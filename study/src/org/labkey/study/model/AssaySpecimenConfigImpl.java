@@ -47,6 +47,8 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
     private String _tubeType;
     private String _lab;
     private String _sampleType;
+    private Double _sampleQuantity;
+    private String _sampleUnits;
     private List<AssaySpecimenVisitImpl> _assayVisitMap;
 
     public AssaySpecimenConfigImpl()
@@ -170,6 +172,26 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
         _sampleType = sampleType;
     }
 
+    public Double getSampleQuantity()
+    {
+        return _sampleQuantity;
+    }
+
+    public void setSampleQuantity(Double sampleQuantity)
+    {
+        _sampleQuantity = sampleQuantity;
+    }
+
+    public String getSampleUnits()
+    {
+        return _sampleUnits;
+    }
+
+    public void setSampleUnits(String sampleUnits)
+    {
+        _sampleUnits = sampleUnits;
+    }
+
     public void setAssayVisitMap(List<AssaySpecimenVisitImpl> assayVisitMap)
     {
         _assayVisitMap = assayVisitMap;
@@ -193,6 +215,8 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
         props.put("DerivtiveTypeId", getDerivativeTypeId());
         props.put("Lab", getLab());
         props.put("SampleType", getSampleType());
+        props.put("SampleQuantity", getSampleQuantity());
+        props.put("SampleUnits", getSampleUnits());
         props.put("Container", getContainer().getId());
         return props;
     }
@@ -214,6 +238,10 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
             assay.setLab(o.getString("Lab"));
         if (o.containsKey("SampleType") && !StringUtils.isEmpty(o.getString("SampleType")))
             assay.setSampleType(o.getString("SampleType"));
+        if (o.containsKey("SampleQuantity") && (o.get("SampleQuantity") instanceof Integer || o.get("SampleQuantity") instanceof Double) && o.getDouble("SampleQuantity") > 0)
+            assay.setSampleQuantity(o.getDouble("SampleQuantity"));
+        if (o.containsKey("SampleUnits") && !StringUtils.isEmpty(o.getString("SampleUnits")))
+            assay.setSampleUnits(o.getString("SampleUnits"));
         if (o.containsKey("PrimaryTypeId") && o.get("PrimaryTypeId") instanceof Integer)
             assay.setPrimaryTypeId(o.getInt("PrimaryTypeId"));
         if (o.containsKey("DerivativeTypeId") && o.get("DerivativeTypeId") instanceof Integer)

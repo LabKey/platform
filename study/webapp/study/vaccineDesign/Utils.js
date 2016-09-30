@@ -51,16 +51,18 @@ Ext4.define('LABKEY.VaccineDesign.Utils', {
      * Helper function to get field editor config object for a study design number field.
      * @param name Field name
      * @param width Field width
+     * @param decimalPrecision Field maximum precision to display after decimal
      * @returns {Object} Field config
      */
-    getStudyDesignNumberConfig : function(name, width)
+    getStudyDesignNumberConfig : function(name, width, decimalPrecision)
     {
         return {
             hideFieldLabel: true,
             name: name,
             width: width,
             minValue: 0,
-            allowDecimals: false
+            allowDecimals: Ext4.isNumber(decimalPrecision),
+            decimalPrecision: decimalPrecision
         }
     },
 

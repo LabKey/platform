@@ -203,9 +203,16 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
                     }
                 }
 
-                // need to htmlEncode and then handle newlines in multiline text fields (i.e. Treatment/Description)
-                val = Ext4.util.Format.htmlEncode(val);
-                val = val.replace(/\n/g, '<br/>');
+                if (Ext4.isNumber(val))
+                {
+                    return val == 0 ? '' : val;
+                }
+                else
+                {
+                    // need to htmlEncode and then handle newlines in multiline text fields (i.e. Treatment/Description)
+                    val = Ext4.util.Format.htmlEncode(val);
+                    val = val.replace(/\n/g, '<br/>');
+                }
 
                 return val;
             },
@@ -215,7 +222,10 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
                 if (val != null && val != '')
                     val = LABKEY.VaccineDesign.Utils.getLabelFromStore(queryName, val);
 
-                return Ext4.util.Format.htmlEncode(val);
+                if (Ext4.isNumber(val))
+                    return val == 0 ? '' : val;
+                else
+                    return Ext4.util.Format.htmlEncode(val);
             },
 
             checkMissingRequired : function(values, dataIndex)

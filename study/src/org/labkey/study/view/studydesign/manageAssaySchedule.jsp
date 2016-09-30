@@ -81,6 +81,10 @@
                         text: 'Sample Types',
                         href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignSampleTypes'}),
                         hrefTarget: '_blank'  // issue 19493
+                    },{
+                        text: 'Units',
+                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignUnits'}),
+                        hrefTarget: '_blank'  // issue 19493
                     }]
                 }
             };
@@ -101,6 +105,10 @@
                     text: 'Sample Types',
                     href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignSampleTypes'}),
                     hrefTarget: '_blank'  // issue 19493
+                },{
+                    text: 'Units',
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignUnits'}),
+                    hrefTarget: '_blank'  // issue 19493
                 }]
             }
         };
@@ -117,7 +125,7 @@ Enter assay schedule information in the grids below.
 <div style="width: 900px;">
     <ul>
         <li <%=form.isUseAlternateLookupFields() ? "style='display:none;'" : ""%>>
-            Configure dropdown options for assays, labs, and sample types at the project
+            Configure dropdown options for assays, labs, sample types, and units at the project
             level to be shared across study designs or within this folder for
             study specific properties: <span id='config-dropdown-menu'></span>
         </li>

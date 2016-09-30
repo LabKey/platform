@@ -156,7 +156,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaySchedulePanel', {
     {
         this.getEl().mask('Saving...');
 
-        var assays = [];
+        var assays = [], errorMsg = [];
         Ext4.each(this.getAssaysGrid().getStore().getRange(), function(record)
         {
             var recData = Ext4.clone(record.data);
@@ -164,8 +164,20 @@ Ext4.define('LABKEY.VaccineDesign.AssaySchedulePanel', {
             // drop any empty treatment rows that were just added
             var hasData = LABKEY.VaccineDesign.Utils.modelHasData(recData, LABKEY.VaccineDesign.Assay.getFields());
             if (hasData)
-                assays.push(recData);
+            {
+                var sampleQuantity = Number(recData['SampleQuantity']);
+                if (isNaN(sampleQuantity) || sampleQuantity < 0)
+                    errorMsg.push('Assay sample quantity values must be a positive numbers: ' + recData['SampleQuantity'] + '.');
+                else
+                    assays.push(recData);
+            }
         }, this);
+
+        if (errorMsg.length > 0)
+        {
+            this.onFailure(errorMsg.join('<br/>'));
+            return;
+        }
 
         LABKEY.Ajax.request({
             url     : LABKEY.ActionURL.buildURL('study-design', 'updateAssaySchedule.api'),
@@ -235,9 +247,9 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
 
     mainTitle : 'Assay Schedule',
 
-    width : 700,
+    width : 420,
 
-    studyDesignQueryNames : ['StudyDesignAssays', 'StudyDesignLabs', 'StudyDesignSampleTypes', 'Location'],
+    studyDesignQueryNames : ['StudyDesignAssays', 'StudyDesignLabs', 'StudyDesignSampleTypes', 'StudyDesignUnits', 'Location'],
 
     visitNoun : 'Visit',
 
@@ -292,7 +304,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
                         root: 'rows'
                     }
                 },
-                sorters: [{ property: 'DisplayOrder', direction: 'ASC' }],
+                sorters: [{ property: 'DisplayOrder', direction: 'ASC' }, { property: 'SequenceNumMin', direction: 'ASC' }],
                 autoLoad: true,
                 listeners: {
                     scope: this,
@@ -390,20 +402,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
                 dataIndex: 'Description',
                 editorType: 'Ext.form.field.Text',
                 editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Description', 185)
-            }/*,{
-                label: 'Sample Quantity',
-                width: 200,
-                dataIndex: 'SampleQuantity',
-                editorType: 'Ext.form.field.Text',
-                editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('SampleQuantity', 185, '95%')
-            },{
-                label: 'Sample Units',
-                width: 200,
-                dataIndex: 'SampleUnits',
-                required: true,
-                editorType: 'LABKEY.ext4.ComboBox',
-                editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('SampleUnits', 185, 'StudyDesignUnits')
-            }*/];
+            }];
 
             if (this.useAlternateLookupFields)
             {
@@ -446,12 +445,27 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
                     editorType: 'LABKEY.ext4.ComboBox',
                     editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('SampleType', 125, 'StudyDesignSampleTypes', undefined, 'Name')
                 });
+                columnConfigs.push({
+                    label: 'Sample Quantity',
+                    width: 140,
+                    dataIndex: 'SampleQuantity',
+                    editorType: 'Ext.form.field.Number',
+                    editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignNumberConfig('SampleQuantity', 125, 2)
+                });
+                columnConfigs.push({
+                    label: 'Sample Units',
+                    width: 140,
+                    dataIndex: 'SampleUnits',
+                    queryName: 'StudyDesignUnits',
+                    editorType: 'LABKEY.ext4.ComboBox',
+                    editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('SampleUnits', 125, 'StudyDesignUnits')
+                });
             }
 
             var visitConfigs = this.getVisitColumnConfigs();
 
             // update the width based on the number of visit columns
-            var width = (visitConfigs.length * 75) + 700 + (this.useAlternateLookupFields ? 120 : 0);
+            var width = (visitConfigs.length * 75) + 420 + (this.useAlternateLookupFields ? 400 : 560);
             this.setWidth(width);
 
             // update the outer panel width if necessary
@@ -501,7 +515,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
             var matchingIndex = LABKEY.VaccineDesign.Utils.getMatchingRowIndexFromArray(value, column.dataIndexArrFilterProp, column.dataIndexArrFilterValue);
             return matchingIndex > -1;
         }
-        else if (dataIndex == 'LocationId' && value == 0)
+        else if ((dataIndex == 'SampleQuantity' || dataIndex == 'LocationId') && value == 0)
         {
             return null;
         }

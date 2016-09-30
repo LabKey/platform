@@ -535,7 +535,7 @@ public class StudyDesignController extends BaseStudyController
                 {
                     if (cohort.getSubjectCount() < 0)
                         errors.reject(ERROR_MSG, "Cohort subject count values must be a positive integer.");
-                    else if (cohort.getSubjectCount() == Integer.MAX_VALUE)
+                    if (cohort.getSubjectCount() == Integer.MAX_VALUE)
                         errors.reject(ERROR_MSG, "Cohort subject count value larger than the max value allowed.");
                 }
             }
@@ -779,6 +779,9 @@ public class StudyDesignController extends BaseStudyController
             {
                 if (assay.getAssayName() == null || StringUtils.isEmpty(assay.getAssayName().trim()))
                     errors.reject(ERROR_MSG, "Assay Name is a required field for all assay configurations.");
+
+                if (assay.getSampleQuantity() != null && assay.getSampleQuantity() < 0)
+                    errors.reject(ERROR_MSG, "Assay sample quantity values must be positive numbers.");
             }
         }
 

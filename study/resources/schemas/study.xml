@@ -2141,6 +2141,8 @@
       </ns:column>
       <ns:column columnName="Lab"/>
       <ns:column columnName="SampleType"/>
+      <ns:column columnName="SampleQuantity"/>
+      <ns:column columnName="SampleUnits"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="AssaySpecimenVisit" tableDbType="TABLE">

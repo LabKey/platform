@@ -81,6 +81,17 @@ public class AssaySpecimenTable extends BaseStudyTable
         });
         addColumn(sampleTypeColumn);
 
+        addWrapColumn(_rootTable.getColumn("SampleQuantity"));
+        ColumnInfo sampleUnitsColumn = new AliasedColumn(this, "SampleUnits", _rootTable.getColumn("SampleUnits"));
+        sampleUnitsColumn.setFk(new LookupForeignKey("Name")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.STUDY_DESIGN_UNITS_TABLE_NAME);
+            }
+        });
+        addColumn(sampleUnitsColumn);
+
         addContainerColumn();
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
