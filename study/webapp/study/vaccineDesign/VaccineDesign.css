@@ -28,6 +28,10 @@
     height: 33px;
 }
 
+.study-vaccine-design td.cell-value .x4-form-cb-wrap {
+    height: 18px;
+}
+
 .study-vaccine-design table.subgrid td {
     background-color: #FFFFFF !important;
 }

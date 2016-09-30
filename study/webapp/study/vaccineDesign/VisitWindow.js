@@ -122,13 +122,21 @@ Ext4.define('LABKEY.VaccineDesign.VisitWindow', {
             {
                 Ext4.each(this.visitStore.query('Included', false).items, function(record)
                 {
-                    data.push(Ext4.clone(record.data));
+                    var recData = Ext4.clone(record.data);
+                    recData['Label'] = recData['Label'] || recData['SequenceNumMin'];
+
+                    data.push(recData);
                 }, this);
             }
 
+            // add an option to select all existing visits for display
+            if (data.length > 1)
+                data.push(0, 0, {Label: '[Show All]', RowId: -1, DisplayOrder: -999999});
+
             this.filteredVisitStore = Ext4.create('Ext.data.Store', {
                 model : 'LABKEY.VaccineDesign.Visit',
-                data : data
+                data : data,
+                sorters : [{property: 'DisplayOrder'},{property: 'SequenceNumMin'}]
             });
         }
 
@@ -223,7 +231,7 @@ Ext4.define('LABKEY.VaccineDesign.VisitWindow', {
                     var values = this.getFormPanel().getValues();
 
                     if (values['visitType'] == 'existing')
-                        this.fireEvent('selectexistingvisit', this, values['existingVisit']);
+                        this.fireEvent('selectexistingvisit', this, values['existingVisit'] == -1 ? 'ALL' : values['existingVisit']);
                     else
                         this.createNewVisit();
                 }

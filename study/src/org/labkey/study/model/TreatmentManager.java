@@ -382,7 +382,43 @@ public class TreatmentManager
         return null;
     }
 
+    public Integer saveAssaySpecimen(Container container, User user, AssaySpecimenConfigImpl assaySpecimen) throws Exception
+    {
+        TableInfo assaySpecimenTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
+        return saveStudyDesignRow(container, user, assaySpecimenTable, assaySpecimen.serialize(), assaySpecimen.isNew() ? null : assaySpecimen.getRowId(), "RowId", true);
+    }
+
+    public Integer saveAssaySpecimenVisit(Container container, User user, AssaySpecimenVisitImpl assaySpecimenVisit) throws Exception
+    {
+        TableInfo assaySpecimenVIsitTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.ASSAY_SPECIMEN_VISIT_TABLE_NAME);
+        return saveStudyDesignRow(container, user, assaySpecimenVIsitTable, assaySpecimenVisit.serialize(), assaySpecimenVisit.isNew() ? null : assaySpecimenVisit.getRowId(), "RowId", true);
+    }
+
+    public List<AssaySpecimenConfigImpl> getFilteredAssaySpecimens(Container container, List<Integer> filterRowIds)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        if (filterRowIds != null && !filterRowIds.isEmpty())
+            filter.addCondition(FieldKey.fromParts("RowId"), filterRowIds, CompareType.NOT_IN);
+
+        return new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimen(), filter, new Sort("RowId")).getArrayList(AssaySpecimenConfigImpl.class);
+    }
+
+    public List<AssaySpecimenVisitImpl> getFilteredAssaySpecimenVisits(Container container, int assaySpecimenId, List<Integer> filterRowIds)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("AssaySpecimenId"), assaySpecimenId);
+        if (filterRowIds != null && !filterRowIds.isEmpty())
+            filter.addCondition(FieldKey.fromParts("RowId"), filterRowIds, CompareType.NOT_IN);
+
+        return new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), filter, new Sort("RowId")).getArrayList(AssaySpecimenVisitImpl.class);
+    }
+
     public Integer saveStudyDesignRow(Container container, User user, TableInfo tableInfo, Map<String, Object> row, Integer key, String pkColName) throws Exception
+    {
+        return saveStudyDesignRow(container, user, tableInfo, row, key, pkColName, false);
+    }
+
+    public Integer saveStudyDesignRow(Container container, User user, TableInfo tableInfo, Map<String, Object> row, Integer key, String pkColName, boolean includeContainerKey) throws Exception
     {
         QueryUpdateService qus = tableInfo != null ? tableInfo.getUpdateService() : null;
         if (qus != null)
@@ -396,8 +432,12 @@ public class TreatmentManager
             }
             else
             {
-                List<Map<String, Object>> oldKeys = Collections.singletonList(Collections.singletonMap(pkColName, key));
-                updatedRows = qus.updateRows(user, container, Collections.singletonList(row), oldKeys, null, null);
+                Map<String, Object> oldKey = new HashMap<>();
+                oldKey.put(pkColName, key);
+                if (includeContainerKey)
+                    oldKey.put("Container", container.getId());
+
+                updatedRows = qus.updateRows(user, container, Collections.singletonList(row), Collections.singletonList(oldKey), null, null);
             }
 
             if (errors.hasErrors())
@@ -489,6 +529,26 @@ public class TreatmentManager
         }
         else
             throw new IllegalStateException("Could not find table: " + StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+    }
+
+    public void deleteAssaySpecimen(Container container, User user, int rowId) throws Exception
+    {
+        // first delete any usages of the AssaySpecimenId in the AssaySpecimenVisit table
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("AssaySpecimenId"), rowId);
+        Table.delete(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), filter);
+
+        // the delete the AssaySpecimen record by RowId
+        filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("RowId"), rowId);
+        Table.delete(StudySchema.getInstance().getTableInfoAssaySpecimen(), filter);
+    }
+
+    public void deleteAssaySpecimenVisit(Container container, User user, int rowId) throws Exception
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("RowId"), rowId);
+        Table.delete(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), filter);
     }
 
     public String getStudyDesignRouteLabelByName(Container container, String name)

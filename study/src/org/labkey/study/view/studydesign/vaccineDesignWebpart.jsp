@@ -77,7 +77,6 @@
     {
         Ext4.create('LABKEY.VaccineDesign.ImmunogensGrid', {
             renderTo : 'immunogens-grid',
-            studyDesignQueryNames : ['StudyDesignImmunogenTypes', 'StudyDesignGenes', 'StudyDesignSubTypes'],
             showDoseRoute: false,
             disableEdit : true
         });

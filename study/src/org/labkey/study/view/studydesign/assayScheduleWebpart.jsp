@@ -19,27 +19,26 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.WebThemeManager" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
-<%@ page import="org.labkey.study.model.AssaySpecimenConfigImpl" %>
-<%@ page import="org.labkey.study.model.LocationImpl" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.model.VisitImpl" %>
-<%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("study/StudyVaccineDesign.css");
+        dependencies.add("study/vaccineDesign/vaccineDesign.lib.xml");
+        dependencies.add("study/vaccineDesign/VaccineDesign.css");
     }
 %>
 <%
     Container c = getContainer();
+    boolean useAlternateLookupFields = getContainer().getActiveModules().contains(ModuleLoader.getInstance().getModule("rho"));
+
     StudyImpl study = StudyManager.getInstance().getStudy(c);
 
     User user = getUser();
@@ -47,116 +46,51 @@
 
     String assayPlan = "";
     if (study != null && study.getAssayPlan() != null)
-        assayPlan = h(study.getAssayPlan()).replaceAll("\n", "<br/>");
+        assayPlan = study.getAssayPlan();
 %>
 
 <style type="text/css">
-
-    table.study-vaccine-design .labkey-col-header {
-        background-color: #<%= WebThemeManager.getTheme(c).getGridColor() %>;
+    .study-vaccine-design tr.header-row td {
+        background-color: #<%= WebThemeManager.getTheme(c).getGridColor() %> !important;
     }
-
 </style>
 
 <%
     if (study != null)
     {
-        List<AssaySpecimenConfigImpl> assaySpecimenConfigs = study.getAssaySpecimenConfigs("AssayName");
-        List<VisitImpl> visits = study.getVisitsForAssaySchedule();
-
-        if (assaySpecimenConfigs.size() == 0)
-        {
-            %>No assays have been scheduled.<br/><%
-        }
+        %>This section shows the assay schedule for this study. Each treatment may consist of several immunogens and adjuvants.<br/><%
 
         if (canEdit)
         {
             ActionURL editUrl = new ActionURL(StudyDesignController.ManageAssayScheduleAction.class, getContainer());
+            if (useAlternateLookupFields)
+                editUrl.addParameter("useAlternateLookupFields", true);
             editUrl.addReturnURL(getActionURL());
 %>
-            To change the set of assays and edit the assay schedule, click the edit button below.<br/>
-            <%= button("Edit").href(editUrl) %>
+            <%=textLink("Manage Assay Schedule", editUrl)%><br/>
 <%
         }
 
-        %><p><%=assayPlan%></p><%
-
-        if (assaySpecimenConfigs.size() > 0)
-        {
 %>
-            <table class="labkey-read-only labkey-data-region labkey-show-borders study-vaccine-design" style="border: solid #ddd 1px;">
-                <tr>
-                    <td class="labkey-col-header" colspan="<%=visits.size()+3%>"><div class="study-vaccine-design-header">Assay Schedule</div></td>
-                </tr>
-                <tr>
-                    <td class="labkey-col-header">Assay</td>
-                    <td class="labkey-col-header">Lab</td>
-                    <td class="labkey-col-header">Sample Type</td>
+        <p><%=h(assayPlan).replaceAll("\n", "<br/>")%></p>
+        <div id="assay-configurations-panel"></div>
 <%
-            for (VisitImpl visit : visits)
-            {
-%>
-                    <td class="labkey-col-header">
-                        <%=h(visit.getDisplayString())%>
-                        <%=(visit.getDescription() != null ? PageFlowUtil.helpPopup("Description", visit.getDescription()) : "")%>
-                    </td>
-<%
-            }
-%>
-                </tr>
-<%
-            for (AssaySpecimenConfigImpl assaySpecimen : assaySpecimenConfigs)
-            {
-                // concatenate sample type (i.e. sample type | tube type)
-                String sampleType = "";
-                String sep = "";
-                if (assaySpecimen.getSampleType() != null)
-                {
-                    sampleType += assaySpecimen.getSampleType();
-                    sep = "|";
-                }
-                if (assaySpecimen.getTubeType() != null)
-                {
-                    sampleType += sep + assaySpecimen.getTubeType();
-                }
-
-                String locationLabel = "";
-                if (assaySpecimen.getLab() != null)
-                {
-                    String labLabel = StudyManager.getInstance().getStudyDesignLabLabelByName(c, assaySpecimen.getLab());
-                    locationLabel += (labLabel != null ? labLabel : assaySpecimen.getLab());
-                }
-                else if (assaySpecimen.getLocationId() != null)
-                {
-                    LocationImpl location = StudyManager.getInstance().getLocation(c, assaySpecimen.getLocationId());
-                    locationLabel = location != null ? location.getLabel() : "";
-                }
-
-                String assayLabel = StudyManager.getInstance().getStudyDesignAssayLabelByName(c, assaySpecimen.getAssayName());
-%>
-                <tr>
-                    <td class="assay-row-padded-view"><%=h(assayLabel != null ? assayLabel : assaySpecimen.getAssayName())%>
-                        <%=(assaySpecimen.getDescription() != null ? PageFlowUtil.helpPopup("Description", assaySpecimen.getDescription()) : "")%>
-                    </td>
-                    <td class="assay-row-padded-view"><%=h(locationLabel)%></td>
-                    <td class="assay-row-padded-view"><%=h(sampleType)%></td>
-<%
-                List<Integer> assaySpecimenVisits = StudyManager.getInstance().getAssaySpecimenVisitIds(c, assaySpecimen);
-                for (VisitImpl visit : visits)
-                {
-                    %><td class="assay-row-padded-view" align="center"><%=assaySpecimenVisits.contains(visit.getRowId()) ? "&#x2713;" : " "%></td><%
-                }
-%>
-                </tr>
-<%
-            }
-%>
-            </table>
-<%
-        }
     }
     else
     {
-        %><p>The folder must contain a study in order to display an assay schedule.</p><%
+%>
+        <p>The folder must contain a study in order to display an assay schedule.</p>
+<%
     }
 %>
+
+<script type="text/javascript">
+    Ext4.onReady(function()
+    {
+        Ext4.create('LABKEY.VaccineDesign.AssaysGrid', {
+            renderTo : 'assay-configurations-panel',
+            disableEdit : true,
+            useAlternateLookupFields : <%=useAlternateLookupFields%>
+        });
+    });
+</script>

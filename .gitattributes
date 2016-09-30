@@ -2212,6 +2212,7 @@ study/src/org/labkey/study/model/SpecimenRequestRequirement.java -text
 study/src/org/labkey/study/model/SpecimenRequestStatus.java -text
 study/src/org/labkey/study/model/SpecimenTypeSummary.java -text
 study/src/org/labkey/study/model/SpecimenTypeSummaryRow.java -text
+study/src/org/labkey/study/model/StudyAssaySchedule.java -text
 study/src/org/labkey/study/model/StudyDomainKind.java -text
 study/src/org/labkey/study/model/StudyImpl.java -text
 study/src/org/labkey/study/model/StudyLsidHandler.java -text
@@ -2721,7 +2722,9 @@ study/webapp/study/tools/specimen_request.png -text
 study/webapp/study/tools/specimen_search.png -text
 study/webapp/study/tools/study_overview.png -text
 study/webapp/study/tools/timeline_chart.png -text
+study/webapp/study/vaccineDesign/AssaySchedule.js -text
 study/webapp/study/vaccineDesign/BaseDataView.js -text
+study/webapp/study/vaccineDesign/BaseDataViewAddVisit.js -text
 study/webapp/study/vaccineDesign/Models.js -text
 study/webapp/study/vaccineDesign/StudyProducts.js -text
 study/webapp/study/vaccineDesign/TreatmentSchedule.js -text

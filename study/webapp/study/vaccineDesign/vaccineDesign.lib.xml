@@ -3,8 +3,10 @@
         <script path="/study/vaccineDesign/Utils.js"/>
         <script path="/study/vaccineDesign/Models.js"/>
         <script path="/study/vaccineDesign/BaseDataView.js"/>
+        <script path="/study/vaccineDesign/BaseDataViewAddVisit.js"/>
         <script path="/study/vaccineDesign/StudyProducts.js"/>
         <script path="/study/vaccineDesign/TreatmentSchedule.js"/>
+        <script path="/study/vaccineDesign/AssaySchedule.js"/>
         <script path="/study/vaccineDesign/VisitWindow.js"/>
     </library>
     <dependencies>

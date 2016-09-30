@@ -146,15 +146,18 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
 
                     tplArr.push(tdTpl + valTpl + tdCloseTpl);
                 }
-                else if (column.editorType === 'LABKEY.ext4.Checkbox')
+                else if (column.editorType == 'Ext.form.field.Checkbox')
                 {
-                    var vRowId = column.dataIndexArrFilterValue,
-                        valTpl = '<input class="scvCheckbox" name="' + column.label + '{[xindex-1]}" id="sc{[xindex-1]}v' + vRowId
-                            + '" configid="{[xindex-1]}" visitid="' + vRowId + '" type=checkbox '
-                            + '{[this.getDisplayValue(values["' + column.dataIndex + '"], '
-                            + '"' + column.dataIndexArrFilterProp + '", "' + column.dataIndexArrFilterValue + '", '
-                            + '"' + column.dataIndexArrValue + '")]}>';
+                    var valTpl = '';
+                    if (!showEdit)
+                    {
+                        valTpl = '{[this.getDisplayValue(values["' + column.dataIndex + '"], '
+                                + '"' + column.dataIndexArrFilterProp + '", '
+                                + '"' + column.dataIndexArrFilterValue + '", '
+                                + '"checkbox")]}';
+                    }
 
+                    tdTpl = tdTpl.substring(0, tdTpl.length -1) + ' style="text-align: center;">';
                     tplArr.push(tdTpl + valTpl + tdCloseTpl);
                 }
                 else
@@ -178,7 +181,12 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
                 {
                     var matchingIndex = LABKEY.VaccineDesign.Utils.getMatchingRowIndexFromArray(val, arrPropFilterName, arrPropFilterVal);
                     if (matchingIndex > -1 && Ext4.isObject(val[matchingIndex]))
-                        val = val[matchingIndex][arrPropDisplayField];
+                    {
+                        if (arrPropDisplayField == 'checkbox')
+                            return '&#x2713;';
+                        else
+                            val = val[matchingIndex][arrPropDisplayField];
+                    }
                     else
                         val = '';
                 }
@@ -353,16 +361,23 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
 
         if (editor != null)
         {
-            // create a new form field to place in the td cell
-            var field = Ext4.create(editor.type, Ext4.apply(editor.config, {
+            var config = {
                 renderTo: target,
-                value: this.getCurrentCellValue(column, record, dataIndex, outerDataIndex, subgridIndex),
                 required: column.required,
                 storeIndex: index,
                 dataFilterValue: dataFilterValue,
                 outerDataIndex: outerDataIndex,
                 subgridIndex: subgridIndex
-            }));
+            };
+
+            var currentValue = this.getCurrentCellValue(column, record, dataIndex, outerDataIndex, subgridIndex);
+            if (editor.type == 'Ext.form.field.Checkbox')
+                config.checked = currentValue;
+            else
+                config.value = currentValue;
+
+            // create a new form field to place in the td cell
+            var field = Ext4.create(editor.type, Ext4.apply(editor.config, config));
 
             // add listeners for when to apply the updated value and clear the input field
             field.on('change', this.updateStoreValueForCellEdit, this, {buffer: 500});

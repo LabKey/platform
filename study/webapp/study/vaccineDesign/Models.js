@@ -35,12 +35,40 @@ Ext4.define('LABKEY.VaccineDesign.Cohort', {
     ]
 });
 
+Ext4.define('LABKEY.VaccineDesign.Assay', {
+    extend : 'Ext.data.Model',
+    idgen: 'sequential',
+    fields : [
+        {name : 'RowId', defaultValue: undefined},
+        {name : 'AssayName', type : 'string'},
+        {name : 'Description', type : 'string'},
+        {name : 'Lab', type : 'string'},
+        {name : 'LocationId', type : 'int'},
+        {name : 'SampleType', type : 'string'},
+        {name : 'Source', type : 'string'},
+        {name : 'TubeType', type : 'string'},
+        //{name : 'SampleQuantity', type : 'string'}
+        //{name : 'SampleUnits', type : 'string'}
+        {name : 'VisitMap', defaultValue: []}
+    ]
+});
+
+Ext4.define('LABKEY.VaccineDesign.AssaySpecimenVisit', {
+    extend : 'Ext.data.Model',
+    fields : [
+        {name : 'RowId', type : 'int'},
+        {name : 'VisitId', type : 'int'},
+        {name : 'AssaySpecimenId', type : 'int'}
+    ]
+});
+
 Ext4.define('LABKEY.VaccineDesign.Visit', {
     extend : 'Ext.data.Model',
     fields : [
         {name : 'RowId', type : 'int'},
         {name : 'Label', type : 'string'},
-        {name : 'SortOrder', type : 'int'},
+        {name : 'DisplayOrder', type : 'int'},
+        {name : 'SequenceNumMin', type : 'numeric'},
         {name : 'Included', type : 'boolean'}
     ]
 });

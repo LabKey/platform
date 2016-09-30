@@ -80,7 +80,9 @@
 Enter treatment information in the grids below.
 <div style="width: 1400px;">
     <ul>
-        <li>Each treatment label must be unique and must consist of at least one study products, i.e. immunogens and/or adjuvants.</li>
+        <li>
+            Each treatment label must be unique and must consist of at least one study products, i.e. immunogens and/or adjuvants.
+        </li>
         <li>
             Use the manage study products page to change or update the set of available immunogens and adjuvants.
             <%
@@ -97,8 +99,9 @@ Enter treatment information in the grids below.
             <%=textLink("Manage Cohorts", CohortController.ManageCohortsAction.class)%>
         </li>
         <li>
-            Use the manage <%=h(visitNoun.toLowerCase())%>s page to further configuration
-            information about the <%=h(visitNoun.toLowerCase())%>s for this study.
+            Use the manage <%=h(visitNoun.toLowerCase())%>s page to further configure
+            information about the <%=h(visitNoun.toLowerCase())%>s for this study or to change
+            the <%=h(visitNoun.toLowerCase())%> display order.
             <%=textLink("Manage " + visitNoun + "s", StudyController.ManageVisitsAction.class)%>
         </li>
 <%

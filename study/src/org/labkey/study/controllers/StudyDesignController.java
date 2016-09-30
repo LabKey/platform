@@ -41,14 +41,17 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.AssaySpecimenConfigImpl;
+import org.labkey.study.model.AssaySpecimenVisitImpl;
 import org.labkey.study.model.CohortManager;
+import org.labkey.study.model.StudyAssaySchedule;
+import org.labkey.study.model.StudyTreatmentSchedule;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DoseAndRoute;
 import org.labkey.study.model.ProductAntigenImpl;
 import org.labkey.study.model.ProductImpl;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.StudyTreatmentSchedule;
 import org.labkey.study.model.TreatmentImpl;
 import org.labkey.study.model.TreatmentManager;
 import org.labkey.study.model.TreatmentProductImpl;
@@ -100,7 +103,7 @@ public class StudyDesignController extends BaseStudyController
         }
     }
 
-    public static class AssayScheduleForm
+    public static class AssayScheduleForm extends ReturnUrlForm
     {
         private boolean useAlternateLookupFields;
 
@@ -762,6 +765,91 @@ public class StudyDesignController extends BaseStudyController
         public void setAssayPlan(String assayPlan)
         {
             _assayPlan = assayPlan;
+        }
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public class UpdateAssayScheduleAction extends MutatingApiAction<StudyAssaySchedule>
+    {
+        @Override
+        public void validateForm(StudyAssaySchedule form, Errors errors)
+        {
+            // validate that each assay configuration has an AssayName
+            for (AssaySpecimenConfigImpl assay : form.getAssays())
+            {
+                if (assay.getAssayName() == null || StringUtils.isEmpty(assay.getAssayName().trim()))
+                    errors.reject(ERROR_MSG, "Assay Name is a required field for all assay configurations.");
+            }
+        }
+
+        @Override
+        public ApiResponse execute(StudyAssaySchedule form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+
+            if (study != null)
+            {
+                StudySchema schema = StudySchema.getInstance();
+
+                try (DbScope.Transaction transaction = schema.getSchema().getScope().ensureTransaction())
+                {
+                    updateAssays(form.getAssays());
+                    updateAssayPlan(study, form.getAssayPlan());
+                    transaction.commit();
+                }
+
+                response.put("success", true);
+                return response;
+            }
+            else
+                throw new IllegalStateException("A study does not exist in this folder");
+        }
+
+        private void updateAssays(List<AssaySpecimenConfigImpl> assays) throws Exception
+        {
+            // insert new assaySpecimens and update any existing ones
+            List<Integer> assaySpecimenRowIds = new ArrayList<>();
+            for (AssaySpecimenConfigImpl assay : assays)
+            {
+                Integer updatedRowId = TreatmentManager.getInstance().saveAssaySpecimen(getContainer(), getUser(), assay);
+                if (updatedRowId != null)
+                {
+                    assaySpecimenRowIds.add(updatedRowId);
+
+                    updateAssayVisitMap(updatedRowId, assay.getAssayVisitMap());
+                }
+            }
+
+            // delete any other assaySpecimens, not included in the insert/update list, by RowId for this container
+            for (AssaySpecimenConfigImpl assaySpecimen : TreatmentManager.getInstance().getFilteredAssaySpecimens(getContainer(), assaySpecimenRowIds))
+                TreatmentManager.getInstance().deleteAssaySpecimen(getContainer(), getUser(), assaySpecimen.getRowId());
+        }
+
+        private void updateAssayVisitMap(int assaySpecimenId, List<AssaySpecimenVisitImpl> assayVisitMaps) throws Exception
+        {
+            List<Integer> assaySpecimenVisitIds = new ArrayList<>();
+            if (assayVisitMaps != null && !assayVisitMaps.isEmpty())
+            {
+                for (AssaySpecimenVisitImpl assaySpecimenVisit : assayVisitMaps)
+                {
+                    assaySpecimenVisit.setAssaySpecimenId(assaySpecimenId);
+
+                    Integer updatedRowId = TreatmentManager.getInstance().saveAssaySpecimenVisit(getContainer(), getUser(), assaySpecimenVisit);
+                    assaySpecimenVisitIds.add(updatedRowId);
+                }
+            }
+
+            // delete any other assaySpecimenVisits, not included in the insert/update list, by RowId for this container and assaySpecimenId
+            for (AssaySpecimenVisitImpl assaySpecimenVisit : TreatmentManager.getInstance().getFilteredAssaySpecimenVisits(getContainer(), assaySpecimenId, assaySpecimenVisitIds))
+                TreatmentManager.getInstance().deleteAssaySpecimenVisit(getContainer(), getUser(), assaySpecimenVisit.getRowId());
+        }
+
+        private void updateAssayPlan(StudyImpl study, String plan)
+        {
+            study = study.createMutable();
+            study.setAssayPlan(plan);
+            StudyManager.getInstance().updateStudy(getUser(), study);
         }
     }
 }

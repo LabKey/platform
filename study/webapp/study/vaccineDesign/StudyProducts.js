@@ -126,7 +126,7 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
         {
             var recData = Ext4.clone(record.data);
 
-            // drop and empty antigen rows that were just added
+            // drop any empty antigen rows that were just added
             var antigenArr = [];
             Ext4.each(recData['Antigens'], function(antigen)
             {

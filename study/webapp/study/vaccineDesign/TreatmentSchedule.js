@@ -511,7 +511,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
 });
 
 Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleGrid', {
-    extend : 'LABKEY.VaccineDesign.BaseDataView',
+    extend : 'LABKEY.VaccineDesign.BaseDataViewAddVisit',
 
     mainTitle : 'Treatment Schedule',
 
@@ -669,7 +669,13 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleGrid', {
             var visitConfigs = this.getVisitColumnConfigs();
 
             // update the width based on the number of visit columns
-            this.setWidth((visitConfigs.length * 150) + 350);
+            var width = (visitConfigs.length * 150) + 350;
+            this.setWidth(width);
+
+            // update the outer panel width if necessary
+            var outerPanel = this.up('panel');
+            if (outerPanel != null)
+                outerPanel.setWidth(Math.max(width, 1300));
 
             this.columnConfigs = columnConfigs.concat(visitConfigs);
         }
@@ -737,77 +743,5 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleGrid', {
         {
             this.callParent([record, column, newValue]);
         }
-    },
-
-    //Override
-    getAddNewRowTpl : function(columns, dataIndex)
-    {
-        var tplArr = [];
-
-        if (!this.disableEdit)
-        {
-            tplArr.push('<tr>');
-            tplArr.push('<td class="cell-display">&nbsp;</td>');
-            tplArr.push('<td class="cell-display action" colspan="' + columns.length + '">');
-            tplArr.push('<i class="' + this.ADD_ICON_CLS + ' add-new-row"> Add new row</i>&nbsp;&nbsp;&nbsp;');
-            tplArr.push('<i class="' + this.ADD_ICON_CLS + ' add-visit-column"> Add new ' + this.visitNoun.toLowerCase() + '</i>');
-            tplArr.push('</td>');
-            tplArr.push('</tr>');
-        }
-
-        return tplArr;
-    },
-
-    //Override
-    attachAddRowListeners : function(view)
-    {
-        this.callParent([view]);
-
-        var addIconEls = Ext4.DomQuery.select('i.add-visit-column', view.getEl().dom);
-
-        Ext4.each(addIconEls, function(addIconEl)
-        {
-            Ext4.get(addIconEl).on('click', this.addNewVisitColumn, this);
-        }, this);
-    },
-
-    addNewVisitColumn : function()
-    {
-        var win = Ext4.create('LABKEY.VaccineDesign.VisitWindow', {
-            title: 'Add ' + this.visitNoun,
-            visitNoun: this.visitNoun,
-            visitStore: this.getVisitStore(),
-            listeners: {
-                scope: this,
-                closewindow: function(){
-                    win.close();
-                },
-                selectexistingvisit: function(w, visitId){
-                    win.close();
-
-                    // set the selected visit to be included
-                    this.getVisitStore().findRecord('RowId', visitId).set('Included', true);
-
-                    this.updateDataViewTemplate();
-                },
-                newvisitcreated: function(w, newVisitData){
-                    win.close();
-
-                    // add the new visit to the store
-                    this.getVisitStore().add(LABKEY.VaccineDesign.Visit.create(newVisitData));
-
-                    this.updateDataViewTemplate();
-                }
-            }
-        });
-
-        win.show();
-    },
-
-    updateDataViewTemplate : function()
-    {
-        // explicitly clear the column configs so the new visit column will be added
-        this.columnConfigs = null;
-        this.getDataView().setTemplate(this.getDataViewTpl());
     }
 });

@@ -15,8 +15,17 @@
  */
 package org.labkey.study.model;
 
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.AssaySpecimenConfig;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: cnathe
@@ -38,6 +47,7 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
     private String _tubeType;
     private String _lab;
     private String _sampleType;
+    private List<AssaySpecimenVisitImpl> _assayVisitMap;
 
     public AssaySpecimenConfigImpl()
     {
@@ -158,5 +168,69 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
     public void setSampleType(String sampleType)
     {
         _sampleType = sampleType;
+    }
+
+    public void setAssayVisitMap(List<AssaySpecimenVisitImpl> assayVisitMap)
+    {
+        _assayVisitMap = assayVisitMap;
+    }
+
+    public List<AssaySpecimenVisitImpl> getAssayVisitMap()
+    {
+        return _assayVisitMap;
+    }
+
+    public Map<String, Object> serialize()
+    {
+        Map<String, Object> props = new HashMap<>();
+        props.put("RowId", getRowId());
+        props.put("AssayName", getAssayName());
+        props.put("Description", getDescription());
+        props.put("LocationId", getLocationId());
+        props.put("Source", getSource());
+        props.put("TubeType", getTubeType());
+        props.put("PrimaryTypeId", getPrimaryTypeId());
+        props.put("DerivtiveTypeId", getDerivativeTypeId());
+        props.put("Lab", getLab());
+        props.put("SampleType", getSampleType());
+        props.put("Container", getContainer().getId());
+        return props;
+    }
+
+    public static AssaySpecimenConfigImpl fromJSON(@NotNull JSONObject o, Container container)
+    {
+        AssaySpecimenConfigImpl assay = new AssaySpecimenConfigImpl(container, o.getString("AssayName"), o.getString("Description"));
+
+        if (o.containsKey("RowId"))
+            assay.setRowId(o.getInt("RowId"));
+
+        if (o.containsKey("Source") && !StringUtils.isEmpty(o.getString("Source")))
+            assay.setSource(o.getString("Source"));
+        if (o.containsKey("LocationId") && o.get("LocationId") instanceof Integer && o.getInt("LocationId") > 0)
+            assay.setLocationId(o.getInt("LocationId"));
+        if (o.containsKey("TubeType") && !StringUtils.isEmpty(o.getString("TubeType")))
+            assay.setTubeType(o.getString("TubeType"));
+        if (o.containsKey("Lab") && !StringUtils.isEmpty(o.getString("Lab")))
+            assay.setLab(o.getString("Lab"));
+        if (o.containsKey("SampleType") && !StringUtils.isEmpty(o.getString("SampleType")))
+            assay.setSampleType(o.getString("SampleType"));
+        if (o.containsKey("PrimaryTypeId") && o.get("PrimaryTypeId") instanceof Integer)
+            assay.setPrimaryTypeId(o.getInt("PrimaryTypeId"));
+        if (o.containsKey("DerivativeTypeId") && o.get("DerivativeTypeId") instanceof Integer)
+            assay.setDerivativeTypeId(o.getInt("DerivativeTypeId"));
+
+        Object visitMapInfo = o.get("VisitMap");
+        if (visitMapInfo != null && visitMapInfo instanceof JSONArray)
+        {
+            JSONArray visitMapJSON = (JSONArray) visitMapInfo;
+
+            List<AssaySpecimenVisitImpl> assayVisitMap = new ArrayList<>();
+            for (int j = 0; j < visitMapJSON.length(); j++)
+                assayVisitMap.add(AssaySpecimenVisitImpl.fromJSON(visitMapJSON.getJSONObject(j), container));
+
+            assay.setAssayVisitMap(assayVisitMap);
+        }
+
+        return assay;
     }
 }

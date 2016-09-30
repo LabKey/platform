@@ -75,13 +75,16 @@ Ext4.define('LABKEY.VaccineDesign.Utils', {
         var key = Ext4.isDefined(filter) ? queryName +  '|' + filter.getColumnName() + '|' + filter.getValue() : queryName,
             store = Ext4.getStore(key),
             hasStudyDesignPrefix = queryName.indexOf('StudyDesign') == 0,
-            columns = 'RowId,Name,Label,DisplayOrder';
+            columns = 'RowId,Name,Label';
 
         if (Ext4.isDefined(store))
             return store;
 
+        // special case to query DisplayOrder and SequenceNumMin for Visit table
+        if (queryName == 'Visit')
+            columns += ',DisplayOrder,SequenceNumMin';
         // special case to query ProductId column for DoseAndRoute table
-        if (queryName == 'DoseAndRoute')
+        else if (queryName == 'DoseAndRoute')
             columns += ',ProductId';
 
         return Ext4.create('LABKEY.ext4.Store', {
@@ -124,7 +127,7 @@ Ext4.define('LABKEY.VaccineDesign.Utils', {
     },
 
     /**
-     * Check if the given object has an properties which have data (i.e. non null, not an empty string, or is an array)
+     * Check if the given object has any properties which have data (i.e. non null, not an empty string, or is an array)
      * @param obj The object to test
      * @returns {boolean}
      */
@@ -141,6 +144,34 @@ Ext4.define('LABKEY.VaccineDesign.Utils', {
                     hasNonNull = true;
                     return false; // break
                 }
+            });
+        }
+
+        return hasNonNull;
+    },
+
+    /**
+     * Check if the given model object has any properties which have data (i.e. non null, not an empty string, or is an array)
+     * @param obj The object to test
+     * @returns {boolean}
+     */
+    modelHasData : function(obj, fields)
+    {
+        var hasNonNull = false;
+
+        if (Ext4.isObject(obj) && Ext4.isArray(fields))
+        {
+            Ext4.each(fields, function(field)
+            {
+                if (Ext4.isArray(obj[field.name]) && obj[field.name].length > 0)
+                    hasNonNull = true;
+                else if (field.type.type == 'int' && obj[field.name] != null && obj[field.name] > 0)
+                    hasNonNull = true;
+                else if (field.type.type == 'string' && obj[field.name] != null && obj[field.name] != '')
+                    hasNonNull = true;
+
+                if (hasNonNull)
+                    return false; // break;
             });
         }
 
