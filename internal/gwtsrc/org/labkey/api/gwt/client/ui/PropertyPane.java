@@ -49,6 +49,7 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
     {
         _domainProvider = provider;
         _name = name;
+        DOM.setElementAttribute(getElement(), "name", name + "Pane");
     }
 
     public String getName()
