@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -653,7 +654,16 @@ public class RenderContext implements Map<String, Object>, Serializable
 
                     // Hack for DATE and TIMESTAMP columns on SQL Server jTDS, see #27332
                     if ((type == JdbcType.DATE || type == JdbcType.TIMESTAMP) && value instanceof String)
-                        value = type.convert(value);
+                    {
+                        try
+                        {
+                            value = type.convert(value);
+                        }
+                        catch (ConversionException x)
+                        {
+                            /* pass */
+                        }
+                    }
 
                     return value;
                 }
