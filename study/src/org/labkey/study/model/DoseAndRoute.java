@@ -68,7 +68,7 @@ public class DoseAndRoute
 
     public String getDose()
     {
-        return _dose;
+        return StringUtils.trimToNull(_dose);
     }
 
     public void setDose(String dose)
@@ -78,7 +78,7 @@ public class DoseAndRoute
 
     public String getRoute()
     {
-        return _route;
+        return StringUtils.trimToNull(_route);
     }
 
     public void setRoute(String route)

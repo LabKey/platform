@@ -443,9 +443,13 @@ public class StudyDesignController extends BaseStudyController
             {
                 for (DoseAndRoute doseAndRoute : doseAndRoutes)
                 {
-                    doseAndRoute.setProductId(productId);
-                    existingDoseAndRoutes.remove(doseAndRoute.getRowId());
-                    TreatmentManager.getInstance().saveStudyProductDoseAndRoute(getContainer(), getUser(), doseAndRoute);
+                    // dose and route both can't be blank
+                    if (doseAndRoute.getDose() != null || doseAndRoute.getRoute() != null)
+                    {
+                        doseAndRoute.setProductId(productId);
+                        existingDoseAndRoutes.remove(doseAndRoute.getRowId());
+                        TreatmentManager.getInstance().saveStudyProductDoseAndRoute(getContainer(), getUser(), doseAndRoute);
+                    }
                 }
 
                 // remove deleted dose and routes
