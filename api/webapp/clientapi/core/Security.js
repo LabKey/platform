@@ -774,6 +774,8 @@ LABKEY.Security = new function()
          * <li>isAdmin: set to true if this user has admin permissions in the current folder</li>
          * <li>isGuest: set to true if this user is the guest (anonymous) user</li>
          * <li>isSystemAdmin: set to true if this user is a system administrator</li>
+         * <li>isDeveloper: set to true if this user is a developer</li>
+         * <li>isSignedIn: set to true if this user is signed in</li>
          * </ul>
          */
         currentUser : LABKEY.user,
