@@ -861,9 +861,11 @@ public class QueryPivot extends QueryRelation
         {
             ArrayList<FieldKey> list = new ArrayList<>();
 
-            for (RelationColumn col : getAllColumns().values())
+            for (ColumnInfo col : getColumns())
             {
                 if (_aggregates.containsKey(col.getFieldKey().getName()))
+                    continue;
+                if (col.isHidden())
                     continue;
                 list.add(col.getFieldKey());
             }
