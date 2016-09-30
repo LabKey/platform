@@ -30,7 +30,7 @@ import java.util.Map;
 // A loader of columnar data.   
 public interface Loader
 {
-    public ColumnDescriptor[] getColumns() throws IOException;
-    public List<Map<String, Object>> load() throws IOException;
-    public CloseableIterator<Map<String, Object>> iterator();
+    ColumnDescriptor[] getColumns() throws IOException;
+    List<Map<String, Object>> load() throws IOException;
+    CloseableIterator<Map<String, Object>> iterator();
 }
