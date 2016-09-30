@@ -445,7 +445,7 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
                 }
             }
 
-            if (LABKEY.devMode) {
+            if (LABKEY.devMode || LABKEY.Security.currentUser.isDeveloper) {
                 children.push(this.formatQueryLink('rawTableMetaData', params, 'view raw table metadata'));
             }
         }
