@@ -324,7 +324,11 @@ public class DatasetDataWriter implements InternalStudyWriter
 
                     // If the column is MV enabled, export the data in the indicator column as well
                     if (!metaData && in.isMvEnabled())
-                        outColumns.add(tinfo.getColumn(in.getMvColumnName()));
+                    {
+                        ColumnInfo mv = tinfo.getColumn(in.getMvColumnName());
+                        if (null != mv)
+                            outColumns.add(mv);
+                    }
                 }
             }
         }
