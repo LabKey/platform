@@ -1203,23 +1203,31 @@ public abstract class CompareType
 
     public static Date asDate(Object v)
     {
-        if (v instanceof Date)
-            return (Date)v;
-        if (v instanceof Calendar)
-            return ((Calendar)v).getTime();
-        String s = v.toString();
+        try
+        {
+            if (v instanceof Date)
+                return (Date) v;
+            if (v instanceof Calendar)
+                return ((Calendar) v).getTime();
+            String s = v.toString();
 
-        if (!s.startsWith("-") && !s.startsWith("+"))
-            return new Date(DateUtil.parseDateTime(s));
+            if (!s.startsWith("-") && !s.startsWith("+"))
+                return new Date(DateUtil.parseDateTime(s));
 
-        boolean add = s.startsWith("+");
-        s = s.substring(1);
-        if (NumberUtils.isDigits(s))
-            s = s + "d";
-        if (add)
-            return new Date(DateUtil.addDuration(System.currentTimeMillis(), s));
-        else
-            return new Date(DateUtil.subtractDuration(System.currentTimeMillis(), s));
+            boolean add = s.startsWith("+");
+            s = s.substring(1);
+            if (NumberUtils.isDigits(s))
+                s = s + "d";
+            if (add)
+                return new Date(DateUtil.addDuration(System.currentTimeMillis(), s));
+            else
+                return new Date(DateUtil.subtractDuration(System.currentTimeMillis(), s));
+        }
+        catch (NumberFormatException nfe)
+        {
+            throw new ConversionException(nfe);
+            //throw nfe;
+        }
     }
 
 
