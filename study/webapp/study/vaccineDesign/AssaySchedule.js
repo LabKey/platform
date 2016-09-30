@@ -381,6 +381,20 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
         this.getStore();
     },
 
+    columnHasData : function(dataIndex)
+    {
+        var recordsDataArr = Ext4.Array.pluck(this.getStore().getRange(), 'data'),
+            colDataArr = Ext4.Array.pluck(recordsDataArr, dataIndex);
+
+        for (var i = 0; i < colDataArr.length; i++)
+        {
+            if ((Ext4.isNumber(colDataArr[i]) && colDataArr[i] > 0) || (Ext4.isString(colDataArr[i]) && colDataArr[i] != ''))
+                return true;
+        }
+
+        return false;
+    },
+
     //Override
     getColumnConfigs : function()
     {
@@ -399,6 +413,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
             },{
                 label: 'Description',
                 width: 200,
+                hidden: this.disableEdit && !this.columnHasData('Description'),
                 dataIndex: 'Description',
                 editorType: 'Ext.form.field.Text',
                 editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Description', 185)
@@ -409,6 +424,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
                 columnConfigs.push({
                     label: 'Source',
                     width: 60,
+                    hidden: this.disableEdit && !this.columnHasData('Source'),
                     dataIndex: 'Source',
                     editorType: 'Ext.form.field.Text',
                     editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Source', 45)
@@ -416,6 +432,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
                 columnConfigs.push({
                     label: 'Location',
                     width: 140,
+                    hidden: this.disableEdit && !this.columnHasData('LocationId'),
                     dataIndex: 'LocationId',
                     queryName: 'Location',
                     editorType: 'LABKEY.ext4.ComboBox',
@@ -424,6 +441,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
                 columnConfigs.push({
                     label: 'TubeType',
                     width: 200,
+                    hidden: this.disableEdit && !this.columnHasData('TubeType'),
                     dataIndex: 'TubeType',
                     editorType: 'Ext.form.field.Text',
                     editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('TubeType', 185)
@@ -434,6 +452,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
                 columnConfigs.push({
                     label: 'Lab',
                     width: 140,
+                    hidden: this.disableEdit && !this.columnHasData('Lab'),
                     dataIndex: 'Lab',
                     editorType: 'LABKEY.ext4.ComboBox',
                     editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Lab', 125, 'StudyDesignLabs')
@@ -441,6 +460,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
                 columnConfigs.push({
                     label: 'Sample Type',
                     width: 140,
+                    hidden: this.disableEdit && !this.columnHasData('SampleType'),
                     dataIndex: 'SampleType',
                     editorType: 'LABKEY.ext4.ComboBox',
                     editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('SampleType', 125, 'StudyDesignSampleTypes', undefined, 'Name')
@@ -448,6 +468,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
                 columnConfigs.push({
                     label: 'Sample Quantity',
                     width: 140,
+                    hidden: this.disableEdit && !this.columnHasData('SampleQuantity'),
                     dataIndex: 'SampleQuantity',
                     editorType: 'Ext.form.field.Number',
                     editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignNumberConfig('SampleQuantity', 125, 2)
@@ -455,6 +476,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
                 columnConfigs.push({
                     label: 'Sample Units',
                     width: 140,
+                    hidden: this.disableEdit && !this.columnHasData('SampleUnits'),
                     dataIndex: 'SampleUnits',
                     queryName: 'StudyDesignUnits',
                     editorType: 'LABKEY.ext4.ComboBox',

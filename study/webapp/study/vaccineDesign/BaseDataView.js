@@ -116,7 +116,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             tplArr.push('<td class="cell-display action"><i class="' + this.DELETE_ICON_CLS + '" outer-index="{[xindex-1]}"/></td>');
         Ext4.each(columns, function(column)
         {
-            if (Ext4.isString(column.dataIndex))
+            if (Ext4.isString(column.dataIndex) && !column.hidden)
             {
                 var checkMissingReqTpl = column.required ? ' {[this.checkMissingRequired(values, "' + column.dataIndex + '")]}' : '',
                     tdTpl = '<td class="' + tdCls + checkMissingReqTpl + '" data-index="' + column.dataIndex + '">',
@@ -301,7 +301,8 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             tplArr.push('<td class="cell-display">&nbsp;</td>');
         Ext4.each(columns, function(column)
         {
-            tplArr.push('<td class="cell-display" width="' + (column.width || 100) +'px">' + Ext4.util.Format.htmlEncode(column.label) + '</td>');
+            if (!column.hidden)
+                tplArr.push('<td class="cell-display" width="' + (column.width || 100) +'px">' + Ext4.util.Format.htmlEncode(column.label) + '</td>');
         }, this);
         tplArr.push('</tr>');
 
