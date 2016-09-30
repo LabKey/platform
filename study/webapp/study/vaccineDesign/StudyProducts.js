@@ -257,7 +257,7 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsGrid', {
 Ext4.define('LABKEY.VaccineDesign.ImmunogensGrid', {
     extend : 'LABKEY.VaccineDesign.StudyProductsGrid',
 
-    width: 1500,
+    width: 1350,
 
     mainTitle : 'Immunogens',
 
@@ -286,35 +286,35 @@ Ext4.define('LABKEY.VaccineDesign.ImmunogensGrid', {
                 editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Type', 185, 'StudyDesignImmunogenTypes')
             },{
                 label: 'HIV Antigens',
-                width: 750,
+                width: 600,
                 dataIndex: 'Antigens',
                 subgridConfig: {
                     columns: [{
                         label: 'Gene',
-                        width: 165,
+                        width: 140,
                         dataIndex: 'Gene',
                         queryName: 'StudyDesignGenes',
                         editorType: 'LABKEY.ext4.ComboBox',
-                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Gene', 150, 'StudyDesignGenes')
+                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Gene', 125, 'StudyDesignGenes')
                     },{
                         label: 'Subtype',
-                        width: 165,
+                        width: 140,
                         dataIndex: 'SubType',
                         queryName: 'StudyDesignSubTypes',
                         editorType: 'LABKEY.ext4.ComboBox',
-                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('SubType', 150, 'StudyDesignSubTypes')
+                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('SubType', 125, 'StudyDesignSubTypes')
                     },{
                         label: 'GenBank Id',
-                        width: 200,
+                        width: 150,
                         dataIndex: 'GenBankId',
                         editorType: 'Ext.form.field.Text',
-                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('GenBankId', 185)
+                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('GenBankId', 135)
                     },{
                         label: 'Sequence',
-                        width: 200,
+                        width: 150,
                         dataIndex: 'Sequence',
                         editorType: 'Ext.form.field.Text',
-                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Sequence', 185)
+                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Sequence', 135)
                     }]
                 }
             }];
