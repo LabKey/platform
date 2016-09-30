@@ -223,7 +223,10 @@ public class LookupColumn extends ColumnInfo
             strJoin.append(" ON ");
             strJoin.append(getJoinCondition(baseAlias));
             SQLFragment sqlJoinPrev = map.get(colTableAlias);
-            assert null == sqlJoinPrev || sqlJoinPrev.getCompareSQL().equals(strJoin.getCompareSQL()) : "Join SQL does not match:\n" + strJoin.getSQL() + "\n\nvs\n\n" + map.get(colTableAlias).getSQL();
+            if (null != sqlJoinPrev)
+            {
+                assert SQLFragment.debugCompareSQL(sqlJoinPrev, strJoin);
+            }
             map.put(colTableAlias, strJoin);
         }
 

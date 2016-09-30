@@ -199,43 +199,30 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
-    /**
-     * This is a to allow us to compare fragments with CTE that haven't been collapsed yet (only used in assertions, debugging etc)
-     * NOTE need to avoid recursive CTE
-     *
-     * CONSIDER: replace with
-     *      static boolean SQLFragment.compareSQL(SQLFragment sql1, SQLFragment sql2)
-     **/
-    public String getCompareSQL()
+    /* This is not an exhaustive .equals() test, but it give pretty good confidence that these statements are the same */
+    static boolean debugCompareSQL(SQLFragment sql1, SQLFragment sql2)
     {
-        return getCompareSQL(new HashSet<String>());
-    }
-    private String getCompareSQL(Set<String> seen)
-    {
-        String select = null != sb ? sb.toString() : null != sql ? sql : "";
-        if (null == commonTableExpressionsMap || commonTableExpressionsMap.isEmpty())
-            return select;
+        String select1 = sql1.getRawSQL();
+        String select2 = sql2.getRawSQL();
 
-        for (Map.Entry<Object, CTE> e : commonTableExpressionsMap.entrySet())
-        {
-            CTE cte = e.getValue();
-            String replaceSQL = null;
-            for (String token : cte.tokens)
-            {
-                if (seen.add(token))
-                {
-                    if (null == replaceSQL)
-                        replaceSQL = cte.sqlf.getCompareSQL(seen);
-                    select = StringUtils.replace(select, token, " FROM (" + replaceSQL + ") ");
-                }
-                else
-                {
-                    select = StringUtil.replace(select, token, " FROM (RECUSRSIVE_CTE) ");
-                }
-            }
-        }
-        return select;
+        if ((null == sql1.commonTableExpressionsMap || sql1.commonTableExpressionsMap.isEmpty()) &&
+            (null == sql2.commonTableExpressionsMap || sql2.commonTableExpressionsMap.isEmpty()))
+            return select1.equals(select2);
+
+        select1 = select1.replaceAll("\\/\\*\\$.*\\$\\*\\/", "CTE");
+        select2 = select1.replaceAll("\\/\\*\\$.*\\$\\*\\/", "CTE");
+            if (!select1.equals(select2))
+                return false;
+
+        Set<String> ctes1 = sql1.commonTableExpressionsMap.values().stream()
+                .map(cte -> cte.sqlf.getRawSQL().replaceAll("\\/\\*\\$.*\\$\\*\\/", "CTE"))
+                .collect(Collectors.toSet());
+        Set<String> ctes2 = sql2.commonTableExpressionsMap.values().stream()
+                .map(cte -> cte.sqlf.getRawSQL().replaceAll("\\/\\*\\$.*\\$\\*\\/", "CTE"))
+                .collect(Collectors.toSet());
+        return ctes1.equals(ctes2);
     }
+
 
     // It is a little confusing that getString() does not return the same charsequence that this object purports to
     // represent.  However, this is a good "display value" for this object.
