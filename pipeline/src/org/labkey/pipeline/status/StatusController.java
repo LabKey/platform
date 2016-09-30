@@ -563,7 +563,14 @@ public class StatusController extends SpringActionController
 
                         if (visible)
                         {
-                            PageFlowUtil.streamFile(getViewContext().getResponse(), fileStatus, form.isDownload());
+                            if (!form.isDownload())
+                            {
+                                renderFile(out, fileShow);
+                            }
+                            else
+                            {
+                                PageFlowUtil.streamFile(getViewContext().getResponse(), fileStatus, true);
+                            }
                             written = true;
                         }
                     }
@@ -572,6 +579,25 @@ public class StatusController extends SpringActionController
 
             if (!written)
                 out.print("File not found.");
+        }
+    }
+
+    private void renderFile(PrintWriter out, File f)
+    {
+        try (BufferedReader br = Readers.getReader(f))
+        {
+            String line;
+
+            while ((line = br.readLine()) != null)
+            {
+                out.write(line);
+                out.write(_newline);
+            }
+        }
+        catch (IOException e)
+        {
+            out.write("...Error reading file...");
+            out.write(_newline);
         }
     }
 

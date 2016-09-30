@@ -96,11 +96,8 @@ public class FileDisplayColumn extends SimpleDisplayColumn
             for (final String fileName : fileNames)
             {
                 // make sure the files can be open for read
-                FileInputStream fis = null;
-
-                try
+                try (FileInputStream ignored = new FileInputStream(new File(dir, fileName)))
                 {
-                    fis = new FileInputStream(new File(dir, fileName));
                     out.write("<a href=\"");
                     out.write(StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, false).getLocalURIString());
                     out.write("\">");
@@ -116,19 +113,6 @@ public class FileDisplayColumn extends SimpleDisplayColumn
                 {
                     out.write(PageFlowUtil.filter(fileName));
                     out.write("<br>\n");
-                }
-                finally
-                {
-                    if (fis != null)
-                    {
-                        try
-                        {
-                            fis.close();
-                        }
-                        catch (Exception e)
-                        {
-                        }
-                    }
                 }
             }
         }
