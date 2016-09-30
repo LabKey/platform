@@ -751,7 +751,7 @@ public class PageFlowUtil
 
     private static MimeMap _mimeMap;
 
-    public static String getContentTypeFor(String filename)
+    public static String getContentTypeFor(@NotNull String filename)
     {
         // Lazy initialization
         if (_mimeMap == null)
@@ -804,11 +804,8 @@ public class PageFlowUtil
     /**
      * Sets up the response to stream back a file. The content type is inferred by the filename extension.
      */
-    public static void prepareResponseForFile(HttpServletResponse response, Map<String, String> responseHeaders, String filename, boolean asAttachment)
+    public static void prepareResponseForFile(HttpServletResponse response, Map<String, String> responseHeaders, @NotNull String filename, boolean asAttachment)
     {
-        if (filename == null)
-            throw new IllegalArgumentException("filename cannot be null");
-
         _prepareResponseForFile(response, responseHeaders, getContentTypeFor(filename), filename, asAttachment);
     }
 
@@ -898,10 +895,8 @@ public class PageFlowUtil
     /**
      * Read the file and stream it to the browser through the response. The content type of the file is detected
      * from the contents of the file.
-     *
-     * @throws IOException
      */
-    public static void streamFile(HttpServletResponse response, @NotNull Map<String, String> responseHeaders, File file, boolean asAttachment) throws IOException
+    public static void streamFile(@NotNull HttpServletResponse response, @NotNull Map<String, String> responseHeaders, File file, boolean asAttachment) throws IOException
     {
         try (InputStream is = new FileInputStream(file))
         {
@@ -914,10 +909,8 @@ public class PageFlowUtil
     /**
      * Read the file and stream it to the browser through the response. The content type of the file is detected
      * from the file name extension.
-     *
-     * @throws IOException
      */
-    public static void streamFile(HttpServletResponse response, @NotNull Map<String, String> responseHeaders, String name, InputStream is, boolean asAttachment) throws IOException
+    public static void streamFile(@NotNull HttpServletResponse response, @NotNull Map<String, String> responseHeaders, @NotNull String name, InputStream is, boolean asAttachment) throws IOException
     {
         try
         {
@@ -932,7 +925,7 @@ public class PageFlowUtil
     }
 
 
-    public static void streamFileBytes(HttpServletResponse response, String filename, byte[] bytes, boolean asAttachment) throws IOException
+    public static void streamFileBytes(@NotNull HttpServletResponse response, @NotNull String filename, @NotNull byte[] bytes, boolean asAttachment) throws IOException
     {
         prepareResponseForFile(response, Collections.emptyMap(), filename, asAttachment);
         response.getOutputStream().write(bytes);
