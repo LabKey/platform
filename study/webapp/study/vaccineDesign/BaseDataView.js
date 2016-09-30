@@ -165,6 +165,10 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
                     tplArr.push(tdTpl + (!showEdit ? '{[this.getDisplayValue(values["' + column.dataIndex + '"])]}' : '') + tdCloseTpl);
                 }
             }
+            else if (Ext4.isString(column.displayValue))
+            {
+                tplArr.push('<td class="cell-display">' + column.displayValue + '</td>');
+            }
         }, this);
         tplArr.push('</tr>');
         tplArr.push('</tpl>');

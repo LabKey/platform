@@ -465,7 +465,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
             var visitConfigs = this.getVisitColumnConfigs();
 
             // update the width based on the number of visit columns
-            var width = (visitConfigs.length * 75) + 420 + (this.useAlternateLookupFields ? 400 : 560);
+            var width = 450 + (Math.max(2, visitConfigs.length) * 75) + (this.useAlternateLookupFields ? 400 : 560);
             this.setWidth(width);
 
             // update the outer panel width if necessary
@@ -501,6 +501,15 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
                 });
             }
         }, this);
+
+        if (visitConfigs.length == 0 && !this.disableEdit)
+        {
+            visitConfigs.push({
+                label: 'No ' + this.visitNoun + 's Defined',
+                displayValue: '',
+                width: 160
+            });
+        }
 
         return visitConfigs;
     },

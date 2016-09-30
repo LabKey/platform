@@ -48,6 +48,10 @@
 
     User user = getUser();
     boolean canEdit  = c.hasPermission(user, UpdatePermission.class);
+
+    String subjectNoun = "Subject";
+    if (study != null)
+        subjectNoun = study.getSubjectNounSingular();
 %>
 
 <style type="text/css">
@@ -88,7 +92,7 @@
             <table class='outer'>
                 <tr class="header-row">
                     <td class="cell-display">Group / Cohort</td>
-                    <td class="cell-display">Count</td>
+                    <td class="cell-display"><%=h(subjectNoun)%> Count</td>
 <%
                     for (VisitImpl visit : visits)
                     {

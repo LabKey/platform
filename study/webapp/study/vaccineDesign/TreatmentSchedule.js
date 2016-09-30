@@ -600,6 +600,15 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleGrid', {
             }
         }, this);
 
+        if (visitConfigs.length == 0 && !this.disableEdit)
+        {
+            visitConfigs.push({
+                label: 'No ' + this.visitNoun + 's Defined',
+                displayValue: '',
+                width: 160
+            });
+        }
+
         return visitConfigs;
     },
 
@@ -669,7 +678,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleGrid', {
             var visitConfigs = this.getVisitColumnConfigs();
 
             // update the width based on the number of visit columns
-            var width = (visitConfigs.length * 150) + 350;
+            var width = 400 + (Math.max(2, visitConfigs.length) * 150);
             this.setWidth(width);
 
             // update the outer panel width if necessary
