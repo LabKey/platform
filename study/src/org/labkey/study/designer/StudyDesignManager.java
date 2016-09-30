@@ -343,6 +343,8 @@ public class StudyDesignManager
         deletedTables.add(StudySchema.getInstance().getTableInfoStudyDesignAssays());
         Table.delete(StudySchema.getInstance().getTableInfoStudyDesignLabs(), filter);
         deletedTables.add(StudySchema.getInstance().getTableInfoStudyDesignLabs());
+        Table.delete(StudySchema.getInstance().getTableInfoDoseAndRoute(), filter);
+        deletedTables.add(StudySchema.getInstance().getTableInfoDoseAndRoute());
     }
 
     public void inactivateStudyDesign(Container c)

@@ -22,6 +22,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.TreatmentProduct;
+import org.labkey.api.util.Pair;
 import org.labkey.study.StudySchema;
 
 import java.util.Collection;
@@ -162,11 +163,15 @@ public class TreatmentProductImpl implements TreatmentProduct
         }
         else if (getDoseAndRoute() != null && getDose() == null && getRoute() == null)
         {
-            DoseAndRoute doseAndRoute = TreatmentManager.getInstance().getDoseAndRoute(getContainer(), getDoseAndRoute(), getProductId());
-            if (doseAndRoute != null)
+            Pair<String, String> parts = DoseAndRoute.parseFromLabel(getDoseAndRoute());
+            if (parts != null)
             {
-                setDose(doseAndRoute.getDose());
-                setRoute(doseAndRoute.getRoute());
+                DoseAndRoute doseAndRoute = TreatmentManager.getInstance().getDoseAndRoute(getContainer(), parts.getKey(), parts.getValue(), getProductId());
+                if (doseAndRoute != null)
+                {
+                    setDose(doseAndRoute.getDose());
+                    setRoute(doseAndRoute.getRoute());
+                }
             }
         }
     }

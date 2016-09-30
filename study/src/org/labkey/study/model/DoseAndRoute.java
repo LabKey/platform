@@ -2,8 +2,10 @@ package org.labkey.study.model;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.Pair;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +16,6 @@ import java.util.Map;
 public class DoseAndRoute
 {
     private Integer _rowId;
-    private String _label = "empty";
     private String _dose;
     private String _route;
     private int _productId;
@@ -51,19 +52,14 @@ public class DoseAndRoute
         _route = route;
         _productId = productId;
         _container = container;
+    }
 
+    public @Nullable String getLabel()
+    {
         if (_dose != null || _route != null)
-            _label = String.format("%s : %s", StringUtils.trimToEmpty(_dose), StringUtils.trimToEmpty(_route));
-    }
-
-    public String getLabel()
-    {
-        return _label;
-    }
-
-    public void setLabel(String label)
-    {
-        _label = label;
+            return String.format("%s : %s", StringUtils.trimToEmpty(_dose), StringUtils.trimToEmpty(_route));
+        else
+            return null;
     }
 
     public String getDose()
@@ -130,5 +126,29 @@ public class DoseAndRoute
         props.put(keys.Route.name(), getRoute());
 
         return props;
+    }
+
+    /**
+     * Helper to convert the concatenated label into a dose and/or route portion
+     * @return Pair object where the key is the dose and the value is the route
+     */
+    public static @Nullable
+    Pair<String, String> parseFromLabel(String label)
+    {
+        // need to keep the label generation in sync with code in DoseAndRouteTable label expr column
+        if (label != null)
+        {
+            if (label.contains(":"))
+            {
+                String[] parts = label.split(":");
+                if (parts.length == 2)
+                {
+                    return new Pair<>(
+                        StringUtils.trimToNull(parts[0]),
+                        StringUtils.trimToNull(parts[1]));
+                }
+            }
+        }
+        return null;
     }
 }

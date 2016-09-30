@@ -2210,7 +2210,6 @@
   <ns:table tableName="DoseAndRoute" tableDbType="TABLE">
     <ns:columns>
       <ns:column columnName="RowId"/>
-      <ns:column columnName="Label"/>
       <ns:column columnName="Dose"/>
       <ns:column columnName="Route"/>
       <ns:column columnName="ProductId"/>

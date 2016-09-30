@@ -367,21 +367,6 @@ public class TreatmentManager
         return null;
     }
 
-    @Nullable
-    public DoseAndRoute getDoseAndRoute(Container container, String label, int productId)
-    {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), container);
-        filter.addCondition(FieldKey.fromParts("ProductId"), productId);
-        filter.addCondition(FieldKey.fromParts("Label"), label);
-        Collection<DoseAndRoute> doseAndRoutes = new TableSelector(StudySchema.getInstance().getTableInfoDoseAndRoute(), filter, null).getCollection(DoseAndRoute.class);
-
-        if (!doseAndRoutes.isEmpty())
-        {
-            return doseAndRoutes.iterator().next();
-        }
-        return null;
-    }
-
     public Integer saveAssaySpecimen(Container container, User user, AssaySpecimenConfigImpl assaySpecimen) throws Exception
     {
         TableInfo assaySpecimenTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
