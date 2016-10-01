@@ -641,26 +641,20 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
 
     public static boolean validateLookup(PropertyType fkType, String schema, String table, PropertyType pkType)
     {
-        boolean ret = _validateLookup(fkType,schema,table,pkType);
-        _log("" + ret + "=validateLookup("+(null==fkType?"null":fkType.getShortName())+","+schema+","+table+","+pkType.getShortName()+")");
+        boolean ret = _validateLookup(fkType, pkType);
+        _log("" + ret + "=validateLookup(" + (null==fkType ? "null" : fkType.getShortName())
+                + "," + schema + "," + table + "," + pkType.getShortName() + ")");
         return ret;
     }
 
 
-    public static boolean _validateLookup(PropertyType fkType, String schema, String table, PropertyType pkType)
+    private static boolean _validateLookup(PropertyType fkType, PropertyType pkType)
     {
         if (null == fkType)
             return true;
         fkType = fkType == PropertyType.expMultiLine ? PropertyType.xsdString : fkType;
         pkType = pkType == PropertyType.expMultiLine ? PropertyType.xsdString : pkType;
-        if (fkType == pkType)
-            return true;
-
-        // HACK for samplesets which can use Name as alternate lookup
-        if (schema.equalsIgnoreCase("samples") && fkType == PropertyType.xsdString)
-            return true;
-
-        return false;
+        return fkType == pkType;
     }
 
 

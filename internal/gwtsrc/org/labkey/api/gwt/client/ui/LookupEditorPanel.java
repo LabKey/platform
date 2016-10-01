@@ -66,7 +66,6 @@ public class LookupEditorPanel extends LayoutContainer
         _service = service;
         initUI(showContainer);
         setValue(initialValue);
-        updateUI();                // TODO #24770 related? Is this needed?
     }
 
     @Override
@@ -297,14 +296,20 @@ public class LookupEditorPanel extends LayoutContainer
     private void checkForMissingTargetQuery()
     {
         boolean matchExisting = false;
+        StringBuilder possibleTargets = new StringBuilder();
+        String separator = "";
         for (ComboModelData comboModelData : _comboTableName.getStore().getModels())
         {
-            if (comboModelData.<String>get("value").equalsIgnoreCase(_comboTableName.getStringValue()))
+            String value = comboModelData.get("value");
+            possibleTargets.append(separator);
+            possibleTargets.append(value);
+            separator = "; ";
+            if (value.equalsIgnoreCase(_comboTableName.getStringValue()))
             {
                 matchExisting = true;
             }
         }
-        _log("matchExisting="+matchExisting);
+        _log("matchExisting="+matchExisting + " for query " + _comboTableName.getStringValue() + ", possible targets: " + possibleTargets.toString());
         if (!matchExisting)
         {
             _comboTableName.setStringValue(null);
