@@ -1441,11 +1441,82 @@ public class DbScope
     public enum CommitTaskOption
     {
         /** Run inside of the same transaction, immediately before committing it */
-        PRECOMMIT,
+        PRECOMMIT
+        {
+            @Override
+            protected Set<Runnable> getRunnables(DbScope.TransactionImpl transaction)
+            {
+                return transaction._preCommitTasks;
+            }
+        },
         /** Run after the main transaction has been committed, separate from the transaction itself */
-        POSTCOMMIT,
+        POSTCOMMIT
+        {
+            @Override
+            protected Set<Runnable> getRunnables(DbScope.TransactionImpl transaction)
+            {
+                return transaction._postCommitTasks;
+            }
+        },
+        /** Run after the transaction has been completely rolled back and abandoned, but not if it was committed */
+        POSTROLLBACK
+        {
+            @Override
+            protected Set<Runnable> getRunnables(DbScope.TransactionImpl transaction)
+            {
+                return transaction._postRollbackTasks;
+            }
+        },
         /** Run immediately. Useful for cache-clearing tasks, which often want to fire right away, as well as after the commit */
         IMMEDIATE
+        {
+            @Override
+            protected Set<Runnable> getRunnables(DbScope.TransactionImpl transaction)
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public <T extends Runnable> T add(TransactionImpl transaction, T task)
+            {
+                task.run();
+                return task;
+            }
+        };
+
+        protected abstract Set<Runnable> getRunnables(DbScope.TransactionImpl transaction);
+
+        public void run(DbScope.TransactionImpl transaction)
+        {
+            // Copy to avoid ConcurrentModificationExceptions
+            Set<Runnable> tasks = new HashSet<>(getRunnables(transaction));
+
+            for (Runnable task : tasks)
+            {
+                task.run();
+            }
+
+            transaction.closeCaches();
+        }
+
+        public <T extends Runnable> T add(TransactionImpl transaction, T task)
+        {
+            T addedObj = task;
+            boolean added = getRunnables(transaction).add(task);
+            for(Runnable r : getRunnables(transaction))
+            {
+                if (r.equals(task))
+                {
+                    addedObj = (T) r;
+                    break;
+                }
+            }
+            if (!added)
+            {
+                LOG.debug("Skipping duplicate runnable: " + task.toString());
+            }
+            return addedObj;
+        }
     }
 
     public interface Transaction extends AutoCloseable
@@ -1453,10 +1524,10 @@ public class DbScope
         /*
          * @return  the task that was inserted or the existing object (equal to the runnable passed in) that will be run instead
          */
-        public <T extends Runnable> T addCommitTask(T runnable, CommitTaskOption... taskOption);
-        public Connection getConnection();
-        public void close();
-        public void commit();
+        <T extends Runnable> T addCommitTask(T runnable, CommitTaskOption... taskOption);
+        Connection getConnection();
+        void close();
+        void commit();
 
         /**
          * Commit the current transaction, running pre and post commit tasks, but don't close the connection
@@ -1509,6 +1580,7 @@ public class DbScope
         // Sets so that we can coalesce identical tasks and avoid duplicating the effort
         private final Set<Runnable> _preCommitTasks = new LinkedHashSet<>();
         private final Set<Runnable> _postCommitTasks = new LinkedHashSet<>();
+        private final Set<Runnable> _postRollbackTasks = new LinkedHashSet<>();
 
         private List<List<Lock>> _locks = new ArrayList<>();
         private boolean _aborted = false;
@@ -1540,44 +1612,13 @@ public class DbScope
 
         public <T extends Runnable> T addCommitTask(T task, CommitTaskOption... taskOptions)
         {
-            boolean added = false;
-            T addedObj = task;
-
+            T result = task;
             for (CommitTaskOption taskOption : taskOptions)
             {
-                switch (taskOption)
-                {
-                    case PRECOMMIT:
-                        added |= _preCommitTasks.add(task);
-                        for(Runnable r : _preCommitTasks)
-                            if( r.equals(task))
-                            {
-                                addedObj = (T) r;
-                                break;
-                            }
-                        break;
-                    case POSTCOMMIT:
-                        added |= _postCommitTasks.add(task);
-                        for(Runnable r : _postCommitTasks)
-                            if( r.equals(task))
-                            {
-                                addedObj = (T) r;
-                                break;
-                            }
-                        break;
-                    case IMMEDIATE:
-                        task.run();
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Option '" + taskOption + "' handled by addCommitTask");
-                }
+                result = taskOption.add(this, task);
             }
 
-            if (!added)
-            {
-                LOG.debug("Skipping duplicate runnable: " + task.toString());
-            }
-            return addedObj;
+            return result;
         }
 
         public Connection getConnection()
@@ -1612,6 +1653,12 @@ public class DbScope
                     // and we want to use _abort to ensure no one tries to commit this transaction
                     popCurrentTransaction();
                 }
+
+                if (_aborted)
+                {
+                    // Run this now that we've been disassociated with a potentially trashed connection
+                    CommitTaskOption.POSTROLLBACK.run(this);
+                }
             }
             else
             {
@@ -1644,14 +1691,14 @@ public class DbScope
                 {
                     try (Connection conn = getConnection())
                     {
-                        runCommitTasks(CommitTaskOption.PRECOMMIT);
+                        CommitTaskOption.PRECOMMIT.run(this);
                         conn.commit();
                         conn.setAutoCommit(true);
                     }
 
                     popCurrentTransaction();
 
-                    runCommitTasks(CommitTaskOption.POSTCOMMIT);
+                    CommitTaskOption.POSTCOMMIT.run(this);
                 }
                 catch (SQLException e)
                 {
@@ -1665,10 +1712,10 @@ public class DbScope
         {
             try
             {
-                runCommitTasks(CommitTaskOption.PRECOMMIT);
+                CommitTaskOption.PRECOMMIT.run(this);
                 getConnection().commit();
                 _caches.clear();
-                runCommitTasks(CommitTaskOption.POSTCOMMIT);
+                CommitTaskOption.POSTCOMMIT.run(this);
             }
             catch (SQLException e)
             {
@@ -1680,19 +1727,6 @@ public class DbScope
         public boolean isAborted()
         {
             return _aborted;
-        }
-
-        private void runCommitTasks(CommitTaskOption taskOption)
-        {
-            // Copy to avoid ConcurrentModificationExceptions
-            Set<Runnable> tasks = new HashSet<>(taskOption == CommitTaskOption.PRECOMMIT ? _preCommitTasks : _postCommitTasks);
-
-            for (Runnable task : tasks)
-            {
-                task.run();
-            }
-
-            closeCaches();
         }
 
         private void closeCaches()

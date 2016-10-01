@@ -190,7 +190,6 @@ abstract public class DomainKind implements Handler<String>
 
     /**
      * Set of hard table names in this schema that are not provision tables
-     * @return
      */
     abstract public Set<String> getNonProvisionedTableNames();
 

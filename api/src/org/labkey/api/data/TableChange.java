@@ -82,6 +82,7 @@ public class TableChange
             DbScope scope = kind.getScope();
             SqlExecutor executor = new SqlExecutor(scope);
 
+            boolean success = false;
             try
             {
                 for (String sql : scope.getSqlDialect().getChangeStatements(this))
@@ -89,10 +90,11 @@ public class TableChange
                     LOG.debug("Will issue: " + sql);
                     executor.execute(sql);
                 }
+                success = true;
             }
             finally
             {
-                kind.invalidate(_domain);
+                scope.addCommitTask(() -> kind.invalidate(_domain), success ? DbScope.CommitTaskOption.IMMEDIATE : DbScope.CommitTaskOption.POSTROLLBACK);
             }
         }
     }
