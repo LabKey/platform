@@ -39,10 +39,10 @@ public class QuerySnapshotTest extends StudyBaseTest
     private String _folderName;
 
     private static final String CROSS_STUDY_QUERY_SQL =
-            "SELECT 1 as sequenceNum, '054' as protocol, ds1.MouseId, ds1.demsex, ds1.demsexor\n" +
+            "SELECT 1 as sequenceNum, '054' as protocol, ds1.MouseId, ds1.demsex AS AliasedDemSex, ds1.demsexor\n" +
             "FROM Project.\"054\".study.\"DEM-1: Demographics\" ds1\n" +
             "UNION \n" +
-            "SELECT 2 as sequenceNum, '065' as protocol, ds2.MouseId, ds2.demsex, ds2.demsexor\n" +
+            "SELECT 2 as sequenceNum, '065' as protocol, ds2.MouseId, ds2.demsex AS AliasedDemSex, ds2.demsexor\n" +
             "FROM Project.\"065\".study.\"DEM-1: Demographics\" ds2";
 
     private static final String CUSTOM_QUERY_SQL =

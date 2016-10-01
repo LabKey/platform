@@ -5127,7 +5127,6 @@ public class StudyController extends BaseStudyController
                         DatasetSnapshotProvider.addAsDomainProperty(d, col);
                     }
                     d.save(getUser());
-                    //def.saveDomain(d, getUser());
                 }
             }
         }
