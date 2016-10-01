@@ -16,13 +16,13 @@
 package org.labkey.query.persist;
 
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.collections4.multimap.AbstractListValuedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
@@ -41,14 +41,10 @@ import java.util.stream.Collectors;
  */
 public class CustomViewCache
 {
-    private static final Cache<Container, CustomViewCollections> CUSTOM_VIEW_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database Custom View Cache", new CacheLoader<Container, CustomViewCollections>()
-    {
-        @Override
-        public CustomViewCollections load(Container c, @Nullable Object argument)
-        {
-            return new CustomViewCollections(c);
-        }
-    });
+    private static final Cache<Container, CustomViewCollections> CUSTOM_VIEW_DB_CACHE = CacheManager.getBlockingCache(
+            CacheManager.UNLIMITED, CacheManager.DAY, "Database Custom View Cache",
+            (c, argument) -> new CustomViewCollections(c)
+    );
 
     private static class CustomViewCollections
     {
@@ -60,8 +56,8 @@ public class CustomViewCache
 
         private CustomViewCollections(Container c)
         {
-            Map<String, MultiValuedMap<String, CstmView>> customViews = new HashMap<>();
-            Map<String, MultiValuedMap<String, CstmView>> inheritableCustomViews = new HashMap<>();
+            Map<String, MultiValuedMap<String, CstmView>> customViews = new CaseInsensitiveHashMap<>();
+            Map<String, MultiValuedMap<String, CstmView>> inheritableCustomViews = new CaseInsensitiveHashMap<>();
             Map<Integer, CstmView> rowIdMap = new HashMap<>();
             Map<String, CstmView> entityIdMap = new HashMap<>();
 
@@ -90,7 +86,7 @@ public class CustomViewCache
         {
             if (!views.containsKey(schemaName))
             {
-                views.put(schemaName, new ArrayListValuedHashMap<>());
+                views.put(schemaName, new CstmViewMap());
             }
             return views.get(schemaName);
         }
@@ -125,8 +121,8 @@ public class CustomViewCache
                                 views = viewList.stream().filter(view -> viewName.equals(view.getName())).collect(Collectors.toList());
                             return Collections.unmodifiableList(views);
                         }
-                        else
-                            return viewList;
+
+                        return viewList;
                     }
                 }
                 else
@@ -162,7 +158,6 @@ public class CustomViewCache
                                 @Nullable User user, boolean inheritableOnly, boolean sharedOnly)
     {
         List<CstmView> views = new ArrayList<>();
-        //assert schemaName != null : "schemaName must be specified";
 
         for (CstmView view : CUSTOM_VIEW_DB_CACHE.get(c).getCstmViews(schemaName, queryName, viewName, inheritableOnly))
         {
@@ -203,5 +198,21 @@ public class CustomViewCache
     public static void uncache(Container c)
     {
         CUSTOM_VIEW_DB_CACHE.remove(c);
+    }
+
+    // Intends to act like a case-insensitive version of
+    // org.apache.commons.collections4.multimap.ArrayListValuedHashMap
+    private static class CstmViewMap extends AbstractListValuedMap<String, CstmView>
+    {
+        public CstmViewMap()
+        {
+            super(new CaseInsensitiveHashMap<>());
+        }
+
+        @Override
+        protected List<CstmView> createCollection()
+        {
+            return new ArrayList<>();
+        }
     }
 }
