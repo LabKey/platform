@@ -25,6 +25,7 @@ import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpProtocolOutput;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DotRunner;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ImageUtil;
@@ -181,7 +182,7 @@ public class ExperimentRunGraph
                     focusId = Integer.parseInt(focus);
                     run.trimRunTree(focusId, typeCode);
                 }
-                catch (NumberFormatException e) {}
+                catch (NumberFormatException ignored) {}
             }
 
             StringWriter writer = new StringWriter();
@@ -243,6 +244,10 @@ public class ExperimentRunGraph
             // Start the procedure of downgrade our lock from write to read so that the caller can use the files
             readLock.lock();
             return new RunGraphFiles(mapFile, imageFile, readLock);
+        }
+        catch (UnsatisfiedLinkError | NoClassDefFoundError e)
+        {
+            throw new ConfigurationException("Unable to resize image, likely a problem with missing Java Runtime libraries not being available", e);
         }
         finally
         {
