@@ -39,6 +39,8 @@ public class MenuBarView extends JspView<MenuBarView.MenuBarBean>
 {
     public static final String EXPERIMENTAL_NAV = "experimental-navigation";
 
+    private static final Logger LOG = Logger.getLogger(MenuBarView.class);
+
     public MenuBarView(ViewContext ctx, PageConfig page)
     {
         super(MenuBarView.class, "menuBar.jsp", null /* will be set later in constructor */);
@@ -72,7 +74,7 @@ public class MenuBarView extends JspView<MenuBarView.MenuBarBean>
                 }
                 catch (Exception x)
                 {
-                    Logger.getLogger(JspView.class).error(x);
+                    LOG.error("Failed to add client dependencies", x);
                 }
             }
 
