@@ -50,6 +50,11 @@ public class UserIdQueryForeignKey extends QueryForeignKey
         {
             // Clear out the filter that might be preventing us from resolving the lookup if the user list is being filtered
             FilteredTable table = (FilteredTable)result;
+            if (table == null)
+            {
+                // Exception 23740
+                throw new IllegalStateException("Failed to find lookup target " + getLookupSchemaName() + "." + getLookupTableName() + " in container " + getLookupContainer());
+            }
             table.clearConditions(FieldKey.fromParts("UserId"));
         }
         return result;
