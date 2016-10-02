@@ -95,33 +95,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                         var fileArea = this.down('#fileArea');
                         fileArea.removeAll();
 
-                        fileArea.add({
-                            itemId:"fileContent",
-                            name: 'text',
-                            xtype: 'textarea',
-                            height:350,
-                            width: 700
-                        },{
-                            xtype: 'combo',
-                            name: 'format',
-                            itemId: 'formatField',
-                            width: 300,
-                            value: 'tsv',
-                            displayField: 'displayText',
-                            valueField: 'value',
-                            queryMode: 'local',
-                            store: Ext4.create('Ext.data.ArrayStore', {
-                                fields: [
-                                    'value',
-                                    'displayText'
-                                ],
-                                idIndex: 0,
-                                data: [
-                                    ['tsv', 'Tab-separated text (tsv)'],
-                                    ['csv', 'Comma-separated text (csv)']
-                                ]
-                            })
-                        });
+                        fileArea.add(this.createTextArea(), this.createFileTypeCombo());
 
                         this.uploadType = 'text';
                     }
@@ -155,34 +129,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                 itemId: 'fileArea',
                 width: '100%',
                 border: false,
-                items: [{
-                    itemId: 'fileContent',
-                    xtype: 'textarea',
-                    name: 'text',
-                    height:350,
-                    width: 700
-                },{
-                    xtype: 'combo',
-                    name: 'format',
-                    itemId: 'formatField',
-                    width: 300,
-                    value: 'tsv',
-                    displayField: 'displayText',
-                    valueField: 'value',
-                    triggerAction: 'all',
-                    mode: 'local',
-                    store: Ext4.create('Ext.data.ArrayStore', {
-                        fields: [
-                            'value',
-                            'displayText'
-                        ],
-                        idIndex: 0,
-                        data: [
-                            ['tsv', 'Tab-separated text (tsv)'],
-                            ['csv', 'Comma-separated text (csv)']
-                        ]
-                    })
-                }]
+                items: [this.createTextArea(), this.createFileTypeCombo()]
             }]
         });
 
@@ -226,6 +173,64 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
          * @event uploadcomplete
          */
         this.addEvents('uploadexception', 'uploadcomplete');
+    },
+
+    createFileTypeCombo: function() {
+        return {
+            xtype: 'combo',
+            name: 'format',
+            itemId: 'formatField',
+            width: 300,
+            value: 'tsv',
+            displayField: 'displayText',
+            valueField: 'value',
+            triggerAction: 'all',
+            mode: 'local',
+            store: Ext4.create('Ext.data.ArrayStore', {
+                fields: [
+                    'value',
+                    'displayText'
+                ],
+                idIndex: 0,
+                data: [
+                    ['tsv', 'Tab-separated text (tsv)'],
+                    ['csv', 'Comma-separated text (csv)']
+                ]
+            })
+        }
+    },
+
+    createTextArea: function ()
+    {
+        return {
+            itemId: "fileContent",
+            name: 'text',
+            xtype: 'textarea',
+            enableKeyEvents: true,
+            height: 350,
+            width: 700,
+            listeners: {
+                keydown: function(textfield, event) {
+                    if (event.getKey() == event.TAB) {
+                        // Special code to treat tabs as characters instead of navigation, adapted from
+                        // http://ext4all.com/post/how-to-allow-tab-key-in-textarea.html
+                        event.stopEvent();
+
+                        var el = textfield.inputEl.dom;
+
+                        if (el.setSelectionRange) {
+                            var withIns = el.value.substring(0, el.selectionStart) + '\t';
+                            var pos = withIns.length;
+                            el.value = withIns + el.value.substring(el.selectionEnd, el.value.length);
+                            el.setSelectionRange(pos, pos);
+                        }
+                        else if (document.selection) {
+                            document.selection.createRange().text = '\t';
+                        }
+                    }
+                }
+            }
+        };
     },
 
     populateTemplates: function(meta){
