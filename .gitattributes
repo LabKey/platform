@@ -2654,9 +2654,11 @@ study/test/sampledata/study/LotsOfPtidsStudy.folder.zip -text
 study/test/sampledata/study/LotsOfPtidsStudy_NoData.folder.zip -text
 study/test/sampledata/study/Results.tsv -text
 study/test/src/org/labkey/test/pages/DesignerController/DesignerTester.java -text
+study/test/src/org/labkey/test/pages/studydesigncontroller/AssayScheduleWebpart.java -text
 study/test/src/org/labkey/test/pages/studydesigncontroller/BaseManageVaccineDesignPage.java -text
+study/test/src/org/labkey/test/pages/studydesigncontroller/BaseManageVaccineDesignVisitPage.java -text
 study/test/src/org/labkey/test/pages/studydesigncontroller/ImmunizationScheduleWebpart.java -text
-study/test/src/org/labkey/test/pages/studydesigncontroller/ManageAssayScheduleTester.java -text
+study/test/src/org/labkey/test/pages/studydesigncontroller/ManageAssaySchedulePage.java -text
 study/test/src/org/labkey/test/pages/studydesigncontroller/ManageStudyProductsPage.java -text
 study/test/src/org/labkey/test/pages/studydesigncontroller/ManageTreatmentsPage.java -text
 study/test/src/org/labkey/test/pages/studydesigncontroller/VaccineDesignWebpart.java -text
@@ -2716,7 +2718,6 @@ study/webapp/study/SpecimenSearchPanel.js -text
 study/webapp/study/StudySchedule.css -text
 study/webapp/study/StudyScheduleGrid.js -text
 study/webapp/study/StudyVaccineDesign.css -text
-study/webapp/study/StudyVaccineDesign.js -text
 study/webapp/study/StudyWizard.js -text
 study/webapp/study/assay/SampleLookupTemplate.xls -text
 study/webapp/study/dataset.png -text

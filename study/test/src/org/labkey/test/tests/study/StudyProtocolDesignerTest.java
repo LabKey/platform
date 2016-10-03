@@ -15,7 +15,6 @@
  */
 package org.labkey.test.tests.study;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -29,8 +28,10 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyB;
+import org.labkey.test.pages.studydesigncontroller.AssayScheduleWebpart;
+import org.labkey.test.pages.studydesigncontroller.BaseManageVaccineDesignVisitPage;
 import org.labkey.test.pages.studydesigncontroller.ImmunizationScheduleWebpart;
-import org.labkey.test.pages.studydesigncontroller.ManageAssayScheduleTester;
+import org.labkey.test.pages.studydesigncontroller.ManageAssaySchedulePage;
 import org.labkey.test.pages.studydesigncontroller.ManageTreatmentsPage;
 import org.labkey.test.pages.studydesigncontroller.ManageStudyProductsPage;
 import org.labkey.test.pages.studydesigncontroller.VaccineDesignWebpart;
@@ -39,17 +40,14 @@ import org.labkey.test.util.PortalHelper;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.*;
 
-/**
- * Created by tchadick on 1/29/14.
- */
 @Category({DailyB.class})
 public class StudyProtocolDesignerTest extends BaseWebDriverTest
 {
@@ -76,16 +74,16 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
     private static final String[] NEW_ASSAYS = {"Elispot", "Neutralizing Antibodies", "ICS"};
     private static final String[] NEW_COHORTS = {"TestCohort", "OtherTestCohort"};
 
-    private static List<ManageTreatmentsPage.Visit> VISITS = Arrays.asList(
-        new ManageTreatmentsPage.Visit("Enrollment", 0, 0),
-        new ManageTreatmentsPage.Visit("Visit 1", 1, 1),
-        new ManageTreatmentsPage.Visit("Visit 2", 2, 2),
-        new ManageTreatmentsPage.Visit("Visit 3", 3, 3),
-        new ManageTreatmentsPage.Visit("Visit 4", 4, 4)
+    private static List<BaseManageVaccineDesignVisitPage.Visit> VISITS = Arrays.asList(
+        new BaseManageVaccineDesignVisitPage.Visit("Enrollment", 0, 0),
+        new BaseManageVaccineDesignVisitPage.Visit("Visit 1", 1, 1),
+        new BaseManageVaccineDesignVisitPage.Visit("Visit 2", 2, 2),
+        new BaseManageVaccineDesignVisitPage.Visit("Visit 3", 3, 3),
+        new BaseManageVaccineDesignVisitPage.Visit("Visit 4", 4, 4)
     );
-    private static List<ManageTreatmentsPage.Visit> NEW_VISITS = Arrays.asList(
-        new ManageTreatmentsPage.Visit("NewVisit1", 6, 7),
-        new ManageTreatmentsPage.Visit("NewVisit2", 8, 8)
+    private static List<BaseManageVaccineDesignVisitPage.Visit> NEW_VISITS = Arrays.asList(
+        new BaseManageVaccineDesignVisitPage.Visit("NewVisit1", 6, 7),
+        new BaseManageVaccineDesignVisitPage.Visit("NewVisit2", 8, 8)
     );
 
 
@@ -107,7 +105,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
     public void preTest()
     {
         _portalHelper = new PortalHelper(getDriver());
-        populateVisitRowIds();
+        populateVisitRowIds(getProjectName() + "/" + getFolderName(), false);
         clickProject(getProjectName());
     }
 
@@ -116,7 +114,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
     {
         testVaccineDesign();
         testTreatmentSchedule();
-        // TODO testAssaySchedule();
+        testAssaySchedule();
         testExportImport();
     }
 
@@ -187,9 +185,9 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         treatmentsPage.addAllExistingVisitColumns();
 
         // create two new visits to add as columns to the cohort grid
-        for (ManageTreatmentsPage.Visit visit : NEW_VISITS)
+        for (BaseManageVaccineDesignVisitPage.Visit visit : NEW_VISITS)
             treatmentsPage.addNewVisitColumn(visit.getLabel(), visit.getRangeMin(), visit.getRangeMax());
-        populateVisitRowIds();
+        populateVisitRowIds(getProjectName() + "/" + getFolderName(), false);
 
         // add visit/treatment mappings for the Positive cohort
         treatmentsPage.addCohortTreatmentMapping(VISITS.get(0), TREATMENTS[0], 1);
@@ -217,24 +215,40 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         clickTab("Overview");
         _portalHelper.addWebPart("Assay Schedule");
 
-        Locator editButton = PortalHelper.Locators.webPart("Assay Schedule").append(Locator.lkButton("Edit"));
-        clickAndWait(editButton);
-        _ext4Helper.waitForMaskToDisappear();
+        AssayScheduleWebpart assayScheduleWebpart = new AssayScheduleWebpart(getDriver());
+        assertTrue("Unexpected rows in the assay schedule table", assayScheduleWebpart.isEmpty());
+        assayScheduleWebpart.manage();
 
-        ManageAssayScheduleTester schedule = new ManageAssayScheduleTester(this);
+        // show all of the existing visit columns
+        ManageAssaySchedulePage assaySchedulePage = new ManageAssaySchedulePage(this);
+        assaySchedulePage.addAllExistingVisitColumns();
 
-        schedule.insertNewAssayConfiguration(NEW_ASSAYS[0], null, LABS[0], null);
-        schedule.insertNewAssayConfiguration(NEW_ASSAYS[1], null, LABS[1], null);
-        schedule.insertNewAssayConfiguration(NEW_ASSAYS[2], null, LABS[2], null);
-        schedule.insertNewAssayConfiguration(NEW_ASSAYS[2], null, LABS[3], null);
+        // add the first assay and define the properties for it
+        assaySchedulePage.addNewAssayRow(NEW_ASSAYS[0] + " Label", null, 0);
+        assaySchedulePage.setBaseProperties(LABS[0] + " Label", null, null, null, 0);
+        assaySchedulePage.selectVisits(Arrays.asList(VISITS.get(0), NEW_VISITS.get(0)), 0);
 
-        checkCheckbox(ManageAssayScheduleTester.Locators.assayScheduleGridCheckbox(NEW_ASSAYS[0], VISITS.get(0).getLabel()));
-        checkCheckbox(ManageAssayScheduleTester.Locators.assayScheduleGridCheckbox(NEW_ASSAYS[1], VISITS.get(1).getLabel()));
-        checkCheckbox(ManageAssayScheduleTester.Locators.assayScheduleGridCheckbox(NEW_ASSAYS[2], VISITS.get(2).getLabel()));
-        checkCheckbox(ManageAssayScheduleTester.Locators.assayScheduleGridCheckbox(NEW_ASSAYS[0], NEW_VISITS.get(0).getLabel()));
-        checkCheckbox(ManageAssayScheduleTester.Locators.assayScheduleGridCheckbox(NEW_ASSAYS[1], NEW_VISITS.get(1).getLabel()));
+        // add the second assay and define the properties for it
+        assaySchedulePage.addNewAssayRow(NEW_ASSAYS[1] + " Label", null, 1);
+        assaySchedulePage.setBaseProperties(LABS[1] + " Label", null, null, null, 1);
+        assaySchedulePage.selectVisits(Arrays.asList(VISITS.get(1), NEW_VISITS.get(1)), 1);
 
-        schedule.setAssayPlan("Do some exciting science!");
+
+        // add the third assay and define the properties for it
+        assaySchedulePage.addNewAssayRow(NEW_ASSAYS[2] + " Label", null, 2);
+        assaySchedulePage.setBaseProperties(LABS[2] + " Label", null, null, null, 2);
+        assaySchedulePage.selectVisits(Arrays.asList(VISITS.get(2)), 2);
+
+        // add the third assay, again, and define it with different properties
+        assaySchedulePage.addNewAssayRow(NEW_ASSAYS[2] + " Label", null, 3);
+        assaySchedulePage.setBaseProperties(LABS[3] + " Label", null, null, null, 3);
+
+        // set the assay plan value
+        assaySchedulePage.setAssayPlan("Do some exciting science!");
+
+        assaySchedulePage.save();
+
+        verifyAssaySchedule();
     }
 
     @LogMethod
@@ -249,29 +263,29 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         verifyImportedProtocol(importedFolder);
     }
 
-    private void populateVisitRowIds()
+    private void populateVisitRowIds(String folderPath, boolean forceOverride)
     {
-        for (ManageTreatmentsPage.Visit visit : VISITS)
+        for (BaseManageVaccineDesignVisitPage.Visit visit : VISITS)
         {
-            if (visit.getRowId() == null)
-                visit.setRowId(queryVisitRowId(visit));
+            if (forceOverride || visit.getRowId() == null)
+                visit.setRowId(queryVisitRowId(folderPath, visit));
         }
 
-        for (ManageTreatmentsPage.Visit visit : NEW_VISITS)
+        for (BaseManageVaccineDesignVisitPage.Visit visit : NEW_VISITS)
         {
-            if (visit.getRowId() == null)
-                visit.setRowId(queryVisitRowId(visit));
+            if (forceOverride || visit.getRowId() == null)
+                visit.setRowId(queryVisitRowId(folderPath, visit));
         }
     }
 
-    private Integer queryVisitRowId(ManageTreatmentsPage.Visit visit)
+    private Integer queryVisitRowId(String folderPath, BaseManageVaccineDesignVisitPage.Visit visit)
     {
         SelectRowsCommand command = new SelectRowsCommand("study", "Visit");
         command.setFilters(Arrays.asList(new Filter("Label", visit.getLabel())));
         SelectRowsResponse response;
         try
         {
-            response = command.execute(createDefaultConnection(true), getProjectName() + "/" + getFolderName());
+            response = command.execute(createDefaultConnection(true), folderPath);
         }
         catch (IOException | CommandException e)
         {
@@ -293,7 +307,11 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         verifyImmunogenTable();
         verifyAdjuvantTable();
         verifyTreatmentSchedule();
-        // TODO verifyAssaySchedule();
+
+        // the imported folder will have different visit RowIds, so re-populate
+        populateVisitRowIds(getProjectName() + "/" + folderName, true);
+
+        verifyAssaySchedule();
     }
 
     @LogMethod(quiet = true)
@@ -383,20 +401,25 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
     @LogMethod(quiet = true)
     private void verifyAssaySchedule()
     {
-        Locator.XPathLocator scheduleGrid = Locators.studyProtocolWebpartGrid("Assay Schedule");
-        String gridText = getText(scheduleGrid);
+        AssayScheduleWebpart assayScheduleWebpart = new AssayScheduleWebpart(getDriver());
+        assertFalse("Expected rows in the immunization schedule table", assayScheduleWebpart.isEmpty());
+        assertEquals("Unexpected number of assay rows", NEW_ASSAYS.length + 1, assayScheduleWebpart.getAssayRowCount());
 
-        List<String> expectedTexts = new ArrayList<>();
-        expectedTexts.addAll(Arrays.asList(NEW_ASSAYS));
-        expectedTexts.addAll(Arrays.asList(LABS));
-        expectedTexts.addAll(Arrays.asList("Enrollment", "Visit 1", "Visit 2", "NewVisit1", "NewVisit2"));
+        verifyAssayRow(assayScheduleWebpart, 0, NEW_ASSAYS[0] + " Label", LABS[0] + " Label", Arrays.asList(VISITS.get(0), NEW_VISITS.get(0)));
+        verifyAssayRow(assayScheduleWebpart, 1, NEW_ASSAYS[2] + " Label", LABS[2] + " Label", Arrays.asList(VISITS.get(2)));
+        verifyAssayRow(assayScheduleWebpart, 2, NEW_ASSAYS[2] + " Label", LABS[3] + " Label", Collections.emptyList());
+        verifyAssayRow(assayScheduleWebpart, 3, NEW_ASSAYS[1] + " Label", LABS[1] + " Label", Arrays.asList(VISITS.get(1), NEW_VISITS.get(1)));
 
-        for (String expectedText : expectedTexts)
-        {
-            assertTrue("Vaccine design assay schedule did not contain: " + expectedText, gridText.contains(expectedText));
-        }
+        assertEquals("Unexpected assay plan", "Do some exciting science!", assayScheduleWebpart.getAssayPlan());
+    }
 
-        assertEquals("Wrong number of scheduled assay/visits", 5, StringUtils.countMatches(gridText, "\u2713"));
+    private void verifyAssayRow(AssayScheduleWebpart table, int rowIndex, String name, String lab, List<BaseManageVaccineDesignVisitPage.Visit> visits)
+    {
+        assertEquals("Unexpected assay name at row " + rowIndex, name, table.getAssayCellDisplayValue("AssayName", rowIndex));
+        assertEquals("Unexpected assay lab at row " + rowIndex, lab, table.getAssayCellDisplayValue("Lab", rowIndex));
+
+        for (BaseManageVaccineDesignVisitPage.Visit visit : visits)
+            assertEquals("Unexpected assay visit mapping", "\u2713", table.getAssayCellDisplayValue("VisitMap", rowIndex, visit.getRowId()+""));
     }
 
     @Nullable

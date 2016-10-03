@@ -245,6 +245,8 @@ Ext4.define('LABKEY.VaccineDesign.AssaySchedulePanel', {
 Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
     extend : 'LABKEY.VaccineDesign.BaseDataViewAddVisit',
 
+    cls : 'study-vaccine-design vaccine-design-assays',
+
     mainTitle : 'Assay Schedule',
 
     width : 420,
@@ -454,6 +456,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
                     width: 140,
                     hidden: this.disableEdit && !this.columnHasData('Lab'),
                     dataIndex: 'Lab',
+                    queryName: 'StudyDesignLabs',
                     editorType: 'LABKEY.ext4.ComboBox',
                     editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Lab', 125, 'StudyDesignLabs')
                 });
@@ -585,7 +588,9 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
     //Override
     getNewModelInstance : function()
     {
-        return LABKEY.VaccineDesign.Assay.create();
+        var newAssay = LABKEY.VaccineDesign.Assay.create();
+        newAssay.set('VisitMap', []);
+        return newAssay;
     },
 
     //Override

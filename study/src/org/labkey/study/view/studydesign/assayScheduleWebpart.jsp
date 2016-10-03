@@ -72,7 +72,7 @@
         }
 
 %>
-        <p><%=h(assayPlan).replaceAll("\n", "<br/>")%></p>
+        <p data-index="AssayPlan"><%=h(assayPlan).replaceAll("\n", "<br/>")%></p>
         <div id="assay-configurations-panel"></div>
 <%
     }
