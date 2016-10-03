@@ -2517,7 +2517,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BuildSummaryAction extends SimpleViewAction<IssuesController.BuildSummaryBean>
     {
         @Override
