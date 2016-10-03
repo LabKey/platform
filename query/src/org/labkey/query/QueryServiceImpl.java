@@ -1044,7 +1044,7 @@ public class QueryServiceImpl extends QueryService
         writer.write(c, user, dir, schemas, header);
     }
 
-    public int importCustomViews(User user, Container container, VirtualFile viewDir) throws XmlValidationException, IOException
+    public int importCustomViews(User user, Container container, VirtualFile viewDir) throws IOException
     {
         QueryManager mgr = QueryManager.get();
         HttpServletRequest request = new MockHttpServletRequest();

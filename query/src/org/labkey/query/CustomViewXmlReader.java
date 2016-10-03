@@ -17,6 +17,8 @@
 package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.CustomView;
@@ -27,6 +29,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.data.xml.queryCustomView.AggregateType;
 import org.labkey.data.xml.queryCustomView.AggregatesType;
 import org.labkey.data.xml.queryCustomView.ColumnType;
@@ -80,6 +83,7 @@ public class CustomViewXmlReader
     protected String _name;
     private String _label;
 
+    private static final Logger LOG = Logger.getLogger(CustomViewXmlReader.class);
 
     private CustomViewXmlReader()
     {
@@ -283,9 +287,10 @@ public class CustomViewXmlReader
 
             return reader;
         }
-        catch (Exception e)
+        catch (XmlException | IOException | XmlValidationException e)
         {
-            throw new UnexpectedException(e);
+            LOG.error("Failed to parse custom view file from custom module at location " + path + ", falling back on default view", e);
+            return new CustomViewXmlReader();
         }
     }
 
