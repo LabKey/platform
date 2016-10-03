@@ -167,7 +167,7 @@ Ext4.define('LABKEY.VaccineDesign.Utils', {
             {
                 if (Ext4.isArray(obj[field.name]) && obj[field.name].length > 0)
                     hasNonNull = true;
-                else if (field.type.type == 'int' && obj[field.name] != null && obj[field.name] > 0)
+                else if ((field.type.type == 'int' || field.type.type == 'float') && obj[field.name] != null && obj[field.name] != 0)
                     hasNonNull = true;
                 else if (field.type.type == 'string' && obj[field.name] != null && obj[field.name] != '')
                     hasNonNull = true;

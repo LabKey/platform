@@ -47,7 +47,7 @@ Ext4.define('LABKEY.VaccineDesign.Assay', {
         {name : 'SampleType', type : 'string'},
         {name : 'Source', type : 'string'},
         {name : 'TubeType', type : 'string'},
-        {name : 'SampleQuantity', type : 'double'},
+        {name : 'SampleQuantity', type : 'float'},
         {name : 'SampleUnits', type : 'string'},
         {name : 'VisitMap', defaultValue: []}
     ]

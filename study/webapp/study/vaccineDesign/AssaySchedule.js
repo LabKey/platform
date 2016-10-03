@@ -167,7 +167,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaySchedulePanel', {
             {
                 var sampleQuantity = Number(recData['SampleQuantity']);
                 if (isNaN(sampleQuantity) || sampleQuantity < 0)
-                    errorMsg.push('Assay sample quantity values must be a positive numbers: ' + recData['SampleQuantity'] + '.');
+                    errorMsg.push('Assay sample quantity value must be a positive number: ' + recData['SampleQuantity'] + '.');
                 else
                     assays.push(recData);
             }
@@ -591,7 +591,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
     //Override
     getDeleteConfirmationMsg : function()
     {
-        return 'Are you sure you want to delete the selected assay configuration?<br/><br/>'
+        return 'Are you sure you want to delete the selected assay configuration? '
             + 'Note: this will also delete all related visit mapping information.';
     }
 });

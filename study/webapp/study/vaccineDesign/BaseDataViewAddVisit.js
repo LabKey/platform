@@ -73,7 +73,9 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataViewAddVisit', {
                     win.close();
 
                     // add the new visit to the store
-                    this.getVisitStore().add(LABKEY.VaccineDesign.Visit.create(newVisitData));
+                    var newVisitRec = LABKEY.VaccineDesign.Visit.create(newVisitData);
+                    newVisitRec.set('Included', true);
+                    this.getVisitStore().add(newVisitRec);
 
                     this.updateDataViewTemplate();
                 }

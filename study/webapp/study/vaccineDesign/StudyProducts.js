@@ -248,7 +248,7 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsGrid', {
     //Override
     getDeleteConfirmationMsg : function()
     {
-        return 'Are you sure you want to delete the selected study product?<br/><br/>'
+        return 'Are you sure you want to delete the selected study product? '
             + 'Note: if this study product is being used by any treatment definitions, '
             + 'those associations will also be deleted upon save.';
     }
@@ -256,6 +256,8 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsGrid', {
 
 Ext4.define('LABKEY.VaccineDesign.ImmunogensGrid', {
     extend : 'LABKEY.VaccineDesign.StudyProductsGrid',
+
+    cls : 'study-vaccine-design vaccine-design-immunogens',
 
     width: 1350,
 
@@ -351,6 +353,8 @@ Ext4.define('LABKEY.VaccineDesign.ImmunogensGrid', {
 
 Ext4.define('LABKEY.VaccineDesign.AdjuvantsGrid', {
     extend : 'LABKEY.VaccineDesign.StudyProductsGrid',
+
+    cls : 'study-vaccine-design vaccine-design-adjuvants',
 
     width : 530,
 

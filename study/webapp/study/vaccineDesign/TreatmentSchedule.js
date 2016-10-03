@@ -442,7 +442,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
     //Override
     getDeleteConfirmationMsg : function()
     {
-        return 'Are you sure you want to delete the selected treatment?<br/><br/>'
+        return 'Are you sure you want to delete the selected treatment? '
             + 'Note: this will also delete any usages of this treatment record in the Treatment Schedule grid below.';
     },
 
