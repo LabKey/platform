@@ -513,7 +513,7 @@ public enum PropertyType
         uriToProperty = m;
     }
 
-    public static PropertyType getFromURI(String concept, String datatype, PropertyType def)
+    public static PropertyType getFromURI(@Nullable String concept, String datatype, PropertyType def)
     {
         PropertyType p = uriToProperty.get(concept);
 

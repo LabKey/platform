@@ -39,7 +39,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
@@ -147,7 +146,7 @@ abstract public class QueryService
      */
     abstract public List<CustomView> getDatabaseCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited, boolean sharedOnly);
 
-    abstract public int importCustomViews(User user, Container container, VirtualFile viewDir) throws XmlValidationException, IOException;
+    abstract public int importCustomViews(User user, Container container, VirtualFile viewDir) throws IOException;
 
     /**
      * Get CustomView properties as a JSON map.

@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -450,6 +451,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         return sb.toString();
     }
 
+    @Nullable
     public PropertyType getPropertyType()
     {
         if (propertyType == null && getRangeURI() != null)

@@ -15,9 +15,18 @@
  */
 package org.labkey.api.exp;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.ParameterDescription;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.PdLookupForeignKey;
@@ -50,6 +59,8 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     private String lookupSchema;
     private String lookupQuery;
     private boolean mvEnabled;
+
+    private static final Logger LOG = Logger.getLogger(PropertyDescriptor.class);
 
     /** Entity id for the lookup's target container */
     public String getLookupContainer()
@@ -314,7 +325,13 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     @Override
     public JdbcType getJdbcType()
     {
-        return getPropertyType().getJdbcType();
+        PropertyType type = getPropertyType();
+        if (type == null)
+        {
+            LOG.warn("Could not determine propertyType from RangeURI " + getRangeURI() + " and ConceptURI " + getConceptURI() + " for PropertyURI " + getPropertyURI() + ", defaulting to string");
+            type = PropertyType.STRING;
+        }
+        return type.getJdbcType();
     }
 
     public void setJdbcType(JdbcType jdbcType, Integer size)
