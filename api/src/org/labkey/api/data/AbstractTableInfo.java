@@ -982,7 +982,15 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
 
                         if (column != null)
                         {
-                            initColumnFromXml(schema, column, xmlColumn, errors);
+                            try
+                            {
+                                initColumnFromXml(schema, column, xmlColumn, errors);
+                            }
+                            catch (IllegalArgumentException e)
+                            {
+                                // XMLBeans throws various subclasses when values in XML are invalid, see issue 27168
+                                LOG.warn("Invalid XML metadata for column " + xmlColumn.getColumnName() + " on " + getPublicSchemaName() + "." + getName() + ", skipping the rest of its metadata", e);
+                            }
                         }
                     }
                 }
