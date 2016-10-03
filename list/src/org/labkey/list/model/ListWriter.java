@@ -124,6 +124,11 @@ public class ListWriter
                 ListDefinition def = entry.getValue();
                 TableInfo ti = schema.getTable(def.getName());
 
+                // Continue exporting other lists if a TableInfo can't be loaded. One possible scenario: extra long column names
+                // with MV indicators cause errors right now. We need to fix that, but export also needs to be resilient.
+                if (null == ti)
+                    continue;
+
                 // Write meta data
                 TableType tableXml = tablesXml.addNewTable();
                 ListTableInfoWriter xmlWriter = new ListTableInfoWriter(ti, def, getColumnsToExport(ti, true, removeProtected));
@@ -135,7 +140,6 @@ public class ListWriter
 
                 // Write data
                 Collection<ColumnInfo> columns = getColumnsToExport(ti, false, removeProtected);
-
 
                 if (null != ctx && ctx.isAlternateIds())
                 {
