@@ -143,7 +143,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         return _includeBlankLines;
     }
 
-    /** When false (the default), lines that have no values will be skipped.  When values, an row of null values is returned. */
+    /** When false (the default), lines that have no values will be skipped. When true, a row of null values is returned instead. */
     public void setIncludeBlankLines(boolean includeBlankLines)
     {
         _includeBlankLines = includeBlankLines;
@@ -183,22 +183,8 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         if (cols == null || cols.size() == 0)
             throw new IllegalArgumentException("List of columns cannot be null or empty");
 
-        boolean useMv = _mvIndicatorContainer != null ? !MvUtil.getIndicatorsAndLabels(_mvIndicatorContainer).isEmpty() : false;
+        boolean useMv = _mvIndicatorContainer != null && !MvUtil.getIndicatorsAndLabels(_mvIndicatorContainer).isEmpty();
         _columnInfoMap = ImportAliasable.Helper.createImportMap(cols, useMv);
-    }
-
-    public void ensureColumn(ColumnDescriptor column) throws IOException
-    {
-        ColumnDescriptor[] existingColumns = getColumns();
-        for (ColumnDescriptor existing : existingColumns)
-        {
-            if (existing.name.equalsIgnoreCase(column.name))
-                return;
-        }
-        ColumnDescriptor[] newColumns = new ColumnDescriptor[existingColumns.length + 1];
-        System.arraycopy(existingColumns, 0, newColumns, 0, existingColumns.length);
-        newColumns[newColumns.length - 1] = column;
-        setColumns(newColumns);
     }
 
     protected void initializeColumns() throws IOException
@@ -714,7 +700,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                             sb.append(" in column #");
                             sb.append(i + 1);
                             sb.append(" (");
-                            if (column.name.indexOf("#") != -1)
+                            if (column.name.contains("#"))
                             {
                                 sb.append(column.name.substring(column.name.indexOf("#") + 1));
                             }
@@ -906,7 +892,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 {
                     if (null == _findMap)
                     {
-                        _findMap = new ArrayListMap.FindMap<>(new CaseInsensitiveHashMap<Integer>());
+                        _findMap = new ArrayListMap.FindMap<>(new CaseInsensitiveHashMap<>());
                         for (ColumnDescriptor cd : _columns)
                             _findMap.put(cd.getColumnName(),_findMap.size());
                     }
@@ -971,11 +957,11 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         @Override
         public void debugLogInfo(StringBuilder sb)
         {
-            sb.append(this.getClass().getName() + "\n");
-            Arrays.asList(this._columns).stream()
+            sb.append(this.getClass().getName()).append("\n");
+            Arrays.stream(_columns)
                 .forEach(c ->
                 {
-                    sb.append("    " + c.name + " " + c.clazz.getSimpleName() + "\n");
+                    sb.append("    ").append(c.name).append(" ").append(c.clazz.getSimpleName()).append("\n");
                 });
         }
     }
