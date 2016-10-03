@@ -165,7 +165,9 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
             resp.put("successurl", getUploadWizardCompleteURL(protocol, run));
             resp.put("assayId", protocol.getRowId());
             resp.put("batchId", result.first.getRowId());
-            resp.put("runId", run.getRowId());
+            // Run id may be null if the import is performed in a background job
+            if (run != null)
+                resp.put("runId", run.getRowId());
 
             return resp;
         }
