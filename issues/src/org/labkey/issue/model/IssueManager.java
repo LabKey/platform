@@ -1493,7 +1493,10 @@ public class IssueManager
 
     public static Collection<IssueListDef> getIssueListDefs(Container container)
     {
-        return IssueListDefCache.getIssueListDefs(container);
+        if (container != null)
+            return IssueListDefCache.getIssueListDefs(container);
+        else
+            return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), null, null).getArrayList(IssueListDef.class);
     }
 
     public static IssueListDef insertIssueListDef(User user, IssueListDef def)
