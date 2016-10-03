@@ -64,6 +64,7 @@ import java.net.URISyntaxException;
 import java.security.Principal;
 import java.sql.BatchUpdateException;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -858,7 +859,7 @@ public class ExceptionUtil
             final MockServletResponse res = new MockServletResponse();
             InvocationHandler h = (o, method, objects) -> {
                 // still calls in 'headers' for validation
-                res.addHeader(method.getDeclaringClass().getSimpleName() + "." + method.getName(), objects.length==0 ? "" : objects.length==1 ? String.valueOf(objects[0]) : objects.toString());
+                res.addHeader(method.getDeclaringClass().getSimpleName() + "." + method.getName(), objects.length==0 ? "" : objects.length==1 ? String.valueOf(objects[0]) : Arrays.toString(objects));
                 return null;
             };
             SearchService dummySearch = (SearchService) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{SearchService.class}, h);

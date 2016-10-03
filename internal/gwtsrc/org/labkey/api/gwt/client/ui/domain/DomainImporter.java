@@ -168,7 +168,7 @@ public class DomainImporter
     }
 
     /**
-     * @deprecated temporary method to push in extra metadata for the mapped columns, in the next
+     * @Deprecated temporary method to push in extra metadata for the mapped columns, in the next
      * release we need to remove this method and make it so mapped columns come in as
      * GWTPropertyDescriptors not just names.
      */

@@ -16,9 +16,7 @@
 
 package org.labkey.api.security;
 
-/**
- * @deprecated Use SecurityPolicy
- */
+@Deprecated // Use SecurityPolicy
 public class ACL implements Cloneable
 {
     public static final int PERM_NONE = 0x00000000;

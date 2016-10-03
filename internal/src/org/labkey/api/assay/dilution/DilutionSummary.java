@@ -147,17 +147,14 @@ public class DilutionSummary implements Serializable
         return data.getStdDev();
     }
 
-    /**
-     * @deprecated used only by old NAb assay; always null for new NAb runs
-     */
+
+    @Deprecated // used only by old NAb assay; always null for new NAb runs
     public String getSampleId()
     {
         return (String) _firstGroup.getProperty(SampleProperty.SampleId.name());
     }
 
-    /**
-     * @deprecated used only by old NAb assay; always null for new NAb runs
-     */
+    @Deprecated // used only by old NAb assay; always null for new NAb runs
     public String getSampleDescription()
     {
         return (String) _firstGroup.getProperty(SampleProperty.SampleDescription.name());

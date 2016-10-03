@@ -54,10 +54,7 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
 
     String getFileName();
 
-    /**
-     * @deprecated no support for subcategories using this method, callers should use getViewCategory instead unless they are using the category label for
-     * display purposes.
-     */
+    @Deprecated // no support for subcategories using this method, callers should use getViewCategory instead unless they are using the category label for display purposes.
     String getCategory();
 
     @Nullable

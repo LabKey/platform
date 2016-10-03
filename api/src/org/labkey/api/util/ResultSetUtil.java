@@ -421,7 +421,7 @@ public class ResultSetUtil
             return NEGATIVE_INFINITY_DB_VALUE;
         else if (Double.POSITIVE_INFINITY == javaDouble)
             return POSITIVE_INFINITY_DB_VALUE;
-        else if (Double.NaN == javaDouble)
+        else if (Double.isNaN(javaDouble))
             return NAN_DB_VALUE;
         else
             return javaDouble;

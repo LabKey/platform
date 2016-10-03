@@ -371,8 +371,8 @@ public class FileUtil
      *
      * @param path path to normalize
      * @return cleaned path or null if path goes outside of 'root'
-     * @deprecated use java.util.Path
      */
+    @Deprecated // use java.util.Path
     public static String normalize(String path)
     {
         if (path == null || equals(path,'/'))
@@ -415,7 +415,7 @@ quickScan:
     }
 
 
-    /** @deprecated use java.util.Path */
+    @Deprecated // use java.util.Path
     public static ArrayList<String> normalizeSplit(String str)
     {
         int len = str.length();

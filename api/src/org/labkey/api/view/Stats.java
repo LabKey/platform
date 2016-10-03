@@ -280,9 +280,7 @@ public abstract class Stats
         }
     }
 
-    /**
-     * @deprecated : Use StatsService.getStats(double[]) instead
-     */
+    @Deprecated // Use StatsService.getStats(double[]) instead
     public static class DoubleStats extends Stats implements MathStat
     {
         protected double mean;

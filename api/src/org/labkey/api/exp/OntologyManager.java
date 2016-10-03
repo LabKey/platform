@@ -2383,18 +2383,12 @@ public class OntologyManager
 
     /**
      * @return whether the import was successful or not. Check the errors collection for details
-     * @deprecated  use PropertyService
      */
+    @Deprecated // use PropertyService
     public static boolean importOneType(final String domainURI, List<Map<String, Object>> maps, Collection<String> errors, final Container container, User user)
             throws ChangePropertyDescriptorException
     {
-        return importTypes(new DomainURIFactory()
-            {
-                public Pair<String,Container> getDomainURI(String name)
-                {
-                    return new Pair<>(domainURI, container);
-                }
-            }, null, maps, errors, container, false, user, null);
+        return importTypes(name -> new Pair<>(domainURI, container), null, maps, errors, container, false, user, null);
     }
 
 

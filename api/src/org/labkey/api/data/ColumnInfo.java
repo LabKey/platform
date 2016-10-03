@@ -113,22 +113,13 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             return false;
         }
     };
-    public static final DisplayColumnFactory NOWRAP_FACTORY = new DisplayColumnFactory()
+    public static final DisplayColumnFactory NOWRAP_FACTORY = colInfo ->
     {
-        public DisplayColumn createRenderer(ColumnInfo colInfo)
-        {
-            DataColumn dataColumn = new DataColumn(colInfo);
-            dataColumn.setNoWrap(true);
-            return dataColumn;
-        }
+        DataColumn dataColumn = new DataColumn(colInfo);
+        dataColumn.setNoWrap(true);
+        return dataColumn;
     };
-    public static final DisplayColumnFactory NOLOOKUP_FACTORY = new DisplayColumnFactory()
-    {
-        public DisplayColumn createRenderer(ColumnInfo colInfo)
-        {
-            return new DataColumn(colInfo, false);
-        }
-    };
+    public static final DisplayColumnFactory NOLOOKUP_FACTORY = colInfo -> new DataColumn(colInfo, false);
 
 
     private static final Logger _log = Logger.getLogger(ColumnInfo.class);
@@ -684,7 +675,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         // NOTE: most non-string types don't have spaces after conversion except dates
         // let's make sure they don't wrap (bug 392)
-        return null != getJdbcType() && (java.util.Date.class.isAssignableFrom(getJdbcType().cls) || isNumericType());
+        return java.util.Date.class.isAssignableFrom(getJdbcType().cls) || isNumericType();
     }
 
     public void setDisplayField(ColumnInfo field)

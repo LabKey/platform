@@ -389,8 +389,8 @@ public class SecurityPolicy implements HasPermission
      * This is purely for backwards compatibility with HTTP APIs--Do not use for new code!
      * @param principal the user/group
      * @return old-style bitmask for basic permissions
-     * @deprecated Use getPermissions() instead.
      */
+    @Deprecated // Use getPermissions() instead.
     public int getPermsAsOldBitMask(UserPrincipal principal)
     {
         int perms = 0;

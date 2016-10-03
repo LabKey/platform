@@ -674,8 +674,8 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
     /**
      * for compatibility with old late-bound views
-     * @deprecated
      */
+    @Deprecated
     public ModelAndView addObject(String key, Object value)
     {
         getViewContext().put(key, value);
