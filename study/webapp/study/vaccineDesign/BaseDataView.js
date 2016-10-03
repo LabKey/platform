@@ -60,6 +60,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
         // add a single event listener to focus the first input field on the initial render
         this.on('renderviewcomplete', function() {
             this.giveCellInputFocus('table.outer tr.row:first td.cell-value:first input', true);
+            LABKEY.Utils.signalWebDriverTest("VaccineDesign_renderviewcomplete");
         }, this, {single: true});
 
         this.callParent();
@@ -111,7 +112,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
 
         // data rows
         tplArr.push('<tpl for=".">');
-        tplArr.push('<tr class="row {[xindex % 2 === 0 ? "alternate-row" : ""]}">');
+        tplArr.push('<tr class="row row-outer {[xindex % 2 === 0 ? "alternate-row" : ""]}">');
         if (showEdit)
             tplArr.push('<td class="cell-display action"><i class="' + this.DELETE_ICON_CLS + '" outer-index="{[xindex-1]}"/></td>');
         Ext4.each(columns, function(column)
@@ -119,7 +120,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             if (Ext4.isString(column.dataIndex) && !column.hidden)
             {
                 var checkMissingReqTpl = column.required ? ' {[this.checkMissingRequired(values, "' + column.dataIndex + '")]}' : '',
-                    tdTpl = '<td class="' + tdCls + checkMissingReqTpl + '" data-index="' + column.dataIndex + '">',
+                    tdTpl = '<td class="' + tdCls + checkMissingReqTpl + '" data-index="' + column.dataIndex + '" outer-index="{[xindex-1]}">',
                     tdCloseTpl = '</td>';
 
                 if (Ext4.isDefined(column.dataIndexArrFilterValue))
@@ -167,7 +168,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             }
             else if (Ext4.isString(column.displayValue))
             {
-                tplArr.push('<td class="cell-display">' + column.displayValue + '</td>');
+                tplArr.push('<td class="cell-display" outer-index="{[xindex-1]}">' + column.displayValue + '</td>');
             }
         }, this);
         tplArr.push('</tr>');
@@ -250,7 +251,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             tdCls = showEdit ? 'cell-value' : 'cell-display',
             tplArr = [];
 
-        tplArr.push('<td class="cell-display">');
+        tplArr.push('<td class="cell-display" outer-index="{[xindex-1]}">');
 
         // only show the subgrid if we are allowing edits of if it has at least one row
         tplArr.push('<tpl if="' + dataIndex + '.length &gt; 0 || ' + showEdit + '">');
@@ -337,7 +338,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             if (Ext4.isString(dataIndex))
                 tplArr.push('<i class="' + this.ADD_ICON_CLS + ' add-new-row" data-index="' + dataIndex + '" outer-index="{[xindex-1]}"> Add new row</i>');
             else
-                tplArr.push('<i class="' + this.ADD_ICON_CLS + ' add-new-row"> Add new row</i>');
+                tplArr.push('<i class="' + this.ADD_ICON_CLS + ' add-new-row outer-add-new-row"> Add new row</i>');
             tplArr.push('</td>');
             tplArr.push('</tr>');
         }

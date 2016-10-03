@@ -87,7 +87,7 @@
         List<VisitImpl> visits = study.getVisitsForTreatmentSchedule();
 %>
         <br/>
-        <div class="study-vaccine-design">
+        <div class="study-vaccine-design immunization-schedule-cohorts">
             <div class="main-title">Immunization Schedule</div>
             <table class='outer'>
                 <tr class="header-row">
@@ -122,9 +122,9 @@
                         visitTreatments.put(treatmentVisitMap.getVisitId(), treatmentVisitMap.getTreatmentId());
                     }
 %>
-                    <tr class="row <%=index % 2 == 0 ? "alternate-row" : ""%>">
-                        <td class="cell-display "><%=h(cohort.getLabel())%></td>
-                        <td class="cell-display "><%=cohort.getSubjectCount() != null ? cohort.getSubjectCount() : ""%></td>
+                    <tr class="row row-outer <%=index % 2 == 0 ? "alternate-row" : ""%>" outer-index="<%=index-1%>">
+                        <td class="cell-display " data-index="Label"><%=h(cohort.getLabel())%></td>
+                        <td class="cell-display " data-index="SubjectCount"><%=cohort.getSubjectCount() != null ? cohort.getSubjectCount() : ""%></td>
 <%
                     for (VisitImpl visit : visits)
                     {
@@ -154,7 +154,7 @@
                             productHover += "</table></div>";
                         }
 %>
-                        <td class="cell-display ">
+                        <td class="cell-display " data-index="<%=h(visit.getLabel())%>">
                             <%=h(treatment != null ? treatment.getLabel() : "")%>
                             <%=(productHover.length() > 0 ? PageFlowUtil.helpPopup("Treatment Products", productHover, true, 500) : "")%>
                         </td>

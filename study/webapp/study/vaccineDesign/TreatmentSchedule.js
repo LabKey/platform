@@ -265,6 +265,8 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
 Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
     extend : 'LABKEY.VaccineDesign.BaseDataView',
 
+    cls : 'study-vaccine-design vaccine-design-treatments',
+
     mainTitle : 'Treatments',
 
     width: 1300,
@@ -513,6 +515,8 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
 Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleGrid', {
     extend : 'LABKEY.VaccineDesign.BaseDataViewAddVisit',
 
+    cls : 'study-vaccine-design vaccine-design-cohorts',
+
     mainTitle : 'Treatment Schedule',
 
     width: 350,
@@ -695,7 +699,9 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleGrid', {
     //Override
     getNewModelInstance : function()
     {
-        return LABKEY.VaccineDesign.Cohort.create();
+        var newCohort = LABKEY.VaccineDesign.Cohort.create();
+        newCohort.set('VisitMap', []);
+        return newCohort;
     },
 
     //Override

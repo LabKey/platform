@@ -785,7 +785,7 @@ public class StudyDesignController extends BaseStudyController
                     errors.reject(ERROR_MSG, "Assay Name is a required field for all assay configurations.");
 
                 if (assay.getSampleQuantity() != null && assay.getSampleQuantity() < 0)
-                    errors.reject(ERROR_MSG, "Assay sample quantity values must be positive numbers.");
+                    errors.reject(ERROR_MSG, "Assay sample quantity value must be a positive number.");
             }
         }
 

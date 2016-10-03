@@ -17,7 +17,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataViewAddVisit', {
             tplArr.push('<tr>');
             tplArr.push('<td class="cell-display">&nbsp;</td>');
             tplArr.push('<td class="cell-display action" colspan="' + columns.length + '">');
-            tplArr.push('<i class="' + this.ADD_ICON_CLS + ' add-new-row"> Add new row</i>&nbsp;&nbsp;&nbsp;');
+            tplArr.push('<i class="' + this.ADD_ICON_CLS + ' add-new-row outer-add-new-row"> Add new row</i>&nbsp;&nbsp;&nbsp;');
             tplArr.push('<i class="' + this.ADD_ICON_CLS + ' add-visit-column"> Add new ' + this.visitNoun.toLowerCase() + '</i>');
             tplArr.push('</td>');
             tplArr.push('</tr>');
