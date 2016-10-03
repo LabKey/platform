@@ -17,7 +17,7 @@
       </configuration>
     </facet>
   </component>
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_5" inherit-compiler-output="false">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_6" inherit-compiler-output="false">
     <output url="file://$MODULE_DIR$/../../../intellijBuild/modules/studyGWT/classes" />
     <exclude-output />
     <content url="file://$MODULE_DIR$/gwtsrc">
@@ -28,4 +28,3 @@
     <orderEntry type="module" module-name="InternalGWT" />
   </component>
 </module>
-

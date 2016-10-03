@@ -817,13 +817,13 @@ public class OlapController extends SpringActionController
  * (optional)
  *
  * filter : []
- * @deprecated same as countFilter
  *
  * TODO document set selection syntax (operator, memberQuery etc.)
  */
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
+    @Deprecated // same as countFilter
     public class CountDistinctQueryAction extends ApiAction<JsonQueryForm>
     {
         @Override

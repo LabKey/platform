@@ -42,7 +42,6 @@ import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.DownloadURL;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.data.ActionButton;
@@ -131,14 +130,12 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -888,137 +885,6 @@ public class ListController extends SpringActionController
             else
                 return root.addChild("List Item Details"); 
         }
-    }
-
-
-    /**
-     * @deprecated delete after audit hard table migration
-     */
-    private static class ItemDetails extends WebPartView
-    {
-        String _comment;
-        String _oldRecord;
-        String _newRecord;
-        boolean _isEncoded;
-        String _returnUrl;
-
-        public ItemDetails(String comment, String oldRecord, String newRecord, boolean isEncoded, String returnUrl)
-        {
-            super(FrameType.DIV);
-            _comment = comment;
-            _oldRecord = oldRecord;
-            _newRecord = newRecord;
-            _isEncoded = isEncoded;
-            _returnUrl = returnUrl;
-        }
-
-        protected void renderView(Object model, PrintWriter out) throws Exception
-        {
-            if (_isEncoded)
-            {
-                _renderViewEncoded(out);
-            }
-            else
-            {
-                out.write("<table>\n");
-                out.write("<tr><td>");
-                if (_returnUrl != null)
-                    out.write(PageFlowUtil.button("Done").href(_returnUrl).toString());
-                out.write("</tr></td>");
-                out.write("<tr><td></td></tr>");
-
-                out.write("<tr class=\"labkey-wp-header\"><th align=\"left\">Item Changes</th></tr>");
-                out.write("<tr><td>Comment:&nbsp;<i>" + PageFlowUtil.filter(_comment) + "</i></td></tr>");
-                out.write("<tr><td><table>\n");
-                if (!StringUtils.isEmpty(_oldRecord))
-                    _renderRecord("previous:", _oldRecord, out);
-
-                if (!StringUtils.isEmpty(_newRecord))
-                    _renderRecord("current:", _newRecord, out);
-                out.write("</table></td></tr>\n");
-                out.write("</table>\n");
-            }
-        }
-
-        private void _renderRecord(String title, String record, PrintWriter out)
-        {
-            out.write("<tr><td><b>" + title + "</b></td>");
-            for (Pair<String, String> param : PageFlowUtil.fromQueryString(record))
-            {
-                out.write("<td>" + param.getValue() + "</td>");
-            }
-        }
-
-        private void _renderViewEncoded(PrintWriter out)
-        {
-            Map<String, String> prevProps = ListAuditProvider.decodeFromDataMap(_oldRecord);
-            Map<String, String> newProps = ListAuditProvider.decodeFromDataMap(_newRecord);
-            int modified = 0;
-
-            out.write("<table>\n");
-            out.write("<tr class=\"labkey-wp-header\"><th colspan=\"2\" align=\"left\">Item Changes</th></tr>");
-            out.write("<tr><td colspan=\"2\">Comment:&nbsp;<i>" + PageFlowUtil.filter(_comment) + "</i></td></tr>");
-            out.write("<tr><td/>\n");
-
-            for (Map.Entry<String, String> entry : prevProps.entrySet())
-            {
-                String newValue = newProps.remove(entry.getKey());
-                if (!Objects.equals(newValue, entry.getValue()))
-                {
-                    out.write("<tr><td class=\"labkey-form-label\">");
-                    out.write(PageFlowUtil.filter(entry.getKey()));
-                    out.write("</td><td>");
-
-                    modified++;
-                    out.write(PageFlowUtil.filter(entry.getValue()));
-                    out.write("&nbsp;&raquo;&nbsp;");
-                    out.write(PageFlowUtil.filter(Objects.toString(newValue, "")));
-                    out.write("</td></tr>\n");
-                }
-                else
-                {
-                    out.write("<tr><td class=\"labkey-form-label\">");
-                    out.write(PageFlowUtil.filter(entry.getKey()));
-                    out.write("</td><td>");
-                    out.write(PageFlowUtil.filter(entry.getValue()));
-                    out.write("</td></tr>\n");
-                }
-            }
-
-            for (Map.Entry<String, String> entry : newProps.entrySet())
-            {
-                modified++;
-                out.write("<tr><td class=\"labkey-form-label\">");
-                out.write(PageFlowUtil.filter(entry.getKey()));
-                out.write("</td><td>");
-
-                out.write("&nbsp;&raquo;&nbsp;");
-                out.write(PageFlowUtil.filter(Objects.toString(entry.getValue(), "")));
-                out.write("</td></tr>\n");
-            }
-            out.write("<tr><td/>\n");
-            out.write("<tr><td colspan=\"2\">Summary:&nbsp;<i>");
-            if (1 == modified)
-                out.write(modified + " field was modified");
-            else
-                out.write(modified + " fields were modified");
-            out.write("</i></td></tr>");
-
-
-            out.write("<tr><td>&nbsp;</td></tr>");
-            out.write("<tr><td>");
-            if (_returnUrl != null)
-                out.write(PageFlowUtil.button("Done").href(_returnUrl).toString());
-            out.write("</tr></td>");
-
-            out.write("</table>\n");
-        }
-    }
-
-
-    public static ActionURL getDownloadURL(Container c, String entityId, String filename)
-    {
-        return new DownloadURL(DownloadAction.class, c, entityId, filename);
     }
 
 

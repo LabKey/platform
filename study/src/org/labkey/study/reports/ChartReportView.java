@@ -60,9 +60,8 @@ import java.util.List;
 /**
  * User: Karl Lum
  * Date: Nov 17, 2006
- *
- * @deprecated : multiple embedded charts is no longer supported directly, instead use : StudyChartQueryReport 
  */
+@Deprecated // Embedding multiple charts is no longer supported directly, instead use: StudyChartQueryReport
 public class ChartReportView extends AbstractReportView
 {
     public static final String TYPE = "Study.chartReportView";

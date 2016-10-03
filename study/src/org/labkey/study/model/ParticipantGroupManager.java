@@ -468,9 +468,7 @@ public class ParticipantGroupManager
         return filtered;
     }
 
-    /**
-     * @deprecated create participant categories and groups separately
-     */
+    @Deprecated // create participant categories and groups separately
     public ParticipantCategoryImpl setParticipantCategory(Container c, User user, ParticipantCategoryImpl def, String[] participants, String participantFilters, String description) throws ValidationException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();

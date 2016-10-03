@@ -989,7 +989,7 @@ public class ReportsController extends BaseStudyController
             return sequenceNum;
         }
 
-        /** @deprecated needed so saved maps (e.g. EnrollmentReport configuration) still  work */
+        @Deprecated // needed so saved maps (e.g. EnrollmentReport configuration) still work
         public void setVisitId(double sequenceNum)
         {
             this.sequenceNum = sequenceNum;

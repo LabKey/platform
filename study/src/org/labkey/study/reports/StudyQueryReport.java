@@ -133,9 +133,7 @@ public class StudyQueryReport extends QueryReport
         };
     }
 
-    /**
-     * @deprecated
-     */
+    @Deprecated
     public ActionURL getRunReportURL(ViewContext context)
     {
         int datasetId = NumberUtils.toInt(getDescriptor().getProperty("showWithDataset"), -1);
