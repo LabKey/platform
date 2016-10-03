@@ -580,10 +580,14 @@ public class ConnectionWrapper implements java.sql.Connection
             if (_scope.isTransactionActive())
             {
                 LOG.warn("Additional SQLException on a Connection that has already thrown a SQLException. Additional exception to be logged separately, original exception is: ", _originalSqlException);
+                if (_originalSqlException.getNextException() != null)
+                    LOG.warn("Next exception", _originalSqlException.getNextException());
             }
             else
             {
                 LOG.debug("Additional SQLException on a Connection that has already thrown a SQLException. Additional exception to be logged separately, original exception is: ", _originalSqlException);
+                if (_originalSqlException.getNextException() != null)
+                    LOG.debug("Next exception", _originalSqlException.getNextException());
             }
         }
         return e;
