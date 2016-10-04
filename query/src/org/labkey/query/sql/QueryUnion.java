@@ -105,6 +105,8 @@ public class QueryUnion extends QueryRelation
 				QueryUnion union = new QueryUnion(_query, (QUnion)n);
 				_termList.add(union);
 			}
+			if (!getParseErrors().isEmpty())
+			    break;
         }
     }
 

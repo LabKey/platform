@@ -284,6 +284,8 @@ groupByLoop:
                     relation._parent = this;
             }
             assert relation != null || !getParseErrors().isEmpty();
+            if (!getParseErrors().isEmpty())
+                break;
             if (relation == null)
                 continue;
             qtable.setQueryRelation(relation);
