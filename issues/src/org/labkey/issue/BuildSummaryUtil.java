@@ -196,11 +196,11 @@ public class BuildSummaryUtil
         Date lastResolvedClosed = issue.getClosed() != null ? issue.getClosed() : issue.getResolved();
         if (previousBuild.isStableBuild())
         {
-            if (previousBuild.getbuildDate() == null || currentBuild.getbuildDate() == null)
+            if (previousBuild.getBuildDate() == null || currentBuild.getBuildDate() == null)
                 throw new IllegalArgumentException("previousBuildDate and currentBuildDate cannot be null");
-            if (lastResolvedClosed.toInstant().compareTo(previousBuild.getbuildDate()) > 0 && issueMilestone.compareTo(previousBuild.getMilestone()) == 0)
+            if (lastResolvedClosed.toInstant().compareTo(previousBuild.getBuildDate()) > 0 && issueMilestone.compareTo(previousBuild.getMilestone()) == 0)
                 return true;
-            if (issue.getResolved().toInstant().compareTo(currentBuild.getbuildDate()) < 0 && issueMilestone.compareTo(previousBuild.getMilestone()) > 0)
+            if (issue.getResolved().toInstant().compareTo(currentBuild.getBuildDate()) < 0 && issueMilestone.compareTo(previousBuild.getMilestone()) > 0)
                 return true;
 
             return false;
@@ -209,16 +209,16 @@ public class BuildSummaryUtil
         {
             if (previousBuild.getBuildType() == BuildType.beta)
             {
-                if (previousBuild.getbuildDate() == null || currentBuild.getbuildDate() == null)
+                if (previousBuild.getFirstSprintStartDate() == null || currentBuild.getCurrentSprintEndDate() == null)
                     throw new IllegalArgumentException("previousFirstSprintStartDate and currentSprintEndDate cannot be null");
-                if (! (lastResolvedClosed.toInstant().compareTo(previousBuild.getFirstSprintStartDate()) > 0 || issue.getResolved().toInstant().compareTo(currentBuild.getLastSprintEndDate()) < 0))
+                if (! (lastResolvedClosed.toInstant().compareTo(previousBuild.getFirstSprintStartDate()) > 0 || issue.getResolved().toInstant().compareTo(currentBuild.getCurrentSprintEndDate()) < 0))
                     return false;
             }
             else
             {
-                if (previousBuild.getbuildDate() == null || currentBuild.getbuildDate() == null)
+                if (previousBuild.getBuildDate() == null || currentBuild.getCurrentSprintEndDate() == null)
                     throw new IllegalArgumentException("previousBuildDate and currentSprintEndDate cannot be null");
-                if (! (lastResolvedClosed.toInstant().compareTo(previousBuild.getbuildDate()) > 0 || issue.getResolved().toInstant().compareTo(currentBuild.getLastSprintEndDate()) < 0))
+                if (! (lastResolvedClosed.toInstant().compareTo(previousBuild.getBuildDate()) > 0 || issue.getResolved().toInstant().compareTo(currentBuild.getCurrentSprintEndDate()) < 0))
                     return false;
             }
         }
@@ -250,7 +250,7 @@ public class BuildSummaryUtil
         private Instant buildDate;
         private Milestone milestone;
         private Instant firstSprintStartDate;
-        private Instant lastSprintEndDate;
+        private Instant currentSprintEndDate;
 
         BuildBean(String buildType, String buildDateStr, String milestone, String firstSprintStartStr, String lastSprintEndStr)
         {
@@ -258,7 +258,7 @@ public class BuildSummaryUtil
             this.buildDate = buildDateStr == null ? null : Instant.parse(buildDateStr);
             this.milestone = new Milestone(milestone);
             this.firstSprintStartDate = firstSprintStartStr == null ? null : Instant.parse(firstSprintStartStr);
-            this.lastSprintEndDate = lastSprintEndStr == null ? null : Instant.parse(lastSprintEndStr);
+            this.currentSprintEndDate = lastSprintEndStr == null ? null : Instant.parse(lastSprintEndStr);
 
         }
 
@@ -272,12 +272,12 @@ public class BuildSummaryUtil
             this.buildType = buildType;
         }
 
-        public Instant getbuildDate()
+        public Instant getBuildDate()
         {
             return buildDate;
         }
 
-        public void setbuildDate(Instant buildTime)
+        public void setBuildDate(Instant buildTime)
         {
             this.buildDate = buildTime;
         }
@@ -307,14 +307,14 @@ public class BuildSummaryUtil
             this.firstSprintStartDate = firstSprintDate;
         }
 
-        public Instant getLastSprintEndDate()
+        public Instant getCurrentSprintEndDate()
         {
-            return lastSprintEndDate;
+            return currentSprintEndDate;
         }
 
-        public void setLastSprintEndDate(Instant lastSprintEndDate)
+        public void setCurrentSprintEndDate(Instant currentSprintEndDate)
         {
-            this.lastSprintEndDate = lastSprintEndDate;
+            this.currentSprintEndDate = currentSprintEndDate;
         }
     }
 
