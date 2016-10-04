@@ -260,15 +260,18 @@ public abstract class AbstractSpecimenTransformTask
         @Override
         public void writeRow(Map<String, Object> row)
         {
-            if (_rowCount == 0)
+            if (null != row)
             {
-                writeFileHeader();
-                setColumns(row.keySet());
-                writeColumnHeaders();
+                if (_rowCount == 0)
+                {
+                    writeFileHeader();
+                    setColumns(row.keySet());
+                    writeColumnHeaders();
 
+                }
+                super.writeRow(row);
+                _rowCount++;
             }
-            super.writeRow(row);
-            _rowCount++;
         }
 
         public int getRowCount()
