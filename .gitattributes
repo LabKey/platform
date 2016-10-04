@@ -2654,14 +2654,6 @@ study/test/sampledata/study/LotsOfPtidsStudy.folder.zip -text
 study/test/sampledata/study/LotsOfPtidsStudy_NoData.folder.zip -text
 study/test/sampledata/study/Results.tsv -text
 study/test/src/org/labkey/test/pages/DesignerController/DesignerTester.java -text
-study/test/src/org/labkey/test/pages/studydesigncontroller/AssayScheduleWebpart.java -text
-study/test/src/org/labkey/test/pages/studydesigncontroller/BaseManageVaccineDesignPage.java -text
-study/test/src/org/labkey/test/pages/studydesigncontroller/BaseManageVaccineDesignVisitPage.java -text
-study/test/src/org/labkey/test/pages/studydesigncontroller/ImmunizationScheduleWebpart.java -text
-study/test/src/org/labkey/test/pages/studydesigncontroller/ManageAssaySchedulePage.java -text
-study/test/src/org/labkey/test/pages/studydesigncontroller/ManageStudyProductsPage.java -text
-study/test/src/org/labkey/test/pages/studydesigncontroller/ManageTreatmentsPage.java -text
-study/test/src/org/labkey/test/pages/studydesigncontroller/VaccineDesignWebpart.java -text
 study/test/src/org/labkey/test/tests/search/DataClassSearchTest.java -text
 study/test/src/org/labkey/test/tests/search/SearchTest.java -text
 study/test/src/org/labkey/test/tests/search/SearchTestDefault.java -text
