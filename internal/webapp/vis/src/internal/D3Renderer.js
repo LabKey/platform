@@ -2990,6 +2990,28 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 })
                     .attr('y', collapsed ? parentYAcc : typeSubtypeYAcc)
                     .attr('dy', perEventYOffset * 1.2);
+
+            //bind interaction events
+            if (geom.rowClickFnAes) {
+                eventLabels.on('click', function(d) {
+                    geom.rowClickFnAes.value(d3.event, d, layer);
+                });
+            }
+            else { eventLabels.on('click', null); }
+
+            if (geom.mouseOverRowFnAes) {
+                eventLabels.on('mouseover', function(d) {
+                    geom.mouseOverRowFnAes.value(d3.event, d, layer);
+                });
+            }
+            else { eventLabels.on('mouseover', null); }
+
+            if (geom.mouseOutRowFnAes) {
+                eventLabels.on('mouseout', function(d) {
+                    geom.mouseOutRowFnAes.value(d3.event, d, layer);
+                });
+            }
+            else { eventLabels.on('mouseout', null); }
         };
 
         var renderEventIcons = function() {
