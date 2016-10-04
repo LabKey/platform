@@ -1034,12 +1034,12 @@ public class SimpleFilter implements Filter
         String prefixDot = regionName == null ? "" : regionName + ".";
 
         // for "dataRegion.column~op" filters
-        urlHelp.getParameterMap().entrySet().stream()
-            .filter(entry -> entry.getKey().startsWith(prefixDot))
-            .forEach(entry ->
+        urlHelp.getParameterMap().keySet().stream()
+            .filter(filterKey -> filterKey.startsWith(prefixDot))
+            .forEach(filterKey ->
             {
-                String colTildeCompare = entry.getKey().substring(prefixDot.length());
-                for (String param : entry.getValue())
+                String colTildeCompare = filterKey.substring(prefixDot.length());
+                for (String param : urlHelp.getParameters(filterKey))
                 {
                     String[] compareInfo = colTildeCompare.split(SEPARATOR_CHAR);
                     CompareType type = null;
@@ -1066,12 +1066,12 @@ public class SimpleFilter implements Filter
 
         // for "dataRegion~op" filters (e.g. dataregion level filters)
         String prefixTilde = regionName == null ? "" : regionName + "~";
-        urlHelp.getParameterMap().entrySet().stream()
-                .filter(entry -> entry.getKey().startsWith(prefixTilde))
-                .forEach(entry ->
+        urlHelp.getParameterMap().keySet().stream()
+                .filter(filterKey -> filterKey.startsWith(prefixDot))
+                .forEach(filterKey ->
                 {
-                    String colTildeCompare = entry.getKey().substring(prefixTilde.length());
-                    for (String param : entry.getValue())
+                    String colTildeCompare = filterKey.substring(prefixTilde.length());
+                    for (String param : urlHelp.getParameters(filterKey))
                     {
                         CompareType type = CompareType.getByURLKey(colTildeCompare);
 
