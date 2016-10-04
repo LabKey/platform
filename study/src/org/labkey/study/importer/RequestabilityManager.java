@@ -157,7 +157,7 @@ public class RequestabilityManager
     }
 
 
-    public static enum RuleType
+    public enum RuleType
     {
         ADMIN_OVERRIDE
                 {
@@ -530,6 +530,8 @@ public class RequestabilityManager
 
             UserSchema schema = QueryService.get().getUserSchema(user, container, _schemaName);
             TableInfo tinfo = schema.getTable(_queryName);
+            if (null == tinfo)
+                throw new InvalidRuleException("Query " + _queryName + " in schema " + _schemaName + " not found.");
             ColumnInfo globalUniqueIdCol = tinfo.getColumn("GlobalUniqueId");
             if (globalUniqueIdCol == null)
                 throw new InvalidRuleException("Query " + _queryName + " in schema " + _schemaName + " doesn't include required column name 'GlobalUniqueId'.");
