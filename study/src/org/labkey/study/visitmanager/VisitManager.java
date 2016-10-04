@@ -158,7 +158,8 @@ public abstract class VisitManager
         // to the dataset that specifies the cohort
         if (!_study.isManualCohortAssignment() &&
                 cohortDatasetId != null &&
-                changedDatasets.contains(StudyManager.getInstance().getDatasetDefinition(_study, cohortDatasetId)))
+                    (participantVisitResyncRequired ||
+                    changedDatasets.contains(StudyManager.getInstance().getDatasetDefinition(_study, cohortDatasetId))))
         {
             CohortManager.getInstance().updateParticipantCohorts(user, getStudy());
         }
