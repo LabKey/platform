@@ -1053,7 +1053,12 @@ public class QueryController extends SpringActionController
             }
             catch (SQLException e)
             {
-                errors.reject("An exception occurred: " + e);
+                errors.reject(ERROR_MSG, "An exception occurred: " + e);
+                LOG.error("Error", e);
+            }
+            catch (RuntimeSQLException e)
+            {
+                errors.reject(ERROR_MSG, "An exception occurred: " + e.getMessage());
                 LOG.error("Error", e);
             }
 
@@ -3415,9 +3420,9 @@ public static class ExportSqlForm
                 //issue 13967: provide better message for OptimisticConflictException
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
             }
-            catch (ConversionException e)
+            catch (ConversionException | DuplicateKeyException e)
             {
-                //Issue 14294: improve handling of ConversionException
+                //Issue 14294: improve handling of ConversionException (and DuplicateKeyException (Issue 28037))
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
             }
             catch (BatchValidationException e)
