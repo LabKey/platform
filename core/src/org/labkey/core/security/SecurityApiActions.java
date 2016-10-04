@@ -1761,6 +1761,7 @@ public class SecurityApiActions
             try
             {
                 SecurityManager.renameGroup(group, form.getNewName().toString(), getUser());
+                group.setName(form.getNewName().toString());
                 writeToAuditLog(group, oldName);
             }
             catch (IllegalArgumentException x)
