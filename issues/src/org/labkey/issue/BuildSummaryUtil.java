@@ -193,11 +193,12 @@ public class BuildSummaryUtil
         if (issueMilestone.compareTo(currentBuild.getMilestone()) > 0)
             return false;
 
+        Date lastResolvedClosed = issue.getClosed() != null ? issue.getClosed() : issue.getResolved();
         if (previousBuild.isStableBuild())
         {
             if (previousBuild.getbuildDate() == null || currentBuild.getbuildDate() == null)
                 throw new IllegalArgumentException("previousBuildDate and currentBuildDate cannot be null");
-            if (issue.getResolved().toInstant().compareTo(previousBuild.getbuildDate()) > 0 && issueMilestone.compareTo(previousBuild.getMilestone()) == 0)
+            if (lastResolvedClosed.toInstant().compareTo(previousBuild.getbuildDate()) > 0 && issueMilestone.compareTo(previousBuild.getMilestone()) == 0)
                 return true;
             if (issue.getResolved().toInstant().compareTo(currentBuild.getbuildDate()) < 0 && issueMilestone.compareTo(previousBuild.getMilestone()) > 0)
                 return true;
@@ -210,14 +211,14 @@ public class BuildSummaryUtil
             {
                 if (previousBuild.getbuildDate() == null || currentBuild.getbuildDate() == null)
                     throw new IllegalArgumentException("previousFirstSprintStartDate and currentSprintEndDate cannot be null");
-                if (! (issue.getResolved().toInstant().compareTo(previousBuild.getFirstSprintStartDate()) > 0 || issue.getResolved().toInstant().compareTo(currentBuild.getLastSprintEndDate()) < 0))
+                if (! (lastResolvedClosed.toInstant().compareTo(previousBuild.getFirstSprintStartDate()) > 0 || issue.getResolved().toInstant().compareTo(currentBuild.getLastSprintEndDate()) < 0))
                     return false;
             }
             else
             {
                 if (previousBuild.getbuildDate() == null || currentBuild.getbuildDate() == null)
                     throw new IllegalArgumentException("previousBuildDate and currentSprintEndDate cannot be null");
-                if (! (issue.getResolved().toInstant().compareTo(previousBuild.getbuildDate()) > 0 || issue.getResolved().toInstant().compareTo(currentBuild.getLastSprintEndDate()) < 0))
+                if (! (lastResolvedClosed.toInstant().compareTo(previousBuild.getbuildDate()) > 0 || issue.getResolved().toInstant().compareTo(currentBuild.getLastSprintEndDate()) < 0))
                     return false;
             }
         }
