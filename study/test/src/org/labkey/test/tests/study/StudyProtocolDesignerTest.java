@@ -135,9 +135,9 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
 
         // add the second immunogen, with HIV antigen records, and define the dose/route values for it
         manageStudyProductsPage.addNewImmunogenRow(IMMUNOGENS[1], IMMUNOGEN_TYPES[1], 1);
+        manageStudyProductsPage.addNewImmunogenDoseAndRoute(DOSE_AND_UNITS[1], ROUTES[0], 1, 0);
         manageStudyProductsPage.addNewImmunogenAntigen(GENES[0], SUBTYPES[0], GENBANKIDS[0], SEQUENCES[0], 1, 0);
         manageStudyProductsPage.addNewImmunogenAntigen(GENES[1], SUBTYPES[1], GENBANKIDS[1], SEQUENCES[1], 1, 1);
-        manageStudyProductsPage.addNewImmunogenDoseAndRoute(DOSE_AND_UNITS[1], ROUTES[0], 1, 0);
 
         // add the third immunogen and define the dose/route values for it
         manageStudyProductsPage.addNewImmunogenRow(IMMUNOGENS[2], IMMUNOGEN_TYPES[2], 2);
