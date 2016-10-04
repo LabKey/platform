@@ -69,6 +69,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /*
 * User: adam
@@ -148,13 +149,11 @@ public class ListWriter
 
                 if (!columns.isEmpty())
                 {
-                    List<DisplayColumn> displayColumns = new LinkedList<>();
-
-                    for (ColumnInfo col : columns)
-                    {
-                        if (col != null)
-                            displayColumns.add(new ListExportDataColumn(col));
-                    }
+                    List<DisplayColumn> displayColumns = columns
+                        .stream()
+                        .filter(col -> col != null)
+                        .map(ListExportDataColumn::new)
+                        .collect(Collectors.toCollection(LinkedList::new));
 
                     // Sort the data rows by PK, #11261
                     Sort sort = ti.getPkColumnNames().size() != 1 ? null : new Sort(ti.getPkColumnNames().get(0));
@@ -166,7 +165,7 @@ public class ListWriter
                     PrintWriter out = listsDir.getPrintWriter(def.getName() + ".tsv");
                     tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
 
-                    writeAttachments(ti, def, c, listsDir);
+                    writeAttachments(ti, def, c, listsDir, removeProtected);
                 }
             }
 
@@ -222,13 +221,23 @@ public class ListWriter
         if (null != def.getEntireListBodyTemplate()) settings.setEntireListBodyTemplate(def.getEntireListBodyTemplate());
     }
 
-    private void writeAttachments(TableInfo ti, ListDefinition def, Container c, VirtualFile listsDir) throws SQLException, IOException
+    private void writeAttachments(TableInfo ti, ListDefinition def, Container c, VirtualFile listsDir, boolean removeProtected) throws SQLException, IOException
     {
         List<ColumnInfo> attachmentColumns = new ArrayList<>();
 
         for (DomainProperty prop : def.getDomain().getProperties())
+        {
             if (prop.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
-                attachmentColumns.add(ti.getColumn(prop.getName()));
+            {
+                ColumnInfo column = ti.getColumn(prop.getName());
+
+                // Don't export files associated with protected file attachment columns if protected columns are being skipped. See #28035.
+                if (removeProtected && column.isProtected())
+                    continue;
+
+                attachmentColumns.add(column);
+            }
+        }
 
         if (!attachmentColumns.isEmpty())
         {
