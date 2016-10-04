@@ -211,14 +211,14 @@ public class BuildSummaryUtil
             {
                 if (previousBuild.getFirstSprintStartDate() == null || currentBuild.getCurrentSprintEndDate() == null)
                     throw new IllegalArgumentException("previousFirstSprintStartDate and currentSprintEndDate cannot be null");
-                if (! (lastResolvedClosed.toInstant().compareTo(previousBuild.getFirstSprintStartDate()) > 0 || issue.getResolved().toInstant().compareTo(currentBuild.getCurrentSprintEndDate()) < 0))
+                if (lastResolvedClosed.toInstant().compareTo(previousBuild.getFirstSprintStartDate()) <= 0 || issue.getResolved().toInstant().compareTo(currentBuild.getCurrentSprintEndDate()) >= 0)
                     return false;
             }
             else
             {
                 if (previousBuild.getBuildDate() == null || currentBuild.getCurrentSprintEndDate() == null)
                     throw new IllegalArgumentException("previousBuildDate and currentSprintEndDate cannot be null");
-                if (! (lastResolvedClosed.toInstant().compareTo(previousBuild.getBuildDate()) > 0 || issue.getResolved().toInstant().compareTo(currentBuild.getCurrentSprintEndDate()) < 0))
+                if (lastResolvedClosed.toInstant().compareTo(previousBuild.getBuildDate()) <= 0 || issue.getResolved().toInstant().compareTo(currentBuild.getCurrentSprintEndDate()) >= 0)
                     return false;
             }
         }
