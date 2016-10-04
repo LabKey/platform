@@ -179,9 +179,13 @@ public class BuildSummaryUtil
         filters.addInClause(FieldKey.fromString("Status"), issueStatuses);
         filters.addCondition(FieldKey.fromString("Type"), excludedIssueTypes, CompareType.NOT_IN);
         filters.addCondition(FieldKey.fromString("Story"), null, CompareType.ISBLANK);
+        filters.addCondition(FieldKey.fromString("Milestone"), null, CompareType.NONBLANK);
         if (previousOfficialReleaseDate == null)
             throw new IllegalArgumentException("previousOfficialReleaseDate cannot be null");
-        filters.addCondition(FieldKey.fromString("Resolved"), previousOfficialReleaseDate, CompareType.DATE_GT);
+        filters.addClause(new SimpleFilter.OrClause(
+                new CompareType.CompareClause(FieldKey.fromString("Resolved"), CompareType.DATE_GT, Date.from(previousOfficialReleaseDate)),
+                new CompareType.CompareClause(FieldKey.fromString("Closed"), CompareType.DATE_GT, Date.from(previousOfficialReleaseDate))
+        ));
         //TODO security issues should be automatically filtered out based on container, need to verify.
 
         return filters;
