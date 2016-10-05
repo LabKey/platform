@@ -48,12 +48,12 @@ public abstract class GenericChartReport extends AbstractReport
             @Override
             public String getName()
             {
-                return "Bar Plot";
+                return "Bar Chart";
             }
             @Override
             public String getDescription()
             {
-                return "Bar Plot";
+                return "Bar Chart";
             }
             @Override
             public String getIconPath()
