@@ -24,11 +24,10 @@ import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
+import org.openqa.selenium.By;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import java.io.File;
-
-import static org.junit.Assert.fail;
 
 @Category({DailyC.class})
 public class StudyScheduleTest extends StudyBaseTest
@@ -96,9 +95,9 @@ public class StudyScheduleTest extends StudyBaseTest
     {
         clickTab("Manage");
         click(Locator.linkWithText("Study Schedule"));
-        shortWait().until(ExpectedConditions.elementToBeClickable(Locator.xpath("//div[.='ECI-1: Eligibility Criteria']/../../..//div[@class='unchecked']").toBy()));
+        shortWait().until(ExpectedConditions.elementToBeClickable(By.xpath("//div[.='ECI-1: Eligibility Criteria']/../../..//div[@class='unchecked']")));
         click(Locator.xpath("//div[.='ECI-1: Eligibility Criteria']/../../..//div[@class='unchecked']"));
-        shortWait().until(ExpectedConditions.elementToBeClickable(Locator.xpath("//span[.='Save Changes']").toBy()));
+        shortWait().until(ExpectedConditions.elementToBeClickable(By.xpath("//span[.='Save Changes']")));
         click(Locator.xpath("//span[.='Save Changes']"));
         waitForElement(Locator.xpath("//div[.='ECI-1: Eligibility Criteria']/../../..//div[@class='checked']"));
     }
@@ -282,23 +281,18 @@ public class StudyScheduleTest extends StudyBaseTest
                 String datasetFileName = _sampleDataPath + "/datasets/plate002.tsv";
                 File file = new File(TestFileUtils.getLabKeyRoot(), datasetFileName);
 
-                if (file.exists())
-                {
-                    Locator fileUpload = Locator.xpath("//input[@name = 'uploadFormElement']");
-                    waitForElement(fileUpload, WAIT_FOR_JAVASCRIPT);
-                    setFormElement(fileUpload, file.getAbsolutePath());
+                Locator fileUpload = Locator.xpath("//input[@name = 'uploadFormElement']");
+                waitForElement(fileUpload, WAIT_FOR_JAVASCRIPT);
+                setFormElement(fileUpload, file);
 
-                    waitForElement(Locator.xpath("//div[@class = 'gwt-HTML' and contains(text(), 'Showing first 5 rows')]"), WAIT_FOR_JAVASCRIPT);
+                waitForElement(Locator.xpath("//div[@class = 'gwt-HTML' and contains(text(), 'Showing first 5 rows')]"), WAIT_FOR_JAVASCRIPT);
 
-                    Locator.XPathLocator mouseId = Locator.xpath("//label[contains(@class, 'x-form-item-label') and text() ='MouseId:']/../div/div");
-                    _extHelper.selectGWTComboBoxItem(mouseId, "ptid");
-                    Locator.XPathLocator sequenceNum = Locator.xpath("//label[contains(@class, 'x-form-item-label') and text() ='Sequence Num:']/../div/div");
-                    _extHelper.selectGWTComboBoxItem(sequenceNum, "visit");
+                Locator.XPathLocator mouseId = Locator.xpath("//label[contains(@class, 'x-form-item-label') and text() ='MouseId:']/../div/div");
+                _extHelper.selectGWTComboBoxItem(mouseId, "ptid");
+                Locator.XPathLocator sequenceNum = Locator.xpath("//label[contains(@class, 'x-form-item-label') and text() ='Sequence Num:']/../div/div");
+                _extHelper.selectGWTComboBoxItem(sequenceNum, "visit");
 
-                    clickButton("Import");
-                }
-                else
-                    fail("The dataset import .tsv file (plate002.tsv) does not exist");
+                clickButton("Import");
                 break;
             case placeholder:
                 click(Ext4Helper.Locators.ext4Radio("do this later"));
@@ -360,23 +354,18 @@ public class StudyScheduleTest extends StudyBaseTest
                 String datasetFileName = _sampleDataPath + "/datasets/plate002.tsv";
                 File file = new File(TestFileUtils.getLabKeyRoot(), datasetFileName);
 
-                if (file.exists())
-                {
-                    Locator fileUpload = Locator.xpath("//input[@name = 'uploadFormElement']");
-                    waitForElement(fileUpload, WAIT_FOR_JAVASCRIPT);
-                    setFormElement(fileUpload, file.getAbsolutePath());
+                Locator fileUpload = Locator.xpath("//input[@name = 'uploadFormElement']");
+                waitForElement(fileUpload, WAIT_FOR_JAVASCRIPT);
+                setFormElement(fileUpload, file);
 
-                    waitForElement(Locator.xpath("//div[@class = 'gwt-HTML' and contains(text(), 'Showing first 5 rows')]"), WAIT_FOR_JAVASCRIPT);
+                waitForElement(Locator.xpath("//div[@class = 'gwt-HTML' and contains(text(), 'Showing first 5 rows')]"), WAIT_FOR_JAVASCRIPT);
 
-                    Locator.XPathLocator mouseId = Locator.xpath("//label[contains(@class, 'x-form-item-label') and text() ='MouseId:']/../div/div");
-                    _extHelper.selectGWTComboBoxItem(mouseId, "ptid");
-                    Locator.XPathLocator sequenceNum = Locator.xpath("//label[contains(@class, 'x-form-item-label') and text() ='Sequence Num:']/../div/div");
-                    _extHelper.selectGWTComboBoxItem(sequenceNum, "visit");
+                Locator.XPathLocator mouseId = Locator.xpath("//label[contains(@class, 'x-form-item-label') and text() ='MouseId:']/../div/div");
+                _extHelper.selectGWTComboBoxItem(mouseId, "ptid");
+                Locator.XPathLocator sequenceNum = Locator.xpath("//label[contains(@class, 'x-form-item-label') and text() ='Sequence Num:']/../div/div");
+                _extHelper.selectGWTComboBoxItem(sequenceNum, "visit");
 
-                    clickButton("Import");
-                }
-                else
-                    fail("The dataset import .tsv file (plate002.tsv) does not exist");
+                clickButton("Import");
                 break;
             case linkeToExisting:
                 click(Ext4Helper.Locators.ext4Radio("Link to existing dataset"));
