@@ -62,33 +62,29 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<String,
     @Override
     public CacheLoader<String, TablesDocument> getResourceLoader()
     {
-        return new CacheLoader<String, TablesDocument>()
+        return (key, argument) ->
         {
-            @Override
-            public TablesDocument load(String key, @Nullable Object argument)
+            ModuleResourceCache.CacheId id = ModuleResourceCache.parseCacheKey(key);
+            Module module = id.getModule();
+            String filename = id.getName();
+            Path path = new Path(DIR_NAME, filename);
+            Resource resource  = module.getModuleResolver().lookup(path);
+
+            assert null != resource : "Expected schema metadata xml file";
+
+            try (InputStream xmlStream = resource.getInputStream())
             {
-                ModuleResourceCache.CacheId id = ModuleResourceCache.parseCacheKey(key);
-                Module module = id.getModule();
-                String filename = id.getName();
-                Path path = new Path(DIR_NAME, filename);
-                Resource resource  = module.getModuleResolver().lookup(path);
-
-                assert null != resource : "Expected schema metadata xml file";
-
-                try (InputStream xmlStream = resource.getInputStream())
+                if (null != xmlStream)
                 {
-                    if (null != xmlStream)
-                    {
-                        return TablesDocument.Factory.parse(xmlStream);
-                    }
+                    return TablesDocument.Factory.parse(xmlStream);
                 }
-                catch (IOException | XmlException e)
-                {
-                    ExceptionUtil.logExceptionToMothership(null, e);
-                }
-
-                return null;
             }
+            catch (IOException | XmlException e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+
+            return null;
         };
     }
 
