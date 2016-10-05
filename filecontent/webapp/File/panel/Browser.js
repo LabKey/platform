@@ -3037,6 +3037,14 @@ Ext4.define('File.panel.Browser', {
             this.fileProps[record.data.id]["Flag/Comment"] = record.data.description;
         }, this);
 
+        var editPropsPanel = Ext4.create('File.panel.EditCustomFileProps', {
+            itemId: 'editFilePropsPanel',
+            extraColumns: this.getExtraColumns(),
+            fileRecords: options.fileRecords,
+            winId: 'editFilePropsWin',
+            fileProps: this.fileProps
+        });
+
         Ext4.create('Ext.Window', {
             title : 'Extended File Properties',
             id : 'editFilePropsWin',
@@ -3044,18 +3052,11 @@ Ext4.define('File.panel.Browser', {
             modal : true,
             width : 400,
             autoShow: true,
-            items : Ext4.create('File.panel.EditCustomFileProps', {
-                itemId: 'editFilePropsPanel',
-                extraColumns : this.getExtraColumns(),
-                fileRecords : options.fileRecords,
-                winId : 'editFilePropsWin',
-                fileProps : this.fileProps
-            }),
+            items: [editPropsPanel],
             listeners : {
                 afterrender: function (win) {
                     Ext4.create("Ext.util.KeyNav", win.getEl(), {
                         enter: function () {
-                            var editPropsPanel = win.down('#editFilePropsPanel');
                             if (editPropsPanel) {
                                 editPropsPanel.doSave();
                             }

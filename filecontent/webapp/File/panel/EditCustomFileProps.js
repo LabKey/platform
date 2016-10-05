@@ -204,8 +204,7 @@ Ext4.define('File.panel.EditCustomFileProps', {
     doSave : function() {
         var files = [];
         this.saveFormPage();
-        for(var i = 0; i < this.formPages.length; i++)
-        {
+        for (var i = 0; i < this.formPages.length; i++) {
             var formPage = this.formPages[i];
             var rec = this.fileRecords[i];
             var row = {
@@ -219,8 +218,7 @@ Ext4.define('File.panel.EditCustomFileProps', {
                 row["RowId"] = prevValues["rowId"];
             }
 
-            for (var r = 0; r < this.extraColumns.length; r++)
-            {
+            for (var r = 0; r < this.extraColumns.length; r++) {
                 var extraColName = this.extraColumns[r].name;
                 row[extraColName] = formPage[extraColName];
             }
@@ -234,33 +232,50 @@ Ext4.define('File.panel.EditCustomFileProps', {
         }
 
         Ext4.Ajax.request({
-            url: LABKEY.ActionURL.buildURL("filecontent", "updateFileProps"),
-            method : 'POST',
-            scope: this,
-            success: function(){
-                Ext4.getCmp(this.winId).fireEvent('successfulsave');
-                Ext4.getCmp(this.winId).close();
+            url: LABKEY.ActionURL.buildURL('filecontent', 'updateFileProps.api'),
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            jsonData: { files: files },
+            success: function() {
+                var win = Ext4.getCmp(this.winId);
+                if (win) {
+                    win.fireEvent('successfulsave');
+                    win.close();
+                }
             },
-            failure: function(response, opt){
-                var errorTxt = 'An error occurred submitting the .';
-                var jsonResponse = Ext4.JSON.decode(response.responseText);
-                if (jsonResponse && jsonResponse.errors)
-                {
-                    for (var i=0; i < jsonResponse.errors.length; i++)
-                    {
-                        var error = jsonResponse.errors[i];
-                        errorTxt = '<span class="labkey-error">' + error.message + '</span>'
+            failure: LABKEY.Utils.getCallbackWrapper(function(json) {
+                var errorMsg = '';
+
+                if (json) {
+                    if (json.errors) {
+                        for (var i=0; i < json.errors.length; i++) {
+                            var error = json.errors[i];
+                            errorMsg += '<span class="labkey-error"> + error.message + </span>';
+                        }
+                    }
+                    else if (json.exception) {
+                        errorMsg = json.exception;
                     }
                 }
+
+                if (!errorMsg) {
+                    errorMsg = 'An unknown error occurred';
+                }
+
                 var el = Ext4.get('file-props-status');
-                if (el)
-                    el.update(errorTxt);
-                Ext4.getCmp(this.winId).close();
-            },
-            jsonData : {files : files},
-            headers : {
-                'Content-Type' : 'application/json'
-            }
+                if (el) {
+                    el.update(errorMsg);
+                }
+                else {
+                    Ext4.Msg.alert('Error', errorMsg);
+                }
+
+                var win = Ext4.getCmp(this.winId);
+                if (win) {
+                    win.close();
+                }
+            }, this, true),
+            scope: this
         });
     },
 
