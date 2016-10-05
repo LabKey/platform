@@ -71,7 +71,9 @@ public class PipelineQueryView extends QueryView
 
     private QuerySettings createSettings(ViewContext context)
     {
-        return getSchema().getSettings(context, "StatusFiles", "job");
+        QuerySettings settings = getSchema().getSettings(context, "StatusFiles", "job");
+        settings.setBaseSort(new Sort("-Created"));
+        return settings;
     }
 
     @Override
@@ -91,7 +93,6 @@ public class PipelineQueryView extends QueryView
             view.getRenderContext().setBaseFilter(createCompletedFilter());
         }
 
-        view.getRenderContext().setBaseSort(new Sort("-Created"));
         if (_context.getContainer() == null || _context.getContainer().isRoot())
         {
             view.getRenderContext().setUseContainerFilter(false);
