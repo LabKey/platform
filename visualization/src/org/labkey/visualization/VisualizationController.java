@@ -767,6 +767,12 @@ public class VisualizationController extends SpringActionController
                 return request.getParameter("title");
             return "visualization";
         }
+
+        // Make sure the filename doesn't foul up the header
+        protected final @NotNull String getFilename(String extension)
+        {
+            return (getTitle() + "." + extension).replaceAll("\"", "-");
+        }
     }
 
     /**
@@ -782,7 +788,7 @@ public class VisualizationController extends SpringActionController
         {
             HttpServletResponse response = getViewContext().getResponse();
             response.setContentType("image/png");
-            response.addHeader("Content-Disposition", "attachment; filename=\"" + getTitle() + ".png\"");
+            response.addHeader("Content-Disposition", "attachment; filename=\"" + getFilename("png") + "\"");
 
             DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
 
@@ -806,7 +812,7 @@ public class VisualizationController extends SpringActionController
         {
             HttpServletResponse response = getViewContext().getResponse();
             response.setContentType("application/pdf");
-            response.addHeader("Content-Disposition", "attachment; filename=\"" + getTitle() + ".pdf\"");
+            response.addHeader("Content-Disposition", "attachment; filename=\"" + getFilename("pdf") + "\"");
 
             TranscoderInput xIn = new TranscoderInput(new StringReader(getSVGSource()));
             TranscoderOutput xOut = new TranscoderOutput(response.getOutputStream());
