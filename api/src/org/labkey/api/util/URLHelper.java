@@ -745,10 +745,10 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         {
             String name = pv.getName();
             Object o = pv.getValue();
-            if (o instanceof String)
+            if (o instanceof String || o == null)
                 map.put(name, new String[]{(String)o});
             else
-                map.put(pv.getName(), (String[])o);
+                map.put(name, (String[])o);
         }
         return map;
     }
