@@ -453,17 +453,20 @@ public class ApiQueryResponse implements ApiResponse
         boolean complete = true;
         writer.startList("rows");
 
-        _ctx.setResults(results);
-        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
-        factory.setConvertBigDecimalToDouble(false);
-
-        while(results.next())
+        if (null != results)
         {
-            _ctx.setRow(factory.getRowMap(results));
-            writer.writeListEntry(getRow());
-            ++_numRespRows;
+            _ctx.setResults(results);
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
+            factory.setConvertBigDecimalToDouble(false);
+
+            while (results.next())
+            {
+                _ctx.setRow(factory.getRowMap(results));
+                writer.writeListEntry(getRow());
+                ++_numRespRows;
+            }
+            complete = results.isComplete();
         }
-        complete = results.isComplete();
         writer.endList();
         return complete;
     }
