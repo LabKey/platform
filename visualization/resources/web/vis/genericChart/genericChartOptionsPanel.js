@@ -460,7 +460,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     validateChanges : function()
     {
-        return (this.widthBox.isDisabled() || this.getWidth() > 0) && (this.heightBox.isDisabled() || this.getHeight() > 0);
+        return (this.widthBox.isDisabled() || this.getWidth() == null || this.getWidth() > 0)
+                && (this.heightBox.isDisabled() || this.getHeight() == null || this.getHeight() > 0);
     },
 
     setPanelOptionValues: function(chartConfig)
