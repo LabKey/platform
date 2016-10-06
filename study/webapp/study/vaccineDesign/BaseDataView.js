@@ -86,6 +86,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
                 tpl: this.getDataViewTpl(),
                 store: this.getStore(),
                 itemSelector: 'tr.row',
+                disableSelection: true,
                 setTemplate: function(newTpl)
                 {
                     this.tpl = newTpl;
