@@ -19,7 +19,8 @@ Ext4.define('LABKEY.VaccineDesign.Treatment', {
         {name : 'Label', type : 'string'},
         {name : 'Description', type : 'string'},
         {name : 'Immunogen', defaultValue: []},
-        {name : 'Adjuvant', defaultValue: []}
+        {name : 'Adjuvant', defaultValue: []},
+        {name : 'Challenge', defaultValue: []}
     ]
 });
 

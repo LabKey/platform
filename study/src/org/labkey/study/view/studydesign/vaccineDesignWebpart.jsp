@@ -62,6 +62,8 @@
         <div id="immunogens-grid"></div>
         <br/>
         <div id="adjuvants-grid"></div>
+        <br/>
+        <div id="challenges-grid"></div>
 <%
     }
     else
@@ -83,6 +85,12 @@
 
         Ext4.create('LABKEY.VaccineDesign.AdjuvantsGrid', {
             renderTo : 'adjuvants-grid',
+            showDoseRoute: false,
+            disableEdit : true
+        });
+
+        Ext4.create('LABKEY.VaccineDesign.ChallengesGrid', {
+            renderTo : 'challenges-grid',
             showDoseRoute: false,
             disableEdit : true
         });

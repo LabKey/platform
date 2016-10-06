@@ -135,10 +135,25 @@ public class StudyDesignController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(UpdatePermission.class)
-    public class ManageTreatmentsAction extends SimpleViewAction<ReturnUrlForm>
+    public static class ManageTreatmentsBean extends ReturnUrlForm
     {
-        public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
+        private boolean _singleTable;
+
+        public boolean isSingleTable()
+        {
+            return _singleTable;
+        }
+
+        public void setSingleTable(boolean singleTable)
+        {
+            _singleTable = singleTable;
+        }
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public class ManageTreatmentsAction extends SimpleViewAction<ManageTreatmentsBean>
+    {
+        public ModelAndView getView(ManageTreatmentsBean form, BindException errors) throws Exception
         {
             return new JspView<>("/org/labkey/study/view/studydesign/manageTreatments.jsp", form);
         }

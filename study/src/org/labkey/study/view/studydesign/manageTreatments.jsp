@@ -43,8 +43,8 @@
     }
 %>
 <%
-    JspView<ReturnUrlForm> me = (JspView<ReturnUrlForm>) HttpView.currentView();
-    ReturnUrlForm bean = me.getModelBean();
+    JspView<StudyDesignController.ManageTreatmentsBean> me = (JspView<StudyDesignController.ManageTreatmentsBean>) HttpView.currentView();
+    StudyDesignController.ManageTreatmentsBean bean = me.getModelBean();
 
     Container c = getContainer();
     User user = getUser();
@@ -67,13 +67,32 @@
 <script type="text/javascript">
     Ext4.onReady(function()
     {
-        Ext4.create('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
-            renderTo : 'treatment-schedule-panel',
-            disableEdit : <%=isDataspaceStudy%>,
-            subjectNoun : <%=q(subjectNoun)%>,
-            visitNoun : <%=q(visitNoun)%>,
-            returnURL : <%=q(returnUrl)%>
-        });
+            LABKEY.Query.selectDistinctRows({
+                schemaName: 'study',
+                queryName: 'product',
+                column:'role',
+                success: function(response) {
+                    var panelClass = 'LABKEY.VaccineDesign.TreatmentSchedulePanel';
+
+                    <%
+                    if (bean.isSingleTable())
+                    {
+                    %>
+                        panelClass = 'LABKEY.VaccineDesign.TreatmentScheduleSingleTablePanel';
+                    <%
+                    }
+                    %>
+
+                    Ext4.create(panelClass, {
+                        renderTo : 'treatment-schedule-panel',
+                        disableEdit : <%=isDataspaceStudy%>,
+                        subjectNoun : <%=q(subjectNoun)%>,
+                        visitNoun : <%=q(visitNoun)%>,
+                        returnURL : <%=q(returnUrl)%>,
+                        productRoles: response.values
+                    });
+                }
+            });
     });
 </script>
 
@@ -81,10 +100,10 @@ Enter treatment information in the grids below.
 <div style="width: 1400px;">
     <ul>
         <li>
-            Each treatment label must be unique and must consist of at least one study products, i.e. immunogens and/or adjuvants.
+            Each treatment label must be unique and must consist of at least one study products, i.e. immunogens and/or adjuvants and/or challenges.
         </li>
         <li>
-            Use the manage study products page to change or update the set of available immunogens and adjuvants.
+            Use the manage study products page to change or update the set of available immunogens, adjuvants or challenges.
             <%
                 ActionURL manageStudyProductsURL = new ActionURL(StudyDesignController.ManageStudyProductsAction.class, getContainer());
                 manageStudyProductsURL.addReturnURL(getActionURL());

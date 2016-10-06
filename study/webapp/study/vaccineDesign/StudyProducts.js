@@ -23,6 +23,7 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
         this.items = [
             this.getImmunogensGrid(),
             this.getAdjuvantGrid(),
+            this.getChallengesGrid(),
             this.getButtonBar()
         ];
 
@@ -60,6 +61,22 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
         }
 
         return this.adjuvantGrid;
+    },
+
+    getChallengesGrid : function()
+    {
+        if (!this.challengesGrid)
+        {
+            this.challengesGrid = Ext4.create('LABKEY.VaccineDesign.ChallengesGrid', {
+                padding: '20px 0',
+                disableEdit: this.disableEdit
+            });
+
+            this.challengesGrid.on('dirtychange', this.enableSaveButton, this);
+            this.challengesGrid.on('celledited', this.enableSaveButton, this);
+        }
+
+        return this.challengesGrid;
     },
 
     getButtonBar : function()
@@ -144,6 +161,12 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
         Ext4.each(this.getAdjuvantGrid().getStore().getRange(), function(record)
         {
             // drop any empty rows that were just added
+            if (Ext4.isDefined(record.get('RowId')) || record.get('Label') != '')
+                studyProducts.push(Ext4.clone(record.data));
+        }, this);
+
+        Ext4.each(this.getChallengesGrid().getStore().getRange(), function(record)
+        {
             if (Ext4.isDefined(record.get('RowId')) || record.get('Label') != '')
                 studyProducts.push(Ext4.clone(record.data));
         }, this);
@@ -376,6 +399,70 @@ Ext4.define('LABKEY.VaccineDesign.AdjuvantsGrid', {
                 required: true,
                 editorType: 'Ext.form.field.Text',
                 editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Label', 185)
+            }];
+
+            if (this.showDoseRoute)
+            {
+                this.columnConfigs.push({
+                    label: 'Doses and Routes',
+                    width: 330,
+                    dataIndex: 'DoseAndRoute',
+                    subgridConfig: {
+                        columns: [{
+                            label: 'Dose',
+                            width: 140,
+                            dataIndex: 'Dose',
+                            editorType: 'Ext.form.field.Text',
+                            editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Dose', 125)
+                        }, {
+                            label: 'Route',
+                            width: 140,
+                            dataIndex: 'Route',
+                            queryName: 'StudyDesignRoutes',
+                            editorType: 'LABKEY.ext4.ComboBox',
+                            editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Route', 125, 'StudyDesignRoutes')
+                        }]
+                    }
+                });
+            }
+        }
+
+        return this.columnConfigs;
+    }
+});
+
+Ext4.define('LABKEY.VaccineDesign.ChallengesGrid', {
+    extend : 'LABKEY.VaccineDesign.StudyProductsGrid',
+
+    cls : 'study-vaccine-design vaccine-design-challenges',
+
+    width : 730,
+
+    mainTitle : 'Challenges',
+
+    filterRole : 'Challenge',
+
+    studyDesignQueryNames : ['StudyDesignImmunogenTypes', 'StudyDesignRoutes'],
+
+    //Override
+    getColumnConfigs : function()
+    {
+        if (!this.columnConfigs)
+        {
+            this.columnConfigs = [{
+                label: 'Label',
+                width: 200,
+                dataIndex: 'Label',
+                required: true,
+                editorType: 'Ext.form.field.Text',
+                editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Label', 185)
+            }, {
+                label: 'Sub Type',
+                width: 200,
+                dataIndex: 'Type',
+                queryName: 'StudyDesignImmunogenTypes', //TODO need verify
+                editorType: 'LABKEY.ext4.ComboBox',
+                editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Type', 185, 'StudyDesignImmunogenTypes')
             }];
 
             if (this.showDoseRoute)
