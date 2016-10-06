@@ -66,7 +66,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             width: 275,
             padding: '0 0 10px 0',
             allowDecimals: false,
-            hideTrigger: true
+            minValue: 250,
+            step: 50
         });
 
         this.heightBox = Ext4.create('Ext.form.field.Number', {
@@ -77,7 +78,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             width: 275,
             padding: '0 0 10px 0',
             allowDecimals: false,
-            hideTrigger: true
+            minValue: 250,
+            step: 50
         });
 
         this.showPiePercentagesCheckBox = Ext4.create('Ext.form.field.Checkbox', {
@@ -454,6 +456,11 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             else
                 this.setFooter('');
         }
+    },
+
+    validateChanges : function()
+    {
+        return (this.widthBox.isDisabled() || this.getWidth() > 0) && (this.heightBox.isDisabled() || this.getHeight() > 0);
     },
 
     setPanelOptionValues: function(chartConfig)
