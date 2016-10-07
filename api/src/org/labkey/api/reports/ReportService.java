@@ -81,7 +81,28 @@ public class ReportService
          * creates new descriptor or report instances.
          */
         ReportDescriptor createDescriptorInstance(String typeName);
+
+        /**
+         * Returns a ReportDescriptor defined in the specified module at the specified path.
+         * @param module Module to search for the ReportDescriptor
+         * @param container Container to splat into the ReportDescriptor... which is bad news. See #23582.
+         * @param user User is needed to ensure the ViewCategory associated with each ReportDescriptor... which is awful. See #23582.
+         * @param path Full path to a specific report, for example "reports/schemas/lists/People/Super Cool R Report.r". Note that
+         *             inconsistency with getModuleReportDescriptors() below. Plus, this parameter should probably be a Path.
+         * @return The ReportDescriptor matching the requested parameters or null, if no matching ReportDescriptor is found.
+         */
         ReportDescriptor getModuleReportDescriptor(Module module, Container container, User user, String path);
+
+        /**
+         * Returns a list of ReportDescriptors defined in the specified module, either those associated with the specified query path or all of them.
+         * @param module Module to search for ReportDescriptors
+         * @param container Container to splat into the ReportDescriptor... which is bad news. See #23582.
+         * @param user User is needed to ensure the ViewCategory associated with each ReportDescriptor... which is awful. See #23582.
+         * @param path Path to a specific query, meaning return reports associated with that query, or null, meaning return all reports
+         *             in this module. Unlike getModuleReportDescriptor() above, this path is relative to reports/schemas... for
+         *             example, "list/People". Wouldn't a QueryKey be better here?
+         * @return A list of ReportDescriptors matching the requested parameters.
+         */
         List<ReportDescriptor> getModuleReportDescriptors(Module module, Container container, User user, @Nullable String path);
 
         @Nullable

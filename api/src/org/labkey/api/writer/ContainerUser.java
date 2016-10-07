@@ -26,6 +26,6 @@ import org.labkey.api.data.Container;
 */
 public interface ContainerUser
 {
-    public User getUser();
-    public Container getContainer();
+    User getUser();
+    Container getContainer();
 }
