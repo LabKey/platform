@@ -22,6 +22,10 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="static org.apache.commons.lang3.StringUtils.stripEnd" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -35,8 +39,23 @@
     ReturnUrlForm form = ((JspView<ReturnUrlForm>) HttpView.currentView()).getModelBean();
     ActionURL alternativeURL = urlProvider(ProjectUrls.class).getBeginURL(getContainer());
     ActionURL returnURL = form.getReturnActionURL(alternativeURL);
+    URLHelper baseServerURL = null;
+    try
+    {
+        String baseUrl = stripEnd(AppProps.getInstance().getBaseServerUrl(),"/") + AppProps.getInstance().getContextPath() + "/";
+        baseServerURL = new URLHelper(baseUrl);
+        if (baseServerURL.getHost().equalsIgnoreCase("localhost"))
+            baseServerURL = null;
+        else if (baseServerURL.getHost().equals("127.0.0.1"))
+            baseServerURL = null;
+    }
+    catch (IllegalArgumentException ex)
+    {
+        %><%=ex.getMessage()%><%
+    }
     String id = SessionApiKeyManager.get().createKey(getViewContext().getRequest(), getUser());
 %>
+<%= AppProps.getInstance().getBaseServerUrl() %>
 This API key can be used to authorize client code accessing LabKey Server using one of the <%=helpLink("viewApis", "LabKey Client APIs")%>. Using an API key avoids
 copying and storing your credentials on the client machine. Also, all client API access is tied to the current browser session, which means the code runs under the
 current context (e.g., your user, your authorizations, your declared terms of use and PHI level, your current impersonation state, etc.). It also means the API key
@@ -44,6 +63,17 @@ will likely lose authorization when the session expires, e.g., when you sign out
 <br/><br/>
 <input id="session-token" value="<%=h(id)%>" style="width: 300px;" readonly/>
 <%= button("Copy to clipboard").id("session-token-copy").attributes("data-clipboard-target=\"#session-token\"") %>
+<br/><br/>
+<h3>R usage</h3>
+<div style="padding:10pt; border:solid 1px grey">
+<code>
+    library(Rlabkey)<br>
+    labkey.setDefaults(apiKey="<%=h(id)%>")<br>
+    <% if (null != baseServerURL) { %>
+    labkey.setDefaults(baseUrl="<%=h(baseServerURL.getURIString())%>")<br>
+    <% } %>
+</code>
+</div>
 <br/><br/>
 <%= button("Done").href(returnURL) %>
 <script type="application/javascript">
