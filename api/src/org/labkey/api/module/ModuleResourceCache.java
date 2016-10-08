@@ -32,6 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -66,6 +67,15 @@ public final class ModuleResourceCache<T>
         return (T)_cache.get(resourceName, null, cacheLoader);
     }
 
+    @Deprecated // This is temporary, until the ModuleReportCache work is finished
+    @SuppressWarnings("unchecked")
+    @Nullable
+    public T getResource(String resourceName, @Nullable Object argument)
+    {
+        CacheLoader<String, Object> cacheLoader = (CacheLoader<String, Object>) _handler.getResourceLoader();
+        return (T)_cache.get(resourceName, argument, cacheLoader);
+    }
+
     /**
      *  Return a collection of all resources managed by this cache that are defined in the active modules
      *  in the specified Container.
@@ -75,9 +85,9 @@ public final class ModuleResourceCache<T>
         Set<Module> activeModules = c.getActiveModules();
         Collection<T> resources = new LinkedList<>();
 
-        for (Module module : _directory.getModules())
-            if (activeModules.contains(module))
-                resources.addAll(getResources(module));
+        _directory.getModules().stream()
+            .filter(activeModules::contains)
+            .forEach(module -> resources.addAll(getResources(module)));
 
         return Collections.unmodifiableCollection(resources);
     }
@@ -143,16 +153,16 @@ public final class ModuleResourceCache<T>
             {
                 // Create a list of all files in this directory that conform to the resource file format.
                 // Store just the base name, which matches the resource name format.
-                for (Resource r : resourceDir.list())
-                {
-                    if (r.isFile())
-                    {
-                        String filename = r.getName();
+                resourceDir.list()
+                    .stream()
+                    .filter((Predicate<Resource>) Resource::isFile)
+                    .forEach(r ->
+                        {
+                            String filename = r.getName();
 
-                        if (_handler.isResourceFile(filename))
-                            resourceNames.add(_handler.getResourceName(module, filename));
-                    }
-                }
+                            if (_handler.isResourceFile(filename))
+                                resourceNames.add(_handler.getResourceName(module, filename));
+                        });
             }
 
             return Collections.unmodifiableList(new LinkedList<>(resourceNames));
