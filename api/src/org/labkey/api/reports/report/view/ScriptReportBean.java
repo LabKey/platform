@@ -18,6 +18,7 @@ package org.labkey.api.reports.report.view;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.model.ReportPropsManager;
@@ -225,8 +226,13 @@ public class ScriptReportBean extends ReportDesignBean
         setClientDependencies(srDescriptor.getClientDependencies());
         setScriptDependencies(srDescriptor.getScriptDependencies());
 
-        if (ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "thumbnailType") != null)
-            setThumbnailType(ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "thumbnailType").toString());
+        // Could be null, e.g., module-based report
+        Container c = descriptor.getResourceContainer();
+        if (null != c)
+        {
+            if (ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), c, "thumbnailType") != null)
+                setThumbnailType(ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "thumbnailType").toString());
+        }
     }
 
     Map<String, Object> getCacheableMap()
