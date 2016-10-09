@@ -2,12 +2,12 @@ package org.labkey.query.reports;
 
 import org.apache.commons.collections4.ListValuedMap;
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.collections.CaseInsensitiveArrayListValuedMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
@@ -65,7 +65,7 @@ public class ModuleReportCache
         moduleReportFilter.accept(dir, name) || StringUtils.endsWithIgnoreCase(name, ModuleQueryReportDescriptor.FILE_EXTENSION);
 
     private static final Path REPORT_PATH = Path.parse("reports/schemas");
-    private static final ReportCollections EMPTY_REPORT_COLLECTIONS = new ReportCollections(new ArrayListValuedHashMap<>(), new HashMap<>());
+    private static final ReportCollections EMPTY_REPORT_COLLECTIONS = new ReportCollections(new CaseInsensitiveArrayListValuedMap<>(), new HashMap<>());
 
     static List<ReportDescriptor> getDescriptors(Module module, @Nullable String path, Container c, User user)
     {
@@ -82,8 +82,9 @@ public class ModuleReportCache
         private final ListValuedMap<String, ReportDescriptor> _mmap;
         private final Map<String, ReportDescriptor> _map;
 
-        private ReportCollections(ListValuedMap<String, ReportDescriptor> mmap, Map<String, ReportDescriptor> map)
+        private ReportCollections(CaseInsensitiveArrayListValuedMap<ReportDescriptor> mmap, Map<String, ReportDescriptor> map)
         {
+            mmap.trimToSize();
             _mmap = mmap;
             _map = map;
         }
@@ -140,7 +141,7 @@ public class ModuleReportCache
                     if (null == reportsDir || !reportsDir.isCollection())
                         return EMPTY_REPORT_COLLECTIONS;
 
-                    ListValuedMap<String, ReportDescriptor> mmap = new ArrayListValuedHashMap<>();
+                    CaseInsensitiveArrayListValuedMap<ReportDescriptor> mmap = new CaseInsensitiveArrayListValuedMap<>();
                     Map<String, ReportDescriptor> map = new HashMap<>();
                     addReports(module, reportsDir, map, mmap, c, user);
 
@@ -240,14 +241,18 @@ public class ModuleReportCache
 
             List<ReportDescriptor> old = getModuleReportDescriptorsOLD(module, c, user, path);
 
-            if (old.size() != descriptors.size())
-                log("Module report discrepancy: different size lists for " + module.getName() + " " + path);
+            if (old.size() != sorted.size())
+            {
+                log("Module report discrepancy: different size lists for " + module.getName() + " " + path + " (old: " + old.size() + ", new: " + sorted.size() + ")");
+            }
+            else
+            {
+                Iterator<ReportDescriptor> iter = sorted.iterator();
 
-            Iterator<ReportDescriptor> iter = sorted.iterator();
-
-            old.stream()
-                .filter(descriptor -> !equals(descriptor, iter.next()))
-                .forEach(descriptor -> log("Module report discrepancy: " + descriptor.getReportName() + " " + module.getName() + " " + path));
+                old.stream()
+                    .filter(descriptor -> !equals(descriptor, iter.next()))
+                    .forEach(descriptor -> log("Module report discrepancy: " + descriptor.getReportName() + " " + module.getName() + " " + path));
+            }
         }
 
         return descriptors;
