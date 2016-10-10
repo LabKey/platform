@@ -235,21 +235,21 @@ public class ModuleReportCache
         // Test against old caching approach in dev mode
         if (AppProps.getInstance().isDevMode())
         {
-            // Sort to match order of old cache descriptors
-            Set<ReportDescriptor> sorted = new TreeSet<>((d1, d2) -> d1.toString().compareToIgnoreCase(d2.toString()));
-            sorted.addAll(descriptors);
+            // Sort the old and new lists using the same comparator
+            Set<ReportDescriptor> oldSorted = new TreeSet<>((d1, d2) -> d1.toString().compareToIgnoreCase(d2.toString()));
+            oldSorted.addAll(getModuleReportDescriptorsOLD(module, c, user, path));
+            Set<ReportDescriptor> newSorted = new TreeSet<>((d1, d2) -> d1.toString().compareToIgnoreCase(d2.toString()));
+            newSorted.addAll(descriptors);
 
-            List<ReportDescriptor> old = getModuleReportDescriptorsOLD(module, c, user, path);
-
-            if (old.size() != sorted.size())
+            if (oldSorted.size() != newSorted.size())
             {
-                log("Module report discrepancy: different size lists for " + module.getName() + " " + path + " (old: " + old.size() + ", new: " + sorted.size() + ")");
+                log("Module report discrepancy: different size lists for " + module.getName() + " " + path + " (old: " + oldSorted.size() + ", new: " + newSorted.size() + ")");
             }
             else
             {
-                Iterator<ReportDescriptor> iter = sorted.iterator();
+                Iterator<ReportDescriptor> iter = newSorted.iterator();
 
-                old.stream()
+                oldSorted.stream()
                     .filter(descriptor -> !equals(descriptor, iter.next()))
                     .forEach(descriptor -> log("Module report discrepancy: " + descriptor.getReportName() + " " + module.getName() + " " + path));
             }
