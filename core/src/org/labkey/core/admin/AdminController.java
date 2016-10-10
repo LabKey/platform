@@ -75,6 +75,7 @@ import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -93,6 +94,8 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.view.SetupForm;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
@@ -6889,6 +6892,79 @@ public class AdminController extends SpringActionController
         public void setReferrerURL(String referrerURL)
         {
             _referrerURL = referrerURL;
+        }
+    }
+
+
+    /** generate URLS to seed web-site scanner */
+    @RequiresSiteAdmin
+    public static class SpiderAction extends SimpleViewAction
+    {
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            List<String> urls = new ArrayList<>(1000);
+
+            if (getContainer().equals(ContainerManager.getRoot()))
+            {
+                for (Container c : ContainerManager.getAllChildren(ContainerManager.getRoot()))
+                {
+                    urls.add(c.getStartURL(getUser()).toString());
+                    urls.add(new ActionURL(SpiderAction.class, c).toString());
+                }
+
+                Container home = ContainerManager.getHomeContainer();
+                for (ActionDescriptor d : SpringActionController.getRegisteredActionDescriptors())
+                {
+                    ActionURL url = new ActionURL(d.getControllerName(), d.getPrimaryName(), home);
+                    urls.add(url.toString());
+                }
+            }
+            else
+            {
+                DefaultSchema def = DefaultSchema.get(getUser(), getContainer());
+                def.getSchemaNames().stream().forEach(name ->
+                {
+                    QuerySchema q = def.getSchema(name);
+                    if (null == q)
+                        return;
+                    Collection<TableInfo> tables = q.getTables();
+                    if (null == tables)
+                        return;
+                    tables.stream().forEach(t ->
+                    {
+                        ActionURL grid = t.getGridURL(getContainer());
+                        if (null != grid)
+                            urls.add(grid.toString());
+                        else
+                            urls.add(new ActionURL("query","executeQuery.view",getContainer())
+                                    .addParameter("schemaName",q.getSchemaName())
+                                    .addParameter("query.queryName", t.getName())
+                                .toString());
+                    });
+                });
+
+                ModuleLoader.getInstance().getModules().stream().forEach(m ->
+                {
+                    ActionURL url = m.getTabURL(getContainer(), getUser());
+                    if (null != url)
+                        urls.add(url.toString());
+                });
+            }
+
+            StringBuilder sb = new StringBuilder();
+            urls.stream().forEach(url ->
+            {
+                sb.append("<a href=\"").append(PageFlowUtil.filter(url)).append("\">")
+                        .append(PageFlowUtil.filter(url)).append("</a><br>\n");
+            });
+            return new HtmlView(sb.toString());
         }
     }
 }
