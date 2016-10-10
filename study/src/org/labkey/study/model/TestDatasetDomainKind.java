@@ -18,8 +18,10 @@ package org.labkey.study.model;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -53,18 +55,24 @@ public class TestDatasetDomainKind extends DatasetDomainKind
     @Override
     public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
-        Set<PropertyStorageSpec.Index> ret = super.getPropertyIndices(domain);
+        Set<PropertyStorageSpec.Index> ret = new HashSet<>(super.getPropertyIndices(domain));
         Study study = StudyManager.getInstance().getStudy(domain.getContainer());
+        StudyService.Service studyService = StudyService.get();
 
         if(null != study)
         {
-            if(!study.isDataspaceStudy())
+            // Older datasets may not have participantsequencenum
+            if (null == domain.getStorageTableName() || (null != studyService
+                    && null != studyService.getDatasetSchema().getTable(domain.getStorageTableName()).getColumn("participantsequencenum")))
             {
-                ret.add(new PropertyStorageSpec.Index(false, PARTICIPANTSEQUENCENUM));
-            }
-            else
-            {
-                ret.add(new PropertyStorageSpec.Index(false, CONTAINER, PARTICIPANTSEQUENCENUM));
+                if (!study.isDataspaceStudy())
+                {
+                    ret.add(new PropertyStorageSpec.Index(false, PARTICIPANTSEQUENCENUM));
+                }
+                else
+                {
+                    ret.add(new PropertyStorageSpec.Index(false, CONTAINER, PARTICIPANTSEQUENCENUM));
+                }
             }
         }
 
