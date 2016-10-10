@@ -150,6 +150,12 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return getActionDescriptor(actionClass).getPrimaryName();
     }
 
+    public static Collection<ActionDescriptor> getRegisteredActionDescriptors()
+    {
+        return new ArrayList<>(_classToDescriptor.values());
+    };
+
+
     // I don't think there is an interface for this
     public interface ActionResolver
     {
