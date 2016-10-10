@@ -73,6 +73,11 @@
                 column:'role',
                 success: function(response) {
                     var panelClass = 'LABKEY.VaccineDesign.TreatmentSchedulePanel';
+                    var productRoles = response.values.sort(function(a, b){
+                        var aOrder = a == 'Immunogen' ? 1 : a == 'Adjuvant' ? 2 : 3;
+                        var bOrder = b == 'Immunogen' ? 1 : b == 'Adjuvant' ? 2 : 3;
+                        return aOrder - bOrder;
+                    });
 
                     <%
                     if (bean.isSingleTable())
@@ -89,7 +94,7 @@
                         subjectNoun : <%=q(subjectNoun)%>,
                         visitNoun : <%=q(visitNoun)%>,
                         returnURL : <%=q(returnUrl)%>,
-                        productRoles: response.values
+                        productRoles: productRoles
                     });
                 }
             });

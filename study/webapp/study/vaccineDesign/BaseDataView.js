@@ -393,6 +393,12 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             else
                 config.value = currentValue;
 
+            if (column.isTreatmentLookup) {
+                var treatmentLabel = this.getTreatmentCellDisplayValue(currentValue, column.lookupStoreId);
+                config.value = treatmentLabel;
+                config.treatmentId = currentValue;
+            }
+
             // create a new form field to place in the td cell
             var field = Ext4.create(editor.type, Ext4.apply(editor.config, config));
 

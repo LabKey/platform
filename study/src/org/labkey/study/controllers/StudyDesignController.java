@@ -265,7 +265,9 @@ public class StudyDesignController extends BaseStudyController
             List<TreatmentImpl> studyTreatments = TreatmentManager.getInstance().getStudyTreatments(getContainer(), getUser());
             for (TreatmentImpl treatment : studyTreatments)
             {
-                // note: we are currently only including the base fields for this extensible table
+                if (form.getTreatmentId() > 0 && form.getTreatmentId() != treatment.getRowId())
+                    continue;
+
                 Map<String, Object> treatmentProperties = treatment.serialize();
 
                 List<Map<String, Object>> treatmentProductList = new ArrayList<>();
@@ -320,6 +322,8 @@ public class StudyDesignController extends BaseStudyController
     {
         private boolean _splitByRole;
 
+        private int treatmentId;
+
         public boolean isSplitByRole()
         {
             return _splitByRole;
@@ -328,6 +332,16 @@ public class StudyDesignController extends BaseStudyController
         public void setSplitByRole(boolean splitByRole)
         {
             _splitByRole = splitByRole;
+        }
+
+        public int getTreatmentId()
+        {
+            return treatmentId;
+        }
+
+        public void setTreatmentId(int treatmentId)
+        {
+            this.treatmentId = treatmentId;
         }
     }
 

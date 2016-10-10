@@ -35,6 +35,7 @@ import java.util.Map;
  */
 public class TreatmentProductImpl implements TreatmentProduct
 {
+    public static final String PRODUCT_DOSE_DELIMITER = "-#-";
     private Container _container;
     private int _rowId;
     private int _treatmentId;
@@ -42,6 +43,7 @@ public class TreatmentProductImpl implements TreatmentProduct
     private String _dose;
     private String _route;
     private String _doseAndRoute;
+    private String _productDoseRoute;
 
     public TreatmentProductImpl()
     {}
@@ -143,6 +145,7 @@ public class TreatmentProductImpl implements TreatmentProduct
         props.put("Dose", getDose());
         props.put("Route", getRoute());
         props.put("DoseAndRoute", getDoseAndRoute());
+        props.put("ProductDoseRoute", getProductDoseRoute());
 
         return props;
     }
@@ -152,13 +155,14 @@ public class TreatmentProductImpl implements TreatmentProduct
      */
     private void syncDoseAndRoute()
     {
-        if (getDoseAndRoute() == null && (getDose() != null || getRoute() != null))
+        if (getDoseAndRoute() == null && (getDose() != null || getRoute() != null) && getProductId() > 0)
         {
             // get the entry from the DoseAndRoute table so we can serialize the label
             DoseAndRoute doseAndRoute = TreatmentManager.getInstance().getDoseAndRoute(getContainer(), getDose(), getRoute(), getProductId());
             if (doseAndRoute != null)
             {
                 setDoseAndRoute(doseAndRoute.getLabel());
+                setProductDoseRoute(String.valueOf(getProductId() + PRODUCT_DOSE_DELIMITER + doseAndRoute.getLabel()));
             }
         }
         else if (getDoseAndRoute() != null && getDose() == null && getRoute() == null)
@@ -190,7 +194,27 @@ public class TreatmentProductImpl implements TreatmentProduct
             treatmentProduct.setRowId(o.getInt("RowId"));
         if (o.containsKey("DoseAndRoute"))
             treatmentProduct.setDoseAndRoute(o.getString("DoseAndRoute"));
+        if (o.containsKey("ProductDoseRoute"))
+            treatmentProduct.setProductDoseRoute(o.getString("ProductDoseRoute"));
 
         return treatmentProduct;
+    }
+
+    public void setProductDoseRoute(String productDoseRoute)
+    {
+        this._productDoseRoute = productDoseRoute;
+    }
+
+    public String getProductDoseRoute()
+    {
+        return _productDoseRoute;
+    }
+
+    private void populateProductDoseRoute(String productDoseRoute)
+    {
+        setProductDoseRoute(productDoseRoute);
+        String[] parts = productDoseRoute.split(PRODUCT_DOSE_DELIMITER);
+        setProductId(Integer.parseInt(parts[0]));
+        setDoseAndRoute(parts[1]);
     }
 }

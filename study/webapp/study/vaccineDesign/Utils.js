@@ -88,6 +88,8 @@ Ext4.define('LABKEY.VaccineDesign.Utils', {
         // special case to query ProductId column for DoseAndRoute table
         else if (queryName == 'DoseAndRoute')
             columns += ',ProductId';
+        else if (queryName == 'Product')
+            columns += ',Label, Role';
 
         return Ext4.create('LABKEY.ext4.Store', {
             storeId: key,

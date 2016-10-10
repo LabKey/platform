@@ -447,7 +447,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
     //Override
     updateSubgridRecordValue : function(record, outerDataIndex, subgridIndex, fieldName, newValue)
     {
-        var preProductIds = Ext4.Array.pluck(record.get('Immunogen'), 'ProductId').concat(Ext4.Array.pluck(record.get('Adjuvant'), 'ProductId'));
+        var preProductIds = Ext4.Array.pluck(record.get('Immunogen'), 'ProductId').concat(Ext4.Array.pluck(record.get('Adjuvant'), 'ProductId')).concat(Ext4.Array.pluck(record.get('Challenge'), 'ProductId'));
 
         this.callParent([record, outerDataIndex, subgridIndex, fieldName, newValue]);
 
@@ -459,7 +459,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
     //Override
     removeSubgridRecord : function(target, record)
     {
-        var preProductIds = Ext4.Array.pluck(record.get('Immunogen'), 'ProductId').concat(Ext4.Array.pluck(record.get('Adjuvant'), 'ProductId'));
+        var preProductIds = Ext4.Array.pluck(record.get('Immunogen'), 'ProductId').concat(Ext4.Array.pluck(record.get('Adjuvant'), 'ProductId')).concat(Ext4.Array.pluck(record.get('Challenge'), 'ProductId'));
         this.callParent([target, record]);
         this.populateTreatmentLabel(record, preProductIds);
         this.refresh(true);
