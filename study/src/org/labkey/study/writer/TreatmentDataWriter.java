@@ -67,6 +67,7 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
         treatmentTableNames.add(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
         treatmentTableNames.add(StudyQuerySchema.TREATMENT_TABLE_NAME);
         treatmentTableNames.add(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+        treatmentTableNames.add(StudyQuerySchema.DOSE_AND_ROUTE_TABLE_NAME);
 
         // write the table infos and data rows
         writeTableInfos(ctx, vf, treatmentTableNames, schema, projectSchema, SCHEMA_FILENAME);

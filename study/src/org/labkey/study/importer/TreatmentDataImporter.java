@@ -30,6 +30,7 @@ import org.labkey.study.xml.ExportDirType;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -117,14 +118,19 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     importTableData(ctx, vf, productTablePackage, _productTableMapBuilder,
                            new PreserveExistingProjectData(ctx.getUser(), productTablePackage.getTableInfo(), "Label", "RowId", _productIdMap));
 
+                    // product antigen table
                     StudyQuerySchema.TablePackage productAntigenTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
                     List<TransformHelper> transformHelpers = new ArrayList<>();
-                    TransformHelper transformHelperComp = null;
+                    TransformHelper transformHelperComp;
 
                     transformHelpers.add(_productAntigenTableTransform);        // Transform ProductIds first
                     transformHelpers.add(new PreserveExistingProjectData(ctx.getUser(), productAntigenTablePackage.getTableInfo(), _productAntigenFieldNames));
                     transformHelperComp = new TransformHelperComposition(transformHelpers);
                     importTableData(ctx, vf, productAntigenTablePackage, _productAntigenTableMapBuilder, transformHelperComp);
+
+                    // dose and route table, we can reuse the product antigen transform since we are doing the same operation : productId translation
+                    StudyQuerySchema.TablePackage doseAndRouteTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.DOSE_AND_ROUTE_TABLE_NAME);
+                    importTableData(ctx, vf, doseAndRouteTablePackage, null, new TransformHelperComposition(Collections.singletonList(_productAntigenTableTransform)));
 
                     StudyQuerySchema.TablePackage treatmentTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_TABLE_NAME);
                     importTableData(ctx, vf, treatmentTablePackage, _treatmentTableMapBuilder, null);
