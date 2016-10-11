@@ -88,7 +88,8 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private Issue _prevIssue;
     private Set<String> _issueIds = Collections.emptySet();
     private CustomColumnConfiguration _ccc;
-    private Set<String> _editable = Collections.emptySet();
+    private Set<String> _visible = Collections.emptySet();
+    private Set<String> _readOnly = Collections.emptySet();
     private String _callbackURL;
     private ActionURL _returnURL;
     private BindException _errors;
@@ -173,14 +174,19 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return _ccc;
     }
 
-    public Set<String> getEditable()
+    public Set<String> getVisibleFields()
     {
-        return _editable;
+        return _visible;
     }
 
-    public void setEditable(Set<String> editable)
+    public void setVisibleFields(Set<String> visible)
     {
-        _editable = editable;
+        _visible = visible;
+    }
+
+    public void setReadOnlyFields(Set<String> readOnly)
+    {
+        _readOnly = readOnly;
     }
 
     public String getCallbackURL()
@@ -373,10 +379,10 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String renderColumn(DomainProperty prop, ViewContext context) throws IOException
     {
-        return renderColumn(prop, context, true);
+        return renderColumn(prop, context, true, false);
     }
 
-    public String renderColumn(DomainProperty prop, ViewContext context, boolean editable) throws IOException
+    public String renderColumn(DomainProperty prop, ViewContext context, boolean visible, boolean readOnly) throws IOException
     {
         if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()))
         {
@@ -391,7 +397,8 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                     {
                         writer.append("<tr>");
                         writer.append(renderLabel(prop, context));
-                        writer.append(renderInput(prop, context, editable));
+                        if (visible)
+                            writer.append(renderInput(prop, context, readOnly));
                         writer.append("</tr>");
                         sb.append(writer);
                     }
@@ -428,9 +435,9 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return "";
     }
 
-    public String renderInput(DomainProperty prop, ViewContext context, boolean editable) throws IOException
+    public String renderInput(DomainProperty prop, ViewContext context, boolean readOnly) throws IOException
     {
-        if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()) && editable)
+        if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()))
         {
             final StringBuilder sb = new StringBuilder();
             TableInfo table = getIssueTable(context);
@@ -448,6 +455,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
                     DisplayColumn dc = col.getRenderer();
                     RenderContext renderContext = getRenderContext(context);
+                    renderContext.setMode(readOnly ? DataRegion.MODE_DETAILS : getMode());
 
                     try (Writer writer = new StringWriter())
                     {
@@ -472,7 +480,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     // Field is always standard column name, which is HTML safe
     public String writeInput(String field, String value, String extra)
     {
-        if (!isEditable(field))
+        if (!isVisible(field))
             return filter(value, false, true);
         
         final StringBuilder sb = new StringBuilder();
@@ -503,9 +511,14 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return !KeywordManager.getKeywords(_c, type).isEmpty();
     }
 
-    public boolean isEditable(String field)
+    public boolean isVisible(String field)
     {
-        return _editable.contains(field);
+        return _visible.contains(field);
+    }
+
+    public boolean isReadOnly(String field)
+    {
+        return _readOnly.contains(field);
     }
 
     public String getNotifyListString(boolean asEmail)
@@ -534,7 +547,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String getNotifyList()
     {
-        if (!isEditable("notifyList"))
+        if (!isVisible("notifyList"))
         {
             return filter(getNotifyListString(false));
         }

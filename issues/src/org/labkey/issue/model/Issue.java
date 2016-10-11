@@ -186,7 +186,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public void setAssignedTo(Integer assignedTo)
     {
-        if (null != assignedTo && assignedTo == 0) assignedTo = null;
+        //if (null != assignedTo && assignedTo == 0) assignedTo = null;
 
         _properties.put("assignedTo", assignedTo);
     }

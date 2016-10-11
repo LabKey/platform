@@ -343,6 +343,9 @@ public class IssueManager
                 Map<String, Object> row = new CaseInsensitiveHashMap<>();
 
                 ObjectFactory factory = ObjectFactory.Registry.getFactory(Issue.class);
+                String related = issue.getRelated();
+                issue.setRelated(null);
+
                 factory.toMap(issue, row);
                 row.putAll(issue.getProperties());
 
@@ -360,9 +363,9 @@ public class IssueManager
                 else
                 {
                     issue.beforeUpdate(user);
-                    results = qus.updateRows(user, container, Collections.singletonList(row), Collections.singletonList(row) , null, null);
+                    qus.updateRows(user, container, Collections.singletonList(row), Collections.singletonList(row) , null, null);
                 }
-
+                issue.setRelated(related);
                 saveComments(user, issue);
                 saveRelatedIssues(user, issue);
 

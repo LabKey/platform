@@ -598,7 +598,8 @@ public class IssuesController extends SpringActionController
             page.setBody(form.getComment() == null ? form.getBody() : form.getComment());
             page.setCallbackURL(form.getCallbackURL());
             page.setReturnURL(form.getReturnActionURL());
-            page.setEditable(getEditableFields(page.getAction(), customColumnConfig));
+            page.setVisibleFields(getVisibleFields(page.getAction(), customColumnConfig));
+            page.setReadOnlyFields(getReadOnlyFields(page.getAction(), getColumnConfiguration()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
@@ -819,7 +820,8 @@ public class IssuesController extends SpringActionController
 
                 validateRequiredFields(form, errors);
                 validateNotifyList(form, errors);
-                validateAssignedTo(form, errors);
+                if (!"closed".equals(form.getBean().getStatus()))
+                    validateAssignedTo(form, errors);
                 validateStringFields(form, errors);
             }
         }
@@ -879,42 +881,50 @@ public class IssuesController extends SpringActionController
             return getEntryTypeNames().singularName;
         }
 
-        protected Set<String> getEditableFields(Class<? extends Controller> action, CustomColumnConfiguration ccc)
+        /**
+         * Specifies which fields have visible values
+         */
+        protected Set<String> getVisibleFields(Class<? extends Controller> action, CustomColumnConfiguration ccc)
         {
-            final Set<String> editable = new HashSet<>(20);
+            final Set<String> visible = new HashSet<>(20);
 
-            editable.add("title");
-            editable.add("assignedTo");
-            editable.add("type");
-            editable.add("area");
-            editable.add("priority");
-            editable.add("milestone");
-            editable.add("comments");
-            editable.add("attachments");
+            visible.add("title");
+            visible.add("assignedTo");
+            visible.add("type");
+            visible.add("area");
+            visible.add("priority");
+            visible.add("milestone");
+            visible.add("comments");
+            visible.add("attachments");
 
             // Add all the enabled custom fields
             for (CustomColumn cc : ccc.getCustomColumns())
             {
-                editable.add(cc.getName());
+                visible.add(cc.getName());
             }
-
-            editable.add("notifyList");
+            visible.add("notifyList");
 
             if (ResolveAction.class.equals(action))
             {
-                editable.add("resolution");
-                editable.add("duplicate");
+                visible.add("resolution");
+                visible.add("duplicate");
             }
+            visible.add("related");
 
-            editable.add("related");
+            return visible;
+        }
 
-/*
+        /**
+         * Specifies which fields have read only values
+         */
+        protected Set<String> getReadOnlyFields(Class<? extends Controller> action, CustomColumnConfiguration ccc)
+        {
+            final Set<String> readOnly = new HashSet<>(20);
+
             if (CloseAction.class == action)
-            {
-                editable.remove("assignedTo");
-            }
-*/
-            return editable;
+                readOnly.add("assignedTo");
+
+            return readOnly;
         }
 
         /**
@@ -1596,7 +1606,8 @@ public class IssuesController extends SpringActionController
             page.setCustomColumnConfiguration(getColumnConfiguration());
             page.setBody(form.getComment());
             page.setReturnURL(form.getReturnActionURL());
-            page.setEditable(getEditableFields(page.getAction(), getColumnConfiguration()));
+            page.setVisibleFields(getVisibleFields(page.getAction(), getColumnConfiguration()));
+            page.setReadOnlyFields(getReadOnlyFields(page.getAction(), getColumnConfiguration()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
@@ -1654,7 +1665,8 @@ public class IssuesController extends SpringActionController
             page.setPrevIssue(prevIssue);
             page.setCustomColumnConfiguration(getColumnConfiguration());
             page.setBody(form.getComment());
-            page.setEditable(getEditableFields(page.getAction(), getColumnConfiguration()));
+            page.setVisibleFields(getVisibleFields(page.getAction(), getColumnConfiguration()));
+            page.setReadOnlyFields(getReadOnlyFields(page.getAction(), getColumnConfiguration()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
@@ -1696,7 +1708,8 @@ public class IssuesController extends SpringActionController
             page.setPrevIssue(prevIssue);
             page.setCustomColumnConfiguration(getColumnConfiguration());
             page.setBody(form.getComment());
-            page.setEditable(getEditableFields(page.getAction(), getColumnConfiguration()));
+            page.setVisibleFields(getVisibleFields(page.getAction(), getColumnConfiguration()));
+            page.setReadOnlyFields(getReadOnlyFields(page.getAction(), getColumnConfiguration()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
@@ -1741,7 +1754,8 @@ public class IssuesController extends SpringActionController
             page.setPrevIssue(prevIssue);
             page.setCustomColumnConfiguration(getColumnConfiguration());
             page.setBody(form.getComment());
-            page.setEditable(getEditableFields(page.getAction(), getColumnConfiguration()));
+            page.setVisibleFields(getVisibleFields(page.getAction(), getColumnConfiguration()));
+            page.setReadOnlyFields(getReadOnlyFields(page.getAction(), getColumnConfiguration()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());

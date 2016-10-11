@@ -223,12 +223,12 @@
                     <tr><td class="labkey-form-label"><%=text(bean.getLabel("Opened", true))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
                     <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
                     <tr><td class="labkey-form-label"><%=text(bean.getLabel("Resolved", true))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
-                    <%=text(bean.renderColumn(propertyMap.get("resolution"), getViewContext(), bean.isEditable("resolution")))%>
+                    <%=text(bean.renderColumn(propertyMap.get("resolution"), getViewContext(), bean.isVisible("resolution"), bean.isReadOnly("resolution")))%>
                     <%
-                        if (bean.isEditable("resolution") || !"open".equals(issue.getStatus()))
+                        if (bean.isVisible("resolution") || !"open".equals(issue.getStatus()))
                         {%>
                     <tr><td class="labkey-form-label">Duplicate</td><td><%
-                        if (bean.isEditable("duplicate"))
+                        if (bean.isVisible("duplicate"))
                         {
                             if("Duplicate".equals(issue.getResolution()))
                             {
@@ -290,7 +290,7 @@
             </td>
             <td valign="top" rowspan="<%=h(rowSpan)%>"><table style="width: 100%;">
                 <tr><td class="labkey-form-label">Closed</td><td><%=text(bean.writeDate(issue.getClosed()))%><%=text(issue.getClosedBy() != null ? " by " : "")%><%=h(issue.getClosedByName(user))%></td></tr><%
-                if (bean.isEditable("notifyList"))
+                if (bean.isVisible("notifyList"))
                 {%>
                 <tr>
                     <td class="labkey-form-label-nowrap"><%=text(bean.getLabel("NotifyList", true))%><%=text(popup)%><br/><br/><%
@@ -321,7 +321,7 @@
                 }%>
             </table></td>
         </tr>
-        <%=text(bean.renderColumn(propertyMap.get("assignedTo"), getViewContext(), bean.isEditable("assignedTo")))%>
+        <%=text(bean.renderColumn(propertyMap.get("assignedTo"), getViewContext(), bean.isVisible("assignedTo"), bean.isReadOnly("assignedTo")))%>
         <%
             for (DomainProperty prop : extraColumns)
             {%>

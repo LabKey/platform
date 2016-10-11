@@ -114,7 +114,7 @@
             <tr><td class="labkey-form-label">Resolved</td><td><%=h(bean.writeDate(issue.getResolved()))%></td></tr>
             <tr><td class="labkey-form-label">Resolution</td><td><%=h(issue.getResolution())%></td></tr>
             <%
-                if (bean.isEditable("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
+                if (bean.isVisible("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
                 {%>
             <tr><td class="labkey-form-label">Duplicate</td><td>
                 <%=text(bean.writeInput("duplicate", String.valueOf(issue.getDuplicate()), 10))%>

@@ -241,10 +241,10 @@
             <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
             <tr><td class="labkey-form-label"><%=text(bean.getLabel("Resolved", false))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
             <tr><td class="labkey-form-label"><%=text(bean.getLabel("Resolution", false))%></td><td><%=h(issue.getResolution())%></td></tr><%
-            if (bean.isEditable("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
+            if (bean.isVisible("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
             {%>
             <tr><td class="labkey-form-label">Duplicate</td><td><%
-                if (bean.isEditable("duplicate"))
+                if (bean.isVisible("duplicate"))
                 {%>
                 <%=text(bean.writeInput("duplicate", String.valueOf(issue.getDuplicate()), 10))%><%
                 }
