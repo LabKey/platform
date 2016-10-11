@@ -208,6 +208,7 @@
                             scales: {
                                 x: {
                                     scaleType: 'discrete',
+                                    sortFn: LABKEY.vis.discreteSortFn,
                                     tickFormat: function(v) {
                                         var val = categoryShowLabel[v] == undefined || categoryShowLabel[v] ? v : '';
                                         return _truncateLabel(val, 7);

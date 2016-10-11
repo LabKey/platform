@@ -145,20 +145,6 @@ LABKEY.vis.GenericChartHelper = new function(){
         var fields = responseData.metaData.fields;
         var subjectColumn = 'ParticipantId';
 
-        // Issue 23015: sort categorical x-axis alphabetically with special case for "Not in X"
-        var descreteSortFn = function(a,b) {
-            if (a && a.indexOf("Not in ") == 0) {
-                return 1;
-            }
-            else if (b && b.indexOf("Not in ") == 0) {
-                return -1;
-            }
-            else if (a != b) {
-                return a < b ? -1 : 1;
-            }
-            return 0;
-        };
-
         if (LABKEY.moduleContext.study && LABKEY.moduleContext.study.subject)
             subjectColumn = LABKEY.moduleContext.study.subject.columnName;
 
@@ -166,7 +152,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         {
             scales.x = {
                 scaleType: 'discrete', // Force discrete x-axis scale for box plots.
-                sortFn: descreteSortFn,
+                sortFn: LABKEY.vis.discreteSortFn,
                 tickLabelMax: 25
             };
 
@@ -208,7 +194,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             {
                 scales.x = {
                     scaleType: 'discrete',
-                    sortFn: descreteSortFn,
+                    sortFn: LABKEY.vis.discreteSortFn,
                     tickLabelMax: 25
                 };
             }
