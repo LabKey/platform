@@ -178,7 +178,7 @@ public class BuildSummaryUtil
         issueStatuses.add(Issue.statusCLOSED);
         filters.addInClause(FieldKey.fromString("Status"), issueStatuses);
         filters.addCondition(FieldKey.fromString("Type"), excludedIssueTypes, CompareType.NOT_IN);
-        filters.addCondition(FieldKey.fromString("Story"), null, CompareType.ISBLANK);
+        filters.addCondition(FieldKey.fromString("UserStory"), null, CompareType.ISBLANK);
         filters.addCondition(FieldKey.fromString("Milestone"), null, CompareType.NONBLANK);
         if (previousOfficialReleaseDate == null)
             throw new IllegalArgumentException("previousOfficialReleaseDate cannot be null");
