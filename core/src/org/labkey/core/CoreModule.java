@@ -898,7 +898,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ExcelLoader.ExcelLoaderTestCase.class,
                 ExcelFactory.ExcelFactoryTestCase.class,
                 ModuleDependencySorter.TestCase.class,
-                DateUtil.TestCase.class,
                 DatabaseCache.TestCase.class,
                 PasswordExpiration.TestCase.class,
                 BooleanFormat.TestCase.class,
@@ -944,7 +943,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 CollectionUtils.TestCase.class,
                 MarkableIterator.TestCase.class,
                 Sampler.TestCase.class,
-                BuilderObjectFactory.TestCase.class
+                BuilderObjectFactory.TestCase.class,
+                ChecksumUtil.TestCase.class
         ));
     }
 
