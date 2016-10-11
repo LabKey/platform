@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.NamedObject;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -296,10 +297,12 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                 {
                     if (pd.getLookupQuery() != null || pd.getConceptURI() != null)
                     {
-                        col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
+                        col.setFk(new IssuesPdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
                         TableInfo target = col.getFk().getLookupTableInfo();
-                        if (null != target && target.getPkColumnNames().size() == 1 &&StringUtils.equalsIgnoreCase(target.getTitleColumn(),target.getPkColumnNames().get(0)))
+                        if (null != target && target.getPkColumnNames().size() == 1 && StringUtils.equalsIgnoreCase(target.getTitleColumn(),target.getPkColumnNames().get(0)))
+                        {
                             col.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
+                        }
                     }
 
                     if (pd.getPropertyType() == PropertyType.MULTI_LINE)
@@ -674,6 +677,50 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                 }
             }
             return hasNext;
+        }
+    }
+
+    /**
+     * Lookup FK which preserves the current value of the field regardless of whether it
+     * is contained in the lookup.
+     */
+    static class IssuesPdLookupForeignKey extends PdLookupForeignKey
+    {
+        private User _user;
+        private Container _container;
+        private String _propName;
+
+        public IssuesPdLookupForeignKey(User user, PropertyDescriptor pd, Container container)
+        {
+            super(user, pd, container);
+
+            _user = user;
+            _container = container;
+            _propName = pd.getName();
+        }
+
+        @Override
+        public NamedObjectList getSelectList(RenderContext ctx)
+        {
+            NamedObjectList objectList = super.getSelectList(ctx);
+            Integer issueId = ctx.get(FieldKey.fromParts("IssueId"), Integer.class);
+            if (issueId != null)
+            {
+                Issue issue = IssueManager.getIssue(_container, _user, issueId);
+                if (issue != null)
+                {
+                    Object value = issue.getProperties().get(_propName);
+                    if (value instanceof String)
+                    {
+                        NamedObject entry = new SimpleNamedObject(value.toString(), value);
+                        if (!objectList.contains(entry))
+                        {
+                            objectList.put(entry);
+                        }
+                    }
+                }
+            }
+            return objectList;
         }
     }
 
