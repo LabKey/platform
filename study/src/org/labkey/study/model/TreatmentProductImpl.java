@@ -195,7 +195,7 @@ public class TreatmentProductImpl implements TreatmentProduct
         if (o.containsKey("DoseAndRoute"))
             treatmentProduct.setDoseAndRoute(o.getString("DoseAndRoute"));
         if (o.containsKey("ProductDoseRoute"))
-            treatmentProduct.setProductDoseRoute(o.getString("ProductDoseRoute"));
+            treatmentProduct.populateProductDoseRoute(o.getString("ProductDoseRoute"));
 
         return treatmentProduct;
     }
@@ -212,6 +212,8 @@ public class TreatmentProductImpl implements TreatmentProduct
 
     private void populateProductDoseRoute(String productDoseRoute)
     {
+        if (productDoseRoute == null)
+            return;
         setProductDoseRoute(productDoseRoute);
         String[] parts = productDoseRoute.split(PRODUCT_DOSE_DELIMITER);
         setProductId(Integer.parseInt(parts[0]));

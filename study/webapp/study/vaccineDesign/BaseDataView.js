@@ -433,7 +433,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
         else
         {
             var column = this.getColumnConfig(fieldName, dataFilterValue, outerDataIndex);
-            this.updateStoreRecordValue(record, column, newValue);
+            this.updateStoreRecordValue(record, column, newValue, field);
         }
 
         // update the missing-required cls based on the new field value

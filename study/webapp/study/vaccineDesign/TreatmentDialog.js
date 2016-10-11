@@ -52,6 +52,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
                     boxLabel: val.Label,
                     name: role,
                     inputValue: val.ProductDoseRoute,
+                    productLabel: val.ProductLabel,
                     checked: checked,
                     width: 170,
                     cls: 'dialog-product-label',
@@ -95,6 +96,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
             {
                 if (dose.get('RowId') != null && dose.get('ProductId') == product.get('RowId') && product.get('Role') == productRole) {
                     var productDose = Ext4.clone(dose.data);
+                    productDose.ProductLabel = product.get('Label');
                     productDose.Label = product.get('Label') + ' - ' + dose.get('Label');
                     productDose.ProductDoseRoute = dose.get('ProductId') + '-#-' + dose.get('Label');
                     data.push(productDose);
@@ -106,21 +108,35 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
     },
 
     getTreatmentFormValues: function() {
-        var productValues = this.getForm().getValues(), params = {};
+        var fields = this.getForm().getForm().getFields().items, treatmentLabel = '';
+        for (var f = 0; f < fields.length; f++) {
+            var field = fields[f];
+            var data = field.getSubmitData();
+            if (Ext4.isObject(data) && field.productLabel) {
+                if (treatmentLabel != '') {
+                    treatmentLabel += '|';
+                }
+                treatmentLabel += field.productLabel;
+            }
+        }
+
+        var productValues = this.getForm().getValues(), treatment = {Label: treatmentLabel, Products: []};
         Ext4.iterate(productValues, function(key, val){
-            params[key] = [];
+            treatment[key] = [];
             if (val) {
                 if (Ext4.isArray(val)){
                     Ext4.each(val, function(v){
-                        params[key].push({ProductDoseRoute: v})
+                        treatment[key].push({ProductDoseRoute: v});
+                        treatment.Products.push({ProductDoseRoute: v});
                     })
                 }
                 else {
-                    params[key].push({ProductDoseRoute: val})
+                    treatment[key].push({ProductDoseRoute: val});
+                    treatment.Products.push({ProductDoseRoute: val});
                 }
             }
         });
-        return params;
+        return treatment;
     }
 });
 

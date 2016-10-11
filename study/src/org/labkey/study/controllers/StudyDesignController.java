@@ -66,6 +66,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -525,9 +526,54 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermission(UpdatePermission.class)
+    public class UpdateTreatmentsAction extends MutatingApiAction<StudyTreatmentSchedule>
+    {
+        @Override
+        public ApiResponse execute(StudyTreatmentSchedule form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Study study = StudyManager.getInstance().getStudy(getContainer());
+
+            if (study != null)
+            {
+                StudySchema schema = StudySchema.getInstance();
+                Integer treatmentId;
+                try (DbScope.Transaction transaction = schema.getSchema().getScope().ensureTransaction())
+                {
+                    treatmentId = updateTreatments(form.getTreatments());
+                    transaction.commit();
+                }
+
+                response.put("success", true);
+                response.put("treatmentId", treatmentId);
+                return response;
+            }
+            else
+                throw new IllegalStateException("A study does not exist in this folder");
+        }
+
+        private Integer updateTreatments(List<TreatmentImpl> treatments) throws Exception
+        {
+            Integer updatedRowId = -1;
+            for (TreatmentImpl treatment : treatments)
+            {
+                updatedRowId = TreatmentManager.getInstance().saveTreatment(getContainer(), getUser(), treatment);
+                if (updatedRowId != null)
+                {
+                    TreatmentManager.getInstance().updateTreatmentProducts(updatedRowId, treatment.getTreatmentProducts(), getContainer(), getUser());
+                }
+            }
+            return updatedRowId;
+        }
+    }
+
+    @RequiresPermission(UpdatePermission.class)
     public class UpdateTreatmentScheduleAction extends MutatingApiAction<StudyTreatmentSchedule>
     {
         private Map<String, Integer> _tempTreatmentIdMap = new HashMap<>();
+        private Set<Integer> usedTreatmentIds = new HashSet<>(); // treatmentIds referenced in single table Treatment Schedule UI
+        private List<Integer> treatmentRowIds = new ArrayList<>(); // treatmentIds defined in 2 table UI's Treatment section
+        private List<Integer> cohortRowIds = new ArrayList<>();
 
         @Override
         public void validateForm(StudyTreatmentSchedule form, Errors errors)
@@ -588,6 +634,8 @@ public class StudyDesignController extends BaseStudyController
                 {
                     updateTreatments(form.getTreatments());
                     updateCohorts(form.getCohorts(), study);
+                    cleanTreatments();
+                    cleanCohorts();
                     transaction.commit();
                 }
 
@@ -598,10 +646,34 @@ public class StudyDesignController extends BaseStudyController
                 throw new IllegalStateException("A study does not exist in this folder");
         }
 
+        private void cleanCohorts() throws ValidationException
+        {
+            // delete any other study cohorts, not included in the insert/update list, by RowId for this container
+            for (CohortImpl existingCohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
+            {
+                if (!cohortRowIds.contains(existingCohort.getRowId()))
+                {
+                    if (!existingCohort.isInUse())
+                        StudyManager.getInstance().deleteCohort(existingCohort);
+                    else
+                        throw new ValidationException("Unable to delete in-use cohort: " + existingCohort.getLabel());
+                }
+            }
+
+        }
+
+        private void cleanTreatments()
+        {
+            // delete any other study treatments, not included in the insert/update list, by RowId for this container
+            for (TreatmentImpl treatment : TreatmentManager.getInstance().getFilteredTreatments(getContainer(), getUser(), treatmentRowIds, usedTreatmentIds))
+                TreatmentManager.getInstance().deleteTreatment(getContainer(), getUser(), treatment.getRowId());
+
+        }
+
         private void updateTreatments(List<TreatmentImpl> treatments) throws Exception
         {
             // insert new study treatments and update any existing ones
-            List<Integer> treatmentRowIds = new ArrayList<>();
+
             for (TreatmentImpl treatment : treatments)
             {
                 Integer updatedRowId = TreatmentManager.getInstance().saveTreatment(getContainer(), getUser(), treatment);
@@ -612,41 +684,20 @@ public class StudyDesignController extends BaseStudyController
                     if (treatment.getTempRowId() != null)
                         _tempTreatmentIdMap.put(treatment.getTempRowId(), updatedRowId);
 
-                    updateTreatmentProducts(updatedRowId, treatment.getTreatmentProducts());
+                    TreatmentManager.getInstance().updateTreatmentProducts(updatedRowId, treatment.getTreatmentProducts(), getContainer(), getUser());
                 }
             }
-
-            // delete any other study treatments, not included in the insert/update list, by RowId for this container
-            for (TreatmentImpl treatment : TreatmentManager.getInstance().getFilteredTreatments(getContainer(), getUser(), treatmentRowIds))
-                TreatmentManager.getInstance().deleteTreatment(getContainer(), getUser(), treatment.getRowId());
         }
-
-        private void updateTreatmentProducts(int treatmentId, List<TreatmentProductImpl> treatmentProducts) throws Exception
-        {
-            // insert new study treatment product mappings and update any existing ones
-            List<Integer> treatmentProductRowIds = new ArrayList<>();
-            for (TreatmentProductImpl treatmentProduct : treatmentProducts)
-            {
-                // make sure the treatmentId is set based on the treatment rowId
-                treatmentProduct.setTreatmentId(treatmentId);
-
-                Integer updatedRowId = TreatmentManager.getInstance().saveTreatmentProductMapping(getContainer(), getUser(), treatmentProduct);
-                if (updatedRowId != null)
-                    treatmentProductRowIds.add(updatedRowId);
-            }
-
-            // delete any other treatment product mappings, not included in the insert/update list, for the given treatmentId
-            for (TreatmentProductImpl treatmentProduct : TreatmentManager.getInstance().getFilteredTreatmentProductMappings(getContainer(), getUser(), treatmentId, treatmentProductRowIds))
-                TreatmentManager.getInstance().deleteTreatmentProductMap(getContainer(), getUser(), Collections.singletonList(treatmentProduct.getRowId()));
-        }
-
 
         private void updateCohorts(List<CohortImpl> cohorts, Study study) throws ValidationException
         {
             // insert new cohorts and update any existing ones
-            List<Integer> cohortRowIds = new ArrayList<>();
             for (CohortImpl cohort : cohorts)
             {
+                for (TreatmentVisitMapImpl visitMap : cohort.getTreatmentVisitMap())
+                {
+                    usedTreatmentIds.add(visitMap.getTreatmentId());
+                }
                 if (cohort.getRowId() > 0)
                 {
                     CohortImpl updatedCohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), cohort.getRowId());
@@ -667,17 +718,6 @@ public class StudyDesignController extends BaseStudyController
                 updateTreatmentVisitMap(cohort.getRowId(), cohort.getTreatmentVisitMap());
             }
 
-            // delete any other study cohorts, not included in the insert/update list, by RowId for this container
-            for (CohortImpl existingCohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
-            {
-                if (!cohortRowIds.contains(existingCohort.getRowId()))
-                {
-                    if (!existingCohort.isInUse())
-                        StudyManager.getInstance().deleteCohort(existingCohort);
-                    else
-                        throw new ValidationException("Unable to delete in-use cohort: " + existingCohort.getLabel());
-                }
-            }
         }
 
         private void updateTreatmentVisitMap(int cohortId, List<TreatmentVisitMapImpl> treatmentVisitMaps)

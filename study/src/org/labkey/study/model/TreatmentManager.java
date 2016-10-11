@@ -55,6 +55,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by cnathe on 1/24/14.
@@ -162,8 +163,11 @@ public class TreatmentManager
         return treatment;
     }
 
-    public List<TreatmentImpl> getFilteredTreatments(Container container, User user, List<Integer> filterRowIds)
+    public List<TreatmentImpl> getFilteredTreatments(Container container, User user, List<Integer> definedTreatmentIds, Set<Integer> usedTreatmentIds)
     {
+        List<Integer> filterRowIds = new ArrayList<>();
+        filterRowIds.addAll(definedTreatmentIds);
+        filterRowIds.addAll(usedTreatmentIds);
         TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
 
         //Using a user schema so containerFilter will be created for us later (so don't need SimpleFilter.createContainerFilter)
@@ -555,6 +559,25 @@ public class TreatmentManager
     public String getStudyDesignSubTypeLabelByName(Container container, String name)
     {
         return StudyManager.getInstance().getStudyDesignLabelByName(container, StudySchema.getInstance().getTableInfoStudyDesignSubTypes(), name);
+    }
+
+    public void updateTreatmentProducts(int treatmentId, List<TreatmentProductImpl> treatmentProducts, Container container, User user) throws Exception
+    {
+        // insert new study treatment product mappings and update any existing ones
+        List<Integer> treatmentProductRowIds = new ArrayList<>();
+        for (TreatmentProductImpl treatmentProduct : treatmentProducts)
+        {
+            // make sure the treatmentId is set based on the treatment rowId
+            treatmentProduct.setTreatmentId(treatmentId);
+
+            Integer updatedRowId = TreatmentManager.getInstance().saveTreatmentProductMapping(container, user, treatmentProduct);
+            if (updatedRowId != null)
+                treatmentProductRowIds.add(updatedRowId);
+        }
+
+        // delete any other treatment product mappings, not included in the insert/update list, for the given treatmentId
+        for (TreatmentProductImpl treatmentProduct : TreatmentManager.getInstance().getFilteredTreatmentProductMappings(container, user, treatmentId, treatmentProductRowIds))
+            TreatmentManager.getInstance().deleteTreatmentProductMap(container, user, Collections.singletonList(treatmentProduct.getRowId()));
     }
 
     /****

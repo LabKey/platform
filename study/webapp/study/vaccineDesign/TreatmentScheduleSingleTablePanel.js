@@ -5,7 +5,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTablePanel', {
 
     bodyStyle : 'background-color: transparent;',
 
-    width: 1400,
+    width: 1000,
 
     disableEdit : true,
 
@@ -99,54 +99,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTablePanel', {
     {
         this.getEl().mask('Saving...');
 
-        var treatments = [], cohorts = [],
-                index = 0, errorMsg = [];
-
-        //Ext4.each(this.getTreatmentsGrid().getStore().getRange(), function(record)
-        //{
-        //    var recData = Ext4.clone(record.data);
-        //    index++;
-        //
-        //    // drop any empty immunogen or adjuvant or challenge rows that were just added
-        //    recData['Products'] = [];
-        //    Ext4.each(recData['Immunogen'], function(immunogen)
-        //    {
-        //        if (Ext4.isDefined(immunogen['RowId']) || LABKEY.VaccineDesign.Utils.objectHasData(immunogen))
-        //            recData['Products'].push(immunogen);
-        //    }, this);
-        //    Ext4.each(recData['Adjuvant'], function(adjuvant)
-        //    {
-        //        if (Ext4.isDefined(adjuvant['RowId']) || LABKEY.VaccineDesign.Utils.objectHasData(adjuvant))
-        //            recData['Products'].push(adjuvant);
-        //    }, this);
-        //    Ext4.each(recData['Challenge'], function(challenge)
-        //    {
-        //        if (Ext4.isDefined(challenge['RowId']) || LABKEY.VaccineDesign.Utils.objectHasData(challenge))
-        //            recData['Products'].push(challenge);
-        //    }, this);
-        //
-        //    // drop any empty treatment rows that were just added
-        //    var hasData = recData['Label'] != '' || recData['Description'] != '' || recData['Products'].length > 0;
-        //    if (Ext4.isDefined(recData['RowId']) || hasData)
-        //    {
-        //        var treatmentLabel = recData['Label'] != '' ? '\'' + recData['Label'] + '\'' : index;
-        //
-        //        // validation: treatment must have at least one immunogen or adjuvant, no duplicate immunogens/adjuvants for a treatment
-        //        var treatmentProductIds = Ext4.Array.clean(Ext4.Array.pluck(recData['Products'], 'ProductId'));
-        //        if (recData['Products'].length == 0)
-        //            errorMsg.push('Treatment ' + treatmentLabel + ' must have at least one immunogen or adjuvant defined.');
-        //        else if (treatmentProductIds.length != Ext4.Array.unique(treatmentProductIds).length)
-        //            errorMsg.push('Treatment ' + treatmentLabel + ' contains a duplicate immunogen or adjuvant.');
-        //        else
-        //            treatments.push(recData);
-        //    }
-        //}, this);
-
-        if (errorMsg.length > 0)
-        {
-            this.onFailure(errorMsg.join('<br/>'));
-            return;
-        }
+        var treatments = [], cohorts = [], errorMsg = [];
 
         Ext4.each(this.getTreatmentScheduleGrid().getStore().getRange(), function(record)
         {
@@ -256,7 +209,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
                 model : 'LABKEY.VaccineDesign.Cohort',
                 sorters: [{ property: 'RowId', direction: 'ASC' }]
             });
-            this.getTreatmentsStore();
+
             this.queryStudyTreatmentSchedule();
         }
 
@@ -276,7 +229,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
                 {
                     this.getVisitStore(o['visits']);
                     this.getStore().loadData(o['cohorts']);
-                    this.getStore().fireEvent('load', this.getStore());
+                    this.getTreatmentsStore();
                 }
             }
         });
@@ -299,6 +252,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
     {
         if (!this.treatmentsStore)
         {
+            var me = this;
             this.treatmentsStore = Ext4.create('Ext.data.Store', {
                 storeId : 'TreatmentsGridStore',
                 model : 'LABKEY.VaccineDesign.Treatment',
@@ -311,7 +265,14 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
                     }
                 },
                 sorters: [{ property: 'RowId', direction: 'ASC' }],
-                autoLoad: true
+                autoLoad: true,
+                listeners: {
+                    scope: this,
+                    load: function (store)
+                    {
+                        me.getStore().fireEvent('load', me.getStore());
+                    }
+                }
             });
         }
 
@@ -357,7 +318,6 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
     {
         var me = this;
         return {
-
             hideFieldLabel: true,
             name: 'VisitMap',
             width: 135,
@@ -386,8 +346,41 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
                                 text: 'Okay',
                                 cls: 'commentSubmit',
                                 onClick : function () {
-                                    var productValues = win.getTreatmentFormValues();
-                                    // todo api to save and get treatment
+                                    var treatment = win.getTreatmentFormValues();
+                                    if (treatment && treatment.Products.length == 0) {
+                                        win.close();
+                                        cmp.treatmentId = null;
+                                        cmp.setValue(null);
+                                        return;
+                                    }
+                                    var treatments = [treatment];
+                                    LABKEY.Ajax.request({
+                                        url     : LABKEY.ActionURL.buildURL('study-design', 'updateTreatments.api'),
+                                        method  : 'POST',
+                                        jsonData: {
+                                            treatments: treatments
+                                        },
+                                        scope: this,
+                                        success: function(response)
+                                        {
+                                            var resp = Ext4.decode(response.responseText);
+                                            if (resp.success) {
+                                                win.close();
+                                                cmp.treatmentId = resp.treatmentId;
+                                                cmp.setValue(treatments[0].Label);
+                                            }
+                                            else
+                                                this.onFailure();
+                                        },
+                                        failure: function(response)
+                                        {
+                                            var resp = Ext4.decode(response.responseText);
+                                            if (resp.errors)
+                                                this.onFailure(Ext4.Array.pluck(resp.errors, 'message').join('<br/>'));
+                                            else
+                                                this.onFailure(resp.exception);
+                                        }
+                                    });
 
                                 }
                             }]
@@ -500,8 +493,11 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
     },
 
     //Override
-    updateStoreRecordValue : function(record, column, newValue)
+    updateStoreRecordValue : function(record, column, newValue, field)
     {
+        var value = newValue;
+        if (column.lookupStoreId && field && field.treatmentId)
+            value = field.treatmentId;
         // special case for editing the value of one of the pivot visit columns
         if (column.dataIndex == 'VisitMap')
         {
@@ -510,17 +506,17 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
 
             if (matchingIndex > -1)
             {
-                if (newValue != null)
-                    visitMapArr[matchingIndex][column.dataIndexArrValue] = newValue;
+                if (value != null)
+                    visitMapArr[matchingIndex][column.dataIndexArrValue] = value;
                 else
                     Ext4.Array.splice(visitMapArr, matchingIndex, 1);
             }
-            else if (newValue != null)
+            else if (value != null)
             {
                 visitMapArr.push({
                     CohortId: record.get('RowId'),
                     VisitId: column.dataIndexArrFilterValue,
-                    TreatmentId: newValue
+                    TreatmentId: value
                 });
             }
 
@@ -528,7 +524,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
         }
         else
         {
-            this.callParent([record, column, newValue]);
+            this.callParent([record, column, value]);
         }
     }
 });
