@@ -2,6 +2,8 @@
 Ext4.define('LABKEY.VaccineDesign.VisitWindow', {
     extend: 'Ext.window.Window',
 
+    modal: true,
+
     visitStore: null,
 
     visitNoun: 'Visit',
@@ -14,6 +16,7 @@ Ext4.define('LABKEY.VaccineDesign.VisitWindow', {
 
     initComponent: function()
     {
+        this.isTimepoint = this.visitNoun.toLowerCase() == 'timepoint';
         this.items = [this.getFormPanel()];
         this.callParent();
     },
@@ -168,9 +171,8 @@ Ext4.define('LABKEY.VaccineDesign.VisitWindow', {
         {
             this.newVisitMinField = Ext4.create('Ext.form.field.Number', {
                 name: 'newVisitRangeMin',
-                fieldLabel: 'Range',
-                labelWidth: 50,
-                width: 167,
+                hideLabel: true,
+                width: this.isTimepoint ? 100 : 80,
                 emptyText: 'min',
                 hideTrigger: true,
                 decimalPrecision: 4
@@ -188,7 +190,8 @@ Ext4.define('LABKEY.VaccineDesign.VisitWindow', {
         {
             this.newVisitMaxField = Ext4.create('Ext.form.field.Number', {
                 name: 'newVisitRangeMax',
-                width: 113,
+                hideLabel: true,
+                width: this.isTimepoint ? 100 : 80,
                 emptyText: 'max',
                 hideTrigger: true,
                 decimalPrecision: 4
@@ -207,10 +210,12 @@ Ext4.define('LABKEY.VaccineDesign.VisitWindow', {
             this.newVisitMinMaxContainer = Ext4.create('Ext.form.FieldContainer', {
                 layout: 'hbox',
                 style: 'margin-left: 15px; margin-bottom: 15px;',
+                fieldLabel: (this.isTimepoint ? 'Day' : 'Sequence') + ' Range',
+                labelWidth: this.isTimepoint ? 85 : 125,
                 disabled: this.getFilteredVisitStore().getCount() > 0,
                 items: [
                     this.getNewVisitMinField(),
-                    {xtype: 'label', width: 20}, // spacer
+                    {xtype: 'label', width: 10}, // spacer
                     this.getNewVisitMaxField()
                 ]
             });

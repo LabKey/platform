@@ -35,6 +35,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -766,6 +767,7 @@ public class StudyDesignController extends BaseStudyController
         public void validateForm(VisitForm form, Errors errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
+            boolean isDateBased = study.getTimepointType() == TimepointType.DATE;
 
             form.validate(errors, study);
             if (errors.getErrorCount() > 0)
@@ -775,8 +777,9 @@ public class StudyDesignController extends BaseStudyController
             VisitManager visitMgr = StudyManager.getInstance().getVisitManager(study);
             if (null != visitMgr)
             {
+                String range = isDateBased ? "day range" : "sequence range";
                 if (visitMgr.isVisitOverlapping(form.getBean()))
-                    errors.reject(null, "Visit range overlaps an existing visit in this study. Please enter a different range.");
+                    errors.reject(null, "The visit " + range + " provided overlaps with an existing visit in this study. Please enter a different " + range + ".");
             }
         }
 
