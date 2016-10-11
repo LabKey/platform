@@ -186,7 +186,6 @@ public class BuildSummaryUtil
                 new CompareType.CompareClause(FieldKey.fromString("Resolved"), CompareType.DATE_GT, Date.from(previousOfficialReleaseDate)),
                 new CompareType.CompareClause(FieldKey.fromString("Closed"), CompareType.DATE_GT, Date.from(previousOfficialReleaseDate))
         ));
-        //TODO security issues should be automatically filtered out based on container, need to verify.
 
         return filters;
     }
