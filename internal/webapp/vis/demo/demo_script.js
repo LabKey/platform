@@ -970,7 +970,7 @@ var timelinePlot = LABKEY.vis.TimelinePlot({
     disableAxis: {yLeft: true},
     gridLinesVisible: 'y',
     options: {
-        startDate: new Date('06-10-2008'),
+        startDate: new Date('2008-06-10'),
         isCollapsed: false,
         rowHeight: 50,
         eventIconSize: 12,

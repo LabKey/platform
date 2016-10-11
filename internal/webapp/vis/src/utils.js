@@ -175,3 +175,18 @@ LABKEY.vis.arrayObjectIndexOf = function(myArray, searchTerm, property) {
     }
     return -1;
 };
+
+LABKEY.vis.discreteSortFn = function(a,b) {
+    // Issue 23015: sort categorical x-axis alphabetically with special case for "Not in X" and "[Blank]"
+    var aIsEmptyCategory = a && (a.indexOf("Not in ") == 0 || a == '[Blank]'),
+        bIsEmptyCategory = b && (b.indexOf("Not in ") == 0 || b == '[Blank]');
+
+    if (aIsEmptyCategory)
+        return 1;
+    else if (bIsEmptyCategory)
+        return -1;
+    else if (a != b)
+        return a < b ? -1 : 1;
+
+    return 0;
+};
