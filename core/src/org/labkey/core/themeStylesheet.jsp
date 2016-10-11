@@ -771,7 +771,8 @@ span.labkey-file-icon {
     background-color: #<%= primary %>;
     color: #<%= link %>;
 }
-.labkey-notification-title, .labkey-notification-type, .labkey-notification-createdby {
+.labkey-notification-title, .labkey-notification-type, .labkey-notification-createdby,
+.labkey-notification-clear-all, .labkey-notification-footer {
     color: #<%= link %>;
 }
 .labkey-notification-type {
@@ -780,7 +781,6 @@ span.labkey-file-icon {
 .labkey-notification-close {
     border-left-color: #<%= borderTitle %> !important;
 }
-.labkey-notification-clear-all, .labkey-notification-footer,
 .labkey-notification-times, .labkey-notification-toggle {
     color: #<%= borderTitle %>;
 }
