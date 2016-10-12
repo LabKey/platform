@@ -259,7 +259,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
         try
         {
             URLHelper src = new URLHelper(_cstmView.getFilter());
-            List<String> containerFilterNames = src.getParameters(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME);
+            List<String> containerFilterNames = src.getParameterValues(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME);
             if (containerFilterNames.size() > 0)
                 return containerFilterNames.get(containerFilterNames.size() - 1);
             return null;

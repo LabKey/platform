@@ -177,7 +177,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
             for (String key : src.getKeysByPrefix(FILTER_PARAM_PREFIX + "."))
             {
                 String newKey = dataRegionName + key.substring(FILTER_PARAM_PREFIX.length());
-                for (String value : src.getParameters(key))
+                for (String value : src.getParameterValues(key))
                 {
                     url.addParameter(newKey, value);
                 }
@@ -205,7 +205,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
                 for (String key : keys)
                 {
                     String newKey = FILTER_PARAM_PREFIX + key.substring(dataRegionName.length());
-                    for (String value : url.getParameters(key))
+                    for (String value : url.getParameterValues(key))
                     {
                         dest.addParameter(newKey, value);
                     }
