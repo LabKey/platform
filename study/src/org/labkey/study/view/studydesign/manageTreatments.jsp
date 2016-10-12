@@ -104,9 +104,24 @@
 Enter treatment information in the grids below.
 <div style="width: 1400px;">
     <ul>
+        <%
+            if (bean.isSingleTable())
+            {
+        %>
+        <li>
+            Click on time point to define its treatment products by selecting an combination of immunogens, adjuvants, or challenges.
+        </li>
+        <%
+            }
+            else
+            {
+        %>
         <li>
             Each treatment label must be unique and must consist of at least one study products, i.e. immunogens and/or adjuvants and/or challenges.
         </li>
+        <%
+            }
+        %>
         <li>
             Use the manage study products page to change or update the set of available immunogens, adjuvants or challenges.
             <%

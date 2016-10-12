@@ -5,7 +5,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTablePanel', {
 
     bodyStyle : 'background-color: transparent;',
 
-    width: 1000,
+    width: 1400,
 
     disableEdit : true,
 
@@ -322,8 +322,13 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
             name: 'VisitMap',
             width: 135,
             editable : false,
+            disabled: true,
+            cls: 'treatment-input-cell',
             listeners: {
                 render: function(cmp) {
+                    if (cmp.value)
+                        cmp.getEl().dom.title = cmp.value; //tooltip
+
                     cmp.getEl().on('click', function(){
                         var win;
                         var popupConfig = {
@@ -346,6 +351,12 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
                                 text: 'Okay',
                                 cls: 'commentSubmit',
                                 onClick : function () {
+                                    var isFormDirty = win.getForm().getForm().isDirty();
+                                    if (!isFormDirty) {
+                                        win.close();
+                                        return;
+                                    }
+
                                     var treatment = win.getTreatmentFormValues();
                                     if (treatment && treatment.Products.length == 0) {
                                         win.close();

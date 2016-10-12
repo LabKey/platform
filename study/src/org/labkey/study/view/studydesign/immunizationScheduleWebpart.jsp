@@ -34,6 +34,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.module.Module" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     @Override
@@ -45,6 +46,16 @@
 <%
     Container c = getContainer();
     StudyImpl study = StudyManager.getInstance().getStudy(c);
+
+    boolean isCAVD = false;
+    for (Module module : c.getActiveModules())
+    {
+        if ("ViscStudies".equalsIgnoreCase(module.getName()))
+        {
+            isCAVD = true;
+            break;
+        }
+    }
 
     User user = getUser();
     boolean canEdit  = c.hasPermission(user, UpdatePermission.class);
@@ -78,6 +89,7 @@
         if (canEdit)
         {
             ActionURL editUrl = new ActionURL(StudyDesignController.ManageTreatmentsAction.class, getContainer());
+            editUrl.addParameter("singleTable", isCAVD);
             editUrl.addReturnURL(getActionURL());
 %>
             <%=textLink("Manage Treatments", editUrl)%><br/>

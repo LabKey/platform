@@ -82,3 +82,12 @@
     border-color: dimgray;
     box-shadow:  #C0C0C0 0 1px 0 0 inset,#C0C0C0 0 -1px 0 0 inset,#C0C0C0 -1px 0 0 0 inset,#C0C0C0 1px 0 0 0 inset;
 }
+.treatment-dialog .x4-window-header-text-container-default {
+    color: black;
+}
+
+.treatment-input-cell .x4-form-field {
+    cursor: pointer;
+    opacity: 0.8;
+}
+

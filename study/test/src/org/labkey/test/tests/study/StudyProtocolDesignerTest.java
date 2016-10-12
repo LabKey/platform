@@ -164,10 +164,15 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         clickTab("Overview");
         _portalHelper.addWebPart("Immunization Schedule");
 
-        ImmunizationScheduleWebpart immunizationScheduleWebpart = new ImmunizationScheduleWebpart(getDriver());
-        assertFalse("Unexpected rows in the immunization schedule table", immunizationScheduleWebpart.isEmpty());
-        assertEquals("Unexpected number of cohort rows", COHORTS.length, immunizationScheduleWebpart.getCohortRowCount());
-        immunizationScheduleWebpart.manage();
+        //TODO switch to Immunization Schedule webpart after test is updated for single table UI
+        clickAndWait(Locator.linkWithText("Manage Study"));
+        clickAndWait(Locator.linkWithText("MANAGE TREATMENTS"));
+
+
+//        ImmunizationScheduleWebpart immunizationScheduleWebpart = new ImmunizationScheduleWebpart(getDriver());
+//        assertFalse("Unexpected rows in the immunization schedule table", immunizationScheduleWebpart.isEmpty());
+//        assertEquals("Unexpected number of cohort rows", COHORTS.length, immunizationScheduleWebpart.getCohortRowCount());
+//        immunizationScheduleWebpart.manage();
 
         // add the first treatment and define the study products for it
         ManageTreatmentsPage treatmentsPage = new ManageTreatmentsPage(this);
@@ -354,6 +359,9 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
     @LogMethod(quiet = true)
     private void verifyTreatmentSchedule()
     {
+        //TODO switch to Immunization Schedule webpart after test is updated for single table UI
+        clickTab("Overview");
+
         ImmunizationScheduleWebpart immunizationScheduleWebpart = new ImmunizationScheduleWebpart(getDriver());
         assertFalse("Expected rows in the immunization schedule table", immunizationScheduleWebpart.isEmpty());
         assertEquals("Unexpected number of cohort rows", COHORTS.length + NEW_COHORTS.length, immunizationScheduleWebpart.getCohortRowCount());
