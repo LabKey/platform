@@ -96,7 +96,16 @@ public class ModuleReportCache
 
         private @Nullable ReportDescriptor getDescriptor(String path)
         {
-            return _map.get(path);
+            ReportDescriptor descriptor = _map.get(path);
+
+            // Not found.. maybe it's a relative file path
+            if (null == descriptor)
+            {
+                Path p = REPORT_PATH.append(Path.parse(path));
+                descriptor = _map.get(p.toString());
+            }
+
+            return descriptor;
         }
     }
 
@@ -186,11 +195,11 @@ public class ModuleReportCache
                     }
 
                     Path path = dir.getPath();
-                    String subpath = path.subpath(2, path.size()).toString("", "");
+                    String subpath = path.subpath(2, path.size()).toString();
 
                     descriptors.entrySet().forEach(entry ->
                     {
-                        map.put(entry.getKey().toString("", ""), entry.getValue());
+                        map.put(entry.getKey().toString(), entry.getValue());
                         mmap.put(subpath, entry.getValue());
                     });
 
@@ -394,7 +403,7 @@ public class ModuleReportCache
     private static ReportDescriptor createModuleReportDescriptorInstance(Module module, Resource reportFile, Container container, User user)
     {
         Path path = reportFile.getPath();
-        String parent = path.getParent().toString("","");
+        String parent = path.getParent().toString();
         String lower = path.toString().toLowerCase();
 
         // Create R Report Descriptor
