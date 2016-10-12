@@ -292,6 +292,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         EmailTemplateService.get().registerTemplate(SpecimenRequestNotificationEmailTemplate.class);
 
         NotificationService.get().registerNotificationType(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, "Study", "fa-users");
+
+        //register roles during init so they are available to Java sql upgrade scripts
+        RoleManager.registerRole(new SpecimenCoordinatorRole());
+        RoleManager.registerRole(new SpecimenRequesterRole());
+        RoleManager.registerRole(new AssayDesignerRole());
     }
 
     @NotNull
@@ -346,11 +351,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
-        //register roles
-        RoleManager.registerRole(new SpecimenCoordinatorRole());
-        RoleManager.registerRole(new SpecimenRequesterRole());
-        RoleManager.registerRole(new AssayDesignerRole());
-
         PipelineService.get().registerPipelineProvider(new StudyPipeline(this));
         PipelineService.get().registerPipelineProvider(new StudyImportProvider(this));
 
