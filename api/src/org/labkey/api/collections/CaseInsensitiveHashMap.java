@@ -108,6 +108,17 @@ public class CaseInsensitiveHashMap<V> extends CaseInsensitiveMapWrapper<V> impl
         return map;
     }
 
+    public static <V> CaseInsensitiveHashMap<V> of(String k1, V v1, String k2, V v2, String k3, V v3, String k4, V v4, String k5, V v5)
+    {
+        CaseInsensitiveHashMap<V> map = new CaseInsensitiveHashMap<>();
+        map.put(k1, v1);
+        map.put(k2, v2);
+        map.put(k3, v3);
+        map.put(k4, v4);
+        map.put(k5, v5);
+        return map;
+    }
+
     public static class TestCase extends Assert
     {
         @Test
