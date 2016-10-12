@@ -50,12 +50,21 @@ LABKEY.ColumnQueryAnalytics = new function ()
             if (column != null && region.chartWizardURL != undefined)
             {
                 var isNumeric = column.jsonType == 'int' || column.jsonType == 'float',
-                    isLookup = column.hasOwnProperty('lookup') && column.lookup.hasOwnProperty('queryName');
+                    isLookup = column.hasOwnProperty('lookup') && column.lookup.hasOwnProperty('queryName'),
+                    parameters = {};
 
                 if (isNumeric && !isLookup)
-                    window.location = region.chartWizardURL + '&renderType=box_plot&autoColumnYName=' + colFieldKey;
+                {
+                    parameters['renderType'] = 'box_plot';
+                    parameters['autoColumnYName'] = colFieldKey;
+                }
                 else
-                    window.location = region.chartWizardURL + '&renderType=bar_chart&autoColumnName=' + colFieldKey;
+                {
+                    parameters['renderType'] = 'bar_chart';
+                    parameters['autoColumnName'] = colFieldKey;
+                }
+
+                window.location = region.chartWizardURL + '&' + LABKEY.ActionURL.queryString(parameters);
             }
         }
     };
