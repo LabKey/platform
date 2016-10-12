@@ -99,8 +99,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             if (this[autoColPropName])
             {
-                fk = LABKEY.FieldKey.fromParts(this[autoColPropName]);
-                this[autoColPropName] = fk.toString();
+                this[autoColPropName] = LABKEY.FieldKey.fromString(this[autoColPropName]);
             }
         }, this);
 
@@ -823,11 +822,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
             if (measures.x)
             {
-                columns.push(measures.x.name);
+                this.addMeasureForColumnQuery(columns, measures.x);
             }
             else if (this.autoColumnXName)
             {
-                columns.push(LABKEY.FieldKey.fromString(this.autoColumnXName).getName());
+                columns.push(this.autoColumnXName.toString());
             }
             else
             {
@@ -843,18 +842,18 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
 
             if (measures.y)
-                columns.push(measures.y.name);
+                this.addMeasureForColumnQuery(columns, measures.y);
             else if (this.autoColumnYName)
-                columns.push(LABKEY.FieldKey.fromString(this.autoColumnYName).getName());
+                columns.push(this.autoColumnYName.toString());
 
             if (this.autoColumnName)
-                columns.push(LABKEY.FieldKey.fromString(this.autoColumnName).getName());
+                columns.push(this.autoColumnName.toString());
 
             if (measures.color)
-                columns.push(measures.color.name);
+                this.addMeasureForColumnQuery(columns, measures.color);
 
             if (measures.shape)
-                columns.push(measures.shape.name);
+                this.addMeasureForColumnQuery(columns, measures.shape);
         }
         else
         {
@@ -864,6 +863,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         return columns;
+    },
+
+    addMeasureForColumnQuery : function(columns, measure)
+    {
+        columns.push(measure.name);
+
+        // Issue 27814: names with slashes need to be queried by encoded name
+        var encodedName = LABKEY.QueryKey.encodePart(measure.name);
+        if (measure.name != encodedName)
+            columns.push(encodedName);
     },
 
     getChartConfig : function()
@@ -1628,9 +1637,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             if (this.autoColumnYName || (requiresY && this.autoColumnName))
             {
-                // In some cases the column name is escaped, so we need to unescape it when searching.
-                fk = LABKEY.FieldKey.fromString(this.autoColumnYName || this.autoColumnName);
-                measure = measureStore.findRecord('name', fk.name, 0, false, true, true);
+                fk = this.autoColumnYName || this.autoColumnName;
+                measure = this.getMeasureFromFieldKey(fk);
                 if (measure)
                     this.setYAxisMeasure(measure, true);
             }
@@ -1649,8 +1657,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             {
                 if (this.autoColumnXName || (requiresX && this.autoColumnName))
                 {
-                    fk = LABKEY.FieldKey.fromString(this.autoColumnXName || this.autoColumnName);
-                    measure = measureStore.findRecord('name', fk.getName(), 0, false, true, true);
+                    fk = this.autoColumnXName || this.autoColumnName;
+                    measure = this.getMeasureFromFieldKey(fk);
                     if (measure)
                         this.setXAxisMeasure(measure, true);
                 }
@@ -1662,7 +1670,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     return false;
                 }
             }
-            else if (Ext4.isString(this.autoColumnYName))
+            else if (this.autoColumnYName != null)
             {
                 measure = measureStore.findRecord('label', 'Study: Cohort', 0, false, true, true);
                 if (measure)
@@ -1673,6 +1681,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         return true;
+    },
+
+    getMeasureFromFieldKey : function(fk)
+    {
+        var measureStore = this.getChartTypePanel().getStore(),
+            fkName = fk.getParts().length > 1 ? fk.toString() : fk.getName();
+        return measureStore.findRecord('name', fkName, 0, false, true, true);
     },
 
     setYAxisMeasure : function(measure, suppressEvents)
