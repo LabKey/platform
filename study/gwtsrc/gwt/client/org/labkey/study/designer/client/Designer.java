@@ -130,6 +130,9 @@ public class Designer implements EntryPoint
         mainPanel.setStylePrimaryName("study-vaccine-design");
         mainPanel.add(label);
 
+        if (!isReadOnly())
+            mainPanel.add(new DeprecatedMessagePanel(panelName));
+
         if (null == panelName || panelName.toLowerCase().equals("overview"))
         {
             if (null == panelName)
