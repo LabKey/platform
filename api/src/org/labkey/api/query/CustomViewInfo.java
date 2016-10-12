@@ -121,7 +121,7 @@ public interface CustomViewInfo
                     if (parts.length != 2)
                         continue;
 
-                    for (String value : filterSort.getParameters(key))
+                    for (String value : filterSort.getParameterValues(key))
                     {
                         FilterInfo filter = new FilterInfo(parts[0], parts[1], value);
                         fas.filter.add(filter);
@@ -130,7 +130,7 @@ public interface CustomViewInfo
 
                 Sort sort = new Sort(filterSort, FILTER_PARAM_PREFIX);
                 fas.sort = sort.getSortList();
-                fas.containerFilterNames = filterSort.getParameters(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME);
+                fas.containerFilterNames = filterSort.getParameterValues(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME);
 
                 List<Aggregate> aggregates = Aggregate.fromURL(filterSort, FILTER_PARAM_PREFIX);
                 fas.aggregates.addAll(aggregates);

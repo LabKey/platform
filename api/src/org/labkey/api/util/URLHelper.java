@@ -396,7 +396,8 @@ public class URLHelper implements Cloneable, Serializable, Taintable
       * parameter manipulation routines
       */
 
-    // still need other versions of getParameter
+    // NOTE: this follows ServletRequest.getParameter()
+    // DO NOT USE if you expect more than one value to be provided for <i>key</i>
     public String getParameter(String key)
     {
         if (null == _parameters) return null;
@@ -501,7 +502,14 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     }
 
 
+    /* use getParamaterValues() to be consistent with ServletRequest.getParameterValues() */
+    @Deprecated
     public List<String> getParameters(String key)
+    {
+        return getParameterValues(key);
+    }
+
+    public List<String> getParameterValues(String key)
     {
         if (null == _parameters)
             return Collections.emptyList();

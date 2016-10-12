@@ -727,7 +727,7 @@ public class QueryView extends WebPartView<Object>
         {
             String suffix = key.substring(oldPrefix.length());
             String newKey = newPrefix + suffix;
-            for (String value : source.getParameters(key))
+            for (String value : source.getParameterValues(key))
             {
                 boolean isQueryParam = false;
                 try

@@ -509,7 +509,7 @@ public class ViewServlet extends HttpServlet
         @Override
         public String[] getParameterValues(String name)
         {
-            List<String> parameters = _actionURL.getParameters(name);
+            List<String> parameters = _actionURL.getParameterValues(name);
             return parameters.toArray(new String[parameters.size()]);
         }
 

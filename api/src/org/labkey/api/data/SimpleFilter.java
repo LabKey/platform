@@ -1039,7 +1039,7 @@ public class SimpleFilter implements Filter
             .forEach(filterKey ->
             {
                 String colTildeCompare = filterKey.substring(prefixDot.length());
-                for (String param : urlHelp.getParameters(filterKey))
+                for (String param : urlHelp.getParameterValues(filterKey))
                 {
                     String[] compareInfo = colTildeCompare.split(SEPARATOR_CHAR);
                     CompareType type = null;
@@ -1071,7 +1071,7 @@ public class SimpleFilter implements Filter
                 .forEach(filterKey ->
                 {
                     String colTildeCompare = filterKey.substring(prefixTilde.length());
-                    for (String param : urlHelp.getParameters(filterKey))
+                    for (String param : urlHelp.getParameterValues(filterKey))
                     {
                         CompareType type = CompareType.getByURLKey(colTildeCompare);
 
