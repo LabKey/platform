@@ -77,4 +77,5 @@ tika-app-1.5.jar|Tika|1.5|{link:Apache|http://lucene.apache.org/tika/}|{link:Apa
 validation-api-1.0.0.GA.jar|Bean Validation API (JSR 303)|1.0|{link:JCP|http://jcp.org/en/jsr/detail?id=303}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Validation of objects, requirement of GWT
 xbean.jar|XMLBeans|2.5.0|{link:Apache|http://xmlbeans.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Reading/writing XML
 xercesImpl.jar|Xerces|2.6.2|{link:Apache|http://xerces.apache.org/xerces2-j/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|dependents: flow module, batik library
+xstream-1.2.2.jar|XStream|1.2.2|{link:XStream|http://xstream.codehaus.org/}|{link:BSD|http://xstream.codehaus.org/license.html}|jeckels|Pipeline (Mule dependency}
 {table}
