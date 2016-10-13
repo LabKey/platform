@@ -155,6 +155,10 @@ public class BitSetQueryImpl
         initDistinctMeasure();
     }
 
+    public static User getOlapServiceUser()
+    {
+        return olapServiceUser;
+    }
 
     public BitSetQueryImpl setContainerFilter(Collection<String> containerFilter) throws OlapException
     {
@@ -2148,11 +2152,7 @@ public class BitSetQueryImpl
 
         public MemberSet sqlMembersQuery(Level level, String sql) throws SQLException
         {
-            // CONSIDER: This needs to be executed in the context of the actual user for security.
-            // CONSIDER: The result will often be the same across users, however, so we could
-            // CONSIDER: try to share cached results.
-
-            String cacheKey = user.getGUID() + ":" + level.getUniqueName() + ":" + sql;
+            String cacheKey = level.getUniqueName() + ":" + sql;
             MemberSet set = _resultsCache.get(cacheKey);
             if (null != set)
                 return set;
@@ -2161,7 +2161,7 @@ public class BitSetQueryImpl
             CachedCube._Member all = (CachedCube._Member)level.getHierarchy().getLevels().get(0).getMembers().get(0);
 
             MemberSet ret = new MemberSet();
-            try (ResultSet rs = execute(user, sql))
+            try (ResultSet rs = execute(serviceUser, sql))
             {
                 Map<Integer, Integer> columnMap = new HashMap<>();
                 ResultSetMetaData metaData = rs.getMetaData();

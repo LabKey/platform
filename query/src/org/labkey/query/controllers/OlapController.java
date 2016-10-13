@@ -1123,7 +1123,7 @@ public class OlapController extends SpringActionController
         OlapConnection conn = null;
         if (d.usesMondrian())
             conn = getConnection(d);
-        Cube cube = ServerManager.getCachedCube(d, conn, getContainer(), getUser(), form.getSchemaName(), form.getCubeName(), errors);
+        Cube cube = ServerManager.getCachedCube(d, conn, getContainer(), BitSetQueryImpl.getOlapServiceUser(), form.getSchemaName(), form.getCubeName(), errors);
         if (errors.hasErrors())
         {
             return null;
