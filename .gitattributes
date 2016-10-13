@@ -1348,11 +1348,13 @@ pipeline/src/org/labkey/pipeline/xstream/FileXStreamConverter.java -text
 pipeline/src/org/labkey/pipeline/xstream/TaskIdXStreamConverter.java -text
 pipeline/src/org/labkey/pipeline/xstream/URIXStreamConverter.java -text
 pipeline/webapp/WEB-INF/pipeline/pipelineContext.xml -text
+pipeline/webapp/pipeline/ImportAdvancedOptions.css -text
 pipeline/webapp/pipeline/ImportAdvancedOptions.js -text
 pipeline/webapp/pipeline/StatusUpdate.js -text
 pipeline/webapp/pipeline/images/file.gif -text
 pipeline/webapp/pipeline/images/folder.gif -text
 pipeline/webapp/pipeline/images/folder_open.gif -text
+pipeline/webapp/pipeline/importAdvancedOptions.lib.xml -text
 query/build.xml -text
 query/gwtsrc/org/labkey/query/metadata/MetadataEditor.gwt.xml -text
 query/gwtsrc/org/labkey/query/metadata/client/GWTColumnInfo.java -text

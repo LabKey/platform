@@ -30,8 +30,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("Ext4");
-        dependencies.add("pipeline/ImportAdvancedOptions.js");
+        dependencies.add("pipeline/importAdvancedOptions");
     }
 %>
 <%
@@ -59,42 +58,7 @@
     <input type="hidden" name="asStudy" value=<%=bean.isAsStudy()%>>
     <input type="hidden" name="filePath" value=<%=q(bean.getFilePath())%>>
     <div id="startPipelineImportForm"></div>
-    <div id="advancedImportOptionsForm"></div>
 </labkey:form>
-
-<style>
-    .main-form-btn {
-        margin-top: 30px;
-    }
-
-    .main-form-cell {
-        padding-top: 5px;
-    }
-
-    .import-option-panel {
-        padding-top: 10px;
-    }
-
-    .import-option-panel .x4-panel-body {
-        padding: 10px;
-    }
-
-    .import-option-header {
-        padding-bottom: 5px;
-    }
-
-    .import-option-title {
-        font-weight: bold;
-    }
-
-    .import-option-input {
-        padding-top: 5px;
-    }
-
-    .import-option-hide {
-        display: none;
-    }
-</style>
 
 <script type="text/javascript">
 Ext4.onReady(function()
@@ -112,12 +76,12 @@ Ext4.onReady(function()
 
             Ext4.create('LABKEY.import.OptionsPanel', {
                 renderTo: 'startPipelineImportForm',
-                advancedImportOptionId: 'advancedImportOptionsForm',
                 importers: responseText.importers,
                 canCreateSharedDatasets: <%=canCreateSharedDatasets%>,
                 isCreateSharedDatasets: <%=bean.isCreateSharedDatasets()%>,
                 isValidateQueries: <%=bean.isValidateQueries()%>,
-                isAdvancedImportOptions: <%=bean.isAdvancedImportOptions()%>
+                isSpecificImportOptions: <%=bean.isSpecificImportOptions()%>,
+                isApplyToMultipleFolders: <%=bean.isApplyToMultipleFolders()%>
             });
         }
     });

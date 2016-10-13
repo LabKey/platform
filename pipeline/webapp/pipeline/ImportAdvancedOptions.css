@@ -1,0 +1,32 @@
+.import-options-panel .import-options-form-btn {
+    margin-top: 30px;
+}
+
+.import-options-panel .import-options-form-cell {
+    padding-top: 5px;
+}
+
+.import-options-panel .advanced-options-panel {
+    padding-top: 10px;
+    padding-bottom: 20px;
+}
+
+.import-options-panel .advanced-options-panel .x4-panel-body {
+    padding: 10px;
+}
+
+.import-options-panel .advanced-options-header {
+    padding-bottom: 5px;
+}
+
+.import-options-panel .advanced-options-title {
+    font-weight: bold;
+}
+
+.import-options-panel .advanced-options-input {
+    padding-top: 5px;
+}
+
+.import-options-panel .advanced-options-hide {
+    display: none;
+}

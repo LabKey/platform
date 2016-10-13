@@ -1255,13 +1255,13 @@ public class PipelineController extends SpringActionController
                     errors.reject(ERROR_MSG, "Cannot access file " + form.getFilePath());
                 }
 
-                if (form.isAdvancedImportOptions() && (form.getDataTypes() == null || form.getDataTypes().size() == 0))
+                if (form.isSpecificImportOptions() && (form.getDataTypes() == null || form.getDataTypes().size() == 0))
                 {
-                    errors.reject(ERROR_MSG, "At least one folder data type must be selected when using advanced import options.");
+                    errors.reject(ERROR_MSG, "At least one folder data type must be selected when specific import object selection is enabled.");
                 }
-                else if (!form.isAdvancedImportOptions() && form.getDataTypes() != null)
+                else if (!form.isSpecificImportOptions() && form.getDataTypes() != null)
                 {
-                    errors.reject(ERROR_MSG, "Folder data types provided when advanced import options not selected.");
+                    errors.reject(ERROR_MSG, "Folder data types provided when specific import object selection not enabled.");
                 }
             }
         }
@@ -1287,7 +1287,6 @@ public class PipelineController extends SpringActionController
             ImportOptions options = new ImportOptions(getContainer().getId(), getUser().getUserId());
             options.setSkipQueryValidation(!form.isValidateQueries());
             options.setCreateSharedDatasets(form.isCreateSharedDatasets());
-            options.setAdvancedImportOptions(form.isAdvancedImportOptions());
             options.setDataTypes(form.getDataTypes());
 
             if (_archiveFile.exists())
@@ -1386,7 +1385,8 @@ public class PipelineController extends SpringActionController
         private String _filePath;
         private boolean _validateQueries;
         private boolean _createSharedDatasets;
-        private boolean _advancedImportOptions;
+        private boolean _specificImportOptions;
+        private boolean _applyToMultipleFolders;
         private Set<String> _dataTypes;
 
         public String getFilePath()
@@ -1419,14 +1419,24 @@ public class PipelineController extends SpringActionController
             _createSharedDatasets = createSharedDatasets;
         }
 
-        public boolean isAdvancedImportOptions()
+        public boolean isSpecificImportOptions()
         {
-            return _advancedImportOptions;
+            return _specificImportOptions;
         }
 
-        public void setAdvancedImportOptions(boolean advancedImportOptions)
+        public void setSpecificImportOptions(boolean specificImportOptions)
         {
-            _advancedImportOptions = advancedImportOptions;
+            _specificImportOptions = specificImportOptions;
+        }
+
+        public boolean isApplyToMultipleFolders()
+        {
+            return _applyToMultipleFolders;
+        }
+
+        public void setApplyToMultipleFolders(boolean applyToMultipleFolders)
+        {
+            _applyToMultipleFolders = applyToMultipleFolders;
         }
 
         public Set<String> getDataTypes()

@@ -132,7 +132,7 @@
     </tr>
     <tr>
         <td style="padding-left: 15px; padding-top: 5px; padding-bottom: 5px;">
-            <label><input type="checkbox" name="advancedImportOptions" value="true"> Use advanced import options</label>
+            <label><input type="checkbox" name="advancedImportOptions" value="true"> Show advanced import options</label>
         </td>
     </tr>
     <tr>

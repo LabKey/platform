@@ -1,0 +1,9 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="/pipeline/ImportAdvancedOptions.js"/>
+        <script path="/pipeline/ImportAdvancedOptions.css"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext4"/>
+    </dependencies>
+</libraries>
