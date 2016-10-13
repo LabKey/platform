@@ -676,7 +676,7 @@ public class QueryServiceImpl extends QueryService
             {
                 // create the query definition to associate with the module custom view
                 Path path = queryEntry.getKey();
-                if (path.get(0).equals(MODULE_QUERIES_DIRECTORY))
+                if (MODULE_QUERIES_DIRECTORY.equals(path.get(0)))
                 {
                     // after the queries directory, paths should contain schema and query name information
                     if (path.size() >= 3)
@@ -698,7 +698,7 @@ public class QueryServiceImpl extends QueryService
                         }
                     }
                 }
-                else if (path.get(0).equals(AssayService.ASSAY_DIR_NAME))
+                else if (AssayService.ASSAY_DIR_NAME.equals(path.get(0)))
                 {
                     // assays have special support for legacy custom view locations, best to let the schemas
                     // handle those cases.
@@ -764,17 +764,20 @@ public class QueryServiceImpl extends QueryService
         }
     }
 
-    private QueryDefinition getQueryDefinition(User user, Container container, CstmView cstmView)
+    private @Nullable QueryDefinition getQueryDefinition(User user, Container container, CstmView cstmView)
     {
         return getQueryDefinition(user, container, cstmView.getSchema(), cstmView.getQueryName());
     }
 
-    private QueryDefinition getQueryDefinition(User user, Container container, String schemaName, String queryName)
+    private @Nullable QueryDefinition getQueryDefinition(User user, Container container, String schemaName, String queryName)
     {
         QueryDefinition qd = getQueryDef(user, container, schemaName, queryName);
         if (qd == null)
         {
             UserSchema schema = DefaultSchema.get(user, container).getUserSchema(schemaName);
+            if (schema == null)
+                return null;
+
             Set<String> tableNames = new HashSet<>();
             tableNames.addAll(schema.getTableAndQueryNames(true));
 

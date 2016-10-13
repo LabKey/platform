@@ -65,6 +65,8 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -215,6 +217,11 @@ public class QueryModule extends DefaultModule
         AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_DATA_VIEW_PERFORMANCE,
                 "Data Views Performance",
                 "Speeds up display of Custom Views in the Data Views Webpart", false);
+
+        // temporarily enable the experimental feature for testing
+        WriteableAppProps props = AppProps.getWriteableInstance();
+        props.setExperimentalFeatureEnabled(QueryServiceImpl.EXPERIMENTAL_DATA_VIEW_PERFORMANCE, true);
+        props.save();
     }
 
 
