@@ -2731,6 +2731,7 @@ study/webapp/study/vaccineDesign/Models.js -text
 study/webapp/study/vaccineDesign/StudyProducts.js -text
 study/webapp/study/vaccineDesign/TreatmentDialog.js -text
 study/webapp/study/vaccineDesign/TreatmentSchedule.js -text
+study/webapp/study/vaccineDesign/TreatmentScheduleBase.js -text
 study/webapp/study/vaccineDesign/TreatmentScheduleSingleTablePanel.js -text
 study/webapp/study/vaccineDesign/Utils.js -text
 study/webapp/study/vaccineDesign/VaccineDesign.css -text

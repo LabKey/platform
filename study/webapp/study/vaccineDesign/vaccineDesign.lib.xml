@@ -5,6 +5,7 @@
         <script path="/study/vaccineDesign/BaseDataView.js"/>
         <script path="/study/vaccineDesign/BaseDataViewAddVisit.js"/>
         <script path="/study/vaccineDesign/StudyProducts.js"/>
+        <script path="/study/vaccineDesign/TreatmentScheduleBase.js"/>
         <script path="/study/vaccineDesign/TreatmentDialog.js"/>
         <script path="/study/vaccineDesign/TreatmentSchedule.js"/>
         <script path="/study/vaccineDesign/TreatmentScheduleSingleTablePanel.js"/>
