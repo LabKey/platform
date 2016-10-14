@@ -123,6 +123,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
                                         win.close();
                                         cmp.treatmentId = null;
                                         cmp.setValue(null);
+                                        cmp.getEl().dom.title = '';
                                         return;
                                     }
                                     var treatments = [treatment];
@@ -140,6 +141,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
                                                 win.close();
                                                 cmp.treatmentId = resp.treatmentId;
                                                 cmp.setValue(treatments[0].Label);
+                                                cmp.getEl().dom.title = treatments[0].Label;
                                             }
                                             else
                                                 this.onFailure();
