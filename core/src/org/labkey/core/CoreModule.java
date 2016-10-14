@@ -842,6 +842,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 DbSchema.SchemaCasingTestCase.class,
                 TableViewFormTestCase.class,
                 ActionURL.TestCase.class,
+                URLHelper.TestCase.class,
                 SecurityManager.TestCase.class,
                 PropertyManager.TestCase.class,
                 ContainerManager.TestCase.class,

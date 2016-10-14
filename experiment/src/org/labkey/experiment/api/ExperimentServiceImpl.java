@@ -148,6 +148,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
@@ -1909,7 +1910,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         String seedToken = ret.addCommonTableExpression(JdbcUtil.format(seedSqlfSelect), "org_lk_exp_SEED", seedSqlfSelect);
 
         String edgesSelect = map.get("$EDGES$");
-        String edgesToken  = ret.addCommonTableExpression(edgesSelect, "org_lk_exp_EDGES", new SQLFragment(edgesSelect));
+        SQLFragment edgesMaterialized = materializeEdgesCTE(edgesSelect);
+        String edgesToken  = ret.addCommonTableExpression(ExperimentServiceImpl.class.getName()+ "$CTE_EDGES", "org_lk_exp_EDGES", edgesMaterialized);
 
         boolean recursive = getExpSchema().getSqlDialect().isPostgreSQL();
         String parentsSelect = map.get("$PARENTS$");
@@ -1923,6 +1925,91 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         String childrenToken = ret.addCommonTableExpression(childrenSelect, "org_lk_exp_CHILDREN", new SQLFragment(childrenSelect), recursive);
 
         return new Pair<>(parentsToken,childrenToken);
+    }
+
+
+    /* This is the class for the objects that keeps the temp table from being garbage collected by TempTableTracker */
+    static class MaterializedCTE
+    {
+        final long created;
+        final String uptodateKey;
+        final String fromSql;        MaterializedCTE(long created, String key, String sql)
+        {
+            this.created = created;
+            this.uptodateKey = key;
+            this.fromSql = sql;
+        }
+    }
+
+    final Object materializeEdgesLock = new Object();
+    final AtomicReference<MaterializedCTE> edgesTableCTE = new AtomicReference<>();
+
+    public void uncacheEdges()
+    {
+        edgesTableCTE.set(null);
+    }
+
+
+    /* TODO AND CONSIDER:
+     *
+     * remove the DataInput and MaterialInput tables and replace with a table that looks like this "edges" table
+     */
+    SQLFragment materializeEdgesCTE(String selectEdges)
+    {
+        final DbSchema exp = getExpSchema();
+        final long now = System.currentTimeMillis();
+
+        // this is the backup plan, in case cache invalidation doesn't catch everything
+        String materializeKeySql = "SELECT\n" + exp.getSqlDialect().concatenate(
+                "(select cast(count(*) as varchar) from exp.materialinput)",
+                "(select cast(count(*) as varchar) from exp.datainput)",
+                "(select cast(max(rowid) as varchar) from exp.protocolapplication)") + " AS key";
+        final String materializeKey = new SqlSelector(exp, materializeKeySql).getObject(String.class);
+
+        MaterializedCTE cte = edgesTableCTE.get();
+        if (cte != null && cte.created+CacheManager.MINUTE<now)
+        {
+            edgesTableCTE.set(null);
+            cte = null;
+        }
+        if (cte != null && !cte.uptodateKey.equals(materializeKey))
+        {
+            if (!exp.getScope().isTransactionActive())
+                edgesTableCTE.set(null);
+            cte = null;
+        }
+
+        if (null == cte)
+        {
+            // we don't want two threads to concurrently create a new temp table
+            synchronized (materializeEdgesLock)
+            {
+                // check again, since we may have blocked
+                if (!exp.getScope().isTransactionActive())
+                    cte = edgesTableCTE.get();
+                if (null == cte)
+                {
+                    DbSchema temp = DbSchema.getTemp();
+                    String name = "edges_" + GUID.makeHash();
+                    cte = new MaterializedCTE(now, materializeKey, "SELECT * FROM \"" + temp.getName() + "\".\"" + name + "\"");
+                    TempTableTracker.track(name, cte);
+
+                    String selectInto = "SELECT * INTO \"" + temp.getName() + "\".\"" + name + "\"\nFROM (\n" + selectEdges + "\n) _union_";
+                    new SqlExecutor(exp).execute(selectInto);
+                    new SqlExecutor(exp).execute("CREATE INDEX child_" + name + " ON \"" + temp.getName() + "\".\"" + name + "\"  (child_lsid)");
+                    new SqlExecutor(exp).execute("CREATE INDEX parent_" + name + " ON \"" + temp.getName() + "\".\"" + name + "\"  (parent_lsid)");
+
+                    if (!exp.getScope().isTransactionActive())
+                    {
+                        edgesTableCTE.set(cte);
+                    }
+                }
+            }
+        }
+
+        SQLFragment sql = new SQLFragment(cte.fromSql);
+        sql.addTempToken(cte);
+        return sql;
     }
 
 
@@ -4300,6 +4387,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             _protAppParams.clear();
             _materialInputParams.clear();
             _protAppRecords.clear();
+
+            uncacheEdges();
         }
 
         public boolean isEmpty()
@@ -4992,6 +5081,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             Table.insert(user, table, input);
         }
+
+        uncacheEdges();
     }
 
     @NotNull

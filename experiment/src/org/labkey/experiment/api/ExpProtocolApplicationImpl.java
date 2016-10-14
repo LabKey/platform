@@ -257,8 +257,11 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     {
         if (getRowId() != 0)
         {
-            Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
-            Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
+            long countInputs = 0;
+            countInputs += Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
+            countInputs += Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
+            if (countInputs > 0)
+                ExperimentServiceImpl.get().uncacheEdges();
             Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), new SimpleFilter(FieldKey.fromParts("ProtocolApplicationId"), getRowId()));
 
             SQLFragment commonSQL = new SQLFragment(" SET SourceApplicationId = NULL, RunId = NULL WHERE SourceApplicationId = ?", getRowId());
@@ -307,6 +310,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         obj.setRole(roleName);
 
         Table.insert(user, ExperimentServiceImpl.get().getTinfoDataInput(), obj);
+        ExperimentServiceImpl.get().uncacheEdges();
     }
 
     public void addMaterialInput(User user, ExpMaterial material, @Nullable String roleName)
@@ -316,6 +320,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         obj.setTargetApplicationId(getRowId());
         obj.setRole(roleName);
         Table.insert(user, ExperimentServiceImpl.get().getTinfoMaterialInput(), obj);
+        ExperimentServiceImpl.get().uncacheEdges();
     }
 
     public void removeDataInput(User user, ExpData data)
@@ -324,6 +329,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         filter.addCondition(FieldKey.fromParts("TargetApplicationId"), getRowId());
         filter.addCondition(FieldKey.fromParts("DataId"), data.getRowId());
         Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), filter);
+        ExperimentServiceImpl.get().uncacheEdges();
     }
 
     public void removeMaterialInput(User user, ExpMaterial material)
@@ -332,6 +338,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         filter.addCondition(FieldKey.fromParts("TargetApplicationId"), getRowId());
         filter.addCondition(FieldKey.fromParts("MaterialId"), material.getRowId());
         Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), filter);
+        ExperimentServiceImpl.get().uncacheEdges();
     }
 
     public static List<ExpProtocolApplicationImpl> fromProtocolApplications(List<ProtocolApplication> apps)
