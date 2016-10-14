@@ -556,7 +556,7 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
-    void addTempToken(Object tempToken)
+    public void addTempToken(Object tempToken)
     {
         tempTokens.add(tempToken);
     }
