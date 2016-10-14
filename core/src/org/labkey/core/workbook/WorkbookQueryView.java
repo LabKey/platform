@@ -71,4 +71,12 @@ public class WorkbookQueryView extends QueryView
         }
         return view;
     }
+
+    @Override
+    public ActionButton createInsertButton()
+    {
+        final ActionButton insertButton = super.createInsertButton();
+        insertButton.setCaption("Create Workbook");
+        return insertButton;
+    }
 }
