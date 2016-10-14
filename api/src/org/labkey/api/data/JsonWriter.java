@@ -251,6 +251,7 @@ public class JsonWriter
 
                 props.put("crosstabColumnDimension", cinfo.getCrosstabColumnDimension());
             }
+            props.put("phi", cinfo.getPHI());
         }
         else
         {

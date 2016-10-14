@@ -150,6 +150,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
     private PHI _phi = PHI.NotPHI;
+    private boolean shouldLog = true;
     private boolean _lockName = false;
 
     /**
@@ -753,6 +754,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         checkLocked();
         _phi = phi;
+    }
+
+    public boolean isShouldLog()
+    {
+        return shouldLog;
     }
 
     public String getLegalName()
