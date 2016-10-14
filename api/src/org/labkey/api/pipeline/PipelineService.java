@@ -41,6 +41,8 @@ abstract public class PipelineService
 {
     public static final String MODULE_NAME = "Pipeline";
 
+    public static final String UNZIP_DIR = "unzip";
+
     static PipelineService instance;
 
     public static PipelineService get()

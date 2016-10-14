@@ -293,7 +293,7 @@ public abstract class ContainerFilter
                 return CURRENT;
             }
         },
-        CurrentWithUser("Current folder with permisions applied to user")
+        CurrentWithUser("Current folder with permissions applied to user")
         {
             public ContainerFilter create(User user)
             {
