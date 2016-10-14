@@ -18,14 +18,13 @@
 
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.module.Module" %>
+<%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -41,18 +40,6 @@
 
     Container c = getContainer();
     boolean isDataspaceStudy = c.getProject() != null && c.getProject().isDataspace() && !c.isDataspace();
-
-
-    boolean isCAVD = false;
-    for (Module module : c.getActiveModules())
-    {
-        if ("ViscStudies".equalsIgnoreCase(module.getName()))
-        {
-            isCAVD = true;
-            break;
-        }
-    }
-
 
     String returnUrl = bean.getReturnUrl() != null ? bean.getReturnUrl() : PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c).toString();
 %>
@@ -138,8 +125,7 @@ Enter vaccine design information in the grids below.
         <li>
             Use the manage treatments page to describe the schedule of treatments and combinations of immunogens and adjuvants administered at each timepoint.
             <%
-                ActionURL manageTreatmentsURL = new ActionURL(StudyDesignController.ManageTreatmentsAction.class, getContainer());
-                manageTreatmentsURL.addParameter("singleTable", isCAVD);
+                ActionURL manageTreatmentsURL = PageFlowUtil.urlProvider(StudyUrls.class).getManageTreatmentsURL(c, c.hasActiveModuleByName("viscstudies"));
                 manageTreatmentsURL.addReturnURL(getActionURL());
             %>
             <%=textLink("Manage Treatments", manageTreatmentsURL)%>

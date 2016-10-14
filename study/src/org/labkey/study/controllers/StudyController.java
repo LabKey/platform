@@ -294,6 +294,14 @@ public class StudyController extends BaseStudyController
             url.addParameter("useAlternateLookupFields", useAlternateLookupFields);
             return url;
         }
+
+        @Override
+        public ActionURL getManageTreatmentsURL(Container container, boolean useSingleTableEditor)
+        {
+            ActionURL url = new ActionURL(StudyDesignController.ManageTreatmentsAction.class, container);
+            url.addParameter("singleTable", useSingleTableEditor);
+            return url;
+        }
     }
 
     public StudyController()

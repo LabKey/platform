@@ -272,7 +272,7 @@
         <th align="left">Treatments</th>
         <td>This study defines <%= getStudyTreatments(user).size() %> treatments</td>
         <%
-            ActionURL manageTreatmentsURL = new ActionURL(StudyDesignController.ManageTreatmentsAction.class, getContainer());
+            ActionURL manageTreatmentsURL = PageFlowUtil.urlProvider(StudyUrls.class).getManageTreatmentsURL(getContainer(), false);
             manageTreatmentsURL.addReturnURL(getActionURL());
         %>
         <td><%= textLink("Manage Treatments", manageTreatmentsURL) %></td>

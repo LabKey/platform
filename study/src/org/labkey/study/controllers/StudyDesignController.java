@@ -157,6 +157,10 @@ public class StudyDesignController extends BaseStudyController
     {
         public ModelAndView getView(ManageTreatmentsBean form, BindException errors) throws Exception
         {
+            // if the singleTable param is not explicitly set, do a container check
+            if (getViewContext().getRequest().getParameter("singleTable") == null)
+                form.setSingleTable(getContainer().hasActiveModuleByName("viscstudies"));
+
             return new JspView<>("/org/labkey/study/view/studydesign/manageTreatments.jsp", form);
         }
 
