@@ -48,7 +48,6 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ContainerContext;
@@ -116,6 +115,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -658,12 +658,11 @@ public class QueryServiceImpl extends QueryService
 
         // module query views have lower precedence, so add them first
         Collection<Module> modules = container.getActiveModules();
-        Collection<Module> currentModules = new HashSet<>(modules);
-        currentModules = ModuleLoader.getInstance().orderModules(currentModules);
+        Set<String> moduleViewSchemas = new LinkedHashSet<>();
 
         // find out if there are any module custom views to deal with
         Map<Module, Map<Path, Collection<ModuleCustomViewDef>>> moduleMap = new LinkedHashMap<>();
-        for (Module module : currentModules)
+        for (Module module : ModuleLoader.getInstance().orderModules(modules))
         {
             Map<Path, Collection<ModuleCustomViewDef>> map = MODULE_CUSTOM_VIEW_CACHE.getResourceMap(module);
             if (!map.isEmpty())
@@ -674,9 +673,12 @@ public class QueryServiceImpl extends QueryService
         {
             for (Map.Entry<Path, Collection<ModuleCustomViewDef>> queryEntry : moduleEntry.getValue().entrySet())
             {
-                // create the query definition to associate with the module custom view
                 Path path = queryEntry.getKey();
-                if (MODULE_QUERIES_DIRECTORY.equals(path.get(0)))
+                if (AssayService.ASSAY_DIR_NAME.equals(path.get(0)) || AssayService.ASSAY_DIR_NAME.equals(path.get(1)))
+                {
+                    moduleViewSchemas.add(AssayService.ASSAY_DIR_NAME);
+                }
+                else if (MODULE_QUERIES_DIRECTORY.equals(path.get(0)))
                 {
                     // after the queries directory, paths should contain schema and query name information
                     if (path.size() >= 3)
@@ -686,43 +688,35 @@ public class QueryServiceImpl extends QueryService
                             parts[i] = path.get(i+1);
 
                         SchemaKey schemaKey = SchemaKey.fromParts(parts);
-                        String query = path.get(path.size()-1);
-                        QueryDefinition qd = getQueryDefinition(user, container, schemaKey.toString(), query);
-                        if (qd != null)
-                        {
-                            for (ModuleCustomViewDef def : queryEntry.getValue())
-                            {
-                                if (!views.containsKey(def.getName()))
-                                    views.put(def.getName(), new ModuleCustomView(qd, def));
-                            }
-                        }
+                        moduleViewSchemas.add(schemaKey.toString());
                     }
                 }
-                else if (AssayService.ASSAY_DIR_NAME.equals(path.get(0)))
+            }
+        }
+
+        for (String schemaName : moduleViewSchemas)
+        {
+            UserSchema defaultSchema = DefaultSchema.get(user, container).getUserSchema(schemaName);
+            if (defaultSchema != null)
+            {
+                // if there are any nested schemas, pull those in as well
+                Set<UserSchema> allSchemas = new HashSet<>();
+                allSchemas.add(defaultSchema);
+                getNestedSchemas(defaultSchema, allSchemas);
+
+                for (UserSchema schema : allSchemas)
                 {
-                    // assays have special support for legacy custom view locations, best to let the schemas
-                    // handle those cases.
-                    UserSchema defaultSchema = DefaultSchema.get(user, container).getUserSchema(AssaySchema.NAME);
-
-                    // get all the provider and protocol sub schemas
-                    Set<UserSchema> assaySchemas = new HashSet<>();
-                    getAssaySchemas(defaultSchema, assaySchemas);
-
-                    for (UserSchema schema : assaySchemas)
+                    Map<String, QueryDefinition> queryDefMap = schema.getQueryDefs();
+                    for (String name : schema.getTableAndQueryNames(false))
                     {
-                        Map<String, QueryDefinition> queryDefMap = schema.getQueryDefs();
-                        for (String name : schema.getTableAndQueryNames(false))
-                        {
-                            QueryDefinition qd = queryDefMap.get(name);
-                            if (qd == null)
-                                qd = schema.getQueryDefForTable(name);
+                        QueryDefinition qd = queryDefMap.get(name);
+                        if (qd == null)
+                            qd = schema.getQueryDefForTable(name);
 
-                            for (CustomView view : qd.getSchema().getModuleCustomViews(container, qd, alwaysUseTitlesForLoadingCustomViews))
-                            {
-                                if (!views.containsKey(view.getName()))
-                                    views.put(view.getName(), view);
-                            }
-                        }
+                        qd.getSchema().getModuleCustomViews(container, qd, alwaysUseTitlesForLoadingCustomViews)
+                                .stream()
+                                .filter(view -> !views.containsKey(view.getName()))
+                                .forEach(view -> views.put(view.getName(), view));
                     }
                 }
             }
@@ -748,7 +742,7 @@ public class QueryServiceImpl extends QueryService
         return views.values();
     }
 
-    private void getAssaySchemas(UserSchema schema, Set<UserSchema> schemas)
+    private void getNestedSchemas(UserSchema schema, Set<UserSchema> schemas)
     {
         for (QuerySchema querySchema : schema.getSchemas(false))
         {
@@ -758,7 +752,7 @@ public class QueryServiceImpl extends QueryService
                 if (userSchema != null)
                 {
                     schemas.add(userSchema);
-                    getAssaySchemas(userSchema, schemas);
+                    getNestedSchemas(userSchema, schemas);
                 }
             }
         }
@@ -769,11 +763,15 @@ public class QueryServiceImpl extends QueryService
         return getQueryDefinition(user, container, cstmView.getSchema(), cstmView.getQueryName());
     }
 
+    /**
+     * Returns either database (or session) query definitions as well as table-based query definitions
+     */
     private @Nullable QueryDefinition getQueryDefinition(User user, Container container, String schemaName, String queryName)
     {
         QueryDefinition qd = getQueryDef(user, container, schemaName, queryName);
         if (qd == null)
         {
+            // look for a table based query definition
             UserSchema schema = DefaultSchema.get(user, container).getUserSchema(schemaName);
             if (schema == null)
                 return null;
