@@ -38,6 +38,7 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.files.FileContentService;
@@ -57,6 +58,7 @@ import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.CSRF;
@@ -1221,14 +1223,14 @@ public class PipelineController extends SpringActionController
     public class StartFolderImportAction extends FormViewAction<StartFolderImportForm>
     {
         private String _navTrail = "Import Folder";
-        private PipeRoot _pipelineRoot;
         private File _archiveFile;
+        private List<Container> _importContainers = new ArrayList<>();
 
         @Override
         public void validateCommand(StartFolderImportForm form, Errors errors)
         {
-            _pipelineRoot = PipelineService.get().findPipelineRoot(getContainer());
-            if (!PipelineService.get().hasValidPipelineRoot(getContainer()) || null == _pipelineRoot)
+            PipeRoot currentPipelineRoot = PipelineService.get().findPipelineRoot(getContainer());
+            if (!PipelineService.get().hasValidPipelineRoot(getContainer()) || null == currentPipelineRoot)
             {
                 errors.reject(ERROR_MSG, "Pipeline root not found.");
             }
@@ -1241,27 +1243,68 @@ public class PipelineController extends SpringActionController
                 _archiveFile = new File(form.getFilePath());
                 if (!_archiveFile.isAbsolute())
                 {
-                    // Resolve the relative path to an absolute path under the root
-                    _archiveFile = _pipelineRoot.resolvePath(form.getFilePath());
+                    // Resolve the relative path to an absolute path under the current container's root
+                    _archiveFile = currentPipelineRoot.resolvePath(form.getFilePath());
                 }
 
-                // Be sure that the referenced file is under the root
+                // Be sure that the referenced file exists and is under the pipeline root
                 if (_archiveFile == null || !_archiveFile.exists())
                 {
                     errors.reject(ERROR_MSG, "Could not find file at path: " + form.getFilePath());
                 }
-                else if (!_pipelineRoot.isUnderRoot(_archiveFile))
+                else if (!currentPipelineRoot.isUnderRoot(_archiveFile))
                 {
                     errors.reject(ERROR_MSG, "Cannot access file " + form.getFilePath());
                 }
 
+                // Be sure that the set of folder to apply the import to match the setting to enable/disable them
+                if (form.isApplyToMultipleFolders() && (form.getFolderRowIds() == null || form.getFolderRowIds().size() == 0))
+                {
+                    errors.reject(ERROR_MSG, "At least one folder must be selected when 'apply to multiple folders' is enabled.");
+                }
+                else if (!form.isApplyToMultipleFolders() && form.getFolderRowIds() != null)
+                {
+                    errors.reject(ERROR_MSG, "Folder RowIds provided when 'apply to multiple folders' not enabled.");
+                }
+
+                // Be sure that the user has admin permissions to all selected folders and that all selected folders exist
+                if (form.getFolderRowIds() != null)
+                {
+                    for (Integer rowId : form.getFolderRowIds())
+                    {
+                        Container selectedContainer = ContainerManager.getForRowId(rowId);
+                        if (selectedContainer == null)
+                            errors.reject(ERROR_MSG, "Folder does not exist for selected RowId: " + rowId + ".");
+                        else if (!selectedContainer.hasPermission(getUser(), AdminPermission.class))
+                            errors.reject(ERROR_MSG, "You do not have the required permissions for the selected folder: " + selectedContainer.getTitle() + ".");
+                        else
+                            _importContainers.add(selectedContainer);
+                    }
+                }
+                else
+                {
+                    // default to importing the archive to the current container
+                    _importContainers.add(getContainer());
+                }
+
+                // Be sure that each import container has a valid pipeline root
+                for (Container container : _importContainers)
+                {
+                    PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(container);
+                    if (!PipelineService.get().hasValidPipelineRoot(container) || null == pipelineRoot)
+                    {
+                        errors.reject(ERROR_MSG, "Pipeline root not found for selected container: " + container.getTitle() + ".");
+                    }
+                }
+
+                // Be sure that the provided data types to import match the setting to enable/disable them
                 if (form.isSpecificImportOptions() && (form.getDataTypes() == null || form.getDataTypes().size() == 0))
                 {
-                    errors.reject(ERROR_MSG, "At least one folder data type must be selected when specific import object selection is enabled.");
+                    errors.reject(ERROR_MSG, "At least one folder data type must be selected when 'select specific objects to import' is enabled.");
                 }
                 else if (!form.isSpecificImportOptions() && form.getDataTypes() != null)
                 {
-                    errors.reject(ERROR_MSG, "Folder data types provided when specific import object selection not enabled.");
+                    errors.reject(ERROR_MSG, "Folder data types provided when 'select specific objects to import' not enabled.");
                 }
             }
         }
@@ -1279,35 +1322,67 @@ public class PipelineController extends SpringActionController
         @Override
         public boolean handlePost(StartFolderImportForm form, BindException errors) throws Exception
         {
-            Container c = getContainer();
             User user = getUser();
-            ActionURL url = getViewContext().getActionURL();
-            StudyService.Service svc = StudyService.get();
-
-            ImportOptions options = new ImportOptions(getContainer().getId(), getUser().getUserId());
-            options.setSkipQueryValidation(!form.isValidateQueries());
-            options.setCreateSharedDatasets(form.isCreateSharedDatasets());
-            options.setDataTypes(form.getDataTypes());
+            boolean success = true;
+            Map<Container, File> containerArchiveXmlMap = new HashMap<>();
 
             if (_archiveFile.exists())
             {
-                if (form.isAsStudy())
+                // iterate over the selected containers, or just the current container in the default case, and unzip the archive if necessary
+                for (Container container : _importContainers)
                 {
-                    File studyXml = getArchiveXmlFile(_archiveFile, "study.xml", errors);
-                    if (!errors.hasErrors() && svc != null)
-                    {
-                        svc.runStudyImportJob(c, user, url, studyXml, _archiveFile.getName(), errors, _pipelineRoot, options);
-                        return true;
-                    }
+                    File archiveXml = getArchiveXmlFile(container, _archiveFile, form.isAsStudy() ? "study.xml" : "folder.xml", errors);
+                    if (errors.hasErrors())
+                        return false;
+
+                    containerArchiveXmlMap.put(container, archiveXml);
                 }
-                else
+
+                // create a new pipeline import job for applying the imported archive to each selected container
+                for (Container container : _importContainers)
                 {
-                    File folderXml = getArchiveXmlFile(_archiveFile, "folder.xml", errors);
-                    if (!errors.hasErrors())
-                    {
-                        PipelineService.get().queueJob(new FolderImportJob(c, user, url, folderXml, _archiveFile.getName(), _pipelineRoot, options));
-                        return true;
-                    }
+                    ImportOptions options = new ImportOptions(container.getId(), getUser().getUserId());
+                    options.setSkipQueryValidation(!form.isValidateQueries());
+                    options.setCreateSharedDatasets(form.isCreateSharedDatasets());
+                    options.setDataTypes(form.getDataTypes());
+
+                    success = success && createImportPipelineJob(container, user, options, containerArchiveXmlMap.get(container), form.isAsStudy(), errors);
+                }
+            }
+
+            // the original archive file would have been placed in the current container unzip dir, clean that up
+            // if the current container was not one of the target containers
+            if (!containerArchiveXmlMap.containsKey(getContainer()))
+            {
+                PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(getContainer());
+                if (pipelineRoot != null)
+                    pipelineRoot.getImportDirectoryPathAndEnsureDeleted();
+            }
+
+            return success;
+        }
+
+        private boolean createImportPipelineJob(Container container, User user, ImportOptions options, File archiveXml, boolean asStudy, BindException errors)
+        {
+            PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(container);
+            ActionURL url = getViewContext().getActionURL();
+
+            if (asStudy)
+            {
+                StudyService.Service svc = StudyService.get();
+                if (svc != null)
+                    return svc.runStudyImportJob(container, user, url, archiveXml, _archiveFile.getName(), errors, pipelineRoot, options);
+            }
+            else
+            {
+                try
+                {
+                    PipelineService.get().queueJob(new FolderImportJob(container, user, url, archiveXml, _archiveFile.getName(), pipelineRoot, options));
+                    return true;
+                }
+                catch (PipelineValidationException e)
+                {
+                    return false;
                 }
             }
 
@@ -1317,7 +1392,19 @@ public class PipelineController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(StartFolderImportForm form)
         {
-            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
+            // default case, go to the pipeline jobs page for the current container
+            // otherwise go to the pipeline jobs page for the project and show all subfolders
+            Container c = getContainer();
+            if (_importContainers.size() == 1 && _importContainers.get(0).equals(c))
+            {
+                return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
+            }
+            else
+            {
+                ActionURL url = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c.getProject());
+                url.addParameter("StatusFiles.containerFilterName", ContainerFilter.Type.CurrentAndSubfolders.name());
+                return url;
+            }
         }
 
         @Override
@@ -1326,15 +1413,20 @@ public class PipelineController extends SpringActionController
             return root.addChild(_navTrail);
         }
 
-        private File getArchiveXmlFile(File archiveFile, String xmlFileName, BindException errors) throws InvalidFileException
+        private File getArchiveXmlFile(Container container, File archiveFile, String xmlFileName, BindException errors) throws InvalidFileException
         {
+            PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(container);
             File xmlFile = archiveFile;
 
-            if (archiveFile.getName().endsWith(".zip"))
+            if (pipelineRoot != null && archiveFile.getName().endsWith(".zip"))
             {
                 try
                 {
-                    File importDir = _pipelineRoot.getImportDirectoryPathAndEnsureDeleted();
+                    // check if the archive file already exists in the unzip dir of this pipeline root
+                    File importDir = pipelineRoot.resolvePath(PipelineService.UNZIP_DIR);
+                    if (importDir != null && !archiveFile.getParentFile().getAbsolutePath().equals(importDir.getAbsolutePath()))
+                        importDir = pipelineRoot.getImportDirectoryPathAndEnsureDeleted();
+
                     ZipUtil.unzipToDirectory(archiveFile, importDir);
 
                     // when importing a folder archive for a study, the study.xml file may not be at the root
@@ -1388,6 +1480,7 @@ public class PipelineController extends SpringActionController
         private boolean _specificImportOptions;
         private boolean _applyToMultipleFolders;
         private Set<String> _dataTypes;
+        private List<Integer> _folderRowIds;
 
         public String getFilePath()
         {
@@ -1447,6 +1540,16 @@ public class PipelineController extends SpringActionController
         public void setDataTypes(Set<String> dataTypes)
         {
             _dataTypes = dataTypes;
+        }
+
+        public List<Integer> getFolderRowIds()
+        {
+            return _folderRowIds;
+        }
+
+        public void setFolderRowIds(List<Integer> folderRowIds)
+        {
+            _folderRowIds = folderRowIds;
         }
 
         public boolean isAsStudy()
@@ -1519,17 +1622,13 @@ public class PipelineController extends SpringActionController
             return new ActionURL(ActionsAction.class, container);
         }
 
-        public ActionURL urlStartFolderImport(Container container, @NotNull File folderFile, @Nullable ImportOptions options)
+        public ActionURL urlStartFolderImport(Container container, @NotNull File archiveFile, boolean asStudy, @Nullable ImportOptions options)
         {
             ActionURL url = new ActionURL(StartFolderImportAction.class, container);
-            return addStartImportParameters(url, folderFile, options);
-        }
+            if (asStudy)
+                url.addParameter("asStudy", true);
 
-        public ActionURL urlStartStudyImport(Container container, @NotNull File studyFile, @Nullable ImportOptions options)
-        {
-            ActionURL url = new ActionURL(StartFolderImportAction.class, container);
-            url.addParameter("asStudy", true);
-            return addStartImportParameters(url, studyFile, options);
+            return addStartImportParameters(url, archiveFile, options);
         }
 
         private ActionURL addStartImportParameters(ActionURL url, @NotNull File file, @Nullable ImportOptions options)

@@ -212,26 +212,24 @@ public class PipeRootImpl implements PipeRoot
         return file;
     }
 
-    private final String IMPORT_DIRECTORY_NAME = "unzip";
     public File getImportDirectoryPathAndEnsureDeleted() throws DirectoryNotDeletedException, FileNotFoundException
     {
-        File importDir = resolvePath(IMPORT_DIRECTORY_NAME);
+        File importDir = resolvePath(PipelineService.UNZIP_DIR);
         if (null == importDir)
             throw new FileNotFoundException();
 
         if (importDir.exists() && !FileUtil.deleteDir(importDir))
-        {
-            throw new DirectoryNotDeletedException("Import failed: Could not delete the directory \"" + IMPORT_DIRECTORY_NAME + "\"");
-        }
+            throw new DirectoryNotDeletedException("Import failed: Could not delete the directory \"" + PipelineService.UNZIP_DIR + "\"");
+
         return importDir;
     }
 
     public void deleteImportDirectory() throws DirectoryNotDeletedException
     {
-        File importDir = resolvePath(IMPORT_DIRECTORY_NAME);
+        File importDir = resolvePath(PipelineService.UNZIP_DIR);
         if (null != importDir && importDir.exists() && !FileUtil.deleteDir(importDir))
         {
-            throw new DirectoryNotDeletedException("Could not delete the directory \"" + IMPORT_DIRECTORY_NAME + "\"");
+            throw new DirectoryNotDeletedException("Could not delete the directory \"" + PipelineService.UNZIP_DIR + "\"");
         }
     }
 

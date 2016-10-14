@@ -13,6 +13,8 @@ Ext4.define('LABKEY.import.OptionsPanel', {
     bodyStyle: 'background-color: transparent;',
     baseHeight: null,
 
+    formId: null,
+    isProjectAdmin: false,
     canCreateSharedDatasets: false,
     isCreateSharedDatasets: false,
     isValidateQueries: true,
@@ -38,6 +40,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                 itemSelector: 'input',
                 tpl: new Ext4.XTemplate(
                     '<tpl for=".">',
+                      '<tpl if="hidden !== true">',
                         '<table cellpadding=0>',
                         ' <tpl if="header != null">',
                         '  <tr><td class="labkey-announcement-title" align=left><span>{header}</span></td></tr>',
@@ -51,6 +54,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                         '  <div id="{name}-optionsForm"></div>',
                         ' </td></tr>',
                         '</table>',
+                      '</tpl>',
                     '</tpl>'
                 )
             });
@@ -60,7 +64,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                 // attach any optionsForm panels for the sections
                 Ext4.each(this.getOptionsStore().getRange(), function(record)
                 {
-                    if (record.get('optionsForm') != null)
+                    if (!record.get('hidden') && record.get('optionsForm') != null)
                         record.get('optionsForm').call(this, record.get('name') + '-optionsForm');
                 }, this);
             }, this);
@@ -105,16 +109,17 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                 isChecked: this.isSpecificImportOptions,
                 label: 'Select specific objects to import',
                 optionsForm: this.getSpecificImportOptionsForm
-            //},{
-            //    header: null,
-            //    description: 'By default, the imported archive is only applied to the current folder. If you would like to '
-            //        + 'apply this imported archive to multiple folders, you can use the "apply to multiple folders" section to '
-            //        + 'select additional folders you would like to apply this imported archive.',
-            //    name: 'applyToMultipleFolders',
-            //    initChecked: this.isApplyToMultipleFolders ? "checked": "",
-            //    isChecked: this.isApplyToMultipleFolders,
-            //    label: 'Apply to multiple folders',
-            //    optionsForm: null
+            },{
+                header: null,
+                description: 'By default, the imported archive is only applied to the current folder. If you would like to '
+                    + 'apply this imported archive to multiple folders, check the box below to see additional folders for this project. '
+                    + 'The import archive will be applied to all selected folders.',
+                name: 'applyToMultipleFolders',
+                hidden: !this.isProjectAdmin,
+                initChecked: this.isApplyToMultipleFolders ? "checked": "",
+                isChecked: this.isApplyToMultipleFolders,
+                label: 'Apply to multiple folders',
+                optionsForm: this.getApplyToMultipleFoldersForm
             }];
 
             if (this.canCreateSharedDatasets)
@@ -132,7 +137,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
             }
 
             this.optionsStore = Ext4.create('Ext.data.Store', {
-                fields: ['header', 'description', 'name', 'initChecked', 'isChecked', 'label', 'include', 'optionsForm'],
+                fields: ['header', 'description', 'name', 'initChecked', 'isChecked', 'label', 'hidden', 'optionsForm'],
                 data: data
             });
         }
@@ -156,13 +161,36 @@ Ext4.define('LABKEY.import.OptionsPanel', {
         return this.specificImportOptionsForm;
     },
 
+    getApplyToMultipleFoldersForm : function(renderTo)
+    {
+        if (renderTo)
+        {
+            this.applyToMultipleFoldersForm = Ext4.create('LABKEY.import.ApplyToMultipleFolders', {
+                formId: this.formId,
+                hidden: !this.isApplyToMultipleFolders
+            });
+
+            this.applyToMultipleFoldersForm.on('render', this.updatePanelHeight, this);
+            this.applyToMultipleFoldersForm.render(renderTo);
+        }
+
+        return this.applyToMultipleFoldersForm;
+    },
+
     updatePanelHeight : function()
     {
         if (this.baseHeight == null)
             this.baseHeight = this.getHeight();
 
-        var specificImportOptionsHeight = this.getSpecificImportOptionsForm().isVisible() ? this.getSpecificImportOptionsForm().getHeight() : 0;
-        this.setHeight(this.baseHeight + specificImportOptionsHeight);
+        var specificImportOptionsHeight = 0;
+        if (Ext4.isDefined(this.getSpecificImportOptionsForm()) && this.getSpecificImportOptionsForm().isVisible())
+            specificImportOptionsHeight = this.getSpecificImportOptionsForm().getHeight();
+
+        var applyMultipleFoldersHeight = 0;
+        if (Ext4.isDefined(this.getApplyToMultipleFoldersForm()) && this.getApplyToMultipleFoldersForm().isVisible())
+            applyMultipleFoldersHeight = this.getApplyToMultipleFoldersForm().getHeight();
+
+        this.setHeight(this.baseHeight + specificImportOptionsHeight + applyMultipleFoldersHeight);
     },
 
     getSubmitButton : function()
@@ -311,4 +339,171 @@ Ext4.define('LABKEY.import.SpecificImportOptions', {
             }, this);
         }, this);
     }
+});
+
+Ext4.define('LABKEY.import.ApplyToMultipleFolders', {
+    extend: 'Ext.tree.Panel',
+
+    cls: 'apply-multiple-panel',
+    width: 670,
+    height: 300,
+    autoScroll: true,
+    rootVisible: true,
+
+    formId: null,
+    projectRoot: null,
+    store: null,
+
+    initComponent: function()
+    {
+        this.dockedItems = [this.getBottomDockedPanel()];
+
+        this.callParent();
+
+        this.on('select', this.onRecordSelect, this);
+
+        // load the tree root information the first time the section is shown
+        if (!this.hidden)
+            this.getProjectRootNode();
+    },
+
+    getBottomDockedPanel : function()
+    {
+        if (!this.bottomDockedPanel)
+        {
+            this.bottomDockedPanel = Ext4.create('Ext.panel.Panel', {
+                dock: 'bottom',
+                border: false,
+                cls: 'multiple-folder-footer',
+                html: 'Note: any subfolders from the imported archive will not be applied when multiple folders are selected.'
+            });
+        }
+
+        return this.bottomDockedPanel;
+    },
+
+    getProjectFolderTreeStore : function()
+    {
+        if (!this.treeStore)
+        {
+            this.treeStore = Ext4.create('Ext.data.TreeStore', {
+                model: 'LABKEY.import.FolderTreeStore',
+                root: this.projectRoot,
+                proxy: {
+                    type: 'ajax',
+                    url: LABKEY.ActionURL.buildURL('core', 'getExtContainerAdminTree.api', null, {
+                        requiredPermission: 'org.labkey.api.security.permissions.AdminPermission',
+                        useTitles: true,
+                        annotateLeaf: true
+                    })
+                }
+            });
+        }
+
+        return this.treeStore
+    },
+
+    getProjectRootNode : function()
+    {
+        LABKEY.Ajax.request({
+            url     : LABKEY.ActionURL.buildURL('core', 'getContainerTreeRootInfo.api'),
+            scope: this,
+            success: function(response)
+            {
+                var resp = Ext4.decode(response.responseText),
+                    projectInfo = resp.project ? resp.project : resp.current;
+
+                this.currentRowId = resp.current.id;
+
+                this.projectRoot = {
+                    id: projectInfo.id,
+                    expanded: true,
+                    containerPath: projectInfo.path,
+                    text: projectInfo.title,
+                    isProject: true
+                };
+
+                // by default, select the current container node in the tree
+                this.getProjectFolderTreeStore().on('load', function(store, node){
+                    var record = store.getNodeById(resp.current.id);
+                    if (record)
+                        this.setChecked(record);
+                }, this, {single: true});
+
+                this.bindStore(this.getProjectFolderTreeStore());
+            }
+        });
+    },
+
+    onRecordSelect : function(tree, record)
+    {
+        this.setChecked(record);
+    },
+
+    setChecked : function(record)
+    {
+        record.set('checked', true);
+
+        if (!record.isRoot() && !record.isLeaf())
+            record.expand();
+    },
+
+    toggleState : function(checked)
+    {
+        // load the tree root information the first time the section is shown
+        if (checked && this.projectRoot == null)
+            this.getProjectRootNode();
+
+        this.setVisible(checked);
+
+        // on state hide, remove all checked records
+        if (!checked && this.projectRoot != null)
+        {
+            Ext4.each(this.getView().getChecked(), function(record)
+            {
+                record.set('checked', false);
+            }, this);
+
+            // reselect the current container node
+            this.getSelectionModel().deselectAll();
+            var currentNode = this.getProjectFolderTreeStore().getNodeById(this.currentRowId);
+            currentNode.set('checked', true);
+
+            // expand the tree to the parent of the selected currentNode
+            if (currentNode.parentNode)
+                this.expandPath(currentNode.parentNode.getPath());
+        }
+    },
+
+    beforeSubmit : function()
+    {
+        // add hidden form elements for each of the selected folders
+        if (!this.hidden && this.formId != null)
+        {
+            var form = Ext4.get(this.formId);
+
+            Ext4.each(this.getView().getChecked(), function(record)
+            {
+                form.createChild({
+                    tag: 'input',
+                    type: 'hidden',
+                    name: 'folderRowIds',
+                    value: record.get('id')
+                });
+            }, this);
+        }
+    }
+});
+
+Ext4.define('LABKEY.import.FolderTreeStore', {
+    extend: 'Ext.data.Model',
+    fields: [
+        {name: 'containerPath', type: 'string'},
+        {name: 'text', type: 'string'},
+        {name: 'expanded', type: 'boolean'},
+        {name: 'isProject', type: 'boolean'},
+        {name: 'leaf', type: 'boolean'},
+        {name: 'checked', type: 'boolean', defaultValue: false},
+        {name: 'id'}
+    ]
 });

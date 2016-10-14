@@ -15,6 +15,16 @@
     padding: 10px;
 }
 
+.import-options-panel .apply-multiple-panel .x4-grid-table {
+    padding: 10px
+}
+
+.import-options-panel .apply-multiple-panel .multiple-folder-footer .x4-panel-body {
+    background-color: transparent;
+    padding: 5px 0 0 0;
+    font-style: italic;
+}
+
 .import-options-panel .advanced-options-header {
     padding-bottom: 5px;
 }

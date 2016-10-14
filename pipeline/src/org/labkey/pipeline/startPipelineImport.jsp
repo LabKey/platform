@@ -39,6 +39,8 @@
 
     Container c = getViewContext().getContainerNoTab();
     Container project = c.getProject();
+    boolean isProjectAdmin = project != null && project.hasPermission(getUser(), AdminPermission.class);
+    String importFormId = "pipelineImportForm";
 
     boolean canCreateSharedDatasets = false;
     if (bean.isAsStudy() && !c.isProject() && null != project && project != c)
@@ -53,7 +55,7 @@
 %>
 
 <labkey:errors/>
-<labkey:form id="pipelineImportForm" action="<%=h(buildURL(PipelineController.StartFolderImportAction.class))%>" method="post">
+<labkey:form id="<%=h(importFormId)%>" action="<%=h(buildURL(PipelineController.StartFolderImportAction.class))%>" method="post">
     <input type="hidden" name="fromZip" value=<%=bean.isFromZip()%>>
     <input type="hidden" name="asStudy" value=<%=bean.isAsStudy()%>>
     <input type="hidden" name="filePath" value=<%=q(bean.getFilePath())%>>
@@ -76,7 +78,9 @@ Ext4.onReady(function()
 
             Ext4.create('LABKEY.import.OptionsPanel', {
                 renderTo: 'startPipelineImportForm',
+                formId: <%=q(importFormId)%>,
                 importers: responseText.importers,
+                isProjectAdmin: <%=isProjectAdmin%>,
                 canCreateSharedDatasets: <%=canCreateSharedDatasets%>,
                 isCreateSharedDatasets: <%=bean.isCreateSharedDatasets()%>,
                 isValidateQueries: <%=bean.isValidateQueries()%>,

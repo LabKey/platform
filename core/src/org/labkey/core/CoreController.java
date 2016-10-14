@@ -1055,6 +1055,8 @@ public class CoreController extends SpringActionController
         private int _node;
         private boolean _move = false;
         private boolean _showContainerTabs = false;
+        private boolean _useTitles = false;
+        private boolean _annotateLeaf = false;
         private String _requiredPermission;
 
         public int getNode()
@@ -1067,7 +1069,7 @@ public class CoreController extends SpringActionController
             _node = node;
         }
 
-        public boolean getMove()
+        public boolean isMove()
         {
             return _move;
         }
@@ -1087,7 +1089,7 @@ public class CoreController extends SpringActionController
             _requiredPermission = requiredPermission;
         }
 
-        public boolean getShowContainerTabs()
+        public boolean isShowContainerTabs()
         {
             return _showContainerTabs;
         }
@@ -1095,6 +1097,26 @@ public class CoreController extends SpringActionController
         public void setShowContainerTabs(boolean showContainerTabs)
         {
             _showContainerTabs = showContainerTabs;
+        }
+
+        public boolean isUseTitles()
+        {
+            return _useTitles;
+        }
+
+        public void setUseTitles(boolean useTitles)
+        {
+            _useTitles = useTitles;
+        }
+
+        public boolean isAnnotateLeaf()
+        {
+            return _annotateLeaf;
+        }
+
+        public void setAnnotateLeaf(boolean annotateLeaf)
+        {
+            _annotateLeaf = annotateLeaf;
         }
     }
 
@@ -1118,12 +1140,12 @@ public class CoreController extends SpringActionController
         {
             User user = getUser();
             JSONArray children = new JSONArray();
-            _move = form.getMove();
+            _move = form.isMove();
 
             Container parent = ContainerManager.getForRowId(form.getNode());
             if (null != parent)
             {
-                if (!form.getShowContainerTabs() && parent.isContainerTab())
+                if (!form.isShowContainerTabs() && parent.isContainerTab())
                     parent = parent.getParent();            // Don't show container tab, show parent
 
                 //determine which permission should be required for a child to show up
@@ -1137,12 +1159,12 @@ public class CoreController extends SpringActionController
                 for (Container child : parent.getChildren())
                 {
                     // Don't show workbook and don't show containerTabs if we're told not to
-                    if (!child.isWorkbook() && (form.getShowContainerTabs() || !child.isContainerTab()))
+                    if (!child.isWorkbook() && (form.isShowContainerTabs() || !child.isContainerTab()))
                     {
                         AccessType accessType = getAccessType(child, user, _reqPerm);
                         if (accessType != AccessType.none)
                         {
-                            JSONObject childProps = getContainerProps(child, form.getShowContainerTabs());
+                            JSONObject childProps = getContainerProps(child, form);
                             if (accessType == AccessType.indirect)
                             {
                                 // Disable so they can't act on it directly, since they have no permission
@@ -1185,18 +1207,22 @@ public class CoreController extends SpringActionController
             return AccessType.none;
         }
 
-        protected JSONObject getContainerProps(Container c, boolean showContainerTabs)
+        protected JSONObject getContainerProps(Container c, ExtContainerTreeForm form)
         {
             JSONObject props = new JSONObject();
             props.put("id", c.getRowId());
-            props.put("text", PageFlowUtil.filter(c.getName()));
+            props.put("text", PageFlowUtil.filter(form.isUseTitles() ? c.getTitle() : c.getName()));
             props.put("containerPath", c.getPath());
             props.put("expanded", false);
-//            props.put("leaf", !c.hasChildren());  // commented out because you cannot 'drop' on a leaf as an append action
             props.put("iconCls", "x4-tree-icon-parent");
             props.put("isContainerTab", c.isContainerTab());
             props.put("folderTypeHasContainerTabs", c.getFolderType().hasContainerTabs());
             props.put("containerTabTypeOveridden", ContainerManager.isContainerTabTypeThisOrChildrenOverridden(c));      // also set if child container tab overridden
+
+            // default to exclude leaf boolean because you cannot 'drop' on a leaf as an append action
+            if (form.isAnnotateLeaf())
+                props.put("leaf", !c.hasChildren());
+
             return props;
         }
     }
@@ -1205,9 +1231,9 @@ public class CoreController extends SpringActionController
     public class GetExtSecurityContainerTreeAction extends GetExtContainerTreeAction
     {
         @Override
-        protected JSONObject getContainerProps(Container c, boolean showContainerTabs)
+        protected JSONObject getContainerProps(Container c, ExtContainerTreeForm form)
         {
-            JSONObject props = super.getContainerProps(c, showContainerTabs);
+            JSONObject props = super.getContainerProps(c, form);
             String text = PageFlowUtil.filter(c.getName());
             if (!c.getPolicy().getResourceId().equals(c.getResourceId()))
                 text += "*";
@@ -1226,12 +1252,12 @@ public class CoreController extends SpringActionController
                 JSONArray childrenProps = new JSONArray();
                 for (Container child : c.getChildren())
                 {
-                    if (!child.isWorkbook() && (showContainerTabs || !child.isContainerTab()))
+                    if (!child.isWorkbook() && (form.isShowContainerTabs() || !child.isContainerTab()))
                     {
                         AccessType accessType = getAccessType(child, getUser(), _reqPerm);
                         if (accessType != AccessType.none)
                         {
-                            JSONObject childProps = getContainerProps(child, showContainerTabs);
+                            JSONObject childProps = getContainerProps(child, form);
                             if (accessType == AccessType.indirect)
                             {
                                 // Disable so they can't act on it directly, since they have no permission
@@ -1254,9 +1280,9 @@ public class CoreController extends SpringActionController
     public class GetExtMWBContainerTreeAction extends GetExtContainerTreeAction
     {
         @Override
-        protected JSONObject getContainerProps(Container c, boolean showContainerTabs)
+        protected JSONObject getContainerProps(Container c, ExtContainerTreeForm form)
         {
-            JSONObject props = super.getContainerProps(c, showContainerTabs);
+            JSONObject props = super.getContainerProps(c, form);
             if (c.equals(getContainer()))
                 props.put("disabled", true);
             return props;
@@ -1267,9 +1293,9 @@ public class CoreController extends SpringActionController
     public class GetExtContainerAdminTreeAction extends GetExtContainerTreeAction
     {
         @Override
-        protected JSONObject getContainerProps(Container c, boolean showContainerTabs)
+        protected JSONObject getContainerProps(Container c, ExtContainerTreeForm form)
         {
-            JSONObject props = super.getContainerProps(c, showContainerTabs);
+            JSONObject props = super.getContainerProps(c, form);
             if (c.equals(getContainer()))
             {
                 props.put("cls", "x-tree-node-current");
@@ -1292,12 +1318,12 @@ public class CoreController extends SpringActionController
                 JSONArray childrenProps = new JSONArray();
                 for (Container child : c.getChildren())
                 {
-                    if (!child.isWorkbook() && (showContainerTabs || !child.isContainerTab()))
+                    if (!child.isWorkbook() && (form.isShowContainerTabs() || !child.isContainerTab()))
                     {
                         AccessType accessType = getAccessType(child, getUser(), _reqPerm);
                         if (accessType != AccessType.none)
                         {
-                            JSONObject childProps = getContainerProps(child, showContainerTabs);
+                            JSONObject childProps = getContainerProps(child, form);
                             //childProps.put("expanded", true);
                             if (accessType == AccessType.indirect)
                             {
@@ -1312,6 +1338,34 @@ public class CoreController extends SpringActionController
                 props.put("expanded", true);
             }
 
+            return props;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class GetContainerTreeRootInfoAction extends ApiAction<Object>
+    {
+        @Override
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            response.put("current", getContainerProps(getContainer()));
+
+            Container p = getContainer().getProject();
+            if (p != null)
+                response.put("project", getContainerProps(p));
+
+            return new ApiSimpleResponse(response);
+        }
+
+        private Map<String, Object> getContainerProps(Container c)
+        {
+            Map<String, Object> props = new HashMap<>();
+            props.put("id", c.getRowId());
+            props.put("title", c.getTitle());
+            props.put("path", c.getPath());
+            props.put("isDataspace", c.isDataspace());
             return props;
         }
     }

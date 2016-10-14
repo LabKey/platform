@@ -4058,8 +4058,7 @@ public class StudyController extends BaseStudyController
         {
             Container c = getContainer();
             File studyFile = form.getValidatedSingleFile(c);
-
-            return PageFlowUtil.urlProvider(PipelineUrls.class).urlStartStudyImport(c, studyFile, null);
+            return PageFlowUtil.urlProvider(PipelineUrls.class).urlStartFolderImport(c, studyFile, true, null);
         }
 
         @Override
