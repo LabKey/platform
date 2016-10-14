@@ -31,6 +31,7 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.components.ParticipantListWebPart;
+import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.pages.DatasetInsertPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.DatasetDesignerPage;
@@ -218,12 +219,8 @@ public class SharedStudyTest extends BaseWebDriverTest
         goToManageStudy();
         clickAndWait(Locator.linkWithText("manage assay schedule"));
 
-        click(Locator.linkWithText("create new visit"));
-        setFormElement(Locator.input("newVisitLabel"), "Visit 4");
-        setFormElement(Locator.input("newVisitRangeMin"), "4.00");
-        setFormElement(Locator.input("newVisitRangeMax"), "4.99");
-        clickButton("Submit");
-
+        ManageAssaySchedulePage assaySchedulePage = new ManageAssaySchedulePage(this);
+        assaySchedulePage.addNewVisitColumn("Visit 4", 4.0, 4.99);
         click(Locator.linkWithText("manage visits"));
         String url = getCurrentRelativeURL();
         Assert.assertFalse("Expected redirect to project manage visits page, got: " + url, url.contains(STUDY1));

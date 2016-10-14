@@ -75,15 +75,15 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
     private static final String[] NEW_COHORTS = {"TestCohort", "OtherTestCohort"};
 
     private static List<BaseManageVaccineDesignVisitPage.Visit> VISITS = Arrays.asList(
-        new BaseManageVaccineDesignVisitPage.Visit("Enrollment", 0, 0),
-        new BaseManageVaccineDesignVisitPage.Visit("Visit 1", 1, 1),
-        new BaseManageVaccineDesignVisitPage.Visit("Visit 2", 2, 2),
-        new BaseManageVaccineDesignVisitPage.Visit("Visit 3", 3, 3),
-        new BaseManageVaccineDesignVisitPage.Visit("Visit 4", 4, 4)
+        new BaseManageVaccineDesignVisitPage.Visit("Enrollment", 0.0, 0.0),
+        new BaseManageVaccineDesignVisitPage.Visit("Visit 1", 1.0, 1.0),
+        new BaseManageVaccineDesignVisitPage.Visit("Visit 2", 2.0, 2.0),
+        new BaseManageVaccineDesignVisitPage.Visit("Visit 3", 3.0, 3.0),
+        new BaseManageVaccineDesignVisitPage.Visit("Visit 4", 4.0, 4.0)
     );
     private static List<BaseManageVaccineDesignVisitPage.Visit> NEW_VISITS = Arrays.asList(
-        new BaseManageVaccineDesignVisitPage.Visit("NewVisit1", 6, 7),
-        new BaseManageVaccineDesignVisitPage.Visit("NewVisit2", 8, 8)
+        new BaseManageVaccineDesignVisitPage.Visit("NewVisit1", 6.0, 7.0),
+        new BaseManageVaccineDesignVisitPage.Visit("NewVisit2", 8.0, 8.0)
     );
 
 
