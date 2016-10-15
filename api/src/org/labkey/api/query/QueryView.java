@@ -852,6 +852,10 @@ public class QueryView extends WebPartView<Object>
         if (getSettings().getAllowChooseView())
         {
             bar.add(createViewButton(_itemFilter));
+        }
+
+        if (isShowReports())
+        {
             bar.add(createReportButton());
             MenuButton chartButton = createChartButton();
             if (chartButton.getPopupMenu().getNavTree().getChildCount() > 0)
@@ -1378,8 +1382,7 @@ public class QueryView extends WebPartView<Object>
         // existing reports
         if (!getQueryDef().isTemporary())
         {
-            if (_showReports)
-                addReportViews(button);
+            addReportViews(button);
         }
 
         return button;
@@ -1415,7 +1418,7 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        if (!getQueryDef().isTemporary() && _showReports)
+        if (!getQueryDef().isTemporary())
         {
             addChartViews(button);
         }
@@ -2844,6 +2847,9 @@ public class QueryView extends WebPartView<Object>
         _showPaginationCount = showPaginationCount;
     }
 
+    /**
+     * controls display of the reports and charts button
+     */
     public boolean isShowReports()
     {
         return _showReports;
