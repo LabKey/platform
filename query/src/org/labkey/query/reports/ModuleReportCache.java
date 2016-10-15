@@ -64,7 +64,8 @@ public class ModuleReportCache
     private static final FilenameFilter moduleReportFilterWithQuery = (dir, name) ->
         moduleReportFilter.accept(dir, name) || StringUtils.endsWithIgnoreCase(name, ModuleQueryReportDescriptor.FILE_EXTENSION);
 
-    private static final Path REPORT_PATH = Path.parse("reports/schemas");
+    private static final String REPORT_PATH_STRING = "reports/schemas";
+    private static final Path REPORT_PATH = Path.parse(REPORT_PATH_STRING);
     private static final ReportCollections EMPTY_REPORT_COLLECTIONS = new ReportCollections(new CaseInsensitiveArrayListValuedMap<>(), new HashMap<>());
 
     static List<ReportDescriptor> getDescriptors(Module module, @Nullable String path, Container c, User user)
@@ -91,7 +92,14 @@ public class ModuleReportCache
 
         private List<ReportDescriptor> getDescriptors(@Nullable String path)
         {
-            return null == path ? new LinkedList<>(_mmap.values()) : _mmap.get(path);
+            if (null == path)
+                return new LinkedList<>(_mmap.values());
+
+            // Make all paths relative
+            if (path.startsWith(REPORT_PATH_STRING))
+                path = path.substring(REPORT_PATH_STRING.length());
+
+            return _mmap.get(path);
         }
 
         private @Nullable ReportDescriptor getDescriptor(String path)
@@ -228,9 +236,10 @@ public class ModuleReportCache
         if (AppProps.getInstance().isDevMode())
         {
             ReportDescriptor newDescriptor = getDescriptor(module, path, c, user);
+            String difference = differenceNullSafe(newDescriptor, descriptor);
 
-            if (!equalsNullSafe(newDescriptor, descriptor))
-                log("Module report discrepancy: " + module.getName() + " " + path);
+            if (null != difference)
+                log("Module report discrepancy: " + module.getName() + " " + path + ": " + difference);
         }
 
         return descriptor;
@@ -258,9 +267,13 @@ public class ModuleReportCache
             {
                 Iterator<ReportDescriptor> iter = newSorted.iterator();
 
-                oldSorted.stream()
-                    .filter(descriptor -> !equals(descriptor, iter.next()))
-                    .forEach(descriptor -> log("Module report discrepancy: " + descriptor.getReportName() + " " + module.getName() + " " + path));
+                oldSorted.forEach(descriptor ->
+                {
+                    String difference = difference(descriptor, iter.next());
+
+                    if (null != difference)
+                        log("Module report discrepancy: \"" + descriptor.getReportName() + "\" " + module.getName() + " " + path + ": " + difference);
+                });
             }
         }
 
@@ -433,40 +446,50 @@ public class ModuleReportCache
         return legalPath;
     }
 
-    private static boolean equalsNullSafe(ReportDescriptor rpt1, ReportDescriptor rpt2)
+    private static @Nullable String differenceNullSafe(ReportDescriptor rpt1, ReportDescriptor rpt2)
     {
         if (null == rpt1 || null == rpt2)
         {
-            return rpt1 == rpt2;
+            return rpt1 == rpt2 ? null : "null + non-null";
         }
-        return equals(rpt1, rpt2);
+        return difference(rpt1, rpt2);
     }
 
-    private static boolean equals(ReportDescriptor rpt1, ReportDescriptor rpt2)
+    private static @Nullable String difference(ReportDescriptor rpt1, ReportDescriptor rpt2)
     {
-        if (rpt1.getClass() == rpt2.getClass())
-        {
-            if (Objects.equals(rpt1.getAuthor(), rpt2.getAuthor()))
-            {
-                if (Objects.equals(rpt1.getCategory(), rpt2.getCategory()))
-                {
-                    if (
-                            rpt1.getReportName().equals(rpt2.getReportName()) &&
-                            rpt1.getDescriptorType().equals(rpt2.getDescriptorType()) &&
-                            rpt1.getFlags() == rpt2.getFlags() &&
-                            rpt1.getAccess().equals(rpt2.getAccess()) &&
-                            rpt1.getDisplayOrder() == rpt2.getDisplayOrder() &&
-                            rpt1.getReportKey().equals(rpt2.getReportKey()) &&
-                            Objects.equals(rpt1.getResourceDescription(), rpt2.getResourceDescription()) &&
-                            Objects.equals(rpt1.getProperties().get("script"), rpt2.getProperties().get("script"))
-                        )
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
+        if (rpt1.getClass() != rpt2.getClass())
+            return "class";
 
-        return false;
+        if (!Objects.equals(rpt1.getAuthor(), rpt2.getAuthor()))
+            return "author";
+
+        if (!Objects.equals(rpt1.getCategory(), rpt2.getCategory()))
+            return "category";
+
+        if (!rpt1.getReportName().equals(rpt2.getReportName()))
+            return "report name";
+
+        if (!rpt1.getDescriptorType().equals(rpt2.getDescriptorType()))
+            return "descriptor type";
+
+        if (rpt1.getFlags() != rpt2.getFlags())
+            return "flags";
+
+        if (!rpt1.getAccess().equals(rpt2.getAccess()))
+            return "access";
+
+        if (rpt1.getDisplayOrder() != rpt2.getDisplayOrder())
+            return "display order";
+
+        if (!rpt1.getReportKey().equals(rpt2.getReportKey()))
+            return "report key";
+
+        if (!Objects.equals(rpt1.getResourceDescription(), rpt2.getResourceDescription()))
+            return "resource description";
+
+        if (!Objects.equals(rpt1.getProperties().get("script"), rpt2.getProperties().get("script")))
+            return "script";
+
+        return null;
     }
 }
