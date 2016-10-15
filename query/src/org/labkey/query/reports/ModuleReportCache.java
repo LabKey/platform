@@ -106,11 +106,21 @@ public class ModuleReportCache
         {
             ReportDescriptor descriptor = _map.get(path);
 
-            // Not found.. maybe it's a relative file path
+            // Not found... maybe path is relative to "reports/schemas"
+            // e.g., http://localhost:8080/labkey/home/list-grid.view?name=People&query.reportId=module%3Asimpletest%2Flists%2FPeople%2FLess%20Cool%20JS%20Report.js (with simpletest active and People list in home)
             if (null == descriptor)
             {
-                Path p = REPORT_PATH.append(Path.parse(path));
-                descriptor = _map.get(p.toString());
+                Path relPath = Path.parse(path);
+                Path absPath = REPORT_PATH.append(relPath);
+                descriptor = _map.get(absPath.toString());
+
+                // Not found... maybe path is relative to "reports", #15966
+                // e.g., http://localhost:8080/labkey/home/list-grid.view?name=People&query.reportId=module%3Asimpletest%2Fschemas%2Flists%2FPeople%2FLess%20Cool%20JS%20Report.js (with simpletest active and People list in home)
+                if (null == descriptor)
+                {
+                    absPath = REPORT_PATH.getParent().append(relPath)   ;
+                    descriptor = _map.get(absPath.toString());
+                }
             }
 
             return descriptor;
