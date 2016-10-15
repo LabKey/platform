@@ -373,13 +373,16 @@ public class DatasetQueryView extends StudyQueryView
     {
         bar.add(createFilterButton());
         bar.add(createViewButton(getItemFilter()));
-        bar.add(createReportButton());
-        MenuButton chartButton = createChartButton();
-        if (chartButton.getPopupMenu().getNavTree().getChildCount() > 0)
-        {
-            bar.add(chartButton);
-        }
 
+        if (isShowReports())
+        {
+            bar.add(createReportButton());
+            MenuButton chartButton = createChartButton();
+            if (chartButton.getPopupMenu().getNavTree().getChildCount() > 0)
+            {
+                bar.add(chartButton);
+            }
+        }
         bar.add(ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), getDataRegionName(), _cohortFilter, true));
 
         if (StudyManager.getInstance().showQCStates(getContainer()))

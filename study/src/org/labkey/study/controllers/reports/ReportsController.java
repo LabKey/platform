@@ -408,7 +408,9 @@ public class ReportsController extends BaseStudyController
                 int reportId = ReportService.get().saveReport(getViewContext(), key, report);
 
                 if (form.isRedirectToReport())
-                    throw new RedirectException("showReport.view?reportId=" + reportId);
+                {
+                    throw new RedirectException(new ActionURL(ShowReportAction.class, getContainer()).addParameter("reportId", reportId));
+                }
 
                 if (form.getShowWithDataset() != 0)
                 {
