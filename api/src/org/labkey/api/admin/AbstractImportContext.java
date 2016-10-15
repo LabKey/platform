@@ -44,6 +44,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     private final Map<Class<? extends ImportContext>, ImportContext> _contextMap = new HashMap<>();
     private boolean _skipQueryValidation;
     private boolean _createSharedDatasets;
+    private boolean _includeSubfolders = true; // default to true, unless explicitly disabled (i.e. advanced import to multiple folders option)
 
     private transient XmlDocument _xmlDocument;
 
@@ -147,7 +148,12 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     @Override
     public boolean isIncludeSubfolders()
     {
-        return false;
+        return _includeSubfolders;
+    }
+
+    public void setIncludeSubfolders(boolean includeSubfolders)
+    {
+        _includeSubfolders = includeSubfolders;
     }
 
     @Override
@@ -204,6 +210,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
         _skipQueryValidation = skipQueryValidation;
     }
 
+    @Override
     public boolean isCreateSharedDatasets()
     {
         return _createSharedDatasets;

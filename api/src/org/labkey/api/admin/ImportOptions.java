@@ -32,6 +32,7 @@ public class ImportOptions
     private boolean _skipQueryValidation;
     private boolean _createSharedDatasets;
     private boolean _advancedImportOptions;
+    private boolean _includeSubfolders = true; // default to true, unless explicitly disabled (i.e. advanced import to multiple folders option)
     private String _containerId;
     private Integer _userId = null;
     private Collection<String> _messages = new LinkedList<>();
@@ -81,6 +82,16 @@ public class ImportOptions
     public void setAdvancedImportOptions(boolean advancedImportOptions)
     {
         _advancedImportOptions = advancedImportOptions;
+    }
+
+    public boolean isIncludeSubfolders()
+    {
+        return _includeSubfolders;
+    }
+
+    public void setIncludeSubfolders(boolean includeSubfolders)
+    {
+        _includeSubfolders = includeSubfolders;
     }
 
     public @Nullable User getUser()
