@@ -565,14 +565,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             return false;
         }
 
-        // make sure we have a StudyService if we need to create a study import pipeline job
-        studyService = StudyService.get();
-        if (studyService == null)
-        {
-            errors.reject("folderImport", "StudyService does not exist.");
-            return false;
-        }
-
         // make sure that the pipeline root is valid for this container
         pipelineRoot = PipelineService.get().findPipelineRoot(container);
         if (!PipelineService.get().hasValidPipelineRoot(container) || pipelineRoot == null)
@@ -656,7 +648,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         // finally, create the study or folder import pipeline job
         _successURL = pipelineUrlProvider.urlBegin(container);
         if (isStudy)
-            studyService.runStudyImportJob(container, user, url, archiveXml, file.getOriginalFilename(), errors, pipelineRoot, options);
+            StudyService.get().runStudyImportJob(container, user, url, archiveXml, file.getOriginalFilename(), errors, pipelineRoot, options);
         else
             PipelineService.get().runFolderImportJob(container, user, url, archiveXml, file.getOriginalFilename(), errors, pipelineRoot, options);
 

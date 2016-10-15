@@ -1345,6 +1345,7 @@ public class PipelineController extends SpringActionController
                     options.setSkipQueryValidation(!form.isValidateQueries());
                     options.setCreateSharedDatasets(form.isCreateSharedDatasets());
                     options.setDataTypes(form.getDataTypes());
+                    options.setIncludeSubfolders(!form.isApplyToMultipleFolders());
 
                     success = success && createImportPipelineJob(container, user, options, containerArchiveXmlMap.get(container), form.isAsStudy(), errors);
                 }
@@ -1368,25 +1369,9 @@ public class PipelineController extends SpringActionController
             ActionURL url = getViewContext().getActionURL();
 
             if (asStudy)
-            {
-                StudyService.Service svc = StudyService.get();
-                if (svc != null)
-                    return svc.runStudyImportJob(container, user, url, archiveXml, _archiveFile.getName(), errors, pipelineRoot, options);
-            }
+                return StudyService.get().runStudyImportJob(container, user, url, archiveXml, _archiveFile.getName(), errors, pipelineRoot, options);
             else
-            {
-                try
-                {
-                    PipelineService.get().queueJob(new FolderImportJob(container, user, url, archiveXml, _archiveFile.getName(), pipelineRoot, options));
-                    return true;
-                }
-                catch (PipelineValidationException e)
-                {
-                    return false;
-                }
-            }
-
-            return false;
+                return PipelineService.get().runFolderImportJob(container, user, url, archiveXml, _archiveFile.getName(), errors, pipelineRoot, options);
         }
 
         @Override

@@ -77,7 +77,7 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
         {
             VirtualFile subfoldersDir = ctx.getDir("subfolders");
 
-            if (null != subfoldersDir)
+            if (ctx.isIncludeSubfolders() && null != subfoldersDir)
             {
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
