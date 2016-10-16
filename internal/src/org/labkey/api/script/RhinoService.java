@@ -18,7 +18,6 @@ package org.labkey.api.script;
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -27,7 +26,6 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.RowMap;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
@@ -290,13 +288,6 @@ class ScriptReferenceImpl implements ScriptReference
         {
             return _loader;
         }
-
-        @Nullable
-        @Override
-        public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
-        {
-            return null;
-        }
     };
 
     private static final PathBasedModuleResourceCache<CompiledScript> SCRIPT_CACHE = ModuleResourceCaches.create("Module JavaScript cache", CACHE_HANDLER);
@@ -543,13 +534,6 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
         public CacheLoader<String, Long> getResourceLoader()
         {
             return RESOURCE_LOADER;
-        }
-
-        @Nullable
-        @Override
-        public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
-        {
-            return null;
         }
     });
 

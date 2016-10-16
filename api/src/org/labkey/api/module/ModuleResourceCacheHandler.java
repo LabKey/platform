@@ -66,5 +66,8 @@ public interface ModuleResourceCacheHandler<K, V>
      * @param module Module for which to create the listener
      * @return A directory listener with implementation specific handling. Return null for default behavior.
      */
-    @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module);
+    default @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+    {
+        return null;
+    }
 }

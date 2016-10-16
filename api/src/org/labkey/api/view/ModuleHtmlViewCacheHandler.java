@@ -15,9 +15,7 @@
  */
 package org.labkey.api.view;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlViewDefinition;
 import org.labkey.api.module.ModuleResourceCache;
@@ -62,23 +60,13 @@ public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandler<Pa
     @Override
     public CacheLoader<String, ModuleHtmlViewDefinition> getResourceLoader()
     {
-        return new CacheLoader<String, ModuleHtmlViewDefinition>()
+        return (key, argument) ->
         {
-            @Override
-            public ModuleHtmlViewDefinition load(String key, @Nullable Object argument)
-            {
-                ModuleResourceCache.CacheId cid = ModuleResourceCache.parseCacheKey(key);
-                Path path = Path.parse(cid.getName());
-                Resource r = cid.getModule().getModuleResource(path);
+            ModuleResourceCache.CacheId cid = ModuleResourceCache.parseCacheKey(key);
+            Path path = Path.parse(cid.getName());
+            Resource r = cid.getModule().getModuleResource(path);
 
-                return new ModuleHtmlViewDefinition(r);
-            }
+            return new ModuleHtmlViewDefinition(r);
         };
-    }
-
-    @Override
-    public @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
-    {
-        return null;
     }
 }
