@@ -240,13 +240,13 @@ public class ModuleReportCache
     @Nullable
     public static ReportDescriptor getModuleReportDescriptor(Module module, Container c, User user, String path)
     {
-        ReportDescriptor descriptor = getModuleReportDescriptorOLD(module, c, user, path);
+        ReportDescriptor descriptor = getDescriptor(module, path, c, user);;
 
         // Test against new caching approach in dev mode
         if (AppProps.getInstance().isDevMode())
         {
-            ReportDescriptor newDescriptor = getDescriptor(module, path, c, user);
-            String difference = differenceNullSafe(newDescriptor, descriptor);
+            ReportDescriptor oldDescriptor = getModuleReportDescriptorOLD(module, c, user, path);
+            String difference = differenceNullSafe(oldDescriptor, descriptor);
 
             if (null != difference)
                 log("Module report discrepancy: " + module.getName() + " " + path + ": " + difference);
@@ -258,16 +258,16 @@ public class ModuleReportCache
     @NotNull
     public static List<ReportDescriptor> getModuleReportDescriptors(Module module, Container c, User user, @Nullable String path)
     {
-        List<ReportDescriptor> descriptors = getModuleReportDescriptorsOLD(module, c, user, path);
+        List<ReportDescriptor> descriptors = getDescriptors(module, path, c, user);
 
         // Test against new caching approach in dev mode
         if (AppProps.getInstance().isDevMode())
         {
             // Sort the old and new lists using the same comparator
             Set<ReportDescriptor> oldSorted = new TreeSet<>((d1, d2) -> d1.toString().compareToIgnoreCase(d2.toString()));
-            oldSorted.addAll(descriptors);
+            oldSorted.addAll(getModuleReportDescriptorsOLD(module, c, user, path));
             Set<ReportDescriptor> newSorted = new TreeSet<>((d1, d2) -> d1.toString().compareToIgnoreCase(d2.toString()));
-            newSorted.addAll(getDescriptors(module, path, c, user));
+            newSorted.addAll(descriptors);
 
             if (oldSorted.size() != newSorted.size())
             {
