@@ -57,6 +57,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.di.TransformDataIteratorBuilder;
 import org.labkey.di.VariableMap;
 import org.labkey.di.VariableMapImpl;
 import org.labkey.di.data.TransformProperty;
@@ -661,5 +662,11 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     public void setTargetForURI(Object targetForURI)
     {
         _targetForURI = targetForURI;
+    }
+
+    @NotNull
+    protected TransformDataIteratorBuilder createTransformDataIteratorBuilder(int transformRunId, DataIteratorBuilder source, Logger log)
+    {
+        return new TransformDataIteratorBuilder(transformRunId, source, log, getTransformJob(), _factory.getStatusName(), _meta.getColumnTransforms(), _meta.getConstants(), _meta.getAlternateKeys());
     }
 }

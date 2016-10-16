@@ -72,6 +72,7 @@
             <documentation>Targets will be of type 'query' (the default), or 'file'. For query, the schemaName and queryName attributes are required. For file, the fileBaseName and fileExtension attributes are required.</documentation>
         </annotation>
         <all>
+            <element name="alternateKeys" type="etl:AlternateKeysType" minOccurs="0" maxOccurs="1"/>
             <element name="columnTransforms" type="etl:ColumnTransformsType" minOccurs="0" maxOccurs="1"/>
             <element name="constants" type="etl:ConstantsType" minOccurs="0" maxOccurs="1"/>
         </all>
@@ -451,6 +452,21 @@
     <complexType name="SettingType">
         <attribute name="name" type="string" use="required"/>
         <attribute name="value" type="string" use="required"/>
+    </complexType>
+
+    <complexType name="AlternateKeysType">
+        <annotation>
+            <documentation>
+                Defines a set of alternate match keys to use for merge ETLs instead of the primary key of the target.
+            </documentation>
+        </annotation>
+        <sequence>
+            <element name="column" type="etl:AlternateKeyType" minOccurs="0" maxOccurs="unbounded"/>
+        </sequence>
+    </complexType>
+
+    <complexType name="AlternateKeyType">
+        <attribute name="name" type="string" use="required"/>
     </complexType>
 
     <complexType name="ColumnTransformsType">

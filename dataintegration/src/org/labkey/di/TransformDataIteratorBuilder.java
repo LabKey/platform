@@ -60,8 +60,9 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
     private final String _statusName;
     private final Map<String, List<ColumnTransform>> _columnTransforms;
     private final Map<ParameterDescription, Object> _constants;
+    private final Set<String> _alternateKeys;
 
-    public TransformDataIteratorBuilder(int transformRunId, DataIteratorBuilder input, @Nullable Logger statusLogger, @NotNull PipelineJob job, String statusName, Map<String, List<ColumnTransform>> columnTransforms, Map<ParameterDescription, Object> constants)
+    public TransformDataIteratorBuilder(int transformRunId, DataIteratorBuilder input, @Nullable Logger statusLogger, @NotNull PipelineJob job, String statusName, Map<String, List<ColumnTransform>> columnTransforms, Map<ParameterDescription, Object> constants, Set<String> alternateKeys)
     {
         _transformRunId = transformRunId;
         _input = input;
@@ -70,6 +71,7 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
         _statusName = statusName;
         _columnTransforms = columnTransforms;
         _constants = constants;
+        _alternateKeys = alternateKeys;
     }
 
 
@@ -126,6 +128,8 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
                 return r;
             }
         };
+
+        context.getAlternateKeys().addAll(_alternateKeys);
 
         Set<String> constantNames = _constants.keySet().stream().map(ParameterDescription::getName).collect(Collectors.toCollection(CaseInsensitiveHashSet::new));
 

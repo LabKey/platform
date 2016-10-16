@@ -37,7 +37,6 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
-import org.labkey.di.TransformDataIteratorBuilder;
 import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTask;
@@ -139,7 +138,7 @@ public class SimpleQueryTransformStep extends TransformTask
                 if (null == source)
                     return false;
                 int transformRunId = getTransformJob().getTransformRunId();
-                DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, source, log, getTransformJob(), _factory.getStatusName(), _meta.getColumnTransforms(), _meta.getConstants());
+                DataIteratorBuilder transformSource = createTransformDataIteratorBuilder(transformRunId, source, log);
 
                 _recordsInserted = appendToTarget(meta, c, u, context, transformSource, log, txTarget);
 

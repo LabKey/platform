@@ -27,6 +27,8 @@ import org.labkey.api.di.columnTransform.ColumnTransform;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.di.columnTransforms.ColumnMappingTransform;
 import org.labkey.di.pipeline.TransformManager;
+import org.labkey.etl.xml.AlternateKeyType;
+import org.labkey.etl.xml.AlternateKeysType;
 import org.labkey.etl.xml.ColumnTransformType;
 import org.labkey.etl.xml.ColumnTransformsType;
 import org.labkey.etl.xml.SourceObjectType;
@@ -167,6 +169,8 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
             // Parse any column level transforms/name remappings which have been defined. Do this after parsing
             // the constants, as they are made available to column transforms.
             parseColumnTransforms(destination.getColumnTransforms(), transformXML.getId());
+
+            parseAlternateKeys(destination.getAlternateKeys());
         }
         else
             _useTarget = false;
@@ -283,11 +287,15 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
         }
     }
 
-
-    @Override
-    public Map<String, List<ColumnTransform>> getColumnTransforms()
+    private void parseAlternateKeys(@Nullable AlternateKeysType alternateKeysXml)
     {
-        return Collections.unmodifiableMap(_columnTransforms);
+        if (null != alternateKeysXml)
+        {
+            for (AlternateKeyType col : alternateKeysXml.getColumnArray())
+            {
+                _alternateKeys.add(col.getName());
+            }
+        }
     }
 
     @Override

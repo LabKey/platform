@@ -43,7 +43,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
-import org.labkey.di.TransformDataIteratorBuilder;
 import org.labkey.di.VariableMap;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
@@ -656,7 +655,7 @@ public class StoredProcedureStep extends TransformTask
         context.setFailFast(true);
 
         int transformRunId = getTransformJob().getTransformRunId();
-        DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, new DataIteratorBuilder.Wrapper(ResultSetDataIterator.wrap(rs, context)), getJob().getLogger(), getTransformJob(), _factory.getStatusName(), _meta.getColumnTransforms(), _meta.getConstants());
+        DataIteratorBuilder transformSource = createTransformDataIteratorBuilder(transformRunId, new DataIteratorBuilder.Wrapper(ResultSetDataIterator.wrap(rs, context)), getJob().getLogger());
         _recordsInserted = appendToTarget(_meta, _context.getContainer(), _context.getUser(), context, transformSource , getJob().getLogger(), txTarget);
 
         if (context.getErrors().hasErrors())

@@ -23,6 +23,7 @@ import org.labkey.etl.xml.TransformType;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: matthew
@@ -72,4 +73,6 @@ public interface StepMeta
     void putConstants(Map<ParameterDescription, Object> constants);
 
     void setEtlName(String etlName);
+
+    Set<String> getAlternateKeys();
 }
