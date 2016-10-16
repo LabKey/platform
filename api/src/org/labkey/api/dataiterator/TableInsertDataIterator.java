@@ -85,6 +85,14 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         {
             dontUpdate.addAll(context.getDontUpdateColumnNames());
         }
+        if (null == keyColumns)
+        {
+            keyColumns = context.getAlternateKeys();
+        }
+        else
+        {
+            keyColumns.addAll(context.getAlternateKeys());
+        }
         TableInsertDataIterator it;
         it = new TableInsertDataIterator(di, table, c, context, keyColumns, addlSkipColumns, dontUpdate);
         return it;

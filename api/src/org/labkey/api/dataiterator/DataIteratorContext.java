@@ -48,6 +48,7 @@ public class DataIteratorContext
     boolean _allowImportLookupByAlternateKey = false;
     private final Set<String> _passThroughBuiltInColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
+    private final Set<String> _alternateKeys = new CaseInsensitiveHashSet();
 
     int _maxRowErrors = 1;
 
@@ -146,6 +147,9 @@ public class DataIteratorContext
         _allowImportLookupByAlternateKey = allowImportLookupByAlternateKey;
     }
 
+    /** Normally all built in columns (created, createdBy, etc) are populated with newly calculated values on writing to target.
+     * This list specifies those which should pass through from source.
+     */
     public Set<String> getPassThroughBuiltInColumnNames()
     {
         return _passThroughBuiltInColumnNames;
@@ -154,6 +158,11 @@ public class DataIteratorContext
     public Set<String> getDontUpdateColumnNames()
     {
         return _dontUpdateColumnNames;
+    }
+
+    public Set<String> getAlternateKeys()
+    {
+        return _alternateKeys;
     }
 
     /** if this etl should be killed, will execute <code>throw _errors;</code> */

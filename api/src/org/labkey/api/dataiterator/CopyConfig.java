@@ -21,8 +21,10 @@ import org.labkey.api.di.columnTransform.ColumnTransform;
 import org.labkey.api.query.SchemaKey;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: matthewb
@@ -70,6 +72,7 @@ public class CopyConfig
     private boolean _saveState = false;
 
     protected final Map<String, List<ColumnTransform>> _columnTransforms = new CaseInsensitiveHashMap<>();
+    protected final Set<String> _alternateKeys = new HashSet<>();
 
     public CopyConfig()
     {
@@ -393,5 +396,10 @@ public class CopyConfig
     public Map<String, List<ColumnTransform>> getColumnTransforms()
     {
         return Collections.unmodifiableMap(_columnTransforms);
+    }
+
+    public Set<String> getAlternateKeys()
+    {
+        return Collections.unmodifiableSet(_alternateKeys);
     }
 }
