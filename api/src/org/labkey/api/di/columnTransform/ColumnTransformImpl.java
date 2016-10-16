@@ -242,6 +242,8 @@ public abstract class ColumnTransformImpl implements ColumnTransform
 
     /**
      * Register the ColumnTransform output columns, including setting up any Suppliers of output values
+     *
+     * This method is called once per ETL run.
      */
     protected abstract void registerOutput();
 }
