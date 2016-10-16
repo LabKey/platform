@@ -9,7 +9,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.collections.CaseInsensitiveArrayListValuedMap;
 import org.labkey.api.data.Container;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
@@ -45,7 +44,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
- *  This cache will replace the complex module report loading and caching code that used to reside in ReportServiceImpl (recently moved to
+ *  This cache replaces the complex module report loading and caching code that used to reside in ReportServiceImpl (recently moved to
  *  the bottom of this file). Once complete, we should be able to remove that code, report-specific functionality in Module/DefaultModule
  *  (e.g., getCachedReport(Path), cacheReport(Path, ReportDescriptor), getReportFiles(), preloadReports(), moduleReportFilter),
  *  ReportDescriptor methods like isStale(), and ModuleReportResource.ensureScriptCurrent(). The new cache is implemented, but the file
@@ -228,21 +227,14 @@ public class ModuleReportCache
                 }
             };
          }
-
-        @Nullable
-        @Override
-        public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
-        {
-            return null;
-        }
     }
 
     @Nullable
     public static ReportDescriptor getModuleReportDescriptor(Module module, Container c, User user, String path)
     {
-        ReportDescriptor descriptor = getDescriptor(module, path, c, user);;
+        ReportDescriptor descriptor = getDescriptor(module, path, c, user);
 
-        // Test against new caching approach in dev mode
+        // Test against old caching approach in dev mode
         if (AppProps.getInstance().isDevMode())
         {
             ReportDescriptor oldDescriptor = getModuleReportDescriptorOLD(module, c, user, path);
@@ -260,7 +252,7 @@ public class ModuleReportCache
     {
         List<ReportDescriptor> descriptors = getDescriptors(module, path, c, user);
 
-        // Test against new caching approach in dev mode
+        // Test against old caching approach in dev mode
         if (AppProps.getInstance().isDevMode())
         {
             // Sort the old and new lists using the same comparator
@@ -295,7 +287,7 @@ public class ModuleReportCache
         LOG.error(message);
     }
 
-    /* ===== Once new cache is implemented and tested, delete everything below this point ===== */
+    /* ===== Once new cache is fully tested, delete everything below this point ===== */
 
     @Nullable
     private static ReportDescriptor getModuleReportDescriptorOLD(Module module, Container container, User user, String path)

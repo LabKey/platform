@@ -20,7 +20,6 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCacheHandler;
@@ -45,13 +44,6 @@ import java.io.IOException;
     private static final String TASK_CONFIG_EXTENSION = ".task.xml";
 
     static final String MODULE_TASKS_DIR = "tasks";
-
-    @Nullable
-    @Override
-    public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
-    {
-        return null;
-    }
 
     @Override
     public boolean isResourceFile(String filename)

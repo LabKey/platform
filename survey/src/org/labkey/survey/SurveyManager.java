@@ -47,7 +47,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCache;
@@ -71,7 +70,6 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -679,13 +677,6 @@ public class SurveyManager
                     throw new RuntimeException(e);
                 }
             };
-        }
-
-        @Nullable
-        @Override
-        public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
-        {
-            return null;
         }
 
         /** Find any .metadata.json files under the given surveyDir Resource. */
