@@ -1963,7 +1963,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         String materializeKeySql = "SELECT\n" + exp.getSqlDialect().concatenate(
                 "(select cast(count(*) as varchar) from exp.materialinput)",
                 "(select cast(count(*) as varchar) from exp.datainput)",
-                "(select cast(max(rowid) as varchar) from exp.protocolapplication)") + " AS key";
+                "(select cast(max(rowid) as varchar) from exp.protocolapplication)") + " AS \"key\"";
         final String materializeKey = new SqlSelector(exp, materializeKeySql).getObject(String.class);
 
         MaterializedCTE cte = edgesTableCTE.get();
