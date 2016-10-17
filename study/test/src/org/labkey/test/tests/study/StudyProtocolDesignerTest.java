@@ -73,6 +73,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
     private static final String[] TREATMENTS = {"Treatment1", "Treatment2"};
     private static final String[] NEW_ASSAYS = {"Elispot", "Neutralizing Antibodies", "ICS"};
     private static final String[] NEW_COHORTS = {"TestCohort", "OtherTestCohort"};
+    private static final String[] CHALLENGES = {"Challenge1", "Challenge2"};
 
     private static List<BaseManageVaccineDesignVisitPage.Visit> VISITS = Arrays.asList(
         new BaseManageVaccineDesignVisitPage.Visit("Enrollment", 0.0, 0.0),
@@ -152,10 +153,18 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         // add the second adjuvant with no dose/route values
         manageStudyProductsPage.addNewAdjuvantRow(ADJUVANTS[1], 1);
 
+        // add a couple of challenges.
+        manageStudyProductsPage.addNewChallengeRow(CHALLENGES[0], IMMUNOGEN_TYPES[0] + " Label", 0);
+        manageStudyProductsPage.addNewChallengesDoseAndRoute(DOSE_AND_UNITS[0], ROUTES[0], 0, 0);
+        manageStudyProductsPage.addNewChallengesDoseAndRoute(DOSE_AND_UNITS[1], ROUTES[0], 0, 1);
+        manageStudyProductsPage.addNewChallengeRow(CHALLENGES[1], IMMUNOGEN_TYPES[1] + " Label", 1);
+        manageStudyProductsPage.addNewChallengesDoseAndRoute(DOSE_AND_UNITS[2], null, 1, 0);
+
         manageStudyProductsPage.save();
 
         verifyImmunogenTable();
         verifyAdjuvantTable();
+        verifyChallengesTable();
     }
 
     @LogMethod
@@ -312,6 +321,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         verifyImmunogenTable();
         verifyAdjuvantTable();
         verifyTreatmentSchedule();
+        verifyChallengesTable();
 
         // the imported folder will have different visit RowIds, so re-populate
         populateVisitRowIds(getProjectName() + "/" + folderName, true);
@@ -342,6 +352,21 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
                     assertEquals("", SEQUENCES[j], vaccineDesignWebpart.getImmunogenAntigenRowCellDisplayValue("Sequence", i, j));
                 }
             }
+        }
+    }
+
+    @LogMethod(quiet = true)
+    private void verifyChallengesTable()
+    {
+        VaccineDesignWebpart vaccineDesignWebpart = new VaccineDesignWebpart(getDriver());
+        assertFalse(vaccineDesignWebpart.isEmpty());
+
+        assertEquals("Unexpected number of challenges rows", 2, vaccineDesignWebpart.getChallengesRowCount());
+
+        for (int i = 0; i < CHALLENGES.length; i++)
+        {
+            assertEquals("Unexpected challenge label at row " + i, CHALLENGES[i], vaccineDesignWebpart.getChallengeCellDisplayValue("Label", i));
+            assertEquals("Unexpected challenge type at row " + i, IMMUNOGEN_TYPES[i] + " Label", vaccineDesignWebpart.getChallengeCellDisplayValue("Type", i));
         }
     }
 
