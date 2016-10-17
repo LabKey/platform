@@ -3,17 +3,13 @@ package org.labkey.query.reports;
 import org.apache.commons.collections4.ListValuedMap;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.collections.CaseInsensitiveArrayListValuedMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache;
-import org.labkey.api.module.ModuleResourceCacheHandler;
-import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.ModuleResourceCache2;
+import org.labkey.api.module.ModuleResourceCacheHandler2;
 import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryRReportDescriptor;
@@ -26,7 +22,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 
 import java.io.FilenameFilter;
@@ -54,28 +49,26 @@ import java.util.stream.Collectors;
  */
 public class ModuleReportCache
 {
-    private static final Logger LOG = Logger.getLogger(ModuleReportCache.class);
-    private static final ModuleResourceCache<ReportCollections> MODULE_REPORT_DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(), "Module report cache", new ModuleReportHandler());
-
-    private static final FilenameFilter moduleReportFilter = (dir, name) ->
-        ModuleRReportDescriptor.accept(name) || StringUtils.endsWithIgnoreCase(name, ModuleJavaScriptReportDescriptor.FILE_EXTENSION);
-
-    private static final FilenameFilter moduleReportFilterWithQuery = (dir, name) ->
-        moduleReportFilter.accept(dir, name) || StringUtils.endsWithIgnoreCase(name, ModuleQueryReportDescriptor.FILE_EXTENSION);
-
     private static final String REPORT_PATH_STRING = "reports/schemas";
     private static final Path REPORT_PATH = Path.parse(REPORT_PATH_STRING);
     private static final ReportCollections EMPTY_REPORT_COLLECTIONS = new ReportCollections(new CaseInsensitiveArrayListValuedMap<>(), new HashMap<>());
+    private static final FilenameFilter moduleReportFilter = (dir, name) -> ModuleRReportDescriptor.accept(name) || StringUtils.endsWithIgnoreCase(name, ModuleJavaScriptReportDescriptor.FILE_EXTENSION);
+    private static final FilenameFilter moduleReportFilterWithQuery = (dir, name) -> moduleReportFilter.accept(dir, name) || StringUtils.endsWithIgnoreCase(name, ModuleQueryReportDescriptor.FILE_EXTENSION);
+
+    private static final ModuleResourceCache2<ReportCollections> MODULE_REPORT_DESCRIPTOR_CACHE = new ModuleResourceCache2<>("Module report cache", new ModuleReportHandler(), REPORT_PATH);
 
     static List<ReportDescriptor> getDescriptors(Module module, @Nullable String path, Container c, User user)
     {
-        return MODULE_REPORT_DESCRIPTOR_CACHE.getResource(module.getName(), new DefaultContainerUser(c, user)).getDescriptors(path);
+        ReportCollections collections = MODULE_REPORT_DESCRIPTOR_CACHE.getResourceMap(module, new DefaultContainerUser(c, user));
+        return collections.getDescriptors(path);
     }
 
     static @Nullable ReportDescriptor getDescriptor(Module module, String path, Container c, User user)
     {
-        return MODULE_REPORT_DESCRIPTOR_CACHE.getResource(module.getName(), new DefaultContainerUser(c, user)).getDescriptor(path);
+        ReportCollections collections = MODULE_REPORT_DESCRIPTOR_CACHE.getResourceMap(module, new DefaultContainerUser(c, user));
+        return collections.getDescriptor(path);
     }
+
 
     private static class ReportCollections
     {
@@ -126,107 +119,78 @@ public class ModuleReportCache
         }
     }
 
-    private static class ModuleReportHandler implements ModuleResourceCacheHandler<String, ReportCollections>
+
+    private static class ModuleReportHandler implements ModuleResourceCacheHandler2<ReportCollections>
     {
         @Override
-        public boolean isResourceFile(String filename)
+        public ReportCollections load(@Nullable Resource dir, Module module, Container c, User user)
+        {
+            if (null == dir)
+                return EMPTY_REPORT_COLLECTIONS;
+
+            CaseInsensitiveArrayListValuedMap<ReportDescriptor> mmap = new CaseInsensitiveArrayListValuedMap<>();
+            Map<String, ReportDescriptor> map = new HashMap<>();
+            addReports(module, dir, map, mmap, c, user);
+
+            return new ReportCollections(mmap, map);
+        }
+
+        private void addReports(Module module, Resource dir, Map<String, ReportDescriptor> map, MultiValuedMap<String, ReportDescriptor> mmap, Container c, User user)
+        {
+            Map<Path, ReportDescriptor> descriptors = new HashMap<>();
+            HashMap<String, Resource> possibleQueryReportFiles = new HashMap<>();
+            List<Resource> directories = new LinkedList<>();
+
+            for (Resource resource : dir.list())
+            {
+                if (resource.isCollection())
+                {
+                    directories.add(resource);
+                }
+                else
+                {
+                    String name = resource.getName();
+
+                    if (isResourceFile(name))
+                    {
+                        if (StringUtils.endsWithIgnoreCase(name, ModuleQueryReportDescriptor.FILE_EXTENSION))
+                            possibleQueryReportFiles.put(name, resource);
+                        else
+                            descriptors.put(resource.getPath(), createModuleReportDescriptorInstance(module, resource, c, user));  // TODO: Should have version that doesn't take Container and User
+                    }
+                }
+            }
+
+            descriptors.values()
+                .stream()
+                .filter(descriptor -> null != descriptor.getMetaDataFile())
+                .forEach(descriptor -> possibleQueryReportFiles.remove(descriptor.getMetaDataFile().getName()));
+
+            // Anything left in this map should be a Query Report
+            for (Resource resource : possibleQueryReportFiles.values())
+            {
+                descriptors.put(resource.getPath(), createModuleReportDescriptorInstance(module, resource, c, user));  // TODO: Should have version that doesn't take Container and User
+            }
+
+            Path path = dir.getPath();
+            String subpath = path.subpath(2, path.size()).toString();
+
+            descriptors.entrySet().forEach(entry ->
+            {
+                map.put(entry.getKey().toString(), entry.getValue());
+                mmap.put(subpath, entry.getValue());
+            });
+
+            for (Resource childDir : directories)
+            {
+                addReports(module, childDir, map, mmap, c, user);
+            }
+        }
+
+        private boolean isResourceFile(String filename)
         {
             return moduleReportFilterWithQuery.accept(null, filename);
         }
-
-        @Override
-        public String getResourceName(Module module, String filename)
-        {
-            // We're invalidating the whole list of reports, not individual reports... so leave resource name blank
-            return "";
-        }
-
-        @Override
-        public String createCacheKey(Module module, String resourceLocation)
-        {
-            // We're retrieving/caching/invalidating a list of reports, not individual reports, so append "*" to the
-            // requested path. This causes the listener to be registered in "path", not its parent.
-            return ModuleResourceCache.createCacheKey(module, "*");
-        }
-
-        @Override
-        public CacheLoader<String, ReportCollections> getResourceLoader()
-        {
-            return new CacheLoader<String, ReportCollections>()
-            {
-                @Override
-                public ReportCollections load(String moduleName, Object argument)
-                {
-                    // TODO: Remove this hack... shouldn't be passing in Container or User. But needed for now to validate new vs. old caching approach. #
-                    ContainerUser cu = (ContainerUser)argument;
-                    Container c = cu.getContainer();
-                    User user = cu.getUser();
-                    Module module = ModuleLoader.getInstance().getModule(moduleName);
-                    Resource reportsDir = getQueryReportsDirectory(module);
-
-                    if (null == reportsDir || !reportsDir.isCollection())
-                        return EMPTY_REPORT_COLLECTIONS;
-
-                    CaseInsensitiveArrayListValuedMap<ReportDescriptor> mmap = new CaseInsensitiveArrayListValuedMap<>();
-                    Map<String, ReportDescriptor> map = new HashMap<>();
-                    addReports(module, reportsDir, map, mmap, c, user);
-
-                    return new ReportCollections(mmap, map);
-                }
-
-                private void addReports(Module module, Resource dir, Map<String, ReportDescriptor> map, MultiValuedMap<String, ReportDescriptor> mmap, Container c, User user)
-                {
-                    Map<Path, ReportDescriptor> descriptors = new HashMap<>();
-                    HashMap<String, Resource> possibleQueryReportFiles = new HashMap<>();
-                    List<Resource> directories = new LinkedList<>();
-
-                    for (Resource resource : dir.list())
-                    {
-                        if (resource.isCollection())
-                        {
-                            directories.add(resource);
-                        }
-                        else
-                        {
-                            String name = resource.getName();
-
-                            if (isResourceFile(name))
-                            {
-                                if (StringUtils.endsWithIgnoreCase(name, ModuleQueryReportDescriptor.FILE_EXTENSION))
-                                    possibleQueryReportFiles.put(name, resource);
-                                else
-                                    descriptors.put(resource.getPath(), createModuleReportDescriptorInstance(module, resource, c, user));  // TODO: Should have version that doesn't take Container and User
-                            }
-                        }
-                    }
-
-                    descriptors.values()
-                        .stream()
-                        .filter(descriptor -> null != descriptor.getMetaDataFile())
-                        .forEach(descriptor -> possibleQueryReportFiles.remove(descriptor.getMetaDataFile().getName()));
-
-                    // Anything left in this map should be a Query Report
-                    for (Resource resource : possibleQueryReportFiles.values())
-                    {
-                        descriptors.put(resource.getPath(), createModuleReportDescriptorInstance(module, resource, c, user));  // TODO: Should have version that doesn't take Container and User
-                    }
-
-                    Path path = dir.getPath();
-                    String subpath = path.subpath(2, path.size()).toString();
-
-                    descriptors.entrySet().forEach(entry ->
-                    {
-                        map.put(entry.getKey().toString(), entry.getValue());
-                        mmap.put(subpath, entry.getValue());
-                    });
-
-                    for (Resource childDir : directories)
-                    {
-                        addReports(module, childDir, map, mmap, c, user);
-                    }
-                }
-            };
-         }
     }
 
     @Nullable
@@ -284,7 +248,7 @@ public class ModuleReportCache
 
     private static void log(String message)
     {
-        LOG.error(message);
+        throw new IllegalStateException(message);
     }
 
     /* ===== Once new cache is fully tested, delete everything below this point ===== */
