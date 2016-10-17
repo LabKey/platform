@@ -68,6 +68,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
     ColumnInfo _deletedQueryTsCol;
     boolean _useRowversionForSelect = false;
     boolean _useRowversionForDelete = false;
+
     private enum FilterTimestamp
     {
         START
@@ -210,10 +211,16 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         if (null == table || null == tsCol) // Should never happen, but just to be safe
             throw new IllegalStateException("NULL value for table or timestamp column name initializing filter.");
 
-        Object incrementalStartTimestamp = getLastSuccessfulIncrementalEndTimestampJson(deleting);
+        boolean useOverrideWindow = null != _context.getIncrementalWindow();
+        Object incrementalStartTimestamp = useOverrideWindow ? _context.getIncrementalWindow().first : getLastSuccessfulIncrementalEndTimestampJson(deleting);
         if (null != incrementalStartTimestamp)
             f.addCondition(tsCol.getFieldKey(), incrementalStartTimestamp, CompareType.GT);
 
+        SimpleFilter findMaxTsFilter = new SimpleFilter().addAllClauses(f);
+        if (useOverrideWindow && null != _context.getIncrementalWindow().second)
+        {
+            findMaxTsFilter.addCondition(tsCol.getFieldKey(), _context.getIncrementalWindow().second, CompareType.LTE);
+        }
         // Consider the timestamps of rows in *all* containers in scope by a specified filter
         if (null != _config.getSourceContainerFilter() && table.supportsContainerFilter())
         {
@@ -222,7 +229,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
 
         Aggregate max = new Aggregate(tsCol, Aggregate.Type.MAX);
 
-        TableSelector ts = new TableSelector(table, Collections.singleton(tsCol), f, null);
+        TableSelector ts = new TableSelector(table, Collections.singleton(tsCol), findMaxTsFilter, null);
         Map<String, List<Aggregate.Result>> results;
 
         // Issue 24301, from exception 21337. A misconfigured timestamp column can fail in lots of ways.
@@ -282,7 +289,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         return sb.toString();
     }
 
-    Object getLastSuccessfulIncrementalEndTimestampJson(boolean deleted)
+    private Object getLastSuccessfulIncrementalEndTimestampJson(boolean deleted)
     {
         TransformConfiguration cfg = TransformManager.get().getTransformConfiguration(_context.getContainer(), _context.getJobDescriptor());
         JSONObject state = cfg.getJsonState();
@@ -319,7 +326,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         return null!=json && json.has(property) ? json.get(property) : null;
     }
 
-    public boolean isUseRowversion(boolean deleting)
+    private boolean isUseRowversion(boolean deleting)
     {
         return deleting ? _useRowversionForDelete : _useRowversionForSelect;
     }
@@ -344,6 +351,12 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         public boolean checkStepsSeparately()
         {
             return true;
+        }
+
+        @Override
+        public Type getType()
+        {
+            return Type.ModifiedSince;
         }
     }
 

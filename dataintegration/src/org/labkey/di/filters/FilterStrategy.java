@@ -38,10 +38,18 @@ import java.io.Serializable;
  */
 public interface FilterStrategy
 {
+    enum Type
+    {
+        SelectAll,
+        ModifiedSince,
+        Run
+    }
+
     interface Factory extends Serializable
     {
         FilterStrategy getFilterStrategy(TransformJobContext context, StepMeta stepMeta);
         boolean checkStepsSeparately();
+        Type getType();
     }
 
     boolean hasWork();

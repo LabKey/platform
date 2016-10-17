@@ -23,6 +23,7 @@ import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.api.writer.ContainerUser;
 
 import java.io.Serializable;
@@ -35,10 +36,11 @@ import java.util.Map;
  */
 public class TransformJobContext extends ScheduledPipelineJobContext implements ContainerUser, Serializable
 {
-    String _transformId;
-    int _version;
-    PipelineJob _pipelineJob;
-    Map<ParameterDescription, Object> _params =  new LinkedHashMap<>();
+    private String _transformId;
+    private int _version;
+    private PipelineJob _pipelineJob;
+    private Map<ParameterDescription, Object> _params =  new LinkedHashMap<>();
+    private Pair<Object, Object> _incrementalWindow = null;
 
     // No-args constructor to support de-serialization in Java 7
     @SuppressWarnings({"UnusedDeclaration"})
@@ -90,4 +92,17 @@ public class TransformJobContext extends ScheduledPipelineJobContext implements 
         return _params;
     }
 
+    /** An explicit set of min/max incremental filter values, overriding any persisted values from previous runs.
+     *  Setting these values in the UI is only available in dev mode, and is intended to be used for testing
+     *  purposes only.
+     */
+    public Pair<Object, Object> getIncrementalWindow()
+    {
+        return _incrementalWindow;
+    }
+
+    public void setIncrementalWindow(Pair<Object, Object> incrementalWindow)
+    {
+        _incrementalWindow = incrementalWindow;
+    }
 }

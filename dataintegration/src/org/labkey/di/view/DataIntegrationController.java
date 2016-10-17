@@ -35,17 +35,21 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.pipeline.TransformConfiguration;
+import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -140,7 +144,7 @@ public class DataIntegrationController extends SpringActionController
             return appendNavTrail(root, "Transform History");
         }
 
-        protected NavTree appendNavTrail(NavTree root, String title)
+        NavTree appendNavTrail(NavTree root, String title)
         {
             if (_displayName != null)
                 title = title + " - " + _displayName;
@@ -213,6 +217,13 @@ public class DataIntegrationController extends SpringActionController
         String transformId = null;
         Boolean enabled = null;
         Boolean verboseLogging = null;
+        Date dateWindowMin = null;
+        Date dateWindowMax = null;
+        Integer intWindowMin = null;
+        Integer intWindowMax = null;
+        FilterStrategy.Type _type = null;
+        private boolean useDateWindow = false;
+        private boolean useIntWindow = false;
 
         public void setTransformId(String id)
         {
@@ -239,6 +250,70 @@ public class DataIntegrationController extends SpringActionController
         public Boolean isEnabled()
         {
             return this.enabled;
+        }
+
+        public Date getDateWindowMin()
+        {
+            return dateWindowMin;
+        }
+
+        public void setDateWindowMin(Date dateWindowMin)
+        {
+            this.dateWindowMin = dateWindowMin;
+            useDateWindow = true;
+        }
+
+        public Date getDateWindowMax()
+        {
+            return dateWindowMax;
+        }
+
+        public void setDateWindowMax(Date dateWindowMax)
+        {
+            this.dateWindowMax = dateWindowMax;
+            useDateWindow = true;
+        }
+
+        public Integer getIntWindowMin()
+        {
+            return intWindowMin;
+        }
+
+        public void setIntWindowMin(Integer intWindowMin)
+        {
+            this.intWindowMin = intWindowMin;
+            useIntWindow = true;
+        }
+
+        public Integer getIntWindowMax()
+        {
+            return intWindowMax;
+        }
+
+        public void setIntWindowMax(Integer intWindowMax)
+        {
+            this.intWindowMax = intWindowMax;
+            useIntWindow = true;
+        }
+
+        public FilterStrategy.Type getType()
+        {
+            return _type;
+        }
+
+        public void setType(FilterStrategy.Type type)
+        {
+            this._type = type;
+        }
+
+        public boolean isUseDateWindow()
+        {
+            return useDateWindow;
+        }
+
+        public boolean isUseIntWindow()
+        {
+            return useIntWindow;
         }
     }
 
@@ -355,7 +430,21 @@ public class DataIntegrationController extends SpringActionController
                         params.put(pd,q);
                 }
 
-                Integer jobId = TransformManager.get().runNowPipeline(etl, getContainer(), getUser(), params);
+                TransformJobContext context = (TransformJobContext) etl.getJobContext(getContainer(), getUser(), params);
+
+                /* For testing purposes in dev mode, we allow a min/max range to be specified for the incremental filter,
+                   overriding any persisted values.
+                */
+                if (form.isUseDateWindow() && FilterStrategy.Type.ModifiedSince == form.getType())
+                {
+                    context.setIncrementalWindow(new Pair<>(form.getDateWindowMin(), form.getDateWindowMax()));
+                }
+                else if (form.isUseIntWindow() && (FilterStrategy.Type.ModifiedSince == form.getType() || FilterStrategy.Type.Run == form.getType()))
+                {
+                    context.setIncrementalWindow(new Pair<>(form.getIntWindowMin(), form.getIntWindowMax()));
+                }
+
+                Integer jobId = TransformManager.get().runNowPipeline(etl, context);
                 ActionURL pipelineURL = jobId == null ? null : PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(getContainer(), jobId);
                 status = null == pipelineURL ? "No work" : "Queued";
                 if (null != pipelineURL)

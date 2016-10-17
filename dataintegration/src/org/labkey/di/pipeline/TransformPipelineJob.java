@@ -77,7 +77,8 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         // to passing around a TaskId instead.
         String filePath = StringUtils.replace(StringUtils.replace(etlDescriptor.getId(), "{", ""), "}", "");
         File etlLogFile = new File(etlLogDir, FileUtil.makeFileNameWithTimestamp(filePath, LOG_EXTENSION));
-        _transformJobContext = new TransformJobContext(etlDescriptor, info.getContainer(), info.getUser(), info._params);
+        _transformJobContext = new TransformJobContext(etlDescriptor, info.getContainer(), info.getUser(), info.getParams());
+        _transformJobContext.setIncrementalWindow(info.getIncrementalWindow());
         setLogFile(etlLogFile);
         // Default job to etl log directory & file base name. These will be changed if etl target is a file.
         setAnalysisDirectory(etlLogDir);
@@ -110,8 +111,8 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         {
             ParameterDescription pd = entry.getKey();
             Object value = entry.getValue();
-            if (info._params.containsKey(pd))
-                value = info._params.get(pd);
+            if (info.getParams().containsKey(pd))
+                value = info.getParams().get(pd);
             _variableMap.put(pd,value);
         }
 

@@ -19,15 +19,17 @@
 <%@ page import="org.labkey.api.data.RenderContext" %>
 <%@ page import="org.labkey.api.di.ScheduledPipelineJobDescriptor" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.di.filters.FilterStrategy" %>
 <%@ page import="org.labkey.di.pipeline.TransformConfiguration" %>
+<%@ page import="org.labkey.di.pipeline.TransformDescriptor" %>
 <%@ page import="org.labkey.di.pipeline.TransformManager" %>
 <%@ page import="org.labkey.di.pipeline.TransformRun" %>
 <%@ page import="org.labkey.di.view.DataIntegrationController" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
-<%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
@@ -92,7 +94,7 @@ boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
             fn: function(){window.location.reload(true);}
         });
     }
-    function Transform_setProperty(transformId, property, value)
+    function transform_setProperty(transformId, property, value)
     {
         var params = {'transformId':transformId};
         params[property] = value;
@@ -104,18 +106,23 @@ boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
             ,failure : onFailedConfigurationUpdate
         });
     }
-    function Transform_setEnabled(transformId, enabled)
+    function transform_setEnabled(transformId, enabled)
     {
-        Transform_setProperty(transformId, "enabled", enabled);
+        transform_setProperty(transformId, "enabled", enabled);
     }
-    function Transform_setVerboseLogging(transformId, verbose)
+    function transform_setVerboseLogging(transformId, verbose)
     {
-        Transform_setProperty(transformId, "verboseLogging", verbose);
+        transform_setProperty(transformId, "verboseLogging", verbose);
     }
 
-    function Transform_runNow(transformId)
+    function transform_runNow(transformId)
     {
-        var params = {'transformId':transformId};
+        var params = {'transformId': transformId};
+        transform_runWithParams(params);
+    }
+
+    function transform_runWithParams(params)
+    {
         Ext4.Ajax.request({
             url : <%=q(buildURL(DataIntegrationController.RunTransformAction.class))%>,
             params : params,
@@ -125,18 +132,18 @@ boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
                 var json = {};
                 try
                 {
-                    var json = response.responseJSON || LABKEY.Utils.decode(response.responseText);
+                    json = response.responseJSON || LABKEY.Utils.decode(response.responseText);
                 } catch (x) {}
                 if ("pipelineURL" in json && json.pipelineURL)
                     window.location = json.pipelineURL;
                 else
                     Ext4.MessageBox.alert("Success", json.status || "No work to do.");
             },
-            failure : LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure({transformId:transformId}), window, true)
+            failure : LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure({transformId:params['transformId']}), window, true)
         });
     }
 
-    function Transform_resetState(transformId)
+    function transform_resetState(transformId)
     {
         var params = {'transformId':transformId};
         Ext4.Ajax.request({
@@ -150,7 +157,7 @@ boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
         });
     }
 
-    function Transform_truncateResetState(transformId)
+    function transform_truncateResetState(transformId)
     {
         var params = {'transformId':transformId};
         Ext4.MessageBox.confirm(
@@ -186,6 +193,184 @@ boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
 
     }
 
+    function transform_runDialog(transformId, filterType)
+    {
+        var params = {'transformId': transformId,
+                        'type' : filterType};
+
+        var useModified = false;
+        var intFormTitle = '';
+        var intFieldLabel = 'Transfer Run Id'
+        if (filterType == 'ModifiedSince')
+        {
+            intFormTitle = 'Rowversion Range';
+            intFieldLabel = 'Rowversion';
+            useModified = true;
+        }
+
+        var cancelDialogButton = {
+            text: 'Cancel',
+            scope: this,
+            handler: function ()
+            {
+                win.close();
+            }
+        };
+        var helpMsg = {xtype: 'component', html: '<b>For testing purposes only.</b><br/>Overrides initial or persisted incremental filter values.<br/><br/>'};
+        var panelWidth = 325;
+
+        var dateItems = [
+            {xtype: 'fieldcontainer',
+            fieldLabel: 'Min Date/Time',
+            labelWidth: 120,
+            layout: 'hbox',
+            items: [{
+                xtype: 'datefield',
+                name: 'minDate',
+                hideLabel: true,
+                width: 100,
+                value: new Date(),
+                minValue: '1/1/1753'
+            },
+            {
+                xtype: 'timefield',
+                name: 'minTime',
+                hideLabel: true,
+                width: 100,
+                format: 'H:i',
+                increment: 30,
+                minValue: '1/1/1753'
+            }]
+        },
+            {
+                xtype: 'fieldcontainer',
+                fieldLabel: 'Max Date/Time',
+                labelWidth: 120,
+                layout: 'hbox',
+                items: [{
+                    xtype: 'datefield',
+                    name: 'maxDate',
+                    hideLabel: true,
+                    width: 100,
+                    value: new Date()
+                },
+                {
+                    xtype: 'timefield',
+                    name: 'maxTime',
+                    hideLabel: true,
+                    width: 100,
+                    format: 'H:i',
+                    increment: 30
+                }]
+            }
+        ];
+
+        var intItems = [
+            {xtype: 'fieldcontainer',
+            fieldLabel: 'Min ' + intFieldLabel,
+            labelWidth: 150,
+            layout: 'hbox',
+            items: [{
+                xtype: 'numberfield',
+                name: 'minInt',
+                hideLabel: true,
+                allowDecimals: false,
+                width: 150
+            }]
+        },
+        {
+            xtype: 'fieldcontainer',
+            fieldLabel: 'Max ' + intFieldLabel,
+            labelWidth: 150,
+            layout: 'hbox',
+            items: [{
+                xtype: 'numberfield',
+                name: 'maxInt',
+                hideLabel: true,
+                allowDecimals: false,
+                width: 150
+            }]
+        }
+        ];
+
+
+
+        var dateForm = Ext4.create('Ext.form.Panel', {
+            border: false,
+            title: 'Date Range',
+            items: dateItems,
+            width: panelWidth,
+            buttons: [{
+                text: 'Run',
+                scope: this,
+                handler: function()
+                {
+                    var values = dateForm.getValues();
+                    if (values.minDate != '')
+                    {
+                        var dateWindowMin = values.minDate;
+                        if (values.minTime != undefined)
+                        {
+                            dateWindowMin += ' ' + values.minTime;
+                        }
+                        params.dateWindowMin = dateWindowMin;
+                    }
+                    if (values.maxDate != '')
+                    {
+                        var dateWindowMax = values.maxDate;
+                        if (values.maxTime != undefined)
+                        {
+                            dateWindowMax += ' ' + values.maxTime;
+                        }
+                        params.dateWindowMax = dateWindowMax;
+                    }
+                    transform_runWithParams(params);
+                    win.close();
+                }
+            }, cancelDialogButton]
+        });
+
+        var integerForm = Ext4.create('Ext.form.Panel', {
+                    border: false,
+                    title: intFormTitle,
+                    items: intItems,
+                    width: panelWidth,
+                    buttons: [{
+                        text: 'Run',
+                        scope: this,
+                        handler: function(){
+                            var values = integerForm.getValues();
+                            if (values.minInt != undefined)
+                            {
+                                params.intWindowMin = values.minInt;
+                            }
+                            if (values.maxInt != undefined)
+                            {
+                                params.intWindowMax = values.maxInt;
+                            }
+                            transform_runWithParams(params);
+                            win.close();
+                        }
+                    }, cancelDialogButton]
+                }
+        );
+        
+        var modifiedForm = Ext4.create('Ext.tab.Panel', {
+            border: false,
+            width: panelWidth,
+            items: [dateForm, integerForm]
+        });
+
+
+        var win = Ext4.create('Ext.window.Window', {
+            title: 'Incremental Run Range',
+            autoShow: true,
+            modal: true,
+            resizable: false,
+            bodyStyle: 'padding: 10px;',
+            items: [helpMsg, useModified ? modifiedForm : integerForm]
+        });
+    }
 
 // UI GLUE
 function getTransformId(srcEl)
@@ -201,26 +386,31 @@ function getTransformId(srcEl)
 function onEnabledChanged(el,id)
 {
     var checked = el.checked;
-    Transform_setEnabled(id, checked);
+    transform_setEnabled(id, checked);
 }
 function onVerboseLoggingChanged(el,id)
 {
     var checked = el.checked;
-    Transform_setVerboseLogging(id, checked);
+    transform_setVerboseLogging(id, checked);
 }
 function onRunNowClicked(el,id)
 {
-    Transform_runNow(id);
+    transform_runNow(id);
+}
+
+function onRunDialogClicked(id, filterType)
+{
+    transform_runDialog(id, filterType);
 }
 
 function onResetStateClicked(el, id)
 {
-    Transform_resetState(id);
+    transform_resetState(id);
 }
 
 function onTruncateAndReset(el, id)
 {
-    Transform_truncateResetState(id);
+    transform_truncateResetState(id);
 }
 </script>
 
@@ -231,7 +421,7 @@ function onTruncateAndReset(el, id)
 
 <div class="labkey-data-region-wrap">
 <table class="labkey-data-region labkey-show-borders etl-table">
-    <tr class="etl-table-header">
+    <tr class="etl-table-header" align="center">
         <td class="labkey-column-header">Name</td>
         <td class="labkey-column-header">Source Module</td>
         <td class="labkey-column-header">Schedule</td>
@@ -241,22 +431,18 @@ function onTruncateAndReset(el, id)
         <td class="labkey-column-header">Last Successful Run</td>
         <td class="labkey-column-header">Last Checked</td>
     <%if(isAdmin) {%>
-        <td class="labkey-column-header"></td>
-        <td class="labkey-column-header"></td>
+        <td class="labkey-column-header">Run</td>
+        <% if (AppProps.getInstance().isDevMode()) { %>
+            <td class="labkey-column-header">Set Range</td>
+        <% } %>
+        <td class="labkey-column-header">Reset</td>
         <td class="labkey-column-header">Last Transform Run Log Error</td>
     <%}%>
     </tr><%
 
 int row = 0;
 List<ScheduledPipelineJobDescriptor> sortedDescriptors = new ArrayList<>(descriptorsMap.values());
-Collections.sort(sortedDescriptors, new Comparator<ScheduledPipelineJobDescriptor>()
-{
-    @Override
-    public int compare(ScheduledPipelineJobDescriptor o1, ScheduledPipelineJobDescriptor o2)
-    {
-        return o1.getName().compareToIgnoreCase(o2.getName());
-    }
-});
+Collections.sort(sortedDescriptors, (o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()));
 for (ScheduledPipelineJobDescriptor descriptor : sortedDescriptors)
 {
     row++;
@@ -283,7 +469,19 @@ for (ScheduledPipelineJobDescriptor descriptor : sortedDescriptors)
         <td><%=text(configuration.getLastStatusUrl())%></td>
         <td><%=text(configuration.getLastCompletionUrl())%></td>
         <td><%=text(configuration.getLastCheckedString())%></td>
-        <td class="etl-action-col"><%= button("run now").href("#").onClick("onRunNowClicked(this," + q(descriptor.getId()) + "); return false;").enabled(enableControls) %></td>
+        <td class="etl-action-col">
+            <%= button("run now").href("#").onClick("onRunNowClicked(this," + q(descriptor.getId()) + "); return false;").enabled(enableControls) %>
+        </td>
+        <% if (AppProps.getInstance().isDevMode()) { %>
+        <td class="etl-action-col">
+            <%  FilterStrategy.Type filterType = ((TransformDescriptor)descriptor).getDefaultFilterFactory().getType();
+                if (FilterStrategy.Type.ModifiedSince == filterType || FilterStrategy.Type.Run == filterType) { %>
+                <%= button("run...").href("#").onClick("onRunDialogClicked(" + q(descriptor.getId()) + ", " + q(filterType.toString()) + "); return false;").enabled(enableControls) %>
+            <%--<% } else { %>--%>
+                <%--<%= button("run ...").enabled(false)%>--%>
+            <% } %>
+        </td>
+        <% } %>
         <td class="etl-action-col"><%
             MenuButton reset = new MenuButton("Reset State...");
             reset.addMenuItem("Reset", "#", "onResetStateClicked(this," + q(descriptor.getId()) + "); return false;");

@@ -144,7 +144,7 @@ public class TransformManager implements DataIntegrationService.Interface
     private static final Logger LOG = Logger.getLogger(TransformManager.class);
     private static final String JOB_GROUP_NAME = "org.labkey.di.pipeline.ETLManager";
     private static final ModuleResourceCache<ScheduledPipelineJobDescriptor> DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(DescriptorCacheHandler.DIR_NAME), "ETL job descriptors", new DescriptorCacheHandler());
-    public static final String JOB_PENDING_MSG = "Not queuing job because ETL is already pending";
+    private static final String JOB_PENDING_MSG = "Not queuing job because ETL is already pending";
 
     private Map<String, StepProvider> _providers = new CaseInsensitiveHashMap<>();
 
@@ -324,7 +324,7 @@ public class TransformManager implements DataIntegrationService.Interface
 
     // errors
     static final String INVALID_TYPE = "Invalid transform type specified";
-    static final String TYPE_REQUIRED = "Transform type attribute is required";
+    private static final String TYPE_REQUIRED = "Transform type attribute is required";
     static final String ID_REQUIRED = "Id attribute is required";
     static final String DUPLICATE_ID = "Id attribute must be unique for each Transform";
     // errors used by stepMeta's
@@ -397,15 +397,20 @@ public class TransformManager implements DataIntegrationService.Interface
         return DESCRIPTOR_CACHE.getResource(id);
     }
 
-    public synchronized Integer runNowPipeline(ScheduledPipelineJobDescriptor descriptor, Container container, User user,
-            Map<ParameterDescription,Object> params)
+    synchronized Integer runNowPipeline(ScheduledPipelineJobDescriptor descriptor, Container container, User user,
+                                        Map<ParameterDescription, Object> params)
         throws PipelineJobException
     {
-        return runNowPipeline(descriptor, container, user, params, null, null, null);
+        return runNowPipeline(descriptor, descriptor.getJobContext(container, user, params), null, null, null);
     }
 
-    public synchronized Integer runNowPipeline(ScheduledPipelineJobDescriptor descriptor, Container container, User user,
-            Map<ParameterDescription,Object> params, Map<String, String> jobParams, File analysisDirectory, String baseName)
+    public synchronized Integer runNowPipeline(ScheduledPipelineJobDescriptor descriptor, ContainerUser context) throws PipelineJobException
+    {
+        return runNowPipeline(descriptor, context, null, null, null);
+    }
+
+    public synchronized Integer runNowPipeline(ScheduledPipelineJobDescriptor descriptor, ContainerUser context,
+                                               Map<String, String> jobParams, File analysisDirectory, String baseName)
         throws PipelineJobException
     {
         if (ViewServlet.isShuttingDown())
@@ -413,7 +418,6 @@ public class TransformManager implements DataIntegrationService.Interface
 
         try
         {
-            ContainerUser context = descriptor.getJobContext(container, user, params);
             // Don't double queue jobs
             if (descriptor.isPending(context) && !descriptor.isAllowMultipleQueuing())
             {
@@ -439,7 +443,7 @@ public class TransformManager implements DataIntegrationService.Interface
             {
                 PipelineService.get().setStatus(job, PipelineJob.TaskStatus.waiting.toString(), null, true);
                 PipelineService.get().queueJob(job);
-                return PipelineService.get().getJobId(user, container, job.getJobGUID());
+                return PipelineService.get().getJobId(context.getUser(), context.getContainer(), job.getJobGUID());
             }
             catch (Exception e)
             {
@@ -621,7 +625,7 @@ public class TransformManager implements DataIntegrationService.Interface
     }
 
 
-    boolean dumpScheduler()
+    private boolean dumpScheduler()
     {
         try
         {
@@ -958,7 +962,7 @@ public class TransformManager implements DataIntegrationService.Interface
     }
 
     @Nullable
-    public StepProvider getStepProvider(String providerName)
+    private StepProvider getStepProvider(String providerName)
     {
         return _providers.get(providerName);
     }
@@ -970,7 +974,7 @@ public class TransformManager implements DataIntegrationService.Interface
         ScheduledPipelineJobDescriptor etl = getDescriptor(transformId);
         if (etl == null)
             throw new NotFoundException(transformId);
-        return runNowPipeline(etl, c, u, new LinkedHashMap<ParameterDescription, Object>());
+        return runNowPipeline(etl, c, u, new LinkedHashMap<>());
     }
 
     //

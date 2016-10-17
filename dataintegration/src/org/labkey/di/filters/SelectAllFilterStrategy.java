@@ -66,5 +66,11 @@ public class SelectAllFilterStrategy extends FilterStrategyImpl
         {
             return false;
         }
+
+        @Override
+        public Type getType()
+        {
+            return Type.SelectAll;
+        }
     }
 }

@@ -58,17 +58,17 @@ import static org.labkey.di.DataIntegrationQuerySchema.Columns;
  */
 public class RunFilterStrategy extends FilterStrategyImpl
 {
-    SchemaKey _runTableSchema;
-    String _runTableName;
-    TableInfo _runsTable;
-    String _pkColumnName = null;
-    ColumnInfo _runPkCol;
+    private SchemaKey _runTableSchema;
+    private String _runTableName;
+    private TableInfo _runsTable;
+    private String _pkColumnName = null;
+    private ColumnInfo _runPkCol;
 
-    TableInfo _sourceTable;
-    String _fkDefaultColumnName = null;
-    ColumnInfo _sourceFkCol;
-    ColumnInfo _deletedFkCol;
-
+    private TableInfo _sourceTable;
+    private String _fkDefaultColumnName = null;
+    private ColumnInfo _sourceFkCol;
+    private ColumnInfo _deletedFkCol;
+    private boolean _useIncrementalWindow;
 
 
     public RunFilterStrategy(TransformJobContext context, StepMeta stepMeta, SchemaKey runTableSchema, String runTableName, String pkRunColumnName, String fkRunColumnName, DeletedRowsSource deletedRowsSource)
@@ -78,6 +78,7 @@ public class RunFilterStrategy extends FilterStrategyImpl
         _runTableName = runTableName;
         _pkColumnName = pkRunColumnName;
         _fkDefaultColumnName = fkRunColumnName;
+        _useIncrementalWindow = context.getIncrementalWindow() != null;
     }
 
 
@@ -153,7 +154,7 @@ public class RunFilterStrategy extends FilterStrategyImpl
     private Integer findNextRunId(boolean deleting)
     {
         SimpleFilter f = new SimpleFilter();
-        Integer lastRunId = getLastSuccessfulRunIdJSON(deleting);
+        Integer lastRunId = _useIncrementalWindow ? (Integer) _context.getIncrementalWindow().first : getLastSuccessfulRunIdJSON(deleting);
         if (null != lastRunId)
             f.addCondition(_runPkCol.getFieldKey(), lastRunId, CompareType.GT);
 
@@ -164,7 +165,13 @@ public class RunFilterStrategy extends FilterStrategyImpl
         Aggregate.Result minResult = list.get(0);
         Integer nextRunId = null;
         if (null != minResult.getValue())
-            nextRunId = ((Number)minResult.getValue()).intValue();
+        {
+            nextRunId = ((Number) minResult.getValue()).intValue();
+            if (_useIncrementalWindow && nextRunId > (Integer) _context.getIncrementalWindow().second)
+            {
+                nextRunId = (Integer) _context.getIncrementalWindow().second;
+            }
+        }
         return nextRunId;
     }
 
@@ -247,6 +254,12 @@ public class RunFilterStrategy extends FilterStrategyImpl
         public boolean checkStepsSeparately()
         {
             return false;
+        }
+
+        @Override
+        public Type getType()
+        {
+            return Type.Run;
         }
     }
 }

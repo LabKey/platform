@@ -76,7 +76,7 @@ public class QueueJobTask extends TaskRefTaskImpl
 
     private void queueJob(TransformPipelineJob transformJob, ScheduledPipelineJobDescriptor newEtl, TransformJobContext context, String basename) throws PipelineJobException
     {
-        Integer jobId = TransformManager.get().runNowPipeline(newEtl, context.getContainer(), context.getUser(), context.getParams(), transformJob.getParameters(), transformJob.getAnalysisDirectory(), basename);
+        Integer jobId = TransformManager.get().runNowPipeline(newEtl, context.clone(), transformJob.getParameters(), transformJob.getAnalysisDirectory(), basename);
         if (null == jobId)
             transformJob.info("No work for queued ETL " + _transformId);
         else transformJob.info("Queued job " + jobId.toString() + " for ETL " + _transformId);
