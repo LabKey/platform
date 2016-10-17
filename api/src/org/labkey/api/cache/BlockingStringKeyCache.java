@@ -16,7 +16,6 @@
 package org.labkey.api.cache;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.util.Filter;
 
 /**
  * User: adam
@@ -34,12 +33,6 @@ public class BlockingStringKeyCache<V> extends BlockingCache<String, V> implemen
 
     public int removeUsingPrefix(final String prefix)
     {
-        return removeUsingFilter(new Filter<String>(){
-            @Override
-            public boolean accept(String s)
-            {
-                return s.startsWith(prefix);
-            }
-        });
+        return removeUsingFilter(s -> s.startsWith(prefix));
     }
 }

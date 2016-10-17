@@ -747,7 +747,9 @@ api/src/org/labkey/api/module/ModuleHtmlViewDefinition.java -text
 api/src/org/labkey/api/module/ModuleLoader.java -text
 api/src/org/labkey/api/module/ModuleProperty.java -text
 api/src/org/labkey/api/module/ModuleResourceCache.java -text
+api/src/org/labkey/api/module/ModuleResourceCache2.java -text
 api/src/org/labkey/api/module/ModuleResourceCacheHandler.java -text
+api/src/org/labkey/api/module/ModuleResourceCacheHandler2.java -text
 api/src/org/labkey/api/module/ModuleResourceCaches.java -text
 api/src/org/labkey/api/module/ModuleResourceDirectory.java -text
 api/src/org/labkey/api/module/ModuleResourceLoadException.java -text
@@ -1130,6 +1132,7 @@ api/src/org/labkey/api/resource/FileResource.java -text
 api/src/org/labkey/api/resource/MergedDirectoryResource.java -text
 api/src/org/labkey/api/resource/Resolver.java -text
 api/src/org/labkey/api/resource/Resource.java -text
+api/src/org/labkey/api/resource/ResourceWrapper.java -text
 api/src/org/labkey/api/rstudio/RStudioService.java -text
 api/src/org/labkey/api/script/ScriptReference.java -text
 api/src/org/labkey/api/script/ScriptService.java -text

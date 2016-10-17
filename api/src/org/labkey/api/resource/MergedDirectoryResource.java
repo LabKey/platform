@@ -25,7 +25,6 @@ import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatcher;
 import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.Filter;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 
@@ -116,14 +115,7 @@ public class MergedDirectoryResource extends AbstractResourceCollection
     // Static method that operates on the shared cache; removes all children associated with this resolver.
     public static void clearResourceCache(final Resolver resolver)
     {
-        CHILDREN_CACHE.removeUsingFilter(new Filter<Pair<Resolver, Path>>()
-        {
-            @Override
-            public boolean accept(Pair<Resolver, Path> key)
-            {
-                return key.first == resolver;
-            }
-        });
+        CHILDREN_CACHE.removeUsingFilter(key -> key.first == resolver);
     }
 
     public MergedDirectoryResource(Resolver resolver, Path path, List<File> dirs, Resource... children)
