@@ -97,6 +97,7 @@ import org.labkey.query.sql.QueryTableInfo;
 import org.labkey.query.sql.SqlBuilder;
 import org.labkey.query.sql.SqlParser;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -125,6 +126,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -142,6 +144,8 @@ public class QueryServiceImpl extends QueryService
     private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
     private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
     public static final String EXPERIMENTAL_DATA_VIEW_PERFORMANCE = "data-views-performance";
+
+    private ConcurrentMap<Class<? extends Controller>, Pair<Module,String>> _schemaLinkActions = new ConcurrentHashMap<>();
 
     private final List<CompareType> COMPARE_TYPES = new CopyOnWriteArrayList<>(Arrays.asList(
             CompareType.EQUAL,
@@ -2649,6 +2653,35 @@ public class QueryServiceImpl extends QueryService
     public void removeCustomViewListener(CustomViewChangeListener listener)
     {
         QueryManager.get().removeCustomViewListener(listener);
+    }
+
+    @Override
+    public void registerSchemaLinkAction(@NotNull Class<? extends Controller> actionClass, @NotNull Module module, @NotNull String linkLabel)
+    {
+        synchronized(_schemaLinkActions)
+        {
+            if (_schemaLinkActions.keySet().contains(actionClass))
+                throw new IllegalStateException("Schema link action : " + actionClass.getName() + " has previously been registered.");
+
+            _schemaLinkActions.put(actionClass, new Pair<>(module, linkLabel));
+        }
+    }
+
+    public Map<ActionURL, String> getSchemaLinks(Container c)
+    {
+        Set<String> activeModuleNames = new HashSet<>();
+        for (Module module : c.getActiveModules())
+            activeModuleNames.add(module.getName());
+
+        Map<ActionURL, String> schemaLinks = new HashMap<>();
+        for (Class actionClass : _schemaLinkActions.keySet())
+        {
+            Pair<Module, String> actionInfo = _schemaLinkActions.get(actionClass);
+            if (!activeModuleNames.contains(actionInfo.first.getName()))
+                continue;
+            schemaLinks.put(new ActionURL(actionClass, c), actionInfo.second);
+        }
+        return schemaLinks;
     }
 
     private static class QAliasedColumn extends AliasedColumn
