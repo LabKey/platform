@@ -43,6 +43,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TableType;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
@@ -264,6 +265,21 @@ abstract public class QueryService
 
     abstract public void addCustomViewListener(CustomViewChangeListener listener);
     abstract public void removeCustomViewListener(CustomViewChangeListener listener);
+
+    /**
+     * Register an action that can be used for generating links to be displayed in schema browser
+     * @param actionClass Action class of the schema link to be registered
+     * @param module Module in which the actionClass resides
+     * @param linkLabel Label for displaying the action link
+     */
+    abstract public void registerSchemaLinkAction(@NotNull Class<? extends Controller> actionClass, @NotNull Module module, @NotNull String linkLabel);
+
+    /**
+     * Get the set of registered schema links for the active modules in the given container.
+     * @param c container
+     * @return
+     */
+    abstract public Map<ActionURL, String> getSchemaLinks(Container c);
 
     //
     // Thread local environment for executing a query
