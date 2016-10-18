@@ -35,6 +35,8 @@ import java.util.Map;
  */
 public abstract class AbstractDataLoaderFactory extends AbstractDocumentParser implements DataLoaderFactory
 {
+    private boolean _indexable;
+
     public AbstractDataLoaderFactory()
     {
         this(false);
@@ -42,9 +44,13 @@ public abstract class AbstractDataLoaderFactory extends AbstractDocumentParser i
     
     public AbstractDataLoaderFactory(boolean indexable)
     {
-        // NOTE: Disable all indexing for now
-        //if (indexable)
-        //    ServiceRegistry.get(SearchService.class).addDocumentParser(this);
+        _indexable = indexable;
+    }
+
+    @Override
+    public boolean indexable()
+    {
+        return _indexable;
     }
 
     @NotNull

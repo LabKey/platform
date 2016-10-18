@@ -37,4 +37,6 @@ public interface DataLoaderFactory extends SearchService.DocumentParser
     @NotNull DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException;
 
     @NotNull FileType getFileType();
+
+    boolean indexable();
 }
