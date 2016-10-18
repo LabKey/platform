@@ -15,15 +15,26 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.apache.log4j.Logger" %>
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.module.FolderType" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.util.NetworkDrive" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Path" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.webdav.WebdavResource" %>
+<%@ page import="org.labkey.api.webdav.WebdavService" %>
+<%@ page import="java.io.File" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Comparator" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -32,6 +43,38 @@
         dependencies.add("Ext4ClientApi"); // needed for labkey-combo
         dependencies.add("/extWidgets/IconPanel.js");
         dependencies.add("extWidgets/IconPanel.css");
+    }
+
+    HashMap<FolderType,String> m = new HashMap<>();
+    public String getFolderIconPath(Container c)
+    {
+        FolderType ft = c.getFolderType();
+        String ret = m.get(ft);
+        if (null == ret)
+        {
+            String defaultIconPath = FolderType.NONE.getFolderIconPath();
+            String iconPath = ft.getFolderIconPath();
+            if (iconPath.startsWith("/"))
+                iconPath = iconPath.substring(1);
+            if (!StringUtils.equals(iconPath, defaultIconPath))
+            {
+                WebdavResource resource = WebdavService.get().getRootResolver().lookup(Path.parse(iconPath));
+                if (null == resource)
+                    iconPath = defaultIconPath;
+                else
+                {
+                    File iconFile = resource.getFile();
+                    if (!NetworkDrive.exists(iconFile))
+                    {
+                        iconPath = defaultIconPath;  //fall back to default
+                        Logger.getLogger(FolderType.class).warn("Could not find specified icon: " + iconPath);
+                    }
+                }
+            }
+            ret = getContextPath() + "/" + iconPath;
+            m.put(ft, ret);
+        }
+        return ret;
     }
 %>
 <%
@@ -123,30 +166,49 @@ Ext4.onReady(function() {
         return filterArray;
     }
 
-    var store = Ext4.create('LABKEY.ext4.Store', {
-        containerPath: config.containerPath,
-        schemaName: 'core',
-        queryName: 'Containers',
-        sort: 'SortOrder,DisplayName',
-        containerFilter: config.containerFilter,
-        columns: 'Name,DisplayName,EntityId,Path,ContainerType',
-        autoLoad: false,
-        metadata: {
-            iconurl: {
-                createIfDoesNotExist: true,
-                setValueOnLoad: true,
-                getInitialValue: function(val, rec) {
-                    return LABKEY.ActionURL.buildURL('project', 'downloadProjectIcon', rec.get('EntityId'))
-                }
-            },
-            url: {
-                createIfDoesNotExist: true,
-                setValueOnLoad: true,
-                getInitialValue: function(val, rec) {
-                    return LABKEY.ActionURL.buildURL('project', 'start', rec.get('Path'))
-                }
-            }
+    // iconurl, url,Name,DisplayName,EntityId,Path,ContainerType
+    var data = [<%
+        ArrayList<Container> list = new ArrayList<>(ContainerManager.getProjects());
+        list.sort(new Comparator<Container>(){@Override
+            public int compare(Container c1, Container c2)
+            {
+                if (c1.getSortOrder() != c2.getSortOrder())
+                    return c1.getSortOrder() - c2.getSortOrder();
+                return c1.getTitle().compareTo(c2.getTitle());
+            }});
+        String comma = "";
+        for (Container c : list)
+        {
+            if (!c.hasPermission(getUser(),ReadPermission.class))
+                continue;
+            %><%=comma%>{
+                iconurl:<%=q(getFolderIconPath(c))%>,
+                url:<%=q(c.getStartURL(getUser()).getLocalURIString())%>,
+                Name:<%=q(c.getName())%>,
+                DisplayName:<%=q(c.getTitle())%>,
+                EntityId:<%=q(c.getEntityId().toString())%>,
+                Path:<%=q(c.getPath())%>,
+                ContainerType:<%=q(c.getType().toString())%>}<%
+            comma = ",";
         }
+    %>];
+
+    Ext4.define('org_labkey_core_Container', {
+        extend: 'Ext.data.Model',
+        fields: [
+            {name: 'iconurl', type: 'string'},
+            {name: 'url',  type: 'string'},
+            {name: 'Name',  type: 'string'},
+            {name: 'DisplayName',  type: 'string'},
+            {name: 'EntityId',  type: 'string'},
+            {name: 'Path',  type: 'string'},
+            {name: 'ContainerType',  type: 'string'}
+        ]
+    });
+    var store = Ext4.create('Ext.data.Store',
+    {
+        model : 'org_labkey_core_Container',
+        data : data
     });
 
     var panelCfg = {
@@ -191,7 +253,7 @@ Ext4.onReady(function() {
     panel.getFilterArray = getFilterArray;
 
     panel.store.filterArray = getFilterArray(panel);
-    panel.store.load();
+    //panel.store.load();
 
     var container = Ext4.create('Ext.container.Container', {
         renderTo : <%=PageFlowUtil.jsString(renderTarget)%>,
