@@ -58,7 +58,7 @@ public final class QueryBasedModuleResourceCache<T>
     private final BlockingCache<Module, Map<Path, Collection<T>>> _cache;
     private final QueryBasedModuleResourceCacheHandler<T> _handler;
     private final Set<String> _pathsWithListeners = new ConcurrentHashSet<>();
-    private final FileSystemWatcher _watcher = FileSystemWatchers.get("Query-based module resource watcher");
+    private final FileSystemWatcher _watcher = FileSystemWatchers.get();
 
     QueryBasedModuleResourceCache(Path root, String description, QueryBasedModuleResourceCacheHandler<T> handler)
     {

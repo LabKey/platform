@@ -112,7 +112,7 @@ public class ModuleResourceCaches
         private StandardModuleResourceDirectory(Path path)
         {
             _path = path;
-            _watcher = FileSystemWatchers.get("Module resource directory " + path.toString());
+            _watcher = FileSystemWatchers.get();
 
             for (Module module : ModuleLoader.getInstance().getModules())
                 registerModule(module);

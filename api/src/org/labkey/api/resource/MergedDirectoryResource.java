@@ -51,7 +51,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 public class MergedDirectoryResource extends AbstractResourceCollection
 {
     private static final Cache<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getBlockingCache(500, CacheManager.DAY, "MergedDirectoryResourceCache", null);
-    private static final FileSystemWatcher WATCHER = FileSystemWatchers.get("Merged directory resource watcher");
+    private static final FileSystemWatcher WATCHER = FileSystemWatchers.get();
     private static final Set<Pair<Resolver, Path>> KEYS_WITH_LISTENERS = new ConcurrentHashSet<>();
 
     private final List<File> _dirs;

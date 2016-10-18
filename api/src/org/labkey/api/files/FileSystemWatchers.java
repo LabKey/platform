@@ -47,6 +47,11 @@ public class FileSystemWatchers
 
     public static FileSystemWatcher get(String name)
     {
+        return get();
+    }
+
+    public static FileSystemWatcher get()
+    {
         return WATCHER;
     }
 }

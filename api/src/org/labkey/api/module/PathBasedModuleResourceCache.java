@@ -55,7 +55,7 @@ public final class PathBasedModuleResourceCache<T>
     private final BlockingStringKeyCache<T> _cache;
     private final ModuleResourceCacheHandler<Path, T> _handler;
     private final Set<String> _pathsWithListeners = new ConcurrentHashSet<>();
-    private final FileSystemWatcher _watcher = FileSystemWatchers.get("Path-based module resource watcher");
+    private final FileSystemWatcher _watcher = FileSystemWatchers.get();
 
     PathBasedModuleResourceCache(String description, ModuleResourceCacheHandler<Path, T> handler)
     {

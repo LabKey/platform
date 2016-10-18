@@ -97,7 +97,7 @@ public class DebugInfoDumper
         try
         {
             //noinspection unchecked
-            FileSystemWatchers.get("Debug info dumper").addListener(labkeyRoot.toPath(), new FileSystemDirectoryListener()
+            FileSystemWatchers.get().addListener(labkeyRoot.toPath(), new FileSystemDirectoryListener()
             {
                 @Override
                 public void entryCreated(Path directory, Path entry) {}

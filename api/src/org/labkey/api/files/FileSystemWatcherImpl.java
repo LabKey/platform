@@ -42,24 +42,20 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 
 /**
+ * Wraps the low-level Java WatchService API with a simple listener-based interface. Unlike WatchService, which is limited to one
+ * registration per file system directory, a single instance of this class should be sufficient to handle all file system listener
+ * needs of the entire server.
+ *
+ * Callers register a FileSystemDirectoryListener on a directory Path, specifying the desired WatchEvent.Kinds (CREATE, DELETE,
+ * and/or MODIFY); whenever an event occurs on any file or child directory in that directory, the appropriate method is invoked
+ * on all listeners registered on that directory that have requested notification of that event.
+ *
+ * This class is thread-safe, for both listener registration and event invocation. Implementations of FileSystemDirectoryListener
+ * must be thread-safe. Listener methods must return quickly since they are all invoked by a single thread.
+ *
  * User: adam
  * Date: 9/14/13
  * Time: 11:07 AM
- */
-
-/**
- * Wraps the low-level Java WatchService API with a simple listener-based interface. Callers register a FileSystemDirectoryListener
- * on a directory Path, specifying the desired WatchEvent.Kinds (CREATE, DELETE, and/or MODIFY); the appropriate listener method is
- * then invoked whenever a requested event occurs on any file in that directory.
- *
- * A single instance of this class should be sufficient to handle all the file system listener needs of the entire server. (The
- * initial implementation required one FileSystemWatcherImpl per resource type, due to WatchService's limit of one registration per
- * directory plus our need to monitor a single directory for multiple types; that approach required one FileSystemWatcherThread per
- * resource type, which was undesirable. Newer implementation adds bookkeeping to associate multiple listeners with a single
- * WatchService directory registration.)
- *
- * This class is thread-safe, for both listener registration and event invocation. Implementations of FileSystemDirectoryListener
- * must be thread-safe.
  */
 public class FileSystemWatcherImpl implements FileSystemWatcher
 {
@@ -85,7 +81,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
         // Register directory with the WatchService, if it's new
         if (null == previous)
-            directory.register(_watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);  // Register all events (future listener might events that current listener doesn't)
+            directory.register(_watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);  // Register all events (future listener might request events that current listener doesn't)
         else
             plm = previous;
 
