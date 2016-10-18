@@ -869,7 +869,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         File tempDirCopy = new File(workingDir, entry.getValue().getName());
                         if (!entry.getValue().equals(tempDirCopy))
                         {
-                            FileUtils.copyFile(entry.getValue(), tempDirCopy);
+                            FileUtils.moveFile(entry.getValue(), tempDirCopy);
+                            entry.setValue(tempDirCopy);
                         }
                         // Add it as an artifact the user can download
                         tempOutputFiles.add(tempDirCopy);
@@ -1106,6 +1107,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         public Logger getLogger()
         {
             return null;
+        }
+
+        @Override
+        public void init() throws ExperimentException
+        {
+
         }
     }
 }

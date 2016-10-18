@@ -103,6 +103,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     @Nullable
     Logger getLogger();
 
+    void init() throws ExperimentException;
 
     /**
      * Builder pattern for creating a AssayRunUploadContext instance.

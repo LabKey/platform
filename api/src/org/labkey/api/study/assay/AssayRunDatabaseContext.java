@@ -212,4 +212,10 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
     {
         return null;
     }
+
+    @Override
+    public void init() throws ExperimentException
+    {
+
+    }
 }

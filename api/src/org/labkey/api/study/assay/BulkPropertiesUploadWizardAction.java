@@ -93,7 +93,7 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
         {
             try
             {
-                PipelineDataCollector collector = form.getSelectedDataCollector();
+                PipelineDataCollector<BulkPropertiesUploadForm<ProviderType>> collector = form.getSelectedDataCollector();
                 RunStepHandler handler = getRunStepHandler();
                 List<ExpRun> runs = new ArrayList<>();
 
@@ -129,6 +129,7 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
                     {
                         // Something went wrong, restore the full list of files
                         PipelineDataCollector.setFileCollection(getViewContext().getRequest().getSession(true), getContainer(), form.getProtocol(), allFiles);
+                        collector.uploadFailed(form, allFiles);
                     }
                 }
             }

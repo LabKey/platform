@@ -171,6 +171,28 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return ensureUploadDirectory(context.getContainer());
     }
 
+    public Map<String, File> savePipelineFiles(ContextType context, Map<String, File> files) throws ExperimentException, IOException
+    {
+        Map<String, File> savedFiles = new TreeMap<>();
+        if (context.getRequest() instanceof MultipartHttpServletRequest)
+        {
+            File dir = getFileTargetDir(context);
+
+            for (String key : files.keySet())
+            {
+                File savedFile = new File(dir, files.get(key).getName());
+                FileUtils.copyFile(files.get(key), savedFile);
+                savedFiles.put(key, savedFile);
+            }
+        }
+        else
+        {
+            savedFiles = files;
+        }
+
+        return savedFiles;
+    }
+
     public Map<String, File> savePostedFiles(ContextType context, Set<String> parameterNames) throws ExperimentException, IOException
     {
         Map<String, File> files = new TreeMap<>();

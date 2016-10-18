@@ -18,20 +18,24 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.data.Container;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 
 import javax.servlet.http.HttpSession;
 import java.io.File;
-import java.io.IOException;
 import java.io.FileNotFoundException;
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Data collector that supplies files the user previously selected through the pipeline/file browser.
@@ -39,7 +43,7 @@ import java.util.*;
  * User: jeckels
  * Date: Jan 2, 2008
  */
-    public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AbstractAssayDataCollector<ContextType>
+    public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AbstractTempDirDataCollector<ContextType>
 {
     public PipelineDataCollector()
     {
@@ -148,14 +152,15 @@ import java.util.*;
     }
 
     @NotNull
-    public Map<String, File> createData(ContextType context) throws IOException
+    public Map<String, File> createData(ContextType context) throws IOException, ExperimentException
     {
         List<Map<String, File>> files = getFileQueue(context);
         if (files.isEmpty())
         {
             throw new FileNotFoundException("No files from the pipeline directory have been selected");
         }
-        return files.get(0);
+
+        return savePipelineFiles(context, files.get(0));
     }
 
     public boolean isVisible()

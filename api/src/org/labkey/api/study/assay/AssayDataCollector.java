@@ -73,4 +73,8 @@ public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
     Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException;
 
     public AdditionalUploadType getAdditionalUploadType(ContextType context);
+
+    void initDir(ContextType context) throws ExperimentException;
+
+    File getRoot(@Nullable ExpRun run, @Nullable File data);
 }

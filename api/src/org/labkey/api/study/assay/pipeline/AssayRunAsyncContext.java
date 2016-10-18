@@ -369,6 +369,12 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         return _logger;
     }
 
+    @Override
+    public void init() throws ExperimentException
+    {
+
+    }
+
     public void setLogger(Logger logger)
     {
         _logger = logger;

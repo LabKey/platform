@@ -121,6 +121,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         AssayProvider provider = context.getProvider();
         ExpProtocol protocol = context.getProtocol();
         ExpRun run = null;
+        context.init();
 
         // Check if assay protocol is configured to import in the background.
         // Issue 26811: If we don't have a view, assume that we are on a background job thread already.

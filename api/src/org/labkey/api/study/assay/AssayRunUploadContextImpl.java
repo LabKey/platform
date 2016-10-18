@@ -290,4 +290,10 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     {
         return _logger;
     }
+
+    @Override
+    public void init() throws ExperimentException
+    {
+
+    }
 }
