@@ -31,7 +31,6 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceWrapper;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
-import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 
 import java.util.Collection;
@@ -88,7 +87,7 @@ public final class ModuleResourceCache2<V>
 
         _cache = CacheManager.getBlockingCache(200, CacheManager.DAY, description, wrapper);  // One per module... so 200 should be ample
         _handler = handler;
-//        ensureListeners(root);
+//        ensureListeners(root);  // TODO: Enable this to ensure file listeners along the root... except that this seems to deadlock. Maybe push this into CacheLoader.load() above?
     }
 
     // Add a listener in all modules to every directory that's part of this root path. This ensures that the cache will be
@@ -113,10 +112,9 @@ public final class ModuleResourceCache2<V>
     }
 
     @Deprecated // This is temporary, until the ModuleReportCache work is finished
-    public @NotNull V getResourceMap(Module module, Object argument)
+    public @NotNull V getResourceMap(Module module, Container c, User user)
     {
-        ContainerUser cu = (ContainerUser)argument;
-        return _cache.get(module, new ContainerUserCache(cu.getContainer(), cu.getUser(), this));
+        return _cache.get(module, new ContainerUserCache(c, user, this));
     }
 
     private static class ContainerUserCache extends DefaultContainerUser
