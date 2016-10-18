@@ -182,6 +182,7 @@
                 showPagination: false,
                 allowChooseQuery: false,
                 allowChooseView: false,
+                showReports: false,
                 showDeleteButton: false,
                 renderTo: RENDERTO,
                 success: function() {
