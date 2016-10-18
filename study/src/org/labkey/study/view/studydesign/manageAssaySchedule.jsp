@@ -40,9 +40,10 @@
     StudyDesignController.AssayScheduleForm form = me.getModelBean();
 
     Container c = getContainer();
-
     Study study = StudyManager.getInstance().getStudy(getContainer());
-    boolean isDataspace = c.isProject() && c.isDataspace();
+
+    // assay schedule is editable for the individual studies in a Dataspace project
+    boolean disableEdit = c.isProject() && c.isDataspace();
 
     String visitNoun = "Visit";
     if (study != null && study.getTimepointType() == TimepointType.DATE)
@@ -56,7 +57,7 @@
     {
         Ext4.create('LABKEY.VaccineDesign.AssaySchedulePanel', {
             renderTo : 'assay-configurations-panel',
-            disableEdit : <%=isDataspace%>,
+            disableEdit : <%=disableEdit%>,
             visitNoun : <%=q(visitNoun)%>,
             useAlternateLookupFields : <%=form.isUseAlternateLookupFields()%>,
             returnURL : <%=q(returnUrl)%>

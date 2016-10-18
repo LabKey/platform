@@ -130,7 +130,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         vaccineDesignWebpart.manage();
 
         // add the first immunogen and define the dose/route values for it
-        ManageStudyProductsPage manageStudyProductsPage = new ManageStudyProductsPage(this);
+        ManageStudyProductsPage manageStudyProductsPage = new ManageStudyProductsPage(this, true);
         manageStudyProductsPage.addNewImmunogenRow(IMMUNOGENS[0], IMMUNOGEN_TYPES[0], 0);
         manageStudyProductsPage.addNewImmunogenDoseAndRoute(DOSE_AND_UNITS[0], ROUTES[0], 0, 0);
 
@@ -184,7 +184,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
 //        immunizationScheduleWebpart.manage();
 
         // add the first treatment and define the study products for it
-        ManageTreatmentsPage treatmentsPage = new ManageTreatmentsPage(this);
+        ManageTreatmentsPage treatmentsPage = new ManageTreatmentsPage(this, true);
         treatmentsPage.addNewTreatmentRow(TREATMENTS[0], TREATMENTS[0] + " Description", 0);
         treatmentsPage.addNewTreatmentImmunogenRow(IMMUNOGENS[0], DOSE_AND_UNITS[0], ROUTES[0], 0, 0);
         treatmentsPage.addNewTreatmentImmunogenRow(IMMUNOGENS[1], DOSE_AND_UNITS[1], ROUTES[0], 0, 1);
@@ -234,7 +234,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         assayScheduleWebpart.manage();
 
         // show all of the existing visit columns
-        ManageAssaySchedulePage assaySchedulePage = new ManageAssaySchedulePage(this);
+        ManageAssaySchedulePage assaySchedulePage = new ManageAssaySchedulePage(this, true);
         assaySchedulePage.addAllExistingVisitColumns();
 
         // add the first assay and define the properties for it

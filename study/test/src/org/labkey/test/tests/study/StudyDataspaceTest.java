@@ -19,9 +19,13 @@ import org.apache.commons.collections4.Bag;
 import org.apache.commons.collections4.bag.HashBag;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
+import org.labkey.api.util.Pair;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
+import org.labkey.test.components.studydesigner.ManageStudyProductsPage;
+import org.labkey.test.components.studydesigner.ManageTreatmentsPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
@@ -29,7 +33,9 @@ import org.labkey.test.util.PortalHelper;
 import org.openqa.selenium.WebElement;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -92,87 +98,62 @@ public class StudyDataspaceTest extends StudyBaseTest
     {
         log("Verify project has study, but can't import or export");
         clickFolder(getProjectName());
-        clickTab("Manage");
-        assertElementNotPresent(Locator.lkButton("Export Study"));
-        assertElementNotPresent(Locator.lkButton("Reload Study"));
-        goToModule("Query");
-        viewQueryData("study", "Product");
-        // Can insert into Product table in project
-        assertTextPresent(DataRegionTable.getInsertNewButtonText(), DataRegionTable.getImportBulkDataText());
+        verifyStudyExportButtons(false);
+        verifyStudyProductTableInfo(true, 0, null, null);
+        verifyStudyTreatmentTableInfo(false, 0, null, null);
+        verifyStudyAssayScheduleTableInfo(false, 0, null, null);
 
         // Import first study
         log("Import first study and verify");
         clickFolder(FOLDER_STUDY1);
-        startImportStudyFromZip(TestFileUtils.getSampleData("/studies/Dataspace/DataspaceStudyTest-Study1B.zip"), true, false);
-        waitForPipelineJobsToComplete(1, "Study import", false);
-        clickTab("Overview");
-        assertTextPresent("tracks data in", "over 97 time points", "Data is present for 8 Participants");
-
-        log("Check dataset 'Lab Results'");
-        goToModule("Query");
-        viewQueryData("study", "Lab Results");
-        DataRegionTable labResultsTable = new DataRegionTable("query", this);
-        assertEquals("Expected cell value.", "Buffalo1", labResultsTable.getDataAsText(0, "Lab"));
-        assertEquals("Expected cell value.", "gp145", labResultsTable.getDataAsText(0, "Product"));
-        assertEquals("Expected cell value.", "VRC-HIVADV014-00-VP", labResultsTable.getDataAsText(0, "Treatment"));
-        assertEquals("Expected cell value.", "543", labResultsTable.getDataAsText(0, "CD4"));
-        assertEquals("Expected cell value.", "Frankie Lee", labResultsTable.getDataAsText(0, "Treatment By"));
-
-        clickTab("Manage");
-        assertButtonPresent("Export Study");
-        assertButtonPresent("Reload Study");
-
-        log("Verify Product rows added");
-        clickFolder(getProjectName());
-        goToModule("Query");
-        viewQueryData("study", "Product");
-        DataRegionTable productTable = new DataRegionTable("query", this);
-        Assert.assertTrue("Product row count incorrect.", productTable.getDataRowCount() == 8);
-        List<String> productNames = productTable.getColumnDataAsText("Label");
-        Assert.assertTrue("Product table should contain these products.",
-                productNames.contains("gag") && productNames.contains("gag-pol-nef") && productNames.contains("gp145"));
-
-        // Import second study
-        clickFolder(FOLDER_STUDY2);
         startImportStudyFromZip(TestFileUtils.getSampleData("studies/Dataspace/DataspaceStudyTest-Study2B.zip"), true, false);
         waitForPipelineJobsToComplete(1, "Study import", false);
         clickTab("Overview");
         assertTextPresent("tracks data in", "over 103 time points", "Data is present for 8 Participants");
+        Map<String, Pair<Integer, String>> rowValueMap = new HashMap<>();
+        rowValueMap.put("Lab", new Pair<>(1, "Buffalo1"));
+        rowValueMap.put("Product", new Pair<>(1, "gakkon"));
+        rowValueMap.put("Treatment", new Pair<>(1, "Placebo"));
+        rowValueMap.put("CD4", new Pair<>(1, "520"));
+        rowValueMap.put("Treatment By", new Pair<>(1, "Frankie Lee"));
+        verifyLabResultsDataset(6, rowValueMap);
+        verifyDatasetNames(Arrays.asList("Lab Results", "Arms"));
+        verifyStudyExportButtons(true);
+        verifyStudyProductTableInfo(false, 4, Arrays.asList("pol", "gp145", "Gag", "gakkon"), FOLDER_STUDY1);
+        verifyStudyTreatmentTableInfo(true, 3, Arrays.asList("VRC-HIVADV014-00-VP", "Placebo", "VHS1"), FOLDER_STUDY1);
+        verifyStudyAssayScheduleTableInfo(true, 0, null, FOLDER_STUDY1);
 
-        log("Check dataset 'Lab Results'");
-        goToModule("Query");
-        viewQueryData("study", "Lab Results");
-        labResultsTable = new DataRegionTable("query", this);
-        assertEquals("Expected cell value.", "Buffalo1", labResultsTable.getDataAsText(1, "Lab"));
-        assertEquals("Expected cell value.", "gakkon", labResultsTable.getDataAsText(1, "Product"));
-        assertEquals("Expected cell value.", "Placebo", labResultsTable.getDataAsText(1, "Treatment"));
-        assertEquals("Expected cell value.", "520", labResultsTable.getDataAsText(1, "CD4"));
-        assertEquals("Expected cell value.", "Frankie Lee", labResultsTable.getDataAsText(1, "Treatment By"));
-
-        log("Verify Product rows added");
-        clickFolder(getProjectName());
-        goToModule("Query");
-        viewQueryData("study", "Product");
-        productTable = new DataRegionTable("query", this);
-        Assert.assertTrue("Product row count incorrect.", productTable.getDataRowCount() == 8);
-        productNames = productTable.getColumnDataAsText("Label");
-        Assert.assertTrue("Product table should contain these products.",
-                productNames.contains("gakkon") && productNames.contains("gag-pol-nef") && productNames.contains("gp145"));
+        // Import second study
+        clickFolder(FOLDER_STUDY2);
+        startImportStudyFromZip(TestFileUtils.getSampleData("/studies/Dataspace/DataspaceStudyTest-Study1B.zip"), true, false);
+        waitForPipelineJobsToComplete(1, "Study import", false);
+        clickTab("Overview");
+        assertTextPresent("tracks data in", "over 97 time points", "Data is present for 8 Participants");
+        rowValueMap = new HashMap<>();
+        rowValueMap.put("Lab", new Pair<>(0, "Buffalo1"));
+        rowValueMap.put("Product", new Pair<>(0, "gp145"));
+        rowValueMap.put("Treatment", new Pair<>(0, "VRC-HIVADV014-00-VP"));
+        rowValueMap.put("CD4", new Pair<>(0, "543"));
+        rowValueMap.put("Treatment By", new Pair<>(0, "Frankie Lee"));
+        verifyLabResultsDataset(11, rowValueMap);
+        verifyDatasetNames(Arrays.asList("Luminex", "Demographics", "Lab Results", "Arms"));
+        verifyStudyExportButtons(true);
+        verifyStudyProductTableInfo(false, 8, Arrays.asList("Gag", "nef", "gag/pol", "gp140", "gag-pol-nef"), FOLDER_STUDY2);
+        verifyStudyTreatmentTableInfo(true, 3, Arrays.asList("VRC-HIVDNA016-00-VP", "VRC-HIVADV014-00-VP", "Placebo"), FOLDER_STUDY2);
+        verifyStudyAssayScheduleTableInfo(true, 0, null, FOLDER_STUDY2);
 
         // Import third study
         clickFolder(FOLDER_STUDY5);
         startImportStudyFromZip(TestFileUtils.getSampleData("studies/Dataspace/DataspaceStudyTest-Study5.zip"), true, false);
         waitForPipelineJobsToComplete(1, "Study import", false);
-
-        log("Verify Product rows added");
-        clickFolder(getProjectName());
-        goToModule("Query");
-        viewQueryData("study", "Product");
-        productTable = new DataRegionTable("query", this);
-        Assert.assertTrue("Product row count incorrect.", productTable.getDataRowCount() == 8);
-        productNames = productTable.getColumnDataAsText("Label");
-        Assert.assertTrue("Product table should contain these products.",
-                productNames.contains("gakkon") && productNames.contains("gag-pol-nef") && productNames.contains("gp145"));
+        clickTab("Overview");
+        assertTextPresent("tracks data in", "over 6 time points", "Data is present for 3 Participants");
+        verifyLabResultsDataset(6, null);
+        verifyDatasetNames(Arrays.asList("Lab Results"));
+        verifyStudyExportButtons(true);
+        verifyStudyProductTableInfo(false, 8, Arrays.asList("gakkon", "gag-pol-nef", "gp145"), FOLDER_STUDY5);
+        verifyStudyTreatmentTableInfo(true, 1, Arrays.asList("Test Treatment"), FOLDER_STUDY5);
+        verifyStudyAssayScheduleTableInfo(true, 1, Arrays.asList("<Test Assay>"), FOLDER_STUDY5);
 
         // Export archive without Treatment, Product, etc.
         clickFolder(FOLDER_STUDY5);
@@ -189,19 +170,133 @@ public class StudyDataspaceTest extends StudyBaseTest
         clickFolder(SUBFOLDER_STUDY5);
         setPipelineRoot(getPipelinePath());
         importFolderFromPipeline("/export/folder.xml", 1, false);
-
-        log("Check dataset 'Lab Results'");
         clickFolder(SUBFOLDER_STUDY5);
-        goToModule("Query");
-        viewQueryData("study", "Lab Results");
-        labResultsTable = new DataRegionTable("query", this);
-        assertEquals("Expected cell value.", "Buffalo1", labResultsTable.getDataAsText(1, "Lab"));
-        assertEquals("Expected cell value.", "gakkon", labResultsTable.getDataAsText(1, "Product"));
-        assertEquals("Expected cell value.", "1850", labResultsTable.getDataAsText(1, "Lymphocytes"));
-        assertEquals("Expected cell value.", "LabKeyLab", labResultsTable.getDataAsText(4, "Lab"));
-        assertEquals("Expected cell value.", "gakkon", labResultsTable.getDataAsText(4, "Product"));
+        assertTextPresent("tracks data in", "over 6 time points", "Data is present for 3 Participants");
+        verifyLabResultsDataset(6, null);
+        verifyDatasetNames(Arrays.asList("Lab Results"));
+        verifyStudyExportButtons(true);
+        verifyStudyProductTableInfo(false, 8, Arrays.asList("gakkon", "gag-pol-nef", "gp145"), SUBFOLDER_STUDY5);
+        verifyStudyTreatmentTableInfo(true, 0, null, SUBFOLDER_STUDY5);
+        verifyStudyAssayScheduleTableInfo(true, 0, null, SUBFOLDER_STUDY5);
 
         verifyVisitTags();
+    }
+
+    private void verifyStudyExportButtons(boolean canExport)
+    {
+        clickTab("Manage");
+        if (canExport)
+        {
+            assertElementPresent(Locator.lkButton("Export Study"));
+            assertElementPresent(Locator.lkButton("Reload Study"));
+        }
+        else
+        {
+            assertElementNotPresent(Locator.lkButton("Export Study"));
+            assertElementNotPresent(Locator.lkButton("Reload Study"));
+        }
+    }
+
+    private void verifyStudyProductTableInfo(boolean canInsert, int expectedRowCount, List<String> expectedValues, String folderName)
+    {
+        goToModule("Query");
+        viewQueryData("study", "Product");
+        DataRegionTable productTable = new DataRegionTable("query", this);
+        Assert.assertTrue("Product row count incorrect.", productTable.getDataRowCount() == expectedRowCount);
+        verifyInsertButtonsExist(canInsert);
+        verifyRecordContainerLocation(true, folderName);
+        verifyRecordLabels("Label", expectedValues);
+
+        clickTab("Manage");
+        clickAndWait(Locator.linkWithText("Manage Study Products"));
+        ManageStudyProductsPage page = new ManageStudyProductsPage(this, canInsert);
+        Assert.assertEquals("Unexpected link to 'add new row'", canInsert, page.canAddNewRow());
+    }
+
+    private void verifyStudyTreatmentTableInfo(boolean canInsert, int expectedRowCount, List<String> expectedValues, String folderName)
+    {
+        goToModule("Query");
+        viewQueryData("study", "Treatment");
+        DataRegionTable treatmentTable = new DataRegionTable("query", this);
+        Assert.assertTrue("Treatment row count incorrect.", treatmentTable.getDataRowCount() == expectedRowCount);
+        verifyInsertButtonsExist(canInsert);
+        verifyRecordContainerLocation(false, folderName);
+        verifyRecordLabels("Label", expectedValues);
+
+        clickTab("Manage");
+        clickAndWait(Locator.linkWithText("Manage Treatments"));
+        ManageTreatmentsPage page = new ManageTreatmentsPage(this, canInsert);
+        Assert.assertEquals("Unexpected link to 'add new row'", canInsert, page.canAddNewRow());
+    }
+
+    private void verifyStudyAssayScheduleTableInfo(boolean canInsert, int expectedRowCount, List<String> expectedValues, String folderName)
+    {
+        goToModule("Query");
+        viewQueryData("study", "AssaySpecimen");
+        DataRegionTable assaySpecimenTable = new DataRegionTable("query", this);
+        Assert.assertTrue("Assay specimen row count incorrect.", assaySpecimenTable.getDataRowCount() == expectedRowCount);
+        verifyInsertButtonsExist(canInsert);
+        verifyRecordLabels("Assay Name", expectedValues);
+
+        clickTab("Manage");
+        clickAndWait(Locator.linkWithText("Manage Assay Schedule"));
+        ManageAssaySchedulePage page = new ManageAssaySchedulePage(this, canInsert);
+        Assert.assertEquals("Unexpected link to 'add new row'", canInsert, page.canAddNewRow());
+    }
+
+    private void verifyInsertButtonsExist(boolean expected)
+    {
+        if (expected)
+            assertTextPresent(DataRegionTable.getInsertNewButtonText(), DataRegionTable.getImportBulkDataText());
+        else
+            assertTextNotPresent(DataRegionTable.getInsertNewButtonText(), DataRegionTable.getImportBulkDataText());
+    }
+
+    private void verifyRecordContainerLocation(boolean atProject, String folderName)
+    {
+        DataRegionTable table = new DataRegionTable("query", this);
+        List<String> containerNames = table.getColumnDataAsText("Container");
+        if (table.getDataRowCount() > 0)
+        {
+            Assert.assertEquals("Records expected to be at the " + (atProject ? "project" : "folder") + " container", atProject, containerNames.contains(getProjectName()));
+            if (folderName != null)
+                Assert.assertEquals("Records expected to be at the " + (atProject ? "project" : "folder") + " container", atProject, !containerNames.contains(folderName));
+        }
+    }
+
+    private void verifyRecordLabels(String colName, List<String> expectedValues)
+    {
+        if (expectedValues != null)
+        {
+            DataRegionTable table = new DataRegionTable("query", this);
+            List<String> labels = table.getColumnDataAsText(colName);
+            for (String expectedValue : expectedValues)
+                Assert.assertTrue("Expected record label missing", labels.contains(expectedValue));
+        }
+    }
+
+    private void verifyLabResultsDataset(int expectedRowCount, Map<String, Pair<Integer, String>> rowValueMap)
+    {
+        goToModule("Query");
+        viewQueryData("study", "Lab Results");
+
+        DataRegionTable labResultsTable = new DataRegionTable("query", this);
+        Assert.assertTrue("Lab Results row count incorrect.", labResultsTable.getDataRowCount() == expectedRowCount);
+
+        if (rowValueMap != null)
+        {
+            for (Map.Entry<String, Pair<Integer, String>> entry : rowValueMap.entrySet())
+                assertEquals("Unexpected cell value.", entry.getValue().getValue(), labResultsTable.getDataAsText(entry.getValue().getKey(), entry.getKey()));
+        }
+    }
+
+    private void verifyDatasetNames(List<String> datasetNames)
+    {
+        clickTab("Manage");
+        assertElementPresent(Locator.tagWithText("td", "This study defines " + datasetNames.size() + " datasets"));
+        clickAndWait(Locator.linkWithText("Manage Datasets"));
+        for (String datasetName : datasetNames)
+            assertElementPresent(Locator.linkWithText(datasetName));
     }
 
     private void verifyVisitTags()

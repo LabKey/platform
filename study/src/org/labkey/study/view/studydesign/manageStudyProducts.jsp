@@ -37,9 +37,10 @@
 <%
     JspView<ReturnUrlForm> me = (JspView<ReturnUrlForm>) HttpView.currentView();
     ReturnUrlForm bean = me.getModelBean();
-
     Container c = getContainer();
-    boolean isDataspaceStudy = c.getProject() != null && c.getProject().isDataspace() && !c.isDataspace();
+
+    // study products are editable at the project level for Dataspace projects
+    boolean disableEdit = c.getProject() != null && c.getProject().isDataspace() && !c.isDataspace();
 
     String returnUrl = bean.getReturnUrl() != null ? bean.getReturnUrl() : PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c).toString();
 %>
@@ -49,7 +50,7 @@
     {
         Ext4.create('LABKEY.VaccineDesign.StudyProductsPanel', {
             renderTo : 'study-products-panel',
-            disableEdit : <%=isDataspaceStudy%>,
+            disableEdit : <%=disableEdit%>,
             returnURL : <%=q(returnUrl)%>
         });
 

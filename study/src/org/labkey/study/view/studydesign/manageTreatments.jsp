@@ -28,7 +28,6 @@
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
-<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
@@ -51,7 +50,9 @@
 
     Study study = StudyManager.getInstance().getStudy(c);
     boolean canManageStudy = c.hasPermission(user, ManageStudyPermission.class);
-    boolean isDataspaceStudy = c.getProject() != null && c.getProject().isDataspace() && !c.isDataspace();
+
+    // treatment schedule is editable for the individual studies in a Dataspace project
+    boolean disableEdit = c.isProject() && c.isDataspace();
 
     String visitNoun = "Visit";
     if (study != null && study.getTimepointType() == TimepointType.DATE)
@@ -90,7 +91,7 @@
 
                     Ext4.create(panelClass, {
                         renderTo : 'treatment-schedule-panel',
-                        disableEdit : <%=isDataspaceStudy%>,
+                        disableEdit : <%=disableEdit%>,
                         subjectNoun : <%=q(subjectNoun)%>,
                         visitNoun : <%=q(visitNoun)%>,
                         returnURL : <%=q(returnUrl)%>,

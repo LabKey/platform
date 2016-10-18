@@ -219,7 +219,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         goToManageStudy();
         clickAndWait(Locator.linkWithText("manage assay schedule"));
 
-        ManageAssaySchedulePage assaySchedulePage = new ManageAssaySchedulePage(this);
+        ManageAssaySchedulePage assaySchedulePage = new ManageAssaySchedulePage(this, true);
         assaySchedulePage.addNewVisitColumn("Visit 4", 4.0, 4.99);
         click(Locator.linkWithText("manage visits"));
         String url = getCurrentRelativeURL();
