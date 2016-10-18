@@ -1109,10 +1109,5 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             return null;
         }
 
-        @Override
-        public void init() throws ExperimentException
-        {
-
-        }
     }
 }

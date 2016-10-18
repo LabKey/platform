@@ -39,11 +39,4 @@ public abstract class AbstractAssayDataCollector<ContextType extends AssayRunUpl
     {
         return AdditionalUploadType.UploadRequired;
     }
-
-    public void initDir(ContextType context) throws ExperimentException
-    {
-
-    }
-
-
 }

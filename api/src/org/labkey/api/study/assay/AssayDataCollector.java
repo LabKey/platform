@@ -74,7 +74,7 @@ public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
 
     public AdditionalUploadType getAdditionalUploadType(ContextType context);
 
-    void initDir(ContextType context) throws ExperimentException;
+    default void initDir(ContextType context) throws ExperimentException {}
 
     File getRoot(@Nullable ExpRun run, @Nullable File data);
 }
