@@ -203,15 +203,33 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                 scope: this,
                 handler: function()
                 {
-                    // call beforeSubmit for each optionsForm
+                    // call beforeSubmit for each optionsForm.
+                    // if a section wants to display a confirmation message, gather those and ask if the user wants to proceed
+                    var confirmMsgs = [];
                     Ext4.each(this.getOptionsStore().getRange(), function(record)
                     {
                         var optionsForm = record.get('optionsForm') != null ? record.get('optionsForm').call(this) : null;
                         if (optionsForm != null)
-                            optionsForm.beforeSubmit();
+                        {
+                            var msg = optionsForm.beforeSubmit();
+                            if (msg)
+                                confirmMsgs.push(msg);
+                        }
                     }, this);
 
-                    document.getElementById('pipelineImportForm').submit();
+                    if (confirmMsgs.length > 0)
+                    {
+                        confirmMsgs.push("<br/>Would you like to proceed?");
+                        Ext4.Msg.confirm("Confirmation", confirmMsgs.join('<br/>'), function(btnId)
+                        {
+                            if (btnId == 'yes')
+                                document.getElementById('pipelineImportForm').submit();
+                        });
+                    }
+                    else
+                    {
+                        document.getElementById('pipelineImportForm').submit();
+                    }
                 }
             })
         }
@@ -338,6 +356,9 @@ Ext4.define('LABKEY.import.SpecificImportOptions', {
                 }
             }, this);
         }, this);
+
+        // no confirmation msg for this advanced import option section
+        return null;
     }
 });
 
@@ -477,6 +498,8 @@ Ext4.define('LABKEY.import.ApplyToMultipleFolders', {
 
     beforeSubmit : function()
     {
+        var targetFolderCount = 0;
+
         // add hidden form elements for each of the selected folders
         if (!this.hidden && this.formId != null)
         {
@@ -484,6 +507,8 @@ Ext4.define('LABKEY.import.ApplyToMultipleFolders', {
 
             Ext4.each(this.getView().getChecked(), function(record)
             {
+                targetFolderCount++;
+
                 form.createChild({
                     tag: 'input',
                     type: 'hidden',
@@ -492,6 +517,16 @@ Ext4.define('LABKEY.import.ApplyToMultipleFolders', {
                 });
             }, this);
         }
+
+        // return confirmation msg about how many target folders are selected
+        if (targetFolderCount > 0)
+        {
+            return "The import archive will be applied to <b>" + targetFolderCount + " selected target folder"
+                    + (targetFolderCount > 1 ? "s" : "") + "</b>. A separate pipeline import job will be created for each. "
+                    + "This action cannot be undone.";
+        }
+        else
+            return null;
     }
 });
 
