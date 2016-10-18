@@ -87,7 +87,7 @@ public class QAggregate extends QExpr
 
         if (type == Type.GROUP_CONCAT)
         {
-            SqlBuilder nestedBuilder = new SqlBuilder(builder.getDbSchema());
+            SqlBuilder nestedBuilder = new SqlBuilder(builder.getDialect());
             Iterator<QNode> iter = children().iterator();
             ((QExpr)iter.next()).appendSql(nestedBuilder, query);
 
@@ -98,7 +98,7 @@ public class QAggregate extends QExpr
             {
                 if (iter.hasNext())
                 {
-                    SqlBuilder delimiter = new SqlBuilder(builder.getDbSchema());
+                    SqlBuilder delimiter = new SqlBuilder(builder.getDialect());
                     ((QExpr)iter.next()).appendSql(delimiter, query);
                     gcSql = builder.getDialect().getGroupConcat(nestedBuilder, _distinct, true, delimiter.getSQL());
                 }
