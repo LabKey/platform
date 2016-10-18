@@ -28,4 +28,5 @@ public interface ActionType
     class Export implements ActionType {}
     class SelectData implements ActionType {}
     class SelectMetaData implements ActionType {}
+    class PhiReport implements ActionType {}
 }

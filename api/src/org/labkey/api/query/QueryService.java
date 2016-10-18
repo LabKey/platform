@@ -279,7 +279,7 @@ abstract public class QueryService
      * @param c container
      * @return
      */
-    abstract public Map<ActionURL, String> getSchemaLinks(Container c);
+    abstract public Map<ActionURL, String> getSchemaLinks(@NotNull Container c);
 
     //
     // Thread local environment for executing a query
