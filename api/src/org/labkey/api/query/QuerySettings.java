@@ -55,6 +55,7 @@ public class QuerySettings
     private boolean _allowChooseView = true;
     private boolean _allowCustomizeView = true;
     private boolean _allowHeaderLock = true;
+    private boolean _showReports = true;
     private boolean _ignoreUserFilter;
     private int _maxRows = 100;
     private long _offset = 0;
@@ -741,5 +742,15 @@ public class QuerySettings
     public void setLastFilterScope(@NotNull String lastFilterScope)
     {
         _lastFilterScope = lastFilterScope;
+    }
+
+    public boolean isShowReports()
+    {
+        return _showReports;
+    }
+
+    public void setShowReports(boolean showReports)
+    {
+        _showReports = showReports;
     }
 }

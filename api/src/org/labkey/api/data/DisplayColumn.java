@@ -761,7 +761,7 @@ public abstract class DisplayColumn extends RenderColumn
                 navtree.addChild(clearFilterItem);
             }
 
-            boolean disableAnalytics = BooleanUtils.toBoolean(ctx.getViewContext().getActionURL().getParameter(rgn.getName() + ".disableAnalytics"));
+            boolean disableAnalytics = !rgn.getSettings().isShowReports() || BooleanUtils.toBoolean(ctx.getViewContext().getActionURL().getParameter(rgn.getName() + ".disableAnalytics"));
             boolean allowCustomizeView = rgn.getSettings() != null && rgn.getSettings().isAllowCustomizeView();
             if (!disableAnalytics && allowCustomizeView && !getAnalyticsProviders().isEmpty())
             {

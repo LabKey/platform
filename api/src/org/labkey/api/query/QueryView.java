@@ -854,7 +854,8 @@ public class QueryView extends WebPartView<Object>
             bar.add(createViewButton(_itemFilter));
         }
 
-        if (isShowReports())
+        // buttons can be hidden either through query settings or method overriding
+        if (getSettings().isShowReports() && isShowReports())
         {
             bar.add(createReportButton());
             MenuButton chartButton = createChartButton();
