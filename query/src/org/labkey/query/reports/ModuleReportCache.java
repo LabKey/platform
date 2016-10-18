@@ -22,7 +22,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.writer.DefaultContainerUser;
 
 import java.io.FilenameFilter;
 import java.util.ArrayList;
@@ -59,13 +58,13 @@ public class ModuleReportCache
 
     static List<ReportDescriptor> getDescriptors(Module module, @Nullable String path, Container c, User user)
     {
-        ReportCollections collections = MODULE_REPORT_DESCRIPTOR_CACHE.getResourceMap(module, new DefaultContainerUser(c, user));
+        ReportCollections collections = MODULE_REPORT_DESCRIPTOR_CACHE.getResourceMap(module, c, user);
         return collections.getDescriptors(path);
     }
 
     static @Nullable ReportDescriptor getDescriptor(Module module, String path, Container c, User user)
     {
-        ReportCollections collections = MODULE_REPORT_DESCRIPTOR_CACHE.getResourceMap(module, new DefaultContainerUser(c, user));
+        ReportCollections collections = MODULE_REPORT_DESCRIPTOR_CACHE.getResourceMap(module, c, user);
         return collections.getDescriptor(path);
     }
 
