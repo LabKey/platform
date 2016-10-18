@@ -85,7 +85,8 @@ public class StudyTreatmentSchedule implements CustomApiForm
             Map<String, Object> visitProperties = new HashMap<>();
             visitProperties.put("RowId", v.getRowId());
             visitProperties.put("Label", v.getDisplayString());
-            visitProperties.put("SortOrder", v.getDisplayOrder());
+            visitProperties.put("DisplayOrder", v.getDisplayOrder());
+            visitProperties.put("SequenceNumMin", v.getSequenceNumMin());
 
             // tag those visits that are used in the treatment schedule
             visitProperties.put("Included", includedIds.contains(v.getRowId()));

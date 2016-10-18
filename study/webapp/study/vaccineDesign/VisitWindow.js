@@ -139,7 +139,7 @@ Ext4.define('LABKEY.VaccineDesign.VisitWindow', {
             this.filteredVisitStore = Ext4.create('Ext.data.Store', {
                 model : 'LABKEY.VaccineDesign.Visit',
                 data : data,
-                sorters : [{property: 'DisplayOrder'},{property: 'SequenceNumMin'}]
+                sorters : [{property: 'DisplayOrder', direction: 'ASC'},{property: 'SequenceNumMin', direction: 'ASC'}]
             });
         }
 

@@ -220,7 +220,8 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleGridBase', {
         {
             this.visitStore = Ext4.create('Ext.data.Store', {
                 model : 'LABKEY.VaccineDesign.Visit',
-                data : data
+                data : data,
+                sorters : [{property: 'DisplayOrder', direction: 'ASC'},{property: 'SequenceNumMin', direction: 'ASC'}]
             });
         }
 
