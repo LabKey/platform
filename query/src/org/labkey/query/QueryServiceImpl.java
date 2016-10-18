@@ -2667,7 +2667,7 @@ public class QueryServiceImpl extends QueryService
         }
     }
 
-    public Map<ActionURL, String> getSchemaLinks(Container c)
+    public Map<ActionURL, String> getSchemaLinks(@NotNull Container c)
     {
         Set<String> activeModuleNames = new HashSet<>();
         for (Module module : c.getActiveModules())
