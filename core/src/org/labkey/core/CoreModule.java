@@ -43,7 +43,41 @@ import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sampler;
 import org.labkey.api.collections.SwapQueue;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.AtomicDatabaseInteger;
+import org.labkey.api.data.BooleanFormat;
+import org.labkey.api.data.BuilderObjectFactory;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerDisplayColumn;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerService;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.InlineInClauseGenerator;
+import org.labkey.api.data.JsonTest;
+import org.labkey.api.data.MultiValuedRenderContext;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertySchema;
+import org.labkey.api.data.ResultSetSelectorTestCase;
+import org.labkey.api.data.RowTrackingResultSetWrapper;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfoFactory;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelectorTestCase;
+import org.labkey.api.data.StatementUtils;
+import org.labkey.api.data.TSVMapWriter;
+import org.labkey.api.data.TSVWriter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelectorTestCase;
+import org.labkey.api.data.TableViewFormTestCase;
+import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.TestSchema;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.dataiterator.CachingDataIterator;
@@ -69,6 +103,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.ExcelLoader;
@@ -109,7 +144,28 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.ReplacedRunFilter;
 import org.labkey.api.thumbnail.ThumbnailService;
-import org.labkey.api.util.*;
+import org.labkey.api.util.ChecksumUtil;
+import org.labkey.api.util.Compress;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.ExtUtil;
+import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.NumberUtilsLabKey;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.TidyUtil;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -264,6 +320,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ServiceRegistry.get().registerService(FolderSerializationRegistry.class, FolderSerializationRegistryImpl.get());
         ServiceRegistry.get().registerService(ViewService.class, ViewServiceImpl.getInstance());
 
+        // Register the default DataLoaders during init so they are available to sql upgrade scripts
+        DataLoaderServiceImpl dls = new DataLoaderServiceImpl();
+        dls.registerFactory(new ExcelLoader.Factory());
+        dls.registerFactory(new TabLoader.TsvFactory());
+        dls.registerFactory(new TabLoader.CsvFactory());
+        dls.registerFactory(new HTMLDataLoader.Factory());
+        dls.registerFactory(new JSONDataLoader.Factory());
+        dls.registerFactory(new FastaDataLoader.Factory());
+        ServiceRegistry.get().registerService(DataLoaderService.I.class, dls);
+
         new TemplateFactoryClassic().registerTemplates();
         new FrameFactoryClassic().registerFrames();
 
@@ -291,7 +357,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         NotificationService.register(NotificationServiceImpl.getInstance());
 
         ServiceRegistry.get().registerService(ThumbnailService.class, new ThumbnailServiceImpl());
-        ServiceRegistry.get().registerService(DataLoaderService.I.class, new DataLoaderServiceImpl());
         ServiceRegistry.get().registerService(ShortURLService.class, new ShortURLServiceImpl());
         ServiceRegistry.get().registerService(StatsService.class, new StatsServiceImpl());
         AnalyticsServiceImpl.register();
@@ -713,18 +778,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             fsr.addImportFactory(new SubfolderImporterFactory());
         }
 
-        // Register the default DataLoaders.
-        // The DataLoaderFactories also register a SearchService.DocumentParser so this should be done after SearchService is available.
-        DataLoaderService.I dls = DataLoaderService.get();
-        if (dls != null)
-        {
-            dls.registerFactory(new ExcelLoader.Factory());
-            dls.registerFactory(new TabLoader.TsvFactory());
-            dls.registerFactory(new TabLoader.CsvFactory());
-            dls.registerFactory(new HTMLDataLoader.Factory());
-            dls.registerFactory(new JSONDataLoader.Factory());
-            dls.registerFactory(new FastaDataLoader.Factory());
-        }
+        // Register indexable DataLoaders with the search service
+        DataLoaderServiceImpl.get().getFactories()
+                .stream()
+                .filter(DataLoaderFactory::indexable)
+                .forEach(dlf -> ServiceRegistry.get(SearchService.class).addDocumentParser(dlf));
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP,
                 "Client-side Exception Logging To Mothership",

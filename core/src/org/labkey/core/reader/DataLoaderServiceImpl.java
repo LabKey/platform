@@ -28,6 +28,7 @@ import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.webdav.WebdavResource;
@@ -41,6 +42,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,11 +59,21 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
     private MultiValuedMap<String, DataLoaderFactory> _extensionToFactory;
     private List<DataLoaderFactory> _factories;
 
+    public static DataLoaderServiceImpl get()
+    {
+        return (DataLoaderServiceImpl) ServiceRegistry.get(DataLoaderService.I.class);
+    }
+
     public DataLoaderServiceImpl()
     {
         _fileTypeToFactory = new LinkedHashMap<>();
         _extensionToFactory = new ArrayListValuedHashMap<>();
         _factories = new ArrayList<>(10);
+    }
+
+    public List<DataLoaderFactory> getFactories()
+    {
+        return Collections.unmodifiableList(_factories);
     }
 
     @Override
@@ -155,7 +167,7 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
         if (guessFormat != null)
         {
             DataLoaderFactory factory = _fileTypeToFactory.get(guessFormat);
-            assert factory != null : "No DataLoaderFactory registered for FileType.";
+            assert factory != null : "No DataLoaderFactory registered for FileType: " + guessFormat;
             if (factory != null)
             {
                 header = getHeader(null, is);
