@@ -324,12 +324,13 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
                     '      <div class="item-value"></div>',
                     '    </td>',
                     '    <td width="21px" valign="top"><div class="item-paperclip"></div></td>',
-                    '    <td width="15px" valign="top"><div class="labkey-tool labkey-tool-close" title="Remove filter clause"></div></td>',
+                    '    <td width="15px" valign="top"><div class="labkey-tool-close fa fa-times" title="Remove filter clause"></div></td>',
+                    '    <td width="5px"><span>&nbsp;</span></td>',/* Spacer on the end to prevent tools from appearing under scrollbar */
                     '  </tr>',
                     '  </tpl>',
                     '  <tr>',
                     '    <td colspan="3">',
-                    '      <span style="float:right;">',
+                    '      <span style="padding-left:3px;">',
                     // NOTE: The click event for the 'Add' text link is handled in onListBeforeClick.
                     LABKEY.Utils.textLink({text: "Add", onClick: "return false;", add: true}),
                     '      </span>',

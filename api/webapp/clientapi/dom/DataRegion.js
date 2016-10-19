@@ -4177,7 +4177,7 @@ if (!LABKEY.DataRegions) {
      * @param {String} [config.showRows] Either 'paginated' (the default) 'selected', 'unselected', 'all', or 'none'.
      *        When 'paginated', the maxRows and offset parameters can be used to page through the query's result set rows.
      *        When 'selected' or 'unselected' the set of rows selected or unselected by the user in the grid view will be returned.
-     *        You can programatically get and set the selection using the {@link LABKEY.DataRegion.setSelected} APIs.
+     *        You can programmatically get and set the selection using the {@link LABKEY.DataRegion.setSelected} APIs.
      *        Setting <code>config.maxRows</code> to -1 is the same as 'all'
      *        and setting <code>config.maxRows</code> to 0 is the same as 'none'.
      * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to 100).
@@ -4219,7 +4219,7 @@ if (!LABKEY.DataRegions) {
              buttonBarPosition: 'none',
              aggregates: [
                     {column: 'First', type: LABKEY.AggregateTypes.COUNT, label: 'Total People'},
-                    {column: 'Age', type: LABKEY.AggregateTypes.AVG}
+                    {column: 'Age', type: LABKEY.AggregateTypes.MEAN}
              ],
              filters: [
                     LABKEY.Filter.create('Last', 'Flintstone')
@@ -4480,11 +4480,11 @@ LABKEY.AggregateTypes = {
      */
     SUM: 'sum',
     /**
-     * Displays the average of the values in the specified column
+     * Displays the mean of the values in the specified column
      */
-    AVG: 'avg',
+    MEAN: 'mean',
     /**
-     * Displays the count of the values in the specified column
+     * Displays the count of the non-blank values in the specified column
      */
     COUNT: 'count',
     /**
@@ -4494,5 +4494,9 @@ LABKEY.AggregateTypes = {
     /**
      * Displays the minimum values from the specified column
      */
-    MAX: 'max'
+    MAX: 'max',
+    /**
+     * Deprecated - use LABKEY.AggregateTypes.MEAN
+     */
+    AVG: 'mean'
 };

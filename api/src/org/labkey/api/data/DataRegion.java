@@ -1406,34 +1406,13 @@ public class DataRegion extends AbstractDataRegion
     {
         if (_aggregateResults != null && !_aggregateResults.isEmpty())
         {
-            // determine if all our aggregates are the same type.  If so, we don't have to
-            // clutter our aggregate table row by outputting the type repeatedly (bug 1755):
-
-            //we also find the set of distinct aggregate labels and output 1 row per label
-            Iterator<Map.Entry<String, List<Aggregate.Result>>> it = _aggregateResults.entrySet().iterator();
-            Set<String> aggregateLabels = new HashSet<>();
-
-            while (it.hasNext())
-            {
-                Map.Entry<String, List<Aggregate.Result>> result = it.next();
-                for (Aggregate.Result r : result.getValue())
-                {
-                    aggregateLabels.add(r.getAggregate().getDisplayString());
-                }
-            }
-
             out.write("<tr class=\"labkey-col-total labkey-row\">");
+
             if (showRecordSelectors)
             {
-                out.write("<td nowrap class='labkey-selectors'>");
-                if (aggregateLabels.size() == 1)
-                    out.write(aggregateLabels.toArray()[0] + ":");
-                else
-                    out.write("&nbsp;");
-                out.write("</td>");
+                out.write("<td nowrap class='labkey-selectors'>&nbsp;</td>");
             }
 
-            boolean first = true;
             for (DisplayColumn renderer : renderers)
             {
                 if (renderer.isVisible(ctx))
@@ -1442,18 +1421,7 @@ public class DataRegion extends AbstractDataRegion
                     if (renderer.getTextAlign() != null)
                         out.write(" align='" + renderer.getTextAlign() + "'");
                     out.write(">");
-                    // if we aren't showing record selectors, output our aggregate type
-                    // at the beginning of the first row, regardless of whether or not its
-                    // an aggregate col itself.  This way, the agg type always shows up far-left.
-                    if (first)
-                    {
-                        if (!showRecordSelectors && aggregateLabels.size() == 1)
-                        {
-                            out.write(aggregateLabels.toArray()[0].toString());
-                            out.write(":&nbsp;");
-                        }
-                        first = false;
-                    }
+
                     ColumnInfo col = renderer.getColumnInfo();
 
                     List<Aggregate.Result> result = null;
@@ -1465,22 +1433,16 @@ public class DataRegion extends AbstractDataRegion
                     }
                     if (result != null)
                     {
-                        out.write("<table class='labkey-noborder'>");
-                        String delim = "";
                         for (Aggregate.Result r : result)
                         {
-                            out.write(delim);
-                            Format formatter = renderer.getFormat();
-                            if (aggregateLabels.size() > 1)
-                            {
-                                out.write("<tr><td>" + r.getAggregate().getDisplayString());
-                                out.write(":&nbsp;</td>");
-                            }
-                            out.write("<td>");
+                            out.write("<div>");
+                            out.write("<span class='aggregate-label'>" + r.getAggregate().getDisplayString() + ":</span>&nbsp;");
 
                             // Issue 16570: Formatter is only applicable if the aggregate return type is
                             // similar to the input jdbcType.  For example, don't apply a date format
                             // to COUNT aggregates but do apply a string or double format to a MIN/MAX aggregate.
+                            Format formatter = renderer.getFormat();
+
                             Aggregate.Type type = r.getAggregate().getType();
                             JdbcType inputType = col.getJdbcType();
                             JdbcType returnType = type.returnType(inputType);
@@ -1489,7 +1451,7 @@ public class DataRegion extends AbstractDataRegion
                                 if (r.getValue() == null)
                                 {
                                     // no values to aggregate
-                                    out.write("&nbsp;");
+                                    out.write("n/a");
                                 }
                                 else if (formatter != null &&
                                         (inputType == returnType ||
@@ -1511,15 +1473,14 @@ public class DataRegion extends AbstractDataRegion
                             {
                                 out.write("<span class='labkey-error'>Not valid for type '" + col.getFriendlyTypeName() + "'</span>");
                             }
-                            out.write("</td></tr>");
-
-                            delim = "";
+                            out.write("</div>");
                         }
-
-                        out.write("</table>");
                     }
                     else
+                    {
                         out.write("&nbsp;");
+                    }
+
                     out.write("</td>");
                 }
             }

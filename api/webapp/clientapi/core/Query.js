@@ -1093,7 +1093,7 @@ LABKEY.Query = new function()
             if (isNumericType && !isKeyField && !isLookup)
             {
                 aggregates.push(LABKEY.AggregateTypes.SUM);
-                aggregates.push(LABKEY.AggregateTypes.AVG);
+                aggregates.push(LABKEY.AggregateTypes.MEAN);
             }
             if ((isNumericType && !isLookup) || jsonType == 'date')
             {

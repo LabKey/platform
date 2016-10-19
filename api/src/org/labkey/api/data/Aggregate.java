@@ -69,8 +69,14 @@ public class Aggregate
                         }
                     }
                 },
-        AVG("Average")
+        MEAN("Mean")
                 {
+                    @Override
+                    public String getSQLFunctionName()
+                    {
+                        return "AVG";
+                    }
+
                     @Override
                     public JdbcType returnType(JdbcType jdbcType)
                     {
@@ -88,7 +94,7 @@ public class Aggregate
                         }
                     }
                 },
-        COUNT("Count")
+        COUNT("Count (non-blank)")
                 {
                     @Override
                     public JdbcType returnType(JdbcType jdbcType)
@@ -126,13 +132,18 @@ public class Aggregate
             _friendlyName = friendlyName;
         }
 
+        public String getSQLFunctionName()
+        {
+            return name();
+        }
+
         public String getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct)
         {
             if (jdbcType != null && !isLegal(jdbcType))
                 return null;
 
             StringBuilder sb = new StringBuilder();
-            sb.append(name()).append("(");
+            sb.append(getSQLFunctionName()).append("(");
             if (distinct)
                 sb.append("DISTINCT ");
             sb.append(dialect.getColumnSelectName(columnName));
@@ -160,6 +171,14 @@ public class Aggregate
          * JdbcType or null if the type is not applicable (e.g. SUM of a date column).
          */
         public abstract JdbcType returnType(JdbcType jdbcType);
+
+        public static Type getValueOf(String type)
+        {
+            // backwards compatibility for mapping AVG -> MEAN
+            String propType = "AVG".equalsIgnoreCase(type) ? Type.MEAN.name() : type;
+
+            return Aggregate.Type.valueOf(propType.toUpperCase());
+        }
     }
 
     public static class Result
@@ -252,7 +271,7 @@ public class Aggregate
     public String toLabKeySQL()
     {
         StringBuilder sb = new StringBuilder();
-        sb.append(_type.name()).append("(");
+        sb.append(_type.getSQLFunctionName()).append("(");
         if (_distinct)
             sb.append("DISTINCT ");
         sb.append(getFieldKey().toSQLString());
@@ -290,7 +309,7 @@ public class Aggregate
         }
         else
         {
-            return _type.name() + (_distinct ? "Distinct" : "") + alias;
+            return _type.getSQLFunctionName() + (_distinct ? "Distinct" : "") + alias;
         }
     }
 
@@ -423,7 +442,7 @@ public class Aggregate
                 }
             }
 
-            Aggregate.Type type = Aggregate.Type.valueOf(properties.get("type").toUpperCase());
+            Aggregate.Type type = Aggregate.Type.getValueOf(properties.get("type").toUpperCase());
 
             String label = null;
             if (properties.containsKey("label"))
@@ -471,10 +490,10 @@ public class Aggregate
             assertAggregate(false, Type.SUM, JdbcType.BOOLEAN);
             assertAggregate(true,  Type.SUM, JdbcType.INTEGER);
 
-            assertAggregate(false, Type.AVG, JdbcType.DATE);
-            assertAggregate(false, Type.AVG, JdbcType.VARCHAR);
-            assertAggregate(false, Type.AVG, JdbcType.BOOLEAN);
-            assertAggregate(true,  Type.AVG, JdbcType.INTEGER);
+            assertAggregate(false, Type.MEAN, JdbcType.DATE);
+            assertAggregate(false, Type.MEAN, JdbcType.VARCHAR);
+            assertAggregate(false, Type.MEAN, JdbcType.BOOLEAN);
+            assertAggregate(true,  Type.MEAN, JdbcType.INTEGER);
 
             assertAggregate(true,  Type.COUNT, JdbcType.DATE);
             assertAggregate(true,  Type.COUNT, JdbcType.VARCHAR);

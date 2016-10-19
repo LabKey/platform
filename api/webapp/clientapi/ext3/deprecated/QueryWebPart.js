@@ -190,7 +190,7 @@ var qwp1 = new LABKEY.QueryWebPart({
 	buttonBarPosition: 'none',
 	aggregates: [
 		{column: 'First', type: LABKEY.AggregateTypes.COUNT, label: 'Total People'},
-		{column: 'Age', type: LABKEY.AggregateTypes.AVG}
+		{column: 'Age', type: LABKEY.AggregateTypes.MEAN}
 	],
 	filters: [
 		LABKEY.Filter.create('Last', 'Flintstone')

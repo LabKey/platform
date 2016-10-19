@@ -1326,7 +1326,7 @@ public class Table
             aggregates.add(Aggregate.createCountStar());
             aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.COUNT));
             aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.SUM));
-            aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.AVG));
+            aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.MEAN));
             aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.MIN));
             aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.MAX));
             aggregates.add(new Aggregate(tinfo.getColumn("Parent"), Aggregate.Type.COUNT));

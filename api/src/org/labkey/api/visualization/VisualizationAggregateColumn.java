@@ -32,7 +32,7 @@ public class VisualizationAggregateColumn extends VisualizationSourceColumn
         String aggregate = measure.getAggregate();
         if (aggregate == null)
             aggregate = "MAX";
-        _aggregate = Aggregate.Type.valueOf(aggregate);
+        _aggregate = Aggregate.Type.getValueOf(aggregate);
     }
 
     public Aggregate.Type getAggregate()

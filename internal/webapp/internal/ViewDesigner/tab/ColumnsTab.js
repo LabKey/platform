@@ -96,16 +96,16 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                     '  <tr>',
                     '    <td class="labkey-grab"></td>',
                     '    <td><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
-                    '    <td><div class="item-aggregate">{[this.getAggegateCaption(values)]}</div></td>',
+                    '    <td valign="top"><div class="item-aggregate">{[this.getAggegateCaption(values)]}</div></td>',
 
                     /* Clicking this will fire the onToolGear() function */
-                    '    <td width="15px" valign="top"><div class="labkey-tool labkey-tool-gear" title="Edit"></div></td>',
+                    '    <td width="15px" valign="top"><div class="labkey-tool-gear fa fa-cog" title="Edit title"></div></td>',
 
                     /* Clicking this will fire the onToolClose() function */
-                    '    <td width="15px" valign="top"><span class="labkey-tool labkey-tool-close" title="Remove column"></span></td>',
+                    '    <td width="15px" valign="top"><span class="labkey-tool-close fa fa-times" title="Remove column"></span></td>',
 
                     /* Spacer on the end to prevent tools from appearing under scrollbar */
-                    '    <td width="15px"><span>&nbsp;</span></td>',
+                    '    <td width="5px"><span>&nbsp;</span></td>',
                     '  </tr>',
                     '</table>',
                     '</tpl>',
@@ -182,20 +182,10 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
     onToolGear : function(index) {
         var columnRecord = this.getColumnStore().getAt(index);
         var metadataRecord = this.fieldMetaStore.getById(columnRecord.get('id'));
-
-        var aggregateStoreCopy = this.createAggregateStore(); //NOTE: we deliberately create a separate store to use with this window.
-        var aggregateStore = this.aggregateStore;
         var columnsList = this.getList();
 
-        var aggregateOptions = [
-            {value: '', name: '[None]'}
-        ];
-        Ext4.each(LABKEY.Query.getAggregatesForType(metadataRecord.data), function(key) {
-            aggregateOptions.push({value: key.toUpperCase(), name: key.toUpperCase()});
-        }, this);
-
         var win = Ext4.create('Ext.window.Window', {
-            title: "Edit column properties",
+            title: "Edit Title",
             resizable: false,
             constrain: true,
             constrainHeader: true,
@@ -206,126 +196,23 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
             items: {
                 xtype: 'form',
                 border: false,
-                padding: 5,
-                defaults: { padding: 5 },
+                padding: 10,
                 items: [{
-                    xtype: "label",
-                    text: "Title:"
-                },{
                     xtype: "textfield",
                     itemId: "titleField",
+                    fieldLabel: 'Title',
+                    labelWidth: 40,
                     name: "title",
                     allowBlank: true,
                     width: 330
-                },{
-                    xtype: "label",
-                    text: "Aggregates:"
-                },{
-                    xtype: 'grid',
-                    width: 340,
-                    store: aggregateStoreCopy,
-                    selType: 'rowmodel',
-                    plugins: [
-                        Ext4.create('Ext.grid.plugin.CellEditing', {
-                            clicksToEdit: 1
-                        })
-                    ],
-                    columns: [{
-                        text: 'Type',
-                        dataIndex: 'type',
-                        width: 75,
-                        menuDisabled: true,
-                        sortable: false,
-                        editor: {
-                            xtype: "combo",
-                            name: "aggregate",
-                            displayField: 'name',
-                            valueField: 'value',
-                            store: Ext4.create('Ext.data.Store', {
-                                fields: [{name: 'name'}, {name: 'value'}],
-                                data: aggregateOptions
-                            }),
-                            mode: 'local',
-                            editable: false
-                        }
-                    },{
-                        text: 'Label',
-                        dataIndex: 'label',
-                        flex: 1,
-                        menuDisabled: true,
-                        sortable: false,
-                        editor: 'textfield'
-                    },{
-                        xtype: 'actioncolumn',
-                        width: 30,
-                        menuDisabled: true,
-                        sortable: false,
-                        icon: LABKEY.contextPath + '/_images/delete.png',
-                        tooltip: 'Remove',
-                        handler: function(grid, index) {
-                            grid.getStore().removeAt(index);
-                        }
-                    }],
-                    buttons: [{
-                        text: 'Add Aggregate',
-                        margin: 10,
-                        handler: function(btn) {
-                            var store = btn.up('grid').getStore();
-                            store.add({
-                                fieldKey: win.columnRecord.get('fieldKey')
-                            });
-                        }
-                    }]
                 }]
             },
-            buttonAlign: "center",
             buttons: [{
                 text: "OK",
                 handler: function() {
                     var title = win.down('#titleField').getValue();
                     title = title ? title.trim() : "";
                     win.columnRecord.set("title", !Ext4.isEmpty(title) ? title : undefined);
-
-                    var error;
-                    var fieldKey = win.columnRecord.get('fieldKey');
-                    var aggregateStoreCopy = win.down('grid').getStore();
-
-                    //validate the records
-                    aggregateStoreCopy.each(function(rec) {
-                        if (!rec.get('type') && !rec.get('label')) {
-                            aggregateStoreCopy.remove(rec);
-                        }
-                        else if (!rec.get('type'))
-                        {
-                            error = true;
-                            Ext4.Msg.alert('Aggregate is missing a type');
-                            return false;
-                        }
-                    }, this);
-
-                    if (error) {
-                        return;
-                    }
-
-                    //remove existing records matching this field
-                    var recordsToRemove = [];
-                    aggregateStore.each(function(rec) {
-                        if (fieldKey == rec.get('fieldKey')) {
-                            recordsToRemove.push(rec);
-                        }
-                    });
-                    if (recordsToRemove.length > 0) {
-                        aggregateStore.remove(recordsToRemove);
-                    }
-
-                    //then add to store
-                    aggregateStoreCopy.each(function(rec) {
-                        aggregateStore.add({
-                            fieldKey: rec.get('fieldKey'),
-                            type: rec.get('type'),
-                            label: rec.get('label')
-                        });
-                    });
 
                     columnsList.refresh();
                     win.hide();
@@ -339,20 +226,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                 this.columnRecord = columnRecord;
                 this.metadataRecord = metadataRecord;
 
-                this.setTitle("Edit column properties for '" + Ext4.htmlEncode(this.columnRecord.get('fieldKey')) + "'");
+                this.setTitle("Edit title for '" + Ext4.htmlEncode(this.columnRecord.get('fieldKey')) + "'");
                 this.down('#titleField').setValue(this.columnRecord.get("title"));
-
-                //NOTE: we make a copy of the data so we can avoid committing updates until the user clicks OK
-                aggregateStoreCopy.removeAll();
-                aggregateStore.each(function(rec) {
-                    if (rec.get('fieldKey') == this.columnRecord.get('fieldKey')) {
-                        aggregateStoreCopy.add({
-                            fieldKey: rec.get('fieldKey'),
-                            label: rec.get('label'),
-                            type: rec.get('type')
-                        });
-                    }
-                }, this);
 
                 //columnsList
                 this.columnRecord.store.fireEvent('datachanged', this.columnRecord.store)

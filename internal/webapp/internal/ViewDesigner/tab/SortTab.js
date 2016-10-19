@@ -88,7 +88,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.SortTab', {
                     '  <tr>',
                     '    <td><div class="item-dir"></div></td>',
                     '    <td width="21px" valign="top"><div class="item-paperclip"></div></td>',
-                    '    <td width="15px" valign="top"><span class="labkey-tool labkey-tool-close" title="Remove sort"></span></td>',
+                    '    <td width="15px" valign="top"><span class="labkey-tool-close fa fa-times" title="Remove sort"></span></td>',
+                    '    <td width="5px"><span>&nbsp;</span></td>',/* Spacer on the end to prevent tools from appearing under scrollbar */
                     '  </tr>',
                     '</table>',
                     '</tpl>',
