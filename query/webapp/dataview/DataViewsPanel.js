@@ -38,12 +38,12 @@ Ext4.define('TreeFilter', {
 
         tree.expandAll();                         // expand all nodes for the the following iterative routines
 
-        // iterate over all nodes in the tree in order to evalute them against the search criteria
+        // iterate over all nodes in the tree in order to evaluate them against the search criteria
         tree.getRootNode().cascadeBy(function(node) {
             var p= 0, prop;
             for (; p < _propArray.length; p++) {
                 prop = node.get(_propArray[p]);
-                if (prop && prop.match && prop.match(_re)) {  // if the node matches the search criteria and is a leaf (could be modified to searh non-leaf nodes)
+                if (prop && prop.match && prop.match(_re)) {  // if the node matches the search criteria and is a leaf (could be modified to search non-leaf nodes)
                     matches.push(node);                       // add the node to the matches array
                     return;
                 }
@@ -79,7 +79,7 @@ Ext4.define('TreeFilter', {
 
         if (me.collapseOnClear) { tree.collapseAll(); }              // collapse the tree nodes
         root.cascadeBy(function (node) {                             // final loop to hide/show each node
-            var viewNode = Ext4.fly(tree.getView().getNode(node));   // get the dom element assocaited with each node
+            var viewNode = Ext4.fly(tree.getView().getNode(node));   // get the dom element associated with each node
             if (viewNode) {                                          // the first one is undefined ? escape it with a conditional and show  all nodes
                 viewNode.show();
             }
@@ -92,7 +92,7 @@ Ext4.define('TreeFilter', {
             viewNode,
             root = tree.getRootNode();
 
-        if (me.allowParentFolders === false) {     // if me.allowParentFolders is false (default) then remove any  non-leaf nodes from the regex match
+        if (me.allowParentFolders === false) {     // if me.allowParentFolders is false (default) then remove any non-leaf nodes from the regex match
             Ext4.each(matches, function(match) {
                 if (match && !match.isLeaf()) { Ext4.Array.remove(matches, match); }
             });
@@ -104,7 +104,7 @@ Ext4.define('TreeFilter', {
                     visibleNodes.push(node);           // if it's an ancestor of the evaluated node add it to the visibleNodes  array
                 }
             });
-            if (me.allowParentFolders === true &&  !item.isLeaf()) { // if me.allowParentFolders is true and the item is  a non-leaf item
+            if (me.allowParentFolders === true &&  !item.isLeaf()) { // if me.allowParentFolders is true and the item is a non-leaf item
                 item.cascadeBy(function(node) {                     // iterate over its children and set them as visible
                     visibleNodes.push(node)
                 });
@@ -255,15 +255,26 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.on('disableEditMode', this.onDisableEditMode, this);
 
         Ext4.QuickTips.init();
+
+        // Initialize and bind "Full" store
+        this.getFullStore().on('load', this.refreshViewStore, this);
     },
 
-    getViewStore : function() {
+    /**
+     * The "Full" Store contains all of the views/records from the server. This is not exposed directly
+     * to the UI, but rather, it acts as the source for other stores (e.g. "View" store).
+     */
+    getFullStore : function() {
 
-        if (!this.store) {
-            this.store = Ext4.create('Ext.data.TreeStore', {
+        if (!this.fullStore) {
+
+            // The TreeStore does not async load properly when there are multiple outbound/inbound
+            // requests that need to be handled.
+            this.LOCK_FULL_STORE = false;
+
+            this.fullStore = Ext4.create('Ext.data.TreeStore', {
                 pageSize: 100,
                 model   : 'Dataset.Browser.View',
-                autoLoad: true,
                 proxy   : {
                     type   : 'ajax',
                     url    : LABKEY.ActionURL.buildURL('reports', 'browseDataTree.api'),
@@ -276,8 +287,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     },
                     reader : 'json'
                 },
-                listeners : {
-                    beforeload : function() {
+                listeners: {
+                    beforeload: function() {
+                        if (this.LOCK_FULL_STORE) {
+                            return false; // prevent load
+                        }
+                        this.LOCK_FULL_STORE = true;
+
                         if (this.catWinID) {
                             var w = Ext4.getCmp(this.catWinID);
                             if (w && !w.isVisible())
@@ -287,15 +303,117 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                             this.getCenter().getEl().mask('Loading...');
                         }
                     },
-                    load : this.onViewLoad,
+                    load: function() {
+                        this.LOCK_FULL_STORE = false;
+                        this.getCenter().getEl().unmask();
+                    },
                     scope: this
                 },
-                sortRoot : 'displayOrder',
-                scope : this
+                scope: this
             });
         }
 
-        return this.store;
+        return this.fullStore;
+    },
+
+    /**
+     * The "View" store is used to back the UI. It is a local store which sources it's nodes from the
+     * "Full" store.
+     */
+    getViewStore : function() {
+
+        if (!this.viewStore) {
+            this.viewStore = Ext4.create('Ext.data.TreeStore', {
+                pageSize: 100,
+                model: 'Dataset.Browser.View',
+                root: {
+                    text: 'empty root node',
+                    children: []
+                },
+                sortRoot: 'displayOrder'
+            });
+        }
+
+        return this.viewStore;
+    },
+
+    /**
+     * This refreshes the "View" stores results from the "Full" store.
+     */
+    refreshViewStore : function() {
+        var viewStore = this.getViewStore();
+        var fullStoreRoot = this.getFullStore().getRootNode();
+
+        // Due to an error in ExtJS tree panel implementation, you cannot call tree store.removeAll()
+        if (fullStoreRoot) {
+            viewStore.setRootNode(fullStoreRoot.copy());
+        }
+        else if (!viewStore.getRootNode()) {
+            viewStore.setRootNode({
+                text: 'empty root node',
+                children: []
+            });
+        }
+
+        this.addVisibleNodes(fullStoreRoot, viewStore.getRootNode());
+
+        if (this._useDynamicHeight) {
+            // use dynamic height calculated from number of rows in results set
+            this.setHeight(this.getCalculatedPanelHeight());
+        }
+        else {
+            // use custom height the user specified
+            this.setHeight(this._height);
+        }
+    },
+
+    addVisibleNodes : function(fullStoreNode, viewStoreNode) {
+        var visibleChildFlag = false;
+
+        if (fullStoreNode) {
+
+            fullStoreNode.eachChild(function(fullStoreChildNode) {
+                var viewStoreChildNode = fullStoreChildNode.copy();
+
+                if (!fullStoreChildNode.isLeaf()) {
+                    var wasVisibleChildAdded = this.addVisibleNodes(fullStoreChildNode, viewStoreChildNode);
+                    if (wasVisibleChildAdded) {
+                        viewStoreNode.appendChild(viewStoreChildNode);  // don't append categories until we're sure they have children
+                        visibleChildFlag = true;
+                    }
+                }
+                else if (this.visibleFilter(fullStoreChildNode)) {  // visible leaf node
+                    viewStoreNode.appendChild(viewStoreChildNode);
+                    visibleChildFlag = true;
+                }
+
+                // otherwise is non-visible leaf node, so ignore
+
+            }, this);
+        }
+
+        return visibleChildFlag;
+    },
+
+    visibleFilter : function(rec) {
+        var createdByMe = (rec.data.createdByUserId == LABKEY.user.id);
+
+        // match 'mine' if current user is either the author or creator
+        if (this.searchMine && rec.data) {
+            if ((rec.data.authorUserId != LABKEY.user.id) && !createdByMe) {
+                return false;
+            }
+        }
+
+        // Show hidden only in edit mode. Admins see all; authors & editors see only their own.
+        if (!rec.data.visible) {
+            if (this.editMode && (createdByMe || LABKEY.user.isAdmin)) {
+                return true;
+            }
+            return false;
+        }
+
+        return true;
     },
 
     getCenter : function() {
@@ -353,7 +471,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             this.getCenter().removeAll(true);
             this.setHeight(this._height);
             this.initGrid(json.visibleColumns);
-            this.store.load();
+            this.getFullStore().load();
         };
 
         this.getCenter().getEl().mask('Initializing...');
@@ -533,9 +651,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         }
                     }
                 },
-                itemExpand: function() {
-                    this.hiddenFilter(1);
-                },
                 scope : this
             },
 
@@ -548,6 +663,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.getCenter().add(this.gridPanel);
 
         this.fireEvent('initgrid', this.gridPanel);
+        this.getFullStore().load();
     },
 
     initGridColumns : function(visibleColumns) {
@@ -638,7 +754,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             });
         }
 
-        if(visibleColumns['Data Cut Date'] && visibleColumns['Data Cut Date'].checked) {
+        if (visibleColumns['Data Cut Date'] && visibleColumns['Data Cut Date'].checked) {
              _columns.push({
                  text     : 'Data Cut Date',
                  width    : 120,
@@ -728,7 +844,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var filterSearch = function() {
             this.searchVal = searchField.getValue();
-            this.hiddenFilter();
+            this.applySearchFilter();
         };
 
         var filterTask = new Ext4.util.DelayedTask(filterSearch, this);
@@ -754,8 +870,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             border          : false, frame : false,
             listeners       : {
                 change : function(cmp, checked) {
-                    this.searchMine = checked;
-                    filterTask.delay(100);
+                    this.searchMine = checked === true;
+                    this.refreshViewStore();
+                    this.applySearchFilter();
                 },
                 scope : this
             },
@@ -812,22 +929,23 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         };
     },
 
-    getCalculatedPanelHeight: function () {
+    getCalculatedPanelHeight : function () {
 
         var count = 0;
         var heightSize;
         var dataViewPanelHeaderSize = 125;
         var heightPerRecord = 25;
-        var recs = this.store.tree.treeStore.getRootNode().childNodes;
+        var rootNode = this.getFullStore().getRootNode();
 
         // will calculate height to include both hidden and non hidden views. This will make the height be
-        // a bit big if their are many hidden views.
-        Ext4.each(recs, function (rec)
-                {
-                    count++;
-                    count += rec.childNodes.length;
-                }
-        );
+        // a bit big if there are many hidden views.
+        if (rootNode) {
+            rootNode.eachChild(function(rec) {
+                count++;
+                count += rec.childNodes.length;
+            });
+        }
+
         heightSize = count * heightPerRecord + dataViewPanelHeaderSize;
         // make the maximum height that can be dynamically computed be 700,
         // if user wants it bigger it can be customized up to 3000
@@ -839,26 +957,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         }
         return heightSize;
     }, 
-    
-    onViewLoad : function() {
 
-        if(this._useDynamicHeight) {
-            // use dynamic height calculated from number of rows in results set
-            this.setHeight(this.getCalculatedPanelHeight());
-        } else {
-            // use custom height the user specified
-            this.setHeight(this._height);
-        }
-        this.getCenter().getEl().unmask();
-        this.hiddenFilter(10);
-    },
-
-
-    /**
-     * Aggregates the filters applied by search and by custom mode.
-     * @param {int} [delay=200] time to delay the filtering in ms
-     */
-    hiddenFilter : function(delay) {
+    applySearchFilter : function() {
 
         var searchFields = ['name', 'categorylabel', 'type', 'modified', 'authorDisplayName', 'status'];
 
@@ -879,33 +979,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 answer = t.test(s);
             }
 
-            var createdByMe = (rec.data.createdByUserId == LABKEY.user.id);
-
-            // match 'mine' if current user is either the author or creator
-            if (this.searchMine && rec.data && answer) {
-                if ((rec.data.authorUserId != LABKEY.user.id) && !createdByMe) {
-                    return false;
-                }
-            }
-
-            // Show hidden only in edit mode. Admins see all; authors & editors see only their own.
-            if (!rec.data.visible)
-            {
-                if (this.editMode && (createdByMe || LABKEY.user.isAdmin))
-                    return answer;
-                else
-                    return false;
-            }
-
             return answer;
         };
 
-        var f = function(filter, value){
-            this.gridPanel.clearFilter();
-            this.gridPanel.filterBy(filter, value);
-        };
-
-        Ext4.defer(f, delay || 200, this, [filter, this]);
+        this.gridPanel.clearFilter();
+        this.gridPanel.filterBy(filter, this);
     },
 
     isCustomizable : function() {
@@ -917,7 +995,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     },
 
     /**
-     * Takes the panel into/outof customize mode. Customize mode allows users to view edit links,
+     * Takes the panel into/out of customize mode. Customize mode allows users to view edit links,
      * administrate view categories and determine what data types should be shown.
      */
     customize : function() {
@@ -952,15 +1030,16 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         if (this.customPanel && this.customPanel.isVisible()) {
             this.getNorth().hide();
         }
-        if(this._useDynamicHeight) {
+        if (this._useDynamicHeight) {
             // use dynamic height calculated from number of rows in results set
             this.setHeight(this.getCalculatedPanelHeight());
-        } else {
+        }
+        else {
             // use custom height the user specified
             this.setHeight(this._height);
         }
         this.customMode = false;
-        this.hiddenFilter();
+        this.refreshViewStore();
     },
 
     edit : function() {
@@ -972,13 +1051,15 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     onEnableEditMode : function() {
         this.editMode = true;
         this._getEditColumn().show();
-        this.hiddenFilter();
+        this.refreshViewStore();
+        this.applySearchFilter();
     },
 
     onDisableEditMode : function() {
         this.editMode = false;
         this._getEditColumn().hide();
-        this.hiddenFilter();
+        this.refreshViewStore();
+        this.applySearchFilter();
     },
 
     deleteSelected : function() {
@@ -1030,7 +1111,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                                     url     : LABKEY.ActionURL.buildURL("reports", "deleteViews.api"),
                                     scope   : this,
                                     jsonData: {views : viewsToDelete},
-                                    success : function(){this.gridPanel.store.load();},
+                                    success : function() {
+                                        this.getFullStore().load();
+                                    },
                                     failure : LABKEY.Utils.getCallbackWrapper(function(json, response, options) {
                                         Ext4.Msg.alert("Delete", "Deletion Failed: " + json.exception);
                                     }, null, true)
@@ -1059,7 +1142,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         // panel might already exist
         if (this.customPanel && this.customPanel.items.length > 0) {
 
-            this.hiddenFilter();
+            this.refreshViewStore();
 
             this.getNorth().getEl().unmask();
             return;
@@ -1089,7 +1172,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             if (grp.getValue()) {
                 if (grp.inputValue === true) {
                     this._useDynamicHeight = true;
-                } else {
+                }
+                else {
                     this._useDynamicHeight = false;
                 }
                 this.updateConfig = true;
@@ -1260,7 +1344,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                                 if (this.updateConfig)
                                     this.updateConfiguration();
                                 else
-                                    this.store.load();
+                                    this.getFullStore().load();
                             },
                             failure : function() {
                                 Ext4.Msg.alert('Failure');
@@ -1274,7 +1358,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scope : this
         });
 
-        this.hiddenFilter();
+        this.refreshViewStore();
 
         this.customPanel.add(panel);
         this.getNorth().getEl().unmask();
@@ -1342,7 +1426,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         }];
 
         if (this.editInfo[record.data.dataType] && this.editInfo[record.data.dataType].actions['delete']) {
-            var gpStore = this.gridPanel.getStore(); // Need because for some reason this.gridPanel is not in scope
+            var fullStore = this.getFullStore(); // Need because for some reason this.gridPanel is not in scope
                                                      // in the successCallback below.
             buttons.push({
                 text: 'Delete',
@@ -1354,7 +1438,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     {
                         editWindow.close();
                         // Refresh the store, so deleted reports go away.
-                        gpStore.load();
+                        fullStore.load();
                     };
                     var failureCallback = function (response)
                     {
@@ -1430,19 +1514,19 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     },
 
     onEditSave : function() {
-        this.store.load();
+        this.getFullStore().load();
     },
 
     onManageCategories : function() {
 
         var window = LABKEY.study.DataViewUtil.getManageCategoriesDialog();
 
-        window.on('categorychange', function(cmp) {
-            this.gridPanel.getStore().load();
+        window.on('categorychange', function() {
+            this.getFullStore.load();
         }, this);
 
-        window.on('close', function(cmp) {
-            this.gridPanel.getStore().reload();
+        window.on('close', function() {
+            this.getFullStore().reload();
         }, this);
 
         window.show();
@@ -1452,8 +1536,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var window = LABKEY.study.DataViewUtil.getReorderReportsDialog();
         
-        window.on('close', function(rrp) {
-            this.gridPanel.getStore().reload();
+        window.on('close', function() {
+            this.getFullStore().reload();
         }, this);
 
         window.show();
