@@ -98,6 +98,7 @@ import org.labkey.query.sql.SqlBuilder;
 import org.labkey.query.sql.SqlParser;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.servlet.mvc.Controller;
+import org.labkey.data.xml.queryCustomView.OperatorType;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -129,8 +130,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
-
-import static org.apache.commons.lang3.StringUtils.isBlank;
 
 
 public class QueryServiceImpl extends QueryService
@@ -178,31 +177,29 @@ public class QueryServiceImpl extends QueryService
             CompareType.NONBLANK,
             CompareType.MV_INDICATOR,
             CompareType.NO_MV_INDICATOR,
+            CompareType.Q,
             WHERE
     ));
 
-    public static final CompareType WHERE = new CompareType("WHERE", new String[]{"where"}, true, "sql", "WHERE", null) // UNDONE OperatorType
+    public static final CompareType WHERE = new CompareType("WHERE", "where", "WHERE", true /* dataValueRequired */, "sql", OperatorType.WHERE)
     {
         @Override
         protected WhereClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            return new WhereClause((String)value);
-        }
-
-        @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
-        {
-            throw new UnsupportedOperationException("Conditional formatting not yet supported for MV indicators");
+            return new WhereClause((String) value);
         }
     };
 
+    // This is defined here due to the usage of QExpr
     private static class WhereClause extends CompareType.CompareClause
     {
         final QExpr expr;
 
         WhereClause(String value)
         {
-            super(new FieldKey(null,"*"),WHERE,value);
+            super(new FieldKey(null, "*"), WHERE, value);
+            _displayFilterText = true;
+
             String expression = (String)getParamVals()[0];
             List<QueryParseException> errors = new ArrayList<>();
             QExpr parseResult;
@@ -230,7 +227,9 @@ public class QueryServiceImpl extends QueryService
         @Override
         public List<String> getColumnNames()
         {
-            return getFieldKeys().stream().filter(f -> null==f.getParent()).map(f -> f.getName())
+            return getFieldKeys().stream()
+                    .filter(f -> null==f.getParent())
+                    .map(f -> f.getName())
                     .collect(Collectors.toList());
         }
 
@@ -272,7 +271,7 @@ public class QueryServiceImpl extends QueryService
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             String expression = (String)getParamVals()[0];
-            if (isBlank(expression))
+            if (StringUtils.isBlank(expression))
                 return new SQLFragment("1=1");
             // reparse because we have a dialect now
             List<QueryParseException> errors = new ArrayList<>();
@@ -1928,7 +1927,7 @@ public class QueryServiceImpl extends QueryService
 
     public TableType parseMetadata(String metadataXML, Collection<QueryException> errors)
     {
-        if (metadataXML == null || isBlank(metadataXML))
+        if (metadataXML == null || StringUtils.isBlank(metadataXML))
             return null;
 
         XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
