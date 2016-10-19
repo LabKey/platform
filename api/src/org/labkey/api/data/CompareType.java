@@ -723,26 +723,38 @@ public abstract class CompareType
         @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            if (_selectColumns != null)
+            if (_selectColumns != null && _selectColumns.size() > 0)
             {
+                boolean hasResult = false;
                 SQLFragment sql = new SQLFragment();
                 String sep = "";
 
                 for (ColumnInfo column : _selectColumns)
                 {
-                    if (column != null && column.isStringType())
+                    if (column != null)
                     {
-                        sql.append(sep);
-                        sep = " OR ";
+                        // Should the iterator generating "_selectColumns" do the unwrapping?
+                        ColumnInfo targetColumn = column.getDisplayField();
 
-                        sql.append(dialect.getColumnSelectName(column.getAlias()));
-                        sql.append(" LIKE '%");
-                        sql.append(escapeLabKeySqlValue(getParamVals()[0], JdbcType.VARCHAR, true /* suppressQuotes */));
-                        sql.append("%'");
+                        if (targetColumn == null)
+                            targetColumn = column;
+
+                        if (targetColumn.isStringType())
+                        {
+                            hasResult = true;
+                            sql.append(sep);
+                            sep = " OR ";
+
+                            sql.append(dialect.getColumnSelectName(targetColumn.getAlias()));
+                            sql.append(" LIKE '%");
+                            sql.append(escapeLabKeySqlValue(getParamVals()[0], JdbcType.VARCHAR, true /* suppressQuotes */));
+                            sql.append("%'");
+                        }
                     }
                 }
 
-                return sql;
+                if (hasResult)
+                    return sql;
             }
 
             return new SQLFragment("1=1");
