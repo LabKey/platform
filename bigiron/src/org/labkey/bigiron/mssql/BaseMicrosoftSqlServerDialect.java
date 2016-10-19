@@ -614,13 +614,15 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return _groupConcatInstalled;
     }
 
+    private static final Pattern SELECT = Pattern.compile("\\bSELECT\\b", Pattern.CASE_INSENSITIVE);
+
     // Uses custom CLR aggregate function defined in group_concat_install.sql
     @Override
     public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiterSQL)
     {
         // SQL Server does not support aggregates on sub-queries; return a string constant in that case to keep from
         // blowing up. TODO: Don't pass sub-selects into group_contact.
-        if (StringUtils.containsIgnoreCase(sql.getSQL(), "SELECT"))
+        if (SELECT.matcher(sql.getSQL()).find())
             return new SQLFragment("'NOT SUPPORTED'");
 
         if (!supportsGroupConcat())
