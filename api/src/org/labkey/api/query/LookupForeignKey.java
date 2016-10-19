@@ -23,6 +23,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.DelegatingContainerFilter;
 import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.Pair;
@@ -203,8 +204,10 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
             FieldKey columnKey = new FieldKey(null,columnName);
             Set<FieldKey> keys = Collections.singleton(columnKey);
 
-            // if the URL only substitutes the PK we can rewrite as FK (does the DisplayColumn handle when the join fails?)
-            if (f.validateFieldKeys(keys))
+            // If the URL only substitutes the PK we can rewrite as FK (does the DisplayColumn handle when the join fails?)
+            // except if the parent's FK is a multi-value (in which case the parent ColumnInfo is an FK
+            // to the junction table's key column while this URL is the url of the junction table's lookup value column)
+            if (f.validateFieldKeys(keys) && !(parent.getFk() instanceof MultiValuedForeignKey))
                 rewrite = f.remapFieldKeys(null, Collections.singletonMap(columnKey, parent.getFieldKey()));
             else
                 rewrite = f.remapFieldKeys(parent.getFieldKey(), null);
