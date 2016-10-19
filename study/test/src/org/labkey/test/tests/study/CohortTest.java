@@ -22,6 +22,7 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.SortDirection;
 import org.labkey.test.TestFileUtils;
+import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.categories.DailyB;
 import org.labkey.test.util.DataRegionExportHelper;
 import org.labkey.test.util.DataRegionTable;
@@ -714,5 +715,11 @@ public class CohortTest extends BaseWebDriverTest
     private void setCohortFilter(String cohort, AdvancedCohortType type)
     {
         DataRegionTable.findDataRegion(this).clickHeaderMenu("Groups", "Cohorts", cohort, type.toString());
+    }
+
+    @Override
+    protected BrowserType bestBrowser()
+    {
+        return BrowserType.CHROME;
     }
 }
