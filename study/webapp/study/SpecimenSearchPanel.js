@@ -10,12 +10,12 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
     HIDE_TEXT: 'Hide Additional Fields',
     SHOW_TEXT: 'Show Additional Fields',
     showExtraFields: false,
+    border: false,
+    bodyStyle: 'background-color: transparent;padding: 5px;',
     initComponent: function(){
         Ext4.QuickTips.init();
         Ext4.applyIf(this, {
             individualVials : true,
-            border: false,
-            bodyStyle: 'background-color: transparent;padding: 5px;',
             defaults: {
                 bodyStyle: 'background-color: transparent;',
                 border: false
@@ -66,7 +66,8 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
                 width: 400,
                 defaults: {
                     labelWidth: this.LABEL_WIDTH,
-                    width: 400
+                    width: 400,
+                    padding: '0 0 5px 0'
                 },
                 items: [{
                     border: false,
@@ -90,7 +91,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
                     xtype: 'container',
                     bodyStyle: 'background-color: transparent;',
                     itemId: 'extraFieldsPanel',
-                    style: 'padding-top: 10px;',
+                    style: 'padding-top: 5px;',
                     border: false
                 }]
             }],

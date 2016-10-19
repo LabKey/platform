@@ -74,7 +74,7 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.query.analytics.AggregatesAverageAnalyticsProvider;
+import org.labkey.query.analytics.AggregatesMeanAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesCountAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesMaxAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesMinAnalyticsProvider;
@@ -293,7 +293,7 @@ public class QueryModule extends DefaultModule
         {
             analyticsProviderRegistry.registerProvider(new AggregatesCountAnalyticsProvider());
             analyticsProviderRegistry.registerProvider(new AggregatesSumAnalyticsProvider());
-            analyticsProviderRegistry.registerProvider(new AggregatesAverageAnalyticsProvider());
+            analyticsProviderRegistry.registerProvider(new AggregatesMeanAnalyticsProvider());
             analyticsProviderRegistry.registerProvider(new AggregatesMinAnalyticsProvider());
             analyticsProviderRegistry.registerProvider(new AggregatesMaxAnalyticsProvider());
             analyticsProviderRegistry.registerProvider(new RemoveColumnAnalyticsProvider());

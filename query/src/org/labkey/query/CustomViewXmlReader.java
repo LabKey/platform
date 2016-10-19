@@ -381,7 +381,7 @@ public class CustomViewXmlReader
             if (column == null || type == null)
                 continue;
 
-            Aggregate map = new Aggregate(FieldKey.fromString(column), Aggregate.Type.valueOf(type));
+            Aggregate map = new Aggregate(FieldKey.fromString(column), Aggregate.Type.getValueOf(type));
             if(aggregate.getLabel() != null)
                 map.setLabel(aggregate.getLabel());
 

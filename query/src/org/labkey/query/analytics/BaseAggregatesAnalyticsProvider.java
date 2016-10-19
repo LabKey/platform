@@ -31,13 +31,13 @@ public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsPro
     @Override
     public String getDescription()
     {
-        return "Aggregate " + getLabel() + " value function to apply to a given column.";
+        return "Summary statistic " + getLabel() + " value function to apply to a given column.";
     }
 
     @Override
     public String getGroupingHeader()
     {
-        return "Aggregates";
+        return "Summary Statistics";
     }
 
     @Override

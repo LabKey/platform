@@ -1451,9 +1451,9 @@ query/src/org/labkey/query/TableWriter.java -text
 query/src/org/labkey/query/TableXML.java -text
 query/src/org/labkey/query/ValidateQueriesVisitor.java -text
 query/src/org/labkey/query/ViewFilterItemImpl.java -text
-query/src/org/labkey/query/analytics/AggregatesAverageAnalyticsProvider.java -text
 query/src/org/labkey/query/analytics/AggregatesCountAnalyticsProvider.java -text
 query/src/org/labkey/query/analytics/AggregatesMaxAnalyticsProvider.java -text
+query/src/org/labkey/query/analytics/AggregatesMeanAnalyticsProvider.java -text
 query/src/org/labkey/query/analytics/AggregatesMinAnalyticsProvider.java -text
 query/src/org/labkey/query/analytics/AggregatesSumAnalyticsProvider.java -text
 query/src/org/labkey/query/analytics/BaseAggregatesAnalyticsProvider.java -text

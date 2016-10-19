@@ -760,20 +760,11 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
         if (_viewType.isVialView())
         {
-/*            getSettings().addAggregates(
-                    new Aggregate(getTable().getColumn("Volume"), Aggregate.Type.SUM),
-                    new Aggregate(getTable().getColumn("GlobalUniqueId"), Aggregate.Type.COUNT));    */
             addAggregateIfInDisplay("Volume", Aggregate.Type.SUM);
             addAggregateIfInDisplay("GlobalUniqueId", Aggregate.Type.COUNT);
         }
         else
         {
-/*            getSettings().addAggregates(new Aggregate(getTable().getColumn("TotalVolume"), Aggregate.Type.SUM),
-                    new Aggregate(getTable().getColumn("LockedInRequestCount"), Aggregate.Type.SUM),
-                    new Aggregate(getTable().getColumn("AtRepositoryCount"), Aggregate.Type.SUM),
-                    new Aggregate(getTable().getColumn("VialCount"), Aggregate.Type.SUM),
-                    new Aggregate(getTable().getColumn("AvailableVolume"), Aggregate.Type.SUM),
-                    new Aggregate(getTable().getColumn("AvailableCount"), Aggregate.Type.SUM));      */
             addAggregateIfInDisplay("TotalVolume", Aggregate.Type.SUM);
             addAggregateIfInDisplay("LockedInRequestCount", Aggregate.Type.SUM);
             addAggregateIfInDisplay("AtRepositoryCount", Aggregate.Type.SUM);

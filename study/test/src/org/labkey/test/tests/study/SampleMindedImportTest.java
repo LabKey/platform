@@ -119,8 +119,8 @@ public class SampleMindedImportTest extends BaseWebDriverTest
         waitForElement(Locator.linkWithText("BAL"));
         clickAndWait(Locator.linkWithText("BAL"));
         assertTextPresent("BAL Supernatant", "FREE (007)");
-        DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", this);
-        assertEquals("Incorrect number of vials.", "Count:  5", specimenTable.getTotal("Global Unique Id"));
+        DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
+        assertEquals("Incorrect number of vials.", "Count (non-blank): 5", specimenTable.getTotal("Global Unique Id"));
 
         clickAndWait(Locator.linkWithText("Group vials"));
         assertElementPresent(Locator.linkWithText("P20043001"), 2);
@@ -129,7 +129,7 @@ public class SampleMindedImportTest extends BaseWebDriverTest
         // add column sequencenum
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.showHiddenItems();
-        _customizeViewsHelper.addCustomizeViewColumn("SequenceNum");
+        _customizeViewsHelper.addColumn("SequenceNum");
         _customizeViewsHelper.applyCustomView();
         assertTextPresent("999.0138");
     }

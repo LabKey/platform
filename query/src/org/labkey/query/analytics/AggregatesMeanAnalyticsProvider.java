@@ -4,12 +4,12 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ColumnInfo;
 
-public class AggregatesAverageAnalyticsProvider extends BaseAggregatesAnalyticsProvider
+public class AggregatesMeanAnalyticsProvider extends BaseAggregatesAnalyticsProvider
 {
     @Override
     public Aggregate.Type getAggregateType()
     {
-        return Aggregate.Type.AVG;
+        return Aggregate.Type.MEAN;
     }
 
     @Override
