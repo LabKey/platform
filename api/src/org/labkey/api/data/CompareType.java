@@ -685,6 +685,70 @@ public abstract class CompareType
         };
 
 
+    //
+    // Table/Query-wise operators
+    //
+
+    public static final CompareType Q = new CompareType("Search", "q", "Q", true /* dataValueRequired */, "sql", OperatorType.Q)
+    {
+        @Override
+        protected QClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        {
+            return new QClause((String) value);
+        }
+    };
+
+    private static class QClause extends CompareType.CompareClause
+    {
+        QClause(String value)
+        {
+            super(new FieldKey(null, "*"), Q, value);
+            _displayFilterText = true;
+        }
+
+        @Override
+        protected void appendFilterText(StringBuilder sb, SimpleFilter.ColumnNameFormatter formatter)
+        {
+            sb.append("Search for \"");
+            sb.append(getParamVals()[0]);
+            sb.append("\"");
+        }
+
+        @Override
+        public List<FieldKey> getFieldKeys()
+        {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            if (_selectColumns != null)
+            {
+                SQLFragment sql = new SQLFragment();
+                String sep = "";
+
+                for (ColumnInfo column : _selectColumns)
+                {
+                    if (column != null && column.isStringType())
+                    {
+                        sql.append(sep);
+                        sep = " OR ";
+
+                        sql.append(dialect.getColumnSelectName(column.getAlias()));
+                        sql.append(" LIKE '%");
+                        sql.append(escapeLabKeySqlValue(getParamVals()[0], JdbcType.VARCHAR, true /* suppressQuotes */));
+                        sql.append("%'");
+                    }
+                }
+
+                return sql;
+            }
+
+            return new SQLFragment("1=1");
+        }
+    }
+
 
     private String _preferredURLKey;
     private final OperatorType.Enum _xmlType;
@@ -716,52 +780,6 @@ public abstract class CompareType
     public static final Collection<CompareType> values()
     {
         return QueryService.get().getCompareTypes();
-    }
-
-
-    public static List<CompareType> getValidCompareSet(ColumnInfo info)
-    {
-        List<CompareType> types = new ArrayList<>();
-
-        if (info.isDateTimeType())
-        {
-            types.add(DATE_EQUAL);
-            types.add(DATE_NOT_EQUAL);
-        }
-        else if (!info.isLongTextType())
-        {
-            types.add(EQUAL);
-            types.add(NEQ);
-            types.add(IN);
-        }
-        
-        if (info.isNullable())
-        {
-            types.add(ISBLANK);
-            types.add(NONBLANK);
-        }
-
-        if (info.isDateTimeType())
-        {
-            types.add(DATE_GT);
-            types.add(DATE_LT);
-            types.add(DATE_GTE);
-            types.add(DATE_LTE);
-        }
-        else if (!info.isLongTextType() && !info.isBooleanType() )
-        {
-            types.add(GT);
-            types.add(LT);
-            types.add(GTE);
-            types.add(LTE);
-        }
-
-        if (!info.isBooleanType() && !info.isDateTimeType())
-        {
-            types.add(STARTS_WITH);
-            types.add(CONTAINS);
-        }
-        return types;
     }
 
     private static Set<String> parseParams(Object value, String separator)
@@ -915,7 +933,6 @@ public abstract class CompareType
             return Arrays.asList(getFieldKey());
         }
 
-        @Deprecated /** Use getFieldKeys() instead. */
         public List<String> getColumnNames()
         {
             return Arrays.asList(getFieldKey().toString());

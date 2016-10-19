@@ -118,6 +118,22 @@ public class SimpleFilter implements Filter
         protected Object[] _paramVals = new Object[0];   // TODO: _paramVals, getter, and callers should all be @NotNull. Consider List<?> as well
         protected boolean _includeNull = false;
         protected boolean _negated = false;
+        protected List<ColumnInfo> _selectColumns;
+
+        /**
+         * Explicit override for a clause to display filter text. When false, the clause's filter text
+         * will only be shown depending on constraints in displayFilterText().
+         */
+        protected boolean _displayFilterText = false;
+
+        public boolean displayFilterText()
+        {
+            if (_displayFilterText)
+                return true;
+
+            List<FieldKey> keys = this.getFieldKeys();
+            return keys != null && !keys.isEmpty();
+        }
 
         /**
          * Whether or not the value needs to be type converted before being sent to the database. This is important
@@ -207,7 +223,10 @@ public class SimpleFilter implements Filter
                 sb.append(sqlf);
         }
 
-        @Deprecated /** Use getFieldKeys() instead */
+        /**
+         * @deprecated Use {@link #getFieldKeys()}
+         */
+        @Deprecated
         abstract public List<String> getColumnNames();
 
         abstract public List<FieldKey> getFieldKeys();
@@ -297,6 +316,10 @@ public class SimpleFilter implements Filter
             return filterClause;
         }
 
+        public void setSelectColumns(List<ColumnInfo> selectColumns)
+        {
+            this._selectColumns = selectColumns;
+        }
     }
 
     @Override
@@ -345,7 +368,6 @@ public class SimpleFilter implements Filter
             return _fragment;
         }
 
-        @Deprecated // Use .getFieldKeys() instead.
         public List<String> getColumnNames()
         {
             List<String> colNames = new ArrayList<>(_fieldKeys.size());
@@ -387,7 +409,6 @@ public class SimpleFilter implements Filter
             _clauses = new ArrayList<>(Arrays.asList(clauses));
         }
 
-        @Deprecated // Use getFieldKeys() instead.
         public List<String> getColumnNames()
         {
             List<String> result = new ArrayList<>();
@@ -418,7 +439,7 @@ public class SimpleFilter implements Filter
             List<Object> result = new ArrayList<>();
             for (FilterClause clause : _clauses)
             {
-                if(clause.getParamVals() != null)
+                if (clause.getParamVals() != null)
                     result.addAll(Arrays.asList(clause.getParamVals()));
             }
             return result.toArray(new Object[result.size()]);
@@ -461,7 +482,7 @@ public class SimpleFilter implements Filter
         protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             String sep = "";
-            for(FilterClause clause : _clauses)
+            for (FilterClause clause : _clauses)
             {
                 sb.append(sep);
                 clause.appendFilterText(sb, formatter);
@@ -526,7 +547,6 @@ public class SimpleFilter implements Filter
             _clause = clause;
         }
 
-        @Deprecated // Use getFieldKeys() instead.
         public List<String> getColumnNames()
         {
             return _clause.getColumnNames();
@@ -554,11 +574,7 @@ public class SimpleFilter implements Filter
         @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            StringBuilder sqlFragment = new StringBuilder();
-            sqlFragment.append(" NOT (");
-            sqlFragment.append(_clause.getLabKeySQLWhereClause(columnMap));
-            sqlFragment.append(")");
-            return sqlFragment.toString();
+            return " NOT (" + _clause.getLabKeySQLWhereClause(columnMap) + ")";
         }
 
         @Override
@@ -917,7 +933,7 @@ public class SimpleFilter implements Filter
         {
             Object[] params = getParamVals();
             OperationClause oc;
-            if(isNegated())
+            if (isNegated())
                 oc = new AndClause();
             else
                 oc = new OrClause();
@@ -939,13 +955,13 @@ public class SimpleFilter implements Filter
             }
 
             //account for null
-            if(isIncludeNull())
+            if (isIncludeNull())
             {
                 OrClause clause = new OrClause();
-                if(oc._clauses.size() > 0)
+                if (oc._clauses.size() > 0)
                     clause.addClause(oc);
 
-                if(isNegated())
+                if (isNegated())
                     clause.addClause(CompareType.NONBLANK.createFilterClause(fieldKey, null));
                 else
                     clause.addClause(CompareType.ISBLANK.createFilterClause(fieldKey, null));
@@ -1002,7 +1018,10 @@ public class SimpleFilter implements Filter
         _clauses = (ArrayList<FilterClause>) src._clauses.clone();
     }
 
-    @Deprecated /** Use FieldKey version instead. */
+    /**
+     * @deprecated Use {@link #SimpleFilter(FieldKey, Object)}
+     */
+    @Deprecated
     public SimpleFilter(String colName, Object value)
     {
         addCondition(colName, value);
@@ -1013,7 +1032,10 @@ public class SimpleFilter implements Filter
         addCondition(fieldKey, value);
     }
 
-    @Deprecated /** Use FieldKey version instead. */
+    /**
+     * @deprecated Use {@link #SimpleFilter(FieldKey, Object, CompareType)}
+     */
+    @Deprecated
     public SimpleFilter(String colName, Object value, CompareType compare)
     {
         addCondition(colName, value, compare);
@@ -1030,6 +1052,11 @@ public class SimpleFilter implements Filter
     }
 
     public void addUrlFilters(URLHelper urlHelp, @Nullable String regionName)
+    {
+        addUrlFilters(urlHelp, regionName, Collections.emptyList());
+    }
+
+    public void addUrlFilters(URLHelper urlHelp, @Nullable String regionName, @NotNull List<ColumnInfo> selectColumns)
     {
         String prefixDot = regionName == null ? "" : regionName + ".";
 
@@ -1053,6 +1080,7 @@ public class SimpleFilter implements Filter
                     try
                     {
                         FilterClause fc = type.createFilterClause(fieldKey, param);
+                        fc.setSelectColumns(selectColumns);
                         fc._needsTypeConversion = true;
                         _clauses.add(fc);
                     }
@@ -1067,7 +1095,7 @@ public class SimpleFilter implements Filter
         // for "dataRegion~op" filters (e.g. dataregion level filters)
         String prefixTilde = regionName == null ? "" : regionName + "~";
         urlHelp.getParameterMap().keySet().stream()
-                .filter(filterKey -> filterKey.startsWith(prefixDot))
+                .filter(filterKey -> filterKey.startsWith(prefixTilde))
                 .forEach(filterKey ->
                 {
                     String colTildeCompare = filterKey.substring(prefixTilde.length());
@@ -1080,7 +1108,8 @@ public class SimpleFilter implements Filter
 
                         try
                         {
-                            FilterClause fc = type.createFilterClause(new FieldKey(null,"*"), param);
+                            FilterClause fc = type.createFilterClause(new FieldKey(null, "*"), param);
+                            fc.setSelectColumns(selectColumns);
                             fc._needsTypeConversion = true;
                             _clauses.add(fc);
                         }
@@ -1126,7 +1155,10 @@ public class SimpleFilter implements Filter
         return this;
     }
 
-    @Deprecated /** Use FieldKey version instead */
+    /**
+     * @deprecated Use {@link #addCondition(FieldKey, Object)}
+     */
+    @Deprecated
     public SimpleFilter addCondition(String colName, Object value)
     {
         return addCondition(FieldKey.fromString(colName), value);
@@ -1147,7 +1179,10 @@ public class SimpleFilter implements Filter
         return addCondition(column.getFieldKey(), value, compare);
     }
 
-    @Deprecated // Use FieldKey version insead
+    /**
+     * @deprecated Use {@link #addCondition(FieldKey, Object, CompareType)}
+     */
+    @Deprecated
     public SimpleFilter addCondition(String colName, @Nullable Object value, CompareType compare)
     {
         return addCondition(FieldKey.fromString(colName), value, compare);
@@ -1242,6 +1277,20 @@ public class SimpleFilter implements Filter
         }
     }
 
+    /**
+     * Determines if SimpleFilter should display filter text from any of it's FilterClauses.
+     * If any filter clause chooses to display itself, this will return true.
+     */
+    public boolean displayFilterText()
+    {
+        for (FilterClause fc : _clauses)
+        {
+            if (fc.displayFilterText())
+                return true;
+        }
+
+        return false;
+    }
 
     public SQLFragment getSQLFragment(TableInfo tableInfo, @Nullable List<ColumnInfo> colInfos)
     {
@@ -1616,12 +1665,6 @@ public class SimpleFilter implements Filter
         @Test
         public void testInClauseParsing() throws Exception
         {
-//            validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~in=", false, true);
-//            validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~in=1", false, false, "1");
-//            validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~in=1;2;3", false, false, "1", "2", "3");
-//            validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~in=1;", false, true, "1");
-//            validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~in=1;;2", false, true, "1", "2");
-
             validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~notin=", true, true);
             validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~notin=1", true, false, "1");
             validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~notin=1;2;3", true, false, "1", "2", "3");

@@ -50,7 +50,8 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     {
         try
         {
-            _rs = ctx.getResultSet(QueryService.get().getColumns(tinfo, Collections.emptySet(), RenderContext.getSelectColumns(displayColumns, tinfo)), tinfo, null, null, Table.ALL_ROWS, Table.NO_OFFSET, name, false);
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tinfo, Collections.emptySet(), RenderContext.getSelectColumns(displayColumns, tinfo));
+            _rs = ctx.getResultSet(columns, displayColumns, tinfo, null, null, Table.ALL_ROWS, Table.NO_OFFSET, name, false);
             _displayColumns = init(displayColumns);
         }
         catch (SQLException e)

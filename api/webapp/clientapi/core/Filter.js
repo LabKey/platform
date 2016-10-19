@@ -247,28 +247,34 @@ LABKEY.Filter = new function()
 
     function createNoValueFilterType(displayText, displaySymbol, urlSuffix, longDisplayText)
     {
-        return createFilterType(displayText, displaySymbol, urlSuffix, false, null, longDisplayText);
+        return createFilterType(displayText, displaySymbol, urlSuffix, false, false, null, longDisplayText);
     }
 
     function createSingleValueFilterType(displayText, displaySymbol, urlSuffix, longDisplayText)
     {
-        return createFilterType(displayText, displaySymbol, urlSuffix, true, null, longDisplayText);
+        return createFilterType(displayText, displaySymbol, urlSuffix, true, false, null, longDisplayText);
     }
 
     function createMultiValueFilterType(displayText, displaySymbol, urlSuffix, longDisplayText, multiValueSeparator, minOccurs, maxOccurs)
     {
-        return createFilterType(displayText, displaySymbol, urlSuffix, true, multiValueSeparator, longDisplayText, minOccurs, maxOccurs);
+        return createFilterType(displayText, displaySymbol, urlSuffix, true, false, multiValueSeparator, longDisplayText, minOccurs, maxOccurs);
     }
 
-    function createFilterType(displayText, displaySymbol, urlSuffix, dataValueRequired, multiValueSeparator, longDisplayText, minOccurs, maxOccurs)
+    function createTableFilterType(displayText, displaySymbol, urlSuffix, longDisplayText)
+    {
+        return createFilterType(displayText, displaySymbol, urlSuffix, true, true, null, longDisplayText);
+    }
+
+    function createFilterType(displayText, displaySymbol, urlSuffix, dataValueRequired, isTableWise, multiValueSeparator, longDisplayText, minOccurs, maxOccurs)
     {
         var result = {
             getDisplaySymbol : function() { return displaySymbol },
             getDisplayText : function() { return displayText },
             getLongDisplayText : function() { return longDisplayText || displayText },
             getURLSuffix : function() { return urlSuffix },
-            isDataValueRequired : function() { return dataValueRequired },
+            isDataValueRequired : function() { return dataValueRequired === true },
             isMultiValued : function() { return multiValueSeparator != null; },
+            isTableWise : function() { return isTableWise === true },
             getMultiValueSeparator : function() { return multiValueSeparator },
             getMultiValueMinOccurs : function() { return minOccurs },
             getMultiValueMaxOccurs : function() { return maxOccurs; },
@@ -303,11 +309,13 @@ LABKEY.Filter = new function()
 
     function getFilter(columnName, value, filterType)
     {
+        var column = filterType.isTableWise() ? "*" : columnName;
+
         return {
-            getColumnName: function() {return columnName;},
+            getColumnName: function() {return column;},
             getValue: function() {return value},
             getFilterType: function() {return filterType},
-            getURLParameterName : function(dataRegionName) { return (dataRegionName || "query") + "." + columnName + "~" + filterType.getURLSuffix();},
+            getURLParameterName : function(dataRegionName) { return (dataRegionName || "query") + "." + column + "~" + filterType.getURLSuffix();},
             getURLParameterValue : function() { return filterType.isDataValueRequired() ? value : "" }
         };
     }
@@ -390,7 +398,12 @@ LABKEY.Filter = new function()
             HAS_MISSING_VALUE : createNoValueFilterType("Has a missing value indicator", null, "hasmvvalue", null),
             DOES_NOT_HAVE_MISSING_VALUE : createNoValueFilterType("Does not have a missing value indicator", null, "nomvvalue", null),
 
-            EXP_CHILD_OF : createSingleValueFilterType("Is Child Of", null, "exp:childof", " is child of" )
+            EXP_CHILD_OF : createSingleValueFilterType("Is Child Of", null, "exp:childof", " is child of" ),
+
+            //
+            // Table/Query-wise operators
+            //
+            Q : createTableFilterType("Search", null, "q", "Search across all columns")
         },
 
         /** @private create a js object suitable for Query.selectRows, etc */

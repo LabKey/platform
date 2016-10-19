@@ -144,10 +144,10 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, QuerySettings settings, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async)
+    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async)
             throws SQLException, IOException
     {
-        return _ctx.getResultSet(fieldMap, tinfo, settings, parameters, maxRows, offset, name, async);
+        return _ctx.getResultSet(fieldMap, displayColumns, tinfo, settings, parameters, maxRows, offset, name, async);
     }
 
     @Override

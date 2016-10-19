@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
@@ -149,6 +150,7 @@ public abstract class AbstractDataRegion extends DisplayElement
         writer.write(out.toString());
     }
 
+    @Nullable
     private SimpleFilter getValidFilter(RenderContext ctx)
     {
         SimpleFilter urlFilter = new SimpleFilter(ctx.getViewContext().getActionURL(), getName());
@@ -161,10 +163,12 @@ public abstract class AbstractDataRegion extends DisplayElement
 
     private static final String[] HIDDEN_FILTER_COLUMN_SUFFIXES = {"RowId", "DisplayName", "Description", "Label", "Caption", "Value"};
 
+    @Nullable
     protected String getFilterDescription(RenderContext ctx) throws IOException
     {
         SimpleFilter urlFilter = getValidFilter(ctx);
-        if (urlFilter != null && !urlFilter.isEmpty())
+
+        if (urlFilter != null && urlFilter.displayFilterText())
         {
             return urlFilter.getFilterText(new SimpleFilter.ColumnNameFormatter()
             {

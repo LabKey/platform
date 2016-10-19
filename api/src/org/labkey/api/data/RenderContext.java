@@ -75,7 +75,6 @@ public class RenderContext implements Map<String, Object>, Serializable
     private Map<FieldKey, List<String>> _analyticsProviderNamesByFieldKey;
 
     private Results _rs;
-//    private Map<FieldKey, ColumnInfo> _fieldMap;
 
     public RenderContext(ViewContext context)
     {
@@ -304,7 +303,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         return null == _rs ? null : _rs.getFieldMap();
     }
 
-    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, QuerySettings settings, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
+    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
     {
         ActionURL url;
         if (null != settings)
@@ -312,8 +311,18 @@ public class RenderContext implements Map<String, Object>, Serializable
         else
             url = getViewContext().cloneActionURL();
 
+        // collect the ColumnInfo for each DisplayColumn
+        List<ColumnInfo> displayColumnInfos = new ArrayList<>();
+        if (null != displayColumns && !displayColumns.isEmpty())
+        {
+            displayColumns
+                    .stream()
+                    .filter(dc -> dc.getColumnInfo() != null)
+                    .forEach(dc -> displayColumnInfos.add(dc.getColumnInfo()));
+        }
+
         Sort sort = buildSort(tinfo, url, name);
-        SimpleFilter filter = buildFilter(tinfo, url, name, maxRows, offset, sort);
+        SimpleFilter filter = buildFilter(tinfo, displayColumnInfos, url, name, maxRows, offset, sort);
 
         Collection<ColumnInfo> cols = fieldMap.values();
         if (null != QueryService.get())
@@ -419,8 +428,12 @@ public class RenderContext implements Map<String, Object>, Serializable
         return sort;
     }
 
-
     public SimpleFilter buildFilter(TableInfo tinfo, ActionURL url, String name, int maxRows, long offset, Sort sort)
+    {
+        return buildFilter(tinfo, Collections.emptyList(), url, name, maxRows, offset, sort);
+    }
+
+    public SimpleFilter buildFilter(TableInfo tinfo, List<ColumnInfo> displayColumns, ActionURL url, String name, int maxRows, long offset, Sort sort)
     {
         SimpleFilter filter = new SimpleFilter(getBaseFilter());
         //HACK.. Need to fix up the casing of columns throughout so don't have to do
@@ -437,7 +450,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         if (_currentRegion != null && _showRows == ShowRows.SELECTED || _showRows == ShowRows.UNSELECTED)
             buildSelectedFilter(filter, tinfo, _showRows == ShowRows.UNSELECTED);
         else
-            filter.addUrlFilters(url, name);
+            filter.addUrlFilters(url, name, displayColumns);
 
         return filter;
     }

@@ -341,10 +341,9 @@ public class DataRegion extends AbstractDataRegion
     LinkedHashMap<FieldKey, ColumnInfo> getSelectColumns()
     {
         TableInfo table = getTable();
-        List<DisplayColumn> displayCols = getDisplayColumns();
 
         // includes old DisplayColumn.addQueryColumns()
-        List<ColumnInfo> originalColumns = RenderContext.getSelectColumns(displayCols, table);
+        List<ColumnInfo> originalColumns = RenderContext.getSelectColumns(getDisplayColumns(), table);
 
         assert Table.checkAllColumns(table, originalColumns, "DataRegion.getSelectColumns() originalColumns");
 
@@ -652,8 +651,7 @@ public class DataRegion extends AbstractDataRegion
 
     protected Results getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
     {
-        LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
-        return ctx.getResultSet(selectKeyMap, getTable(), getSettings(), getQueryParameters(), getMaxRows(), getOffset(), getName(), async);
+        return ctx.getResultSet(getSelectColumns(), getDisplayColumns(), getTable(), getSettings(), getQueryParameters(), getMaxRows(), getOffset(), getName(), async);
     }
 
 
