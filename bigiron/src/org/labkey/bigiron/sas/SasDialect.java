@@ -219,6 +219,24 @@ public abstract class SasDialect extends SimpleSqlDialect
         return false;
     }
 
+    @Override
+    public SQLFragment getGreatestAndLeastSQL(String method, SQLFragment... arguments)
+    {
+        return super.getGreatestAndLeastSQL(method, arguments);
+        // I think this is right, untested
+        // SAS equivalent to "greatest(col1, col2)" seems to be: "max(of col1 col2)"
+        // See http://stackoverflow.com/questions/21736275/sas-get-max-value-of-variable-in-multiple-rows-columns
+//        SQLFragment ret = new SQLFragment();
+//        ret.append("greatest".equals(method) ? "max" : "min").append("(of");
+//        for (SQLFragment arg : arguments)
+//        {
+//            ret.append(" ");
+//            ret.append(arg);
+//        }
+//        ret.append(")");
+//        return ret;
+    }
+
     // SAS driver doesn't support setting java.sql.Timestamp parameters, so convert to java.sql.Date
     private static class SasStatementWrapper extends StatementWrapper
     {

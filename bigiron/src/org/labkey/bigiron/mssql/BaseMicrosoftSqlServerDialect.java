@@ -831,6 +831,40 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
+    public boolean supportsNativeGreatestAndLeast()
+    {
+        return false;
+    }
+
+    @Override
+    public SQLFragment getGreatestAndLeastSQL(String method, SQLFragment... arguments)
+    {
+        // Example TSQL equivalent to "greatest(col1, col2)": "(SELECT MAX(myCol) FROM (VALUES (col1), (col2)) AS myTbl(myCol))"
+
+        String aggregate;
+        if ("greatest".equalsIgnoreCase(method))
+            aggregate = "MAX";
+        else if ("least".equalsIgnoreCase(method))
+            aggregate = "MIN";
+        else
+            throw new UnsupportedOperationException("Parameter 'method' must either be 'greatest' or 'least'. Was '" + method + "'.");
+
+        SQLFragment ret = new SQLFragment();
+        ret.append("(SELECT ");
+        ret.append(aggregate).append("(virtualCol) ");
+        ret.append("FROM (VALUES ");
+        String comma = "";
+        for (SQLFragment arg : arguments)
+        {
+            ret.append(comma);
+            ret.append("(").append(arg).append(")");
+            comma = ",";
+        }
+        ret.append(") AS virtualTbl(virtualCol))");
+        return ret;
+    }
+
+    @Override
     protected String getSystemTableNames()
     {
         return "dtproperties,sysconstraints,syssegments";

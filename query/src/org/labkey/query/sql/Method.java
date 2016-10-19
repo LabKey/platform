@@ -24,7 +24,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.SQLFragment;
@@ -161,6 +160,14 @@ public abstract class Method
                 return new FolderInfo(true);
             }
         });
+        labkeyMethod.put("greatest", new Method("greatest", JdbcType.OTHER, 1, Integer.MAX_VALUE)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new GreatestAndLeastInfo("greatest");
+            }
+        });
         labkeyMethod.put("hour", new JdbcMethod("hour", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("ifnull", new JdbcMethod("ifnull", JdbcType.OTHER, 2, 2){
             @Override
@@ -243,6 +250,14 @@ public abstract class Method
             }
         });
         labkeyMethod.put("lcase", new JdbcMethod("lcase", JdbcType.VARCHAR, 1, 1));
+        labkeyMethod.put("least", new Method("least", JdbcType.OTHER, 1, Integer.MAX_VALUE)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new GreatestAndLeastInfo("least");
+            }
+        });
         labkeyMethod.put("left", new JdbcMethod("left", JdbcType.VARCHAR, 2, 2));
         labkeyMethod.put("length", new JdbcMethod("length", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("log", new JdbcMethod("log", JdbcType.DOUBLE, 1, 1));
@@ -1175,6 +1190,22 @@ public abstract class Method
         }
     }
 
+    class GreatestAndLeastInfo extends PassthroughInfo
+    {
+        public GreatestAndLeastInfo(String method)
+        {
+            super(method, JdbcType.OTHER);
+        }
+
+        @Override
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        {
+            if (dialect.supportsNativeGreatestAndLeast())
+                return super.getSQL(query, dialect, arguments);
+            else
+                return dialect.getGreatestAndLeastSQL(_name, arguments);
+        }
+    }
 
     public static SQLFragment escapeLikePattern(SQLFragment f, char escapeChar, @Nullable String prepend, @Nullable String append)
     {

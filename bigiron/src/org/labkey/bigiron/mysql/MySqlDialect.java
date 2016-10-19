@@ -298,4 +298,10 @@ public class MySqlDialect extends SimpleSqlDialect
     {
         return true;
     }
+
+    @Override
+    public boolean supportsNativeGreatestAndLeast()
+    {
+        return true;
+    }
 }

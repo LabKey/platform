@@ -1639,6 +1639,12 @@ class PostgreSql91Dialect extends SqlDialect
         return name;
     }
 
+    @Override
+    public boolean supportsNativeGreatestAndLeast()
+    {
+        return true;
+    }
+
     private class PostgreSQLColumnMetaDataReader extends ColumnMetaDataReader
     {
         private final TableInfo _table;

@@ -258,6 +258,12 @@ abstract class OracleDialect extends SimpleSqlDialect
         return true;
     }
 
+    @Override
+    public boolean supportsNativeGreatestAndLeast()
+    {
+        return true;
+    }
+
     // Like SQL Server, EXISTS on Oracle can only be used in a WHERE or CASE. In addition, FROM <table> is required in every SELECT statement
     // on Oracle, so add FROM DUAL, the Oracle dummy table: http://docs.oracle.com/cd/E11882_01/server.112/e41084/queries009.htm#SQLRF20036
     @Override
