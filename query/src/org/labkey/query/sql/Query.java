@@ -1359,6 +1359,7 @@ public class Query
             // TODO: floor
         new MethodSqlTest("SELECT folderName()", JdbcType.VARCHAR, () -> JunitUtil.getTestContainer().getName()),
         new MethodSqlTest("SELECT folderPath()", JdbcType.VARCHAR, () -> JunitUtil.getTestContainer().getPath()),
+            // TODO: greatest
             // TODO: hour
         new MethodSqlTest("SELECT IFNULL(NULL, 'empty') FROM R WHERE rowid=1", JdbcType.VARCHAR, "empty"),
         new MethodSqlTest("SELECT ISEQUAL(NULL, NULL) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),
@@ -1367,6 +1368,7 @@ public class Query
             // javaConstant() always return VARCHAR currently, would like to fix
         new MethodSqlTest("SELECT javaConstant('java.lang.Integer.MAX_VALUE')", JdbcType.VARCHAR, String.valueOf(Integer.MAX_VALUE)),
         new MethodSqlTest("SELECT ISMEMBEROF(-1) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),   // admin is required for junit tests
+            // TODO: least
         new MethodSqlTest("SELECT LCASE('FRED') FROM R WHERE rowid=1", JdbcType.VARCHAR, "fred"),
         new MethodSqlTest("SELECT LEFT('FRED', 2) FROM R WHERE rowid=1", JdbcType.VARCHAR, "FR"),
         new MethodSqlTest("SELECT lower('FRED') FROM R WHERE rowid=1", JdbcType.VARCHAR, "fred"),
