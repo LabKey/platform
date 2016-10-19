@@ -641,6 +641,23 @@ public abstract class SqlDialect
     // does provider support ROUND(double,x) where x != 0
     public abstract boolean supportsRoundDouble();
 
+    /**
+     * Does the dialect have native greatest() and least() methods, in which case they will be passed through,
+     * or should an alternate explicit SQL construct be used instead?
+     */
+    public abstract boolean supportsNativeGreatestAndLeast();
+
+    /**
+     * The alternate SQL construct to use for dialects without native support for greatest() and least()
+     * @param method "greatest" or "least"
+     * @param arguments Arguments passed from the LK SQL
+     * @return the dialect equivalent SQLFragrment
+     */
+    public SQLFragment getGreatestAndLeastSQL(String method, SQLFragment... arguments)
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
     public void handleCreateDatabaseException(SQLException e) throws ServletException
     {
         throw(new ServletException("Can't create database", e));

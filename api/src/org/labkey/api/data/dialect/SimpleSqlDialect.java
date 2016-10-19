@@ -528,4 +528,10 @@ public abstract class SimpleSqlDialect extends SqlDialect
     {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public boolean supportsNativeGreatestAndLeast()
+    {
+        return false;
+    }
 }
