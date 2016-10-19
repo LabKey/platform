@@ -115,7 +115,6 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                     + 'apply this imported archive to multiple folders, check the box below to see additional folders for this project. '
                     + 'The import archive will be applied to all selected folders.',
                 name: 'applyToMultipleFolders',
-                hidden: !this.isProjectAdmin,
                 initChecked: this.isApplyToMultipleFolders ? "checked": "",
                 isChecked: this.isApplyToMultipleFolders,
                 label: 'Apply to multiple folders',
@@ -167,7 +166,8 @@ Ext4.define('LABKEY.import.OptionsPanel', {
         {
             this.applyToMultipleFoldersForm = Ext4.create('LABKEY.import.ApplyToMultipleFolders', {
                 formId: this.formId,
-                hidden: !this.isApplyToMultipleFolders
+                hidden: !this.isApplyToMultipleFolders,
+                rootVisible: this.isProjectAdmin
             });
 
             this.applyToMultipleFoldersForm.on('render', this.updatePanelHeight, this);
@@ -243,7 +243,7 @@ Ext4.define('LABKEY.import.SpecificImportOptions', {
 
     cls: 'advanced-options-panel',
     layout: 'anchor',
-    width: 310,
+    width: 335,
 
     importers: [],
 
@@ -276,15 +276,17 @@ Ext4.define('LABKEY.import.SpecificImportOptions', {
         var items = advancedImportItems;
         if (additionalImportItems.length > 0)
         {
-            this.width = this.width + 275;
+            this.width = this.width + 335;
             this.layout = 'column';
 
             items = [{
                 border: false,
-                bodyStyle: 'padding-right: 25px;',
+                width: 315,
+                bodyStyle: 'padding-right: 20px;',
                 items: advancedImportItems
             },{
                 border: false,
+                width: 315,
                 items: additionalImportItems
             }];
         }
@@ -500,6 +502,12 @@ Ext4.define('LABKEY.import.ApplyToMultipleFolders', {
     {
         var targetFolderCount = 0;
 
+        // remove any previously added hidden inputs, if this function was previously called
+        Ext4.each(Ext4.dom.Query.select('input.advanced-import-target'), function(hiddenInput)
+        {
+            Ext4.removeNode(hiddenInput);
+        });
+
         // add hidden form elements for each of the selected folders
         if (!this.hidden && this.formId != null)
         {
@@ -513,6 +521,7 @@ Ext4.define('LABKEY.import.ApplyToMultipleFolders', {
                     tag: 'input',
                     type: 'hidden',
                     name: 'folderRowIds',
+                    class: 'advanced-import-target',
                     value: record.get('id')
                 });
             }, this);
