@@ -15,34 +15,22 @@ import org.labkey.api.reports.report.ModuleQueryJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryRReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryReportDescriptor;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
-import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 
 import java.io.FilenameFilter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 /**
- *  This cache replaces the complex module report loading and caching code that used to reside in ReportServiceImpl (recently moved to
- *  the bottom of this file). Once complete, we should be able to remove that code, report-specific functionality in Module/DefaultModule
- *  (e.g., getCachedReport(Path), cacheReport(Path, ReportDescriptor), getReportFiles(), preloadReports(), moduleReportFilter),
- *  ReportDescriptor methods like isStale(), and ModuleReportResource.ensureScriptCurrent(). The new cache is implemented, but the file
- *  listeners still need to be registered on all visited directories.
+ *  This class handles loading and caching of module reports. For each module, it loads and caches an instance of
+ *  ReportsCollections, which can look up a single report by path, all reports associated with a given query, or all
+ *  reports defined in the module. MODULE_REPORT_DESCRIPTOR_CACHE invalidates a module's ReportsCollections for any
+ *  change to the report files in that module's resources folder.
  *
  *  Created by adam on 9/12/2016.
  */
@@ -56,16 +44,18 @@ public class ModuleReportCache
 
     private static final ModuleResourceCache2<ReportCollections> MODULE_REPORT_DESCRIPTOR_CACHE = new ModuleResourceCache2<>("Module report cache", new ModuleReportHandler(), REPORT_PATH);
 
-    static List<ReportDescriptor> getDescriptors(Module module, @Nullable String path, Container c, User user)
-    {
-        ReportCollections collections = MODULE_REPORT_DESCRIPTOR_CACHE.getResourceMap(module, c, user);
-        return collections.getDescriptors(path);
-    }
-
-    static @Nullable ReportDescriptor getDescriptor(Module module, String path, Container c, User user)
+    @Nullable
+    static ReportDescriptor getModuleReportDescriptor(Module module, Container c, User user, String path)
     {
         ReportCollections collections = MODULE_REPORT_DESCRIPTOR_CACHE.getResourceMap(module, c, user);
         return collections.getDescriptor(path);
+    }
+
+    @NotNull
+    static List<ReportDescriptor> getModuleReportDescriptors(Module module, Container c, User user, @Nullable String path)
+    {
+        ReportCollections collections = MODULE_REPORT_DESCRIPTOR_CACHE.getResourceMap(module, c, user);
+        return collections.getDescriptors(path);
     }
 
 
@@ -97,7 +87,7 @@ public class ModuleReportCache
         {
             ReportDescriptor descriptor = _map.get(path);
 
-            // Not found... maybe path is relative to "reports/schemas"
+            // Not found... maybe path is relative to "reports/schemas" (e.g., "/lists/People/Less Cool JS Report.js")
             // e.g., http://localhost:8080/labkey/home/list-grid.view?name=People&query.reportId=module%3Asimpletest%2Flists%2FPeople%2FLess%20Cool%20JS%20Report.js (with simpletest active and People list in home)
             if (null == descriptor)
             {
@@ -105,8 +95,10 @@ public class ModuleReportCache
                 Path absPath = REPORT_PATH.append(relPath);
                 descriptor = _map.get(absPath.toString());
 
-                // Not found... maybe path is relative to "reports", #15966
+                // TODO: Eliminate this option... no need to support!
+                // Not found... maybe path is relative to "reports" (e.g., "schemas/lists/People/Less Cool JS Report.js"). See #15966.
                 // e.g., http://localhost:8080/labkey/home/list-grid.view?name=People&query.reportId=module%3Asimpletest%2Fschemas%2Flists%2FPeople%2FLess%20Cool%20JS%20Report.js (with simpletest active and People list in home)
+                // See also SNPRC_EHRTest.testAnimalHistoryReports (SQL Server only... will fail attempting to load "schemas/study/Pedigree/Pedigree.r"
                 if (null == descriptor)
                 {
                     absPath = REPORT_PATH.getParent().append(relPath)   ;
@@ -190,271 +182,24 @@ public class ModuleReportCache
         {
             return moduleReportFilterWithQuery.accept(null, filename);
         }
-    }
 
-    @Nullable
-    public static ReportDescriptor getModuleReportDescriptor(Module module, Container c, User user, String path)
-    {
-        ReportDescriptor descriptor = getDescriptor(module, path, c, user);
-
-        // Test against old caching approach in dev mode
-        if (AppProps.getInstance().isDevMode())
+        // TODO: Create and register factories for these descriptors
+        private static @NotNull ReportDescriptor createModuleReportDescriptorInstance(Module module, Resource reportFile, Container container, User user)
         {
-            ReportDescriptor oldDescriptor = getModuleReportDescriptorOLD(module, c, user, path);
-            String difference = differenceNullSafe(oldDescriptor, descriptor);
+            Path path = reportFile.getPath();
+            String parent = path.getParent().toString();
+            String lower = path.toString().toLowerCase();
 
-            if (null != difference)
-                log("Module report discrepancy: " + module.getName() + " " + path + ": " + difference);
+            // Create R Report Descriptor
+            if (ModuleQueryRReportDescriptor.accept(lower))
+                return new ModuleQueryRReportDescriptor(module, parent, reportFile, path, container, user);
+
+            // Create JS Report Descriptor
+            if (lower.endsWith(ModuleQueryJavaScriptReportDescriptor.FILE_EXTENSION))
+                return new ModuleQueryJavaScriptReportDescriptor(module, parent, reportFile, path, container, user);
+
+            // Create Query Report Descriptor
+            return new ModuleQueryReportDescriptor(module, parent, reportFile, path, container, user);
         }
-
-        return descriptor;
-    }
-
-    @NotNull
-    public static List<ReportDescriptor> getModuleReportDescriptors(Module module, Container c, User user, @Nullable String path)
-    {
-        List<ReportDescriptor> descriptors = getDescriptors(module, path, c, user);
-
-        // Test against old caching approach in dev mode
-        if (AppProps.getInstance().isDevMode())
-        {
-            // Sort the old and new lists using the same comparator
-            Set<ReportDescriptor> oldSorted = new TreeSet<>((d1, d2) -> d1.toString().compareToIgnoreCase(d2.toString()));
-            oldSorted.addAll(getModuleReportDescriptorsOLD(module, c, user, path));
-            Set<ReportDescriptor> newSorted = new TreeSet<>((d1, d2) -> d1.toString().compareToIgnoreCase(d2.toString()));
-            newSorted.addAll(descriptors);
-
-            if (oldSorted.size() != newSorted.size())
-            {
-                log("Module report discrepancy: different size lists for " + module.getName() + " " + path + " (old: " + oldSorted.size() + ", new: " + newSorted.size() + ")");
-            }
-            else
-            {
-                Iterator<ReportDescriptor> iter = newSorted.iterator();
-
-                oldSorted.forEach(descriptor ->
-                {
-                    String difference = difference(descriptor, iter.next());
-
-                    if (null != difference)
-                        log("Module report discrepancy: \"" + descriptor.getReportName() + "\" " + module.getName() + " " + path + ": " + difference);
-                });
-            }
-        }
-
-        return descriptors;
-    }
-
-    private static void log(String message)
-    {
-        throw new IllegalStateException(message);
-    }
-
-    /* ===== Once new cache is fully tested, delete everything below this point ===== */
-
-    @Nullable
-    private static ReportDescriptor getModuleReportDescriptorOLD(Module module, Container container, User user, String path)
-    {
-        List<ReportDescriptor> ds = getModuleReportDescriptorsOLD(module, container, user, path);
-        if (ds.size() == 1)
-            return ds.get(0);
-        return null;
-    }
-
-    @NotNull
-    private static List<ReportDescriptor> getModuleReportDescriptorsOLD(Module module, Container container, User user, @Nullable String path)
-    {
-        if (module.getReportFiles().isEmpty())
-        {
-            return Collections.emptyList();
-        }
-        else if (null == path)
-        {
-            return getReportDescriptors(module.getReportFiles(), module, container, user);
-        }
-
-        Path legalPath = Path.parse(path);
-        legalPath = getLegalFilePath(legalPath);
-
-        // module relative file path
-        Resource reportDirectory = module.getModuleResource(legalPath);
-        Path moduleReportDirectory = getQueryReportsDirectory(module).getPath();
-
-        // report folder relative file path
-        if (null == reportDirectory)
-        {
-            reportDirectory = module.getModuleResource(moduleReportDirectory.append(legalPath));
-
-            // The directory does not exist
-            if (null == reportDirectory)
-            {
-                // 15966 -- check to see if it is resolving from parent report directory
-                reportDirectory = module.getModuleResource(moduleReportDirectory.getParent().append(legalPath));
-
-                if (null == reportDirectory)
-                    return Collections.emptyList();
-            }
-        }
-
-        // Check if it is a file
-        if (!reportDirectory.isFile())
-        {
-            // Not a file so must be within the valid module report path
-            if (!reportDirectory.getPath().startsWith(moduleReportDirectory))
-                return Collections.emptyList();
-        }
-        else
-        {
-            // cannot access files outside of report directory
-            if (!reportDirectory.getPath().startsWith(moduleReportDirectory))
-                return Collections.emptyList();
-
-            // It is a file so iterate across all files within this file's parent folder.
-            reportDirectory = module.getModuleResource(reportDirectory.getPath().getParent());
-        }
-
-        List<ReportDescriptor> reportDescriptors = getReportDescriptors(reportDirectory.list(), module, container, user);
-
-        for (ReportDescriptor descriptor : reportDescriptors)
-        {
-            if (((ModuleReportDescriptor) descriptor).getReportPath().getName().equals(legalPath.getName()))
-                return Collections.singletonList(descriptor);
-        }
-
-        return reportDescriptors;
-    }
-
-    private static List<ReportDescriptor> getReportDescriptors(Collection<? extends Resource> reportFiles, Module module, Container container, User user)
-    {
-        reportFiles = reportFiles.stream().filter(Resource::exists).collect(Collectors.toList());
-
-        // Keep files that might be Query reports (end in .xml);
-        // below we'll remove ones that are associated with R or JS reports
-        Map<String, Resource> possibleQueryReportFiles = reportFiles
-            .stream()
-            .filter(file -> StringUtils.endsWithIgnoreCase(file.getName(), ModuleQueryReportDescriptor.FILE_EXTENSION))
-            .collect(Collectors.toMap(Resource::getName, file->file));
-
-        List<ReportDescriptor> reportDescriptors = new ArrayList<>(reportFiles.size());
-
-        for (Resource file : reportFiles)
-        {
-            if (!moduleReportFilter.accept(null, file.getName()))
-                continue;
-
-            ReportDescriptor descriptor = getReportDescriptor(module, file, container, user);
-            reportDescriptors.add(descriptor);
-
-            if (null != descriptor.getMetaDataFile())
-                possibleQueryReportFiles.remove(descriptor.getMetaDataFile().getName());
-        }
-
-        // Anything left in this map should be a Query Report
-        possibleQueryReportFiles
-            .values()
-            .forEach(file -> reportDescriptors.add(getReportDescriptor(module, file, container, user)));
-
-        return reportDescriptors;
-    }
-
-    private static ReportDescriptor getReportDescriptor(Module module, Resource file, Container container, User user)
-    {
-        ReportDescriptor descriptor = module.getCachedReport(file.getPath());
-
-        // cache miss
-        if (null == descriptor || descriptor.isStale())
-        {
-            descriptor = createModuleReportDescriptorInstance(module, file, container, user);
-
-            // NOTE: getLegalFilePath() is not a two-way mapping, this can cause inconsistencies
-            // so don't cache files with _ (underscore) in path
-            if (!file.getPath().toString().contains("_"))
-                module.cacheReport(file.getPath(), descriptor);
-        }
-
-        descriptor.setContainer(container.getId());
-
-        return descriptor;
-    }
-
-    @NotNull
-    private static ReportDescriptor createModuleReportDescriptorInstance(Module module, Resource reportFile, Container container, User user)
-    {
-        Path path = reportFile.getPath();
-        String parent = path.getParent().toString();
-        String lower = path.toString().toLowerCase();
-
-        // Create R Report Descriptor
-        if (ModuleQueryRReportDescriptor.accept(lower))
-            return new ModuleQueryRReportDescriptor(module, parent, reportFile, path, container, user);
-
-        // Create JS Report Descriptor
-        if (lower.endsWith(ModuleQueryJavaScriptReportDescriptor.FILE_EXTENSION))
-            return new ModuleQueryJavaScriptReportDescriptor(module, parent, reportFile, path, container, user);
-
-        // Create Query Report Descriptor
-        return new ModuleQueryReportDescriptor(module, parent, reportFile, path, container, user);
-    }
-
-    private static Resource getQueryReportsDirectory(Module module)
-    {
-        return module.getModuleResource(REPORT_PATH);
-    }
-
-    private static Path getLegalFilePath(@NotNull Path key)
-    {
-        Path legalPath = Path.emptyPath;
-
-        for (int idx = 0; idx < key.size() ; ++idx)
-            legalPath = legalPath.append(FileUtil.makeLegalName(key.get(idx)));
-
-        return legalPath;
-    }
-
-    private static @Nullable String differenceNullSafe(ReportDescriptor rpt1, ReportDescriptor rpt2)
-    {
-        if (null == rpt1 || null == rpt2)
-        {
-            return rpt1 == rpt2 ? null : "null + non-null";
-        }
-        return difference(rpt1, rpt2);
-    }
-
-    private static @Nullable String difference(ReportDescriptor rpt1, ReportDescriptor rpt2)
-    {
-        if (rpt1.getClass() != rpt2.getClass())
-            return "class";
-
-        if (!Objects.equals(rpt1.getAuthor(), rpt2.getAuthor()))
-            return "author";
-
-        if (!Objects.equals(rpt1.getCategory(), rpt2.getCategory()))
-            return "category";
-
-        if (!rpt1.getReportName().equals(rpt2.getReportName()))
-            return "report name";
-
-        if (!rpt1.getDescriptorType().equals(rpt2.getDescriptorType()))
-            return "descriptor type";
-
-        if (rpt1.getFlags() != rpt2.getFlags())
-            return "flags";
-
-        if (!rpt1.getAccess().equals(rpt2.getAccess()))
-            return "access";
-
-        if (rpt1.getDisplayOrder() != rpt2.getDisplayOrder())
-            return "display order";
-
-        if (!rpt1.getReportKey().equals(rpt2.getReportKey()))
-            return "report key";
-
-        if (!Objects.equals(rpt1.getResourceDescription(), rpt2.getResourceDescription()))
-            return "resource description";
-
-        if (!Objects.equals(rpt1.getProperties().get("script"), rpt2.getProperties().get("script")))
-            return "script";
-
-        return null;
     }
 }
