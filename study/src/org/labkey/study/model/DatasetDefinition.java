@@ -746,18 +746,17 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             CPUTimer time = new CPUTimer("purge");
             time.start();
 
-            Study study = StudyManager.getInstance().getStudy(getContainer());
-
-            boolean deleteSharedRows = (isShared() && getContainer().getId().equals(getDefinitionContainer().getId()))
-                    || ((null!=study) && !study.isDataspaceStudy());
-
             SQLFragment studyDataFrag = new SQLFragment("DELETE FROM " + getStorageTableInfo().getSelectName() + "\n");
             String and = "WHERE ";
-            if (!deleteSharedRows)
+
+            // only apply a container filter on delete when this is a shared dataset definition
+            // and we are not at the container where the definition lives (see issue 28224)
+            if (isShared() && !getContainer().getId().equals(getDefinitionContainer().getId()))
             {
                 studyDataFrag.append(and).append("container=").append(getContainer());
                 and = " AND ";
             }
+
             if (cutoff != null)
             {
                 studyDataFrag.append(and).append(" AND _VisitDate > ?").add(cutoff);
