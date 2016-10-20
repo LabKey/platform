@@ -125,7 +125,7 @@ function toggleItemSelector()
     <table>
         <tr>
             <td>
-                <select name="items" size="<%=containers.size()%>"<%=disabled(!isCustomOrder)%>>
+                <select name="items" size="<%=Math.min(containers.size(), 25)%>"<%=disabled(!isCustomOrder)%>>
                 <%
                 for (Container container : containers)
                 {
