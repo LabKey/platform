@@ -927,11 +927,6 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         }
     }
 
-    public boolean isStale()
-    {
-        return true;
-    }
-
     public Resource getMetaDataFile()
     {
         return null;

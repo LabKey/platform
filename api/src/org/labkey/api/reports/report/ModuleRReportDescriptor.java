@@ -24,8 +24,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
 import org.labkey.query.xml.ReportDescriptorType;
 
-import java.util.Map;
-
 /*
 * User: Dave
 * Date: Dec 4, 2008
@@ -33,7 +31,7 @@ import java.util.Map;
 */
 
 /**
- * Represents an R report defined within a module. This will lazy-load the report script.
+ * Represents an R report defined within a module.
  */
 public class ModuleRReportDescriptor extends RReportDescriptor implements ModuleReportDescriptor
 {
@@ -42,9 +40,10 @@ public class ModuleRReportDescriptor extends RReportDescriptor implements Module
     public static final String KNITR_MD_EXTENSION = ".rmd";
     public static final String KNITR_HTML_EXTENSION = ".rhtml";
 
-    private Module _module;
-    private Path _reportPath;
-    protected ModuleReportResource _resource;
+    private final Module _module;
+    private final Path _reportPath;
+
+    protected final ModuleReportResource _resource;
 
     public ModuleRReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath, Container container, User user)
     {
@@ -58,6 +57,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor implements Module
 
         _resource = getModuleReportResource(sourceFile);
         loadMetaData(container, user);
+        _resource.loadScript();
     }
 
     public ModuleReportResource getModuleReportResource(Resource sourceFile)
@@ -88,8 +88,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor implements Module
             setProperty(Prop.knitrFormat, KnitrFormat.Markdown.name());
             ext = KNITR_MD_EXTENSION;
         }
-        else
-        if (lname.endsWith(KNITR_HTML_EXTENSION))
+        else if (lname.endsWith(KNITR_HTML_EXTENSION))
         {
             setProperty(Prop.knitrFormat, KnitrFormat.Html.name());
             ext = KNITR_HTML_EXTENSION;
@@ -98,43 +97,10 @@ public class ModuleRReportDescriptor extends RReportDescriptor implements Module
         return sourceFile.getName().substring(0, lname.length() - ext.length());
     }
 
-    @Override
-    public boolean isStale()
-    {
-        return _resource.isStale();
-    }
-
     @Nullable
     protected ReportDescriptorType loadMetaData(Container container, User user)
     {
         return _resource.loadMetaData(container, user);
-    }
-
-    @Override
-    public String getProperty(ReportProperty prop)
-    {
-        //if the key = script, ensure we have it
-        if (prop.equals(ScriptReportDescriptor.Prop.script))
-            _resource.ensureScriptCurrent();
-
-        return super.getProperty(prop);
-    }
-
-    @Override
-    public String getProperty(String key)
-    {
-        //if the key = script, ensure we have it
-        if (key.equalsIgnoreCase(ScriptReportDescriptor.Prop.script.name()))
-            _resource.ensureScriptCurrent();
-
-        return super.getProperty(key);
-    }
-
-    @Override
-    public Map<String, Object> getProperties()
-    {
-        _resource.ensureScriptCurrent();
-        return super.getProperties();
     }
 
     @Override

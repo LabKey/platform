@@ -24,8 +24,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
 import org.labkey.query.xml.ReportDescriptorType;
 
-import java.util.Map;
-
 /**
  * User: Nick
  * Date: August 17, 2012
@@ -35,18 +33,16 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
     public static final String TYPE = "moduleJSReportDescriptor";
     public static final String FILE_EXTENSION = ".js";
 
-    protected Module _module;
-    protected Path _reportPath;
-
-    protected ModuleReportResource _resource;
+    private final Module _module;
+    private final Path _reportPath;
+    protected final ModuleReportResource _resource;
 
     public ModuleJavaScriptReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath, Container container, User user)
     {
         _module = module;
         _reportPath = reportPath;
 
-        String name = sourceFile.getName().substring(0, sourceFile.getName().length() -
-                FILE_EXTENSION.length());
+        String name = sourceFile.getName().substring(0, sourceFile.getName().length() - FILE_EXTENSION.length());
 
         setReportKey(reportKey);
         setReportName(name);
@@ -54,6 +50,7 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
         setReportType(JavaScriptReport.TYPE);
         _resource = getModuleReportResource(sourceFile);
         loadMetaData(container, user);
+        _resource.loadScript();
     }
 
     public ModuleReportResource getModuleReportResource(Resource sourceFile)
@@ -61,43 +58,10 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
         return new ModuleReportResource(this, sourceFile);
     }
 
-    @Override
-    public boolean isStale()
-    {
-        return _resource.isStale();
-    }
-
     @Nullable
     protected ReportDescriptorType loadMetaData(Container container, User user)
     {
         return _resource.loadMetaData(container, user);
-    }
-
-    @Override
-    public String getProperty(ReportProperty prop)
-    {
-        //if the key = script, ensure we have it
-        if (prop.equals(ScriptReportDescriptor.Prop.script))
-            _resource.ensureScriptCurrent();
-
-        return super.getProperty(prop);
-    }
-
-    @Override
-    public String getProperty(String key)
-    {
-        //if the key = script, ensure we have it
-        if (key.equalsIgnoreCase(ScriptReportDescriptor.Prop.script.name()))
-            _resource.ensureScriptCurrent();
-
-        return super.getProperty(key);
-    }
-
-    @Override
-    public Map<String, Object> getProperties()
-    {
-        _resource.ensureScriptCurrent();
-        return super.getProperties();
     }
 
     @Override

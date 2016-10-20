@@ -26,7 +26,6 @@ import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.OlapSchemaInfo;
-import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -298,13 +297,6 @@ public interface Module extends Comparable<Module>
      * @return The script file path
      */
     String getSqlScriptsPath(@NotNull SqlDialect dialect);
-
-    @Nullable
-    ReportDescriptor getCachedReport(Path path);
-
-    void cacheReport(Path path, ReportDescriptor descriptor);
-
-    Set<Resource> getReportFiles();
 
     /**
      * Modules can provide a set of ModuleResourceLoaders which will be used

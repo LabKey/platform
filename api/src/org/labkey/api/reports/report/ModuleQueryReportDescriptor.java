@@ -22,8 +22,6 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
 
-import java.util.Map;
-
 /**
  * User: davebradlee
  * Date: 8/21/12
@@ -34,17 +32,16 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor implement
     public static final String TYPE = "moduleQueryReportDescriptor";
     public static final String FILE_EXTENSION = ".xml";
 
-    private Module _module;
-    private Path _reportPath;
-    private ModuleQueryReportResource _resource = null;
+    private final Module _module;
+    private final Path _reportPath;
+    private final ModuleQueryReportResource _resource;
 
     public ModuleQueryReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath, Container container, User user)
     {
         _module = module;
         _reportPath = reportPath;
 
-        String name = sourceFile.getName().substring(0, sourceFile.getName().length() -
-                FILE_EXTENSION.length());
+        String name = sourceFile.getName().substring(0, sourceFile.getName().length() - FILE_EXTENSION.length());
 
         setReportKey(reportKey);
         setReportName(name);
@@ -59,41 +56,9 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor implement
         return QueryReport.TYPE;
     }
 
-    public boolean isStale()
-    {
-        return _resource.isStale();
-    }
-
     protected void loadMetaData(Container container, User user)
     {
         _resource.loadMetaData(container, user);
-    }
-
-    @Override
-    public String getProperty(ReportDescriptor.ReportProperty prop)
-    {
-        //if the key = script, ensure we have it
-        if (prop.equals(ScriptReportDescriptor.Prop.script))
-            _resource.ensureScriptCurrent();
-
-        return super.getProperty(prop);
-    }
-
-    @Override
-    public String getProperty(String key)
-    {
-        //if the key = script, ensure we have it
-        if (key.equalsIgnoreCase(ScriptReportDescriptor.Prop.script.name()))
-            _resource.ensureScriptCurrent();
-
-        return super.getProperty(key);
-    }
-
-    @Override
-    public Map<String, Object> getProperties()
-    {
-        _resource.ensureScriptCurrent();
-        return super.getProperties();
     }
 
     @Override

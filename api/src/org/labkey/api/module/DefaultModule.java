@@ -23,8 +23,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.Container;
@@ -42,10 +40,6 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.OlapSchemaInfo;
-import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
-import org.labkey.api.reports.report.ModuleQueryReportDescriptor;
-import org.labkey.api.reports.report.ModuleRReportDescriptor;
-import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityManager;
@@ -98,7 +92,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -113,7 +106,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
     private static final Set<Pair<Class, String>> INSTANTIATED_MODULES = new HashSet<>();
     private static final String XML_FILENAME = "module.xml";
-    private static final Cache<Path, ReportDescriptor> REPORT_DESCRIPTOR_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Report descriptor cache");
 
     private final Queue<Pair<String, Runnable>> _deferredUpgradeRunnables = new LinkedList<>();
     private final Map<String, Class<? extends Controller>> _controllerNameToClass = new LinkedHashMap<>();
@@ -226,49 +218,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 //        _resolver = new ModuleResourceResolver(this, getResourceDirectories(), getResourceClasses());
 
         init();
-
-        preloadReports();
-    }
-
-    Set<Resource> _reportFiles = Collections.synchronizedSet(new TreeSet<>((o, o1) -> o.getPath().compareTo(o1.getPath())));
-
-    public static final FilenameFilter moduleReportFilter = (dir, name) -> ModuleRReportDescriptor.accept(name) ||
-        StringUtils.endsWithIgnoreCase(name, ModuleJavaScriptReportDescriptor.FILE_EXTENSION);
-
-    protected static final FilenameFilter moduleReportFilterWithQuery = (dir, name) -> moduleReportFilter.accept(dir, name) ||
-        StringUtils.endsWithIgnoreCase(name, ModuleQueryReportDescriptor.FILE_EXTENSION);
-
-    private void preloadReports()
-    {
-        Resource r = getQueryReportsDir();
-        if (null == r || !r.isCollection())
-            return;
-        _findReports(r);
-    }
-
-
-    private void _findReports(Resource dir)
-    {
-        for (Resource file : dir.list())
-        {
-            if (file.isCollection())
-                _findReports(file);
-            else if (moduleReportFilterWithQuery.accept(null, file.getName()))
-                _reportFiles.add(file);
-        }
-    }
-
-    Resource _queryReportsDir = null;
-    protected Resource getQueryReportsDir()
-    {
-        if (null == _queryReportsDir)
-            _queryReportsDir = getModuleResource("reports/schemas");
-        return _queryReportsDir;
-    }
-
-    public Set<Resource> getReportFiles()
-    {
-        return _reportFiles;
     }
 
     protected abstract void init();
@@ -1067,17 +1016,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public final String getSqlScriptsPath(@NotNull SqlDialect dialect)
     {
         return "schemas/dbscripts/" + dialect.getSQLScriptPath() + "/";
-    }
-
-    @Nullable
-    public final ReportDescriptor getCachedReport(Path path)
-    {
-        return REPORT_DESCRIPTOR_CACHE.get(new Path("{"+getName()+"}").append(path));
-    }
-
-    public final void cacheReport(Path path, ReportDescriptor descriptor)
-    {
-        REPORT_DESCRIPTOR_CACHE.put(new Path("{"+getName()+"}").append(path), descriptor);
     }
 
     protected final void loadXmlFile(Resource r)

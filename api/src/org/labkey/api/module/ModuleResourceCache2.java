@@ -45,18 +45,18 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 /**
  * Standard cache for file-system resources provided by a module. An instance of this class manages one specific type of
- * resource (e.g., query, custom view, report, etc.) by caching & returning one or more mappings to each module's resources.
- * This class loads, returns, and invalidates a single object per module (referred to as a "resource map" below), typically
- * a Map or a bean containing multiple Maps presenting different lookup options to callers. It registers file system
- * listeners in every directory the loader visits and invalidates the object on any file system change that occurs within
- * those directories (update, delete, or add of any file or directory). A single change to a single file will therefore
- * result in reloading all the resources of the given type in that module.
+ * resource (e.g., query, custom view, report, etc.) for all modules. This class loads, returns, and invalidates a single
+ * object per module (referred to as a "resource map" below), typically a Map or a bean containing multiple Maps presenting
+ * different lookup options to callers. It registers file system listeners in every directory the loader visits and
+ * invalidates the object on any file system change that occurs within those directories (update, delete, or add of any
+ * file or directory). A single change to a single file will therefore result in reloading all the resources of the given
+ * type in that module.
  *
  * Note: This class is a simplification and generalization that should eventually be able to replace ModuleResourceCache,
  * QueryBasedModuleResourceCache, and PathBasedModuleResourceCache. The trade-offs for this simplification: each loader
  * needs to do a little more work (traversing directories, filtering resource files, creating & populating maps) and all
  * resources of a given type for a given module are loaded & invalidated together, as opposed to invalidating individual
- * resources when changes occur. These seems like reasonable trade-offs...
+ * resources when changes occur. These seem like reasonable trade-offs...
  *
  * User: adam
  * Date: 12/26/13
@@ -67,7 +67,7 @@ public final class ModuleResourceCache2<V>
 
     private final BlockingCache<Module, V> _cache;
     private final ModuleResourceCacheHandler2<V> _handler;
-    private final FileSystemWatcher _watcher = FileSystemWatchers.get("Module resource cache watcher");
+    private final FileSystemWatcher _watcher = FileSystemWatchers.get();
     private final Set<String> _pathsWithListeners = new ConcurrentHashSet<>();
 
     public ModuleResourceCache2(String description, ModuleResourceCacheHandler2<V> handler, Path root)

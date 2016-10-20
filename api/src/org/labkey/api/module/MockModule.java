@@ -25,7 +25,6 @@ import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.OlapSchemaInfo;
-import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -368,24 +367,6 @@ public class MockModule implements Module
     public String getSqlScriptsPath(@NotNull SqlDialect dialect)
     {
         return null;
-    }
-
-    @Override
-    @Nullable
-    public ReportDescriptor getCachedReport(Path path)
-    {
-        return null;
-    }
-
-    @Override
-    public void cacheReport(Path path, ReportDescriptor descriptor)
-    {
-    }
-
-    @Override
-    public Set<Resource> getReportFiles()
-    {
-        return Collections.emptySet();
     }
 
     @Override

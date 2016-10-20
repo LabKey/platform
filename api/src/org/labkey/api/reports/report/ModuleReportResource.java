@@ -36,9 +36,6 @@ public class ModuleReportResource
     protected final ReportDescriptor _reportDescriptor;
     protected final Resource _metaDataFile;
 
-    protected long _sourceLastModified = 0;
-    private long _metaDataLastModified = 0;
-
     public ModuleReportResource(ReportDescriptor reportDescriptor, Resource sourceFile)
     {
         _reportDescriptor = reportDescriptor;
@@ -47,34 +44,20 @@ public class ModuleReportResource
         _metaDataFile = dir.find(_reportDescriptor.getReportName() + ScriptReportDescriptor.REPORT_METADATA_EXTENSION);
     }
 
-    public void ensureScriptCurrent()
+    public void loadScript()
     {
-        if (_sourceFile.exists() && _sourceFile.getLastModified() != _sourceLastModified)
+        try
         {
-            try
+            String script = getFileContents(_sourceFile);
+            if (null != script)
             {
-                String script = getFileContents(_sourceFile);
-                if (null != script)
-                {
-                    _reportDescriptor.setProperty(ScriptReportDescriptor.Prop.script, script);
-                    _sourceLastModified = _sourceFile.getLastModified();
-                }
-            }
-            catch(IOException e)
-            {
-                Logger.getLogger(ModuleReportResource.class).warn("Unable to load report script from source file "
-                        + _sourceFile.getPath(), e);
+                _reportDescriptor.setProperty(ScriptReportDescriptor.Prop.script, script);
             }
         }
-    }
-
-    public boolean isStale()
-    {
-        //check if either source or meta-data files have changed
-        //meta-data file is optional so make sure it exists before checking
-        return (_sourceLastModified != 0 && _sourceFile.getLastModified() != _sourceLastModified)
-                || (_metaDataLastModified != 0 && _metaDataFile.exists() && _metaDataFile.getLastModified() != _metaDataLastModified);
-
+        catch(IOException e)
+        {
+            Logger.getLogger(ModuleReportResource.class).warn("Unable to load report script from source file " + _sourceFile.getPath(), e);
+        }
     }
 
     protected ReportDescriptorType loadMetaData(Container container, User user)
@@ -86,8 +69,6 @@ public class ModuleReportResource
             {
                 String xml = getFileContents(_metaDataFile);
                 d = _reportDescriptor.setDescriptorFromXML(container, user, xml);
-
-                _metaDataLastModified = _metaDataFile.getLastModified();
             }
             catch(IOException e)
             {

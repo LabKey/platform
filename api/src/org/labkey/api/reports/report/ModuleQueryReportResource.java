@@ -39,12 +39,6 @@ public class ModuleQueryReportResource extends ModuleReportResource
     }
 
     @Override
-    public boolean isStale()
-    {
-        return (_sourceLastModified != 0 && _sourceFile.getLastModified() != _sourceLastModified);
-    }
-
-    @Override
     protected ReportDescriptorType loadMetaData(Container container, User user)
     {
         ReportDescriptorType d = null;
@@ -76,8 +70,6 @@ public class ModuleQueryReportResource extends ModuleReportResource
 
                 _reportDescriptor.setProperties(props);
             }
-
-            _sourceLastModified = _sourceFile.getLastModified();
         }
         catch(IOException | XmlException e)
         {
