@@ -319,6 +319,19 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.textLink(text, url);
     }
 
+    /**
+     * Add textlink that opens in new tab/window
+     * @param text to display
+     * @param url to link to
+     * @param targetBlank True to open in new tab/window
+     * @return Link that targets _blank
+     */
+    public String textLink(String text, URLHelper url, boolean targetBlank)
+    {
+        return textLink(text, url, null, null,
+                targetBlank ? Collections.singletonMap("target", "_blank") : Collections.emptyMap());
+    }
+
     public String textLink(String text, URLHelper url, String id)
     {
         return PageFlowUtil.textLink(text, url, id);
