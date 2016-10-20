@@ -159,8 +159,8 @@ public class StudyDataspaceTest extends StudyBaseTest
         clickFolder(FOLDER_STUDY5);
         goToFolderManagement();
         clickAndWait(Locator.linkWithText("Export"));
-        uncheckCheckbox(Locator.checkboxByNameAndValue("types", "Assay Schedule"));
-        uncheckCheckbox(Locator.checkboxByNameAndValue("types", "Treatment Data"));
+        uncheckCheckbox(Locator.css("input[value='Assay Schedule']"));
+        uncheckCheckbox(Locator.css("input[value='Treatment Data']"));
         checkRadioButton(Locator.radioButtonByNameAndValue("location", "0"));
         clickButton("Export");
 

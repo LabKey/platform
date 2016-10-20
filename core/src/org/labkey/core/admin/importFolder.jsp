@@ -20,9 +20,12 @@
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.core.admin.FolderManagementAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
+    FolderManagementAction.FolderManagementForm form = (FolderManagementAction.FolderManagementForm) HttpView.currentModel();
     Container c = getViewContext().getContainerNoTab();
     Container project = c.getProject();
     String requestOrigin = (request.getParameter("origin") != null) ? request.getParameter("origin") : "here";
@@ -119,7 +122,7 @@
 %>
     <tr>
         <td style="padding-left: 15px; padding-top: 5px;">
-            <label><input type="checkbox" name="createSharedDatasets" checked value="true"> Create shared datasets</label>
+            <label><input type="checkbox" name="createSharedDatasets" <%=h(form.isCreateSharedDatasets() ? "checked" : "")%> value="true"> Create shared datasets</label>
         </td>
     </tr>
 <%
@@ -127,12 +130,12 @@
 %>
     <tr>
         <td style="padding-left: 15px; padding-top: 5px;">
-            <label><input type="checkbox" name="validateQueries" checked value="true"> Validate all queries after <%=h(action.toLowerCase())%></label>
+            <label><input type="checkbox" name="validateQueries" <%=h(form.isValidateQueries() ? "checked" : "")%> value="true"> Validate all queries after <%=h(action.toLowerCase())%></label>
         </td>
     </tr>
     <tr>
         <td style="padding-left: 15px; padding-top: 5px; padding-bottom: 5px;">
-            <label><input type="checkbox" name="advancedImportOptions" value="true"> Show advanced import options</label>
+            <label><input type="checkbox" name="advancedImportOptions" <%=h(form.isAdvancedImportOptions() ? "checked" : "")%> value="true"> Show advanced import options</label>
         </td>
     </tr>
     <tr>

@@ -38,9 +38,11 @@ list templates.<%
 %>
 <p>For more information about exporting and importing lists, see <%=helpLink("exportImportLists", "the list documentation")%>.</p>
 </td></tr>
-<tr><td><input type="file" name="listZip" size="50"></td></tr>
 <tr>
-    <td><%= button("Import List Archive").submit(true) %></td>
+    <td><input type="file" name="listZip" size="50"></td>
+</tr>
+<tr>
+    <td><p><%= button("Import List Archive").submit(true) %></p></td>
 </tr>
 
 </table>

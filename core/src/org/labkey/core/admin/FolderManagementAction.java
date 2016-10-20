@@ -1282,6 +1282,14 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                     return new JspView<>("/org/labkey/core/admin/exportFolder.jsp", _form, _errors);
                 case "import":
                     assert !_container.isRoot() : "No import for the root folder";    // TODO: Not needed
+
+                    // default the createSharedDatasets and validateQueries to true if this is not a form error reshow
+                    if (!_errors.hasErrors())
+                    {
+                        _form.setCreateSharedDatasets(true);
+                        _form.setValidateQueries(true);
+                    }
+
                     return new JspView<>("/org/labkey/core/admin/importFolder.jsp", _form, _errors);
                 case "info":
                     return AdminController.getContainerInfoView(_container, getViewContext().getUser());
