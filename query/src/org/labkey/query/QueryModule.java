@@ -65,8 +65,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -74,9 +72,9 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.query.analytics.AggregatesMeanAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesCountAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesMaxAnalyticsProvider;
+import org.labkey.query.analytics.AggregatesMeanAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesMinAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesSumAnalyticsProvider;
 import org.labkey.query.analytics.RemoveColumnAnalyticsProvider;
@@ -213,15 +211,6 @@ public class QueryModule extends DefaultModule
         AdminConsole.addExperimentalFeatureFlag(QueryView.EXPERIMENTAL_EXPORT_COLUMN_HEADER_TYPE,
                 "Column Header Export Type",
                 "Add column header type option to the excel and tsv export panel in grids", false);
-
-        AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_DATA_VIEW_PERFORMANCE,
-                "Data Views Performance",
-                "Speeds up display of Custom Views in the Data Views Webpart", false);
-
-        // temporarily enable the experimental feature for testing
-        WriteableAppProps props = AppProps.getWriteableInstance();
-        props.setExperimentalFeatureEnabled(QueryServiceImpl.EXPERIMENTAL_DATA_VIEW_PERFORMANCE, true);
-        props.save();
     }
 
 

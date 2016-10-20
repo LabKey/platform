@@ -73,6 +73,7 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.externalSchema.TemplateSchemaDocument;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
+import org.labkey.data.xml.queryCustomView.OperatorType;
 import org.labkey.query.audit.QueryAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.controllers.QueryController;
@@ -98,7 +99,6 @@ import org.labkey.query.sql.SqlBuilder;
 import org.labkey.query.sql.SqlParser;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.servlet.mvc.Controller;
-import org.labkey.data.xml.queryCustomView.OperatorType;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -847,63 +847,7 @@ public class QueryServiceImpl extends QueryService
 
         if (schemaName == null || queryName == null)
         {
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DATA_VIEW_PERFORMANCE))
-            {
-                views = new ArrayList<>();
-                views.addAll(getCustomViewsForContainer(user, container, owner, includeInherited, sharedOnly, alwaysUseTitlesForLoadingCustomViews));
-            }
-            else
-            {
-                DefaultSchema defSchema = DefaultSchema.get(user, container);
-                SchemaTreeNode topNode = null != schemaName ? defSchema.getUserSchema(schemaName) : defSchema;
-
-                views = new SchemaTreeWalker<Set<CustomView>, Void>(false) {
-                    @Override
-                    protected Set<CustomView> visitTablesAndReduce(UserSchema schema, Iterable<String> names, Path path, Void param, Set<CustomView> customViews)
-                    {
-                        Set<CustomView> views = new HashSet<>();
-                        views = reduce(views, customViews);
-                        //TODO should getQueryDefForTable() optimize the case where it is a query?
-                        Map<String,QueryDefinition> queries = schema.getQueryDefs();
-                        for (String name : names)
-                        {
-                            QueryDefinition qd = queries.get(name);
-                            if (null == qd)
-                                qd = schema.getQueryDefForTable(name);
-                            if (qd != null)
-                            {
-                                try
-                                {
-                                    Map<String, CustomView> viewMap = getCustomViewMap(user, container, owner, qd, includeInherited, sharedOnly, alwaysUseTitlesForLoadingCustomViews);
-
-                                    if (!viewMap.isEmpty())
-                                        views.addAll(viewMap.values());
-                                }
-                                catch (Exception e)
-                                {
-                                    // Ignore bad columns, etc.
-                                }
-                            }
-                        }
-                        return views;
-                    }
-
-                    @Override
-                    public Set<CustomView> reduce(Set<CustomView> r1, Set<CustomView> r2)
-                    {
-                        if (r1 == null)
-                            return r2;
-                        if (r2 == null)
-                            return r1;
-
-                        Set<CustomView> set = new HashSet<>();
-                        set.addAll(r1);
-                        set.addAll(r2);
-
-                        return set;
-                    }
-                }.visitTop(topNode, null);
-            }
+            views = getCustomViewsForContainer(user, container, owner, includeInherited, sharedOnly, alwaysUseTitlesForLoadingCustomViews);
         }
         else
         {
