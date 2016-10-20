@@ -503,11 +503,10 @@ Ext4.define('LABKEY.import.ApplyToMultipleFolders', {
         var targetFolderCount = 0;
 
         // remove any previously added hidden inputs, if this function was previously called
-        // TODO was this the cause of the YUICompressor failure?
-        //Ext4.each(Ext4.dom.Query.select('input.advanced-import-target'), function(hiddenInput)
-        //{
-        //    Ext4.removeNode(hiddenInput);
-        //});
+        Ext4.each(Ext4.dom.Query.select('input.advanced-import-target'), function(hiddenInput)
+        {
+            Ext4.removeNode(hiddenInput);
+        });
 
         // add hidden form elements for each of the selected folders
         if (!this.hidden && this.formId != null)
@@ -522,7 +521,7 @@ Ext4.define('LABKEY.import.ApplyToMultipleFolders', {
                     tag: 'input',
                     type: 'hidden',
                     name: 'folderRowIds',
-                    //class: 'advanced-import-target',
+                    "class": 'advanced-import-target',
                     value: record.get('id')
                 });
             }, this);
