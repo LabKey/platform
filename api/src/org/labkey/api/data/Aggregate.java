@@ -78,6 +78,16 @@ public class Aggregate
                     }
 
                     @Override
+                    public String getColumnSelect(String columnName, @Nullable JdbcType jdbcType)
+                    {
+                        // special case for casting INTEGER to FLOAT
+                        if (jdbcType != null && jdbcType.equals(JdbcType.INTEGER))
+                            return "CAST(" + columnName + " AS FLOAT)";
+
+                        return super.getColumnSelect(columnName, jdbcType);
+                    }
+
+                    @Override
                     public JdbcType returnType(JdbcType jdbcType)
                     {
                         switch (jdbcType)
@@ -137,6 +147,11 @@ public class Aggregate
             return name();
         }
 
+        public String getColumnSelect(String columnName, @Nullable JdbcType jdbcType)
+        {
+            return columnName;
+        }
+
         public String getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct)
         {
             if (jdbcType != null && !isLegal(jdbcType))
@@ -146,7 +161,7 @@ public class Aggregate
             sb.append(getSQLFunctionName()).append("(");
             if (distinct)
                 sb.append("DISTINCT ");
-            sb.append(dialect.getColumnSelectName(columnName));
+            sb.append(getColumnSelect(dialect.getColumnSelectName(columnName), jdbcType));
             sb.append(") AS ").append(asName);
             return sb.toString();
         }
