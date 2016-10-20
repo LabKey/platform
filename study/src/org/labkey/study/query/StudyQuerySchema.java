@@ -64,6 +64,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.studydesign.DoseAndRouteTable;
 import org.labkey.study.query.studydesign.StudyDesignAssaysTable;
+import org.labkey.study.query.studydesign.StudyDesignChallengeTypesTable;
 import org.labkey.study.query.studydesign.StudyDesignGenesTable;
 import org.labkey.study.query.studydesign.StudyDesignImmunogenTypesTable;
 import org.labkey.study.query.studydesign.StudyDesignLabsTable;
@@ -137,6 +138,7 @@ public class StudyQuerySchema extends UserSchema
 
     // study design tables
     public static final String STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME = "StudyDesignImmunogenTypes";
+    public static final String STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME = "StudyDesignChallengeTypes";
     public static final String STUDY_DESIGN_GENES_TABLE_NAME = "StudyDesignGenes";
     public static final String STUDY_DESIGN_ROUTES_TABLE_NAME = "StudyDesignRoutes";
     public static final String STUDY_DESIGN_SUB_TYPES_TABLE_NAME = "StudyDesignSubTypes";
@@ -496,6 +498,10 @@ public class StudyQuerySchema extends UserSchema
         if (STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new StudyDesignImmunogenTypesTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+        }
+        if (STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return new StudyDesignChallengeTypesTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (STUDY_DESIGN_GENES_TABLE_NAME.equalsIgnoreCase(name))
         {

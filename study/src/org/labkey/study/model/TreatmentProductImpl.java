@@ -178,6 +178,10 @@ public class TreatmentProductImpl implements TreatmentProduct
                 }
             }
         }
+        else if (getDoseAndRoute() == null && getDose() == null && getRoute() == null && getProductId() > 0)
+        {
+            setProductDoseRoute(String.valueOf(getProductId() + PRODUCT_DOSE_DELIMITER));
+        }
     }
 
     public static TreatmentProductImpl fromJSON(@NotNull JSONObject o, Container container)
@@ -217,6 +221,35 @@ public class TreatmentProductImpl implements TreatmentProduct
         setProductDoseRoute(productDoseRoute);
         String[] parts = productDoseRoute.split(PRODUCT_DOSE_DELIMITER);
         setProductId(Integer.parseInt(parts[0]));
-        setDoseAndRoute(parts[1]);
+        if (parts.length > 1)
+            setDoseAndRoute(parts[1]);
+    }
+
+    public boolean isSameTreatmentProductWith(TreatmentProductImpl other)
+    {
+        if (other == null)
+            return false;
+        if (this.getProductId() != other.getProductId())
+            return false;
+        if (this.getProductDoseRoute() != null && other.getProductDoseRoute() != null && this.getProductDoseRoute().equals(other.getProductDoseRoute()))
+            return true;
+
+        if (this.getDose() != null)
+        {
+            if (other.getDose() == null || !this.getDose().equals(other.getDose()))
+                return false;
+        }
+        else if (other.getDose() != null)
+            return false;
+
+        if (this.getRoute() != null)
+        {
+            if (other.getRoute() == null || !this.getRoute().equals(other.getRoute()))
+                return false;
+        }
+        else if (other.getRoute() != null)
+            return false;
+
+        return true;
     }
 }

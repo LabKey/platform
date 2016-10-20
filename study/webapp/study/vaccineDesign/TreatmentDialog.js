@@ -22,7 +22,10 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
         if (!this.formPanel) {
             this.formPanel = Ext4.create('Ext.form.Panel',{
                 border : false,
-                layout : 'hbox',
+                layout : {
+                    type : 'vbox',
+                    align: 'center'
+                },
                 fieldDefaults  :{
                     labelAlign : 'top',
                     labelWidth : 130
@@ -54,7 +57,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
                     inputValue: val.ProductDoseRoute,
                     productLabel: val.ProductLabel,
                     checked: checked,
-                    width: 170,
+                    width: 350,
                     cls: 'dialog-product-label',
                     listeners: {
                         render: function (cmp)
@@ -92,6 +95,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
         {
             if (!product.get('RowId') || product.get('Role') != productRole)
                 return;
+            var hasDoseRoute = false;
             Ext4.each(Ext4.getStore('DoseAndRoute').getRange(), function(dose)
             {
                 if (dose.get('RowId') != null && dose.get('ProductId') == product.get('RowId') && product.get('Role') == productRole) {
@@ -100,8 +104,17 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
                     productDose.Label = product.get('Label') + ' - ' + dose.get('Label');
                     productDose.ProductDoseRoute = dose.get('ProductId') + '-#-' + dose.get('Label');
                     data.push(productDose);
+                    hasDoseRoute = true;
                 }
             }, this);
+            if (!hasDoseRoute)
+            {
+                var productDose = Ext4.clone(product.data);
+                productDose.ProductLabel = product.get('Label');
+                productDose.Label = product.get('Label');
+                productDose.ProductDoseRoute = product.get('RowId') + '-#-';
+                data.push(productDose);
+            }
         }, this);
 
         return data;

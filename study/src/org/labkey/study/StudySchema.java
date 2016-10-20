@@ -395,6 +395,11 @@ public class StudySchema
         return getSchema().getTable("StudyDesignImmunogenTypes");
     }
 
+    public TableInfo getTableInfoStudyDesignChallengeTypes()
+    {
+        return getSchema().getTable("StudyDesignChallengeTypes");
+    }
+
     public TableInfo getTableInfoStudyDesignGenes()
     {
         return getSchema().getTable("StudyDesignGenes");

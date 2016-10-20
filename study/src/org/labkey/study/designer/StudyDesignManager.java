@@ -329,6 +329,8 @@ public class StudyDesignManager
         Filter filter = SimpleFilter.createContainerFilter(c);
         Table.delete(StudySchema.getInstance().getTableInfoStudyDesignImmunogenTypes(), filter);
         deletedTables.add(StudySchema.getInstance().getTableInfoStudyDesignImmunogenTypes());
+        Table.delete(StudySchema.getInstance().getTableInfoStudyDesignChallengeTypes(), filter);
+        deletedTables.add(StudySchema.getInstance().getTableInfoStudyDesignChallengeTypes());
         Table.delete(StudySchema.getInstance().getTableInfoStudyDesignGenes(), filter);
         deletedTables.add(StudySchema.getInstance().getTableInfoStudyDesignGenes());
         Table.delete(StudySchema.getInstance().getTableInfoStudyDesignRoutes(), filter);

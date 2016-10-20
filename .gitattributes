@@ -1947,6 +1947,7 @@ study/resources/schemas/dbscripts/postgresql/study-16.22-16.23.sql -text
 study/resources/schemas/dbscripts/postgresql/study-16.23-16.24.sql -text
 study/resources/schemas/dbscripts/postgresql/study-16.24-16.25.sql -text
 study/resources/schemas/dbscripts/postgresql/study-16.25-16.26.sql -text
+study/resources/schemas/dbscripts/postgresql/study-16.26-16.27.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-0.00-12.20.sql -text
@@ -1990,6 +1991,7 @@ study/resources/schemas/dbscripts/sqlserver/study-16.22-16.23.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-16.23-16.24.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-16.24-16.25.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-16.25-16.26.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-16.26-16.27.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
@@ -2364,6 +2366,7 @@ study/src/org/labkey/study/query/studydesign/AbstractStudyDesignDomainKind.java 
 study/src/org/labkey/study/query/studydesign/DefaultStudyDesignTable.java -text
 study/src/org/labkey/study/query/studydesign/DoseAndRouteTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyDesignAssaysTable.java -text
+study/src/org/labkey/study/query/studydesign/StudyDesignChallengeTypesTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyDesignGenesTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyDesignImmunogenTypesTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyDesignLabsTable.java -text

@@ -542,33 +542,57 @@ public class StudyDesignController extends BaseStudyController
             if (study != null)
             {
                 StudySchema schema = StudySchema.getInstance();
-                Integer treatmentId;
+                List<Integer> treatmentIds;
                 try (DbScope.Transaction transaction = schema.getSchema().getScope().ensureTransaction())
                 {
-                    treatmentId = updateTreatments(form.getTreatments());
+                    treatmentIds = updateTreatments(form.getTreatments());
                     transaction.commit();
                 }
 
                 response.put("success", true);
-                response.put("treatmentId", treatmentId);
+                response.put("treatmentIds", treatmentIds);
                 return response;
             }
             else
                 throw new IllegalStateException("A study does not exist in this folder");
         }
 
-        private Integer updateTreatments(List<TreatmentImpl> treatments) throws Exception
+        private Integer getExistingTreatmentId(TreatmentImpl treatment)
         {
-            Integer updatedRowId = -1;
+            if (treatment == null)
+                return -1;
+            List<TreatmentImpl> studyTreatments = TreatmentManager.getInstance().getStudyTreatments(getContainer(), getUser());
+            for (TreatmentImpl existingTreatment : studyTreatments)
+            {
+                List<TreatmentProductImpl> studyTreatmentProducts = TreatmentManager.getInstance().getStudyTreatmentProducts(getContainer(), getUser(), existingTreatment.getRowId(), existingTreatment.getProductSort());
+                for (TreatmentProductImpl product : studyTreatmentProducts)
+                {
+                    product.serialize();
+                }
+                existingTreatment.setTreatmentProducts(studyTreatmentProducts);
+                if (treatment.isSameTreatmentProductsWith(existingTreatment))
+                    return existingTreatment.getRowId();
+            }
+            return -1;
+        }
+
+        private List<Integer> updateTreatments(List<TreatmentImpl> treatments) throws Exception
+        {
+            List<Integer> updatedRowIds = new ArrayList<>();
             for (TreatmentImpl treatment : treatments)
             {
-                updatedRowId = TreatmentManager.getInstance().saveTreatment(getContainer(), getUser(), treatment);
-                if (updatedRowId != null)
+                Integer updatedRowId = getExistingTreatmentId(treatment);
+                if (updatedRowId == null || updatedRowId <= 0)
                 {
-                    TreatmentManager.getInstance().updateTreatmentProducts(updatedRowId, treatment.getTreatmentProducts(), getContainer(), getUser());
+                    updatedRowId = TreatmentManager.getInstance().saveTreatment(getContainer(), getUser(), treatment);
+                    if (updatedRowId != null)
+                    {
+                        TreatmentManager.getInstance().updateTreatmentProducts(updatedRowId, treatment.getTreatmentProducts(), getContainer(), getUser());
+                    }
                 }
+                updatedRowIds.add(updatedRowId);
             }
-            return updatedRowId;
+            return updatedRowIds;
         }
     }
 

@@ -183,4 +183,42 @@ public class TreatmentImpl implements Treatment
 
         return treatment;
     }
+
+    public boolean isSameTreatmentProductsWith(TreatmentImpl other)
+    {
+        if (other == null)
+            return false;
+        if (this.getTreatmentProducts() == null)
+        {
+            return other.getTreatmentProducts() == null;
+        }
+        else
+        {
+            if (other.getTreatmentProducts() == null)
+                return false;
+
+            if (this.getTreatmentProducts().size() != other.getTreatmentProducts().size())
+                return false;
+
+            boolean hasMismatch = false;
+            for (TreatmentProductImpl product : this.getTreatmentProducts())
+            {
+                boolean foundMatch =false;
+                for (TreatmentProductImpl otherProduct : other.getTreatmentProducts())
+                {
+                    if (product.isSameTreatmentProductWith(otherProduct))
+                    {
+                        foundMatch = true;
+                        break;
+                    }
+                }
+                if (!foundMatch)
+                {
+                    hasMismatch = true;
+                    break;
+                }
+            }
+            return !hasMismatch;
+        }
+    }
 }

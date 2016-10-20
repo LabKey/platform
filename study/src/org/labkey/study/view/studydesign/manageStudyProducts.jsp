@@ -77,6 +77,10 @@
                         text: 'Routes',
                         href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignRoutes'}),
                         hrefTarget: '_blank'  // issue 19493
+                    },{
+                        text: 'Challenge Types',
+                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignChallengeTypes'}),
+                        hrefTarget: '_blank'  // issue 19493
                     }]
                 }
             };
@@ -101,6 +105,10 @@
                     text: 'Routes',
                     href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignRoutes'}),
                     hrefTarget: '_blank'  // issue 19493
+                },{
+                    text: 'Challenge Types',
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignChallengeTypes'}),
+                    hrefTarget: '_blank'  // issue 19493
                 }]
             }
         };
@@ -117,11 +125,11 @@ Enter vaccine design information in the grids below.
 <div style="width: 850px;">
     <ul>
         <li>
-            Configure dropdown options for immunogen types, genes, subtypes, and routes at the project level to be shared across study designs or within this folder for
+            Configure dropdown options for immunogen types, genes, subtypes, routes and challenge types at the project level to be shared across study designs or within this folder for
             study specific properties: <span id='config-dropdown-menu'></span>
         </li>
-        <li>Each immunogen and adjuvant in the study should be listed on one row of the grids below.</li>
-        <li>Immunogens and adjuvants should have unique labels.</li>
+        <li>Each immunogen, adjuvant and challenge in the study should be listed on one row of the grids below.</li>
+        <li>Immunogens, adjuvant and challenge should have unique labels.</li>
         <li>If possible, the immunogen description should include specific sequences of HIV Antigens included in the immunogen.</li>
         <li>
             Use the manage treatments page to describe the schedule of treatments and combinations of immunogens and adjuvants administered at each timepoint.

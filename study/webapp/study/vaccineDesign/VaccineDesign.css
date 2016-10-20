@@ -67,7 +67,12 @@
 }
 
 .dialog-product-label .x4-form-cb-label-after {
-    width: 150px;
+    /* Firefox */
+    width: -moz-calc(100% - 20px);
+    /* WebKit */
+    width: -webkit-calc(100% - 20px);
+    /* Standard */
+    width: calc(100% - 20px);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

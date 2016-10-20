@@ -97,8 +97,8 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
                             autoScroll  : true,
                             buttonAlign : 'right',
                             modal: true,
-                            width: 100 + me.productRoles.length * 170,
-                            height: 300,
+                            width: 400,
+                            height: 500,
                             border: false,
                             closable: false,
                             title: 'Treatment',
@@ -139,7 +139,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
                                             var resp = Ext4.decode(response.responseText);
                                             if (resp.success) {
                                                 win.close();
-                                                cmp.treatmentId = resp.treatmentId;
+                                                cmp.treatmentId = resp.treatmentIds[0];
                                                 cmp.setValue(treatments[0].Label);
                                                 cmp.getEl().dom.title = treatments[0].Label;
                                             }

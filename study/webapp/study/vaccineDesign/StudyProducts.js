@@ -442,7 +442,7 @@ Ext4.define('LABKEY.VaccineDesign.ChallengesGrid', {
 
     filterRole : 'Challenge',
 
-    studyDesignQueryNames : ['StudyDesignImmunogenTypes', 'StudyDesignRoutes'],
+    studyDesignQueryNames : ['StudyDesignChallengeTypes', 'StudyDesignRoutes'],
 
     //Override
     getColumnConfigs : function()
@@ -457,12 +457,12 @@ Ext4.define('LABKEY.VaccineDesign.ChallengesGrid', {
                 editorType: 'Ext.form.field.Text',
                 editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Label', 185)
             }, {
-                label: 'Sub Type',
+                label: 'Type',
                 width: 200,
                 dataIndex: 'Type',
-                queryName: 'StudyDesignImmunogenTypes', //TODO need verify
+                queryName: 'StudyDesignChallengeTypes',
                 editorType: 'LABKEY.ext4.ComboBox',
-                editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Type', 185, 'StudyDesignImmunogenTypes')
+                editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Type', 185, 'StudyDesignChallengeTypes')
             }];
 
             if (this.showDoseRoute)
