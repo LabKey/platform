@@ -39,6 +39,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
@@ -66,6 +67,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     protected boolean _cacheTableInfos = false;
     protected boolean _restricted = false;      // restricted schemas will return null from getSchema()
     protected final Collection<UserSchemaCustomizer> _schemaCustomizers;
+    private boolean hasRegisteredSchemaLinks = false;
 
     public UserSchema(String name, @Nullable String description, User user, Container container, DbSchema dbSchema)
     {
@@ -655,5 +657,33 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     public TableInfo getUnionTable(TableInfo tableInfo, Set<Container> containers)
     {
         return tableInfo;
+    }
+
+    @Override
+    public NavTree getSchemaBrowserLinks(User user)
+    {
+        NavTree root = super.getSchemaBrowserLinks(user);
+        if (hasRegisteredSchemaLinks())
+        {
+            Map<ActionURL, String> schemaLinks = QueryService.get().getSchemaLinks(getContainer());
+            for (ActionURL actionURL : schemaLinks.keySet())
+            {
+                String actionLabel = schemaLinks.get(actionURL);
+                actionURL.addParameter("schemaName", _name);
+                root.addChild(actionLabel, actionURL);
+            }
+        }
+
+        return root;
+    }
+
+    public void setHasRegisteredSchemaLinks(boolean hasRegisteredSchemaLinks)
+    {
+        this.hasRegisteredSchemaLinks = hasRegisteredSchemaLinks;
+    }
+
+    public boolean hasRegisteredSchemaLinks()
+    {
+        return this.hasRegisteredSchemaLinks;
     }
 }

@@ -277,7 +277,7 @@ abstract public class QueryService
     /**
      * Get the set of registered schema links for the active modules in the given container.
      * @param c container
-     * @return
+     * @return a map of ActionURLs and their labels
      */
     abstract public Map<ActionURL, String> getSchemaLinks(@NotNull Container c);
 
