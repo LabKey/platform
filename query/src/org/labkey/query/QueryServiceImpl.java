@@ -2610,11 +2610,10 @@ public class QueryServiceImpl extends QueryService
         }
     }
 
+    @Override
     public Map<ActionURL, String> getSchemaLinks(@NotNull Container c)
     {
-        Set<String> activeModuleNames = new HashSet<>();
-        for (Module module : c.getActiveModules())
-            activeModuleNames.add(module.getName());
+        Set<String> activeModuleNames = c.getActiveModules().stream().map(Module::getName).collect(Collectors.toSet());
 
         Map<ActionURL, String> schemaLinks = new HashMap<>();
         for (Class actionClass : _schemaLinkActions.keySet())
