@@ -230,8 +230,13 @@ public class ExceptionUtil
         }
     }
 
-    /** Figure out exactly what text for the stack trace and other details we should submit */
     private static void logExceptionToMothership(HttpServletRequest request, Throwable ex, String requestURL, boolean local, ExceptionReportingLevel level)
+    {
+        logExceptionToMothership(request, ex, requestURL, local, level, true);
+    }
+
+    /** Figure out exactly what text for the stack trace and other details we should submit */
+    public static MothershipReport logExceptionToMothership(HttpServletRequest request, Throwable ex, String requestURL, boolean local, ExceptionReportingLevel level, boolean submit)
     {
         Map<Enum, String> decorations = getExceptionDecorations(ex);
 
@@ -256,7 +261,7 @@ public class ExceptionUtil
             if (t instanceof DataAccessResourceFailureException)
             {
                 // Don't report exceptions from database connectivity issues
-                return;
+                return null;
             }
             if (t instanceof RuntimeSQLException)
             {
@@ -270,7 +275,7 @@ public class ExceptionUtil
                 if (sqlException.getMessage() != null && sqlException.getMessage().contains("terminating connection due to administrator command"))
                 {
                     // Don't report exceptions from Postgres shutting down
-                    return;
+                    return null;
                 }
                 sqlState = sqlException.getSQLState();
                 String extraInfo = CoreSchema.getInstance().getSqlDialect().getExtraInfo(sqlException);
@@ -296,7 +301,7 @@ public class ExceptionUtil
             }
         }
 
-        reportExceptionToMothership(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, local, level);
+        return reportExceptionToMothership(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, local, level, submit);
     }
 
     /**
@@ -319,16 +324,16 @@ public class ExceptionUtil
         );
 
         // Once to labkey.org, if so configured
-        reportExceptionToMothership(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, false, getExceptionReportingLevel());
+        reportExceptionToMothership(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, false, getExceptionReportingLevel(), true);
 
         // And once to the local server, if so configured
         if (isSelfReportExceptions())
         {
-            reportExceptionToMothership(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, true, ExceptionReportingLevel.HIGH);
+            reportExceptionToMothership(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, true, ExceptionReportingLevel.HIGH, true);
         }
     }
 
-    private static void reportExceptionToMothership(
+    private static MothershipReport reportExceptionToMothership(
             String stackTrace,
             String exceptionMessage,
             String browser,
@@ -337,20 +342,21 @@ public class ExceptionUtil
             String referrerURL,
             String username,
             boolean local,
-            ExceptionReportingLevel level)
+            ExceptionReportingLevel level,
+            boolean submit)
     {
         if (level == ExceptionReportingLevel.NONE)
-            return;
+            return null;
 
         if (local && ModuleLoader.getInstance().isUpgradeInProgress())
         {
             _logStatic.error("Not logging exception to local mothership because upgrade is in progress");
-            return;
+            return null;
         }
 
         // In dev mode, don't report to labkey.org if the Mothership module is installed.
         if (!local && AppProps.getInstance().isDevMode() && MothershipReport.isShowSelfReportExceptions())
-            return;
+            return null;
 
         try
         {
@@ -388,7 +394,10 @@ public class ExceptionUtil
                 }
             }
 
-            _jobRunner.execute(report);
+            if (submit)
+                _jobRunner.execute(report);
+
+            return report;
         }
         catch (MalformedURLException | URISyntaxException e)
         {

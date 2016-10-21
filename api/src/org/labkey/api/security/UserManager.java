@@ -22,19 +22,26 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
@@ -53,6 +60,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -254,6 +262,70 @@ public class UserManager
         }
     }
 
+    private enum LoggedInOrOut {in, out}
+
+    @NotNull
+    private static TableSelector getRecentLoginOrOuts(LoggedInOrOut inOrOut, Date since, @Nullable TableInfo userAuditTable, @Nullable Collection<ColumnInfo> cols)
+    {
+        SimpleFilter f = new SimpleFilter(FieldKey.fromParts("Comment"), "logged " + inOrOut.toString(), CompareType.CONTAINS);
+        f.addCondition(FieldKey.fromParts("Created"), since, CompareType.GTE);
+        if (null == userAuditTable)
+            userAuditTable = getUserAuditSchemaTableInfo();
+        if (null == cols)
+            return new TableSelector(userAuditTable, f, null);
+        else
+            return new TableSelector(userAuditTable, cols, f, null);
+    }
+
+    @NotNull
+    private static SchemaTableInfo getUserAuditSchemaTableInfo()
+    {
+        return StorageProvisioner.getSchemaTableInfo(AuditLogService.get().getAuditProvider(USER_AUDIT_EVENT).getDomain());
+    }
+
+    public static long getRecentLoginCount(Date since)
+    {
+        return getRecentLoginOrOuts(LoggedInOrOut.in, since, null, null).getRowCount();
+    }
+
+    public static long getRecentLogOutCount(Date since)
+    {
+        return getRecentLoginOrOuts(LoggedInOrOut.out, since, null, null).getRowCount();
+    }
+
+    public static int getActiveDaysCount(Date since)
+    {
+        TableInfo uat = getUserAuditSchemaTableInfo();
+        FieldKey createdFk = FieldKey.fromParts("Created");
+        ColumnInfo datePartCol = new ExprColumn(uat, createdFk, new SQLFragment("CAST(Created AS DATE)"), JdbcType.DATE, uat.getColumn(createdFk));
+        Aggregate countDistinctDates = new Aggregate(datePartCol.getFieldKey(), Aggregate.Type.COUNT, null, true);
+
+        TableSelector logins = getRecentLoginOrOuts(LoggedInOrOut.in, since, uat, Collections.singleton(datePartCol));
+        Aggregate.Result result = logins.getAggregates(Collections.singletonList(countDistinctDates)).get(datePartCol.getName()).get(0);
+        return Math.toIntExact((long) result.getValue());
+    }
+
+    public static Integer getAverageSessionDuration(Date since)
+    {
+        TableInfo uat = getUserAuditSchemaTableInfo();
+        SQLFragment loginSql = uat.getSqlDialect().limitRows(new SQLFragment("SELECT Created"),
+                new SQLFragment("FROM ").append(uat, "logins"),
+                new SQLFragment("WHERE Comment LIKE '%logged in%'")
+                        .append(" AND \"user\" = logouts.\"user\"")
+                        .append(" AND Created >= ?")
+                        .append(" AND Created < logouts.Created").add(since),
+                "ORDER BY Created DESC",
+                null, 1, 0);
+        loginSql.prepend(new SQLFragment("("));
+        loginSql.append(")");
+
+        SQLFragment sql = new SQLFragment("SELECT AVG(Duration) FROM (SELECT ");
+        sql.append(uat.getSqlDialect().getDateDiff(Calendar.MINUTE, new SQLFragment("Created"), loginSql)).append(" AS Duration\n");
+        sql.append("FROM ").append(uat, "logouts");
+        sql.append(" WHERE Comment LIKE '%logged out%' AND Created >= ?) x").add(since);
+
+        return new SqlSelector(uat.getSchema(), sql).getObject(Integer.class);
+    }
 
     public static User getGuestUser()
     {

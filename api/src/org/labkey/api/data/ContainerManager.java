@@ -101,6 +101,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -502,6 +503,22 @@ public class ContainerManager
     {
         Map<String, String> props = PropertyManager.getProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME);
         return props.get(FOLDER_TYPE_PROPERTY_NAME);
+    }
+
+    @NotNull
+    public static Map<String, Integer> getFolderTypeNameContainerCounts(Container root)
+    {
+        Map<String, Integer> nameCounts = new TreeMap<>();
+        for (Container c : getAllChildren(root))
+        {
+            Integer count = nameCounts.get(c.getFolderType().getName());
+            if (null == count)
+            {
+                count = new Integer(0);
+            }
+            nameCounts.put(c.getFolderType().getName(), ++count);
+        }
+        return nameCounts;
     }
 
     public static boolean isContainerTabTypeThisOrChildrenOverridden(Container c)

@@ -30,8 +30,10 @@ import org.labkey.api.settings.AppProps;
 import javax.mail.internet.ContentType;
 import javax.net.ssl.HttpsURLConnection;
 import javax.servlet.ServletContext;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.net.HttpURLConnection;
@@ -39,8 +41,10 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * A submission of data to the mothership running on labkey.org. Separate from the Mothership module, which
@@ -156,6 +160,11 @@ public class MothershipReport implements Runnable
         _params.put(key, value);
     }
 
+    public Map<String, String> getParams()
+    {
+        return Collections.unmodifiableMap(_params);
+    }
+
     public void run()
     {
         try
@@ -249,7 +258,7 @@ public class MothershipReport implements Runnable
                         out.print("&");
                     }
                     first = false;
-                    out.println(entry.getKey() + "=" + URLEncoder.encode(value));
+                    out.println(entry.getKey() + "=" + URLEncoder.encode(value, StringUtilsLabKey.DEFAULT_CHARSET.name()));
                 }
             }
         }
@@ -304,6 +313,7 @@ public class MothershipReport implements Runnable
         String servletContainer = context == null ? null : context.getServerInfo();
         addParam("servletContainer", servletContainer);
         addParam("usedInstaller", usedInstaller());
+        addParam("distribution", getDistributionStamp());
     }
 
     public String getContent()
@@ -318,4 +328,24 @@ public class MothershipReport implements Runnable
 
         return  Boolean.parseBoolean(usedInstaller);
     }
+
+    private static String getDistributionStamp()
+    {
+        String distributionStamp = "";
+        try(InputStream input = MothershipReport.class.getResourceAsStream("/distribution"))
+        {
+            if (null != input)
+            {
+                distributionStamp = new BufferedReader(new InputStreamReader(input, StringUtilsLabKey.DEFAULT_CHARSET)).lines().collect(Collectors.joining("\n"));
+            }
+        }
+        catch (IOException e)
+        {
+            // TODO: Where to report, what to do?
+        }
+
+        return distributionStamp;
+    }
+
+
 }
