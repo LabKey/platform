@@ -30,9 +30,11 @@ import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.QueryReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
@@ -147,7 +149,6 @@ public class StudyQueryReport extends QueryReport
                             addParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, getDescriptor().getReportId().toString());
         }
 
-        return new ActionURL(StudyController.QueryReportAction.class, context.getContainer()).
-                addParameter(ReportDescriptor.Prop.reportId, getReportId().toString());
+        return PageFlowUtil.urlProvider(ReportUrls.class).urlQueryReport(context.getContainer(), this);
     }
 }

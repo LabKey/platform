@@ -123,10 +123,6 @@
                 %>
                         <option value="<%= h(paramStart + '&' + QueryParam.queryName.toString() + '=' + u(name) + "&datasetId=" + def.getDatasetId()) %>"<%=selected(name.equals(bean.getQueryName()))%>><%= h(label) %></option>
                 <%
-                        } else {
-                %>
-                        <option value="<%= h(paramStart + '&' + QueryParam.queryName.toString() + '=' + u(name)) %>"<%=selected(name.equals(bean.getQueryName()))%>><%= h(name) %></option>
-                <%
                         }
                     }
                 %>
