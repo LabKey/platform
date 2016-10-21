@@ -150,7 +150,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
     private PHI _phi = PHI.NotPHI;
-    private boolean shouldLog = true;
+    private boolean _shouldLog = true;
     private boolean _lockName = false;
 
     /**
@@ -398,6 +398,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setProtected(col.isProtected());
         setExcludeFromShifting(col.isExcludeFromShifting());
         setPHI(col.getPHI());
+        setShouldLog(col.isShouldLog());
 
         setCrosstabColumnDimension(col.getCrosstabColumnDimension());
         setCrosstabColumnMember(col.getCrosstabColumnMember());
@@ -758,7 +759,13 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public boolean isShouldLog()
     {
-        return shouldLog;
+        return _shouldLog;
+    }
+
+    public void setShouldLog(boolean shouldLog)
+    {
+        checkLocked();
+        _shouldLog = shouldLog;
     }
 
     public String getLegalName()
