@@ -142,6 +142,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
                                                 cmp.treatmentId = resp.treatmentIds[0];
                                                 cmp.setValue(treatments[0].Label);
                                                 cmp.getEl().dom.title = treatments[0].Label;
+                                                me.getTreatmentsStore().load();
                                             }
                                             else
                                                 this.onFailure();
@@ -192,22 +193,6 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
     isFieldTreatmentLookup: function()
     {
         return true;
-    },
-
-    getTreatmentCellDisplayValue : function(val, lookupStore)
-    {
-        var displayVal = val;
-        if (Ext4.isDefined(lookupStore) && val != null && val != '')
-        {
-            var store = Ext4.getStore(lookupStore);
-            if (store != null)
-            {
-                var record = store.findRecord('RowId', val);
-                if (record != null)
-                    displayVal = record.get('Label');
-            }
-        }
-        return displayVal;
     },
 
     //Override
