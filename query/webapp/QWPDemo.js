@@ -14,6 +14,7 @@
             testSetPaging: testSetPaging,
             test25337: test25337,
             testPageOffset: testPageOffset,
+            testParameterizedQueries: testParameterizedQueries,
             testRemovableFilters: testRemovableFilters,
             testShowAllTotalRows: testShowAllTotalRows
         };
@@ -348,6 +349,82 @@
                                 alert('Failed to set Offset to 0 with API');
                             }
                         }
+                    }
+                }
+            });
+        }
+
+        function testParameterizedQueries() {
+            var loadCount = 0;
+            new LABKEY.QueryWebPart({
+                renderTo: RENDERTO,
+                title: 'Parameterized Queries',
+                schemaName: 'Samples',
+                sql: "PARAMETERS (TAG_START VARCHAR) SELECT id, tag FROM sampleDataTest1 WHERE tag LIKE TAG_START || '%'",
+                parameters: {
+                    TAG_START: 'b' // blue, black, blue
+                },
+                failure: function() {
+                    alert('Failed test: Parameterized Queries.');
+                },
+                listeners: {
+                    render: function(qwp) {
+                        var params = qwp.getParameters();
+                        var rowCount = getRowCount(qwp);
+
+                        if (loadCount === 0) {
+                            if (params['TAG_START'] !== 'b') {
+                                alert('Failed test: Parameterized Queries. Expected initial parameters to be returned.');
+                                return;
+                            }
+                            else if (rowCount !== 3) {
+                                alert('Failed test: Parameterized Queries. Expected initial load of 3 row. There are ' + rowCount + ' rows.');
+                                return;
+                            }
+
+                            qwp.setParameters({
+                                TAG_START: 'r' // red
+                            });
+                        }
+                        else if (loadCount === 1) {
+                            if (params['TAG_START'] !== 'r') {
+                                alert('Failed test: Parameterized Queries. Expected setParameters to set parameter to "r". Was: \"' + params['TAG_START'] + '\"');
+                                return;
+                            }
+                            else if (rowCount !== 1) {
+                                alert('Failed test: Parameterized Queries. Expected setParameters to "r" to load of 1 row. There are ' + rowCount + ' rows.');
+                                return;
+                            }
+
+                            qwp.clearAllParameters();
+                        }
+                        else if (loadCount === 2) {
+                            var paramName = qwp.dataRegionName + '.param.TAG_START';
+
+                            // expect form to set parameters
+                            if ($('input[name="' + paramName + '"]').size() !== 1) {
+                                alert('Failed test: Parameterized Queries. Expected input form for parameter TAG_START.');
+                                return;
+                            }
+
+                            qwp.setParameters([
+                                [paramName, 'yellow']
+                            ]);
+                        }
+                        else if (loadCount === 3) {
+                            if (params['TAG_START'] !== 'yellow') {
+                                alert('Failed test: Parameterized Queries. Expected setParameters to set parameter to "yellow". Was: \"' + params['TAG_START'] + '\"');
+                                return;
+                            }
+                            else if (rowCount !== 1) {
+                                alert('Failed test: Parameterized Queries. Expected setParameters to "yellow" to load of 1 row. There are ' + rowCount + ' rows.');
+                                return;
+                            }
+
+                            LABKEY.Utils.signalWebDriverTest("testParameterizedQueries");
+                        }
+
+                        loadCount++;
                     }
                 }
             });
