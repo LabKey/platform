@@ -48,7 +48,7 @@
 <%
     if (study != null)
     {
-        %>This section describes the immunogens and adjuvants evaluated in the study.</br><%
+        %>This section describes the study products evaluated in the study.</br><%
         if (container.hasPermission(user, UpdatePermission.class))
         {
             ActionURL editUrl = new ActionURL(StudyDesignController.ManageStudyProductsAction.class, getContainer());

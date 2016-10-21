@@ -458,7 +458,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
         this.fireEvent('celledited', this, fieldName, newValue);
     },
 
-    updateStoreRecordValue : function(record, column, newValue)
+    updateStoreRecordValue : function(record, column, newValue, field)
     {
         if (Ext4.isString(newValue))
             newValue.trim();

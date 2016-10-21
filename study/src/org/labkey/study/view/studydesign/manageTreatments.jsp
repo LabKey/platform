@@ -73,21 +73,13 @@
                 queryName: 'product',
                 column:'role',
                 success: function(response) {
-                    var panelClass = 'LABKEY.VaccineDesign.TreatmentSchedulePanel';
+                    var panelClass = <%=q(bean.isSingleTable() ? "LABKEY.VaccineDesign.TreatmentScheduleSingleTablePanel" : "LABKEY.VaccineDesign.TreatmentSchedulePanel")%>;
+
                     var productRoles = response.values.sort(function(a, b){
                         var aOrder = a == 'Immunogen' ? 1 : a == 'Adjuvant' ? 2 : 3;
                         var bOrder = b == 'Immunogen' ? 1 : b == 'Adjuvant' ? 2 : 3;
                         return aOrder - bOrder;
                     });
-
-                    <%
-                    if (bean.isSingleTable())
-                    {
-                    %>
-                        panelClass = 'LABKEY.VaccineDesign.TreatmentScheduleSingleTablePanel';
-                    <%
-                    }
-                    %>
 
                     Ext4.create(panelClass, {
                         renderTo : 'treatment-schedule-panel',
@@ -110,7 +102,7 @@ Enter treatment information in the grids below.
             {
         %>
         <li>
-            Click on time point to define its treatment products by selecting an combination of immunogens, adjuvants, or challenges.
+            Click on time point to define its treatment products by selecting a combination of study products.
         </li>
         <%
             }
@@ -118,13 +110,13 @@ Enter treatment information in the grids below.
             {
         %>
         <li>
-            Each treatment label must be unique and must consist of at least one study products, i.e. immunogens and/or adjuvants and/or challenges.
+            Each treatment label must be unique and must consist of at least one study products.
         </li>
         <%
             }
         %>
         <li>
-            Use the manage study products page to change or update the set of available immunogens, adjuvants or challenges.
+            Use the manage study products page to change or update the set of available values.
             <%
                 ActionURL manageStudyProductsURL = new ActionURL(StudyDesignController.ManageStudyProductsAction.class, getContainer());
                 manageStudyProductsURL.addReturnURL(getActionURL());

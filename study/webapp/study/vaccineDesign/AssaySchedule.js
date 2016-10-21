@@ -558,7 +558,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
     },
 
     //Override
-    updateStoreRecordValue : function(record, column, newValue)
+    updateStoreRecordValue : function(record, column, newValue, field)
     {
         // special case for editing the value of one of the pivot visit columns
         if (column.dataIndex == 'VisitMap')

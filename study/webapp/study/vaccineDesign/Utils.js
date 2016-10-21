@@ -89,7 +89,7 @@ Ext4.define('LABKEY.VaccineDesign.Utils', {
         else if (queryName == 'DoseAndRoute')
             columns += ',ProductId';
         else if (queryName == 'Product')
-            columns += ',Label, Role';
+            columns += ',Role';
 
         return Ext4.create('LABKEY.ext4.Store', {
             storeId: key,

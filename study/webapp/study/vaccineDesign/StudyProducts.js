@@ -167,7 +167,8 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
 
         Ext4.each(this.getChallengesGrid().getStore().getRange(), function(record)
         {
-            if (Ext4.isDefined(record.get('RowId')) || record.get('Label') != '')
+            var hasData = record['Label'] != '' || record['Type'] != '';
+            if (Ext4.isDefined(record.get('RowId')) || hasData)
                 studyProducts.push(Ext4.clone(record.data));
         }, this);
 

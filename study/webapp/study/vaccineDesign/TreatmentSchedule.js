@@ -77,20 +77,13 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
 
             // drop any empty immunogen or adjuvant or challenge rows that were just added
             recData['Products'] = [];
-            Ext4.each(recData['Immunogen'], function(immunogen)
+            Ext4.each(this.productRoles, function(role)
             {
-                if (Ext4.isDefined(immunogen['RowId']) || LABKEY.VaccineDesign.Utils.objectHasData(immunogen))
-                    recData['Products'].push(immunogen);
-            }, this);
-            Ext4.each(recData['Adjuvant'], function(adjuvant)
-            {
-                if (Ext4.isDefined(adjuvant['RowId']) || LABKEY.VaccineDesign.Utils.objectHasData(adjuvant))
-                    recData['Products'].push(adjuvant);
-            }, this);
-            Ext4.each(recData['Challenge'], function(challenge)
-            {
-                if (Ext4.isDefined(challenge['RowId']) || LABKEY.VaccineDesign.Utils.objectHasData(challenge))
-                    recData['Products'].push(challenge);
+                Ext4.each(recData[role], function(product)
+                {
+                    if (Ext4.isDefined(product['RowId']) || LABKEY.VaccineDesign.Utils.objectHasData(product))
+                        recData['Products'].push(product);
+                }, this);
             }, this);
 
             // drop any empty treatment rows that were just added
@@ -102,9 +95,9 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
                 // validation: treatment must have at least one immunogen or adjuvant, no duplicate immunogens/adjuvants for a treatment
                 var treatmentProductIds = Ext4.Array.clean(Ext4.Array.pluck(recData['Products'], 'ProductId'));
                 if (recData['Products'].length == 0)
-                    errorMsg.push('Treatment ' + treatmentLabel + ' must have at least one immunogen or adjuvant defined.');
+                    errorMsg.push('Treatment ' + treatmentLabel + ' must have at least one immunogen, adjuvant or challenge defined.');
                 else if (treatmentProductIds.length != Ext4.Array.unique(treatmentProductIds).length)
-                    errorMsg.push('Treatment ' + treatmentLabel + ' contains a duplicate immunogen or adjuvant.');
+                    errorMsg.push('Treatment ' + treatmentLabel + ' contains a duplicate immunogen, adjuvant or challenge.');
                 else
                     treatments.push(recData);
             }
@@ -298,7 +291,14 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
     //Override
     updateSubgridRecordValue : function(record, outerDataIndex, subgridIndex, fieldName, newValue)
     {
-        var preProductIds = Ext4.Array.pluck(record.get('Immunogen'), 'ProductId').concat(Ext4.Array.pluck(record.get('Adjuvant'), 'ProductId')).concat(Ext4.Array.pluck(record.get('Challenge'), 'ProductId'));
+        var preProductIds = [];
+        Ext4.each(this.productRoles, function(role){
+            var productRoleIds = Ext4.Array.pluck(record.get(role), 'ProductId');
+            if (preProductIds.length == 0)
+                preProductIds = productRoleIds;
+            else
+                preProductIds = preProductIds.concat(productRoleIds);
+        });
 
         this.callParent([record, outerDataIndex, subgridIndex, fieldName, newValue]);
 
@@ -310,7 +310,14 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
     //Override
     removeSubgridRecord : function(target, record)
     {
-        var preProductIds = Ext4.Array.pluck(record.get('Immunogen'), 'ProductId').concat(Ext4.Array.pluck(record.get('Adjuvant'), 'ProductId')).concat(Ext4.Array.pluck(record.get('Challenge'), 'ProductId'));
+        var preProductIds = [];
+        Ext4.each(this.productRoles, function(role){
+            var productRoleIds = Ext4.Array.pluck(record.get(role), 'ProductId');
+            if (preProductIds.length == 0)
+                preProductIds = productRoleIds;
+            else
+                preProductIds = preProductIds.concat(productRoleIds);
+        });
         this.callParent([target, record]);
         this.populateTreatmentLabel(record, preProductIds);
         this.refresh(true);
@@ -321,8 +328,16 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
         var currentLabel = record.get('Label');
         if (currentLabel == '' || currentLabel == this.getLabelFromProductIds(preProductIds))
         {
-            var postProductIds = Ext4.Array.pluck(record.get('Immunogen'), 'ProductId').concat(Ext4.Array.pluck(record.get('Adjuvant'), 'ProductId')),
-                updatedTreatmentLabel = this.getLabelFromProductIds(postProductIds);
+            var postProductIds = [];
+            Ext4.each(this.productRoles, function(role){
+                var productRoleIds = Ext4.Array.pluck(record.get(role), 'ProductId');
+                if (postProductIds.length == 0)
+                    postProductIds = productRoleIds;
+                else
+                    postProductIds = postProductIds.concat(productRoleIds);
+            });
+
+            var updatedTreatmentLabel = this.getLabelFromProductIds(postProductIds);
 
             // need to update the input field value, which will intern update the record and fire teh celledited event
             var inputField = this.getInputFieldFromSelector('tr.row:nth(' + (this.getStore().indexOf(record)+1) + ') td.cell-value input');

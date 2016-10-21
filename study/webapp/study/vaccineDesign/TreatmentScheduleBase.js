@@ -208,7 +208,6 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleGridBase', {
                     this.getVisitStore(o['visits']);
                     this.getStore().loadData(o['cohorts']);
                     this.onStudyTreatmentScheduleStoreLoad();
-                    //this.getTreatmentsStore();
                 }
             }
         });

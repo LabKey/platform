@@ -723,10 +723,6 @@ public class StudyDesignController extends BaseStudyController
             // insert new cohorts and update any existing ones
             for (CohortImpl cohort : cohorts)
             {
-                for (TreatmentVisitMapImpl visitMap : cohort.getTreatmentVisitMap())
-                {
-                    usedTreatmentIds.add(visitMap.getTreatmentId());
-                }
                 if (cohort.getRowId() > 0)
                 {
                     CohortImpl updatedCohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), cohort.getRowId());
@@ -751,6 +747,11 @@ public class StudyDesignController extends BaseStudyController
 
         private void updateTreatmentVisitMap(int cohortId, List<TreatmentVisitMapImpl> treatmentVisitMaps)
         {
+            for (TreatmentVisitMapImpl visitMap : treatmentVisitMaps)
+            {
+                usedTreatmentIds.add(visitMap.getTreatmentId());
+            }
+
             // the mapping that is passed in will have all of the current treatment/visit maps, so we will compare
             // this set with the set from the DB and if they are different, replace all
             List<TreatmentVisitMapImpl> existingVisitMaps = TreatmentManager.getInstance().getStudyTreatmentVisitMap(getContainer(), cohortId);

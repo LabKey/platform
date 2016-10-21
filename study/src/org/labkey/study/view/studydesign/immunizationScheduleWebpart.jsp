@@ -73,7 +73,7 @@
       else
       {
         List<CohortImpl> cohorts = study.getCohorts(user);
-        %>This section shows the immunization schedule for this study. Each treatment may consist of several immunogens and adjuvants.<br/><%
+        %>This section shows the immunization schedule for this study. Each treatment may consist of  one or more study products.<br/><%
 
         if (canEdit)
         {
