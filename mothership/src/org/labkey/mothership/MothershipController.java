@@ -443,11 +443,11 @@ public class MothershipController extends SpringActionController
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "serverInstallations", MothershipSchema.SERVER_INSTALLATIONS_TABLE_NAME);
             settings.setSchemaName(schema.getSchemaName());
-            settings.getBaseSort().insertSortColumn("-LastPing");
+            settings.getBaseSort().insertSortColumn(FieldKey.fromParts("LastPing"), Sort.SortDirection.DESC);
 
             List<Aggregate> aggregates = new ArrayList<>();
-            aggregates.add(new Aggregate("DaysActive", Aggregate.Type.MEAN));
-            aggregates.add(new Aggregate("ExceptionCount", Aggregate.Type.MEAN));
+            aggregates.add(new Aggregate(FieldKey.fromParts("DaysActive"), Aggregate.Type.MEAN));
+            aggregates.add(new Aggregate(FieldKey.fromParts("ExceptionCount"), Aggregate.Type.MEAN));
             settings.setAggregates(aggregates);
 
             QueryView gridView = schema.createView(getViewContext(), settings, errors);
@@ -501,6 +501,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
+    @SuppressWarnings("UnusedDeclaration")
     @RequiresPermission(UpdatePermission.class)
     public class SaveUpgradeMessageAction extends FormHandlerAction<UpgradeMessageForm>
     {
@@ -537,7 +538,7 @@ public class MothershipController extends SpringActionController
 
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionReports", MothershipSchema.EXCEPTION_REPORT_WITH_STACK_TABLE_NAME);
-            settings.getBaseSort().insertSortColumn("-Created");
+            settings.getBaseSort().insertSortColumn(FieldKey.fromParts("Created"), Sort.SortDirection.DESC);
             settings.getBaseFilter().addCondition(FieldKey.fromParts("ServerSessionId"), session.getServerSessionId());
 
             QueryView exceptionGridView = new QueryView(schema, settings, errors);
@@ -733,6 +734,7 @@ public class MothershipController extends SpringActionController
     }
 
     // API for inserting exceptions reported from this or other LabKey servers.
+    @SuppressWarnings("UnusedDeclaration")
     @RequiresNoPermission
     @AllowedDuringUpgrade
     public class ReportExceptionAction extends SimpleViewAction<ExceptionForm>
@@ -806,6 +808,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
+    @SuppressWarnings("UnusedDeclaration")
     @RequiresPermission(ReadPermission.class)
     public class ThrowExceptionAction extends SimpleViewAction
     {
@@ -821,6 +824,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
+    @SuppressWarnings("UnusedDeclaration")
     @RequiresNoPermission
     public class CheckForUpdatesAction extends SimpleViewAction<UpdateCheckForm>
     {
@@ -974,6 +978,10 @@ public class MothershipController extends SpringActionController
         private String _servletContainer;
         private boolean _usedInstaller;
         private String _description;
+        private String _distribution;
+        private String _usageReportingLevel;
+        private String _exceptionReportingLevel;
+        private String _jsonMetrics;
 
         public String getSvnURL()
         {
@@ -1170,6 +1178,10 @@ public class MothershipController extends SpringActionController
             session.setEnterprisePipelineEnabled(isEnterprisePipelineEnabled());
             session.setHeapSize(getHeapSize());
             session.setServletContainer(getServletContainer());
+            session.setDistribution(getDistribution());
+            session.setUsageReportingLevel(getUsageReportingLevel());
+            session.setExceptionReportingLevel(getExceptionReportingLevel());
+            session.setJsonMetrics(getJsonMetrics());
 
             return session;
         }
@@ -1212,6 +1224,46 @@ public class MothershipController extends SpringActionController
         public void setDescription(String description)
         {
             _description = description;
+        }
+
+        public String getDistribution()
+        {
+            return _distribution;
+        }
+
+        public void setDistribution(String distribution)
+        {
+            _distribution = distribution;
+        }
+
+        public String getUsageReportingLevel()
+        {
+            return _usageReportingLevel;
+        }
+
+        public void setUsageReportingLevel(String usageReportingLevel)
+        {
+            _usageReportingLevel = usageReportingLevel;
+        }
+
+        public String getExceptionReportingLevel()
+        {
+            return _exceptionReportingLevel;
+        }
+
+        public void setExceptionReportingLevel(String exceptionReportingLevel)
+        {
+            _exceptionReportingLevel = exceptionReportingLevel;
+        }
+
+        public String getJsonMetrics()
+        {
+            return _jsonMetrics;
+        }
+
+        public void setJsonMetrics(String jsonMetrics)
+        {
+            _jsonMetrics = jsonMetrics;
         }
     }
 
@@ -1574,6 +1626,10 @@ public class MothershipController extends SpringActionController
             requestedColumns.add(FieldKey.fromParts("LastPing"));
             requestedColumns.add(FieldKey.fromParts("FirstPing"));
             requestedColumns.add(FieldKey.fromParts("UsedInstaller"));
+
+            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "Distribution"));
+            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "UsageReportingLevel"));
+            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "ExceptionReportingLevel"));
 
             Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(serverInstallationTable, requestedColumns);
 

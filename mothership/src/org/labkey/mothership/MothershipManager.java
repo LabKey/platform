@@ -16,6 +16,8 @@
 
 package org.labkey.mothership;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -36,6 +38,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserDisplayNameComparator;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -311,6 +314,10 @@ public class MothershipManager
                 existingSession.setUserCount(getBestInteger(existingSession.getUserCount(), session.getUserCount()));
                 existingSession.setAdministratorEmail(getBestString(existingSession.getAdministratorEmail(), session.getAdministratorEmail()));
                 existingSession.setEnterprisePipelineEnabled(getBestBoolean(existingSession.isEnterprisePipelineEnabled(), session.isEnterprisePipelineEnabled()));
+                existingSession.setDistribution(getBestString(existingSession.getDistribution(), session.getDistribution()));
+                existingSession.setUsageReportingLevel(getBestString(existingSession.getUsageReportingLevel(), session.getUsageReportingLevel()));
+                existingSession.setExceptionReportingLevel(getBestString(existingSession.getExceptionReportingLevel(), session.getExceptionReportingLevel()));
+                existingSession.setJsonMetrics(getBestJson(existingSession.getJsonMetrics(), session.getJsonMetrics()));
 
                 session = Table.update(null, getTableInfoServerSession(), existingSession, existingSession.getServerSessionId());
             }
@@ -345,6 +352,28 @@ public class MothershipManager
             return currentValue;
         }
         return newValue;
+    }
+
+    private String getBestJson(String currentValue, String newValue)
+    {
+        if (newValue == null)
+        {
+            return currentValue;
+        }
+
+        // Rather than overwrite the current json map, merge the new with the current.
+        ObjectMapper mapper = new ObjectMapper();
+        try
+        {
+            Map currentMap = mapper.readValue(currentValue, Map.class);
+            ObjectReader updater = mapper.readerForUpdating(currentMap);
+            Map merged = updater.readValue(newValue);
+            return mapper.writeValueAsString(merged);
+        }
+        catch (IOException e)
+        {
+            return currentValue; // TODO: And log
+        }
     }
 
     public TableInfo getTableInfoExceptionStackTrace()

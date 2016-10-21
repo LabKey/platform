@@ -49,6 +49,10 @@ public class ServerSession
     private String _administratorEmail;
 
     private String _servletContainer;
+    private String _distribution;
+    private String _usageReportingLevel;
+    private String _exceptionReportingLevel;
+    private String _jsonMetrics;
 
     public String getDatabaseProductVersion()
     {
@@ -258,5 +262,45 @@ public class ServerSession
     public void setServletContainer(String servletContainer)
     {
         _servletContainer = servletContainer;
+    }
+
+    public String getDistribution()
+    {
+        return _distribution;
+    }
+
+    public void setDistribution(String distribution)
+    {
+        _distribution = distribution;
+    }
+
+    public String getUsageReportingLevel()
+    {
+        return _usageReportingLevel;
+    }
+
+    public void setUsageReportingLevel(String usageReportingLevel)
+    {
+        _usageReportingLevel = usageReportingLevel;
+    }
+
+    public String getExceptionReportingLevel()
+    {
+        return _exceptionReportingLevel;
+    }
+
+    public void setExceptionReportingLevel(String exceptionReportingLevel)
+    {
+        _exceptionReportingLevel = exceptionReportingLevel;
+    }
+
+    public String getJsonMetrics()
+    {
+        return _jsonMetrics;
+    }
+
+    public void setJsonMetrics(String jsonMetrics)
+    {
+        _jsonMetrics = jsonMetrics;
     }
 }

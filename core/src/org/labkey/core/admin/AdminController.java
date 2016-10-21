@@ -15,6 +15,7 @@
  */
 package org.labkey.core.admin;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -186,6 +187,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -6785,6 +6787,7 @@ public class AdminController extends SpringActionController
 
     // API for reporting client-side exceptions.
     // UNDONE: Throttle by IP to avoid DOS from buggy clients.
+    @SuppressWarnings("UnusedDeclaration")
     @RequiresNoPermission
     public class LogClientExceptionAction extends SimpleViewAction<ExceptionForm>
     {
@@ -6897,6 +6900,7 @@ public class AdminController extends SpringActionController
 
 
     /** generate URLS to seed web-site scanner */
+    @SuppressWarnings("UnusedDeclaration")
     @RequiresSiteAdmin
     public static class SpiderAction extends SimpleViewAction
     {
@@ -6929,7 +6933,7 @@ public class AdminController extends SpringActionController
             else
             {
                 DefaultSchema def = DefaultSchema.get(getUser(), getContainer());
-                def.getSchemaNames().stream().forEach(name ->
+                def.getSchemaNames().forEach(name ->
                 {
                     QuerySchema q = def.getSchema(name);
                     if (null == q)
@@ -6937,20 +6941,20 @@ public class AdminController extends SpringActionController
                     Collection<TableInfo> tables = q.getTables();
                     if (null == tables)
                         return;
-                    tables.stream().forEach(t ->
+                    tables.forEach(t ->
                     {
                         ActionURL grid = t.getGridURL(getContainer());
                         if (null != grid)
                             urls.add(grid.toString());
                         else
-                            urls.add(new ActionURL("query","executeQuery.view",getContainer())
-                                    .addParameter("schemaName",q.getSchemaName())
+                            urls.add(new ActionURL("query", "executeQuery.view", getContainer())
+                                    .addParameter("schemaName", q.getSchemaName())
                                     .addParameter("query.queryName", t.getName())
-                                .toString());
+                                    .toString());
                     });
                 });
 
-                ModuleLoader.getInstance().getModules().stream().forEach(m ->
+                ModuleLoader.getInstance().getModules().forEach(m ->
                 {
                     ActionURL url = m.getTabURL(getContainer(), getUser());
                     if (null != url)
@@ -6959,12 +6963,85 @@ public class AdminController extends SpringActionController
             }
 
             StringBuilder sb = new StringBuilder();
-            urls.stream().forEach(url ->
+            urls.forEach(url ->
             {
                 sb.append("<a href=\"").append(PageFlowUtil.filter(url)).append("\">")
                         .append(PageFlowUtil.filter(url)).append("</a><br>\n");
             });
             return new HtmlView(sb.toString());
+        }
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    @RequiresSiteAdmin
+    public class TestMothershipReportAction extends ApiAction<MothershipReportSelectionForm>
+    {
+        @Override
+        public Object execute(MothershipReportSelectionForm form, BindException errors) throws Exception
+        {
+            MothershipReport report;
+            if (MothershipReport.Type.CheckForUpdates.toString().equals(form.getType()))
+            {
+                report = UsageReportingLevel.generateReport(UsageReportingLevel.valueOf(form.getLevel()), true);
+                if (null != report && form.isSubmit())
+                {
+                    report.run();
+                }
+            }
+            else
+            {
+                report = ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(),
+                        new SQLException("Intentional exception for testing purposes", "400"),
+                        (String)getViewContext().getRequest().getAttribute(ViewServlet.ORIGINAL_URL_STRING),
+                        true,
+                        ExceptionReportingLevel.valueOf(form.getLevel()),
+                        form.isSubmit());
+            }
+            Map<String, Object> result = new LinkedHashMap<>();
+            if (null != report)
+            {
+                result.put("report", report.getParams());
+                if (null != report.getContent())
+                    result.put("upgradeMessage", report.getContent());
+            }
+            return new ObjectMapper().writeValueAsString(result);
+        }
+    }
+
+    static class MothershipReportSelectionForm
+    {
+        private String _type = MothershipReport.Type.CheckForUpdates.toString();
+        private String _level = UsageReportingLevel.MEDIUM.toString();
+        private boolean _submit = false;
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        public void setType(String type)
+        {
+            _type = type;
+        }
+
+        public String getLevel()
+        {
+            return _level;
+        }
+
+        public void setLevel(String level)
+        {
+            _level = StringUtils.upperCase(level);
+        }
+
+        public boolean isSubmit()
+        {
+            return _submit;
+        }
+
+        public void setSubmit(boolean submit)
+        {
+            _submit = submit;
         }
     }
 }

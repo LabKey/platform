@@ -1155,6 +1155,7 @@ list/src/org/labkey/list/view/listsWebPart.jsp -text
 mothership/module.properties -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-0.00-13.30.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-14.30-15.10.sql -text
+mothership/resources/schemas/dbscripts/postgresql/mothership-16.20-16.21.sql -text
 mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-0.00-11.30.sql -text
 mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-0.00-12.10.sql -text
 mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-0.00-13.20.sql -text
@@ -1164,6 +1165,7 @@ mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-14.30-14.3
 mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-14.31-14.32.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-0.00-13.30.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-14.30-15.10.sql -text
+mothership/resources/schemas/dbscripts/sqlserver/mothership-16.20-16.21.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/obsolete/mothership-0.00-11.30.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/obsolete/mothership-0.00-12.10.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/obsolete/mothership-0.00-13.20.sql -text

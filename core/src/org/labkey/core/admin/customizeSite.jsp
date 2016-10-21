@@ -68,6 +68,76 @@ var submitSystemMaintenance;
         document.forms['systemMaintenance'].submit();
     }
 })();
+
+var enableUsageTest = function() {
+    var el = document.getElementById('testUsageReport');
+    var level = document.querySelector('input[name="usageReportingLevel"]:checked').value;
+    enableTestButtion(el, level);
+};
+
+var enableExceptionTest = function() {
+    var el = document.getElementById('testExceptionReport');
+    var level = document.querySelector('input[name="exceptionReportingLevel"]:checked').value;
+    enableTestButtion(el, level);
+};
+
+var enableTestButtion = function(el, level) {
+    if ("NONE" == level)
+    {
+        LABKEY.Utils.replaceClass(el, 'labkey-button', 'labkey-disabled-button');
+    }
+    else
+    {
+        LABKEY.Utils.replaceClass(el, 'labkey-disabled-button', 'labkey-button');
+    }
+};
+
+var testUsageReport = function() {
+    var level = document.querySelector('input[name="usageReportingLevel"]:checked').value;
+    testMothershipReport('CheckForUpdates', level);
+};
+
+var testExceptionReport = function() {
+    var level = document.querySelector('input[name="exceptionReportingLevel"]:checked').value;
+    testMothershipReport('ReportException', level);
+};
+
+var testMothershipReport = function(type, level, title) {
+    LABKEY.Ajax.request({
+        url: LABKEY.ActionURL.buildURL("admin", "testMothershipReport"),
+        method: "POST",
+        params: {
+            type: type,
+            level: level
+        },
+        success: LABKEY.Utils.getCallbackWrapper(function(response)
+        {
+            var report = JSON.parse(response).report;
+            var reportStr = '';
+            if (report != undefined)
+            {
+                if (report.jsonMetrics != undefined)
+                {
+                    var jsonMetrics = JSON.parse(report.jsonMetrics);
+                    if (jsonMetrics.modules != undefined)
+                    {
+                        jsonMetrics.modules = "Installed module list omitted from sample report."; // module list is ugly
+                    }
+                    report.jsonMetrics = jsonMetrics; // jsonMetrics is a nested object.
+                }
+                else if (report.stackTrace != undefined)
+                {
+                    report.stackTrace = "StackTrace omitted from sample report."; // Stack trace is ugly/truncated in the window alert
+                }
+                reportStr = JSON.stringify(report, null, "  ");
+            }
+            else {
+                reportStr = 'An error occurred generating the sample report.';
+            }
+            window.alert(reportStr);
+        })
+    });
+};
 </script>
 
 <labkey:form name="preferences" enctype="multipart/form-data" method="post">
@@ -129,16 +199,20 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>
     <table>
         <tr>
-            <td valign="top"><input type="radio" name="usageReportingLevel" id="usageReportingLevel1" value="NONE"<%=checked("NONE".equals(appProps.getUsageReportingLevel().toString()))%>></td>
+            <td valign="top"><input type="radio" name="usageReportingLevel" id="usageReportingLevel1" onchange="enableUsageTest();" value="NONE"<%=checked("NONE".equals(appProps.getUsageReportingLevel().toString()))%>></td>
             <td><label for="usageReportingLevel1"><strong>OFF</strong> - Do not report any usage or check for updates</label></td>
         </tr>
         <tr>
-            <td valign="top"><input type="radio" name="usageReportingLevel" id="usageReportingLevel2" value="LOW"<%=checked("LOW".equals(appProps.getUsageReportingLevel().toString()))%>></td>
+            <td valign="top"><input type="radio" name="usageReportingLevel" id="usageReportingLevel2" onchange="enableUsageTest();" value="LOW"<%=checked("LOW".equals(appProps.getUsageReportingLevel().toString()))%>></td>
             <td><label for="usageReportingLevel2"><strong>ON, low</strong> - Check for updates and report system information</label></td>
         </tr>
         <tr>
-            <td valign="top"><input type="radio" name="usageReportingLevel" id="usageReportingLevel3" value="MEDIUM"<%=checked("MEDIUM".equals(appProps.getUsageReportingLevel().toString()))%>></td>
+            <td valign="top"><input type="radio" name="usageReportingLevel" id="usageReportingLevel3" onchange="enableUsageTest();" value="MEDIUM"<%=checked("MEDIUM".equals(appProps.getUsageReportingLevel().toString()))%>></td>
             <td><label for="usageReportingLevel3"><strong>ON, medium</strong> - Check for updates, report system information, organization, and administrator information from this page</label></td>
+        </tr>
+        <tr>
+            <td style="padding: 5px 0 5px;" colspan="2"><%=button("View").id("testUsageReport").onClick("testUsageReport(); return false;").enabled(!"NONE".equals(appProps.getUsageReportingLevel().toString()))%>
+            <label>Display a sample report for the selected level. <strong>No data will be transmitted.</strong></label></td>
         </tr>
     </table>
     </td>
@@ -166,20 +240,24 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>
         <table>
             <tr>
-                <td valign="top"><input type="radio" name="exceptionReportingLevel" id="exceptionReportingLevel1" value="NONE"<%=checked("NONE".equals(appProps.getExceptionReportingLevel().toString()))%>></td>
+                <td valign="top"><input type="radio" name="exceptionReportingLevel" onchange="enableExceptionTest();" id="exceptionReportingLevel1" value="NONE"<%=checked("NONE".equals(appProps.getExceptionReportingLevel().toString()))%>></td>
                 <td><label for="exceptionReportingLevel1"><strong>OFF</strong> - Do not report exceptions</label></td>
             </tr>
             <tr>
-                <td valign="top"><input type="radio" name="exceptionReportingLevel" id="exceptionReportingLevel2" value="LOW"<%=checked("LOW".equals(appProps.getExceptionReportingLevel().toString()))%>></td>
+                <td valign="top"><input type="radio" name="exceptionReportingLevel" onchange="enableExceptionTest();" id="exceptionReportingLevel2" value="LOW"<%=checked("LOW".equals(appProps.getExceptionReportingLevel().toString()))%>></td>
                 <td><label for="exceptionReportingLevel2"><strong>ON, low</strong> - Include anonymous system and exception information</label></td>
             </tr>
             <tr>
-                <td valign="top"><input type="radio" name="exceptionReportingLevel" id="exceptionReportingLevel3" value="MEDIUM"<%=checked("MEDIUM".equals(appProps.getExceptionReportingLevel().toString()))%>></td>
+                <td valign="top"><input type="radio" name="exceptionReportingLevel" onchange="enableExceptionTest();" id="exceptionReportingLevel3" value="MEDIUM"<%=checked("MEDIUM".equals(appProps.getExceptionReportingLevel().toString()))%>></td>
                 <td><label for="exceptionReportingLevel3"><strong>ON, medium</strong> - Include anonymous system and exception information, as well as the URL that triggered the exception</label></td>
             </tr>
             <tr>
-                <td valign="top"><input type="radio" name="exceptionReportingLevel" id="exceptionReportingLevel4" value="HIGH"<%=checked("HIGH".equals(appProps.getExceptionReportingLevel().toString()))%>></td>
+                <td valign="top"><input type="radio" name="exceptionReportingLevel" onchange="enableExceptionTest();" id="exceptionReportingLevel4" value="HIGH"<%=checked("HIGH".equals(appProps.getExceptionReportingLevel().toString()))%>></td>
                 <td><label for="exceptionReportingLevel4"><strong>ON, high</strong> - Include the above, plus the user's email address. The user will be contacted only for assistance in reproducing the bug, if necessary</label></td>
+            </tr>
+            <tr >
+                <td style="padding: 5px 0 5px;" colspan="2"><%=button("View").id("testExceptionReport").onClick("testExceptionReport(); return false;").enabled(!"NONE".equals(appProps.getExceptionReportingLevel().toString()))%>
+                <label>Display a sample report for the selected level. <strong>No data will be transmitted.</strong></label></td>
             </tr>
         </table>
     </td>
