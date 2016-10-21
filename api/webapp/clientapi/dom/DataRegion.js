@@ -14,6 +14,7 @@ if (!LABKEY.DataRegions) {
     //
     var ALL_FILTERS_SKIP_PREFIX = '.~';
     var COLUMNS_PREFIX = '.columns';
+    var DEFAULT_TIMEOUT = 30000;
     var PARAM_PREFIX = '.param.';
     var REPORTID_PREFIX = '.reportId';
     var SORT_PREFIX = '.sort', SORT_ASC = '+', SORT_DESC = '-';
@@ -309,7 +310,7 @@ if (!LABKEY.DataRegions) {
 
                 reportId: undefined,
 
-                requestURL: isQWP ? window.location.href : undefined,
+                requestURL: isQWP ? window.location.href : (document.location.search.substring(1) /* strip the ? */ || ''),
 
                 returnURL: isQWP ? window.location.href : undefined,
 
@@ -663,7 +664,7 @@ if (!LABKEY.DataRegions) {
     LABKEY.DataRegion.prototype.getUserFilterArray = function() {
         var userFilter = [], me = this;
 
-        var pairs = _getParametersSearch(this, this.requestURL);
+        var pairs = _getParameters(this);
         $.each(pairs, function(i, pair) {
             if (pair[0].indexOf(me.name + '.') == 0 && pair[0].indexOf('~') > -1) {
                 var tilde = pair[0].indexOf('~');
@@ -726,7 +727,7 @@ if (!LABKEY.DataRegions) {
         // support fieldKeys (e.g. ["ColumnA", "ColumnA/Sub1"])
         // A special case of fieldKey is "SUBJECT_PREFIX/", used by participant group facet
         if (fieldKeys.length > 0) {
-            $.each(_getParameters(this, this.requestURL), function(i, param) {
+            $.each(_getParameters(this), function(i, param) {
                 var p = param[0];
                 if (p.indexOf(me.name + '.') === 0 && p.indexOf('~') > -1) {
                     $.each(fieldKeys, function(j, name) {
@@ -748,10 +749,9 @@ if (!LABKEY.DataRegions) {
      * @param filterMatch
      */
     LABKEY.DataRegion.prototype.replaceFilterMatch = function(filter, filterMatch) {
-        var params = _getParameters(this, this.requestURL);
         var skips = [], me = this;
 
-        $.each(params, function(i, param) {
+        $.each(_getParameters(this), function(i, param) {
             if (param[0].indexOf(me.name + '.') == 0 && param[0].indexOf(filterMatch) > -1) {
                 skips.push(param[0]);
             }
@@ -1106,23 +1106,21 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
-     * Returns the specified parameter from the URL.
+     * Returns the specified parameter from the URL. Note, this is not related specifically
+     * to parameterized query values (e.g. setParameters()/getParameters())
      * @param {String} paramName
      * @returns {*}
      */
     LABKEY.DataRegion.prototype.getParameter = function(paramName) {
-        var pairs = _getParameters(this, this.getSearchString()), param = null;
-        $.each(pairs, function(i, pair) {
+        var param = null;
+
+        $.each(_getParameters(this), function(i, pair) {
             if (pair.length > 0 && pair[0] == paramName) {
-                if (pair.length > 1) {
-                    param = pair[1];
-                }
-                else {
-                    param = '';
-                }
+                param = pair.length > 1 ? pair[1] : '';
                 return false;
             }
         });
+
         return param;
     };
 
@@ -1134,23 +1132,23 @@ if (!LABKEY.DataRegions) {
      */
     LABKEY.DataRegion.prototype.getParameters = function(toLowercase) {
 
-        var results = {};
+        var params = this.parameters ? this.parameters : {},
+            re = new RegExp('^' + LABKEY.Utils.escapeRe(this.name) + PARAM_PREFIX.replace(/\./g, '\\.'), 'i'),
+            name;
 
-        var params = _getParameters(this, this.getSearchString()),
-                re = new RegExp('^' + LABKEY.Utils.escapeRe(this.name) + PARAM_PREFIX.replace(/\./g, '\\.'), 'i'),
-                name;
-
-        $.each(params, function(i, pair) {
+        $.each(_getParameters(this), function(i, pair) {
             if (pair.length > 0 && pair[0].match(re)) {
                 name = pair[0].replace(re, '');
-                if (toLowercase) {
+                if (toLowercase === true) {
                     name = name.toLowerCase();
                 }
-                results[name] = pair[1];
+
+                // URL parameters will override this.parameters values
+                params[name] = pair[1];
             }
         });
 
-        return results;
+        return params;
     };
 
     /**
@@ -1167,21 +1165,34 @@ if (!LABKEY.DataRegions) {
             return;
         }
 
-        var me = this, _params;
+        var paramPrefix = this.name + PARAM_PREFIX, _params = [];
+        var newParameters = this.parameters ? this.parameters : {};
+
+        function applyParameters(pKey, pValue) {
+            var key = pKey;
+            if (pKey.indexOf(paramPrefix) !== 0) {
+                key = paramPrefix + pKey;
+            }
+            newParameters[key.replace(paramPrefix, '')] = pValue;
+            _params.push([key, pValue]);
+        }
 
         // convert Object into Array of Array pairs and prefix the parameter name if necessary.
         if (LABKEY.Utils.isObject(params)) {
-            _params = [];
-            $.each(params, function(key, value) {
-                if (key.indexOf(me.name + PARAM_PREFIX) !== 0) {
-                    key = me.name + PARAM_PREFIX + key;
+            $.each(params, applyParameters);
+        }
+        else if (LABKEY.Utils.isArray(params)) {
+            $.each(params, function(i, pair) {
+                if (LABKEY.Utils.isArray(pair) && pair.length > 1) {
+                    applyParameters(pair[0], pair[1]);
                 }
-                _params.push([key, value]);
             });
         }
         else {
-            _params = params;
+            return; // invalid argument shape
         }
+
+        this.parameters = newParameters;
 
         _setParameters(this, _params, [PARAM_PREFIX, OFFSET_PREFIX]);
     };
@@ -1968,7 +1979,7 @@ if (!LABKEY.DataRegions) {
      * @private
      */
     LABKEY.DataRegion.prototype._removeCohortGroupFilters = function(subjectColumn, groupNames) {
-        var params = _getParameters(this, this.requestURL);
+        var params = _getParameters(this);
         var skips = [], i, p, k;
 
         var keys = [
@@ -2006,7 +2017,7 @@ if (!LABKEY.DataRegions) {
      * @private
      */
     LABKEY.DataRegion.prototype._replaceAdvCohortFilter = function(filter) {
-        var params = _getParameters(this, this.requestURL);
+        var params = _getParameters(this);
         var skips = [], i, p;
 
         for (i = 0; i < params.length; i++) {
@@ -2659,18 +2670,11 @@ if (!LABKEY.DataRegions) {
         return $('#' + region.domId + '-header');
     };
 
-    // Formerly, LABKEY.DataRegion.getParamValPairs
-    var _getParametersSearch = function(region, qString, skipPrefixSet /* optional */) {
-        if (!qString) {
-            qString = region.getSearchString.call(region);
-        }
-        return _getParameters(region, qString, skipPrefixSet);
-    };
-
-    // Formerly, LABKEY.DataRegion.getParamValPairsFromString
-    var _getParameters = function(region, qString, skipPrefixSet /* optional */) {
+    // Formerly, LABKEY.DataRegion.getParamValPairsFromString / LABKEY.DataRegion.getParamValPairs
+    var _getParameters = function(region, skipPrefixSet /* optional */) {
 
         var params = [];
+        var qString = region.requestURL;
 
         if (LABKEY.Utils.isString(qString) && qString.length > 0) {
 
@@ -2711,9 +2715,9 @@ if (!LABKEY.DataRegions) {
                                 else if (key.indexOf(skipPrefix) == 0) {
                                     // only skip filters, parameters, and sorts
                                     if (key == skipPrefix ||
-                                            key.indexOf("~") > 0 ||
+                                            key.indexOf('~') > 0 ||
                                             key.indexOf(PARAM_PREFIX) > 0 ||
-                                            key == (skipPrefix + "sort")) {
+                                            key == (skipPrefix + 'sort')) {
                                         stop = true;
                                         return false;
                                     }
@@ -2920,7 +2924,7 @@ if (!LABKEY.DataRegions) {
         }
 
         var param, value,
-            params = _getParametersSearch(region, region.requestURL, skipPrefixes);
+            params = _getParameters(region, skipPrefixes);
 
         if ($.isArray(newParamValPairs)) {
             $.each(newParamValPairs, function(i, newPair) {
@@ -2997,7 +3001,7 @@ if (!LABKEY.DataRegions) {
 
     var _load = function(region, callback, scope, newParams) {
 
-        var params = _getAsyncParams(region, newParams ? newParams : _getParametersSearch(region, region.requestURL));
+        var params = _getAsyncParams(region, newParams ? newParams : _getParameters(region));
         var jsonData = _getAsyncBody(region, params);
 
         // TODO: This should be done in _getAsyncParams, but is not since _getAsyncBody relies on it. Refactor it.
@@ -3048,7 +3052,7 @@ if (!LABKEY.DataRegions) {
         }
 
         LABKEY.Ajax.request({
-            timeout: (region.timeout == undefined) ? 30000 : region.timeout,
+            timeout: (region.timeout == undefined) ? DEFAULT_TIMEOUT : region.timeout,
             url: LABKEY.ActionURL.buildURL('project', 'getWebPart.api', region.containerPath),
             method: 'POST',
             params: params,
@@ -3062,7 +3066,7 @@ if (!LABKEY.DataRegions) {
 
                         LABKEY.Utils.loadAjaxContent(response, target, function() {
 
-                            if (LABKEY.Utils.isFunction(callback)) {
+                            if ($.isFunction(callback)) {
                                 callback.call(scope);
                             }
 
@@ -3258,12 +3262,13 @@ if (!LABKEY.DataRegions) {
             }
 
             if (region.parameters) {
+                var paramPrefix = name + PARAM_PREFIX;
                 $.each(region.parameters, function(parameter, value) {
-                    var p = parameter;
-                    if (parameter.indexOf(name + PARAM_PREFIX) !== 0) {
-                        p = name + PARAM_PREFIX + parameter;
+                    var key = parameter;
+                    if (parameter.indexOf(paramPrefix) !== 0) {
+                        key = paramPrefix + parameter;
                     }
-                    params[p] = value;
+                    params[key] = value;
                 });
             }
         }
