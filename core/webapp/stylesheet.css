@@ -2278,6 +2278,11 @@ table.labkey-manage-default-reqs
     white-space:nowrap;
 }
 
+.labkey-callout-tip-left {
+    border-left:0;
+    border-right:1px dotted #89A1B4;
+}
+
 .labkey-callout-tip-over {
     background-color: #89A1B4;
 }
