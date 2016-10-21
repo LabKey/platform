@@ -80,16 +80,46 @@ public class RecordedAction
 
     public void addInput(URI input, String role)
     {
-        //only add if this input does not already exist.  exp.datainputs only allows one row per distinct input
+        addInput(input, role, true);
+    }
+
+    public void addInputIfNotPresent(File input, String role)
+    {
+        addInput(input.toURI(), role, false);
+    }
+
+    /**
+     * Exp.data has a constraint that will only allow a given file
+     * once per action, so by default this will throw an exception
+     * if the same file is added twice as an input.  Alternately,
+     * addInputIfNotPresent() which will silently ignore duplicate files.
+     */
+    private void addInput(URI input, String role, boolean throwIfExists)
+    {
         if (!uriExists(input, _inputs))
         {
             _inputs.add(new DataFile(input, role, false, false));
         }
+        else if (throwIfExists)
+        {
+            throw new IllegalArgumentException("Already has been added as an input for the action " + getName() + ":" + input.toString());
+        }
     }
 
+    /**
+     * Exp.data has a constraint that will only allow a given file
+     * once per action, so by default this will throw an exception
+     * if the same file is added twice as an output.  Alternately,
+     * addOutputIfNotPresent() which will silently ignore duplicate files.
+     */
     public void addOutput(File output, String role, boolean transientFile)
     {
         addOutput(output.toURI(), role, transientFile, false);
+    }
+
+    public void addOutputIfNotPresent(File output, String role, boolean transientFile)
+    {
+        addOutput(output.toURI(), role, transientFile, false, false);
     }
 
     public void addOutput(File output, String role, boolean transientFile, boolean generated)
@@ -104,7 +134,19 @@ public class RecordedAction
 
     public void addOutput(URI output, String role, boolean transientFile, boolean generated)
     {
-        _outputs.add(new DataFile(output, role, transientFile, generated));
+        addOutput(output, role, transientFile, generated, true);
+    }
+
+    private void addOutput(URI output, String role, boolean transientFile, boolean generated, boolean throwIfExists)
+    {
+        if (!uriExists(output, _outputs))
+        {
+            _outputs.add(new DataFile(output, role, transientFile, generated));
+        }
+        else if (throwIfExists)
+        {
+            throw new IllegalArgumentException("Already has been added as an output for the action " + getName() + ":" + output.toString());
+        }
     }
 
     public Set<DataFile> getInputs()
