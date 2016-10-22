@@ -1037,7 +1037,7 @@ public class ReportsController extends BaseStudyController
         @Override
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            out.write("<form method='post' action='");
+            out.write("<form method='post' name='saveReport' action='");
             out.write(PageFlowUtil.filter(new ActionURL(SaveReportViewAction.class, getViewContext().getContainer())));
             out.write("'>");
             out.write("<table><tr>");
