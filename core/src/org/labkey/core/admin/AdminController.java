@@ -34,6 +34,7 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.json.JSONObject;
+import org.labkey.api.Constants;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -5678,7 +5679,7 @@ public class AdminController extends SpringActionController
             {
                 if (ignoreSet.isEmpty() && !form.isManagedOnly())
                 {
-                    String previousRelease = ModuleContext.formatVersion(ModuleLoader.getInstance().getPreviousReleaseVersion());
+                    String previousRelease = ModuleContext.formatVersion(Constants.getPreviousReleaseVersion());
                     ActionURL url = new ActionURL(AdminController.ModulesAction.class, ContainerManager.getRoot());
                     url.addParameter("ignore", "0.00," + previousRelease);
                     url.addParameter("managedOnly", true);

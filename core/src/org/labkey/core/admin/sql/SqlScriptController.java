@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.Constants;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -684,7 +685,7 @@ public class SqlScriptController extends SpringActionController
     {
         private String _module;
         private String _schema;
-        private double _fromVersion = ModuleLoader.getInstance().getPreviousReleaseVersion();
+        private double _fromVersion = Constants.getPreviousReleaseVersion();
         private double _toVersion = getToVersion(_fromVersion);
         private boolean _includeSingleScripts = false;
 

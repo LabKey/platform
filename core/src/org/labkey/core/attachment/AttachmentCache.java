@@ -46,24 +46,21 @@ public class AttachmentCache
     private static final Set<String> ATTACHMENT_COLUMNS = new CsvSet("Parent, Container, DocumentName, DocumentSize, DocumentType, Created, CreatedBy, LastIndexed");
     private static final StringKeyCache<Map<String, Attachment>> _cache = CacheManager.getStringKeyCache(20000, CacheManager.DAY, "Attachments");
 
-    private static final CacheLoader<String, Map<String, Attachment>> LOADER = new CacheLoader<String, Map<String, Attachment>>() {
-        @Override
-        public Map<String, Attachment> load(String key, Object attachmentParent)
-        {
-            AttachmentParent parent = (AttachmentParent)attachmentParent;
+    private static final CacheLoader<String, Map<String, Attachment>> LOADER = (key, attachmentParent) ->
+    {
+        AttachmentParent parent = (AttachmentParent)attachmentParent;
 
-            Collection<Attachment> attachments = new TableSelector(CoreSchema.getInstance().getTableInfoDocuments(),
-                    ATTACHMENT_COLUMNS,
-                    new SimpleFilter(FieldKey.fromParts("Parent"), parent.getEntityId()),
-                    new Sort("+RowId")).getCollection(Attachment.class);
+        Collection<Attachment> attachments = new TableSelector(CoreSchema.getInstance().getTableInfoDocuments(),
+                ATTACHMENT_COLUMNS,
+                new SimpleFilter(FieldKey.fromParts("Parent"), parent.getEntityId()),
+                new Sort("+RowId")).getCollection(Attachment.class);
 
-            Map<String, Attachment> map = new LinkedHashMap<>(attachments.size());
+        Map<String, Attachment> map = new LinkedHashMap<>(attachments.size());
 
-            for (Attachment attachment : attachments)
-                map.put(attachment.getName(), attachment);
+        for (Attachment attachment : attachments)
+            map.put(attachment.getName(), attachment);
 
-            return Collections.unmodifiableMap(map);
-        }
+        return Collections.unmodifiableMap(map);
     };
 
 
