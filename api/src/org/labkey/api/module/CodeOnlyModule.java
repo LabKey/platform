@@ -2,6 +2,7 @@ package org.labkey.api.module;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.Constants;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.UpgradeCode;
 
@@ -21,14 +22,14 @@ import java.util.Set;
 public abstract class CodeOnlyModule extends DefaultModule
 {
     /**
-     * Update this version number immediately before release; all modules that extend this class will inherit the new version.
+     * All code-only modules use this version.
      *
      * @return The module version
      */
     @Override
     public final double getVersion()
     {
-        return 16.20;
+        return Constants.getPreviousReleaseVersion();
     }
 
     @Override

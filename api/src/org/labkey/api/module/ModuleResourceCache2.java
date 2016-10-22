@@ -18,6 +18,7 @@ package org.labkey.api.module;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.Constants;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -85,7 +86,7 @@ public final class ModuleResourceCache2<V>
             }
         };
 
-        _cache = CacheManager.getBlockingCache(200, CacheManager.DAY, description, wrapper);  // One per module... so 200 should be ample
+        _cache = CacheManager.getBlockingCache(Constants.getMaxModules(), CacheManager.DAY, description, wrapper);  // Cache is one entry per module
         _handler = handler;
 //        ensureListeners(root);  // TODO: Enable this to ensure file listeners along the root... except that this seems to deadlock. Maybe push this into CacheLoader.load() above?
     }

@@ -18,6 +18,7 @@ package org.labkey.api.module;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.Constants;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -128,7 +129,7 @@ public final class QueryBasedModuleResourceCache<T>
         };
 
         _handler = handler;
-        _cache = CacheManager.getBlockingCache(200, CacheManager.DAY, description, wrapper);  // Cache is one entry per module
+        _cache = CacheManager.getBlockingCache(Constants.getMaxModules(), CacheManager.DAY, description, wrapper);  // Cache is one entry per module
     }
 
     @NotNull

@@ -19,8 +19,8 @@ package org.labkey.api.util;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.Constants;
 import org.labkey.api.annotations.JavaRuntimeVersion;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.NavTree;
 
 import java.util.Formatter;
@@ -34,7 +34,7 @@ import java.util.Map;
 public class HelpTopic
 {
     private static String TARGET_NAME = "labkeyHelp"; // LabKey help should always appear in the same tab/window
-    private static String HELP_VERSION = Formats.f1.format(ModuleLoader.getInstance().getPreviousReleaseVersion());
+    private static String HELP_VERSION = Formats.f1.format(Constants.getPreviousReleaseVersion());
 
     @JavaRuntimeVersion // Update this link whenever we require a new major Java version so we always point at the current docs
     private static final String JDK_JAVADOC_BASE_URL = "http://docs.oracle.com/javase/8/docs/api/";

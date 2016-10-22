@@ -21,7 +21,6 @@ import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheTimeChooser;
-import org.labkey.api.cache.Wrapper;
 import org.labkey.api.module.ModuleLoader;
 
 /*
