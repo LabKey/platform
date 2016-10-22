@@ -18,7 +18,6 @@ package org.labkey.api.dataiterator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
-import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
 

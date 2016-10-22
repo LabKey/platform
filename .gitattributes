@@ -17,7 +17,6 @@ api/src/org/json/JSONWriter.java -text
 api/src/org/json/Test.java -text
 api/src/org/json/XML.java -text
 api/src/org/json/XMLTokener.java -text
-api/src/org/labkey/api/ScrollableDataIterator.java -text
 api/src/org/labkey/api/action/AbstractFileUploadAction.java -text
 api/src/org/labkey/api/action/Action.java -text
 api/src/org/labkey/api/action/ActionType.java -text
@@ -520,6 +519,7 @@ api/src/org/labkey/api/dataiterator/Pump.java -text
 api/src/org/labkey/api/dataiterator/QueryDataIteratorBuilder.java -text
 api/src/org/labkey/api/dataiterator/RemoveDuplicatesDataIterator.java -text
 api/src/org/labkey/api/dataiterator/ResultSetDataIterator.java -text
+api/src/org/labkey/api/dataiterator/ScrollableDataIterator.java -text
 api/src/org/labkey/api/dataiterator/SimpleTranslator.java -text
 api/src/org/labkey/api/dataiterator/StandardDataIteratorBuilder.java -text
 api/src/org/labkey/api/dataiterator/StatementDataIterator.java -text
@@ -775,6 +775,7 @@ api/src/org/labkey/api/notification/EmailMessage.java -text
 api/src/org/labkey/api/notification/EmailPref.java -text
 api/src/org/labkey/api/notification/EmailPrefFilter.java -text
 api/src/org/labkey/api/notification/EmailService.java -text
+api/src/org/labkey/api/notification/NotificationMenuView.java -text
 api/src/org/labkey/api/pipeline/AbstractRemoteExecutionEngineConfig.java -text
 api/src/org/labkey/api/pipeline/AbstractTaskFactory.java -text
 api/src/org/labkey/api/pipeline/AbstractTaskFactorySettings.java -text
@@ -1708,7 +1709,6 @@ api/src/org/labkey/api/writer/Writer.java -text
 api/src/org/labkey/api/writer/WriterFactory.java -text
 api/src/org/labkey/api/writer/ZipFile.java -text
 api/src/org/labkey/api/writer/ZipUtil.java -text
-api/src/org/labkey/core/notification/NotificationMenuView.java -text
 api/src/org/systemsbiology/jrap/DataProcessingInfo.java -text
 api/src/org/systemsbiology/jrap/MSInstrumentInfo.java -text
 api/src/org/systemsbiology/jrap/MSOperator.java -text

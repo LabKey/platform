@@ -18,7 +18,6 @@ package org.labkey.api.dataiterator;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.util.GUID;

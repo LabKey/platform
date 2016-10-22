@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api;
-
-import org.labkey.api.dataiterator.DataIterator;
+package org.labkey.api.dataiterator;
 
 /**
  *
@@ -23,7 +21,7 @@ import org.labkey.api.dataiterator.DataIterator;
  *
  * I'm going to go with the idea of having the 'purest' interface possible, and see how it goes.
  *
- * Why have the isScrollable() method on a ScrollableDataIterator inteface?  This is so that wrapper/pass-through
+ * Why have the isScrollable() method on a ScrollableDataIterator interface? This is so that wrapper/pass-through
  * base classes can pass-through the scrollability of their input class if appropriate.
  */
 public interface ScrollableDataIterator extends DataIterator

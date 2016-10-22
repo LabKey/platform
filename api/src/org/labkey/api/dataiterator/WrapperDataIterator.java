@@ -16,7 +16,6 @@
 package org.labkey.api.dataiterator;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
 

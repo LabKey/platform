@@ -15,7 +15,6 @@
  */
 package org.labkey.api.dataiterator;
 
-import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.ColumnInfo;

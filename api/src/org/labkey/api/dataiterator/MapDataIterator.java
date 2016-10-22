@@ -16,7 +16,6 @@
 package org.labkey.api.dataiterator;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
