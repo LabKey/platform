@@ -3,7 +3,7 @@ package org.labkey.study.model;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
 import org.apache.log4j.Logger;
-import org.labkey.api.ScrollableDataIterator;
+import org.labkey.api.dataiterator.ScrollableDataIterator;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
