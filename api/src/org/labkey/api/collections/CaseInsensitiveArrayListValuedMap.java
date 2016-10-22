@@ -28,8 +28,10 @@ public class CaseInsensitiveArrayListValuedMap<V> extends AbstractListValuedMap<
     /**
      * Trims the capacity of all value collections to their current size.
      */
-    public void trimToSize() {
-        for (Collection<V> coll : getMap().values()) {
+    public void trimToSize()
+    {
+        for (Collection<V> coll : getMap().values())
+        {
             final ArrayList<V> list = (ArrayList<V>) coll;
             list.trimToSize();
         }
