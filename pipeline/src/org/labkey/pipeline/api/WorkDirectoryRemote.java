@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.api;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.WorkDirFactory;
 import org.labkey.api.pipeline.WorkDirectory;
@@ -22,6 +23,7 @@ import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.URIUtil;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.io.ByteArrayOutputStream;
@@ -48,6 +50,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
     private static final int FILE_LOCKS_DEFAULT = 5;
     
     private final File _lockDirectory;
+    private final File _folderToClean;
 
     private static final Map<File, Lock> _locks = new HashMap<>();
 
@@ -102,6 +105,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             }
 
             File tempDir;
+            File tempDirBase = null;
             int attempt = 0;
             do
             {
@@ -118,10 +122,12 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                         if (_deterministicWorkingDirName)
                         {
                             dirParent = new File(dirParent, jobId);
+                            tempDirBase = dirParent;
                         }
                         else
                         {
                             dirParent = File.createTempFile(jobId, "", dirParent);
+                            tempDirBase = dirParent;
                         }
 
                         if (_allowReuseExistingTempDirectory && dirParent.exists())
@@ -186,7 +192,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
             File lockDir = (_lockDirectory == null ? null : new File(_lockDirectory));
             File transferToDirOnFailure = (_transferToDirOnFailure == null ? null : new File(_transferToDirOnFailure));
-            return new WorkDirectoryRemote(support, this, log, lockDir, tempDir, transferToDirOnFailure, _allowReuseExistingTempDirectory);
+            return new WorkDirectoryRemote(support, this, log, lockDir, tempDir, transferToDirOnFailure, _allowReuseExistingTempDirectory, tempDirBase);
         }
 
         public String getLockDirectory()
@@ -320,12 +326,13 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         }
     }
 
-    public WorkDirectoryRemote(FileAnalysisJobSupport support, WorkDirFactory factory, Logger log, File lockDir, File tempDir, File transferToDirOnFailure, boolean reuseExistingDirectory) throws IOException
+    public WorkDirectoryRemote(FileAnalysisJobSupport support, WorkDirFactory factory, Logger log, File lockDir, File tempDir, File transferToDirOnFailure, boolean reuseExistingDirectory, File folderToClean) throws IOException
     {
         super(support, factory, tempDir, reuseExistingDirectory, log);
 
         _lockDirectory = lockDir;
         _transferToDirOnFailure = transferToDirOnFailure;
+        _folderToClean = folderToClean;
     }
 
     /**
@@ -392,6 +399,35 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             _locks.put(f, result);
         }
         return result;
+    }
+
+    @Override
+    public void remove(boolean success) throws IOException
+    {
+        super.remove(success);
+
+        // Issue 25166: this was a pre-existing potential bug.  If _sharedTempDirectory is true, we create a second level
+        // of temp directory above the primary working dir.  this is added to make sure we clean this up.
+        if (_folderToClean != null && !_dir.getParentFile().equals(_folderToClean))
+        {
+            _jobLog.debug("removing complete work dir from: " + _folderToClean.getPath());
+            File toCheck = _dir.getParentFile();
+            while (toCheck != null && toCheck.isDirectory() && URIUtil.isDescendant(_folderToClean.toURI(), toCheck.toURI()))
+            {
+                String[] children = toCheck.list();
+                if (children != null && children.length == 0)
+                {
+                    _jobLog.debug("removing work dir: " + toCheck.getPath());
+                    toCheck = toCheck.getParentFile();
+                    FileUtils.deleteDirectory(toCheck);
+                }
+                else
+                {
+                    _jobLog.debug("work directory has children, will not delete: " + toCheck.getPath());
+                    break;
+                }
+            }
+        }
     }
 
     protected CopyingResource createCopyingLock() throws IOException
