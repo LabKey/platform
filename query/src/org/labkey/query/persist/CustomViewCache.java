@@ -16,12 +16,12 @@
 package org.labkey.query.persist;
 
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.AbstractListValuedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveArrayListValuedMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -56,8 +56,8 @@ public class CustomViewCache
 
         private CustomViewCollections(Container c)
         {
-            Map<String, MultiValuedMap<String, CstmView>> customViews = new CaseInsensitiveHashMap<>();
-            Map<String, MultiValuedMap<String, CstmView>> inheritableCustomViews = new CaseInsensitiveHashMap<>();
+            Map<String, CaseInsensitiveArrayListValuedMap<CstmView>> customViews = new CaseInsensitiveHashMap<>();
+            Map<String, CaseInsensitiveArrayListValuedMap<CstmView>> inheritableCustomViews = new CaseInsensitiveHashMap<>();
             Map<Integer, CstmView> rowIdMap = new HashMap<>();
             Map<String, CstmView> entityIdMap = new HashMap<>();
 
@@ -76,19 +76,25 @@ public class CustomViewCache
 
             }, CstmView.class);
 
-            _customViews = Collections.unmodifiableMap(customViews);
+            _customViews = getUnmodifiable(customViews);
             _rowIdMap = Collections.unmodifiableMap(rowIdMap);
             _entityIdMap = Collections.unmodifiableMap(entityIdMap);
-            _inheritableCustomViews = Collections.unmodifiableMap(inheritableCustomViews);
+            _inheritableCustomViews = getUnmodifiable(inheritableCustomViews);
         }
 
-        private MultiValuedMap<String, CstmView> ensureViewMultiMap(Map<String, MultiValuedMap<String, CstmView>> views, String schemaName)
+        private MultiValuedMap<String, CstmView> ensureViewMultiMap(Map<String, CaseInsensitiveArrayListValuedMap<CstmView>> views, String schemaName)
         {
             if (!views.containsKey(schemaName))
             {
-                views.put(schemaName, new CstmViewMap());
+                views.put(schemaName, new CaseInsensitiveArrayListValuedMap<>());
             }
             return views.get(schemaName);
+        }
+
+        private Map<String, MultiValuedMap<String, CstmView>> getUnmodifiable(Map<String, CaseInsensitiveArrayListValuedMap<CstmView>> views)
+        {
+            views.values().forEach(CaseInsensitiveArrayListValuedMap::trimToSize);
+            return Collections.unmodifiableMap(views);
         }
 
         private @NotNull
@@ -198,21 +204,5 @@ public class CustomViewCache
     public static void uncache(Container c)
     {
         CUSTOM_VIEW_DB_CACHE.remove(c);
-    }
-
-    // Intends to act like a case-insensitive version of
-    // org.apache.commons.collections4.multimap.ArrayListValuedHashMap
-    private static class CstmViewMap extends AbstractListValuedMap<String, CstmView>
-    {
-        public CstmViewMap()
-        {
-            super(new CaseInsensitiveHashMap<>());
-        }
-
-        @Override
-        protected List<CstmView> createCollection()
-        {
-            return new ArrayList<>();
-        }
     }
 }
