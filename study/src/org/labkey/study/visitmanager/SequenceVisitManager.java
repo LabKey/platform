@@ -253,7 +253,7 @@ public class SequenceVisitManager extends VisitManager
 
         //
         // Delete ParticipantVisit where the participant does not exist anymore
-        //   obviously the participants table needs to be udpated first
+        //   obviously the participants table needs to be updated first
         //
         purgeParticipantsFromParticipantsVisitTable(container);
 

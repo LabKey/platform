@@ -40,6 +40,7 @@ import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyManager;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -405,8 +406,8 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
         String allString = getAllString();
 
-        Participant[] participants = StudyManager.getInstance().getParticipants(study);
-        if (participants.length <= 200)
+        Collection<Participant> participants = StudyManager.getInstance().getParticipants(study);
+        if (participants.size() <= 200)
         {
             builder.append("<select name=\"").append(inputName).append("\">\n");
             builder.append("<option value=\"").append(allString).append("\"");
@@ -433,7 +434,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         {
             String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
             String completionUrl = new ActionURL(SpecimenController.CompleteSpecimenAction.class, getContainer()).addParameter("type", "ParticipantId").getLocalURIString();
-            String initValue = selectedParticipantId != null ? selectedParticipantId : participants[0].getParticipantId();
+            String initValue = selectedParticipantId != null ? selectedParticipantId : participants.iterator().next().getParticipantId();
 
             StringBuilder sb = new StringBuilder();
 

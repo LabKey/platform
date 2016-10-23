@@ -38,14 +38,12 @@ import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.SingleCohortFilter;
 import org.labkey.study.StudySchema;
 
-import javax.servlet.ServletException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -124,10 +122,9 @@ public class CohortManager
     //
     private void setCohortAssignment(StudyImpl study, User user, Map<String, Integer> p2c)
     {
-        Participant[] participants = StudyManager.getInstance().getParticipants(study);
         clearParticipantCohorts(study);
 
-        for (Participant p : participants)
+        for (Participant p : StudyManager.getInstance().getParticipants(study))
         {
             Integer newCohortId = p2c.get(p.getParticipantId());
 

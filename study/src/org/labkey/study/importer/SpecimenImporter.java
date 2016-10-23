@@ -1294,7 +1294,7 @@ public class SpecimenImporter
     public void process(VirtualFile specimensDir, boolean merge, Logger logger, @Nullable PipelineJob job, boolean syncParticipantVisit)
             throws SQLException, IOException, ValidationException
     {
-        Map<SpecimenTableType, SpecimenImportFile> sifMap = populateFileMap(specimensDir, new HashMap<SpecimenTableType, SpecimenImportFile>());
+        Map<SpecimenTableType, SpecimenImportFile> sifMap = populateFileMap(specimensDir, new HashMap<>());
 
         process(sifMap, merge, logger, job, syncParticipantVisit);
     }

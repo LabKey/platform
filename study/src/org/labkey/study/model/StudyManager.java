@@ -4249,10 +4249,10 @@ public class StudyManager
         DbCache.remove(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(container));
     }
 
-    public Participant[] getParticipants(Study study)
+    public Collection<Participant> getParticipants(Study study)
     {
         Map<String, Participant> participantMap = getParticipantMap(study);
-        return participantMap.values().toArray(new Participant[participantMap.size()]);
+        return Collections.unmodifiableCollection(participantMap.values());
     }
 
     public Participant getParticipant(Study study, String participantId)
