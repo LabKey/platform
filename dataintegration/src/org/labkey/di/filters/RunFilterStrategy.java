@@ -159,7 +159,7 @@ public class RunFilterStrategy extends FilterStrategyImpl
             f.addCondition(_runPkCol.getFieldKey(), lastRunId, CompareType.GT);
 
         TableSelector ts = new TableSelector(_runsTable, Collections.singleton(_runPkCol), f, null);
-        Aggregate min = new Aggregate(_runPkCol, Aggregate.Type.MIN);
+        Aggregate min = new Aggregate(_runPkCol, Aggregate.BaseType.MIN);
         Map<String, List<Aggregate.Result>> results = ts.getAggregates(Collections.singletonList(min));
         List<Aggregate.Result> list = results.get(_runPkCol.getName());
         Aggregate.Result minResult = list.get(0);

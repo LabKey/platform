@@ -19,8 +19,10 @@ package org.labkey.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.analytics.AnalyticsProviderRegistry;
+import org.labkey.api.analytics.SummaryStatisticRegistry;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
@@ -72,7 +74,7 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.query.analytics.AggregatesCountAnalyticsProvider;
+import org.labkey.query.analytics.AggregatesCountNonBlankAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesMaxAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesMeanAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesMinAnalyticsProvider;
@@ -280,12 +282,22 @@ public class QueryModule extends DefaultModule
         AnalyticsProviderRegistry analyticsProviderRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
         if (null != analyticsProviderRegistry)
         {
-            analyticsProviderRegistry.registerProvider(new AggregatesCountAnalyticsProvider());
+            analyticsProviderRegistry.registerProvider(new AggregatesCountNonBlankAnalyticsProvider());
             analyticsProviderRegistry.registerProvider(new AggregatesSumAnalyticsProvider());
             analyticsProviderRegistry.registerProvider(new AggregatesMeanAnalyticsProvider());
             analyticsProviderRegistry.registerProvider(new AggregatesMinAnalyticsProvider());
             analyticsProviderRegistry.registerProvider(new AggregatesMaxAnalyticsProvider());
             analyticsProviderRegistry.registerProvider(new RemoveColumnAnalyticsProvider());
+        }
+
+        SummaryStatisticRegistry summaryStatisticRegistry = ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
+        if (null != summaryStatisticRegistry)
+        {
+            summaryStatisticRegistry.register(Aggregate.BaseType.SUM);
+            summaryStatisticRegistry.register(Aggregate.BaseType.MEAN);
+            summaryStatisticRegistry.register(Aggregate.BaseType.COUNT);
+            summaryStatisticRegistry.register(Aggregate.BaseType.MIN);
+            summaryStatisticRegistry.register(Aggregate.BaseType.MAX);
         }
     }
 

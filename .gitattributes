@@ -410,6 +410,7 @@ core/src/org/labkey/core/admin/writer/SecurityGroupWriterFactory.java -text
 core/src/org/labkey/core/analytics/AnalyticsController.java -text
 core/src/org/labkey/core/analytics/AnalyticsProviderRegistryImpl.java -text
 core/src/org/labkey/core/analytics/AnalyticsServiceImpl.java -text
+core/src/org/labkey/core/analytics/SummaryStatisticRegistryImpl.java -text
 core/src/org/labkey/core/analytics/analyticsSettings.jsp -text
 core/src/org/labkey/core/attachment/AttachmentCache.java -text
 core/src/org/labkey/core/attachment/AttachmentServiceImpl.java -text
@@ -1453,12 +1454,11 @@ query/src/org/labkey/query/TableWriter.java -text
 query/src/org/labkey/query/TableXML.java -text
 query/src/org/labkey/query/ValidateQueriesVisitor.java -text
 query/src/org/labkey/query/ViewFilterItemImpl.java -text
-query/src/org/labkey/query/analytics/AggregatesCountAnalyticsProvider.java -text
+query/src/org/labkey/query/analytics/AggregatesCountNonBlankAnalyticsProvider.java -text
 query/src/org/labkey/query/analytics/AggregatesMaxAnalyticsProvider.java -text
 query/src/org/labkey/query/analytics/AggregatesMeanAnalyticsProvider.java -text
 query/src/org/labkey/query/analytics/AggregatesMinAnalyticsProvider.java -text
 query/src/org/labkey/query/analytics/AggregatesSumAnalyticsProvider.java -text
-query/src/org/labkey/query/analytics/BaseAggregatesAnalyticsProvider.java -text
 query/src/org/labkey/query/analytics/RemoveColumnAnalyticsProvider.java -text
 query/src/org/labkey/query/audit/QueryAuditProvider.java -text
 query/src/org/labkey/query/audit/QueryUpdateAuditProvider.java -text

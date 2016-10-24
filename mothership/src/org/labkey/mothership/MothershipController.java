@@ -446,8 +446,8 @@ public class MothershipController extends SpringActionController
             settings.getBaseSort().insertSortColumn(FieldKey.fromParts("LastPing"), Sort.SortDirection.DESC);
 
             List<Aggregate> aggregates = new ArrayList<>();
-            aggregates.add(new Aggregate(FieldKey.fromParts("DaysActive"), Aggregate.Type.MEAN));
-            aggregates.add(new Aggregate(FieldKey.fromParts("ExceptionCount"), Aggregate.Type.MEAN));
+            aggregates.add(new Aggregate(FieldKey.fromParts("DaysActive"), Aggregate.BaseType.MEAN));
+            aggregates.add(new Aggregate(FieldKey.fromParts("ExceptionCount"), Aggregate.BaseType.MEAN));
             settings.setAggregates(aggregates);
 
             QueryView gridView = schema.createView(getViewContext(), settings, errors);

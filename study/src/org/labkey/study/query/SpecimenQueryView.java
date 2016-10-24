@@ -760,17 +760,17 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
         if (_viewType.isVialView())
         {
-            addAggregateIfInDisplay("Volume", Aggregate.Type.SUM);
-            addAggregateIfInDisplay("GlobalUniqueId", Aggregate.Type.COUNT);
+            addAggregateIfInDisplay("Volume", Aggregate.BaseType.SUM);
+            addAggregateIfInDisplay("GlobalUniqueId", Aggregate.BaseType.COUNT);
         }
         else
         {
-            addAggregateIfInDisplay("TotalVolume", Aggregate.Type.SUM);
-            addAggregateIfInDisplay("LockedInRequestCount", Aggregate.Type.SUM);
-            addAggregateIfInDisplay("AtRepositoryCount", Aggregate.Type.SUM);
-            addAggregateIfInDisplay("VialCount", Aggregate.Type.SUM);
-            addAggregateIfInDisplay("AvailableVolume", Aggregate.Type.SUM);
-            addAggregateIfInDisplay("AvailableCount", Aggregate.Type.SUM);
+            addAggregateIfInDisplay("TotalVolume", Aggregate.BaseType.SUM);
+            addAggregateIfInDisplay("LockedInRequestCount", Aggregate.BaseType.SUM);
+            addAggregateIfInDisplay("AtRepositoryCount", Aggregate.BaseType.SUM);
+            addAggregateIfInDisplay("VialCount", Aggregate.BaseType.SUM);
+            addAggregateIfInDisplay("AvailableVolume", Aggregate.BaseType.SUM);
+            addAggregateIfInDisplay("AvailableCount", Aggregate.BaseType.SUM);
         }
     }
 

@@ -19,12 +19,14 @@ package org.labkey.query;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
+import org.labkey.api.analytics.SummaryStatisticRegistry;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
@@ -381,7 +383,10 @@ public class CustomViewXmlReader
             if (column == null || type == null)
                 continue;
 
-            Aggregate map = new Aggregate(FieldKey.fromString(column), Aggregate.Type.getValueOf(type));
+            SummaryStatisticRegistry registry = ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
+            Aggregate.Type aggType = registry != null ? registry.getByName(type) : null;
+
+            Aggregate map = new Aggregate(FieldKey.fromString(column), aggType);
             if(aggregate.getLabel() != null)
                 map.setLabel(aggregate.getLabel());
 

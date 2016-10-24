@@ -377,7 +377,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
 
                 for (Aggregate agg : fas.getAggregates())
                 {
-                    AggregateEnumType.Enum aggEnum = AggregateEnumType.Enum.forString(agg.getType().name());
+                    AggregateEnumType.Enum aggEnum = AggregateEnumType.Enum.forString(agg.getType().getName());
                     if (aggEnum != null)
                     {
                         AggregateType aggXml = aggsXml.addNewAggregate();

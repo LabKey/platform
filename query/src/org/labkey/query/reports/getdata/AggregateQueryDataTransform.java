@@ -182,7 +182,7 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         public void testAggregatesWithNoGroupBy()
         {
             AggregateQueryDataTransform transform = new AggregateQueryDataTransform(new DummyQueryDataSource(),
-                    new SimpleFilter(), Collections.singletonList(new Aggregate(FieldKey.fromParts("Agg1"), Aggregate.Type.MAX)), Collections.emptyList(),
+                    new SimpleFilter(), Collections.singletonList(new Aggregate(FieldKey.fromParts("Agg1"), Aggregate.BaseType.MAX)), Collections.emptyList(),
                     null);
 
             assertEqualsIgnoreWhitespace("SELECT MAX(\"Agg1\") AS \"MAXAgg1\" FROM ( mySchema.myTable ) A", transform.getLabKeySQL());
@@ -192,13 +192,13 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         public void testGroupBy()
         {
             AggregateQueryDataTransform transform = new AggregateQueryDataTransform(new DummyQueryDataSource(),
-                    new SimpleFilter(), Collections.singletonList(new Aggregate(FieldKey.fromParts("Agg1"), Aggregate.Type.MAX)), Arrays.asList(FieldKey.fromParts("Group1", "Child1"), FieldKey.fromParts("Group2")),
+                    new SimpleFilter(), Collections.singletonList(new Aggregate(FieldKey.fromParts("Agg1"), Aggregate.BaseType.MAX)), Arrays.asList(FieldKey.fromParts("Group1", "Child1"), FieldKey.fromParts("Group2")),
                     null);
 
             assertEqualsIgnoreWhitespace("SELECT A.\"Group1\".\"Child1\", A.\"Group2\", MAX(\"Agg1\") AS \"MAXAgg1\" FROM ( mySchema.myTable ) A GROUP BY A.\"Group1\".\"Child1\", A.\"Group2\"", transform.getLabKeySQL());
 
             transform = new AggregateQueryDataTransform(new DummyQueryDataSource(),
-                    new SimpleFilter(), Collections.singletonList(new Aggregate(FieldKey.fromParts("Agg1"), Aggregate.Type.MAX, "MyAggLabel")), Arrays.asList(FieldKey.fromParts("Group1", "Child1"), FieldKey.fromParts("Group2")),
+                    new SimpleFilter(), Collections.singletonList(new Aggregate(FieldKey.fromParts("Agg1"), Aggregate.BaseType.MAX, "MyAggLabel")), Arrays.asList(FieldKey.fromParts("Group1", "Child1"), FieldKey.fromParts("Group2")),
                     null);
 
             assertEqualsIgnoreWhitespace("SELECT A.\"Group1\".\"Child1\", A.\"Group2\", MAX(\"Agg1\") AS \"MyAggLabel\" FROM ( mySchema.myTable ) A GROUP BY A.\"Group1\".\"Child1\", A.\"Group2\"", transform.getLabKeySQL());

@@ -367,7 +367,8 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
             if (aggregate && column instanceof VisualizationAggregateColumn)
             {
                 VisualizationAggregateColumn agg = (VisualizationAggregateColumn) column;
-                sql.append(agg.getAggregate().getSQLFunctionName()).append("(");
+                if (agg.getAggregate().getSQLFunctionName(null) != null)
+                    sql.append(agg.getAggregate().getSQLFunctionName(null)).append("(");
             }
 
             if (aliasInsteadOfName)

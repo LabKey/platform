@@ -227,7 +227,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
             ((ContainerFilterable)table).setContainerFilter(ContainerFilter.getContainerFilterByName(_config.getSourceContainerFilter(), _context.getUser()));
         }
 
-        Aggregate max = new Aggregate(tsCol, Aggregate.Type.MAX);
+        Aggregate max = new Aggregate(tsCol, Aggregate.BaseType.MAX);
 
         TableSelector ts = new TableSelector(table, Collections.singleton(tsCol), findMaxTsFilter, null);
         Map<String, List<Aggregate.Result>> results;

@@ -27,6 +27,7 @@ import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.analytics.AnalyticsProviderRegistry;
+import org.labkey.api.analytics.SummaryStatisticRegistry;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientApiAuditProvider;
@@ -166,6 +167,7 @@ import org.labkey.core.admin.writer.SecurityGroupWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsProviderRegistryImpl;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
+import org.labkey.core.analytics.SummaryStatisticRegistryImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.authentication.ldap.LdapAuthenticationProvider;
 import org.labkey.core.authentication.ldap.LdapController;
@@ -307,6 +309,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AnalyticsServiceImpl.register();
         ServiceRegistry.get().registerService(SiteValidationService.class, new SiteValidationServiceImpl());
         ServiceRegistry.get().registerService(AnalyticsProviderRegistry.class, new AnalyticsProviderRegistryImpl());
+        ServiceRegistry.get().registerService(SummaryStatisticRegistry.class, new SummaryStatisticRegistryImpl());
 
         WebdavService.get().setResolver(ModuleStaticResolverImpl.get());
 
