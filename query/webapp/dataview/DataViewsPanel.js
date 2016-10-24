@@ -346,7 +346,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         // Due to an error in ExtJS tree panel implementation, you cannot call tree store.removeAll()
         if (fullStoreRoot) {
-            viewStore.setRootNode(fullStoreRoot.copy());
+            // Set preventLoad to true to avoid error when the tree store attempts to auto-expand
+            // the root node upon set.
+            viewStore.setRootNode(fullStoreRoot.copy(), true /* preventLoad */);
         }
         else if (!viewStore.getRootNode()) {
             viewStore.setRootNode({
