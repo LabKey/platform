@@ -17,6 +17,7 @@ package org.labkey.api.writer;
 
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.XmlBeansUtil;
 
 import java.io.BufferedInputStream;
@@ -56,7 +57,7 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     public PrintWriter getPrintWriter(String path) throws IOException
     {
         StringWriter writer = new StringWriter();
-        _textDocMap.put(path, writer);
+        _textDocMap.put(makeLegalName(path), writer);
 
         return new PrintWriter(writer);
     }
@@ -65,7 +66,7 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     public OutputStream getOutputStream(String filename) throws IOException
     {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        _byteDocMap.put(filename, os);
+        _byteDocMap.put(makeLegalName(filename), os);
 
         return new BufferedOutputStream(os);
     }
@@ -73,18 +74,18 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     @Override
     public InputStream getInputStream(String filename) throws IOException
     {
-        XmlObject doc = _docMap.get(filename);
+        XmlObject doc = _docMap.get(makeLegalName(filename));
         if (doc != null)
             return doc.newInputStream(XmlBeansUtil.getDefaultSaveOptions());
 
-        StringWriter writer = _textDocMap.get(filename);
+        StringWriter writer = _textDocMap.get(makeLegalName(filename));
         if (writer != null)
         {
             String contents = writer.getBuffer().toString();
-            return new BufferedInputStream(new ByteArrayInputStream(contents.getBytes()));
+            return new BufferedInputStream(new ByteArrayInputStream(contents.getBytes(StringUtilsLabKey.DEFAULT_CHARSET)));
         }
 
-        ByteArrayOutputStream os = _byteDocMap.get(filename);
+        ByteArrayOutputStream os = _byteDocMap.get(makeLegalName(filename));
         if (os != null)
         {
             return new BufferedInputStream(new ByteArrayInputStream(os.toByteArray()));
@@ -96,7 +97,7 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     @Override
     public void saveXmlBean(String filename, XmlObject doc) throws IOException
     {
-        _docMap.put(filename, doc);    // TODO: Shouldn't this validate before saving?  That would match the other VF impls
+        _docMap.put(makeLegalName(filename), doc);    // TODO: Shouldn't this validate before saving?  That would match the other VF impls
     }
 
     @Override
@@ -108,11 +109,12 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     @Override
     public VirtualFile getDir(String path)
     {
-        if (!_folders.containsKey(path))
+        String newPath = makeLegalName(path);
+        if (!_folders.containsKey(newPath))
         {
-            _folders.put(path, new MemoryVirtualFile(path));
+            _folders.put(newPath, new MemoryVirtualFile(newPath));
         }
-        return _folders.get(path);
+        return _folders.get(newPath);
     }
 
     @Override
@@ -129,19 +131,19 @@ public class MemoryVirtualFile extends AbstractVirtualFile
 
     public XmlObject getDoc(String filename)
     {
-        return _docMap.get(filename);
+        return _docMap.get(makeLegalName(filename));
     }
 
     @Override
     public XmlObject getXmlBean(String filename) throws IOException
     {
-        return _docMap.get(filename);
+        return _docMap.get(makeLegalName(filename));
     }
 
     @Override
     public String getRelativePath(String filename)
     {
-        return _root + File.separator + filename;
+        return _root + File.separator + makeLegalName(filename);
     }
 
     @Override
@@ -165,9 +167,9 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     @Override
     public boolean delete(String filename)
     {
-        if (_docMap.containsKey(filename))
+        if (_docMap.containsKey(makeLegalName(filename)))
         {
-            _docMap.remove(filename);
+            _docMap.remove(makeLegalName(filename));
             return true;
         }
         return false;
