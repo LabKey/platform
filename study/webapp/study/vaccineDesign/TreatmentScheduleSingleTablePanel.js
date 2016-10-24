@@ -91,6 +91,16 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
                         cmp.getEl().dom.title = cmp.value; //tooltip
 
                     cmp.getEl().on('click', function(){
+                        if (me.productRoles == null || me.productRoles.length == 0) {
+                            Ext4.Msg.show({
+                                title: 'Error',
+                                msg: 'No study products have been defined.',
+                                icon: Ext4.Msg.ERROR,
+                                buttons: Ext4.Msg.OK
+                            });
+                            return;
+                        }
+
                         var win;
                         var popupConfig = {
                             productRoles: me.productRoles,
