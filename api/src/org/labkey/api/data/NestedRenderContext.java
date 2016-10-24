@@ -81,9 +81,9 @@ public class NestedRenderContext extends RenderContext
         }
     }
 
-    public SimpleFilter buildFilter(TableInfo tinfo, ActionURL url, String name, int maxRows, long offset, Sort sort)
+    public SimpleFilter buildFilter(TableInfo tinfo, List<ColumnInfo> displayColumns, ActionURL url, String name, int maxRows, long offset, Sort sort)
     {
-        SimpleFilter result = super.buildFilter(tinfo, url, name, maxRows, offset, sort);
+        SimpleFilter result = super.buildFilter(tinfo, displayColumns, url, name, maxRows, offset, sort);
         if (_nestingOption != null && (maxRows > 0 || offset > 0))
         {
             // We have to apply pagination as a subquery, since we want to paginate based
