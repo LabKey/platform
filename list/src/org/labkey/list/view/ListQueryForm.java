@@ -26,7 +26,13 @@ import org.labkey.list.model.ListQuerySchema;
 
 public class ListQueryForm extends QueryForm
 {
-    private ListDefinition _def;
+    /** Prefer the list referenced by a constructor argument */
+    private ListDefinition _primaryDef;
+    /**
+     * Fall back on those resolved via reflection calls to setters. Useful because when referenced via LABKEY.WebPart
+     * JS API, might have a separate "name" parameter on the URL.
+     */
+    private ListDefinition _reflectionBoundDef;
 
     public ListQueryForm()
     {
@@ -37,28 +43,28 @@ public class ListQueryForm extends QueryForm
     {
         this();
         setViewContext(context);
-        _def = getListDef(listId);
+        _primaryDef = getListDef(listId);
     }
 
     public ListQueryForm(String listName, ViewContext context)
     {
         this();
         setViewContext(context);
-        setName(listName);
+        _primaryDef = ListService.get().getList(getContainer(), listName);
     }
 
     // Set by spring binding reflection
     @SuppressWarnings({"UnusedDeclaration"})
     public void setListId(int listId)
     {
-        _def = getListDef(listId);
+        _reflectionBoundDef = getListDef(listId);
     }
 
     // Set by spring binding reflection
     @SuppressWarnings({"UnusedDeclaration"})
     public void setName(String name)
     {
-        _def = ListService.get().getList(getContainer(), name);
+        _reflectionBoundDef = ListService.get().getList(getContainer(), name);
     }
 
     private ListDefinition getListDef(int listId)
@@ -69,12 +75,16 @@ public class ListQueryForm extends QueryForm
     protected QuerySettings createQuerySettings(UserSchema schema)
     {
         QuerySettings ret = super.createQuerySettings(schema);
-        ret.setQueryName(_def.getName());
+        ListDefinition list = getList();
+        if (list != null)
+        {
+            ret.setQueryName(list.getName());
+        }
         return ret;
     }
 
     public ListDefinition getList()
     {
-        return _def;
+        return _primaryDef == null ? _reflectionBoundDef : _primaryDef;
     }
 }
