@@ -576,6 +576,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         return defaultValue;
     }
 
+    @Nullable
     public ColumnInfo getDisplayField()
     {
         if (displayField != null)
@@ -593,6 +594,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         }
     }
 
+    @Nullable
     public List<ColumnInfo> getSortFields()
     {
         if (getParentTable() == null)

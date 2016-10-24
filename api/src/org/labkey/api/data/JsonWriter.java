@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -39,15 +40,13 @@ import java.util.Map;
  */
 public class JsonWriter
 {
-    public static Map<FieldKey, Map<String,Object>> getNativeColProps(TableInfo tinfo, Collection<FieldKey> fields, FieldKey fieldKeyPrefix, boolean includeDomainFormat)
+    public static Map<FieldKey, Map<String,Object>> getNativeColProps(TableInfo tableInfo, Collection<FieldKey> fields, FieldKey fieldKeyPrefix, boolean includeDomainFormat)
     {
-        List<ColumnInfo> columns = new ArrayList<>(tinfo.getColumns());
-        LinkedHashMap<FieldKey, ColumnInfo> allColumns = QueryService.get().getColumns(tinfo, fields, columns);
-        List<DisplayColumn> displayColumns = new ArrayList<>();
-        for (ColumnInfo cinfo : allColumns.values())
-        {
-            displayColumns.add(cinfo.getDisplayColumnFactory().createRenderer(cinfo));
-        }
+        List<DisplayColumn> displayColumns = QueryService.get().getColumns(tableInfo, fields, tableInfo.getColumns())
+                .values()
+                .stream()
+                .map(cinfo -> cinfo.getDisplayColumnFactory().createRenderer(cinfo))
+                .collect(Collectors.toList());
 
         return getNativeColProps(displayColumns, fieldKeyPrefix, includeDomainFormat);
     }
@@ -55,17 +54,16 @@ public class JsonWriter
     public static Map<FieldKey, Map<String,Object>> getNativeColProps(Collection<DisplayColumn> columns, FieldKey fieldKeyPrefix, boolean includeDomainFormat)
     {
         Map<FieldKey, Map<String,Object>> colProps = new LinkedHashMap<>();
-        for (DisplayColumn column : columns)
+        for (DisplayColumn displayColumn : columns)
         {
-            Map<String, Object> metadata = JsonWriter.getMetaData(column, fieldKeyPrefix, true, true, includeDomainFormat);
-            ColumnInfo cinfo = column.getColumnInfo();
             FieldKey fieldKey;
+            ColumnInfo cinfo = displayColumn.getColumnInfo();
             if (cinfo != null && null != cinfo.getFieldKey())
                 fieldKey = FieldKey.fromParts(fieldKeyPrefix, cinfo.getFieldKey());
             else
-                fieldKey = new FieldKey(fieldKeyPrefix, column.getName());
+                fieldKey = new FieldKey(fieldKeyPrefix, displayColumn.getName());
 
-            colProps.put(fieldKey, metadata);
+            colProps.put(fieldKey, JsonWriter.getMetaData(displayColumn, fieldKeyPrefix, true, true, includeDomainFormat));
         }
         return colProps;
     }
@@ -151,6 +149,7 @@ public class JsonWriter
         props.put("defaultScale", cinfo != null ? cinfo.getDefaultScale().name() : DefaultScaleType.LINEAR.name());
         props.put("protected", cinfo != null && cinfo.isProtected());
         props.put("excludeFromShifting", cinfo != null && cinfo.isExcludeFromShifting());
+        props.put("sortable", dc.isSortable());
 
         props.put("conceptURI", cinfo == null ? null : cinfo.getConceptURI());
         props.put("rangeURI", cinfo == null ? null : cinfo.getRangeURI());
@@ -161,10 +160,7 @@ public class JsonWriter
         {
             props.put("displayField", displayField.getFieldKey().toString());
             props.put("displayFieldSqlType", displayField.getSqlTypeName());
-            DisplayColumn renderer = displayField.getRenderer();
-            props.put("displayFieldJsonType", renderer.getJsonTypeName());
-            //String displayFriendlyTypeName = displayField == null ? ColumnInfo.getFriendlyTypeName(renderer.getDisplayValueClass()) : displayField.getFriendlyTypeName();
-            //props.put("displayFieldType", displayFriendlyTypeName);
+            props.put("displayFieldJsonType", displayField.getRenderer().getJsonTypeName());
         }
 
         if (cinfo != null)
@@ -273,7 +269,8 @@ public class JsonWriter
 
         return props;
     }
-    
+
+    @Nullable
     public static JSONObject getLookupInfo(ColumnInfo columnInfo, boolean includeDomainFormat)
     {
         ForeignKey fk = columnInfo.getFk();

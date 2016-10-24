@@ -901,9 +901,7 @@ public abstract class DisplayColumn extends RenderColumn
     
     public String getCaption(RenderContext ctx, boolean htmlEncode)
     {
-        if(!htmlEncode)
-            return _caption == null ? getName() : _caption.eval(ctx);
-        else
+        if (htmlEncode)
         {
             StringWriter writer = new StringWriter();
             try
@@ -916,6 +914,8 @@ public abstract class DisplayColumn extends RenderColumn
             }
             return writer.toString();
         }
+
+        return _caption == null ? getName() : _caption.eval(ctx);
     }
 
 
