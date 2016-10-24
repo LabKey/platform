@@ -469,10 +469,10 @@ public class Aggregate
                 else
                     Collections.addAll(values, (String[]) val.getValue());
 
-                for(String s : values)
+                for (String s : values)
                 {
                     Aggregate a = decodeAggregate(fieldKey, s);
-                    if(a != null)
+                    if (a != null)
                         aggregates.add(a);
                 }
             }
@@ -504,6 +504,8 @@ public class Aggregate
 
             SummaryStatisticRegistry registry = ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
             Aggregate.Type type = registry != null ? registry.getByName(properties.get("type")) : null;
+            if (type == null)
+                throw new IllegalArgumentException("Invalid aggregate type: '" + properties.get("type") + "'.");
 
             String label = null;
             if (properties.containsKey("label"))
@@ -513,7 +515,7 @@ public class Aggregate
         }
         catch (IllegalArgumentException e)
         {
-            throw new IllegalArgumentException("'" + value + "' is not a valid aggregate type.");
+            throw new IllegalArgumentException("Invalid aggregate type: '" + value + "'.");
         }
     }
 

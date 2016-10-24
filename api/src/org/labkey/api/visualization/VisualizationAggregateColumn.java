@@ -37,6 +37,9 @@ public class VisualizationAggregateColumn extends VisualizationSourceColumn
 
         SummaryStatisticRegistry registry = ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
         _aggregate = registry != null ? registry.getByName(aggregate) : null;
+
+        if (_aggregate == null)
+            throw new IllegalArgumentException("Invalid aggregate type: '" + aggregate + "'.");
     }
 
     public Aggregate.Type getAggregate()
