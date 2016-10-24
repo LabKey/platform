@@ -516,6 +516,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
     {
         this.attachCellEditors(view);
         this.attachAddRowListeners(view);
+        this.doLayout();
         this.fireRenderCompleteTask.delay(250);
     },
 
