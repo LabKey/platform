@@ -1050,7 +1050,12 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             if (assayResultTable != null)
             {
                 columns = new LinkedHashMap<>(columns);
-                columns.putAll(assayResultTable.getExtendedColumns(includeHidden));
+                Map<FieldKey, ColumnInfo> assayColumns = assayResultTable.getExtendedColumns(includeHidden);
+                // Add the assay column but only if it's not already on the dataset side, see issue 27787
+                for (Map.Entry<FieldKey, ColumnInfo> entry : assayColumns.entrySet())
+                {
+                    columns.putIfAbsent(entry.getKey(), entry.getValue());
+                }
             }
         }
 
