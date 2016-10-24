@@ -385,12 +385,14 @@ public class CustomViewXmlReader
 
             SummaryStatisticRegistry registry = ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
             Aggregate.Type aggType = registry != null ? registry.getByName(type) : null;
+            if (aggType != null)
+            {
+                Aggregate map = new Aggregate(FieldKey.fromString(column), aggType);
+                if (aggregate.getLabel() != null)
+                    map.setLabel(aggregate.getLabel());
 
-            Aggregate map = new Aggregate(FieldKey.fromString(column), aggType);
-            if(aggregate.getLabel() != null)
-                map.setLabel(aggregate.getLabel());
-
-            ret.add(map);
+                ret.add(map);
+            }
         }
         return ret;
     }
