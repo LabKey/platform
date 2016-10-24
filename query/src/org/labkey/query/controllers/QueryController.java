@@ -2259,7 +2259,7 @@ public class QueryController extends SpringActionController
                 ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
             }
 
-            return true;
+            return !errors.hasErrors();
         }
 
         public ActionURL getSuccessURL(QueryForm form)
