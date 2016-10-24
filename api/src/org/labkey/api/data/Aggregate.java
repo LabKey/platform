@@ -20,9 +20,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.analytics.SummaryStatisticRegistry;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -48,7 +50,63 @@ public class Aggregate
     public static String STAR = "*";
     private static FieldKey STAR_FIELDKEY = FieldKey.fromParts(STAR);
 
-    public enum Type
+    public interface Type
+    {
+        String getName();
+        String getFullLabel();
+        String getDisplayValue();
+
+        default String getAliasName()
+        {
+            return getSQLFunctionName(null);
+        }
+
+        default String getSQLFunctionName(@Nullable SqlDialect dialect)
+        {
+            return getName();
+        }
+
+        /**
+         * Get the generated SQL for calculating this aggregate value based on a TableInfo column.
+         * @param dialect SQL dialect for the running server
+         * @param columnName The name of the column to use in the SQL select
+         * @param asName The alias to use in the SQL select
+         * @param jdbcType The column type
+         * @param distinct Boolean indicating if this SQL should use 'DISTINCT' in the generated query
+         * @return String generated SQL
+         */
+        default String getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct)
+        {
+            if (jdbcType != null && !isLegal(jdbcType))
+                return null;
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(getSQLFunctionName(dialect)).append("(");
+            if (distinct)
+                sb.append("DISTINCT ");
+            sb.append(dialect.getColumnSelectName(columnName));
+            sb.append(") AS ").append(asName);
+            return sb.toString();
+        }
+
+        /**
+         * Return true if the jdbcType is a valid input type to this aggregate function.
+         * @param jdbcType input type.
+         * @return true if valid type.
+         */
+        default boolean isLegal(JdbcType jdbcType)
+        {
+            return returnType(jdbcType) != null;
+        }
+
+        /**
+         * Get the return type of the aggregate function for the given
+         * JdbcType or null if the type is not applicable (e.g. SUM of a date column).
+         */
+        JdbcType returnType(JdbcType jdbcType);
+    }
+
+    public enum BaseType implements Type
     {
         SUM("Sum")
                 {
@@ -72,19 +130,32 @@ public class Aggregate
         MEAN("Mean")
                 {
                     @Override
-                    public String getSQLFunctionName()
+                    public String getSQLFunctionName(@Nullable SqlDialect dialect)
                     {
                         return "AVG";
                     }
 
                     @Override
-                    public String getColumnSelect(String columnName, @Nullable JdbcType jdbcType)
+                    public String getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct)
                     {
+                        if (jdbcType != null && !isLegal(jdbcType))
+                            return null;
+
                         // special case for casting INTEGER to FLOAT
                         if (jdbcType != null && jdbcType.equals(JdbcType.INTEGER))
-                            return "CAST(" + columnName + " AS FLOAT)";
-
-                        return super.getColumnSelect(columnName, jdbcType);
+                        {
+                            StringBuilder sb = new StringBuilder();
+                            sb.append(getSQLFunctionName(dialect)).append("(");
+                            if (distinct)
+                                sb.append("DISTINCT ");
+                            sb.append("CAST(" + dialect.getColumnSelectName(columnName) + " AS FLOAT)");
+                            sb.append(") AS ").append(asName);
+                            return sb.toString();
+                        }
+                        else
+                        {
+                            return super.getSQLColumnFragment(dialect, columnName, asName, jdbcType, distinct);
+                        }
                     }
 
                     @Override
@@ -112,7 +183,7 @@ public class Aggregate
                         return JdbcType.BIGINT;
                     }
                 },
-        MIN("Minimum")
+        MIN("Minimum", "Min")
                 {
                     @Override
                     public JdbcType returnType(JdbcType jdbcType)
@@ -123,7 +194,7 @@ public class Aggregate
                         return null;
                     }
                 },
-        MAX("Maximum")
+        MAX("Maximum", "Max")
                 {
                     @Override
                     public JdbcType returnType(JdbcType jdbcType)
@@ -135,64 +206,33 @@ public class Aggregate
                     }
                 };
 
-        private String _friendlyName;
+        private String _fullLabel;
+        private String _displayValue;
 
-        private Type(String friendlyName)
+        BaseType(String fullLabel)
         {
-            _friendlyName = friendlyName;
+            this(fullLabel, fullLabel);
         }
 
-        public String getSQLFunctionName()
+        BaseType(String fullLabel, String displayValue)
         {
-            return name();
+            _fullLabel = fullLabel;
+            _displayValue = displayValue;
         }
 
-        public String getColumnSelect(String columnName, @Nullable JdbcType jdbcType)
+        public String getName()
         {
-            return columnName;
+            return  name();
         }
 
-        public String getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct)
+        public String getFullLabel()
         {
-            if (jdbcType != null && !isLegal(jdbcType))
-                return null;
-
-            StringBuilder sb = new StringBuilder();
-            sb.append(getSQLFunctionName()).append("(");
-            if (distinct)
-                sb.append("DISTINCT ");
-            sb.append(getColumnSelect(dialect.getColumnSelectName(columnName), jdbcType));
-            sb.append(") AS ").append(asName);
-            return sb.toString();
+            return _fullLabel;
         }
 
-        public String getFriendlyName()
+        public String getDisplayValue()
         {
-            return _friendlyName;
-        }
-
-        /**
-         * Return true if the jdbcType is a valid input type to this aggregate function.
-         * @param jdbcType input type.
-         * @return true if valid type.
-         */
-        public boolean isLegal(JdbcType jdbcType)
-        {
-            return returnType(jdbcType) != null;
-        }
-
-        /**
-         * Get the return type of the aggregate function for the given
-         * JdbcType or null if the type is not applicable (e.g. SUM of a date column).
-         */
-        public abstract JdbcType returnType(JdbcType jdbcType);
-
-        public static Type getValueOf(String type)
-        {
-            // backwards compatibility for mapping AVG -> MEAN
-            String propType = "AVG".equalsIgnoreCase(type) ? Type.MEAN.name() : type;
-
-            return Aggregate.Type.valueOf(propType.toUpperCase());
+            return _displayValue;
         }
     }
 
@@ -268,14 +308,14 @@ public class Aggregate
     {
         Aggregate agg = new Aggregate();
         agg._fieldKey = STAR_FIELDKEY;
-        agg._type = Type.COUNT;
+        agg._type = BaseType.COUNT;
         agg._distinct = false;
         return agg;
     }
 
     public boolean isCountStar()
     {
-        return _fieldKey == STAR_FIELDKEY && _type == Type.COUNT;
+        return _fieldKey == STAR_FIELDKEY && _type == BaseType.COUNT;
     }
 
     public boolean isDistinct()
@@ -285,15 +325,20 @@ public class Aggregate
 
     public String toLabKeySQL()
     {
+        String alias = _label == null ? getAggregateName(getFieldKey().toString()) : _label;
+        alias = alias.replace("\"", "\\\"");
+
+        // special case for those aggregate types that don't have a LabKey SQL function
+        if (_type.getSQLFunctionName(null) == null)
+            return _type.getSQLColumnFragment(null, getFieldKey().toSQLString(), alias, JdbcType.INTEGER, _distinct);
+
         StringBuilder sb = new StringBuilder();
-        sb.append(_type.getSQLFunctionName()).append("(");
+        sb.append(_type.getSQLFunctionName(null)).append("(");
         if (_distinct)
             sb.append("DISTINCT ");
         sb.append(getFieldKey().toSQLString());
-        String alias = _label == null ? getAggregateName(getFieldKey().toString()) : _label;
-        sb.append(") AS \"").append(alias.replace("\"", "\\\"")).append("\"");
+        sb.append(") AS \"").append(alias).append("\"");
         return sb.toString();
-
     }
 
     @Nullable
@@ -324,7 +369,7 @@ public class Aggregate
         }
         else
         {
-            return _type.getSQLFunctionName() + (_distinct ? "Distinct" : "") + alias;
+            return _type.getAliasName() + (_distinct ? "Distinct" : "") + alias;
         }
     }
 
@@ -362,7 +407,7 @@ public class Aggregate
         StringBuilder sb = new StringBuilder();
         if (isDistinct())
             sb.append("Distinct ");
-        sb.append(getType().getFriendlyName());
+        sb.append(getType().getDisplayValue());
         return sb.toString();
     }
 
@@ -457,7 +502,8 @@ public class Aggregate
                 }
             }
 
-            Aggregate.Type type = Aggregate.Type.getValueOf(properties.get("type").toUpperCase());
+            SummaryStatisticRegistry registry = ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
+            Aggregate.Type type = registry != null ? registry.getByName(properties.get("type")) : null;
 
             String label = null;
             if (properties.containsKey("label"))
@@ -474,12 +520,12 @@ public class Aggregate
     public String getValueForUrl()
     {
         if (getLabel() == null)
-            return getType().name();
+            return getType().getName();
 
         StringBuilder ret = new StringBuilder();
 
         ret.append(PageFlowUtil.encode("label=" + getLabel()));
-        ret.append(PageFlowUtil.encode("&type=" + getType().name()));
+        ret.append(PageFlowUtil.encode("&type=" + getType().getName()));
 
         return ret.toString();
     }
@@ -500,36 +546,41 @@ public class Aggregate
         @Test
         public void validAggregateTypes()
         {
-            assertAggregate(false, Type.SUM, JdbcType.DATE);
-            assertAggregate(false, Type.SUM, JdbcType.VARCHAR);
-            assertAggregate(false, Type.SUM, JdbcType.BOOLEAN);
-            assertAggregate(true,  Type.SUM, JdbcType.INTEGER);
+            assertAggregate(false, BaseType.SUM, JdbcType.DATE);
+            assertAggregate(false, BaseType.SUM, JdbcType.VARCHAR);
+            assertAggregate(false, BaseType.SUM, JdbcType.BOOLEAN);
+            assertAggregate(true,  BaseType.SUM, JdbcType.INTEGER);
+            assertAggregate(true,  BaseType.SUM, JdbcType.DOUBLE);
 
-            assertAggregate(false, Type.MEAN, JdbcType.DATE);
-            assertAggregate(false, Type.MEAN, JdbcType.VARCHAR);
-            assertAggregate(false, Type.MEAN, JdbcType.BOOLEAN);
-            assertAggregate(true,  Type.MEAN, JdbcType.INTEGER);
+            assertAggregate(false, BaseType.MEAN, JdbcType.DATE);
+            assertAggregate(false, BaseType.MEAN, JdbcType.VARCHAR);
+            assertAggregate(false, BaseType.MEAN, JdbcType.BOOLEAN);
+            assertAggregate(true,  BaseType.MEAN, JdbcType.INTEGER);
+            assertAggregate(true,  BaseType.MEAN, JdbcType.DOUBLE);
 
-            assertAggregate(true,  Type.COUNT, JdbcType.DATE);
-            assertAggregate(true,  Type.COUNT, JdbcType.VARCHAR);
-            assertAggregate(true,  Type.COUNT, JdbcType.BOOLEAN);
-            assertAggregate(true,  Type.COUNT, JdbcType.INTEGER);
+            assertAggregate(true,  BaseType.COUNT, JdbcType.DATE);
+            assertAggregate(true,  BaseType.COUNT, JdbcType.VARCHAR);
+            assertAggregate(true,  BaseType.COUNT, JdbcType.BOOLEAN);
+            assertAggregate(true,  BaseType.COUNT, JdbcType.INTEGER);
+            assertAggregate(true,  BaseType.COUNT, JdbcType.DOUBLE);
 
-            assertAggregate(true,  Type.MIN, JdbcType.DATE);
-            assertAggregate(true,  Type.MIN, JdbcType.VARCHAR);
-            assertAggregate(false, Type.MIN, JdbcType.BOOLEAN);
-            assertAggregate(true,  Type.MIN, JdbcType.INTEGER);
+            assertAggregate(true,  BaseType.MIN, JdbcType.DATE);
+            assertAggregate(true,  BaseType.MIN, JdbcType.VARCHAR);
+            assertAggregate(false, BaseType.MIN, JdbcType.BOOLEAN);
+            assertAggregate(true,  BaseType.MIN, JdbcType.INTEGER);
+            assertAggregate(true,  BaseType.MIN, JdbcType.DOUBLE);
 
-            assertAggregate(true,  Type.MAX, JdbcType.DATE);
-            assertAggregate(true,  Type.MAX, JdbcType.VARCHAR);
-            assertAggregate(false, Type.MAX, JdbcType.BOOLEAN);
-            assertAggregate(true,  Type.MAX, JdbcType.INTEGER);
+            assertAggregate(true,  BaseType.MAX, JdbcType.DATE);
+            assertAggregate(true,  BaseType.MAX, JdbcType.VARCHAR);
+            assertAggregate(false, BaseType.MAX, JdbcType.BOOLEAN);
+            assertAggregate(true,  BaseType.MAX, JdbcType.INTEGER);
+            assertAggregate(true,  BaseType.MAX, JdbcType.DOUBLE);
 
         }
 
         private void assertAggregate(boolean legal, Type type, JdbcType jdbcType)
         {
-            assertEquals("Expected " + type.getFriendlyName() + " to be " + (legal ? "legal" : "illegal") + " for JDBC type " + jdbcType.name(),
+            assertEquals("Expected " + type.getDisplayValue() + " to be " + (legal ? "legal" : "illegal") + " for JDBC type " + jdbcType.name(),
                     legal, type.isLegal(jdbcType));
         }
 

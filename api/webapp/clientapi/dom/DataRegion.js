@@ -4487,7 +4487,7 @@ LABKEY.AggregateTypes = {
     /**
      * Displays the mean of the values in the specified column
      */
-    MEAN: 'mean',
+    MEAN: 'mean', /* Alternate forms for backwards compatibility */ AVG: 'mean',
     /**
      * Displays the count of the non-blank values in the specified column
      */
@@ -4499,9 +4499,7 @@ LABKEY.AggregateTypes = {
     /**
      * Displays the minimum values from the specified column
      */
-    MAX: 'max',
-    /**
-     * Deprecated - use LABKEY.AggregateTypes.MEAN
-     */
-    AVG: 'mean'
+    MAX: 'max'
+
+    // TODO how to allow premium module additions to aggregate types?
 };

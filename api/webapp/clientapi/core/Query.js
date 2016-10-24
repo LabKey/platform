@@ -1067,44 +1067,6 @@ LABKEY.Query = new function()
         },
 
         /**
-        * Return an array of the allowable aggregates for the supplied data type.
-        * @param {Object|String} metadata Object, the column metadata. If String, the json type of data. This should match the jsonType property of LABKEY.
-        * @returns {Array} An array of strings
-        */
-
-        getAggregatesForType: function(metadata)
-        {
-            var jsonType = null, isKeyField = false, isLookup = false, isNumericType = false;
-
-            if (typeof metadata == 'object')
-            {
-                jsonType = metadata.jsonType.toLowerCase();
-                isKeyField = metadata.keyField;
-                isLookup = typeof metadata.lookup == 'object';
-            }
-            else
-            {
-                jsonType = metadata.toLowerCase();
-            }
-            isNumericType = jsonType == 'int' || jsonType == 'float';
-
-            // See matching logic for subclasses of BaseAggregatesAnalyticsProvider
-            var aggregates = [LABKEY.AggregateTypes.COUNT];
-            if (isNumericType && !isKeyField && !isLookup)
-            {
-                aggregates.push(LABKEY.AggregateTypes.SUM);
-                aggregates.push(LABKEY.AggregateTypes.MEAN);
-            }
-            if ((isNumericType && !isLookup) || jsonType == 'date')
-            {
-                aggregates.push(LABKEY.AggregateTypes.MIN);
-                aggregates.push(LABKEY.AggregateTypes.MAX);
-            }
-
-            return aggregates;
-        },
-
-        /**
          * Returns the set of schemas available in the specified container.
          * @param config An object that contains the following configuration parameters
          * @param {String} config.schemaName Get schemas under the given schemaName.

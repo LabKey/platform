@@ -1267,8 +1267,8 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
                 aggregateOptionStore.removeAll();
                 aggregateOptionStore.add(new aggregateOptionStore.recordType({value: "", name: "[None]"}));
-                Ext.each(LABKEY.Query.getAggregatesForType(metadataRecord.get('jsonType')), function(key){
-                    aggregateOptionStore.add(new aggregateOptionStore.recordType({value: key.toUpperCase(), name: key.toUpperCase()}));
+                Ext.Object.each(LABKEY.AggregateTypes, function(key, value){
+                    aggregateOptionStore.add(new aggregateOptionStore.recordType({value: value, name: key.toUpperCase()}));
                 }, this);
 
                 //columnsList

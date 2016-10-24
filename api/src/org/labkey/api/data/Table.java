@@ -1324,19 +1324,19 @@ public class Table
             assertTrue(aggregateMap.isEmpty());
 
             aggregates.add(Aggregate.createCountStar());
-            aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.COUNT));
-            aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.SUM));
-            aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.MEAN));
-            aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.MIN));
-            aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.MAX));
-            aggregates.add(new Aggregate(tinfo.getColumn("Parent"), Aggregate.Type.COUNT));
-            aggregates.add(new Aggregate(tinfo.getColumn("Parent").getFieldKey(), Aggregate.Type.COUNT, null, true));
-            aggregates.add(new Aggregate(FieldKey.fromParts("Parent", "Parent"), Aggregate.Type.COUNT));
-            aggregates.add(new Aggregate(tinfo.getColumn("SortOrder"), Aggregate.Type.SUM));
-            aggregates.add(new Aggregate(tinfo.getColumn("SortOrder").getFieldKey(), Aggregate.Type.SUM, null, true));
-            aggregates.add(new Aggregate(tinfo.getColumn(CREATED_BY_COLUMN_NAME), Aggregate.Type.COUNT));
-            aggregates.add(new Aggregate(tinfo.getColumn(CREATED_COLUMN_NAME), Aggregate.Type.MIN));
-            aggregates.add(new Aggregate(tinfo.getColumn("Name"), Aggregate.Type.MIN));
+            aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.BaseType.COUNT));
+            aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.BaseType.SUM));
+            aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.BaseType.MEAN));
+            aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.BaseType.MIN));
+            aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.BaseType.MAX));
+            aggregates.add(new Aggregate(tinfo.getColumn("Parent"), Aggregate.BaseType.COUNT));
+            aggregates.add(new Aggregate(tinfo.getColumn("Parent").getFieldKey(), Aggregate.BaseType.COUNT, null, true));
+            aggregates.add(new Aggregate(FieldKey.fromParts("Parent", "Parent"), Aggregate.BaseType.COUNT));
+            aggregates.add(new Aggregate(tinfo.getColumn("SortOrder"), Aggregate.BaseType.SUM));
+            aggregates.add(new Aggregate(tinfo.getColumn("SortOrder").getFieldKey(), Aggregate.BaseType.SUM, null, true));
+            aggregates.add(new Aggregate(tinfo.getColumn(CREATED_BY_COLUMN_NAME), Aggregate.BaseType.COUNT));
+            aggregates.add(new Aggregate(tinfo.getColumn(CREATED_COLUMN_NAME), Aggregate.BaseType.MIN));
+            aggregates.add(new Aggregate(tinfo.getColumn("Name"), Aggregate.BaseType.MIN));
 
             aggregateMap = new TableSelector(tinfo, Collections.emptyList(), null, null).getAggregates(aggregates);
 

@@ -298,7 +298,7 @@ public class UserManager
         TableInfo uat = getUserAuditSchemaTableInfo();
         FieldKey createdFk = FieldKey.fromParts("Created");
         ColumnInfo datePartCol = new ExprColumn(uat, createdFk, new SQLFragment("CAST(Created AS DATE)"), JdbcType.DATE, uat.getColumn(createdFk));
-        Aggregate countDistinctDates = new Aggregate(datePartCol.getFieldKey(), Aggregate.Type.COUNT, null, true);
+        Aggregate countDistinctDates = new Aggregate(datePartCol.getFieldKey(), Aggregate.BaseType.COUNT, null, true);
 
         TableSelector logins = getRecentLoginOrOuts(LoggedInOrOut.in, since, uat, Collections.singleton(datePartCol));
         Aggregate.Result result = logins.getAggregates(Collections.singletonList(countDistinctDates)).get(datePartCol.getName()).get(0);

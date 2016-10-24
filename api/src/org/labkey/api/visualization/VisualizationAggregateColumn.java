@@ -15,7 +15,9 @@
  */
 package org.labkey.api.visualization;
 
+import org.labkey.api.analytics.SummaryStatisticRegistry;
 import org.labkey.api.data.Aggregate;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ViewContext;
 
 /**
@@ -32,7 +34,9 @@ public class VisualizationAggregateColumn extends VisualizationSourceColumn
         String aggregate = measure.getAggregate();
         if (aggregate == null)
             aggregate = "MAX";
-        _aggregate = Aggregate.Type.getValueOf(aggregate);
+
+        SummaryStatisticRegistry registry = ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
+        _aggregate = registry != null ? registry.getByName(aggregate) : null;
     }
 
     public Aggregate.Type getAggregate()
@@ -43,6 +47,6 @@ public class VisualizationAggregateColumn extends VisualizationSourceColumn
     @Override
     public String getAlias()
     {
-        return super.getAlias() + "_" + _aggregate.name();
+        return super.getAlias() + "_" + _aggregate.getName();
     }
 }
