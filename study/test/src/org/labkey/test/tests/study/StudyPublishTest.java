@@ -966,8 +966,8 @@ public class StudyPublishTest extends StudyProtectedExportTest
             _extHelper.setExtFormElementByType(ADD_MEASURE_TITLE, "text", pair[0]);
 //            pressEnter(_extHelper.getExtDialogXPath(this, ADD_MEASURE_TITLE)+"//input[contains(@class, 'x4-form-text') and @type='text']");
             String measureXpath = _extHelper.getExtDialogXPath(ADD_MEASURE_TITLE) + "//table/tbody/tr[not(contains(@class, 'x4-grid-row-selected'))]/td[div[starts-with(text(), '"+ pair[1]+"')]]";
-            waitForElement(Locator.xpath(measureXpath), WAIT_FOR_JAVASCRIPT); // Make sure measure has appeared
-            waitForElementToDisappear(Locator.xpath("("+measureXpath+")[2]"), WAIT_FOR_JAVASCRIPT); // Wait for filter to remove any duplicates
+            waitForElement(Locator.xpath(measureXpath), WAIT_FOR_JAVASCRIPT * 2); // Make sure measure has appeared
+            waitForElementToDisappear(Locator.xpath("("+measureXpath+")[2]"), WAIT_FOR_JAVASCRIPT * 2); // Wait for filter to remove any duplicates
 
             _ext4Helper.selectGridItem("label", pair[1], -1, "measuresGridPanel", true);
         }
