@@ -19,8 +19,11 @@ package org.labkey.study.specimen.notifications;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.study.SpecimenManager;
+import org.labkey.study.controllers.specimen.ShowGroupMembersAction;
 import org.labkey.study.model.SpecimenRequestActor;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.StudyManager;
@@ -97,11 +100,12 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
 
     public String getConfigureEmailsLinkHTML()
     {
-        String configureMembersURL = "showGroupMembers.view?id=" + getActor().getRowId();
+        URLHelper url = new ActionURL(ShowGroupMembersAction.class, getActor().getContainer());
+        url.addParameter("id", Integer.toString(getActor().getRowId()));
         if (getLocation() != null)
-            configureMembersURL += "&locationId=" + getLocation().getRowId();
-        configureMembersURL += "&returnUrl=" + PageFlowUtil.encode(HttpView.currentContext().getActionURL().getLocalURIString());
-        return PageFlowUtil.textLink("Configure Addresses", configureMembersURL);
+            url.addParameter("locationId", Integer.toString(getLocation().getRowId()));
+        url.addParameter("returnUrl", HttpView.currentContext().getActionURL().getLocalURIString());
+        return PageFlowUtil.textLink("Configure Addresses", url);
     }
 
     public String getHtmlDescriptionAndLink(boolean hasEmailAddresses)
