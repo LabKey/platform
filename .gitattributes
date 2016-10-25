@@ -98,6 +98,7 @@ audit/resources/schemas/dbscripts/postgresql/obsolete/audit-0.00-12.30.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-13.30-14.10.sql -text
 audit/resources/schemas/dbscripts/sqlserver/audit-0.00-14.10.sql -text
 audit/resources/schemas/dbscripts/sqlserver/audit-16.20-16.21.sql -text
+audit/resources/schemas/dbscripts/sqlserver/audit-16.20-16.30.sql -text
 audit/resources/schemas/dbscripts/sqlserver/obsolete/audit-0.00-12.10.sql -text
 audit/resources/schemas/dbscripts/sqlserver/obsolete/audit-0.00-12.30.sql -text
 audit/resources/schemas/dbscripts/sqlserver/obsolete/audit-13.30-14.10.sql -text
@@ -268,6 +269,7 @@ core/resources/schemas/dbscripts/sqlserver/obsolete/test-14.32-14.33.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-0.00-14.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-15.30-16.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-16.20-16.21.sql -text
+core/resources/schemas/dbscripts/sqlserver/prop-16.20-16.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-16.21-16.22.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-drop.sql -text
@@ -1039,6 +1041,7 @@ issues/resources/schemas/dbscripts/sqlserver/issues-16.11-16.12.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-16.12-16.13.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-16.13-16.14.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-16.20-16.21.sql -text
+issues/resources/schemas/dbscripts/sqlserver/issues-16.20-16.30.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-16.21-16.22.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-16.22-16.23.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-16.23-16.24.sql -text
@@ -1166,6 +1169,7 @@ mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-14.31-14.3
 mothership/resources/schemas/dbscripts/sqlserver/mothership-0.00-13.30.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-14.30-15.10.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-16.20-16.21.sql -text
+mothership/resources/schemas/dbscripts/sqlserver/mothership-16.20-16.30.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/obsolete/mothership-0.00-11.30.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/obsolete/mothership-0.00-12.10.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/obsolete/mothership-0.00-13.20.sql -text
@@ -1987,6 +1991,7 @@ study/resources/schemas/dbscripts/sqlserver/study-16.10-16.20.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-16.11-16.12.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-16.12-16.13.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-16.20-16.21.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-16.20-16.30.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-16.21-16.22.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-16.22-16.23.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-16.23-16.24.sql -text
