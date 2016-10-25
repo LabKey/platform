@@ -52,16 +52,16 @@
         <input type="text" id="notificationEmail" name="notificationEmail" style="width: 100%; max-width: 40em;" value="<%=h(bean.getNotificationEmail())%>">
     </div>
 
-    <% if (!AppProps.getInstance().isDevMode()) { %>
-        <h3 style="margin-bottom: 2px;"><label for="allowReporting">Error and Usage Reporting</label></h3>
-        <div style="margin-bottom: 10px;">
-            Each installation can report information about errors and basic usage to labkey.org. This
-            helps the development team fix bugs and provides insight into LabKey Server usage.
-            No confidential data is submitted.
-            <br/>
-            <input type="checkbox" id="allowReporting" name="allowReporting"<%=checked(bean.isAllowReporting())%>> Allow reporting
-            <span style="font-size: smaller; font-style: italic;">we strongly recommend this basic level of reporting</span>
+    <h3 style="margin-bottom: 2px;"><label for="allowReporting">Error and Usage Reporting</label></h3>
+    <div style="margin-bottom: 10px;">
+        Help improve LabKey Server by reporting errors and basic usage statistics to the LabKey team. This
+        data is used by LabKey to help identify bugs and prioritize enhancements to the platform.
+        No confidential data is submitted.
+        <br/>
+        <div style="margin-top: 5px;">
+        <input type="checkbox" id="allowReporting" name="allowReporting" <%=checked(bean.isAllowReporting() && !AppProps.getInstance().isDevMode())%>> Allow Automatic Reporting
+        <span style="font-size: smaller; font-style: italic;">(we strongly recommend this basic level of reporting)</span>
         </div>
-    <% } %>
+    </div>
     <%= button("Next").submit(true) %>
 </labkey:form>
