@@ -1356,9 +1356,9 @@ public class OntologyManager
         }
     }
 
-    private static PropertyDescriptor ensurePropertyDescriptor(String propertyURI, String dataTypeURI, String name, Container container) throws SQLException
+    private static PropertyDescriptor ensurePropertyDescriptor(String propertyURI, PropertyType type, String name, Container container) throws SQLException
 	{
-        PropertyDescriptor pdNew = new PropertyDescriptor(propertyURI, dataTypeURI, name, container);
+        PropertyDescriptor pdNew = new PropertyDescriptor(propertyURI, type, name, container);
         return ensurePropertyDescriptor (pdNew);
     }
 
@@ -1749,7 +1749,7 @@ public class OntologyManager
 			{
 				if (null == pd)
 				{
-                    PropertyDescriptor pdIn = new PropertyDescriptor(property.getPropertyURI(), property.getRangeURI(), property.getName(), c);
+                    PropertyDescriptor pdIn = new PropertyDescriptor(property.getPropertyURI(), property.getPropertyType(), property.getName(), c);
                     pdIn.setFormat(property.getFormat());
                     pd = getPropertyDescriptor(pdIn.getPropertyURI(), pdIn.getContainer());
 
@@ -2985,7 +2985,7 @@ public class OntologyManager
                 String objP1Fa = new Lsid("OntologyObject", "JUnit", fa.replace('/','.')).toString();
                 ensureObject(fldr1a, objP1Fa);
                 String propP1Fa = fa + "PD1";
-                PropertyDescriptor pd1Fa = ensurePropertyDescriptor(propP1Fa, PropertyType.STRING.getTypeUri(),"PropertyDescriptor 1"+ fa, fldr1a);
+                PropertyDescriptor pd1Fa = ensurePropertyDescriptor(propP1Fa, PropertyType.STRING,"PropertyDescriptor 1"+ fa, fldr1a);
                 insertProperties(fldr1a, null, new ObjectProperty(objP1Fa, fldr1a, propP1Fa, "same fldr"));
 
                 //object in folder not moving, prop desc in folder moving
@@ -2995,12 +2995,12 @@ public class OntologyManager
 
                 //object in folder moving, prop desc in folder not moving
                 String propP2Fb = fb + "PD1";
-                ensurePropertyDescriptor(propP2Fb, PropertyType.STRING.getTypeUri(),"PropertyDescriptor 1" + fb, fldr1b);
+                ensurePropertyDescriptor(propP2Fb, PropertyType.STRING,"PropertyDescriptor 1" + fb, fldr1b);
                 insertProperties(fldr1a, null, new ObjectProperty(objP1Fa, fldr1a, propP2Fb, "object in folder moving, prop desc in folder not moving"));
 
                 // third prop desc in folder that is moving;  shares domain with first prop desc
                 String propP1Fa3 = fa + "PD3";
-                PropertyDescriptor pd1Fa3 = ensurePropertyDescriptor(propP1Fa3, PropertyType.STRING.getTypeUri(),"PropertyDescriptor 3" + fa, fldr1a);
+                PropertyDescriptor pd1Fa3 = ensurePropertyDescriptor(propP1Fa3, PropertyType.STRING,"PropertyDescriptor 3" + fa, fldr1a);
                 String domP1Fa = fa + "DD1";
                 DomainDescriptor dd1 = ensureDomainDescriptor(domP1Fa, "DomDesc 1" + fa, fldr1a);
                 ensurePropertyDomain(pd1Fa, dd1);
@@ -3009,7 +3009,7 @@ public class OntologyManager
                 //second domain desc in folder that is moving
                 // second prop desc in folder moving, belongs to 2nd domain
                 String propP1Fa2 = fa + "PD2";
-                PropertyDescriptor pd1Fa2 = ensurePropertyDescriptor(propP1Fa2, PropertyType.STRING.getTypeUri(),"PropertyDescriptor 2" + fa, fldr1a);
+                PropertyDescriptor pd1Fa2 = ensurePropertyDescriptor(propP1Fa2, PropertyType.STRING,"PropertyDescriptor 2" + fa, fldr1a);
                 String domP1Fa2 = fa +  "DD2";
                 DomainDescriptor dd2 = ensureDomainDescriptor(domP1Fa2, "DomDesc 2" + fa, fldr1a);
                 ensurePropertyDomain(pd1Fa2, dd2);
@@ -3288,7 +3288,7 @@ public class OntologyManager
             pdStr = ensurePropertyDescriptor(pdStr);
             assertNotNull(pdStr);
 
-            PropertyDescriptor pdInt = ensurePropertyDescriptor(intPropURI, PropertyType.INTEGER.getTypeUri(), "Domain1.intProp", c);
+            PropertyDescriptor pdInt = ensurePropertyDescriptor(intPropURI, PropertyType.INTEGER, "Domain1.intProp", c);
 
             ensurePropertyDomain(pdStr, dd);
             ensurePropertyDomain(pdInt, dd);

@@ -25,7 +25,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.ParameterDescription;
-import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -103,7 +102,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
 
     public PropertyDescriptor(ColumnInfo col, Container c)
     {
-        this(col.getPropertyURI(), PropertyType.getFromClass(col.getJavaClass()).getTypeUri(), col.getName(), c);
+        this(col.getPropertyURI(), PropertyType.getFromClass(col.getJavaClass()), col.getName(), c);
         setDescription(col.getDescription());
         setRequired(!col.isNullable());
         setHidden(col.isHidden());
@@ -117,26 +116,20 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
         setScale(col.getScale());
     }
 
-    public PropertyDescriptor(String propertyURI, String rangeURI, String name, Container container)
+    public PropertyDescriptor(String propertyURI, PropertyType type, String name, Container container)
     {
-        this(propertyURI, rangeURI, name, null, container);
+        this(propertyURI, type, name, null, container);
     }
 
-    public PropertyDescriptor(String propertyURI, String rangeURI, String name, String caption, Container container)
-    {
-        this(propertyURI, rangeURI, name, caption, container, PropertyType.STRING.getTypeUri().equals(rangeURI) ? PropertyStorageSpec.DEFAULT_SIZE : null);
-    }
-
-    public PropertyDescriptor(String propertyURI, String rangeURI, String name, String caption, Container container, @Nullable Integer scale)
+    public PropertyDescriptor(String propertyURI, PropertyType type, String name, String caption, Container container)
     {
         this();
         this.propertyURI = propertyURI;
-        this.rangeURI = rangeURI;
+        this.rangeURI = type.getTypeUri();
         this.name = name;
         this.label = caption;
         setContainer(container);
-        if (scale != null)
-            setScale(scale);
+        setScale(type.getScale());
     }
 
     public int getPropertyId()

@@ -82,7 +82,7 @@ public class SystemProperty
 
     protected PropertyDescriptor constructPropertyDescriptor()
     {
-        return new PropertyDescriptor(_propertyURI, _type.getTypeUri(), _name, getContainer());
+        return new PropertyDescriptor(_propertyURI, _type, _name, getContainer());
     }
 
     static public void registerProperties()

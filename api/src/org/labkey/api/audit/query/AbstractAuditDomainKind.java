@@ -334,7 +334,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind
 
         String propertyURI = generatePropertyURI(name);
 
-        PropertyDescriptor pd = new PropertyDescriptor(propertyURI, type.getTypeUri(), name, null, domainContainer, scale);
+        PropertyDescriptor pd = new PropertyDescriptor(propertyURI, type, name, null, domainContainer);
         if (caption != null)
             pd.setLabel(caption);
         if (description != null)

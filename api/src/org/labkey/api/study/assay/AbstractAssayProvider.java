@@ -445,7 +445,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         String label = name;
         if (name.contains(" "))
             name = name.replace(" ", "");
-        PropertyDescriptor pd = new PropertyDescriptor(null, type.getTypeUri(), name, label, sourceContainer);
+        PropertyDescriptor pd = new PropertyDescriptor(null, type, name, label, sourceContainer);
         if (type.getJavaType() == Double.class)
             pd.setFormat("0.###");
         return pd;

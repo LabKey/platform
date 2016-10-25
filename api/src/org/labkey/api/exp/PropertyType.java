@@ -421,7 +421,7 @@ public enum PropertyType
                  String xarName,
                  char storageType,
                  @NotNull JdbcType jdbcType,
-                 int scale,
+                 @NotNull int scale,
                  String inputType,
                  int excelCellType,
                  Class javaType,
