@@ -1301,8 +1301,11 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             // update provisioned table -- note that LSID isn't the PK so we need to use the filter to update the correct row instead
             keys = new Object[] { };
             TableInfo t = ExpDataClassDataTableImpl.this._dataClass.getTinfo();
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
-            ret.putAll(Table.update(user, t, rowStripped, keys, filter, Level.DEBUG));
+            if (t.getColumnNameSet().stream().anyMatch(rowStripped::containsKey))
+            {
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
+                ret.putAll(Table.update(user, t, rowStripped, keys, filter, Level.DEBUG));
+            }
 
             // update comment
             ExpDataImpl data = null;
