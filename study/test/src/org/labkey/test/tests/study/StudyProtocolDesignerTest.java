@@ -63,6 +63,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
     private static final String[] ROUTES = {"Intramuscular (IM)"};
     private static final String[] LABS = {"Lab 1", "McElrath", "Montefiori", "Schmitz"};
     private static final String[] SAMPLE_TYPES = {"Platelets", "Plasma"};
+    private static final String[] CHALLENGE_TYPES = {"ChallengeType01", "ChallengeType02", "ChallengeType03"};
 
     // Study design elements created by this test
     private static final String[] IMMUNOGENS = {"gp100", "Cp1", "Immunogen1"};
@@ -73,7 +74,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
     private static final String[] TREATMENTS = {"Treatment1", "Treatment2"};
     private static final String[] NEW_ASSAYS = {"Elispot", "Neutralizing Antibodies", "ICS"};
     private static final String[] NEW_COHORTS = {"TestCohort", "OtherTestCohort"};
-    private static final String[] CHALLENGES = {"Challenge1", "Challenge2"};
+    private static final String[] CHALLENGES = {"Challenge1", "Challenge2", "Challenge3"};
 
     private static List<BaseManageVaccineDesignVisitPage.Visit> VISITS = Arrays.asList(
         new BaseManageVaccineDesignVisitPage.Visit("Enrollment", 0.0, 0.0),
@@ -154,11 +155,13 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         manageStudyProductsPage.addNewAdjuvantRow(ADJUVANTS[1], 1);
 
         // add a couple of challenges.
-        manageStudyProductsPage.addNewChallengeRow(CHALLENGES[0], IMMUNOGEN_TYPES[0] + " Label", 0);
+        manageStudyProductsPage.addNewChallengeRow(CHALLENGES[0], CHALLENGE_TYPES[0], 0);
         manageStudyProductsPage.addNewChallengesDoseAndRoute(DOSE_AND_UNITS[0], ROUTES[0], 0, 0);
         manageStudyProductsPage.addNewChallengesDoseAndRoute(DOSE_AND_UNITS[1], ROUTES[0], 0, 1);
-        manageStudyProductsPage.addNewChallengeRow(CHALLENGES[1], IMMUNOGEN_TYPES[1] + " Label", 1);
+        manageStudyProductsPage.addNewChallengeRow(CHALLENGES[1], CHALLENGE_TYPES[1], 1);
         manageStudyProductsPage.addNewChallengesDoseAndRoute(DOSE_AND_UNITS[2], null, 1, 0);
+        manageStudyProductsPage.addNewChallengeRow(CHALLENGES[2], CHALLENGE_TYPES[2], 2);
+        manageStudyProductsPage.addNewChallengesDoseAndRoute(DOSE_AND_UNITS[1], ROUTES[0], 2, 0);
 
         manageStudyProductsPage.save();
 
@@ -189,12 +192,14 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         treatmentsPage.addNewTreatmentImmunogenRow(IMMUNOGENS[0], DOSE_AND_UNITS[0], ROUTES[0], 0, 0);
         treatmentsPage.addNewTreatmentImmunogenRow(IMMUNOGENS[1], DOSE_AND_UNITS[1], ROUTES[0], 0, 1);
         treatmentsPage.addNewTreatmentAdjuvantRow(ADJUVANTS[0], DOSE_AND_UNITS[2], null, 0, 0);
+        treatmentsPage.addNewChallengesRow(CHALLENGES[0], DOSE_AND_UNITS[0], ROUTES[0], 0, 0);
 
         // add the second treatment and define the study products for it
         treatmentsPage.addNewTreatmentRow(TREATMENTS[1], TREATMENTS[1] + " Description", 1);
         treatmentsPage.addNewTreatmentImmunogenRow(IMMUNOGENS[2], DOSE_AND_UNITS[1], null, 1, 0);
         treatmentsPage.addNewTreatmentAdjuvantRow(ADJUVANTS[1], null, null, 1, 0);
-
+        treatmentsPage.addNewChallengesRow(CHALLENGES[1], DOSE_AND_UNITS[2], null, 1, 0);
+        treatmentsPage.addNewChallengesRow(CHALLENGES[2], DOSE_AND_UNITS[1], ROUTES[0], 1, 1);
         // add all existing visits as columns to the cohort grid
         treatmentsPage.addAllExistingVisitColumns();
 
@@ -361,12 +366,12 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         VaccineDesignWebpart vaccineDesignWebpart = new VaccineDesignWebpart(getDriver());
         assertFalse(vaccineDesignWebpart.isEmpty());
 
-        assertEquals("Unexpected number of challenges rows", 2, vaccineDesignWebpart.getChallengesRowCount());
+        assertEquals("Unexpected number of challenges rows", CHALLENGES.length, vaccineDesignWebpart.getChallengesRowCount());
 
         for (int i = 0; i < CHALLENGES.length; i++)
         {
             assertEquals("Unexpected challenge label at row " + i, CHALLENGES[i], vaccineDesignWebpart.getChallengeCellDisplayValue("Label", i));
-            assertEquals("Unexpected challenge type at row " + i, IMMUNOGEN_TYPES[i] + " Label", vaccineDesignWebpart.getChallengeCellDisplayValue("Type", i));
+            assertEquals("Unexpected challenge type at row " + i, CHALLENGE_TYPES[i] + " Label", vaccineDesignWebpart.getChallengeCellDisplayValue("Type", i));
         }
     }
 
