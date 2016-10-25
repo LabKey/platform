@@ -42,7 +42,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
         Ext4.each(this.productRoles, function(role){
             var checkedProducts = this.treatmentDetails ? this.treatmentDetails[role] : [];
             productRolesItems[role] = [];
-            var values = this.getProductAndDoseRouteValues(role);
+            var values = this.getProductAndDoseRouteValues(role, checkedProducts);
             Ext4.each(values, function(val){
                 var checked = false;
                 Ext4.each(checkedProducts, function(product){
@@ -87,7 +87,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
         return columns;
     },
 
-    getProductAndDoseRouteValues : function(productRole)
+    getProductAndDoseRouteValues : function(productRole, checkedProducts)
     {
         var data = [];
 
@@ -114,6 +114,18 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
                 productDose.Label = product.get('Label');
                 productDose.ProductDoseRoute = product.get('RowId') + '-#-';
                 data.push(productDose);
+            }
+            else {
+                //Issue 28273: No products selected in Treatment dialog for single table manage treatment page if product does not have dose/route selected
+                Ext4.each(checkedProducts, function(checked){
+                    if (checked.ProductId == product.get('RowId') && !checked.DoseAndRoute && !checked.Dose && !checked.Route)
+                    {
+                        var productDose = Ext4.clone(checked);
+                        productDose.ProductLabel = checked['ProductId/Label'];
+                        productDose.Label = checked['ProductId/Label'];
+                        data.push(productDose);
+                    }
+                });
             }
         }, this);
 
