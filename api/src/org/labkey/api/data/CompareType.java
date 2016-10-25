@@ -707,7 +707,7 @@ public abstract class CompareType
         }
 
         @Override
-        protected void appendFilterText(StringBuilder sb, SimpleFilter.ColumnNameFormatter formatter)
+        protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             sb.append("Search for \"");
             sb.append(getParamVals()[0]);
@@ -728,27 +728,35 @@ public abstract class CompareType
                 boolean hasResult = false;
                 SQLFragment sql = new SQLFragment();
                 String sep = "";
+                final String escapedValue = escapeLabKeySqlValue(getParamVals()[0], JdbcType.VARCHAR, true /* suppressQuotes */);
 
-                for (ColumnInfo column : _selectColumns)
+                if (escapedValue.length() > 0)
                 {
-                    if (column != null)
+                    for (ColumnInfo column : _selectColumns)
                     {
-                        // Should the iterator generating "_selectColumns" do the unwrapping?
-                        ColumnInfo targetColumn = column.getDisplayField();
-
-                        if (targetColumn == null)
-                            targetColumn = column;
-
-                        if (targetColumn.isStringType())
+                        if (column != null)
                         {
-                            hasResult = true;
-                            sql.append(sep);
-                            sep = " OR ";
+                            ColumnInfo targetColumn = column.getDisplayField();
 
-                            sql.append(dialect.getColumnSelectName(targetColumn.getAlias()));
-                            sql.append(" LIKE '%");
-                            sql.append(escapeLabKeySqlValue(getParamVals()[0], JdbcType.VARCHAR, true /* suppressQuotes */));
-                            sql.append("%'");
+                            if (targetColumn == null)
+                                targetColumn = column;
+
+                            if (columnMap.containsKey(targetColumn.getFieldKey()))
+                            {
+                                ColumnInfo mappedColumn = columnMap.get(targetColumn.getFieldKey());
+
+                                if (mappedColumn != null)
+                                {
+                                    hasResult = true;
+                                    sql.append(sep);
+                                    sep = " OR ";
+
+                                    sql.append(dialect.getColumnSelectName(mappedColumn.getAlias()));
+                                    sql.append(" ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ");
+                                    sql.append("'%").append(LikeClause.escapeLikePattern(escapedValue)).append("%'");
+                                    sql.append(LikeClause.sqlEscape());
+                                }
+                            }
                         }
                     }
                 }
@@ -1530,7 +1538,7 @@ public abstract class CompareType
             _unescapedValue = Objects.toString(value, "");
         }
 
-        static private String escapeLikePattern(String value)
+        public static String escapeLikePattern(String value)
         {
             String strEscape = new String(new char[] { escapeChar } );
             value = StringUtils.replace(value, strEscape, strEscape + strEscape);
@@ -1544,7 +1552,7 @@ public abstract class CompareType
             return value;
         }
 
-        protected String sqlEscape()
+        public static String sqlEscape()
         {
             assert escapeChar != '\'';
             return " ESCAPE '" + escapeChar + "'";
