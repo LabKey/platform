@@ -1386,6 +1386,48 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return statements;
     }
 
+    // There are cases where property scale was not saved properly. When updating these with accurate scale we cannot
+    // determine how the previous indexes were created since the scale was null.  This function will basically try to
+    // delete large and small column indexes for the particular index.
+    private void bestEffortDropIndexStatements(List<String> statements, TableChange change, PropertyStorageSpec.Index index)
+    {
+        String nameIndex = nameIndex(change.getTableName(), index.columnNames, false);
+        String nameIndexLegacy = nameIndex(change.getTableName(), index.columnNames, true);
+
+        statements.add(String.format("IF EXISTS (SELECT 1 FROM sys.indexes i WHERE i.name = '%s') DROP INDEX %s ON %s",
+                nameIndex,
+                nameIndex,
+                makeTableIdentifier(change)
+        ));
+        // Issue 26311: We add to drop statements to capture indexes named with legacy truncation limit as well as new, longer truncation limit
+        statements.add(String.format("IF EXISTS (SELECT 1 FROM sys.indexes i WHERE i.name = '%s') DROP INDEX %s ON %s",
+                nameIndexLegacy,
+                nameIndexLegacy,
+                makeTableIdentifier(change)
+        ));
+
+        final String columnName = index.columnNames[0];
+        final String hashedColumn = makeLegalIdentifier("_hashed_" + columnName);
+        final String tableName = makeTableIdentifier(change);
+
+        statements.add(String.format("IF EXISTS (SELECT 1 FROM sys.triggers i WHERE i.name = '%s') DROP TRIGGER %s.%s",
+                nameTrigger(change.getTableName(), new String[]{columnName}),
+                change.getSchemaName(),
+                nameTrigger(change.getTableName(), new String[]{columnName})));
+
+        statements.add(String.format("IF EXISTS (SELECT 1 FROM sys.indexes i WHERE i.name = '%s') DROP INDEX %s ON %s",
+                nameIndex(change.getTableName(), index.columnNames, false),
+                nameIndex(change.getTableName(), index.columnNames, false),
+                tableName
+        ));
+
+        statements.add(String.format("IF EXISTS (SELECT 1 FROM sys.columns i WHERE i.name = '%s' AND i.object_id = OBJECT_ID(N'%s')) ALTER TABLE %s DROP COLUMN %s",
+                hashedColumn,
+                tableName,
+                tableName,
+                hashedColumn));
+    }
+
     private void addDropIndexStatements(List<String> statements, TableChange change)
     {
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
@@ -1422,24 +1464,28 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             else
             {
                 if (index.columnNames.length > 1)
-                    throw new IllegalArgumentException("Large indexes currently only supported for a single string column");
+                {
+                    bestEffortDropIndexStatements(statements, change, index);
+                }
+                else
+                {
+                    final String columnName = index.columnNames[0];
+                    final String hashedColumn = makeLegalIdentifier("_hashed_" + columnName);
+                    final String tableName = makeTableIdentifier(change);
 
-                final String columnName = index.columnNames[0];
-                final String hashedColumn = makeLegalIdentifier("_hashed_" + columnName);
-                final String tableName = makeTableIdentifier(change);
+                    statements.add(String.format("DROP TRIGGER %s.%s",
+                            change.getSchemaName(),
+                            nameTrigger(change.getTableName(), new String[]{columnName})));
 
-                statements.add(String.format("DROP TRIGGER %s.%s",
-                        change.getSchemaName(),
-                        nameTrigger(change.getTableName(), new String[] { columnName })));
+                    statements.add(String.format("DROP INDEX %s ON %s",
+                            nameIndex(change.getTableName(), index.columnNames, false),
+                            tableName
+                    ));
 
-                statements.add(String.format("DROP INDEX %s ON %s",
-                        nameIndex(change.getTableName(), index.columnNames, false),
-                        tableName
-                ));
-
-                statements.add(String.format("ALTER TABLE %s DROP COLUMN %s",
-                        tableName,
-                        hashedColumn));
+                    statements.add(String.format("ALTER TABLE %s DROP COLUMN %s",
+                            tableName,
+                            hashedColumn));
+                }
             }
         }
     }

@@ -1570,7 +1570,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                     String name = col.getName();
                     PropertyType type = PropertyType.getFromClass(col.getJdbcType().getJavaClass());
                     PropertyDescriptor pd = new PropertyDescriptor(
-                            propertyURI, type.getTypeUri(), name, ContainerManager.getSharedContainer());
+                            propertyURI, type, name, ContainerManager.getSharedContainer());
                     standardPropertySet.add(pd);
                 }
             }

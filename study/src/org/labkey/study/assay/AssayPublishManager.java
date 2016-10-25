@@ -162,7 +162,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             PropertyType type = types.get(pdName);
             String typeURI = type.getTypeUri();
             PropertyDescriptor pd = new PropertyDescriptor(null,
-                    typeURI, pdName, targetContainer);
+                    type, pdName, targetContainer);
             if (type.getJavaType() == Double.class)
                 pd.setFormat("0.###");
             propertyDescriptors.add(pd);
