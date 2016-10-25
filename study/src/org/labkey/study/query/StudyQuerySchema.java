@@ -291,6 +291,7 @@ public class StudyQuerySchema extends UserSchema
             // Always add StudyProperties and study designer lookup tables, even if we have no study
             names.add(PROPERTIES_TABLE_NAME);
             names.add(STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
+            names.add(STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME);
             names.add(STUDY_DESIGN_GENES_TABLE_NAME);
             names.add(STUDY_DESIGN_ROUTES_TABLE_NAME);
             names.add(STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
@@ -1169,6 +1170,7 @@ public class StudyQuerySchema extends UserSchema
     static
     {
         _dataspaceProjectLevelTables.add(STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME);
         _dataspaceProjectLevelTables.add(STUDY_DESIGN_GENES_TABLE_NAME);
         _dataspaceProjectLevelTables.add(STUDY_DESIGN_ROUTES_TABLE_NAME);
         _dataspaceProjectLevelTables.add(STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
@@ -1363,6 +1365,7 @@ public class StudyQuerySchema extends UserSchema
                 // Always add StudyProperties and study designer lookup tables, even if we have no study
                 names.add(PROPERTIES_TABLE_NAME);
                 names.add(STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
+                names.add(STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME);
                 names.add(STUDY_DESIGN_GENES_TABLE_NAME);
                 names.add(STUDY_DESIGN_ROUTES_TABLE_NAME);
                 names.add(STUDY_DESIGN_SUB_TYPES_TABLE_NAME);

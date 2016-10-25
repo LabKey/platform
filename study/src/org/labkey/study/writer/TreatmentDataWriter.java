@@ -85,6 +85,7 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
         designTableNames.add(StudyQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME);
         designTableNames.add(StudyQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME);
         designTableNames.add(StudyQuerySchema.STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
+        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME);
         designTableNames.add(StudyQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
 
         writeTableData(ctx, vf, designTableNames, schema, projectSchema, containerFilter);
