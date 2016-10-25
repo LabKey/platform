@@ -44,8 +44,7 @@ public class NotificationMenuView extends JspView<Object>
 
     public NotificationMenuView()
     {
-        // NOTE: this .jsp is in the core module so that jsp recompile works
-        super("/org/labkey/core/notification/notificationpanel.jsp", null);
+        super(NotificationMenuView.class, "notificationpanel.jsp", null);
         setFrame(FrameType.NONE);
     }
 

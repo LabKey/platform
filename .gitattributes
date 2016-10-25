@@ -779,6 +779,7 @@ api/src/org/labkey/api/notification/EmailPref.java -text
 api/src/org/labkey/api/notification/EmailPrefFilter.java -text
 api/src/org/labkey/api/notification/EmailService.java -text
 api/src/org/labkey/api/notification/NotificationMenuView.java -text
+api/src/org/labkey/api/notification/notificationpanel.jsp -text
 api/src/org/labkey/api/pipeline/AbstractRemoteExecutionEngineConfig.java -text
 api/src/org/labkey/api/pipeline/AbstractTaskFactory.java -text
 api/src/org/labkey/api/pipeline/AbstractTaskFactorySettings.java -text
