@@ -146,6 +146,8 @@
                 }, 200);
             };
 
+            var folderTemplateWriters = null;
+
             var panel = Ext4.create('Ext.form.Panel', {
                 renderTo: 'createFormDiv',
                 border: false,
@@ -443,7 +445,28 @@
 
                     scrollToBottom();
                 },
+                getFolderTemplateWriters : function() {
+                    LABKEY.Ajax.request({
+                        url: LABKEY.ActionURL.buildURL("core", "getRegisteredFolderWriters"),
+                        method: 'POST',
+                        jsonData: {forTemplate: true},
+                        scope: this,
+                        success: function (response)
+                        {
+                            var responseText = Ext4.decode(response.responseText);
+                            folderTemplateWriters = responseText.writers;
+                            this.renderTemplateInfo();
+                        }
+                    });
+                },
                 renderTemplateInfo : function() {
+                    // initialize the set of folder template writers the first time only
+                    if (folderTemplateWriters == null)
+                    {
+                        this.getFolderTemplateWriters();
+                        return;
+                    }
+
                     var target = this.down('#additionalTypeInfo');
                     target.add([
                         {
@@ -470,13 +493,57 @@
                         },{
                             xtype: 'panel',
                             border: false,
-                            items: function(){
-                                Ext4.each(folderTemplateWriters, function(writer){
-                                    if (hasLoaded)
-                                        writer.checked = selectedTemplateWriters && selectedTemplateWriters.indexOf(writer.itemId) > -1;
+                            items: function()
+                            {
+                                var folderWriterConfigs = [];
+
+                                Ext4.each(folderTemplateWriters, function(writer)
+                                {
+                                    var hasChildren = Ext4.isArray(writer.children) && writer.children.length > 0;
+
+                                    var writerConfig = {
+                                        xtype: "checkbox",
+                                        name: "templateWriterTypes",
+                                        hideLabel: true,
+                                        boxLabel: writer.name,
+                                        itemId: writer.name,
+                                        inputValue: writer.name,
+                                        checked: !hasLoaded ? writer.selectedByDefault : (selectedTemplateWriters.indexOf(writer.name) > -1),
+                                        objectType: hasChildren ? "parent" : null
+                                    };
+
+                                    if (hasChildren)
+                                    {
+                                        writerConfig.listeners = {
+                                            change: function(cb, checked)
+                                            {
+                                                var childCbs = cb.up('panel').queryBy(function(childCb){ return childCb.parentId == cb.itemId; });
+                                                Ext4.each(childCbs, function(childCb){ childCb.setValue(checked); });
+                                            }
+                                        }
+                                    }
+
+                                    folderWriterConfigs.push(writerConfig);
+
+                                    if (hasChildren)
+                                    {
+                                        Ext4.each(writer.children, function(childWriterName)
+                                        {
+                                            folderWriterConfigs.push({
+                                                xtype: "checkbox",
+                                                name: "templateWriterTypes",
+                                                hidden: true,
+                                                hideLabel: true,
+                                                boxLabel: childWriterName,
+                                                inputValue: childWriterName,
+                                                checked: writerConfig.checked,
+                                                parentId: writer.name
+                                            });
+                                        });
+                                    }
                                 }, this);
 
-                                return folderTemplateWriters;
+                                return folderWriterConfigs;
                             }()
                         },{
                             html: 'Options:',
@@ -486,7 +553,8 @@
                             hideLabel: true,
                             boxLabel: 'Include Subfolders',
                             name: 'templateIncludeSubfolders',
-                            itemId: 'templateIncludeSubfolders'
+                            itemId: 'templateIncludeSubfolders',
+                            checked: <%=form.getTemplateIncludeSubfolders()%>
                         }
                     ]);
 
@@ -543,35 +611,5 @@
         };
 
         request.send(onSuccess);
-
-        var folderTemplateWriters = [];
-        <%
-            // TODO: see exportFolder.jsp, this should be converted to use core/getRegisteredFolderWriters API
-            Collection<FolderWriter> writers = new LinkedList<>(FolderSerializationRegistryImpl.get().getRegisteredFolderWriters());
-            for (FolderWriter writer : writers)
-            {
-                String parent = writer.getDataType();
-                if (null != parent && writer.supportsVirtualFile())
-                {
-                    %>folderTemplateWriters.push({xtype: "checkbox", hideLabel: true, boxLabel: "<%=parent%>", name: "templateWriterTypes", itemId: "<%=parent%>", inputValue: "<%=parent%>", checked: true, objectType: "parent"});<%
-
-                    Collection<Writer> children = writer.getChildren(true);
-                    if (null != children && children.size() > 0)
-                    {
-                        for (Writer child : children)
-                        {
-                            if (null != child.getDataType())
-                            {
-                                String text = child.getDataType();
-                                %>
-                                folderTemplateWriters.push({xtype: "checkbox", style: {marginLeft: "20px"}, hideLabel: true, boxLabel: "<%=text%>", name: "templateWriterTypes", itemId: "<%=text%>",
-                                    inputValue: "<%=text%>", checked: true, objectType: "child", parentId: "<%=parent%>"});
-                                <%
-                            }
-                        }
-                    }
-                }
-            }
-        %>
     });
 </script>

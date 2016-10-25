@@ -117,7 +117,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public boolean supportsVirtualFile()
+        public boolean includeWithTemplate()
         {
             return false;
         }

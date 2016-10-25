@@ -26,4 +26,8 @@ import org.labkey.study.model.StudyImpl;
 */
 public interface InternalStudyWriter extends Writer<StudyImpl, StudyExportContext>
 {
+    default boolean includeWithTemplate()
+    {
+        return true;
+    }
 }

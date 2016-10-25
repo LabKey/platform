@@ -1759,14 +1759,14 @@ public class CoreController extends SpringActionController
                 Map<String, Object> writerMap = new HashMap<>();
                 String dataType = writer.getDataType();
                 boolean excludeForDataspace = getContainer().isDataspace() && "Study".equals(dataType);
+                boolean excludeForTemplate = form.isForTemplate() && !writer.includeWithTemplate();
 
-                if (dataType != null && writer.show(getContainer()) && !excludeForDataspace)
+                if (dataType != null && writer.show(getContainer()) && !excludeForDataspace && !excludeForTemplate)
                 {
                     writerMap.put("name", dataType);
                     writerMap.put("selectedByDefault", writer.selectedByDefault(form.getExportType()));
-                    writerMap.put("supportsVirtualFile", writer.supportsVirtualFile());
 
-                    Collection<Writer> childWriters = writer.getChildren(true);
+                    Collection<Writer> childWriters = writer.getChildren(true, form.isForTemplate());
                     if (childWriters != null && childWriters.size() > 0)
                     {
                         List<String> children = new ArrayList<>();
@@ -1794,6 +1794,7 @@ public class CoreController extends SpringActionController
     public static class FolderWriterForm
     {
         private String _exportType;
+        private boolean _forTemplate;
 
         public AbstractFolderContext.ExportType getExportType()
         {
@@ -1806,6 +1807,16 @@ public class CoreController extends SpringActionController
         public void setExportType(String exportType)
         {
             _exportType = exportType;
+        }
+
+        public boolean isForTemplate()
+        {
+            return _forTemplate;
+        }
+
+        public void setForTemplate(boolean forTemplate)
+        {
+            _forTemplate = forTemplate;
         }
     }
 

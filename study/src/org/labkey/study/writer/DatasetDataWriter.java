@@ -145,6 +145,11 @@ public class DatasetDataWriter implements InternalStudyWriter
         }
     }
 
+    @Override
+    public boolean includeWithTemplate()
+    {
+        return false;
+    }
 
     private void writeResultsToTSV(Results rs, VirtualFile vf, String fileName) throws SQLException, IOException
     {

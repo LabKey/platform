@@ -35,10 +35,6 @@ import java.util.Comparator;
 import java.util.LinkedList;
 
 
-/**
- * User: cnathe
- * Date: Apr 11, 2012
- */
 public class StudyWriterFactory implements FolderWriterFactory
 {
     private static final String DEFAULT_DIRECTORY = "study";
@@ -119,11 +115,15 @@ public class StudyWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public Collection<Writer> getChildren(boolean sort)
+        public Collection<Writer> getChildren(boolean sort, boolean forTemplate)
         {
             LinkedList<Writer> children = new LinkedList<>();
             Collection<InternalStudyWriter> writers = StudySerializationRegistryImpl.get().getInternalStudyWriters();
-            children.addAll(writers);
+            for (InternalStudyWriter writer : writers)
+            {
+                if (!forTemplate || writer.includeWithTemplate())
+                    children.add(writer);
+            }
 
             if (sort)
             {
@@ -147,9 +147,9 @@ public class StudyWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public boolean supportsVirtualFile()
+        public boolean includeWithTemplate()
         {
-            return false;  // Not sure why...
+            return false; // TODO remove this override in 17.1.1
         }
     }
 }

@@ -113,6 +113,12 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
         specimensDir.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
     }
 
+    @Override
+    public boolean includeWithTemplate()
+    {
+        return false;
+    }
+
     private static class SpecimenTableInfoWriter extends TableInfoWriter
     {
         private final Map<String, DomainProperty> _properties = new CaseInsensitiveHashMap<>();

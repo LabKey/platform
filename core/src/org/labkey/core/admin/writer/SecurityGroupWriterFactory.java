@@ -84,5 +84,11 @@ public class SecurityGroupWriterFactory implements FolderWriterFactory
         {
             return container.isProject();
         }
+
+        @Override
+        public boolean includeWithTemplate()
+        {
+            return false;
+        }
     }
 }

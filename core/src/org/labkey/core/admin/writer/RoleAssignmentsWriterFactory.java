@@ -115,5 +115,11 @@ public class RoleAssignmentsWriterFactory implements FolderWriterFactory
         {
             return false;
         }
+
+        @Override
+        public boolean includeWithTemplate()
+        {
+            return false;
+        }
     }
 }
