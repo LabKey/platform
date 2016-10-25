@@ -741,7 +741,7 @@ public abstract class CompareType
                             if (targetColumn == null)
                                 targetColumn = column;
 
-                            if (columnMap.containsKey(targetColumn.getFieldKey()))
+                            if (targetColumn.isStringType() && columnMap.containsKey(targetColumn.getFieldKey()))
                             {
                                 ColumnInfo mappedColumn = columnMap.get(targetColumn.getFieldKey());
 
