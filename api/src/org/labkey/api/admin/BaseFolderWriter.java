@@ -41,7 +41,7 @@ public class BaseFolderWriter implements FolderWriter
     }
 
     @Override
-    public Collection<Writer> getChildren(boolean sort)
+    public Collection<Writer> getChildren(boolean sort, boolean forTemplate)
     {
         return null;
     }
@@ -57,7 +57,7 @@ public class BaseFolderWriter implements FolderWriter
     {}
 
     @Override
-    public boolean supportsVirtualFile()
+    public boolean includeWithTemplate()
     {
         return true;
     }

@@ -29,11 +29,9 @@ import java.util.Collection;
  */
 public interface FolderWriter extends Writer<Container, ImportContext<FolderDocument.Folder>>
 {
-    @Nullable Collection<Writer> getChildren(boolean sort);
+    @Nullable Collection<Writer> getChildren(boolean sort, boolean forTemplate);
     boolean show(Container c);
     boolean selectedByDefault(AbstractFolderContext.ExportType type);
     void initialize(ImportContext<FolderDocument.Folder> context);
-
-    /* temporary setting until all importers support using VirtualFile */
-    boolean supportsVirtualFile();
+    boolean includeWithTemplate();
 }
