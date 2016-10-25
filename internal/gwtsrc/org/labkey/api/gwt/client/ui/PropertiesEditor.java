@@ -257,7 +257,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             {
                 final ImportSchemaWizard popup = new ImportSchemaWizard(PropertiesEditor.this);
                 popup.setText("Import Fields");
-                popup.center();
+                popup.show();
+                WindowUtil.centerDialog(popup);
             }
         };
 
@@ -267,7 +268,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             {
                 final ExportSchemaWizard popup = new ExportSchemaWizard(PropertiesEditor.this);
                 popup.setText("Export Fields");
-                popup.center();
+                popup.show();
+                WindowUtil.centerDialog(popup);
             }
         };
 
@@ -277,7 +279,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             {
                 final InferSchemaWizard popup = new InferSchemaWizard(PropertiesEditor.this);
                 popup.setText("Infer Fields from File");
-                popup.center();
+                popup.show();
+                WindowUtil.centerDialog(popup);
             }
         };
 
