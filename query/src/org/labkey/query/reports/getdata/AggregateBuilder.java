@@ -15,8 +15,10 @@
  */
 package org.labkey.query.reports.getdata;
 
+import org.labkey.api.analytics.SummaryStatisticRegistry;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.services.ServiceRegistry;
 
 /**
  * JSON deserialization target, responsible for creating the Aggregate object understood by Query.,
@@ -27,7 +29,7 @@ import org.labkey.api.query.FieldKey;
 public class AggregateBuilder
 {
     private FieldKey _fieldKey;
-    private Aggregate.Type _type;
+    private String _type;
     private String _label;
     private boolean _distinct = false;
 
@@ -36,7 +38,7 @@ public class AggregateBuilder
         _fieldKey = FieldKey.fromParts(fieldKey);
     }
 
-    public void setType(Aggregate.Type type)
+    public void setType(String type)
     {
         _type = type;
     }
@@ -53,6 +55,12 @@ public class AggregateBuilder
 
     public Aggregate create()
     {
-        return new Aggregate(_fieldKey, _type, _label, _distinct);
+        // lookup the Aggregate.Type from the String value
+        SummaryStatisticRegistry registry = ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
+        Aggregate.Type type = registry != null ? registry.getByName(_type) : null;
+        if (type == null)
+            throw new IllegalArgumentException("Invalid aggregate type: '" + _type + "'.");
+
+        return new Aggregate(_fieldKey, type, _label, _distinct);
     }
 }
