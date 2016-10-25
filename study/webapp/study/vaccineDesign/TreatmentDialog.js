@@ -52,7 +52,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
                     }
                 });
                 productRolesItems[role].push({
-                    boxLabel: val.Label,
+                    boxLabel: Ext4.util.Format.htmlEncode(val.Label),
                     name: role,
                     inputValue: val.ProductDoseRoute,
                     productLabel: val.ProductLabel,
