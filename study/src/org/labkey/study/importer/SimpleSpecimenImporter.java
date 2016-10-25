@@ -263,7 +263,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
 
         try
         {
-            super.process(sifMap, merge, logger, null, true);
+            super.process(sifMap, merge, logger, null, true, false);
         }
         catch (ValidationException ex)
         {

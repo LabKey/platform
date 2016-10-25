@@ -1296,10 +1296,11 @@ public class SpecimenImporter
     {
         Map<SpecimenTableType, SpecimenImportFile> sifMap = populateFileMap(specimensDir, new HashMap<>());
 
-        process(sifMap, merge, logger, job, syncParticipantVisit);
+        process(sifMap, merge, logger, job, syncParticipantVisit, false);
     }
 
-    protected void process(Map<SpecimenTableType, SpecimenImportFile> sifMap, boolean merge, Logger logger, @Nullable PipelineJob job, boolean syncParticipantVisit)
+    protected void process(Map<SpecimenTableType, SpecimenImportFile> sifMap, boolean merge, Logger logger, @Nullable PipelineJob job,
+                           boolean syncParticipantVisit, boolean editingSpecimens)
             throws IOException, ValidationException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
@@ -1359,7 +1360,7 @@ public class SpecimenImporter
             }
 
             // No need to setPhase() here... method sets timer phases immediately
-            updateCalculatedSpecimenData(merge);
+            updateCalculatedSpecimenData(merge, editingSpecimens);
 
             setStatus(GENERAL_JOB_STATUS_MSG + " (update study)");
             _iTimer.setPhase(ImportPhases.ResyncStudy);
@@ -1719,7 +1720,7 @@ public class SpecimenImporter
     private static final int CURRENT_SITE_UPDATE_LOGGING_SIZE = 10000;   // Can choose to log at a less frequent rate than the update batch size
 
     // UNDONE: add vials in-clause to only update data for rows that changed
-    private void updateCalculatedSpecimenData(final boolean merge)
+    private void updateCalculatedSpecimenData(final boolean merge, final boolean editingSpecimens)
     {
         setStatus(GENERAL_JOB_STATUS_MSG + " (update)");
         _iTimer.setPhase(ImportPhases.PrepareQcComments);
@@ -2015,7 +2016,7 @@ public class SpecimenImporter
         _iTimer.setPhase(ImportPhases.UpdateRequestability);
         try
         {
-            RequestabilityManager.getInstance().updateRequestability(_container, _user, false, _logger);
+            RequestabilityManager.getInstance().updateRequestability(_container, _user, false, editingSpecimens, _logger);
         }
         catch (RequestabilityManager.InvalidRuleException e)
         {

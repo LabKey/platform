@@ -812,9 +812,9 @@ public class RequestabilityManager
         updateRequestability(container, user, true, null, vials);
     }
 
-    public void updateRequestability(Container container, User user, boolean resetToAvailable, Logger logger) throws InvalidRuleException
+    public void updateRequestability(Container container, User user, boolean resetToAvailable, boolean editingSpecimens, Logger logger) throws InvalidRuleException
     {
-        updateRequestability(container, user, resetToAvailable, logger, null);
+        updateRequestability(container, user, (resetToAvailable || editingSpecimens), logger, null);
     }
 
     public static String makeSpecimenUnavailableMessage(Vial vial, @Nullable String additionalText)
