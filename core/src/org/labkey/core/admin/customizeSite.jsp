@@ -194,7 +194,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label" valign="top">Check for updates and report usage statistics to the LabKey team.
-        Usage data helps the LabKey team improve the LabKey Server platform.
+        Usage data helps LabKey improve the LabKey Server platform. All data is transmitted securely over SSL.
     </td>
     <td>
     <table>
@@ -218,7 +218,7 @@ Click the Save button at any time to accept the current settings and continue.</
     </td>
 </tr>
 <tr>
-    <td class="labkey-form-label" valign="top"><label for="administratorContactEmail">Site administrator to use for Medium level reporting</label></td>
+    <td class="labkey-form-label" valign="top"><label for="administratorContactEmail">Site administrator to use for medium level reporting</label></td>
     <td>
         <select name="administratorContactEmail" id="administratorContactEmail">
         <% List<Pair<Integer, String>> members = org.labkey.api.security.SecurityManager.getGroupMemberNamesAndIds("Administrators");
