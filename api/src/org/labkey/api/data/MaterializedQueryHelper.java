@@ -18,6 +18,9 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.labkey.api.test.TestWhen.When.BVT;
 
@@ -83,6 +86,9 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             return eldest.getValue().created + maxTimeToCache < HeartBeat.currentTimeMillis();
         }
     };
+    // DEBUG variables
+    int countGetFromSql = 0;
+    int countSelectInto = 0;
 
     boolean closed = false;
 
@@ -143,13 +149,14 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     }
 
 
-    public synchronized SQLFragment getMaterializedTable(Container c)
+    public synchronized SQLFragment getFromSql(String tableAlias, Container c)
     {
         if (closed)
             throw new IllegalStateException();
         if (null != c)
             throw new UnsupportedOperationException();
 
+        this.countGetFromSql++;
         final long now = HeartBeat.currentTimeMillis();
         final String txCacheKey = makeKey(scope.getCurrentTransaction(), c);
         Materialized materialized = null;
@@ -175,9 +182,10 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
         if (null == materialized)
         {
+            this.countSelectInto++;
             DbSchema temp = DbSchema.getTemp();
             String name = "mat_" + GUID.makeHash();
-            materialized = new Materialized(txCacheKey, now, uptodateKey, "SELECT * FROM \"" + temp.getName() + "\".\"" + name + "\"");
+            materialized = new Materialized(txCacheKey, now, uptodateKey, "\"" + temp.getName() + "\".\"" + name + "\"");
             TempTableTracker.track(name, materialized);
 
             SQLFragment selectInto = new SQLFragment("SELECT * INTO \"" + temp.getName() + "\".\"" + name + "\"\nFROM (\n");
@@ -198,6 +206,8 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         }
 
         SQLFragment sqlf = new SQLFragment(materialized.fromSql);
+        if (!StringUtils.isBlank(tableAlias))
+            sqlf.append(" " ).append(tableAlias);
         sqlf.addTempToken(materialized);
         return sqlf;
     }
@@ -229,7 +239,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         }
 
         @Test
-        public void test()
+        public void testSimple()
         {
             DbSchema temp = DbSchema.getTemp();
             DbScope s = temp.getScope();
@@ -237,13 +247,81 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             SQLFragment uptodate = new SQLFragment("SELECT COALESCE(CAST(SUM(x) AS VARCHAR(40)),'-') FROM temp.MQH_TESTCASE");
             try (MaterializedQueryHelper  mqh = MaterializedQueryHelper.create(s,select,uptodate,null,CacheManager.UNLIMITED))
             {
-                SQLFragment emptyA = mqh.getMaterializedTable(null);
-                SQLFragment emptyB = mqh.getMaterializedTable(null);
+                SQLFragment emptyA = mqh.getFromSql("_", null);
+                SQLFragment emptyB = mqh.getFromSql("_", null);
                 assertEquals(emptyA,emptyB);
                 new SqlExecutor(temp).execute("INSERT INTO temp.MQH_TESTCASE (x) VALUES (1)");
-                SQLFragment one = mqh.getMaterializedTable(null);
+                SQLFragment one = mqh.getFromSql("_", null);
                 assertNotEquals(emptyA, one);
             }
+        }
+
+        @Test
+        public void testThreads() throws Exception
+        {
+            final AtomicReference<Exception> error = new AtomicReference<>();
+            final AtomicInteger queries = new AtomicInteger();
+            final long stop = System.currentTimeMillis() + 5000;
+            final Random r = new Random();
+
+            DbSchema temp = DbSchema.getTemp();
+            DbScope s = temp.getScope();
+            SQLFragment select = new SQLFragment("SELECT x, x*x as y FROM temp.MQH_TESTCASE");
+            SQLFragment uptodate = new SQLFragment("SELECT COALESCE(CAST(SUM(x) AS VARCHAR(40)),'-') FROM temp.MQH_TESTCASE");
+            try (final MaterializedQueryHelper  mqh = MaterializedQueryHelper.create(s,select,uptodate,null,CacheManager.UNLIMITED))
+            {
+                Runnable inserter = () ->
+                {
+                    try
+                    {
+                        while (System.currentTimeMillis() < stop)
+                        {
+                            new SqlExecutor(temp).execute("INSERT INTO temp.MQH_TESTCASE (x) VALUES (" + r.nextInt()%1000 + ")");
+                            queries.incrementAndGet();
+                            try { Thread.sleep(100); } catch (InterruptedException x) {/* */}
+                        }
+                    }
+                    catch (Exception x)
+                    {
+                        error.set(x);
+                    }
+                };
+                Runnable reader = () ->
+                {
+                    try
+                    {
+                        while (System.currentTimeMillis() < stop)
+                        {
+                            new SqlSelector(temp, new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_", null))).getMapCollection();
+                            queries.incrementAndGet();
+                        }
+                    }
+                    catch (Exception x)
+                    {
+                        error.set(x);
+                    }
+                };
+
+                List<Thread> list = new ArrayList<>();
+                _run(list, inserter);
+                for (int i=1 ; i<3 ; i++)
+                    _run(list, reader);
+                _join(list);
+                Exception x = error.get();
+                if (null != x)
+                    throw x;
+            }
+        }
+
+        private void _run(List<Thread> list, Runnable r)
+        {
+            Thread t = new Thread(r);
+            list.add(t);
+            t.start();
+        }
+        private void _join(List<Thread> list)
+        {
+            list.forEach((t) -> {try{t.join();}catch(InterruptedException x){/* */}});
         }
     }
 }
