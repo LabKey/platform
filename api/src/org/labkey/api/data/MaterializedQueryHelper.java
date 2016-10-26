@@ -11,14 +11,17 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.JobRunner;
 import org.springframework.dao.DataAccessException;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -54,7 +57,12 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
      */
     public static MaterializedQueryHelper create(DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Collection<String> indexes, long maxTimeToCache)
     {
-        return new MaterializedQueryHelper(scope, select, uptodate, indexes, maxTimeToCache, false);
+        return new MaterializedQueryHelper(null, scope, select, uptodate, indexes, maxTimeToCache, false);
+    }
+
+    public static MaterializedQueryHelper create(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Collection<String> indexes, long maxTimeToCache)
+    {
+        return new MaterializedQueryHelper(prefix, scope, select, uptodate, indexes, maxTimeToCache, false);
     }
 
 
@@ -70,6 +78,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         return (null == t ? "-" : t.getId()) + "/" + (null==c ? "-" : c.getRowId());
     }
 
+    final String prefix;
     final DbScope scope;
     final SQLFragment selectQuery;
     final SQLFragment uptodateQuery;
@@ -92,8 +101,9 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
     boolean closed = false;
 
-    private MaterializedQueryHelper(DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, @Nullable Collection<String> indexes, long maxTimeToCache, boolean perContainer)
+    private MaterializedQueryHelper(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, @Nullable Collection<String> indexes, long maxTimeToCache, boolean perContainer)
     {
+        this.prefix = StringUtils.defaultString(prefix,"mat");
         this.scope = scope;
         this.selectQuery = select;
         this.uptodateQuery = uptodate;
@@ -137,6 +147,36 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         map.remove(txCacheKey);
         if (scope.isTransactionActive())
             scope.getCurrentTransaction().addCommitTask(() -> map.remove(makeKey(null,c)));
+    }
+
+
+    Set<Integer> pending = null;
+
+    /** call uncache() first to force reload */
+    public synchronized void cacheInBackground(final Container c)
+    {
+        if (closed)
+            throw new IllegalStateException();
+        if (null != c)
+            throw new UnsupportedOperationException();
+
+        if (pending == null)
+            pending = new HashSet<>();
+        if (!pending.add(null==c ? 0 : c.getRowId()))
+            return;
+        JobRunner.getDefault().execute(() ->
+        {
+            _runCacheInBackground(c);
+        });
+    }
+
+
+    private synchronized void _runCacheInBackground(Container c)
+    {
+        pending.remove(null==c ? 0 : c.getRowId());
+        if (pending.isEmpty())
+            pending = null;
+        getFromSql(null, c);
     }
 
 
@@ -184,7 +224,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         {
             this.countSelectInto++;
             DbSchema temp = DbSchema.getTemp();
-            String name = "mat_" + GUID.makeHash();
+            String name = prefix + "_" + GUID.makeHash();
             materialized = new Materialized(txCacheKey, now, uptodateKey, "\"" + temp.getName() + "\".\"" + name + "\"");
             TempTableTracker.track(name, materialized);
 
