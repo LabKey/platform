@@ -1987,7 +1987,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
         }
 
-        SQLFragment sqlf = materializedEdges.getMaterializedTable(null);
+        SQLFragment sqlf = new SQLFragment("SELECT * FROM ").append(materializedEdges.getFromSql(null,null));
         return sqlf;
     }
 
