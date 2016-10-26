@@ -339,6 +339,8 @@ public abstract class AbstractAuditDomainKind extends DomainKind
             pd.setLabel(caption);
         if (description != null)
             pd.setDescription(description);
+        if (scale != null)
+            pd.setScale(scale);
         pd.setRequired(required);
 
         return pd;
