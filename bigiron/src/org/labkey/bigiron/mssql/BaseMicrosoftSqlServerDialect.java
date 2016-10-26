@@ -1473,16 +1473,20 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                     final String hashedColumn = makeLegalIdentifier("_hashed_" + columnName);
                     final String tableName = makeTableIdentifier(change);
 
-                    statements.add(String.format("DROP TRIGGER %s.%s",
+                    statements.add(String.format("IF EXISTS (SELECT 1 FROM sys.triggers i WHERE i.name = '%s') DROP TRIGGER %s.%s",
+                            nameTrigger(change.getTableName(), new String[]{columnName}),
                             change.getSchemaName(),
                             nameTrigger(change.getTableName(), new String[]{columnName})));
 
-                    statements.add(String.format("DROP INDEX %s ON %s",
+                    statements.add(String.format("IF EXISTS (SELECT 1 FROM sys.indexes i WHERE i.name = '%s') DROP INDEX %s ON %s",
+                            nameIndex(change.getTableName(), index.columnNames, false),
                             nameIndex(change.getTableName(), index.columnNames, false),
                             tableName
                     ));
 
-                    statements.add(String.format("ALTER TABLE %s DROP COLUMN %s",
+                    statements.add(String.format("IF EXISTS (SELECT 1 FROM sys.columns i WHERE i.name = '%s' AND i.object_id = OBJECT_ID(N'%s')) ALTER TABLE %s DROP COLUMN %s",
+                            hashedColumn,
+                            tableName,
                             tableName,
                             hashedColumn));
                 }
