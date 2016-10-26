@@ -153,6 +153,11 @@ public class CacheManager
         LISTENERS.add(listener);
     }
 
+    public static void removeListener(CacheListener listener)
+    {
+        LISTENERS.remove(listener);
+    }
+
     public static CacheStats getCacheStats(TrackingCache cache)
     {
         return new CacheStats(cache.getDebugName(), cache.getCreationStackTrace(), cache.getStats(), cache.size(), cache.getLimit());

@@ -39,6 +39,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
@@ -1536,6 +1537,8 @@ public class DbScope
         public void commitAndKeepConnection();
 
         boolean isAborted();
+
+        String getId();
     }
 
     private void popCurrentTransaction()
@@ -1574,6 +1577,7 @@ public class DbScope
     // transaction, and the tasks to run immediately after commit to update the shared caches with removals.
     protected class TransactionImpl implements Transaction
     {
+        private final String id = GUID.makeGUID();
         private final ConnectionWrapper _conn;
         private final Map<DatabaseCache<?>, StringKeyCache<?>> _caches = new HashMap<>(20);
 
@@ -1631,6 +1635,12 @@ public class DbScope
             _preCommitTasks.clear();
             _postCommitTasks.clear();
             closeCaches();
+        }
+
+        @Override
+        public String getId()
+        {
+            return id;
         }
 
         @Override
