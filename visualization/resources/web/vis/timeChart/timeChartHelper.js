@@ -117,6 +117,13 @@ LABKEY.vis.TimeChartHelper = new function() {
                 return tickMap[value] ? tickMap[value].description : "";
             };
         }
+        // Issue 27309: Don't show decimal values on x-axis for date-based time charts with interval = "Days"
+        else if (config.measures[0].time == 'date' && config.measures[0].dateOptions.interval == 'Days')
+        {
+            xTickFormat = function(value) {
+                return Ext4.isNumber(value) && value % 1 > 0 ? null : value;
+            };
+        }
 
         return {
             x: {
