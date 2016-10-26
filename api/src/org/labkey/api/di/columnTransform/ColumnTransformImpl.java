@@ -6,6 +6,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.dataiterator.CopyConfig;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -171,6 +172,7 @@ public abstract class ColumnTransformImpl implements ColumnTransform
     private transient int _transformRunId;
     private transient Integer _inputPosition;
     private transient Set<ColumnInfo> _outColumns;
+    private transient ContainerUser _containerUser;
 
     public SimpleTranslator getData()
     {
@@ -190,6 +192,11 @@ public abstract class ColumnTransformImpl implements ColumnTransform
     public Set<ColumnInfo> getOutColumns()
     {
         return _outColumns;
+    }
+
+    public ContainerUser getContainerUser()
+    {
+        return _containerUser;
     }
 
     /**
@@ -230,8 +237,9 @@ public abstract class ColumnTransformImpl implements ColumnTransform
 
     @NotNull
     @Override
-    public Set<ColumnInfo> addTransform(@NotNull SimpleTranslator data, int transformRunId, @Nullable Integer inputPosition)
+    public Set<ColumnInfo> addTransform(ContainerUser cu, @NotNull SimpleTranslator data, int transformRunId, @Nullable Integer inputPosition)
     {
+        _containerUser = cu;
         _data = data;
         _transformRunId = transformRunId;
         _inputPosition = inputPosition;

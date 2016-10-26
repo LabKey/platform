@@ -6,6 +6,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.dataiterator.CopyConfig;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.writer.ContainerUser;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -55,13 +56,14 @@ public interface ColumnTransform extends Serializable
     /**
      * Injects this ColumnTransform into the process of building DataIterators for the ETL job
      *
+     * @param cu The ContainerUser context running the ETL
      * @param data SimpleTranslator holding the columns to be output into the ETL destination
      * @param transformRunId transformRunId of this run
      * @param inputPosition the index of the source column in the source query. If null, no source column was specified in the ETL xml
      * @return The set of output columns, if any, added by the transform class implementation
      */
     @NotNull
-    Set<ColumnInfo> addTransform(@NotNull SimpleTranslator data, int transformRunId, @Nullable Integer inputPosition);
+    Set<ColumnInfo> addTransform(ContainerUser cu, @NotNull SimpleTranslator data, int transformRunId, @Nullable Integer inputPosition);
 
     /**
      * @return true if the source column attribute is required in the ETL xml
