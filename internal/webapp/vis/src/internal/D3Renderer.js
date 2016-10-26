@@ -396,7 +396,7 @@ LABKEY.vis.internal.Axis = function() {
             for (i = 0; i < textEls[0].length - 1; i++) {
                 bBoxA = textEls[0][i].getBBox();
                 bBoxB = textEls[0][i + 1].getBBox();
-                if (bBoxA.x + bBoxA.width >= bBoxB.x) {
+                if (bBoxB.x > 0 && bBoxA.x + bBoxA.width >= bBoxB.x) {
                     hasOverlap = true;
                     break;
                 }

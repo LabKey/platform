@@ -899,7 +899,7 @@ boxPlot.render();
         this.tickTextColor = config.tickTextColor ? config.tickTextColor : null;
         this.tickLength = config.hasOwnProperty('tickLength') ? config.tickLength : null;
         this.tickWidth = config.hasOwnProperty('tickWidth') ? config.tickWidth : null;
-        this.tickOverlapRotation = config.tickOverlapRotation ? config.tickOverlapRotation : null;
+        this.tickOverlapRotation = config.hasOwnProperty('tickOverlapRotation') ? config.tickOverlapRotation : null;
         this.gridLineWidth = config.hasOwnProperty('gridLineWidth') ? config.gridLineWidth : null;
         this.borderWidth = config.hasOwnProperty('borderWidth') ? config.borderWidth : null;
 
