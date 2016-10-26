@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
@@ -50,6 +51,10 @@ public class ParticipantGroupTable extends BaseStudyTable
         // fix up container filter to include project if dataspace study
         if (schema.getContainer().isProject() && getContainerFilter() instanceof DataspaceContainerFilter)
             _setContainerFilter(((DataspaceContainerFilter)getContainerFilter()).getIncludeProjectDatasetContainerFilter());
+
+        ColumnInfo folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
+        addColumn(folderColumn);
+        folderColumn.setFk(new ContainerForeignKey(_userSchema));
 
         ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
         rowIdColumn.setHidden(true);
