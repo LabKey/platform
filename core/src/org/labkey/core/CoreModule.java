@@ -951,7 +951,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 MarkableIterator.TestCase.class,
                 Sampler.TestCase.class,
                 BuilderObjectFactory.TestCase.class,
-                ChecksumUtil.TestCase.class
+                ChecksumUtil.TestCase.class,
+                MaterializedQueryHelper.TestCase.class
         ));
     }
 

@@ -2405,6 +2405,8 @@ public class QueryController extends SpringActionController
                 if (null == insertedRow)
                     return super.getSuccessURL(form);
                 StringExpression se = form.getTable().getDetailsURL(null, getContainer());
+                if (null == se)
+                    return super.getSuccessURL(form);
                 str = se.eval(insertedRow);
             }
             try
@@ -3531,6 +3533,12 @@ public static class ExportSqlForm
         {
             runnable.run();
             return runnable;
+        }
+
+        @Override
+        public String getId()
+        {
+            return "-";
         }
 
         @Override

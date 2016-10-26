@@ -1941,14 +1941,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    final Object materializeEdgesLock = new Object();
-    final AtomicReference<MaterializedCTE> edgesTableCTE = new AtomicReference<>();
+
+    MaterializedQueryHelper materializedEdges = null;
+    final Object initEdgesLock = new Object();
 
     public void uncacheEdges()
     {
-        edgesTableCTE.set(null);
+        synchronized (initEdgesLock)
+        {
+            if (null != materializedEdges)
+                materializedEdges.uncache(null);
+        }
     }
-
 
     /* TODO AND CONSIDER:
      *
@@ -1959,59 +1963,32 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         final DbSchema exp = getExpSchema();
         final long now = System.currentTimeMillis();
 
-        // this is the backup plan, in case cache invalidation doesn't catch everything
-        String materializeKeySql = "SELECT\n" + exp.getSqlDialect().concatenate(
-                "(select coalesce(cast(count(*) as varchar(40)),'-') from exp.materialinput)",
-                "'/'",
-                "(select coalesce(cast(count(*) as varchar(40)),'-') from exp.datainput)",
-                "'/'",
-                "(select coalesce(cast(max(rowid) as varchar(40)),'-') from exp.protocolapplication)") + " AS \"key\"";
-        final String materializeKey = new SqlSelector(exp, materializeKeySql).getObject(String.class);
-
-        MaterializedCTE cte = edgesTableCTE.get();
-        if (cte != null && cte.created+CacheManager.MINUTE<now)
+        synchronized (initEdgesLock)
         {
-            edgesTableCTE.set(null);
-            cte = null;
-        }
-        if (cte != null && !cte.uptodateKey.equals(materializeKey))
-        {
-            if (!exp.getScope().isTransactionActive())
-                edgesTableCTE.set(null);
-            cte = null;
-        }
-
-        if (null == cte)
-        {
-            // we don't want two threads to concurrently create a new temp table
-            synchronized (materializeEdgesLock)
+            if (null == materializedEdges)
             {
-                // check again, since we may have blocked
-                if (!exp.getScope().isTransactionActive())
-                    cte = edgesTableCTE.get();
-                if (null == cte)
-                {
-                    DbSchema temp = DbSchema.getTemp();
-                    String name = "edges_" + GUID.makeHash();
-                    cte = new MaterializedCTE(now, materializeKey, "SELECT * FROM \"" + temp.getName() + "\".\"" + name + "\"");
-                    TempTableTracker.track(name, cte);
+                String materializeKeySql = "SELECT\n" + exp.getSqlDialect().concatenate(
+                        "(select coalesce(cast(count(*) as varchar(40)),'-') from exp.materialinput)",
+                        "'/'",
+                        "(select coalesce(cast(count(*) as varchar(40)),'-') from exp.datainput)",
+                        "'/'",
+                        "(select coalesce(cast(max(rowid) as varchar(40)),'-') from exp.protocolapplication)") + " AS \"key\"";
 
-                    String selectInto = "SELECT * INTO \"" + temp.getName() + "\".\"" + name + "\"\nFROM (\n" + selectEdges + "\n) _union_";
-                    new SqlExecutor(exp).execute(selectInto);
-                    new SqlExecutor(exp).execute("CREATE INDEX child_" + name + " ON \"" + temp.getName() + "\".\"" + name + "\"  (child_lsid)");
-                    new SqlExecutor(exp).execute("CREATE INDEX parent_" + name + " ON \"" + temp.getName() + "\".\"" + name + "\"  (parent_lsid)");
-
-                    if (!exp.getScope().isTransactionActive())
-                    {
-                        edgesTableCTE.set(cte);
-                    }
-                }
+                materializedEdges = MaterializedQueryHelper.create(
+                        getExpSchema().getScope(),
+                        new SQLFragment(selectEdges),
+                        new SQLFragment(materializeKeySql),
+                        Arrays.asList(
+                               "CREATE INDEX child_${NAME} ON temp.${NAME}  (child_lsid)",
+                               "CREATE INDEX parent_${NAME} ON temp.${NAME}  (parent_lsid)"
+                        ),
+                        CacheManager.MINUTE
+                        );
             }
         }
 
-        SQLFragment sql = new SQLFragment(cte.fromSql);
-        sql.addTempToken(cte);
-        return sql;
+        SQLFragment sqlf = materializedEdges.getMaterializedTable(null);
+        return sqlf;
     }
 
 
