@@ -31,6 +31,7 @@ import org.labkey.api.di.columnTransform.ColumnTransform;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.di.pipeline.TransformPipelineJob;
 import org.labkey.di.pipeline.TransformUtils;
 
 import java.util.HashSet;
@@ -144,7 +145,7 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
             {
                 for (ColumnTransform ct : _columnTransforms.get(c.getColumnName()))
                 {
-                    outCols.addAll(ct.addTransform(out, _transformRunId, i));
+                    outCols.addAll(ct.addTransform(((TransformPipelineJob)_job).getTransformJobContext(), out, _transformRunId, i));
                 }
             }
             else
@@ -158,7 +159,7 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
         {
             for (ColumnTransform ct : _columnTransforms.get(null))
             {
-                outCols.addAll(ct.addTransform(out, _transformRunId, null));
+                outCols.addAll(ct.addTransform(((TransformPipelineJob)_job).getTransformJobContext(), out, _transformRunId, null));
             }
         }
 
