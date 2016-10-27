@@ -70,6 +70,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * User: rossb
@@ -79,7 +80,8 @@ public class ExceptionUtil
 {
     private static final JobRunner _jobRunner = new JobRunner("Mothership Reporting", 1);
     private static final Logger _logStatic = Logger.getLogger(ExceptionUtil.class);
-
+    // Allow 10 report submissions to mothership per minute
+    private static final RateLimiter _reportingRateLimiter = new RateLimiter("exception reporting", 10, TimeUnit.MINUTES);
 
     private ExceptionUtil()
     {
@@ -357,6 +359,12 @@ public class ExceptionUtil
         // In dev mode, don't report to labkey.org if the Mothership module is installed.
         if (!local && AppProps.getInstance().isDevMode() && MothershipReport.isShowSelfReportExceptions())
             return null;
+
+        if (submit && _reportingRateLimiter.add(1, false) > 0)
+        {
+            MothershipReport.incrementDroppedExceptionCount();
+            return null;
+        }
 
         try
         {

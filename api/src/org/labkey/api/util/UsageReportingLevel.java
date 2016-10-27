@@ -125,6 +125,7 @@ public enum UsageReportingLevel
         metrics.put("activeDayCount", UserManager.getActiveDaysCount(startDate));
         Integer averageRecentDuration = UserManager.getAverageSessionDuration(startDate);
         metrics.put("recentAvgSessionDuration", null == averageRecentDuration ? -1 : averageRecentDuration);
+        metrics.put("droppedExceptionCount", MothershipReport.getDroppedExceptionCount());
     }
 
     private static Timer _timer;

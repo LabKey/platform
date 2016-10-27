@@ -64,6 +64,7 @@ public class MothershipReport implements Runnable
     public static final String CONTAINER_PATH = "/_mothership";
     public static final String BASE_URL = "/mothership" + CONTAINER_PATH;
     private static boolean showSelfReportExceptions = false;
+    private static int _droppedExceptionCount = 0;
 
     /** @return true if this server can self-report exceptions (that is, has the Mothership module installed) */
     public static boolean isShowSelfReportExceptions()
@@ -76,6 +77,21 @@ public class MothershipReport implements Runnable
     public static void setShowSelfReportExceptions(boolean b)
     {
         showSelfReportExceptions = b;
+    }
+
+    /**
+     * Increment droppedExceptionCount when an exceptionReport submission is blocked by the RateLimiter in ExceptionUtil
+     * We'll send this count in usage reports and monitor that we aren't being overly prescriptive with the RateLimiter
+     * settings.
+     */
+    public static void incrementDroppedExceptionCount()
+    {
+        _droppedExceptionCount++;
+    }
+
+    public static int getDroppedExceptionCount()
+    {
+        return _droppedExceptionCount;
     }
 
     public enum Type
