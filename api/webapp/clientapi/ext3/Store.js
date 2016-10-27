@@ -21,9 +21,9 @@ Ext.namespace("LABKEY", "LABKEY.ext");
 
 /**
  * Constructs a new LabKey Store using the supplied configuration.
- * @class LabKey extension to the <a href="http://www.extjs.com/deploy/dev/docs/?class=Ext.data.Store">Ext.data.Store</a> class,
+ * @class LabKey extension to the <a href="http://docs.sencha.com/extjs/3.4.0/#!/api/Ext.data.Store">Ext.data.Store</a> class,
  * which can retrieve data from a LabKey server, track changes, and update the server upon demand. This is most typically
- * used with data-bound user interface widgets, such as the LABKEY.ext.Grid.
+ * used with data-bound user interface widgets, such as the <a href="http://docs.sencha.com/extjs/3.4.0/#!/api/Ext.grid.EditorGridPanel">Ext.grid.EditorGridPanel</a>.
  *
  * <p>If you use any of the LabKey APIs that extend Ext APIs, you must either make your code open source or
  * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=extDevelopment">purchase an Ext license</a>.</p>
@@ -58,28 +58,61 @@ Ext.namespace("LABKEY", "LABKEY.ext");
  *           <li>"CurrentPlusProjectAndShared": Include the current folder plus its project plus any shared folders</li>
  *           <li>"AllFolders": Include all folders for which the user has read permission</li>
  *       </ul>
- * @example &lt;script type="text/javascript"&gt;
-    var _grid, _store;
-    Ext.onReady(function(){
+ * @example &lt;div id="div1"/&gt;
+ &lt;script type="text/javascript"&gt;
 
-        //create a Store bound to the 'People' list in the 'lists' schema
-        _store = new LABKEY.ext.Store({
-            schemaName: 'lists',
-            queryName: 'People'
-        });
+ // This sample code uses LABKEY.ext.Store to hold data from the server's Users table.
+ // Ext.grid.EditorGridPanel provides a user interface for updating the Phone column.
+ // On pressing the 'Submit' button, any changes made in the grid are submitted to the server.
+ var _store = new LABKEY.ext.Store({
+    schemaName: 'core',
+    queryName: 'Users',
+    columns: "DisplayName, Phone",
+    autoLoad: true
+});
 
-        //create a grid using that store as the data source
-        _grid = new LABKEY.ext.EditorGridPanel({
-            store: _store,
-            renderTo: 'grid',
-            width: 800,
-            autoHeight: true,
-            title: 'Example',
-            editable: true
-        });
-    });
-&lt;/script&gt;
-&lt;div id='grid'/&gt;
+ var _grid = new Ext.grid.EditorGridPanel({
+    title: 'Users - Change Phone Number',
+    store: _store,
+    renderTo: 'div1',
+    autoHeight: true,
+    columnLines: true,
+    viewConfig: {
+        forceFit: true
+    },
+    colModel: new Ext.grid.ColumnModel({
+        columns: [{
+            header: 'User Name',
+            dataIndex: 'DisplayName',
+            hidden: false,
+            width: 150
+        }, {
+            header: 'Phone Number',
+            dataIndex: 'Phone',
+            hidden: false,
+            sortable: true,
+            width: 100,
+            editor: new Ext.form.TextField()
+        }]
+    }),
+    buttons: [{
+        text: 'Save',
+        handler: function ()
+        {
+            _grid.getStore().commitChanges();
+            alert("Number of records changed: "
+                   + _grid.getStore().getModifiedRecords().length);
+        }
+    }, {
+        text: 'Cancel',
+        handler: function ()
+        {
+            _grid.getStore().rejectChanges();
+        }
+    }]
+});
+
+ &lt;/script&gt;
  */
 LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     constructor: function(config) {
