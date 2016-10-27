@@ -119,7 +119,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
                                     win.close();
                                 }
                             },{
-                                text: 'Okay',
+                                text: 'OK',
                                 cls: 'commentSubmit',
                                 onClick : function () {
                                     var isFormDirty = win.getForm().getForm().isDirty();
@@ -149,6 +149,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
                                             var resp = Ext4.decode(response.responseText);
                                             if (resp.success) {
                                                 win.close();
+                                                me.fireEvent('celledited');
                                                 cmp.treatmentId = resp.treatmentIds[0];
                                                 cmp.setValue(treatments[0].Label);
                                                 cmp.getEl().dom.title = treatments[0].Label;

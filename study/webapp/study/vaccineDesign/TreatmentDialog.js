@@ -11,6 +11,13 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
 
     cls: 'treatment-dialog',
 
+    listeners: {
+        resize: function (cmp)
+        {
+            cmp.doLayout();
+        }
+    },
+
     initComponent : function()
     {
         this.items = this.getForm();
@@ -24,7 +31,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
                 border : false,
                 layout : {
                     type : 'vbox',
-                    align: 'center'
+                    align: 'stretch'
                 },
                 fieldDefaults  :{
                     labelAlign : 'top',
@@ -57,7 +64,6 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
                     inputValue: val.ProductDoseRoute,
                     productLabel: val.ProductLabel,
                     checked: checked,
-                    width: 350,
                     cls: 'dialog-product-label',
                     listeners: {
                         render: function (cmp)
@@ -129,7 +135,51 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
             }
         }, this);
 
+        var me = this;
+        data.sort(function(a, b){
+            // if different product, sort by product
+            if (a.ProductLabel && b.ProductLabel && a.ProductLabel != b.ProductLabel) {
+               return me.natural(a.ProductLabel, b.ProductLabel);
+            }
+            // if same product, sort by dose/route
+            var doseA = a.ProductDoseRoute.replace(a.ProductLabel, ''), doseB = b.ProductDoseRoute.replace(b.ProductLabel, '');
+            return me.natural(doseA, doseB);
+        });
+
         return data;
+    },
+
+    natural : function (aso, bso) {
+        // http://stackoverflow.com/questions/19247495/alphanumeric-sorting-an-array-in-javascript
+        var a, b, a1, b1, i= 0, n, L,
+                rx=/(\.\d+)|(\d+(\.\d+)?)|([^\d.]+)|(\.\D+)|(\.$)/g;
+        if (aso === bso) return 0;
+        a = aso.toLowerCase().match(rx);
+        b = bso.toLowerCase().match(rx);
+
+        if (a == 'null' || b == 'null') {
+            var aEmpty = a == 'null';
+            var bEmpty = b == 'null';
+
+            // both are empty
+            if (aEmpty && bEmpty) {
+                return 0;
+            }
+
+            return aEmpty ? -1 : 1;
+        }
+
+        L = a.length;
+        while (i < L) {
+            if (!b[i]) return 1;
+            a1 = a[i]; b1 = b[i++];
+            if (a1 !== b1) {
+                n = a1 - b1;
+                if (!isNaN(n)) return n;
+                return a1 > b1 ? 1 : -1;
+            }
+        }
+        return b[i] ? -1 : 0;
     },
 
     getTreatmentFormValues: function() {

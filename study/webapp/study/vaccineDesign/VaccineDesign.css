@@ -1,4 +1,3 @@
-
 .study-vaccine-design .x4-panel-body {
     background-color: transparent;
 }
@@ -74,8 +73,6 @@
     /* Standard */
     width: calc(100% - 20px);
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 .treatment-dialog {
     background-color: #C0C0C0;
