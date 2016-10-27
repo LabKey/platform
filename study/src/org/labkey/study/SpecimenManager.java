@@ -1129,7 +1129,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     {
         Map<String, String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser(),
                 container, "SpecimenRequestDisplay");
-        if (settingsMap.get("OneAvailableVial") == null)
+        if (settingsMap.isEmpty())
         {
             DisplaySettings defaults = DisplaySettings.getDefaultSettings();
             saveDisplaySettings(container, defaults);
