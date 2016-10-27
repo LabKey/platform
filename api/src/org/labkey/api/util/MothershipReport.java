@@ -314,6 +314,8 @@ public class MothershipReport implements Runnable
         addParam("servletContainer", servletContainer);
         addParam("usedInstaller", usedInstaller());
         addParam("distribution", getDistributionStamp());
+        addParam("usageReportingLevel", AppProps.getInstance().getUsageReportingLevel().toString());
+        addParam("exceptionReportingLevel", AppProps.getInstance().getExceptionReportingLevel().toString());
     }
 
     public String getContent()

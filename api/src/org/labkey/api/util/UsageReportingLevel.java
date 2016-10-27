@@ -19,11 +19,12 @@ package org.labkey.api.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.time.DateUtils;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.ActionsHelper;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
@@ -34,13 +35,12 @@ import java.net.URISyntaxException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
+import java.util.TreeMap;
 
 /**
  * User: jeckels
@@ -54,6 +54,12 @@ public enum UsageReportingLevel
         protected void addExtraParams(MothershipReport report, Map<String, Object> metrics)
         {
             // no op
+        }
+
+        @Override
+        protected boolean doGeneration()
+        {
+            return false;
         }
 
         @Override
@@ -82,6 +88,11 @@ public enum UsageReportingLevel
 
     protected abstract void addExtraParams(MothershipReport report, Map<String, Object> metrics);
 
+    protected boolean doGeneration()
+    {
+        return true;
+    }
+
     private static void addMediumUsageReportingParams(MothershipReport report, Map<String, Object> metrics)
     {
         LookAndFeelProperties laf = LookAndFeelProperties.getInstance(ContainerManager.getRoot());
@@ -92,7 +103,7 @@ public enum UsageReportingLevel
         report.addParam("systemShortName", laf.getShortName());
         report.addParam("administratorEmail", AppProps.getInstance().getAdministratorContactEmail());
 
-        metrics.put("modules", getInstalledModules());
+        metrics.put("modules", getModulesStats());
         metrics.put("folderTypeCounts", ContainerManager.getFolderTypeNameContainerCounts(ContainerManager.getRoot()));
         metrics.put("targetedMSRuns", getTargetedMSRunCount());
     }
@@ -107,9 +118,6 @@ public enum UsageReportingLevel
         report.addParam("activeUserCount", UserManager.getRecentUserCount(startDate));
         report.addParam("containerCount", ContainerManager.getContainerCount());
         report.addParam("projectCount", ContainerManager.getRoot().getChildren().size());
-
-        report.addParam("usageReportingLevel", AppProps.getInstance().getUsageReportingLevel().toString());
-        report.addParam("exceptionReportingLevel", AppProps.getInstance().getExceptionReportingLevel().toString());
 
         // Other counts within the last 30 days
         metrics.put("recentLoginCount", UserManager.getRecentLoginCount(startDate));
@@ -158,20 +166,25 @@ public enum UsageReportingLevel
 
     public static MothershipReport generateReport(UsageReportingLevel level, boolean local)
     {
-        MothershipReport report;
-        try
+        if (level.doGeneration())
         {
-            report = new MothershipReport(MothershipReport.Type.CheckForUpdates, local);
+            MothershipReport report;
+            try
+            {
+                report = new MothershipReport(MothershipReport.Type.CheckForUpdates, local);
+            }
+            catch (MalformedURLException | URISyntaxException e)
+            {
+                throw new RuntimeException(e);
+            }
+            report.addServerSessionParams();
+            Map<String, Object> additionalMetrics = new LinkedHashMap<>();
+            level.addExtraParams(report, additionalMetrics);
+            addJsonMetricsParam(report, additionalMetrics);
+            return report;
         }
-        catch (MalformedURLException | URISyntaxException e)
-        {
-            throw new RuntimeException(e);
-        }
-        report.addServerSessionParams();
-        Map<String, Object> additionalMetrics = new LinkedHashMap<>();
-        level.addExtraParams(report, additionalMetrics);
-        addJsonMetricsParam(report, additionalMetrics);
-        return report;
+        else
+            return null;
     }
 
     private static class UsageTimerTask extends TimerTask
@@ -185,17 +198,20 @@ public enum UsageReportingLevel
         public void run()
         {
             MothershipReport report = generateReport(_level, false);
-            report.run();
-            String message = report.getContent();
-            if ("".equals(message))
+            if (report != null)
             {
-                _upgradeMessage = null;
+                report.run();
+                String message = report.getContent();
+                if ("".equals(message))
+                {
+                    _upgradeMessage = null;
+                }
+                else
+                {
+                    _upgradeMessage = message;
+                }
             }
-            else
-            {
-                _upgradeMessage = message;
-            }
-        }
+         }
     }
 
     private static void addJsonMetricsParam(MothershipReport report, Map<String, Object> metrics)
@@ -217,9 +233,28 @@ public enum UsageReportingLevel
         }
     }
 
-    private static Set<String> getInstalledModules()
+    private static Map<String, Map<String, Long>> getModulesStats()
     {
-        return ModuleLoader.getInstance().getModules().stream().map(Module::getName).collect(Collectors.toCollection(TreeSet::new));
+        Map<String, Map<String, Long>> modulesStats = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        try
+        {
+            ActionsHelper.getActionStatistics().forEach((module, controllersMap) -> {
+                Map<String, Long> controllerHitCounts = new TreeMap<>();
+                modulesStats.put(module, controllerHitCounts);
+                controllersMap.forEach((controller, actionStatsMap) -> {
+                    controllerHitCounts.put(controller,
+                            actionStatsMap.values().stream().mapToLong(SpringActionController.ActionStats::getCount).sum());
+                });
+            });
+        }
+        catch (InstantiationException | IllegalAccessException e)
+        {
+            // Unlikely to hit this, but just in case, still give module list
+            ModuleLoader.getInstance().getModules().stream().map(module -> modulesStats.put(module.getName(), new HashMap<>()));
+            // TODO: Report!
+        }
+
+        return modulesStats;
     }
 
     private static long getTargetedMSRunCount()
