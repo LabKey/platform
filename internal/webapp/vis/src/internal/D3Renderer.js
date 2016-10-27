@@ -391,7 +391,7 @@ LABKEY.vis.internal.Axis = function() {
             addEvents(anchors.select('rect.highlight'));
         };
 
-        if (orientation == 'bottom') {
+        if (orientation == 'bottom' && textEls.length > 0) {
             hasOverlap = false;
             for (i = 0; i < textEls[0].length - 1; i++) {
                 bBoxA = textEls[0][i].getBBox();
