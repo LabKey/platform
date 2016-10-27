@@ -16,7 +16,8 @@ public class TestColumnTransform extends AbstractColumnTransform
     @Override
     protected Object doTransform(Object inputValue)
     {
-        String prefix = getInputValue("id").toString();
-        return prefix + "_" + inputValue + "_" + getConstantValue("myConstant");
+        Object prefix = getInputValue("id");
+        String prefixStr = null == prefix ? "" : prefix.toString();
+        return prefixStr + "_" + inputValue + "_" + getConstant("myConstant");
     }
 }
