@@ -184,6 +184,9 @@
                             categoryShowLabel[categoryData[i].label] = i % m == 0;
                     }
 
+                    if ($('#' + plotDivId).length == 0)
+                        return;
+
                     if (analyticsProviderName == 'VIS_BAR')
                     {
                         plot = new LABKEY.vis.BarPlot({
@@ -359,25 +362,11 @@
             if (renderType != null)
             {
                 var params = {
-                    edit: true,
                     renderType: renderType,
-                    schemaName: dataRegion.schemaName,
-                    queryName: dataRegion.queryName,
                     autoColumnName: colFieldKey
                 };
 
-                if (dataRegion.viewName != null)
-                {
-                    params.viewName = dataRegion.viewName;
-                }
-
-                if (dataRegion.getUserFilterArray().length > 0)
-                {
-                    params.dataRegionName = dataRegion.name;
-                    params.filterUrl = window.location.search;
-                }
-
-                return LABKEY.ActionURL.buildURL('visualization', 'genericChartWizard', null, params);
+                return dataRegion.chartWizardURL + '&' + LABKEY.ActionURL.queryString(params);
             }
 
             return null;

@@ -81,14 +81,12 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
-import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.ParticipantCategory;
@@ -101,7 +99,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -188,12 +185,12 @@ public class VisualizationController extends SpringActionController
 
             // Add the base filter as set in code:
             SimpleFilter baseFilter = settings.getBaseFilter();
-            baseFilter.applyToURL(filterURL, FILTER_DATAREGION);
+            baseFilter.applyToURL(filterURL, settings.getDataRegionName());
 
             // Finally, add view-level filters:
             CustomView view = QueryService.get().getCustomView(user, container, user, settings.getSchemaName(), settings.getQueryName(), settings.getViewName());
             if (view != null)
-                view.applyFilterAndSortToURL(filterURL, FILTER_DATAREGION);
+                view.applyFilterAndSortToURL(filterURL, settings.getDataRegionName());
 
             url.addParameter(QueryParam.dataRegionName, settings.getDataRegionName());
             url.addParameter(VISUALIZATION_FILTER_URL, filterURL.getLocalURIString());
