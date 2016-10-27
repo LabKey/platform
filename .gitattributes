@@ -549,7 +549,6 @@ api/src/org/labkey/api/di/ScheduledPipelineJobDescriptor.java -text
 api/src/org/labkey/api/di/TaskRefTask.java -text
 api/src/org/labkey/api/di/columnTransform/AbstractColumnTransform.java -text
 api/src/org/labkey/api/di/columnTransform/ColumnTransform.java -text
-api/src/org/labkey/api/di/columnTransform/ColumnTransformImpl.java -text
 api/src/org/labkey/api/event/PropertyChange.java -text
 api/src/org/labkey/api/exp/AbstractParameter.java -text
 api/src/org/labkey/api/exp/ChangePropertyDescriptorException.java -text

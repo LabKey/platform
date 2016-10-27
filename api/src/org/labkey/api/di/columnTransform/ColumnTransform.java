@@ -11,6 +11,7 @@ import org.labkey.api.writer.ContainerUser;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * User: tgaluhn
@@ -22,15 +23,19 @@ import java.util.Set;
  * or performing some other operation altogether.
  *
  * An instance of the implementing class is created when the ETL xml is parsed, a new instance
- * for each usage of that class anywhere.
+ * for each usage of that class anywhere. This same instance is reused for each ETL run.
+ *
  * All of the setters here are called when the ETL xml is parsed. These members are all expected
  * to be configuration settings which will be constant across ETL runs, and serializable.
  *
  * If an implementing class needs additional class level members, they MUST either be serializable objects,
- * or declared transient.
+ * or declared transient. Note that as the same instance of this class is reused for each run,
+ * those members will retain their values unless explicitly reset/cleared.
  */
 public interface ColumnTransform extends Serializable
 {
+    // All of the setters here are called when the ETL xml is parsed. These members are all expected
+    // to be configuration settings which will be constant across ETL runs, and serializable.
     void setEtlName(@NotNull String etlName);
     void setStepId(@NotNull String stepId);
     void setSourceSchema(@Nullable SchemaKey sourceSchema);
@@ -42,6 +47,7 @@ public interface ColumnTransform extends Serializable
     void setTargetType(@Nullable CopyConfig.TargetTypes targetType);
     void setConstants(@NotNull Map<String, Object> constants);
 
+    // The getters for the serializable configuration properties
     @NotNull String getEtlName();
     @NotNull String getStepId();
     @Nullable SchemaKey getSourceSchema();
@@ -52,6 +58,49 @@ public interface ColumnTransform extends Serializable
     @Nullable String getTargetColumnName();
     @Nullable CopyConfig.TargetTypes getTargetType();
     @NotNull Map<String, Object> getConstants();
+    @Nullable Object getConstant(String constantName);
+
+    // These getters return properties which are specific to an etl job, not a configuration.
+    // The backing properties should be transient and are expected to be initialized in the addTransform() call.
+    @NotNull SimpleTranslator getData();
+    int getTransformRunId();
+    @Nullable Integer getInputPosition();
+    @NotNull Set<ColumnInfo> getOutColumns();
+    @NotNull ContainerUser getContainerUser();
+
+    /**
+     * @return true if the source column attribute is required in the ETL xml
+     *
+     */
+    default boolean requiresSourceColumnName() {return true;}
+
+    /**
+     *
+     * @return true if the target column attribute is required in the ETL xml
+     */
+    default boolean requiresTargetColumnName() {return false;}
+
+    /**
+     * Returns the row value for the configured source column
+     * @return the value in this row
+     */
+    @Nullable
+    Object getInputValue();
+
+    /**
+     * Returns the row value for any arbitrary column in the source query
+     * @param columnName the name of the column
+     * @return the value in this row
+     */
+    @Nullable
+    Object getInputValue(String columnName);
+
+    /**
+     * Add a column to the output of the ETL
+     * @param name The name of the output column
+     * @param supplier Method called to determine value for the output column
+     */
+    void addOutputColumn(String name, Supplier supplier);
 
     /**
      * Injects this ColumnTransform into the process of building DataIterators for the ETL job
@@ -66,14 +115,21 @@ public interface ColumnTransform extends Serializable
     Set<ColumnInfo> addTransform(ContainerUser cu, @NotNull SimpleTranslator data, int transformRunId, @Nullable Integer inputPosition);
 
     /**
-     * @return true if the source column attribute is required in the ETL xml
+     * Wrapping class for exceptions caught in doTransform(). Must be a RuntimeException b/c Java 8 Suppliers
+     * don't directly support throwing checked exceptions.
      *
+     * A thrown instance of this exception will be unwrapped for the ETL log to show the real cause.
      */
-    default boolean requiresSourceColumnName() {return true;}
+    class ColumnTransformException extends RuntimeException
+    {
+        public ColumnTransformException(String message, @NotNull Throwable cause)
+        {
+            super(message, cause);
+        }
 
-    /**
-     *
-     * @return true if the target column attribute is required in the ETL xml
-     */
-    default boolean requiresTargetColumnName() {return false;}
+        public ColumnTransformException(@NotNull Throwable cause)
+        {
+            super(cause);
+        }
+    }
 }
