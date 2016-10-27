@@ -150,7 +150,7 @@ public class CustomViewUtil
                     ret.append(PageFlowUtil.encode(type));
                 }
 
-                url.addParameter(FILTER_PARAM_PREFIX + "." + AGGREGATE_PARAM_PREFIX + "." + fieldKey, ret.toString());
+                url.addParameter(getAggregateParamKey(fieldKey), ret.toString());
             }
         }
 
@@ -164,7 +164,7 @@ public class CustomViewUtil
                 if (fieldKey == null || name == null)
                     continue;
 
-                url.addParameter(FILTER_PARAM_PREFIX + "." + ANALYTICSPROVIDER_PARAM_PREFIX + "." + fieldKey, name);
+                url.addParameter(getAnalyticsProviderParamKey(fieldKey), name);
             }
         }
 
@@ -173,6 +173,16 @@ public class CustomViewUtil
             url.addParameter(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME, containerFilter);
 
         view.setFilterAndSortFromURL(url, FILTER_PARAM_PREFIX);
+    }
+
+    public static String getAggregateParamKey(String colName)
+    {
+        return FILTER_PARAM_PREFIX + "." + AGGREGATE_PARAM_PREFIX + "." + colName;
+    }
+
+    public static String getAnalyticsProviderParamKey(String colName)
+    {
+        return FILTER_PARAM_PREFIX + "." + ANALYTICSPROVIDER_PARAM_PREFIX + "." + colName;
     }
 
     public static Map<String, Object> toMap(ViewContext context, UserSchema schema, String queryName, String viewName, boolean includeFieldMeta, boolean initializeMissingView, Map<FieldKey, Map<String, Object>> columnMetadata)

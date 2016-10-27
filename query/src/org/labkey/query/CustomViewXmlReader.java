@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.analytics.SummaryStatisticRegistry;
 import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.AnalyticsProviderItem;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
@@ -34,6 +35,8 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.data.xml.queryCustomView.AggregateType;
 import org.labkey.data.xml.queryCustomView.AggregatesType;
+import org.labkey.data.xml.queryCustomView.AnalyticsProviderType;
+import org.labkey.data.xml.queryCustomView.AnalyticsProvidersType;
 import org.labkey.data.xml.queryCustomView.ColumnType;
 import org.labkey.data.xml.queryCustomView.ColumnsType;
 import org.labkey.data.xml.queryCustomView.ContainerFilterType;
@@ -76,6 +79,7 @@ public class CustomViewXmlReader
     private List<Pair<String,String>> _filters;
     private List<String> _sorts;
     private List<Aggregate> _aggregates;
+    private List<AnalyticsProviderItem> _analyticsProviders;
     private String _customIconUrl;
     private String _customIconCls;
     private ContainerFilter.Type _containerFilter;
@@ -136,6 +140,11 @@ public class CustomViewXmlReader
         return _aggregates;
     }
 
+    public List<AnalyticsProviderItem> getAnalyticsProviders()
+    {
+        return _analyticsProviders;
+    }
+
     public ContainerFilter.Type getContainerFilter()
     {
         return _containerFilter;
@@ -194,10 +203,21 @@ public class CustomViewXmlReader
             for (Aggregate aggregate : getAggregates())
             {
                 ret.append(sep);
-                ret.append(CustomViewInfo.FILTER_PARAM_PREFIX).append(".").append(CustomViewInfo.AGGREGATE_PARAM_PREFIX).append(".");
-                ret.append(PageFlowUtil.encode(aggregate.getFieldKey().toString()));
+                ret.append(CustomViewUtil.getAggregateParamKey(PageFlowUtil.encode(aggregate.getFieldKey().toString())));
                 ret.append("=");
                 ret.append(PageFlowUtil.encode(aggregate.getValueForUrl()));
+                sep = "&";
+            }
+        }
+
+        if (null != getAnalyticsProviders() && !getAnalyticsProviders().isEmpty())
+        {
+            for (AnalyticsProviderItem analyticsProvider : getAnalyticsProviders())
+            {
+                ret.append(sep);
+                ret.append(CustomViewUtil.getAnalyticsProviderParamKey(PageFlowUtil.encode(analyticsProvider.getFieldKey().toString())));
+                ret.append("=");
+                ret.append(PageFlowUtil.encode(analyticsProvider.getName()));
                 sep = "&";
             }
         }
@@ -280,11 +300,12 @@ public class CustomViewXmlReader
             if (viewElement.isSetCategory())
                 reader._category = viewElement.getCategory();
 
-            //load the columns, filters, sorts, aggregates
+            //load the columns, filters, sorts, aggregates, and analyticsProviders
             reader._colList = loadColumns(viewElement.getColumns());
             reader._filters = loadFilters(viewElement.getFilters());
             reader._sorts = loadSorts(viewElement.getSorts());
             reader._aggregates = loadAggregates(viewElement.getAggregates());
+            reader._analyticsProviders = loadAnalyticsProviders(viewElement.getAnalyticsProviders());
             reader._containerFilter = loadContainerFilter(viewElement.getContainerFilter());
 
             return reader;
@@ -394,6 +415,25 @@ public class CustomViewXmlReader
                 ret.add(map);
             }
         }
+        return ret;
+    }
+
+    protected static List<AnalyticsProviderItem> loadAnalyticsProviders(AnalyticsProvidersType analyticsProviders)
+    {
+        if (null == analyticsProviders)
+            return null;
+
+        List<AnalyticsProviderItem> ret = new ArrayList<>();
+        for (AnalyticsProviderType analytic : analyticsProviders.getAnalyticsProviderArray())
+        {
+            String column = StringUtils.trimToNull(analytic.getColumn());
+            String type = StringUtils.trimToNull(analytic.getType());
+            if (column == null || type == null)
+                continue;
+
+            ret.add(new AnalyticsProviderItem(FieldKey.fromString(column), type));
+        }
+
         return ret;
     }
 
