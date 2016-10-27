@@ -302,10 +302,16 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        return updateRow(user, container, row, oldRow, false);
+        return updateRow(user, container, row, oldRow, false, false);
     }
 
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner)
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    {
+        return updateRow(user, container, row, oldRow, allowOwner, false);
+    }
+
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         Map<String,Object> rowStripped = new CaseInsensitiveHashMap<>(row.size());
@@ -340,10 +346,9 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             //unfortunately, the Table.update() method doesn't strip these, so we'll
             //do that here.
             // Owner, CreatedBy, Created, EntityId
-            if ((!allowOwner && name.equalsIgnoreCase("Owner")) ||
-                    name.equalsIgnoreCase("CreatedBy") ||
-                    name.equalsIgnoreCase("Created") ||
-                    name.equalsIgnoreCase("EntityId"))
+            if ((!retainCreation && (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("Created")))
+                || (!allowOwner && name.equalsIgnoreCase("Owner"))
+                || name.equalsIgnoreCase("EntityId"))
                 continue;
 
             // We want a map using the DbTable column names as keys, so figure out the right name to use
