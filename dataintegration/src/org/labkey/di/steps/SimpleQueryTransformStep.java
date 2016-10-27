@@ -25,6 +25,7 @@ import org.labkey.api.dataiterator.CopyConfig;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.QueryDataIteratorBuilder;
+import org.labkey.api.di.columnTransform.ColumnTransform;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -159,7 +160,13 @@ public class SimpleQueryTransformStep extends TransformTask
         catch (Exception x)
         {
             // TODO: more verbose logging
-            throw new PipelineJobException("Failed to run transform from source.", x);
+
+            if (ColumnTransform.ColumnTransformException.class.isInstance(x))
+            {
+                throw new PipelineJobException("ColumnTransformException during run: " + x.getMessage(), x.getCause());
+            }
+            else
+                throw new PipelineJobException("Failed to run transform from source.", x);
         }
         if (context.getErrors().hasErrors())
         {
