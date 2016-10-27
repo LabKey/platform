@@ -18,6 +18,7 @@ package org.labkey.core.admin;
 
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.ActionsHelper;
 import org.labkey.api.data.TSVWriter;
 
 import java.util.Arrays;
