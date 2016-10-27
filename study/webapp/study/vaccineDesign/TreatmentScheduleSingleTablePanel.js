@@ -82,8 +82,8 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
             hideFieldLabel: true,
             name: 'VisitMap',
             width: 135,
-            editable : false,
-            disabled: true,
+            readOnly: true,
+            enableKeyEvents: false,
             cls: 'treatment-input-cell',
             listeners: {
                 render: function(cmp) {

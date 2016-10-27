@@ -231,8 +231,8 @@ public class TreatmentProductImpl implements TreatmentProduct
             return false;
         if (this.getProductId() != other.getProductId())
             return false;
-        if (this.getProductDoseRoute() != null && other.getProductDoseRoute() != null && this.getProductDoseRoute().equals(other.getProductDoseRoute()))
-            return true;
+        if (this.getProductDoseRoute() != null && other.getProductDoseRoute() != null)
+            return this.getProductDoseRoute().equals(other.getProductDoseRoute());
 
         if (this.getDose() != null)
         {
