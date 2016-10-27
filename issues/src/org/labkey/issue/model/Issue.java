@@ -394,9 +394,14 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    public Object clone() throws CloneNotSupportedException
+    public Issue clone() throws CloneNotSupportedException
     {
-        return super.clone();
+        Issue clone = (Issue)super.clone();
+
+        clone._properties = new CaseInsensitiveHashMap<>();
+        clone._properties.putAll(_properties);
+
+        return clone;
     }
 
 

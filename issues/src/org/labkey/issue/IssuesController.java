@@ -1298,7 +1298,7 @@ public class IssuesController extends SpringActionController
                 for (Integer relatedId : newRelatedIssues)
                 {
                     Issue related = IssueManager.getIssue(null, getUser(), relatedId);
-                    if (!related.lookupContainer().hasPermission(user, ReadPermission.class))
+                    if (related == null || !related.lookupContainer().hasPermission(user, ReadPermission.class))
                     {
                         errors.rejectValue("Related", SpringActionController.ERROR_MSG, "User does not have Read Permission for related issue '" + relatedId + "'");
                         return false;

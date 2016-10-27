@@ -125,10 +125,16 @@ public class IssuesQueryView extends QueryView
             item.setStrong(URLHelper.queryEqual(url, target));
         menu.addMenuItem(item);
 
+        boolean hasMilestoneField = false;
+        Domain domain = _issueDef.getDomain(getUser());
+        if (domain != null)
+            hasMilestoneField = domain.getPropertyByName("Milestone") != null;
+
         url = cloneIssuesUrl(target);
         url.addFilter(getDataRegionName(), FieldKey.fromString("Status"), CompareType.EQUAL, "open");
         Sort sort = new Sort("AssignedTo/DisplayName");
-        sort.insertSortColumn(FieldKey.fromParts("Milestone"), Sort.SortDirection.ASC, true);
+        if (hasMilestoneField)
+            sort.insertSortColumn(FieldKey.fromParts("Milestone"), Sort.SortDirection.ASC, true);
         sort.addURLSort(url, getDataRegionName());
         url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
         item = new NavTree("open", url);
@@ -139,7 +145,8 @@ public class IssuesQueryView extends QueryView
         url = cloneIssuesUrl(target);
         url.addFilter(getDataRegionName(), FieldKey.fromString("Status"), CompareType.EQUAL, "resolved");
         sort = new Sort("AssignedTo/DisplayName");
-        sort.insertSortColumn(FieldKey.fromParts("Milestone"), Sort.SortDirection.ASC, true);
+        if (hasMilestoneField)
+            sort.insertSortColumn(FieldKey.fromParts("Milestone"), Sort.SortDirection.ASC, true);
         sort.addURLSort(url, getDataRegionName());
         url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
         item = new NavTree("resolved", url);
@@ -152,7 +159,7 @@ public class IssuesQueryView extends QueryView
             url = cloneIssuesUrl(target);
             url.addFilter(getDataRegionName(), FieldKey.fromString("AssignedTo/DisplayName"), CompareType.EQUAL, getUser().getDisplayName(getViewContext().getUser()));
             url.addFilter(getDataRegionName(), FieldKey.fromString("Status"), CompareType.NEQ_OR_NULL, "closed");
-            sort = new Sort("-Milestone");
+            sort = hasMilestoneField ? new Sort("-Milestone") : new Sort();
             sort.addURLSort(url, getDataRegionName());
             url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
             item = new NavTree("mine", url);
