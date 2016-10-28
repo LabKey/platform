@@ -18,7 +18,6 @@ package org.labkey.test.util.mothership;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.PostCommand;
-import org.labkey.remoteapi.query.ContainerFilter;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.remoteapi.query.Sort;
@@ -91,5 +90,31 @@ public class MothershipHelper
         {
             throw new RuntimeException(e);
         }
+    }
+
+    public enum ReportLevel
+    {
+        NONE,
+        LOW,
+        MEDIUM,
+        HIGH
+    }
+
+    public void createUsageReport(ReportLevel level, boolean submit)
+    {
+        createMothershipReport("CheckForUpdates", level, submit);
+    }
+
+    public void createExceptionReport(ReportLevel level, boolean submit)
+    {
+        createMothershipReport("ReportException", level, submit);
+    }
+
+    private void createMothershipReport(String type, ReportLevel level, boolean submit)
+    {
+        String relativeUrl = "/admin-testMothershipReport.view?" + "type=" + type +
+                "&level=" + level.toString() +
+                "&submit=" + submit;
+        driver.beginAt(relativeUrl);
     }
 }

@@ -50,8 +50,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.labkey.test.pages.test.TestActions.*;
+import static org.labkey.test.pages.test.TestActions.ExceptionActions;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
 
 @Category({DailyB.class})
@@ -119,7 +118,7 @@ public class MothershipTest extends BaseWebDriverTest
     {
         IssuesHelper issuesHelper = new IssuesHelper(this);
         Integer highestIssueId = issuesHelper.getHighestIssueId(ISSUES_PROJECT, ISSUES_LIST);
-        Integer stackTraceId = ensureUnasignedException();
+        Integer stackTraceId = ensureUnassignedException();
 
         ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
         ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
@@ -149,7 +148,7 @@ public class MothershipTest extends BaseWebDriverTest
     @Test
     public void testAssignException() throws Exception
     {
-        Integer stackTraceId = ensureUnasignedException();
+        Integer stackTraceId = ensureUnassignedException();
 
         ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
         ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
@@ -172,7 +171,7 @@ public class MothershipTest extends BaseWebDriverTest
     @Test
     public void testIgnoreExceptionFromDataRegion() throws Exception
     {
-        Integer stackTraceId = ensureUnasignedException();
+        Integer stackTraceId = ensureUnassignedException();
 
         ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
         ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
@@ -187,7 +186,7 @@ public class MothershipTest extends BaseWebDriverTest
     @Test
     public void testCreateIssueForAssignedException() throws Exception
     {
-        Integer stackTraceId = ensureUnasignedException();
+        Integer stackTraceId = ensureUnassignedException();
 
         ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
         ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
@@ -258,7 +257,7 @@ public class MothershipTest extends BaseWebDriverTest
         return new ShowExceptionsPage(getDriver());
     }
 
-    protected int ensureUnasignedException()
+    protected int ensureUnassignedException()
     {
         int stackTraceId = triggerException(ExceptionActions.npe);
         _mothershipHelper.resetStackTrace(stackTraceId);
