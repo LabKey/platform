@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2016 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 /**
  * A new implementation of OlapExplorer that support multiple level using tree as underlying data structure
  */
