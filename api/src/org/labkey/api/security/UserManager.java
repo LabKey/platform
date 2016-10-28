@@ -310,7 +310,7 @@ public class UserManager
         TableInfo uat = getUserAuditSchemaTableInfo();
         SQLFragment loginSql = uat.getSqlDialect().limitRows(new SQLFragment("SELECT Created"),
                 new SQLFragment("FROM ").append(uat, "logins"),
-                new SQLFragment("WHERE Comment LIKE '%logged in%'")
+                new SQLFragment("WHERE Comment LIKE '%").append(UserAuditEvent.LOGGED_IN).append("%'")
                         .append(" AND \"user\" = logouts.\"user\"")
                         .append(" AND Created >= ?")
                         .append(" AND Created < logouts.Created").add(since),
@@ -322,7 +322,7 @@ public class UserManager
         SQLFragment sql = new SQLFragment("SELECT AVG(Duration) FROM (SELECT ");
         sql.append(uat.getSqlDialect().getDateDiff(Calendar.MINUTE, new SQLFragment("Created"), loginSql)).append(" AS Duration\n");
         sql.append("FROM ").append(uat, "logouts");
-        sql.append(" WHERE Comment LIKE '%logged out%' AND Created >= ?) x").add(since);
+        sql.append(" WHERE Comment LIKE '%").append(UserAuditEvent.LOGGED_OUT).append("%' AND Created >= ?) x").add(since);
 
         return new SqlSelector(uat.getSchema(), sql).getObject(Integer.class);
     }
@@ -856,6 +856,9 @@ public class UserManager
 
     public static class UserAuditEvent extends AuditTypeEvent
     {
+        public static final String LOGGED_IN = "logged in";
+        public static final String LOGGED_OUT = "logged out";
+
         int _user;
 
         public UserAuditEvent()

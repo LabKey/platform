@@ -17,6 +17,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -42,7 +43,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -55,7 +56,7 @@ import java.util.stream.Collectors;
 public class MothershipReport implements Runnable
 {
     private final URL _url;
-    private final Map<String, String> _params = new HashMap<>();
+    private final Map<String, String> _params = new LinkedHashMap<>();
     private int _responseCode = -1;
     private String _content;
     public static final String MOTHERSHIP_STATUS_HEADER_NAME = "MothershipStatus";
@@ -349,17 +350,25 @@ public class MothershipReport implements Runnable
 
     private static String getDistributionStamp()
     {
-        String distributionStamp = "";
+        String distributionStamp;
         try(InputStream input = MothershipReport.class.getResourceAsStream("/distribution"))
         {
             if (null != input)
             {
                 distributionStamp = new BufferedReader(new InputStreamReader(input, StringUtilsLabKey.DEFAULT_CHARSET)).lines().collect(Collectors.joining("\n"));
+                if (StringUtils.isEmpty(distributionStamp))
+                {
+                    distributionStamp = "Distribution File Empty";
+                }
+            }
+            else
+            {
+                distributionStamp = "Distribution File Missing";
             }
         }
         catch (IOException e)
         {
-            // TODO: Where to report, what to do?
+            distributionStamp = "Exception reading distribution file. " + e.getMessage();
         }
 
         return distributionStamp;

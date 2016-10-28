@@ -223,23 +223,28 @@ public class ExceptionUtil
         _logStatic.error("Exception detected and logged to mothership", ex);
 
         // Once to labkey.org, if so configured
-        logExceptionToMothership(request, ex, requestURL, false, getExceptionReportingLevel());
+        sendReport(createReportFromThrowable(request, ex, requestURL, false, getExceptionReportingLevel()));
 
         // And once to the local server, if so configured
         if (isSelfReportExceptions())
         {
-            logExceptionToMothership(request, ex, requestURL, true, ExceptionReportingLevel.HIGH);
+            sendReport(createReportFromThrowable(request, ex, requestURL, true, ExceptionReportingLevel.HIGH));
         }
     }
 
-    private static void logExceptionToMothership(HttpServletRequest request, Throwable ex, String requestURL, boolean local, ExceptionReportingLevel level)
+    private static void sendReport(MothershipReport report)
     {
-        logExceptionToMothership(request, ex, requestURL, local, level, true);
+        if (null != report)
+            _jobRunner.execute(report);
     }
 
     /** Figure out exactly what text for the stack trace and other details we should submit */
-    public static MothershipReport logExceptionToMothership(HttpServletRequest request, Throwable ex, String requestURL, boolean local, ExceptionReportingLevel level, boolean submit)
+    @Nullable
+    public static MothershipReport createReportFromThrowable(HttpServletRequest request, Throwable ex, String requestURL, boolean local, ExceptionReportingLevel level)
     {
+        if (!shouldSend(level, local))
+            return null;
+
         Map<Enum, String> decorations = getExceptionDecorations(ex);
 
         String exceptionMessage = null;
@@ -303,7 +308,7 @@ public class ExceptionUtil
             }
         }
 
-        return reportExceptionToMothership(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, local, level, submit);
+        return createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, local, level);
     }
 
     /**
@@ -326,46 +331,49 @@ public class ExceptionUtil
         );
 
         // Once to labkey.org, if so configured
-        reportExceptionToMothership(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, false, getExceptionReportingLevel(), true);
+        ExceptionReportingLevel level = getExceptionReportingLevel();
+        if (shouldSend(level, false))
+        {
+            sendReport(createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, false, level));
+        }
 
         // And once to the local server, if so configured
-        if (isSelfReportExceptions())
+        if (isSelfReportExceptions() && shouldSend(ExceptionReportingLevel.HIGH, true))
         {
-            reportExceptionToMothership(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, true, ExceptionReportingLevel.HIGH, true);
+            sendReport(createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, true, ExceptionReportingLevel.HIGH));
         }
     }
 
-    private static MothershipReport reportExceptionToMothership(
-            String stackTrace,
-            String exceptionMessage,
-            String browser,
-            String sqlState,
-            String requestURL,
-            String referrerURL,
-            String username,
-            boolean local,
-            ExceptionReportingLevel level,
-            boolean submit)
+    private static boolean shouldSend(ExceptionReportingLevel level, boolean local)
     {
+        boolean send = true;
+        
         if (level == ExceptionReportingLevel.NONE)
-            return null;
-
-        if (local && ModuleLoader.getInstance().isUpgradeInProgress())
+        {
+            send = false;
+        }
+        else if (local && ModuleLoader.getInstance().isUpgradeInProgress())
         {
             _logStatic.error("Not logging exception to local mothership because upgrade is in progress");
-            return null;
+            send = false;
         }
-
         // In dev mode, don't report to labkey.org if the Mothership module is installed.
-        if (!local && AppProps.getInstance().isDevMode() && MothershipReport.isShowSelfReportExceptions())
-            return null;
-
-        if (submit && _reportingRateLimiter.add(1, false) > 0)
+        else if (!local && AppProps.getInstance().isDevMode() && MothershipReport.isShowSelfReportExceptions())
+        {
+            send = false;
+        }
+        else if (!local && _reportingRateLimiter.add(1, false) > 0)
         {
             MothershipReport.incrementDroppedExceptionCount();
-            return null;
+            send = false;
         }
 
+        return send;
+    }
+
+    @NotNull
+    private static MothershipReport createReportFromStacktrace(String stackTrace, String exceptionMessage, String browser, String sqlState, String requestURL, String referrerURL, String username, boolean local, ExceptionReportingLevel level)
+    {
         try
         {
             MothershipReport report = new MothershipReport(MothershipReport.Type.ReportException, local);
@@ -401,9 +409,6 @@ public class ExceptionUtil
                     report.addParam("username", username);
                 }
             }
-
-            if (submit)
-                _jobRunner.execute(report);
 
             return report;
         }

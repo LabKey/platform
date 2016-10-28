@@ -677,7 +677,7 @@ public class AuthenticationManager
         }
 
         _userProviders.put(user.getUserId(), authProvider);
-        addAuditEvent(user, request, email + " logged in successfully via " + authProvider.getName() + " authentication.");
+        addAuditEvent(user, request, email + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + authProvider.getName() + " authentication.");
 
         return new PrimaryAuthenticationResult(user);
     }
@@ -771,7 +771,7 @@ public class AuthenticationManager
             provider.logout(request);
 
         if (!user.isGuest())
-            addAuditEvent(user, request, user.getEmail() + " logged out.");
+            addAuditEvent(user, request, user.getEmail() + " " + UserManager.UserAuditEvent.LOGGED_OUT + ".");
     }
 
 

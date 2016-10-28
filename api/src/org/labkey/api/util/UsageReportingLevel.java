@@ -73,7 +73,24 @@ public enum UsageReportingLevel
         @Override
         protected void addExtraParams(MothershipReport report, Map<String, Object> metrics)
         {
-            addLowUsageReportingParams(report, metrics);
+            report.addParam("userCount", UserManager.getActiveUserCount());
+
+            report.addParam("containerCount", ContainerManager.getContainerCount());
+            report.addParam("projectCount", ContainerManager.getRoot().getChildren().size());
+            metrics.put("droppedExceptionCount", MothershipReport.getDroppedExceptionCount());
+
+            // Users within the last 30 days
+            Calendar cal = new GregorianCalendar();
+            cal.add(Calendar.DATE, -30);
+            Date startDate = cal.getTime();
+            report.addParam("activeUserCount", UserManager.getRecentUserCount(startDate));
+            // Other counts within the last 30 days
+            metrics.put("recentLoginCount", UserManager.getRecentLoginCount(startDate));
+            metrics.put("recentLogoutCount", UserManager.getRecentLogOutCount(startDate));
+            metrics.put("activeDayCount", UserManager.getActiveDaysCount(startDate));
+            Integer averageRecentDuration = UserManager.getAverageSessionDuration(startDate);
+            metrics.put("recentAvgSessionDuration", null == averageRecentDuration ? -1 : averageRecentDuration);
+
         }
     },
     MEDIUM
@@ -81,8 +98,18 @@ public enum UsageReportingLevel
         @Override
         protected void addExtraParams(MothershipReport report, Map<String, Object> metrics)
         {
-            addLowUsageReportingParams(report, metrics);
-            addMediumUsageReportingParams(report, metrics);
+            LOW.addExtraParams(report, metrics);
+
+            LookAndFeelProperties laf = LookAndFeelProperties.getInstance(ContainerManager.getRoot());
+            report.addParam("logoLink", laf.getLogoHref());
+            report.addParam("organizationName", laf.getCompanyName());
+            report.addParam("systemDescription", laf.getDescription());
+            report.addParam("systemShortName", laf.getShortName());
+            report.addParam("administratorEmail", AppProps.getInstance().getAdministratorContactEmail());
+
+            metrics.put("modules", getModulesStats());
+            metrics.put("folderTypeCounts", ContainerManager.getFolderTypeNameContainerCounts(ContainerManager.getRoot()));
+            metrics.put("targetedMSRuns", getTargetedMSRunCount());
         }
     };
 
@@ -91,41 +118,6 @@ public enum UsageReportingLevel
     protected boolean doGeneration()
     {
         return true;
-    }
-
-    private static void addMediumUsageReportingParams(MothershipReport report, Map<String, Object> metrics)
-    {
-        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(ContainerManager.getRoot());
-
-        report.addParam("logoLink", laf.getLogoHref());
-        report.addParam("organizationName", laf.getCompanyName());
-        report.addParam("systemDescription", laf.getDescription());
-        report.addParam("systemShortName", laf.getShortName());
-        report.addParam("administratorEmail", AppProps.getInstance().getAdministratorContactEmail());
-
-        metrics.put("modules", getModulesStats());
-        metrics.put("folderTypeCounts", ContainerManager.getFolderTypeNameContainerCounts(ContainerManager.getRoot()));
-        metrics.put("targetedMSRuns", getTargetedMSRunCount());
-    }
-
-    private static void addLowUsageReportingParams(MothershipReport report, Map<String, Object> metrics)
-    {
-        report.addParam("userCount", UserManager.getActiveUserCount());
-        // Users within the last 30 days
-        Calendar cal = new GregorianCalendar();
-        cal.add(Calendar.DATE, -30);
-        Date startDate = cal.getTime();
-        report.addParam("activeUserCount", UserManager.getRecentUserCount(startDate));
-        report.addParam("containerCount", ContainerManager.getContainerCount());
-        report.addParam("projectCount", ContainerManager.getRoot().getChildren().size());
-
-        // Other counts within the last 30 days
-        metrics.put("recentLoginCount", UserManager.getRecentLoginCount(startDate));
-        metrics.put("recentLogoutCount", UserManager.getRecentLogOutCount(startDate));
-        metrics.put("activeDayCount", UserManager.getActiveDaysCount(startDate));
-        Integer averageRecentDuration = UserManager.getAverageSessionDuration(startDate);
-        metrics.put("recentAvgSessionDuration", null == averageRecentDuration ? -1 : averageRecentDuration);
-        metrics.put("droppedExceptionCount", MothershipReport.getDroppedExceptionCount());
     }
 
     private static Timer _timer;
