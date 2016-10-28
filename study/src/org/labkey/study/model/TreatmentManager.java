@@ -361,8 +361,12 @@ public class TreatmentManager
         filter.addCondition(FieldKey.fromParts("ProductId"), productId);
         if (dose != null)
             filter.addCondition(FieldKey.fromParts("Dose"), dose);
+        else
+            filter.addCondition(FieldKey.fromParts("Dose"), null, CompareType.ISBLANK);
         if (route != null)
             filter.addCondition(FieldKey.fromParts("Route"), route);
+        else
+            filter.addCondition(FieldKey.fromParts("Route"), null, CompareType.ISBLANK);
         Collection<DoseAndRoute> doseAndRoutes = new TableSelector(StudySchema.getInstance().getTableInfoDoseAndRoute(), filter, null).getCollection(DoseAndRoute.class);
 
         if (!doseAndRoutes.isEmpty())
