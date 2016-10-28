@@ -401,21 +401,23 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
 
     optimizeFilter: function(op, values, field){
         if(field && field.store){
-            if(values.length == field.store.getCount()){
+            if(values.length == field.store.getTotalCount()){
                 op = null;
                 values = [];
             }
-            else if(values.length > (field.store.getCount() / 2)){
+            else if(values.length > (field.store.getTotalCount() / 2)){
                 op = LABKEY.Filter.getFilterTypeForURLSuffix(op).getOpposite().getURLSuffix();
-
+                var filters = Ext4.clone(field.store.filters.items);
+                field.store.clearFilter();
                 var newValues = [];
                 field.store.each(function(rec){
-                    var v = rec.get(field.displayField)
+                    var v = rec.get(field.displayField);
                     if(values.indexOf(v) == -1){
                         newValues.push(v);
                     }
                 }, this);
                 values = newValues;
+                field.store.addFilter(filters, true);
             }
         }
         values = Ext4.unique(values);
