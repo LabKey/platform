@@ -224,6 +224,6 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     @Override
     public boolean isDataTypeSelected(String dataType)
     {
-        return _dataTypes == null || _dataTypes.contains(dataType);
+        return _dataTypes == null || dataType == null || _dataTypes.contains(dataType);
     }
 }

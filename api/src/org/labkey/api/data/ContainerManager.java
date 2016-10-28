@@ -330,7 +330,7 @@ public class ContainerManager
         List<String> errorStrings = new ArrayList<>();
 
         if (!c.isProject() && folderType.isProjectOnlyType())
-            errorStrings.add("Cannot set a subfolder to " + folderType.getName() + "because it is a project-only folder type.");
+            errorStrings.add("Cannot set a subfolder to " + folderType.getName() + " because it is a project-only folder type.");
 
         // Check for any containers that need to be moved into container tabs
         if (errorStrings.isEmpty() && folderType.hasContainerTabs())
