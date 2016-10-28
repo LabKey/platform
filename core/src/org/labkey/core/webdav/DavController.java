@@ -6678,7 +6678,7 @@ public class DavController extends SpringActionController
             return "Filename may not contain 'tab', 'new line', or 'return' characters.";
         if (StringUtils.contains("-$%", s.charAt(0)))
             return "Filename may not begin with any of these characters: -$%";
-        if (Pattern.matches(".*\\s-.*",s))
+        if (Pattern.matches(".*\\s-[^ ].*",s))
             return "Filename may not contain space followed by dash.";
         return null;
     }
