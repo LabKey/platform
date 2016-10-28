@@ -55,15 +55,14 @@
 %>
         <div id='study-schedule-<%=webPartIndex%>' class="study-schedule-container"></div>
         <script type="text/javascript">
-            function callRender() {
-                var studySchedulePanel = Ext4.create('LABKEY.ext4.StudyScheduleGrid', {
+
+            Ext4.onReady(function(){
+                Ext4.create('LABKEY.ext4.StudyScheduleGrid', {
                     renderTo      : "study-schedule-"+ <%=webPartIndex%>,
                     timepointType : "<%=timepointType%>",
                     canEdit       : <%=canEdit%>
                 });
-            }
-            Ext4.onReady(callRender);
-
+            });
         </script>
 <%
     }

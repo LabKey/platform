@@ -275,12 +275,6 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                         }
                     }
                 },
-                //Set the height of the panel correctly
-                afterrender : function(panel)
-                {
-                    var count = panel.getView().getSelectionModel().getStore().getCount();
-                    this.setHeight(62+(24+28*count));
-                },
                 itemclick : function(view, record, item, index, e, opts) {
                     var cls = e.target.className;
                     if (cls.search(/edit-views-link/i) >= 0)
@@ -289,7 +283,6 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             }
         });
 
-        this.centerPanel.setHeight((this.schedule.data.length + 2) * 30);
         this.centerPanel.removeAll();
         this.centerPanel.add(this.gridPanel);
 

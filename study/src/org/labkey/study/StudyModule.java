@@ -524,7 +524,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         public StudyScheduleWebPartFactory()
         {
-            super("Study Schedule", true, false, WebPartFactory.LOCATION_BODY); // is editable
+            super("Study Schedule", false, false, WebPartFactory.LOCATION_BODY);
         }
 
         @Override
