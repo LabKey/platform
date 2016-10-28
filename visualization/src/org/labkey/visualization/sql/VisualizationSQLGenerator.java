@@ -29,6 +29,7 @@ import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.ExceptionUtil;
@@ -343,7 +344,11 @@ public class VisualizationSQLGenerator implements HasViewContext
             VisualizationSourceQuery query = _sourceQueries.get(queryName);
             if (query != null)
             {
-                SimpleFilter filter = new SimpleFilter(filterUrl, VisualizationController.FILTER_DATAREGION);
+                String dataRegionName = filterUrl.getParameter(QueryParam.dataRegionName);
+                if (dataRegionName == null)
+                    dataRegionName = VisualizationController.FILTER_DATAREGION;
+
+                SimpleFilter filter = new SimpleFilter(filterUrl, dataRegionName);
                 query.addFilter(filter);
             }
         }

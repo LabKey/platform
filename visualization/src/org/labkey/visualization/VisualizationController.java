@@ -182,6 +182,7 @@ public class VisualizationController extends SpringActionController
 
             // Get URL (column-header) filters:
             ActionURL filterURL = settings.getSortFilterURL();
+            filterURL.addParameter(QueryParam.dataRegionName, settings.getDataRegionName());
 
             // Add the base filter as set in code:
             SimpleFilter baseFilter = settings.getBaseFilter();
@@ -409,7 +410,12 @@ public class VisualizationController extends SpringActionController
                             if (filterUrlString != null)
                             {
                                 ActionURL filterUrl = new ActionURL(filterUrlString);
-                                filter = new SimpleFilter(filterUrl, VisualizationController.FILTER_DATAREGION);
+
+                                String dataRegionName = filterUrl.getParameter(QueryParam.dataRegionName);
+                                if (dataRegionName == null)
+                                    dataRegionName = VisualizationController.FILTER_DATAREGION;
+
+                                filter = new SimpleFilter(filterUrl, dataRegionName);
                             }
 
                             QueryLogging queryLogging = new QueryLogging();
