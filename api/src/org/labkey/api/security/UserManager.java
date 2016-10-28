@@ -394,6 +394,11 @@ public class UserManager
         return UserCache.getUserIds();
     }
 
+    public static Map<ValidEmail, User> getUserEmailMap()
+    {
+        return UserCache.getUserEmailMap();
+    }
+
     public static void clearUserList()
     {
         UserCache.clear();
