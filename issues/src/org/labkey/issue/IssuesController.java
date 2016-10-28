@@ -112,6 +112,7 @@ import org.labkey.issue.actions.DeleteIssueListAction;
 import org.labkey.issue.actions.GetRelatedFolder;
 import org.labkey.issue.actions.InsertIssueDefAction;
 import org.labkey.issue.actions.IssueServiceAction;
+import org.labkey.issue.actions.RepairIssueLookupsAction;
 import org.labkey.issue.actions.UpgradeIssuesAction;
 import org.labkey.issue.actions.ValidateIssueDefNameAction;
 import org.labkey.issue.model.CustomColumn;
@@ -164,7 +165,8 @@ public class IssuesController extends SpringActionController
             InsertIssueDefAction.class,
             ValidateIssueDefNameAction.class,
             UpgradeIssuesAction.class,
-            DeleteIssueListAction.class);
+            DeleteIssueListAction.class,
+            RepairIssueLookupsAction.class);
 
     public IssuesController() throws Exception
     {

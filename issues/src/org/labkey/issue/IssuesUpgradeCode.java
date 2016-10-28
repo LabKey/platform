@@ -18,6 +18,7 @@ package org.labkey.issue;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -463,28 +464,7 @@ public class IssuesUpgradeCode implements UpgradeCode
             // get the picklists for any of the custom keywords
             if (ccc != null)
             {
-                Map<String, Collection<KeywordManager.Keyword>> keywordMap = new CaseInsensitiveHashMap<>();
-                for (CustomColumn cc : ccc.getCustomColumns())
-                {
-                    if (cc.isPickList())
-                    {
-                        ColumnType type = ColumnTypeEnum.forName(cc.getName());
-                        if (type != null)
-                        {
-                            keywordMap.put(cc.getName(), KeywordManager.getKeywords(c, type));
-                        }
-                    }
-                }
-
-                // check for any keywords for any of the standard columns
-                for (String colName : Arrays.asList("type", "area", "priority", "milestone", "resolution"))
-                {
-                    Collection<KeywordManager.Keyword> keywords = KeywordManager.getKeywords(c, ColumnTypeEnum.forName(colName));
-                    if (!keywords.isEmpty())
-                        keywordMap.put(colName, keywords);
-                }
-
-                config.setKeywordMap(keywordMap);
+                config.setKeywordMap(getKeywordMap(ccc, c));
             }
             Container inheritContainer = IssueManager.getInheritFromContainer(c);
             if (inheritContainer == null)
@@ -493,6 +473,7 @@ public class IssuesUpgradeCode implements UpgradeCode
                 {
                     settingsProjectMap.put(project, new ArrayListValuedHashMap<>());
                 }
+                config.setIgnoreKeywords(false);
                 settingsProjectMap.get(project).put(config, c);
                 allConfigs.put(c, config);
             }
@@ -629,6 +610,33 @@ public class IssuesUpgradeCode implements UpgradeCode
         return migrationPlans;
     }
 
+    private Map<String, Collection<KeywordManager.Keyword>>  getKeywordMap(@NotNull CustomColumnConfiguration ccc, Container c)
+    {
+        Map<String, Collection<KeywordManager.Keyword>> keywordMap = new CaseInsensitiveHashMap<>();
+
+        for (CustomColumn cc : ccc.getCustomColumns())
+        {
+            if (cc.isPickList())
+            {
+                ColumnType type = ColumnTypeEnum.forName(cc.getName());
+                if (type != null)
+                {
+                    keywordMap.put(cc.getName(), KeywordManager.getKeywords(c, type));
+                }
+            }
+        }
+
+        // check for any keywords for any of the standard columns
+        for (String colName : Arrays.asList("type", "area", "priority", "milestone", "resolution"))
+        {
+            Collection<KeywordManager.Keyword> keywords = KeywordManager.getKeywords(c, ColumnTypeEnum.forName(colName));
+            if (!keywords.isEmpty())
+                keywordMap.put(colName, keywords);
+        }
+
+        return keywordMap;
+    }
+
     private String createUniqueName(String base, Set<String> names)
     {
         String name = base;
@@ -638,6 +646,82 @@ public class IssuesUpgradeCode implements UpgradeCode
             name = base + i++;
         }
         return name;
+    }
+
+    /**
+     * Repair any lookup values that may not have gotten migrated properly
+     * @param context
+     */
+    public void repairIssueLookups(final ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        try
+        {
+            _log.info("Checking for issue list lookups that need to be repaired");
+            User upgradeUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(SiteAdminRole.class)), false);
+            for (IssueListDef issueListDef : IssueManager.getIssueListDefs(null))
+            {
+                Container c = ContainerManager.getForId(issueListDef.getContainerId());
+                // only inspecting non-inherited configurations since this represented the problem scenario
+                if (IssueManager.getInheritFromContainer(c) == null)
+                {
+                    _log.info("Evaluating issue list definition : " + issueListDef.getName() + " in folder : " + c.getPath());
+
+                    CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(c);
+                    if (ccc != null)
+                    {
+                        Map<String, Collection<KeywordManager.Keyword>> keywordMap = getKeywordMap(ccc, c);
+
+                        // verify the automatically created lookups have the complete set of values
+                        Domain domain = issueListDef.getDomain(upgradeUser);
+                        if (domain != null)
+                        {
+                            for (Map.Entry<String, Collection<KeywordManager.Keyword>> entry : keywordMap.entrySet())
+                            {
+                                String lookupTableName = IssueDefDomainKind.getLookupListName(domain.getName(), entry.getKey());
+                                ensureLookupValues(domain.getContainer(), upgradeUser, lookupTableName, entry.getValue());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            _log.error(e.getMessage());
+        }
+    }
+
+    private void ensureLookupValues(Container c, User user, String tableName, Collection<KeywordManager.Keyword> keywords) throws Exception
+    {
+        UserSchema userSchema = QueryService.get().getUserSchema(user, c, "lists");
+        TableInfo table = userSchema.getTable(tableName);
+
+        if (table != null)
+        {
+            QueryUpdateService qus = table.getUpdateService();
+            if (qus != null)
+            {
+                Set<String> existingValues = new CaseInsensitiveHashSet();
+                new TableSelector(table).forEachMap(row -> existingValues.add(String.valueOf(row.get("value"))));
+
+                List<Map<String, Object>> rows = new ArrayList<>();
+                BatchValidationException errors = new BatchValidationException();
+
+                for (KeywordManager.Keyword keyword : keywords)
+                {
+                    if (!existingValues.contains(keyword.getKeyword()))
+                    {
+                        _log.info("Lookup table : " + tableName + " is missing legacy value of : " + keyword.getKeyword());
+                        rows.add(new CaseInsensitiveHashMap<>(Collections.singletonMap("value", keyword.getKeyword())));
+                    }
+                }
+                if (!rows.isEmpty())
+                    qus.insertRows(user, c, rows, errors, null, null);
+            }
+        }
     }
 
     static class IssueAdminConfig
