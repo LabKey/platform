@@ -6984,19 +6984,18 @@ public class AdminController extends SpringActionController
             if (MothershipReport.Type.CheckForUpdates.toString().equals(form.getType()))
             {
                 report = UsageReportingLevel.generateReport(UsageReportingLevel.valueOf(form.getLevel()), true);
-                if (null != report && form.isSubmit())
-                {
-                    report.run();
-                }
             }
             else
             {
-                report = ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(),
+                report = ExceptionUtil.createReportFromThrowable(getViewContext().getRequest(),
                         new SQLException("Intentional exception for testing purposes", "400"),
                         (String)getViewContext().getRequest().getAttribute(ViewServlet.ORIGINAL_URL_STRING),
                         true,
-                        ExceptionReportingLevel.valueOf(form.getLevel()),
-                        form.isSubmit());
+                        ExceptionReportingLevel.valueOf(form.getLevel()));
+            }
+            if (null != report && form.isSubmit())
+            {
+                report.run();
             }
             Map<String, Object> result = new LinkedHashMap<>();
             if (null != report)
