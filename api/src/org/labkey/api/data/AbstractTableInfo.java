@@ -1529,10 +1529,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     @Override
     public Set<ColumnInfo> getAllInvolvedColumns(Collection<ColumnInfo> selectColumns)
     {
-        Set<ColumnInfo> allInvolvedColumns = new HashSet<>();
-        for (ColumnInfo column : selectColumns)
-            allInvolvedColumns.add(column);
-        return allInvolvedColumns;
+        return new HashSet<>(selectColumns);
     }
 
     public static class TestCase extends Assert{
