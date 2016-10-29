@@ -585,15 +585,16 @@ public class QueryTable extends QueryRelation
         for (RelationColumn rc : selected)
         {
             TableColumn tc = (TableColumn)rc;
-            FieldKey fk = tc._col.getFieldKey();
+            ColumnInfo col = tc._col;
+            FieldKey fk = col.getFieldKey();
 
             if (suggestedContainerColumns.add(fk.getParent()))
                 addSuggestedContainerColumn(suggested, tc, selectedColumnMap);
 
-            if (null != tc._col.getMvColumnName())
-                addSuggestedColumn(suggested, tc._col.getMvColumnName(), selectedColumnMap);
+            if (null != col.getMvColumnName())
+                addSuggestedColumn(suggested, col.getMvColumnName(), selectedColumnMap);
 
-            StringExpression se = tc._col.getURL();
+            StringExpression se = col.getURL();
             if (se instanceof StringExpressionFactory.FieldKeyStringExpression)
             {
                 Set<FieldKey> keys = ((StringExpressionFactory.FieldKeyStringExpression) se).getFieldKeys();
@@ -601,12 +602,12 @@ public class QueryTable extends QueryRelation
                     addSuggestedColumn(suggested, key, selectedColumnMap);
             }
 
-            if (tc._col.getFk() != null)
-                addSuggestedColumns(suggested, tc._col.getFk().getSuggestedColumns(), selectedColumnMap);
+            if (col.getFk() != null)
+                addSuggestedColumns(suggested, col.getFk().getSuggestedColumns(), selectedColumnMap);
 
-            if (tc._col.getSortFieldKeys() != null)
+            if (col.getSortFieldKeys() != null)
             {
-                for (FieldKey key : tc._col.getSortFieldKeys())
+                for (FieldKey key : col.getSortFieldKeys())
                 {
                     addSuggestedColumn(suggested, key, selectedColumnMap);
                 }
@@ -620,6 +621,15 @@ public class QueryTable extends QueryRelation
                 {
                     addSuggestedColumn(suggested, fieldKey, selectedColumnMap);
                 }
+            }
+
+            ColumnLogging columnLogging = col.getColumnLogging();
+            for (FieldKey fieldKey : columnLogging.getDataLoggingColumns())
+            {
+                FieldKey fixedUp = fieldKey;
+                if (null != tc.getFieldKey().getParent())
+                    fixedUp = new FieldKey(tc.getFieldKey().getParent(), fieldKey.getName());
+                addSuggestedColumn(suggested, fixedUp, selectedColumnMap);
             }
         }
         suggested.removeAll(selected);

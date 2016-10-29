@@ -175,7 +175,7 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     @Override
     public Set<ColumnInfo> getAllInvolvedColumns(Collection<ColumnInfo> selectColumns)
     {
-        Set<ColumnInfo> allInvolvedColumns = new HashSet<>();
+        Set<ColumnInfo> allInvolvedColumns = super.getAllInvolvedColumns(selectColumns);
         for (QueryTable.TableColumn tableColumn : _relation._query.getInvolvedTableColumns())
             allInvolvedColumns.add(tableColumn._col);
         return allInvolvedColumns;
