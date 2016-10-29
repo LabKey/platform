@@ -16,6 +16,7 @@
 package org.labkey.test.tests.study;
 
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -34,12 +35,16 @@ import org.labkey.test.components.studydesigner.ImmunizationScheduleWebpart;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.components.studydesigner.ManageTreatmentsPage;
 import org.labkey.test.components.studydesigner.ManageStudyProductsPage;
+import org.labkey.test.components.studydesigner.ManageTreatmentsSingleTablePage;
+import org.labkey.test.components.studydesigner.TreatmentDialog;
 import org.labkey.test.components.studydesigner.VaccineDesignWebpart;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PortalHelper;
+import org.openqa.selenium.WebElement;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -116,6 +121,8 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
     {
         testVaccineDesign();
         testTreatmentSchedule();
+        testManageTreatmentsSingleTable();
+        verifyTreatmentSchedule();
         testAssaySchedule();
         testExportImport();
     }
@@ -225,7 +232,6 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
 
         treatmentsPage.save();
 
-        verifyTreatmentSchedule();
     }
 
     @LogMethod
@@ -268,6 +274,187 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         assaySchedulePage.save();
 
         verifyAssaySchedule();
+    }
+
+    @LogMethod
+    public void testManageTreatmentsSingleTable()
+    {
+        ManageTreatmentsSingleTablePage singleManagementTable;
+        TreatmentDialog treatmentDialog;
+        List<String> EXPECTED_HEADERS = new ArrayList<>(Arrays.asList("Group / Cohort", "Participant Count", "Enrollment", "Visit 1", "Visit 2", "NewVisit1", "NewVisit2"));
+        String tempText;
+
+        // These are the expected Immunogen options:
+        // Cp1 - 1.6e8 Ad vg : Intramuscular (IM)
+        // gp100 - 35ug : Intramuscular (IM)
+        // Immunogen1 - 1.6e8 Ad vg :
+        List<String> EXPECTED_IMMUNOGEN_VALUES = new ArrayList<>(Arrays.asList(
+                IMMUNOGENS[1] + " - " + DOSE_AND_UNITS[1] + " : " + ROUTES[0],
+                IMMUNOGENS[0] + " - " + DOSE_AND_UNITS[0] + " : " + ROUTES[0],
+                IMMUNOGENS[2] + " - " + DOSE_AND_UNITS[1] + " :"
+        ));
+
+        // These are the expected Adjuvant options:
+        // Adjuvant1 - 100ml :
+        // Adjuvant1 - 100ml : Intramuscular (IM)
+        // Adjuvant1 - : Intramuscular (IM)
+        // Freund's incomplete
+        List<String> EXPECTED_ADJUVANT_VALUES = new ArrayList<>(Arrays.asList(
+                ADJUVANTS[0] + " - " + DOSE_AND_UNITS[2] + " :",
+                ADJUVANTS[0] + " - " + DOSE_AND_UNITS[2] + " : " + ROUTES[0],
+                ADJUVANTS[0] + " - : " + ROUTES[0],
+                ADJUVANTS[1]
+        ));
+
+        // These are the expected Chhallenge options:
+        // Challenge1 - 1.6e8 Ad vg : Intramuscular (IM)
+        // Challenge1 - 35ug : Intramuscular (IM)
+        // Challenge2 - 100ml :
+        // Challenge3 - 1.6e8 Ad vg : Intramuscular (IM)
+        List<String> EXPECTED_CHALLENGE_VALUES = new ArrayList<>(Arrays.asList(
+                CHALLENGES[0] + " - " + DOSE_AND_UNITS[1] + " : " + ROUTES[0],
+                CHALLENGES[0] + " - " + DOSE_AND_UNITS[0] + " : " + ROUTES[0],
+                CHALLENGES[1] + " - " + DOSE_AND_UNITS[2] + " :",
+                CHALLENGES[2] + " - " + DOSE_AND_UNITS[1] + " : " + ROUTES[0]
+        ));
+
+
+        clickFolder("ProtocolDesigner Study");
+        clickTab("Overview");
+
+        log("Validate the Treatment dialog for the single table management.");
+
+        ImmunizationScheduleWebpart immunizationScheduleWebpart = new ImmunizationScheduleWebpart(getDriver());
+        sleep(1000);
+        immunizationScheduleWebpart.manage();
+
+        log("Validate that the column headers are as expected, and that the number of rows is as expected.");
+
+        singleManagementTable = new ManageTreatmentsSingleTablePage(this);
+        List<String> actualHeaders = singleManagementTable.columnHeaders();
+        for(String expectedHeader : EXPECTED_HEADERS)
+        {
+            Assert.assertTrue("Did not find header '" + expectedHeader + "'", actualHeaders.contains(expectedHeader));
+        }
+
+        Assert.assertEquals("Number of rows not as expected.", 6, singleManagementTable.numberOfRows());
+
+        log("Validate that the cell we are going to click on has the expected default value.");
+        Assert.assertEquals("Value of cell not as expected. ", TREATMENTS[1], singleManagementTable.getCellValue(3,5));
+
+        log("Validate that the options shown in the treatment dialog are as expected.");
+
+        treatmentDialog = singleManagementTable.clickCell(3,5);
+        log("Validate the number of labels in the Immunogen section.");
+        Assert.assertEquals("Number of labels in the Immunogen section not as expected.", 3, treatmentDialog.sectionOptions(TreatmentDialog.Sections.Immunogen).size());
+        for(WebElement we : treatmentDialog.sectionOptions(TreatmentDialog.Sections.Immunogen))
+        {
+            tempText = we.getText().trim();
+            Assert.assertTrue("Found unexpected value '" + tempText + "' in Immunogen section.", EXPECTED_IMMUNOGEN_VALUES.contains(tempText));
+        }
+
+        log("Validate the number of labels in the Adjuvant section.");
+        Assert.assertEquals("Number of labels in the Adjuvant section not as expected.", 4, treatmentDialog.sectionOptions(TreatmentDialog.Sections.Adjuvant).size());
+        for(WebElement we : treatmentDialog.sectionOptions(TreatmentDialog.Sections.Adjuvant))
+        {
+            tempText = we.getText().trim();
+            Assert.assertTrue("Found unexpected value '" + tempText + "' in Adjuvant section.", EXPECTED_ADJUVANT_VALUES.contains(tempText));
+        }
+
+        log("Validate the number of labels in the Challenge section.");
+        Assert.assertEquals("Number of labels in the Challenge section not as expected.", 4, treatmentDialog.sectionOptions(TreatmentDialog.Sections.Challenge).size());
+        for(WebElement we : treatmentDialog.sectionOptions(TreatmentDialog.Sections.Challenge))
+        {
+            tempText = we.getText().trim();
+            Assert.assertTrue("Found unexpected value '" + tempText + "' in Challenge section.", EXPECTED_CHALLENGE_VALUES.contains(tempText));
+        }
+
+        log("Validate that the expected values are selected.");
+        List<WebElement> selectedValues = treatmentDialog.getSelectedValues();
+        Assert.assertEquals("Number of values selected not as expected.", 4, selectedValues.size());
+        Assert.assertEquals(EXPECTED_IMMUNOGEN_VALUES.get(2), selectedValues.get(0).getText());
+        Assert.assertEquals(EXPECTED_ADJUVANT_VALUES.get(3), selectedValues.get(1).getText());
+        Assert.assertEquals(EXPECTED_CHALLENGE_VALUES.get(2), selectedValues.get(2).getText());
+        Assert.assertEquals(EXPECTED_CHALLENGE_VALUES.get(3), selectedValues.get(3).getText());
+
+        log("Change the setting by selecting a new challenge");
+        treatmentDialog.selectOption(TreatmentDialog.Sections.Challenge, EXPECTED_CHALLENGE_VALUES.get(1));
+
+        treatmentDialog.clickOk();
+        sleep(500);
+
+        log("Validate that the text in the grid is updated. ");
+        tempText = IMMUNOGENS[2] + "|" + ADJUVANTS[1] + "|" + CHALLENGES[0] + "|" + CHALLENGES[1] + "|" + CHALLENGES[2];
+        Assert.assertEquals("Cell value not as expected after update.", tempText, singleManagementTable.getCellValue(3,5));
+
+        log("Reopen the dialog and validate the updates are shown.");
+        treatmentDialog = singleManagementTable.clickCell(3,5);
+        selectedValues = treatmentDialog.getSelectedValues();
+        Assert.assertEquals("Number of values selected not as expected.", 5, selectedValues.size());
+        Assert.assertEquals(EXPECTED_IMMUNOGEN_VALUES.get(2), selectedValues.get(0).getText());
+        Assert.assertEquals(EXPECTED_ADJUVANT_VALUES.get(3), selectedValues.get(1).getText());
+        Assert.assertEquals(EXPECTED_CHALLENGE_VALUES.get(1), selectedValues.get(2).getText());
+        Assert.assertEquals(EXPECTED_CHALLENGE_VALUES.get(2), selectedValues.get(3).getText());
+        Assert.assertEquals(EXPECTED_CHALLENGE_VALUES.get(3), selectedValues.get(4).getText());
+
+        treatmentDialog.clickCancel();
+        sleep(500);
+
+        log("Now add a treatment.");
+        treatmentDialog = singleManagementTable.clickCell(1,7);
+        treatmentDialog.selectOption(TreatmentDialog.Sections.Immunogen, EXPECTED_IMMUNOGEN_VALUES.get(1))
+                .selectOption(TreatmentDialog.Sections.Adjuvant, EXPECTED_ADJUVANT_VALUES.get(2))
+                .selectOption(TreatmentDialog.Sections.Challenge, EXPECTED_CHALLENGE_VALUES.get(1));
+        treatmentDialog.clickOk();
+        sleep(500);
+        log("Validate that the text in the grid is as expected. ");
+        tempText = IMMUNOGENS[0] + "|" + ADJUVANTS[0] + "|" + CHALLENGES[0];
+        log(tempText);
+        log(singleManagementTable.getCellValue(1,7));
+        Assert.assertEquals("Cell value not as expected after update.", tempText, singleManagementTable.getCellValue(1,7));
+
+        log("Now add another treatment that should map to a named treatment.");
+        treatmentDialog = singleManagementTable.clickCell(1,5);
+        treatmentDialog.selectOption(TreatmentDialog.Sections.Immunogen, EXPECTED_IMMUNOGEN_VALUES.get(0))
+                .selectOption(TreatmentDialog.Sections.Immunogen, EXPECTED_IMMUNOGEN_VALUES.get(1))
+                .selectOption(TreatmentDialog.Sections.Adjuvant, EXPECTED_ADJUVANT_VALUES.get(0))
+                .selectOption(TreatmentDialog.Sections.Challenge, EXPECTED_CHALLENGE_VALUES.get(1));
+        treatmentDialog.clickOk();
+        sleep(500);
+        log("Validate that the text in the grid is as expected. ");
+        tempText = IMMUNOGENS[1] + "|" + IMMUNOGENS[0] + "|" + ADJUVANTS[0] + "|" + CHALLENGES[0];
+        Assert.assertEquals("Cell value not as expected after update.", tempText, singleManagementTable.getCellValue(1,5));
+
+        sleep(1000);
+        clickButton("Save");
+        sleep(1000);
+
+        log("Now revisit the single table and make sure the updates were saved.");
+        immunizationScheduleWebpart = new ImmunizationScheduleWebpart(getDriver());
+        immunizationScheduleWebpart.manage();
+        sleep(1000);
+        singleManagementTable = new ManageTreatmentsSingleTablePage(this);
+
+        log("Validate that the cell has the text version of the update.");
+        tempText = IMMUNOGENS[0] + "|" + ADJUVANTS[0] + "|" + CHALLENGES[0];
+        Assert.assertEquals("Cell value not as expected after update.", tempText, singleManagementTable.getCellValue(1,7));
+        log("Validate the dialog reflects the changes.");
+        treatmentDialog = singleManagementTable.clickCell(1,7);
+        Assert.assertEquals("Number of values selected not as expected.", 3, treatmentDialog.getSelectedValues().size());
+        selectedValues = treatmentDialog.getSelectedValues();
+        Assert.assertEquals(EXPECTED_IMMUNOGEN_VALUES.get(1), selectedValues.get(0).getText());
+        Assert.assertEquals(EXPECTED_ADJUVANT_VALUES.get(2), selectedValues.get(1).getText());
+        Assert.assertEquals(EXPECTED_CHALLENGE_VALUES.get(1), selectedValues.get(2).getText());
+        treatmentDialog.clickCancel();
+        sleep(500);
+
+        tempText = TREATMENTS[0];
+        log("Validate that this cell now says: " + tempText);
+        Assert.assertEquals("Cell value not as expected after update.", tempText, singleManagementTable.getCellValue(1,5));
+
+        log("We are done, go to Overview tab.");
+        clickTab("Overview");
+
     }
 
     @LogMethod
@@ -403,6 +590,8 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         );
 
         visitTreatments = new HashMap<>();
+        visitTreatments.put(VISITS.get(2).getLabel(), TREATMENTS[0]);
+        visitTreatments.put(NEW_VISITS.get(1).getLabel(), IMMUNOGENS[0] + "|" + ADJUVANTS[0] + "|" + CHALLENGES[0]);
         verifyCohortRow(immunizationScheduleWebpart, 0, COHORTS[1], null, visitTreatments, allVisitLabels);
 
         visitTreatments = new HashMap<>();
@@ -418,8 +607,26 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
 
         visitTreatments = new HashMap<>();
         visitTreatments.put(VISITS.get(0).getLabel(), TREATMENTS[0]);
-        visitTreatments.put(VISITS.get(2).getLabel(), TREATMENTS[1]);
+        visitTreatments.put(VISITS.get(2).getLabel(), IMMUNOGENS[2] + "|" + ADJUVANTS[1] + "|" + CHALLENGES[0] + "|" + CHALLENGES[1] + "|" + CHALLENGES[2]);
         verifyCohortRow(immunizationScheduleWebpart, 3, NEW_COHORTS[0], 2, visitTreatments, allVisitLabels);
+
+//        // Check the 1st and last rows after everything else. If this is after update visit treatments will have changed.
+//        if(!afterUpdate)
+//        {
+//            visitTreatments = new HashMap<>();
+//            verifyCohortRow(immunizationScheduleWebpart, 0, COHORTS[1], null, visitTreatments, allVisitLabels);
+//
+//            visitTreatments = new HashMap<>();
+//            visitTreatments.put(VISITS.get(0).getLabel(), TREATMENTS[0]);
+//            visitTreatments.put(VISITS.get(2).getLabel(), TREATMENTS[1]);
+//            verifyCohortRow(immunizationScheduleWebpart, 3, NEW_COHORTS[0], 2, visitTreatments, allVisitLabels);
+//
+//        }
+//        else
+//        {
+//
+//        }
+//
     }
 
     private void verifyCohortRow(ImmunizationScheduleWebpart table, int rowIndex, String label, Integer subjectCount, Map<String, String> visitTreatments, List<String> allVisitLabels)
