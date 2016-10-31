@@ -29,10 +29,8 @@ import org.openqa.selenium.WebElement;
 
 import java.util.Collections;
 
-public class ShowInstallationDetailPage extends LabKeyPage
+public class ShowInstallationDetailPage extends LabKeyPage<ShowInstallationDetailPage.ElementCache>
 {
-    private Elements _elements;
-
     public ShowInstallationDetailPage(WebDriver driver)
     {
         super(driver);
@@ -59,21 +57,13 @@ public class ShowInstallationDetailPage extends LabKeyPage
         return Locator.lkLabel(WordUtils.capitalize(labelText)).followingSibling("td").findElement(getDriver()).getText();
     }
 
-    protected Elements elements()
+    @Override
+    protected ElementCache newElementCache()
     {
-        if (_elements == null)
-            _elements = new Elements();
-        return _elements;
+        return new ElementCache();
     }
 
-    private class Elements extends ComponentElements
+    protected class ElementCache extends LabKeyPage.ElementCache
     {
-        @Override
-        protected SearchContext getContext()
-        {
-            return getDriver();
-        }
-
-        WebElement example = new LazyWebElement(Locator.css("button"), this);
     }
 }

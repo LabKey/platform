@@ -29,10 +29,8 @@ import org.openqa.selenium.WebElement;
 
 import static org.labkey.test.components.html.OptionSelect.OptionSelect;
 
-public class StackTraceDetailsPage extends BaseMothershipPage
+public class StackTraceDetailsPage extends BaseMothershipPage<StackTraceDetailsPage.ElementCache>
 {
-    private Elements _elements;
-
     public StackTraceDetailsPage(WebDriver driver)
     {
         super(driver);
@@ -51,44 +49,43 @@ public class StackTraceDetailsPage extends BaseMothershipPage
 
     public Input bugNumber()
     {
-        return elements().bugNumberInput;
+        return elementCache().bugNumberInput;
     }
 
     public Input comments()
     {
-        return elements().commentsTextArea;
+        return elementCache().commentsTextArea;
     }
 
     public OptionSelect assignedTo()
     {
-        return elements().assignedToSelect;
+        return elementCache().assignedToSelect;
     }
 
     public ShowExceptionsPage clickSave()
     {
-        clickAndWait(elements().saveButton);
+        clickAndWait(elementCache().saveButton);
         return new ShowExceptionsPage(getDriver());
     }
 
     public InsertPage clickCreateIssue()
     {
-        clickAndWait(elements().createIssueButton);
+        clickAndWait(elementCache().createIssueButton);
         return new InsertPage(getDriver());
     }
 
     public DataRegionTable getExceptionReports()
     {
-        return elements().exceptionReportsDataRegion;
+        return elementCache().exceptionReportsDataRegion;
     }
 
-    protected Elements elements()
+    @Override
+    protected ElementCache newElementCache()
     {
-        if (_elements == null)
-            _elements = new Elements();
-        return _elements;
+        return new ElementCache();
     }
 
-    private class Elements extends BaseMothershipPage.Elements
+    protected class ElementCache extends BaseMothershipPage.ElementCache
     {
         Input bugNumberInput = new Input(Locator.name("bugNumber").findWhenNeeded(this), getDriver());
         Input commentsTextArea = new Input(Locator.name("comments").findWhenNeeded(this), getDriver());

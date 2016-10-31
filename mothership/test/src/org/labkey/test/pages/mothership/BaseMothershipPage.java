@@ -23,7 +23,7 @@ import org.openqa.selenium.SearchContext;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
-public abstract class BaseMothershipPage extends LabKeyPage
+public abstract class BaseMothershipPage<EC extends BaseMothershipPage.ElementCache> extends LabKeyPage<EC>
 {
     protected BaseMothershipPage(WebDriver driver)
     {
@@ -32,50 +32,42 @@ public abstract class BaseMothershipPage extends LabKeyPage
 
     public ShowExceptionsPage clickViewExceptions()
     {
-        clickAndWait(elements().viewExceptionsLink);
+        clickAndWait(elementCache().viewExceptionsLink);
         return new ShowExceptionsPage(getDriver());
     }
 
     public ShowInstallationsPage clickViewInstallations()
     {
-        clickAndWait(elements().allInstallationsLink);
+        clickAndWait(elementCache().allInstallationsLink);
         return new ShowInstallationsPage(getDriver());
     }
 
     public EditUpgradeMessagePage clickConfigure()
     {
-        clickAndWait(elements().configureLink);
+        clickAndWait(elementCache().configureLink);
         return new EditUpgradeMessagePage(getDriver());
     }
 
     public ShowReleasesPage clickShowReleases()
     {
-        clickAndWait(elements().listReleasesLink);
+        clickAndWait(elementCache().listReleasesLink);
         return new ShowReleasesPage(getDriver());
     }
 
     public ReportsPage clickReports()
     {
-        clickAndWait(elements().reportsLink);
+        clickAndWait(elementCache().reportsLink);
         return new ReportsPage(getDriver());
     }
 
     public ShowExceptionsPage clickMyExceptions()
     {
-        clickAndWait(elements().myExceptionsLink);
+        clickAndWait(elementCache().myExceptionsLink);
         return new ShowExceptionsPage(getDriver());
     }
 
-    protected abstract Elements elements();
-
-    protected class Elements extends ComponentElements
+    protected class ElementCache extends LabKeyPage.ElementCache
     {
-        @Override
-        protected SearchContext getContext()
-        {
-            return getDriver();
-        }
-
         WebElement viewExceptionsLink = new LazyWebElement(Locator.linkWithText("View Exceptions"), this);
         WebElement allInstallationsLink = new LazyWebElement(Locator.linkWithText("View All Installations"), this);
         WebElement configureLink = new LazyWebElement(Locator.linkWithText("Configure Mothership"), this);

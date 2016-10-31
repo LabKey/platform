@@ -21,10 +21,8 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.mothership.MothershipHelper;
 import org.openqa.selenium.WebDriver;
 
-public class ShowReleasesPage extends BaseMothershipPage
+public class ShowReleasesPage extends BaseMothershipPage<ShowReleasesPage.ElementCache>
 {
-    private Elements _elements;
-
     public ShowReleasesPage(WebDriver driver)
     {
         super(driver);
@@ -41,14 +39,13 @@ public class ShowReleasesPage extends BaseMothershipPage
         return new ShowReleasesPage(driver.getDriver());
     }
 
-    protected Elements elements()
+    @Override
+    protected ElementCache newElementCache()
     {
-        if (_elements == null)
-            _elements = new Elements();
-        return _elements;
+        return new ElementCache();
     }
 
-    private class Elements extends BaseMothershipPage.Elements
+    protected class ElementCache extends BaseMothershipPage.ElementCache
     {
         DataRegionTable dataRegion = new DataRegionTable("softwareReleases", getDriver());
     }

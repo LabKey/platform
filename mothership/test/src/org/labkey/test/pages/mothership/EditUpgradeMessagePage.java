@@ -24,10 +24,8 @@ import org.labkey.test.util.mothership.MothershipHelper;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
-public class EditUpgradeMessagePage extends BaseMothershipPage
+public class EditUpgradeMessagePage extends BaseMothershipPage<EditUpgradeMessagePage.ElementCache>
 {
-    private Elements _elements;
-
     public EditUpgradeMessagePage(WebDriver driver)
     {
         super(driver);
@@ -46,38 +44,37 @@ public class EditUpgradeMessagePage extends BaseMothershipPage
 
     public Input currentRevision()
     {
-        return elements().currentRevisionInput;
+        return elementCache().currentRevisionInput;
     }
 
     public Input message()
     {
-        return elements().messageTextArea;
+        return elementCache().messageTextArea;
     }
 
     public Input createIssueURL()
     {
-        return elements().createIssueURLInput;
+        return elementCache().createIssueURLInput;
     }
 
     public Input issuesContainer()
     {
-        return elements().issuesContainerInput;
+        return elementCache().issuesContainerInput;
     }
 
     public ShowExceptionsPage save()
     {
-        clickAndWait(elements().saveButton);
+        clickAndWait(elementCache().saveButton);
         return new ShowExceptionsPage(getDriver());
     }
 
-    protected Elements elements()
+    @Override
+    protected ElementCache newElementCache()
     {
-        if (_elements == null)
-            _elements = new Elements();
-        return _elements;
+        return new ElementCache();
     }
 
-    private class Elements extends BaseMothershipPage.Elements
+    protected class ElementCache extends BaseMothershipPage.ElementCache
     {
         Input currentRevisionInput = new Input(new LazyWebElement(Locator.name("currentRevision"), this), getDriver());
         Input messageTextArea = new Input(new LazyWebElement(Locator.name("message"), this), getDriver());

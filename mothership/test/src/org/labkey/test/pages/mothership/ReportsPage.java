@@ -20,10 +20,8 @@ import org.labkey.test.WebTestHelper;
 import org.labkey.test.util.mothership.MothershipHelper;
 import org.openqa.selenium.WebDriver;
 
-public class ReportsPage extends BaseMothershipPage
+public class ReportsPage extends BaseMothershipPage<ReportsPage.ElementCache>
 {
-    private Elements _elements;
-
     public ReportsPage(WebDriver driver)
     {
         super(driver);
@@ -40,14 +38,13 @@ public class ReportsPage extends BaseMothershipPage
         return new ReportsPage(driver.getDriver());
     }
 
-    protected Elements elements()
+    @Override
+    protected ElementCache newElementCache()
     {
-        if (_elements == null)
-            _elements = new Elements();
-        return _elements;
+        return new ElementCache();
     }
 
-    private class Elements extends BaseMothershipPage.Elements
+    protected class ElementCache extends BaseMothershipPage.ElementCache
     {
     }
 }

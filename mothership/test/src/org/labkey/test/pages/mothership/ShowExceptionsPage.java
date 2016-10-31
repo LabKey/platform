@@ -22,10 +22,8 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.mothership.MothershipHelper;
 import org.openqa.selenium.WebDriver;
 
-public class ShowExceptionsPage extends BaseMothershipPage
+public class ShowExceptionsPage extends BaseMothershipPage<ShowExceptionsPage.ElementCache>
 {
-    private Elements _elements;
-
     public ShowExceptionsPage(WebDriver driver)
     {
         super(driver);
@@ -44,19 +42,18 @@ public class ShowExceptionsPage extends BaseMothershipPage
 
     public ExceptionSummaryDataRegion exceptionSummary()
     {
-        return elements().exceptionSummary;
+        return elementCache().exceptionSummary;
     }
 
-    protected Elements elements()
+    @Override
+    protected ElementCache newElementCache()
     {
-        if (_elements == null)
-            _elements = new Elements();
-        return _elements;
+        return new ElementCache();
     }
 
-    private class Elements extends BaseMothershipPage.Elements
+    protected class ElementCache extends BaseMothershipPage.ElementCache
     {
-        ExceptionSummaryDataRegion exceptionSummary = new ExceptionSummaryDataRegion(getDriver());
+        final ExceptionSummaryDataRegion exceptionSummary = new ExceptionSummaryDataRegion(getDriver());
     }
 
     public class ExceptionSummaryDataRegion extends DataRegionTable
