@@ -27,6 +27,7 @@ public class ExpLineageOptions
     private boolean _children = true;
     private String _expType;
     private String _cpasType;
+    private boolean _distinct = false;
 
     public int getDepth()
     {
@@ -106,5 +107,15 @@ public class ExpLineageOptions
     public void setCpasType(String cpasType)
     {
         _cpasType = cpasType;
+    }
+
+    public boolean isDistinct()
+    {
+        return _distinct;
+    }
+
+    public void setDistinct(boolean distinct)
+    {
+        _distinct = distinct;
     }
 }
