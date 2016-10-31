@@ -15,7 +15,6 @@
  */
 package org.labkey.api.admin.sitevalidation;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -24,11 +23,8 @@ import org.labkey.api.security.User;
  * User: tgaluhn
  * Date: 4/8/2015
  */
-public interface SiteValidationProvider extends Comparable<SiteValidationProvider>
+public interface SiteValidationProvider extends SiteValidatorDescriptor
 {
-    String getName();
-    String getDescription();
-
     /**
      *
      * Return false to indicate the validator shouldn't be run for that container.
@@ -48,12 +44,6 @@ public interface SiteValidationProvider extends Comparable<SiteValidationProvide
     default boolean isSiteScope()
     {
         return true;
-    }
-
-    @Override
-    default int compareTo(@NotNull SiteValidationProvider p)
-    {
-        return getName().compareToIgnoreCase(p.getName());
     }
 
     @Nullable

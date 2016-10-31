@@ -166,6 +166,7 @@ core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationProvider.java -te
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationResult.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationResultList.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationService.java -text
+core/api-src/org/labkey/api/admin/sitevalidation/SiteValidatorDescriptor.java -text
 core/build.xml -text
 core/module.properties -text
 core/resources/credits/executables.txt -text
@@ -390,6 +391,7 @@ core/src/org/labkey/core/admin/reorderFolders.jsp -text
 core/src/org/labkey/core/admin/setFolderPermissions.jsp -text
 core/src/org/labkey/core/admin/setInitialFolderSettings.jsp -text
 core/src/org/labkey/core/admin/sitevalidation/SiteValidationServiceImpl.java -text
+core/src/org/labkey/core/admin/sitevalidation/SiteValidatorDescriptorImpl.java -text
 core/src/org/labkey/core/admin/sitevalidation/siteValidation.jsp -text
 core/src/org/labkey/core/admin/sql/ScriptReorderer.java -text
 core/src/org/labkey/core/admin/sql/SqlScriptController.java -text

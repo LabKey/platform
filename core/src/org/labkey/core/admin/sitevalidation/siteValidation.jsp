@@ -22,7 +22,12 @@
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.admin.sitevalidation.SiteValidatorDescriptor" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+
+<style type="text/css">
+    ul {list-style-type: none; padding-left: 5px;}
+</style>
 <%
     final String LINK_HEADING = "More info";
     SiteValidationService validationService = ServiceRegistry.get().getService(SiteValidationService.class);
@@ -31,75 +36,78 @@
         <span>SiteValidationService has not been registered.</span>
     <%}
     else { %>
-        <style type="text/css">
-            ul {list-style-type: none; padding-left: 5px;}
-        </style>
         <% if (getContainer().isRoot()) {
-            Map<String, SiteValidationResultList> siteResults = validationService.runSiteScopeValidators(getUser());
+            Map<String,Map<SiteValidatorDescriptor, SiteValidationResultList>> siteResults = validationService.runSiteScopeValidators(getUser());
         %>
             <strong>Site Level Validation Results</strong>
-            <% if (!validationService.hasSiteValidators()) { %>
+            <% if (siteResults.isEmpty()) { %>
             <span>No site-wide validators have been registered.</span>
             <% }
                 else {
             %>
             <ul>
-                <%  List<SiteValidationResult> moduleInfos;
-                    List<SiteValidationResult> moduleErrors;
-                    List<SiteValidationResult> moduleWarnings;
-                    for (Map.Entry<String, SiteValidationResultList> moduleResults : siteResults.entrySet())
+                <%  List<SiteValidationResult> infos;
+                    List<SiteValidationResult> errors;
+                    List<SiteValidationResult> warnings;
+                    for (Map.Entry<String, Map<SiteValidatorDescriptor, SiteValidationResultList>> moduleResults : siteResults.entrySet())
                     {
-                        moduleInfos = moduleResults.getValue().getResults(Level.INFO);
-                        moduleWarnings = moduleResults.getValue().getResults(Level.WARN);
-                        moduleErrors = moduleResults.getValue().getResults(Level.ERROR);
                 %>
-                <li><%=h("Module: " + moduleResults.getKey())%>
+                <li><strong>Module: </strong><%=h(moduleResults.getKey())%>
                     <ul>
-                <% for (SiteValidationResult result : moduleInfos) { %>
-                <li>
-                    <%=h(result.getMessage())%>
-                    <% if (null != result.getLink()) { %>
-                    <span><%=textLink(LINK_HEADING, result.getLink())%></span>
-                    <% } %>
-                </li>
-                <% } %>
-                <% if (moduleErrors.size() > 0) { %>
-                        <li><br/></li>
-                        <li>Errors:
-                <ul>
-                <% for (SiteValidationResult result : moduleErrors) { %>
-                <li>
-                    <span class="labkey-error"><%=h(result.getMessage())%></span>
-                    <% if (null != result.getLink()) { %>
-                    <span><%=textLink(LINK_HEADING, result.getLink())%></span>
-                    <% } %>
-                </li>
-                <% } %>
-                <% } %></ul></li>
-                <% if (moduleWarnings.size() > 0) { %>
-                        <li><br/></li>
-                        <li>Warnings:
-                <ul>
-                <% for (SiteValidationResult result : moduleWarnings) { %>
-                <li>
-                    <%=h(result.getMessage())%>
-                    <% if (null != result.getLink()) { %>
-                    <span><%=textLink(LINK_HEADING, result.getLink())%></span>
-                    <% } %>
-                </li>
-                <% } %></ul></li>
-                <% } %></ul></li>
-                <% } %>
-            </ul>
-            <% } %>
-            <br/><br/>
+                    <% for (Map.Entry<SiteValidatorDescriptor, SiteValidationResultList> results : moduleResults.getValue().entrySet()) { %>
+                        <li><strong>Validator: </strong><%=h(results.getKey().getName() + " ")%><span style="font-style: italic;"><%=h(results.getKey().getDescription())%></span>
+                            <ul>
+                                <% if (results.getValue().getResults().isEmpty()) { %>
+                                   <li>Nothing to report</li>
+                                <% } else {
+                                    infos = results.getValue().getResults(Level.INFO);
+                                    warnings = results.getValue().getResults(Level.WARN);
+                                    errors = results.getValue().getResults(Level.ERROR);
+                                    for (SiteValidationResult result : infos) { %>
+                                <li>
+                                    <%=h(result.getMessage())%>
+                                    <% if (null != result.getLink()) { %>
+                                    <span><%=textLink(LINK_HEADING, result.getLink())%></span>
+                                    <% } %>
+                                </li>
+                                <% } %>
+                                <% if (errors.size() > 0) { %>
+                                        <li><br/></li>
+                                        <li>Errors:
+                                <ul>
+                                <% for (SiteValidationResult result : errors) { %>
+                                <li>
+                                    <span class="labkey-error"><%=h(result.getMessage())%></span>
+                                    <% if (null != result.getLink()) { %>
+                                    <span><%=textLink(LINK_HEADING, result.getLink())%></span>
+                                    <% } %>
+                                </li>
+                                <% } %></ul>
+                                <% } %>
+                                <% if (warnings.size() > 0) { %>
+                                        <%--<li><br/></li>--%>
+                                        <li>Warnings:
+                                <ul>
+                                <% for (SiteValidationResult result : warnings) { %>
+                                <li>
+                                    <%=h(result.getMessage())%>
+                                    <% if (null != result.getLink()) { %>
+                                    <span><%=textLink(LINK_HEADING, result.getLink())%></span>
+                                    <% } %>
+                                </li>
+                                <% } %></ul></li>
+                                <% } %>
+                    <% } %></ul></li>
+                <% } %> </ul><br/></li>
+             <% } %>
+            </ul><% } %>
         <% } %>
 
         <strong>Folder Validation Results</strong>
-        <% if (!validationService.hasContainerValidators()) { %>
+        <%  Map<String, Map<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>>> containerResults = validationService.runContainerScopeValidators(getContainer(), getUser());
+            if (containerResults.isEmpty()) { %>
             <span>No folder validators have been registered.</span>
         <%} else {
-            Map<String, Map<String, SiteValidationResultList>> containerResults = validationService.runContainerScopeValidators(getContainer(), getUser());
         %>
         <ul>
           <%
@@ -107,9 +115,18 @@
             List<SiteValidationResult> containerErrors;
             List<SiteValidationResult> containerWarnings;
 
-            for (Map.Entry<String, Map<String, SiteValidationResultList>> projectResult : containerResults.entrySet()) {
+            for (Map.Entry<String, Map<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>>> moduleResults : containerResults.entrySet()) {
           %>
-            <li><%=h("Project: " + projectResult.getKey())%>
+          <li><strong>Module: </strong><%=h(moduleResults.getKey())%>
+              <ul>
+                  <% for (Map.Entry<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>> validatorResults : moduleResults.getValue().entrySet()) { %>
+                  <li><strong>Validator: </strong><%=h(validatorResults.getKey().getName() + " ")%><span style="font-style: italic;"><%=h(validatorResults.getKey().getDescription())%></span>
+                      <ul>
+                          <% if (validatorResults.getValue().isEmpty()) { %>
+                          <li>Nothing to report</li>
+                          <% } else {
+                              for (Map.Entry<String, Map<String, SiteValidationResultList>> projectResult : validatorResults.getValue().entrySet()) { %>
+                  <li><%=h("Project: " + projectResult.getKey())%>
                 <ul>
                     <% for (Map.Entry<String, SiteValidationResultList> subtreeResult : projectResult.getValue().entrySet()) { %>
                     <li><%=h("Folder: " + subtreeResult.getKey())%>
@@ -151,6 +168,14 @@
                             <% } %>
                         </ul>
                     </li>
+                    <% } %>
+                        </ul>
+                    </li>
+                  <% } %>
+                        </ul>
+                    </li>
+                  <% } %>
+
                     <% } %>
                 </ul><br/>
             </li>
