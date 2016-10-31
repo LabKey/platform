@@ -400,7 +400,7 @@ public class CustomViewXmlReader
         for (AggregateType aggregate : aggregates.getAggregateArray())
         {
             String column = StringUtils.trimToNull(aggregate.getColumn());
-            String type = StringUtils.trimToNull(aggregate.getType() != null ? aggregate.getType().toString() : null);
+            String type = StringUtils.trimToNull(aggregate.getType());
             if (column == null || type == null)
                 continue;
 
@@ -413,6 +413,10 @@ public class CustomViewXmlReader
                     map.setLabel(aggregate.getLabel());
 
                 ret.add(map);
+            }
+            else
+            {
+                LOG.warn("Invalid summary statistic type: " + type);
             }
         }
         return ret;

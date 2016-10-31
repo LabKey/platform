@@ -40,7 +40,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.data.xml.queryCustomView.AggregateEnumType;
 import org.labkey.data.xml.queryCustomView.AggregateType;
 import org.labkey.data.xml.queryCustomView.AggregatesType;
 import org.labkey.data.xml.queryCustomView.AnalyticsProviderType;
@@ -380,16 +379,11 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
 
                 for (Aggregate agg : fas.getAggregates())
                 {
-                    AggregateEnumType.Enum aggEnum = AggregateEnumType.Enum.forString(agg.getType().getName());
-                    if (aggEnum != null)
-                    {
-                        AggregateType aggXml = aggsXml.addNewAggregate();
-                        aggXml.setColumn(agg.getFieldKey().toString());
-                        aggXml.setType(aggEnum);
-
-                        if (agg.getLabel() != null)
-                            aggXml.setLabel(agg.getLabel());
-                    }
+                    AggregateType aggXml = aggsXml.addNewAggregate();
+                    aggXml.setColumn(agg.getFieldKey().toString());
+                    aggXml.setType(agg.getType().getName());
+                    if (agg.getLabel() != null)
+                        aggXml.setLabel(agg.getLabel());
                 }
             }
 
