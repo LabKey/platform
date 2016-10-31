@@ -203,6 +203,7 @@ public class LineageTableInfo extends VirtualTable
     public SQLFragment getFromSQL()
     {
         ExpLineageOptions options = new ExpLineageOptions();
+        options.setDistinct(true);
         options.setParents(_parents);
         options.setChildren(!_parents);
         options.setCpasType(_cpasType);

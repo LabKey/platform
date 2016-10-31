@@ -347,7 +347,6 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
     {
         TableInfo provisioned = _issueDef.createTable(getUserSchema().getUser());
 
-        // NOTE: Issue 27795: Duplicate duplicate columns on issue.issues and provisioned issue table
         SQLFragment sql = new SQLFragment();
         sql.append("(SELECT * FROM\n");
         sql.append("(SELECT i.issueid, i.duplicate, i.lastIndexed, i.issueDefId, p.* FROM ");

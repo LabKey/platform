@@ -35,10 +35,52 @@ import org.labkey.api.cache.DbCache;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AttachmentParentEntity;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.MaterializedQueryHelper;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.exp.*;
+import org.labkey.api.exp.AbstractParameter;
+import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.ExperimentDataHandler;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentMaterialListener;
+import org.labkey.api.exp.ExperimentRunListView;
+import org.labkey.api.exp.ExperimentRunType;
+import org.labkey.api.exp.ExperimentRunTypeSource;
+import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.LsidType;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.ProtocolApplicationParameter;
+import org.labkey.api.exp.ProtocolParameter;
+import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -148,7 +190,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
@@ -159,6 +200,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     private DatabaseCache<MaterialSource> materialSourceCache;
     private StringKeyCache<Protocol> protocolCache;
 
+    public static final String EXPERIMENTAL_LEGACY_LINEAGE = "legacy-lineage";
     public static final String DEFAULT_MATERIAL_SOURCE_NAME = "Unspecified";
 
     private List<ExperimentRunTypeSource> _runTypeSources = new CopyOnWriteArrayList<>();
@@ -1455,14 +1497,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     @Override
     public Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpProtocolOutput start)
     {
-//        Pair<Set<ExpData>, Set<ExpMaterial>> newHotness   = getParentsNewHotness(start);
-//
-//        Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
-//        assert null != (oldAndBusted = getParentsOldAndBusted(start));
-//        assert assertLineage(start, newHotness, oldAndBusted);
-//
-//        return newHotness;
-        return getParentsOldAndBusted(start);
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LEGACY_LINEAGE))
+        {
+            return getParentsOldAndBusted(start);
+        }
+
+        Pair<Set<ExpData>, Set<ExpMaterial>> newHotness   = getParentsNewHotness(start);
+
+        Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
+        assert null != (oldAndBusted = getParentsOldAndBusted(start));
+        assert assertLineage(start, newHotness, oldAndBusted);
+
+        return newHotness;
     }
 
     // Make boolean so it can hide behind 'assert' and no-op in production mode
@@ -1560,14 +1606,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     @Override
     public Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpProtocolOutput start)
     {
-//        Pair<Set<ExpData>, Set<ExpMaterial>> newHotness   = getChildrenNewHotness(start);
-//
-//        Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
-//        assert null != (oldAndBusted = getChildrenOldAndBusted(start));
-//        assert assertLineage(start, newHotness, oldAndBusted);
-//
-//        return newHotness;
-        return getChildrenOldAndBusted(start);
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LEGACY_LINEAGE))
+        {
+            return getChildrenOldAndBusted(start);
+        }
+
+        Pair<Set<ExpData>, Set<ExpMaterial>> newHotness   = getChildrenNewHotness(start);
+
+        Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
+        assert null != (oldAndBusted = getChildrenOldAndBusted(start));
+        assert assertLineage(start, newHotness, oldAndBusted);
+
+        return newHotness;
     }
 
 
@@ -2004,7 +2054,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             if (up)
             {
-                sqlf.append("\nSELECT * FROM " + tokens.first);
+                sqlf.append("\nSELECT");
+                if (options.isDistinct() && getSchema().getSqlDialect().isPostgreSQL())
+                    sqlf.append(" DISTINCT ON (self_lsid, parent_lsid)");
+                sqlf.append(" * FROM " + tokens.first);
                 String and = "\nWHERE ";
 
                 if (!includeSelf)
@@ -2041,7 +2094,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             if (down)
             {
-                sqlf.append("\nSELECT * FROM " + tokens.second);
+                sqlf.append("\nSELECT");
+                if (options.isDistinct() && getSchema().getSqlDialect().isPostgreSQL())
+                    sqlf.append(" DISTINCT ON (self_lsid, child_lsid)");
+                sqlf.append(" * FROM " + tokens.second);
                 String and = "\nWHERE ";
 
                 if (!includeSelf)

@@ -33,6 +33,7 @@ public class ParentOfClause extends LineageClause
     protected ExpLineageOptions createOptions()
     {
         ExpLineageOptions options = new ExpLineageOptions();
+        options.setDistinct(true);
         options.setParents(true);
         options.setChildren(false);
         return options;

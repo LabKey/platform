@@ -49,6 +49,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -138,6 +139,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         PropertyService.get().registerValidatorKind(new LengthValidator());
 
         ExperimentService.get().registerExperimentDataHandler(new DefaultExperimentDataHandler());
+
+        AdminConsole.addExperimentalFeatureFlag(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE, "Legacy lineage query",
+                "This feature will restore the legacy lineage queries used on the Material and Data details pages", false);
     }
 
     public boolean hasScripts()

@@ -28,6 +28,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -156,6 +157,8 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             case RowId:
             {
                 ColumnInfo ret = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                // When no sorts are added by views, QueryServiceImpl.createDefaultSort() adds the primary key's default sort direction
+                ret.setSortDirection(Sort.SortDirection.DESC);
                 ret.setFk(new RowIdForeignKey(ret));
                 ret.setHidden(true);
                 ret.setShownInInsertView(false);
