@@ -76,7 +76,14 @@ public class QueueJobTask extends TaskRefTaskImpl
 
     private void queueJob(TransformPipelineJob transformJob, ScheduledPipelineJobDescriptor newEtl, TransformJobContext context, String basename) throws PipelineJobException
     {
-        Integer jobId = TransformManager.get().runNowPipeline(newEtl, context.clone(), transformJob.getParameters(), transformJob.getAnalysisDirectory(), basename);
+        TransformJobContext newContext = (TransformJobContext) newEtl.getJobContext(context.getContainer(), context.getUser(), context.getParams());
+        // If the etl is requeuing itself, don't pass on the incrementalWindow setting; let the requeued job pick up the filter settings from the original
+        // Otherwise, do chain the incrementalWindow through
+        if (!newContext.getTransformId().equals(context.getTransformId()))
+        {
+            newContext.setIncrementalWindow(context.getIncrementalWindow());
+        }
+        Integer jobId = TransformManager.get().runNowPipeline(newEtl, newContext, transformJob.getParameters(), transformJob.getAnalysisDirectory(), basename);
         if (null == jobId)
             transformJob.info("No work for queued ETL " + _transformId);
         else transformJob.info("Queued job " + jobId.toString() + " for ETL " + _transformId);

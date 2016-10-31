@@ -698,7 +698,7 @@ public class TransformManager implements DataIntegrationService.Interface
     {
         try
         {
-            TableInfo t = DbSchema.get("dataintegration").getTable("TransformConfiguration");
+            TableInfo t = DbSchema.get("dataintegration", DbSchemaType.Module).getTable("TransformConfiguration");
             if (-1 == config.rowId)
                 return Table.insert(user, t, config);
             else
