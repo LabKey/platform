@@ -3929,3 +3929,24 @@ a div.x4-menu-item-icon.fa-users
     opacity: 1;
     filter:alpha(opacity=100);
 }
+
+.labkey-column-header-sort-icon{
+    background-repeat: no-repeat;
+    display: none;
+    height: 4px;
+    width: 13px;
+    margin-left:3px;
+    vertical-align: middle;
+}
+
+.labkey-sort-asc .labkey-column-header-sort-icon
+{
+    background-image:url(./ext-3.4.1/resources/images/default/grid/sort_asc.gif);
+    display:inline;
+}
+
+.labkey-sort-desc .labkey-column-header-sort-icon
+{
+    background-image:url(./ext-3.4.1/resources/images/default/grid/sort_desc.gif);
+    display:inline;
+}
