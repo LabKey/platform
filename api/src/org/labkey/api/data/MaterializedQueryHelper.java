@@ -39,6 +39,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static org.labkey.api.test.TestWhen.When.BVT;
 
@@ -70,16 +71,21 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
      *  NOTE: the uptodate query should be very fast WRT the select query, the caller should use "uncache" as the primary means of making
      *  sure the materialized table is kept consistent.
      */
-    public static MaterializedQueryHelper create(DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Collection<String> indexes, long maxTimeToCache)
-    {
-        return new MaterializedQueryHelper(null, scope, select, uptodate, indexes, maxTimeToCache, false);
-    }
-
     public static MaterializedQueryHelper create(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Collection<String> indexes, long maxTimeToCache)
     {
         return new MaterializedQueryHelper(prefix, scope, select, uptodate, indexes, maxTimeToCache, false);
     }
 
+    public static MaterializedQueryHelper create(String prefix, DbScope scope, SQLFragment select, Supplier<String> uptodate, Collection<String> indexes, long maxTimeToCache)
+    {
+        return new MaterializedQueryHelper(prefix, scope, select, null, indexes, maxTimeToCache, false)
+        {
+            protected String getUpToDateKey()
+            {
+                return uptodate.get();
+            }
+        };
+    }
 
 /*  TODO, we're probably going to want this
     public static MaterializedQueryHelper createPerContainer(DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, long maxTimeToCache)
@@ -110,6 +116,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             return eldest.getValue().created + maxTimeToCache < HeartBeat.currentTimeMillis();
         }
     };
+    public long lastUsed = HeartBeat.currentTimeMillis();
     // DEBUG variables
     int countGetFromSql = 0;
     int countSelectInto = 0;
@@ -260,6 +267,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             scope.getCurrentTransaction().addCommitTask(() -> map.remove(txCacheKey));
         }
 
+        lastUsed = HeartBeat.currentTimeMillis();
         SQLFragment sqlf = new SQLFragment(materialized.fromSql);
         if (!StringUtils.isBlank(tableAlias))
             sqlf.append(" " ).append(tableAlias);
@@ -300,7 +308,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             DbScope s = temp.getScope();
             SQLFragment select = new SQLFragment("SELECT * FROM temp.MQH_TESTCASE");
             SQLFragment uptodate = new SQLFragment("SELECT COALESCE(CAST(SUM(x) AS VARCHAR(40)),'-') FROM temp.MQH_TESTCASE");
-            try (MaterializedQueryHelper  mqh = MaterializedQueryHelper.create(s,select,uptodate,null,CacheManager.UNLIMITED))
+            try (MaterializedQueryHelper  mqh = MaterializedQueryHelper.create("test", s,select,uptodate,null,CacheManager.UNLIMITED))
             {
                 SQLFragment emptyA = mqh.getFromSql("_", null);
                 SQLFragment emptyB = mqh.getFromSql("_", null);
@@ -323,7 +331,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             DbScope s = temp.getScope();
             SQLFragment select = new SQLFragment("SELECT x, x*x as y FROM temp.MQH_TESTCASE");
             SQLFragment uptodate = new SQLFragment("SELECT COALESCE(CAST(SUM(x) AS VARCHAR(40)),'-') FROM temp.MQH_TESTCASE");
-            try (final MaterializedQueryHelper  mqh = MaterializedQueryHelper.create(s,select,uptodate,null,CacheManager.UNLIMITED))
+            try (final MaterializedQueryHelper  mqh = MaterializedQueryHelper.create("test", s,select,uptodate,null,CacheManager.UNLIMITED))
             {
                 Runnable inserter = () ->
                 {
