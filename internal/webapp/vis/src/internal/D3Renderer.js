@@ -294,6 +294,34 @@ LABKEY.vis.internal.Axis = function() {
 
         addEvents(textEls);
 
+        //Issue 27309: Fill in zero values for empty tick marks when calculating the start and end positions of the tick text rect
+        var replaceZerosForTickPositions = function(positionArr)
+        {
+            var prevNonZero = null, zeroCount = 0, step;
+
+            for (var i = 0; i < positionArr.length; i++)
+            {
+                if (positionArr[i] != 0)
+                {
+                    if (zeroCount > 0 && prevNonZero != null)
+                    {
+                        step = (positionArr[i] - prevNonZero) / (zeroCount + 1);
+                        for (var j = zeroCount; j > 0; j--)
+                        {
+                            prevNonZero += step;
+                            positionArr[i - j] = prevNonZero;
+                        }
+                    }
+
+                    prevNonZero = positionArr[i];
+                    zeroCount = 0;
+                }
+                else
+                {
+                    zeroCount++;
+                }
+            }
+        };
 
         //Issue 24497: Adjust axis categorical selection area. Change the x and width of hotspot so that selection capability is more discoverable.
         // Each hotspot extends halfway to its neighbor.
@@ -316,6 +344,9 @@ LABKEY.vis.internal.Axis = function() {
                     ends.push(this.getBBox().width + this.getBBox().x);
                 }
             });
+
+            replaceZerosForTickPositions(starts);
+            replaceZerosForTickPositions(ends);
 
             if (starts.length > 1 && ends.length > 0) {
                 defaultSpacer = (starts[1] - ends[0]) / 2;
