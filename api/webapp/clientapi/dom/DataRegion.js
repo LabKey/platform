@@ -4197,6 +4197,7 @@ if (!LABKEY.DataRegions) {
      * 'div', 'portal', 'none', 'dialog', 'title', 'left-nav'.
      * @param {String} [config.showViewPanel] Open the customize view panel after rendering.  The value of this option can be "true" or one of "ColumnsTab", "FilterTab", or "SortTab".
      * @param {String} [config.bodyClass] A CSS style class that will be added to the enclosing element for the web part.
+     * Note, this may not be applied when used in conjunction with some "frame" types (e.g. 'none').
      * @param {Function} [config.success] A function to call after the part has been rendered. It will be passed two arguments:
      * <ul>
      * <li><b>dataRegion:</b> the LABKEY.DataRegion object representing the rendered QueryWebPart</li>
