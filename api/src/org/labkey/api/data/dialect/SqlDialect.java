@@ -1271,6 +1271,25 @@ public abstract class SqlDialect
     }
 
 
+    /**
+     * Encode wildcard characters in search string used by LIKE operator to force exact match of those charactors.
+     * Currently only encodes single wildcard character '_' and '%' used by LIKE, while more complicated pattern such as [], {} are not encoded.
+     * Example:
+     *      String searchString = "search_string";
+     *      SqlFragment sqlFragment = ...
+     *      ...
+     *      sqlFragment.append(" LIKE ?");
+     *      sqlFragment.add("_" + encodeLikeSearchString(searchString) + "%");
+     *
+     *    ##encodeLikeSearchString(searchString) will ensure exact match of substring "search_string" and won't treate the the underscore as a wildcard.
+     * @param search
+     * @return encoded search string
+     */
+    public String encodeLikeOpSearchString(String search)
+    {
+        return search;
+    }
+
     // Return the interesting table types for this dialect. Types array is passed to DatabaseMetaData.getTables().
     public String[] getTableTypes()
     {
