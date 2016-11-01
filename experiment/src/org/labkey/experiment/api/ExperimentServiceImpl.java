@@ -2024,7 +2024,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         "'/'",
                         "(select coalesce(cast(max(rowid) as varchar(40)),'-') from exp.protocolapplication)") + " AS \"key\"";
 
-                materializedEdges = MaterializedQueryHelper.create(
+                materializedEdges = MaterializedQueryHelper.create( "exp_edges",
                         getExpSchema().getScope(),
                         new SQLFragment(selectEdges),
                         new SQLFragment(materializeKeySql),
