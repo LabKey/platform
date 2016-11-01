@@ -101,16 +101,23 @@ public class PipelineServiceImpl extends PipelineService
     }
 
     @Nullable
-    public PipeRootImpl findPipelineRoot(Container container)
+    @Override
+    public PipeRootImpl findPipelineRoot(Container container, String type)
     {
-        PipelineRoot pipelineRoot = PipelineManager.findPipelineRoot(container);
+        PipelineRoot pipelineRoot = PipelineManager.findPipelineRoot(container, type);
         if (null != pipelineRoot)
         {
             return new PipeRootImpl(pipelineRoot);
         }
 
         // if we haven't found a 'real' root, default to a root off the site wide default
-        return getDefaultPipelineRoot(container, PipelineRoot.PRIMARY_ROOT);
+        return getDefaultPipelineRoot(container, type);
+    }
+
+    @Nullable
+    public PipeRootImpl findPipelineRoot(Container container)
+    {
+        return findPipelineRoot(container, PipelineRoot.PRIMARY_ROOT);
     }
 
     /**

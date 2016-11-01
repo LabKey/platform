@@ -17,6 +17,7 @@ package org.labkey.pipeline.api;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
@@ -54,7 +55,6 @@ import org.labkey.pipeline.status.StatusController;
 
 import javax.mail.Address;
 import javax.mail.Message;
-import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.net.URI;
 import java.sql.SQLException;
@@ -93,11 +93,18 @@ public class PipelineManager
         return c.getId() + "/" + StringUtils.trimToEmpty(type);
     }
 
-    public static PipelineRoot findPipelineRoot(Container container)
+    @Nullable
+    public static PipelineRoot findPipelineRoot(@NotNull Container container)
+    {
+        return findPipelineRoot(container, PipelineRoot.PRIMARY_ROOT);
+    }
+
+    @Nullable
+    public static PipelineRoot findPipelineRoot(@NotNull Container container, String type)
     {
         while (container != null && !container.isRoot())
         {
-            PipelineRoot pipelineRoot = getPipelineRootObject(container, PipelineRoot.PRIMARY_ROOT);
+            PipelineRoot pipelineRoot = getPipelineRootObject(container, type);
             if (null != pipelineRoot)
                 return pipelineRoot;
             container = container.getParent();
