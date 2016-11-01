@@ -610,7 +610,7 @@ public abstract class DisplayColumn extends RenderColumn
         renderTitle(ctx, out);
 
         out.write("<img src=\"" + ctx.getRequest().getContextPath() + "/_.gif\" class=\"labkey-grid-filter-icon\"/>");
-        out.write("<img src=\"" + ctx.getRequest().getContextPath() + "/_.gif\" class=\"x-grid3-sort-icon\"/>");
+        out.write("<img src=\"" + ctx.getRequest().getContextPath() + "/_.gif\" class=\"labkey-column-header-sort-icon\"/>");
 
         out.write("</div>");
 
