@@ -99,6 +99,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 
 public class ProjectController extends SpringActionController
@@ -442,7 +443,7 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
+    @RequiresNoPermission
     @IgnoresTermsOfUse
     public class DownloadProjectIconAction extends ExportAction<Object>
     {
@@ -458,10 +459,14 @@ public class ProjectController extends SpringActionController
             }
             if (!NetworkDrive.exists(iconFile))
             {
-                iconFile = new File(ModuleLoader.getServletContext().getRealPath(FolderType.NONE.getFolderIconPath()));  //fall back to default
+                iconPath = FolderType.NONE.getFolderIconPath();
+                iconFile = new File(ModuleLoader.getServletContext().getRealPath(iconPath));  //fall back to default
                 _log.warn("Could not find specified icon: "+iconPath);
             }
-            PageFlowUtil.streamFile(response, iconFile, false);
+            Map<String,String> headers = new HashMap<>();
+            headers.put("Cache-Control", "max-age=" + TimeUnit.DAYS.toSeconds(1));
+            headers.put("ETag", iconPath);
+            PageFlowUtil.streamFile(response, headers, iconFile, false);
         }
 
         @Override
