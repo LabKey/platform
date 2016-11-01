@@ -1806,6 +1806,12 @@ class PostgreSql91Dialect extends SqlDialect
         return iso;
     }
 
+    @Override
+    public String encodeLikeOpSearchString(String search)
+    {
+        return search.replaceAll("_", "\\\\_").replaceAll("%", "\\\\%");
+    }
+
 
     @Override
     public boolean canShowExecutionPlan()
@@ -1871,7 +1877,7 @@ class PostgreSql91Dialect extends SqlDialect
             return epoch.append("/3600.0");
 
         return super.formatJdbcFunction("timestampdiff", arguments);
-}
+    }
 
 
     public static class TestCase extends Assert

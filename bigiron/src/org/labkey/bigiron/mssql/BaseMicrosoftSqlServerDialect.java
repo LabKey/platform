@@ -2279,4 +2279,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
         return -1;
     }
+
+    @Override
+    public String encodeLikeOpSearchString(String search)
+    {
+        return search.replaceAll("_", "[_]").replaceAll("%", "[%]");
+    }
 }
