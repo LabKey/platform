@@ -65,6 +65,15 @@ abstract public class PipelineService
     @Nullable
     abstract public PipeRoot findPipelineRoot(Container container);
 
+    /**
+     * Looks up the container hierarchy until it finds a pipeline root defined which is being
+     * inherited by the specified container
+     * @return null if there's no specific pipeline override and the default root is unavailable or misconfigured
+     */
+    @Nullable
+    abstract public PipeRoot findPipelineRoot(Container container, String type);
+
+
     /** @return true if this container (or an inherited parent container) has a pipeline root that exists on disk */
     abstract public boolean hasValidPipelineRoot(Container container);
 

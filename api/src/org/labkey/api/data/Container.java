@@ -1092,8 +1092,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             for (Module dm : m.getResolvedModuleDependencies())
             {
                 String name = dm.getName(); //modules can declare a dependency using the wrong case, so we normalize
-                if(dependencies.get(name) == null)
-                    dependencies.put(name, new HashSet<String>());
+                dependencies.putIfAbsent(name, new HashSet<>());
 
                 dependencies.get(name).add(m.getName());
             }
