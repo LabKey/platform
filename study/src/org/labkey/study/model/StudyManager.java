@@ -3981,9 +3981,7 @@ public class StudyManager
                 if (null == d)
                     d = PropertyService.get().createDomain(entry.datasetDefinition.getDefinitionContainer(), ipd.domainURI, ipd.domainName);
                 domainsMap.put(d.getTypeURI(), d);
-                // add all the properties that exist for the domain
-                List<? extends DomainProperty> existingProperties = new ArrayList<>(d.getProperties());
-                domainsPropertiesMap.put(d.getTypeURI(), existingProperties);
+                populateDomainExistingPropertiesMap(domainsPropertiesMap, d);
             }
             // Issue 14569:  during study reimport be sure to look for a column has been deleted.
             // Look at the existing properties for this dataset's domain and
@@ -4014,6 +4012,30 @@ public class StudyManager
                 p.setDescription(ipd.pd.getDescription());
             }
         }
+
+        //Ensure that each dataset has an entry in the domain map
+        if (datasetDefEntryMap.size() != domainsMap.size())
+        {
+            for (DatasetDefinitionEntry datasetDefinitionEntry : datasetDefEntryMap.values())
+            {
+                if (domainsMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI()) == null)
+                {
+                    Domain domain =
+                            PropertyService.get().getDomain(
+                                    datasetDefinitionEntry.datasetDefinition.getDefinitionContainer(),
+                                    datasetDefinitionEntry.datasetDefinition.getTypeURI());
+                    populateDomainExistingPropertiesMap(domainsPropertiesMap, domain);
+                    domainsMap.put(datasetDefinitionEntry.datasetDefinition.getTypeURI(), domain);
+                }
+            }
+        }
+    }
+
+    private void populateDomainExistingPropertiesMap(Map<String, List<? extends DomainProperty>> domainsPropertiesMap, Domain d)
+    {
+        // add all the properties that exist for the domain
+        List<? extends DomainProperty> existingProperties = new ArrayList<>(d.getProperties());
+        domainsPropertiesMap.put(d.getTypeURI(), existingProperties);
     }
 
     private void addMissingRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, Domain> domainsMap)
