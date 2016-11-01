@@ -267,7 +267,8 @@ public abstract class AbstractColumnTransform implements ColumnTransform
      * If needed, other values (from other columns, constants, or configuration settings such as
      * etlName, source query name, etc.) are available via public getters.
      *
-     * Any checked exception which is caught in this method should be rethrown as a ColumnTransformException.
+     * Any checked exception which is caught in this method should be rethrown as a ColumnTransformException,
+     * passing the original caught throwable.
      * This ensures proper unwrapping for log and console output of the original exception.
      *
      * @param inputValue The value from the source query
