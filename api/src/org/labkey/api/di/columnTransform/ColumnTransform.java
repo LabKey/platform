@@ -46,6 +46,11 @@ import java.util.function.Supplier;
  * If an implementing class needs additional class level members, they MUST either be serializable objects,
  * or declared transient. Note that as the same instance of this class is reused for each run,
  * those members will retain their values unless explicitly reset/cleared.
+ *
+ * Two default methods of importance here are requiresSourceColumnName() and requiresTargetColumnName().
+ * These are checked in the initial parsing/validation of an etl xml. Defaults are requiresSource == true,
+ * requiresTarget == false; override as appropriate. As a shorthand helper, if requiresTarget == false and no
+ * target column name is given in the xml, the source column name is used for both source and target.
  */
 public interface ColumnTransform extends Serializable
 {
@@ -92,6 +97,9 @@ public interface ColumnTransform extends Serializable
     /**
      *
      * @return true if the target column attribute is required in the ETL xml
+     *
+     * Note if requiresTargetColumnName() == false, and no target column is supplied in the config,
+     * the same column name is used for both source and target.
      */
     default boolean requiresTargetColumnName() {return false;}
 
@@ -130,8 +138,9 @@ public interface ColumnTransform extends Serializable
     Set<ColumnInfo> addTransform(ContainerUser cu, @NotNull SimpleTranslator data, int transformRunId, @Nullable Integer inputPosition);
 
     /**
-     * Wrapping class for exceptions caught in doTransform(). Must be a RuntimeException b/c Java 8 Suppliers
-     * don't directly support throwing checked exceptions.
+     * Wrapping class for exceptions caught in the Supplier to addOutputColumn(), such as implementations of
+     * AbstractColumnTransform.doTransform(). Must be a RuntimeException b/c Java 8 Suppliers don't directly
+     * support throwing checked exceptions.
      *
      * A thrown instance of this exception will be automatically unwrapped for the ETL log to show the cause and stack
      * trace of the original underlying exception.
@@ -141,7 +150,7 @@ public interface ColumnTransform extends Serializable
         /**
          *
          * @param message An explanatory message, as with any other thrown exception
-         * @param cause The caught exception (don't unwrap in the call to the construct)
+         * @param cause The caught exception (don't unwrap in the call to the constructor; pass the exception as-is)
          */
         public ColumnTransformException(String message, @NotNull Throwable cause)
         {
@@ -150,7 +159,7 @@ public interface ColumnTransform extends Serializable
 
         /**
          *
-         * @param cause The caught exception (don't unwrap in the call to the construct)
+         * @param cause The caught exception (don't unwrap in the call to the constructor; pass the exception as-is)
          */
         public ColumnTransformException(@NotNull Throwable cause)
         {
