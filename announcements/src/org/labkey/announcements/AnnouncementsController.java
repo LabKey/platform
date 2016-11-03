@@ -57,6 +57,7 @@ import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
@@ -2174,6 +2175,8 @@ public class AnnouncementsController extends SpringActionController
         public ActionURL emailPrefsURL;
         public ActionURL emailManageURL;
         public ActionURL insertURL;
+        public ActionURL containerEmailTemplateURL;
+        public ActionURL siteEmailTemplateURL;
         public boolean includeGroups;
 
         protected void init(Container c, ActionURL url, User user, DiscussionService.Settings settings, Permissions perm, boolean displayAll, boolean isFiltered, int rowLimit)
@@ -2186,6 +2189,8 @@ public class AnnouncementsController extends SpringActionController
                 adminURL = c.hasPermission(user, AdminPermission.class) ? getAdminURL(c, url) : null;
                 emailPrefsURL   = user.isGuest() ? null : getEmailPreferencesURL(c, url, c.getId());
                 emailManageURL = c.hasPermission(user, AdminPermission.class) ? getAdminEmailURL(c, url) : null;
+                containerEmailTemplateURL = c.hasPermission(user, AdminPermission.class) ? PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(c, AnnouncementManager.NotificationEmailTemplate.class, url) : null;
+                siteEmailTemplateURL = user.isSiteAdmin() ? PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(ContainerManager.getRoot(), AnnouncementManager.NotificationEmailTemplate.class, url) : null;
                 insertURL = perm.allowInsert() ? getInsertURL(c, url) : null;
                 includeGroups = perm.includeGroups();
             }
@@ -2197,6 +2202,26 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
+    private static void addAdminMenus(LinkBarBean bean, NavTree menu, ViewContext context)
+    {
+        NavTree email = new NavTree("Email", "", context.getContextPath() + "/_images/email.png");
+        if (bean.emailPrefsURL != null)
+            email.addChild("Preferences", bean.emailPrefsURL);
+        if (bean.emailManageURL != null)
+            email.addChild("Administration", bean.emailManageURL);
+        if (bean.siteEmailTemplateURL != null)
+            email.addChild("Site-Wide Email Template", bean.siteEmailTemplateURL);
+        if (bean.containerEmailTemplateURL != null)
+            email.addChild(StringUtils.capitalize(context.getContainer().getContainerNoun()) + " Email Template", bean.containerEmailTemplateURL);
+
+        if (bean.adminURL != null)
+            menu.addChild("Admin", bean.adminURL);
+
+        if (email.hasChildren())
+            menu.addChild(email);
+    }
+
+
     public static class ListLinkBar extends JspView<ListLinkBar.ListBean>
     {
         private ListLinkBar(Container c, ActionURL url, User user, DiscussionService.Settings settings, Permissions perm, boolean displayAll)
@@ -2205,19 +2230,9 @@ public class AnnouncementsController extends SpringActionController
 
             ListBean bean = new ListBean(c, url, user, settings, perm, displayAll);
             NavTree menu = new NavTree("");
-            
-            if (bean.emailPrefsURL != null || bean.emailManageURL != null)
-            {
-                NavTree email = new NavTree("Email", "", getViewContext().getContextPath() + "/_images/email.png");
-                if (bean.emailPrefsURL != null)
-                    email.addChild("Preferences", bean.emailPrefsURL);
-                if (bean.emailManageURL != null)
-                    email.addChild("Administration", bean.emailManageURL);
-                if (bean.adminURL != null)
-                    menu.addChild("Admin", bean.adminURL);
-                menu.addChild(email);
-            }
-            
+
+            addAdminMenus(bean, menu, getViewContext());
+
             setNavMenu(menu);
         }
 
@@ -2264,18 +2279,7 @@ public class AnnouncementsController extends SpringActionController
             if (bean.listURL != null)
                 menu.addChild("View List", bean.listURL);
 
-            if (bean.emailPrefsURL != null || bean.emailManageURL != null)
-            {
-                NavTree email = new NavTree("Email");
-                if (bean.emailPrefsURL != null)
-                    email.addChild("Preferences", bean.emailPrefsURL);
-                if (bean.emailManageURL != null)
-                    email.addChild("Administration", bean.emailManageURL);
-                menu.addChild(email);
-            }
-
-            if (bean.adminURL != null)
-                menu.addChild("Admin", bean.adminURL.toString());
+            addAdminMenus(bean, menu, getViewContext());
 
             setIsWebPart(asWebPart);
             setNavMenu(menu);

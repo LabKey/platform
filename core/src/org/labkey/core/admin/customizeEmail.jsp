@@ -54,8 +54,6 @@
         <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>" />
     <% } %>
     <table width="85%">
-        <tr class="labkey-wp-header"><th colspan=2>Custom Emails</th></tr>
-        <tr><td></td></tr>
         <tr><td class="labkey-form-label" style="width: 85px">Email Type:</td>
             <td><select id="templateClass" name="templateClass" onchange="changeEmailTemplate();">
 <%
@@ -76,7 +74,7 @@
             <%= button("Save").submit(true) %>
             <%= button("Cancel").href(bean.getReturnURLHelper(urlProvider(AdminUrls.class).getAdminConsoleURL())) %>
             <%= button("Reset to Default Template").submit(true).onClick("this.form.action=" + qh(buildURL(AdminController.DeleteCustomEmailAction.class)) + ";").attributes("id='siteResetButton' style='display: none;'")%>
-            <%= button("Delete Folder-Level Template").submit(true).onClick("this.form.action=" + qh(buildURL(AdminController.DeleteCustomEmailAction.class)) + ";").attributes("id='folderResetButton' style='display: none;'")%>
+            <%= button("Delete " + getContainer().getContainerNoun() + "-Level Template").submit(true).onClick("this.form.action=" + qh(buildURL(AdminController.DeleteCustomEmailAction.class)) + ";").attributes("id='folderResetButton' style='display: none;'")%>
         </tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td colspan="2"><hr></td></tr>

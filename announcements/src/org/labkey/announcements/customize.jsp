@@ -19,6 +19,10 @@
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -101,6 +105,13 @@
     <tr>
         <td class="labkey-form-label">Show poster's groups, link user name to full details (admins only)</td>
         <td><table><tr><td><input type="checkbox" name="includeGroups"<%=checked(settings.includeGroups())%>></td></tr></table></td>
+    </tr>
+    <tr>
+        <td class="labkey-form-label">Email templates</td>
+        <td>
+            <% if (me.getViewContext().getUser().isSiteAdmin()) { %><%= textLink("Customize site-wide template", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(ContainerManager.getRoot(), AnnouncementManager.NotificationEmailTemplate.class, getViewContext().getActionURL()))%><br /><% } %>
+            <%= textLink("Customize template for this " + getContainer().getContainerNoun(), PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), AnnouncementManager.NotificationEmailTemplate.class, getViewContext().getActionURL()))%>
+        </td>
     </tr>
     <tr>
         <td colspan=2><%= button("Save").submit(true) %>

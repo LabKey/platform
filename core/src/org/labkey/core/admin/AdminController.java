@@ -277,10 +277,13 @@ public class AdminController extends SpringActionController
 
     public static NavTree appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action, Container container)
     {
+        if (container.isRoot())
+            root.addChild("Admin Console", getShowAdminURL());
+
         if (null == action)
-            root.addChild("Admin Console", getShowAdminURL()).addChild(childTitle);
+            root.addChild(childTitle);
         else
-            root.addChild("Admin Console", getShowAdminURL()).addChild(childTitle, new ActionURL(action, container));
+            root.addChild(childTitle, new ActionURL(action, container));
 
         return root;
     }
@@ -3907,7 +3910,9 @@ public class AdminController extends SpringActionController
                 // Must be a site admin to customize in the root, which is where the site-wide templates are stored
                 throw new UnauthorizedException();
             }
-            return new JspView<>("/org/labkey/core/admin/customizeEmail.jsp", form, errors);
+            JspView<CustomEmailForm> result = new JspView<>("/org/labkey/core/admin/customizeEmail.jsp", form, errors);
+            result.setTitle("Email Template");
+            return result;
         }
 
         public boolean handlePost(CustomEmailForm form, BindException errors) throws Exception
@@ -3938,13 +3943,19 @@ public class AdminController extends SpringActionController
 
         public ActionURL getSuccessURL(CustomEmailForm form)
         {
-            return new ActionURL(CustomizeEmailAction.class, getContainer()).replaceParameter("templateClass", form.getTemplateClass());
+            ActionURL result = new ActionURL(CustomizeEmailAction.class, getContainer());
+            result.replaceParameter("templateClass", form.getTemplateClass());
+            if (form.getReturnActionURL() != null)
+            {
+                result.replaceParameter(ActionURL.Param.returnUrl, form.getReturnUrl());
+            }
+            return result;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("customEmail"));
-            return appendAdminNavTrail(root, "Customize Email", this.getClass());
+            return appendAdminNavTrail(root, "Customize " + (getContainer().isRoot() ? "Site-Wide" : StringUtils.capitalize(getContainer().getContainerNoun()) + "-Level") + " Email", this.getClass());
         }
     }
 
