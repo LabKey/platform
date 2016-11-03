@@ -170,7 +170,7 @@ public class CustomViewXmlReader
     {
         String sort = getSortParamValue();
 
-        if (null == getFilters() && null == sort && null == getAggregates())
+        if (null == getFilters() && null == sort && null == getAggregates() && null == getAnalyticsProviders())
             return null;
 
         StringBuilder ret = new StringBuilder("?");
