@@ -31,6 +31,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.query.FieldKey;
@@ -49,6 +50,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -58,7 +60,7 @@ import java.util.regex.Pattern;
 /**
  * Knows how to create an Excel file (of various formats) based on the {@link Results} of a database query.
  */
-public class ExcelWriter implements ExportWriter
+public class ExcelWriter implements ExportWriter, AutoCloseable
 {
     /** Flavors of supported Excel file formats */
     public enum ExcelDocumentType
@@ -140,11 +142,13 @@ public class ExcelWriter implements ExportWriter
     private String _sheetName;
     private String _footer;
     private String _filenamePrefix;
-    private List<String> _headers;
-    private List<String> _commentLines;
+    @NotNull
+    private List<String> _headers = Collections.emptyList();
+    @NotNull
+    private List<String> _commentLines = Collections.emptyList();
     private ColumnHeaderType _captionType = ColumnHeaderType.Caption;
     private boolean _insertableColumnsOnly = false;
-    private ArrayList<ExcelColumn> _columns = new ArrayList<>(10);
+    private List<ExcelColumn> _columns = new ArrayList<>();
     private boolean _captionRowFrozen = true;
     private boolean _captionRowVisible = true;
 
@@ -337,17 +341,17 @@ public class ExcelWriter implements ExportWriter
     }
 
 
-    public void setHeaders(List<String> headers)
+    public void setHeaders(@NotNull List<String> headers)
     {
-        _headers = headers;
+        _headers = Collections.unmodifiableList(new ArrayList<>(headers));
     }
 
     public void setHeaders(String... headers)
     {
-        _headers = Arrays.asList(headers);
+        setHeaders(Arrays.asList(headers));
     }
 
-
+    @NotNull
     public List<String> getHeaders()
     {
         return _headers;
@@ -734,9 +738,9 @@ public class ExcelWriter implements ExportWriter
 
     public void renderCommentLines(Sheet sheet) throws MaxRowsExceededException
     {
-        if (null != _commentLines)
+        for (String line : _commentLines)
         {
-            for (String line : _commentLines)
+            if (_currentRow <= _docType.getMaxRows())
             {
                 Row row = sheet.getRow(getCurrentRow());
                 if (row == null)
@@ -754,11 +758,11 @@ public class ExcelWriter implements ExportWriter
 
     public void renderSheetHeaders(Sheet sheet, int columnCount) throws MaxRowsExceededException
     {
-        if (null != _headers)
+        // Merge cells at top of sheet and write the headers
+        // One or more embedded tabs split a header into equally spaced columns
+        for (String header : _headers)
         {
-            // Merge cells at top of sheet and write the headers
-            // One or more embedded tabs split a header into equally spaced columns
-            for (String header : _headers)
+            if (_currentRow <= _docType.getMaxRows())
             {
                 String[] headerColumns = (null == header ? "" : header).split("\t");
                 int headerColumnCount = headerColumns.length;
@@ -798,16 +802,19 @@ public class ExcelWriter implements ExportWriter
 
     public void renderColumnCaptions(Sheet sheet, List<ExcelColumn> visibleColumns) throws MaxRowsExceededException
     {
-        if (!_captionRowVisible || _captionType == ColumnHeaderType.None)
-            return;
+        if (_currentRow <= _docType.getMaxRows())
+        {
+            if (!_captionRowVisible || _captionType == ColumnHeaderType.None)
+                return;
 
-        for (int column = 0; column < visibleColumns.size(); column++)
-            visibleColumns.get(column).renderCaption(sheet, getCurrentRow(), column, getBoldFormat(), _captionType);
+            for (int column = 0; column < visibleColumns.size(); column++)
+                visibleColumns.get(column).renderCaption(sheet, getCurrentRow(), column, getBoldFormat(), _captionType);
 
-        incrementRow();
+            incrementRow();
 
-        if (_captionRowFrozen)
-            sheet.createFreezePane(0, getCurrentRow());
+            if (_captionRowFrozen)
+                sheet.createFreezePane(0, getCurrentRow());
+        }
     }
 
 
@@ -881,19 +888,29 @@ public class ExcelWriter implements ExportWriter
         return _docType;
     }
 
+    @NotNull
     public List<String> getCommentLines()
     {
         return _commentLines;
     }
 
-    public void setCommentLines(List<String> commentLines)
+    public void setCommentLines(@NotNull List<String> commentLines)
     {
-        _commentLines = commentLines;
+        _commentLines = Collections.unmodifiableList(new ArrayList<>(commentLines));
     }
 
     @Override
     public int getDataRowCount()
     {
         return _totalDataRows;
+    }
+
+    @Override
+    public void close()
+    {
+        if (_rs != null)
+        {
+            try { _rs.close(); } catch (SQLException ignored) {}
+        }
     }
 }
