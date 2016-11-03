@@ -119,7 +119,7 @@ public interface Result<T> extends Supplier<T>
         return new Failure(s);
     }
 
-    public static Result failure(RuntimeException x)
+    public static Result failure(Exception x)
     {
         return new Failure(x);
     }
