@@ -93,7 +93,7 @@ public interface ExpProtocol extends ExpObject
         ExperimentRunOutput,
     }
 
-    List<ExpProtocolAction> getSteps();
+    List<? extends ExpProtocolAction> getSteps();
     ApplicationType getApplicationType();
     ProtocolImplementation getImplementation();
     String getDescription();
