@@ -1842,7 +1842,7 @@ public class QueryView extends WebPartView<Object>
     }
 
     /**
-     * this is the choke point for rendering reports and views, if this method is overriden you need to call
+     * this is the choke point for rendering reports and views, if this method is overridden you need to call
      * super in order to have report/view rendering to work properly.
      */
     @Override

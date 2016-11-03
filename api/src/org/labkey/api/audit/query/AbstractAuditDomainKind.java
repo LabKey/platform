@@ -328,7 +328,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     protected PropertyDescriptor createPropertyDescriptor(
             @NotNull String name, @NotNull PropertyType type,
             @Nullable String caption, @Nullable String description,
-            boolean required, Integer scale)
+            boolean required, @Nullable Integer scale)
     {
         Container domainContainer = getDomainContainer();
 
