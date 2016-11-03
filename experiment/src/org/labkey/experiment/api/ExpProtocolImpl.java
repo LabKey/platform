@@ -109,9 +109,9 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
         _object.setMaxInputDataPerInstance(i);
     }
 
-    public List<ExpProtocolAction> getSteps()
+    public List<? extends ExpProtocolAction> getSteps()
     {
-        return Arrays.asList(ExpProtocolActionImpl.fromProtocolActions(ExperimentServiceImpl.get().getProtocolActions(getRowId())));
+        return ExpProtocolActionImpl.fromProtocolActions(ExperimentServiceImpl.get().getProtocolActions(getRowId()));
     }
 
     public Container getContainer()

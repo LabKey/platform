@@ -272,7 +272,7 @@ public class ExpGeneratorHelper
         run.save(job.getUser());
 
         Map<String, ExpProtocolAction> expActionMap = new HashMap<>();
-        List<ExpProtocolAction> expActions = parentProtocol.getSteps();
+        List<? extends ExpProtocolAction> expActions = parentProtocol.getSteps();
         for (ExpProtocolAction action : expActions)
         {
             expActionMap.put(action.getChildProtocol().getName(), action);
@@ -417,7 +417,7 @@ public class ExpGeneratorHelper
     static private boolean validateProtocol(PipelineJob job, Map<String, ExpProtocol> protocolCache, List<String> protocolSequence, ExpProtocol parentProtocol, String description)
     {
         job.debug("Checking " + parentProtocol.getLSID() + " to see if it is a match");
-        List<ExpProtocolAction> existingSteps = parentProtocol.getSteps();
+        List<? extends ExpProtocolAction> existingSteps = parentProtocol.getSteps();
         // Two extra steps in the database, one to mark the run inputs, one to mark the run outputs
         if (existingSteps.size() != protocolSequence.size() + 2)
         {

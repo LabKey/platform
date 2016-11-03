@@ -115,12 +115,12 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
         Table.insert(user, ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), map);
     }
 
-    public static ExpProtocolActionImpl[] fromProtocolActions(ProtocolAction[] actions)
+    public static List<ExpProtocolActionImpl> fromProtocolActions(List<ProtocolAction> actions)
     {
-        ExpProtocolActionImpl[] result = new ExpProtocolActionImpl[actions.length];
-        for (int i = 0; i < actions.length; i++)
+        List<ExpProtocolActionImpl> result = new ArrayList<>(actions.size());
+        for (ProtocolAction action : actions)
         {
-            result[i] = new ExpProtocolActionImpl(actions[i]);
+            result.add(new ExpProtocolActionImpl(action));
         }
         return result;
     }

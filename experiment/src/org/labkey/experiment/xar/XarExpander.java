@@ -636,12 +636,16 @@ public class XarExpander extends AbstractXarImporter
 
     private List<String> getMaterialOutputs(String protocolStepLSID) throws SQLException
     {
-        ProtocolActionPredecessor[] predecessors = ExperimentServiceImpl.get().getProtocolActionPredecessors(_run.getProtocolLSID(), protocolStepLSID);
+        return getOutputs(protocolStepLSID, _materialOutputs);
+    }
+
+    private List<String> getOutputs(String protocolStepLSID, Map<PredecessorStep, List<String>> outputs)
+    {
         List<String> result = new ArrayList<>();
-        for (ProtocolActionPredecessor predecessor : predecessors)
+        for (ProtocolActionPredecessor predecessor : ExperimentServiceImpl.get().getProtocolActionPredecessors(_run.getProtocolLSID(), protocolStepLSID))
         {
             PredecessorStep step = new PredecessorStep(predecessor.getPredecessorChildLSID(), predecessor.getPredecessorSequence());
-            List<String> stepOutputs = _materialOutputs.get(step);
+            List<String> stepOutputs = outputs.get(step);
             if (stepOutputs != null)
             {
                 result.addAll(stepOutputs);
@@ -652,18 +656,7 @@ public class XarExpander extends AbstractXarImporter
 
     private List<String> getDataOutputs(String protocolStepLSID) throws SQLException
     {
-        ProtocolActionPredecessor[] predecessors = ExperimentServiceImpl.get().getProtocolActionPredecessors(_run.getProtocolLSID(), protocolStepLSID);
-        List<String> result = new ArrayList<>();
-        for (ProtocolActionPredecessor predecessor : predecessors)
-        {
-            PredecessorStep step = new PredecessorStep(predecessor.getPredecessorChildLSID(), predecessor.getPredecessorSequence());
-            List<String> stepOutputs = _dataOutputs.get(step);
-            if (stepOutputs != null)
-            {
-                result.addAll(stepOutputs);
-            }
-        }
-        return result;
+        return getOutputs(protocolStepLSID, _dataOutputs);
     }
 
     private static class PredecessorStep extends Pair<String, Integer>

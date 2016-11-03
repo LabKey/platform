@@ -1433,12 +1433,12 @@ public class XarReader extends AbstractXarImporter
 
         ProtocolActionType[] xActions = actionSet.getProtocolActionArray();
 
-        ProtocolAction[] existingActions = ExperimentServiceImpl.get().getProtocolActions(parentProtocol.getRowId());
-        boolean alreadyLoaded = existingActions.length != 0;
-        if (alreadyLoaded && existingActions.length != xActions.length)
+        List<ProtocolAction> existingActions = ExperimentServiceImpl.get().getProtocolActions(parentProtocol.getRowId());
+        boolean alreadyLoaded = existingActions.size() != 0;
+        if (alreadyLoaded && existingActions.size() != xActions.length)
         {
             throw new XarFormatException("Protocol actions for protocol " + parentLSID + " do not match those that have " +
-                    "already been loaded. The existing protocol has " + existingActions.length +
+                    "already been loaded. The existing protocol has " + existingActions.size() +
                     " actions but the file contains " + xActions.length + " actions.");
         }
 
@@ -1492,12 +1492,12 @@ public class XarReader extends AbstractXarImporter
             {
                 predecessors = new ProtocolActionType.PredecessorAction[0];
             }
-            ProtocolActionPredecessor[] existingPredecessors = ExperimentServiceImpl.get().getProtocolActionPredecessors(parentLSID, childLSID);
+            List<ProtocolActionPredecessor> existingPredecessors = ExperimentServiceImpl.get().getProtocolActionPredecessors(parentLSID, childLSID);
 
-            if (alreadyLoaded && predecessors.length != existingPredecessors.length)
+            if (alreadyLoaded && predecessors.length != existingPredecessors.size())
             {
                 throw new XarFormatException("Predecessors for child protocol " + childLSID + " do not match those " +
-                        "that have already been loaded. The existing protocol has " + existingPredecessors.length +
+                        "that have already been loaded. The existing protocol has " + existingPredecessors.size() +
                         " predecessors but the file contains " + predecessors.length + " predecessors.");
             }
 

@@ -2445,10 +2445,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new TableSelector(getTinfoProtocolApplication(), new SimpleFilter(FieldKey.fromParts("LSID"), lsid), null).getObject(ProtocolApplication.class);
     }
 
-    public ProtocolAction[] getProtocolActions(int parentProtocolRowId)
+    public List<ProtocolAction> getProtocolActions(int parentProtocolRowId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ParentProtocolId"), parentProtocolRowId);
-        return new TableSelector(getTinfoProtocolAction(), filter, new Sort("+Sequence")).getArray(ProtocolAction.class);
+        return new TableSelector(getTinfoProtocolAction(), filter, new Sort("+Sequence")).getArrayList(ProtocolAction.class);
     }
 
     public List<Material> getRunInputMaterial(String runLSID)
@@ -3858,11 +3858,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
 
-    public ProtocolActionPredecessor[] getProtocolActionPredecessors(String parentProtocolLSID, String childProtocolLSID)
+    public List<ProtocolActionPredecessor> getProtocolActionPredecessors(String parentProtocolLSID, String childProtocolLSID)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ChildProtocolLSID"), childProtocolLSID);
         filter.addCondition(FieldKey.fromParts("ParentProtocolLSID"), parentProtocolLSID);
-        return new TableSelector(getTinfoProtocolActionPredecessorLSIDView(), filter, new Sort("+PredecessorSequence")).getArray(ProtocolActionPredecessor.class);
+        return new TableSelector(getTinfoProtocolActionPredecessorLSIDView(), filter, new Sort("+PredecessorSequence")).getArrayList(ProtocolActionPredecessor.class);
     }
 
     public List<Data> getOutputDataForApplication(int applicationId)
@@ -4117,12 +4117,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
                 ExpProtocolImpl parentProtocol = run.getProtocol();
 
-                ProtocolAction[] actions = getProtocolActions(parentProtocol.getRowId());
-                if (actions.length != 3)
+                List<ProtocolAction> actions = getProtocolActions(parentProtocol.getRowId());
+                if (actions.size() != 3)
                 {
                     throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol, it should have three");
                 }
-                ProtocolAction action1 = actions[0];
+                ProtocolAction action1 = actions.get(0);
                 assert action1.getSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
                 assert action1.getChildProtocolId() == parentProtocol.getRowId();
 
@@ -4130,11 +4130,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
                 Date date = new Date();
 
-                ProtocolAction action2 = actions[1];
+                ProtocolAction action2 = actions.get(1);
                 assert action2.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE;
                 ExpProtocol protocol2 = getExpProtocol(action2.getChildProtocolId());
 
-                ProtocolAction action3 = actions[2];
+                ProtocolAction action3 = actions.get(2);
                 assert action3.getSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE;
                 ExpProtocol outputProtocol = getExpProtocol(action3.getChildProtocolId());
                 assert outputProtocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput : "Expected third protocol to be of type ExperimentRunOutput but was " + outputProtocol.getApplicationType();
@@ -4314,20 +4314,20 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 // protocol applications
                 ExpProtocol parentProtocol = run.getProtocol();
 
-                ProtocolAction[] actions = getProtocolActions(parentProtocol.getRowId());
-                if (actions.length != 3)
+                List<ProtocolAction> actions = getProtocolActions(parentProtocol.getRowId());
+                if (actions.size() != 3)
                 {
                     throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol, it should have three");
                 }
-                ProtocolAction action1 = actions[0];
+                ProtocolAction action1 = actions.get(0);
                 assert action1.getSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
                 assert action1.getChildProtocolId() == parentProtocol.getRowId();
 
-                ProtocolAction action2 = actions[1];
+                ProtocolAction action2 = actions.get(1);
                 assert action2.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE;
                 ExpProtocol protocol2 = getExpProtocol(action2.getChildProtocolId());
 
-                ProtocolAction action3 = actions[2];
+                ProtocolAction action3 = actions.get(2);
                 assert action3.getSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE;
                 ExpProtocol outputProtocol = getExpProtocol(action3.getChildProtocolId());
                 assert outputProtocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput : "Expected third protocol to be of type ExperimentRunOutput but was " + outputProtocol.getApplicationType();

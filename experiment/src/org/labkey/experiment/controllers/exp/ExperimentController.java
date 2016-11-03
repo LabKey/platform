@@ -3309,36 +3309,44 @@ public class ExperimentController extends SpringActionController
         @Override
         public boolean handlePost(UploadMaterialSetForm form, BindException errors) throws Exception
         {
-            _ss = form.getSampleSet();
-
-            // TODO: how to get this FormattedError into the validate command?
-            if (!form.isImportMoreSamples() && null != _ss)
+            try
             {
-                errors.addError(new FormattedError("A sample set with that name already exists.  If you would like to import samples that set, go here:  " +
-                        "<a href=" + getViewContext().getActionURL() + "name=" + form.getName() + "&importMoreSamples=true>Import More Samples</a>"));
-            }
+                _ss = form.getSampleSet();
 
-            if (!errors.hasErrors())
-            {
-                try
+                // TODO: how to get this FormattedError into the validate command?
+                if (!form.isImportMoreSamples() && null != _ss)
                 {
-                    UploadSamplesHelper helper = new UploadSamplesHelper(form, _ss == null ? null : _ss.getDataObject());
-                    Pair<MaterialSource, List<ExpMaterial>> pair = helper.uploadMaterials();
-                    MaterialSource newSource = pair.first;
+                    errors.addError(new FormattedError("A sample set with that name already exists.  If you would like to import samples that set, go here:  " +
+                            "<a href=" + getViewContext().getActionURL() + "name=" + form.getName() + "&importMoreSamples=true>Import More Samples</a>"));
+                }
 
-                    ExpSampleSetImpl activeSampleSet = ExperimentServiceImpl.get().lookupActiveSampleSet(getContainer());
-                    ExpSampleSetImpl newSampleSet = ExperimentServiceImpl.get().getSampleSet(newSource.getRowId());
-
-                    if (activeSampleSet == null)
+                if (!errors.hasErrors())
+                {
+                    try
                     {
-                        ExperimentService.get().setActiveSampleSet(getContainer(), newSampleSet);
+                        UploadSamplesHelper helper = new UploadSamplesHelper(form, _ss == null ? null : _ss.getDataObject());
+                        Pair<MaterialSource, List<ExpMaterial>> pair = helper.uploadMaterials();
+                        MaterialSource newSource = pair.first;
+
+                        ExpSampleSetImpl activeSampleSet = ExperimentServiceImpl.get().lookupActiveSampleSet(getContainer());
+                        ExpSampleSetImpl newSampleSet = ExperimentServiceImpl.get().getSampleSet(newSource.getRowId());
+
+                        if (activeSampleSet == null)
+                        {
+                            ExperimentService.get().setActiveSampleSet(getContainer(), newSampleSet);
+                        }
+                        _newss = newSampleSet;
                     }
-                    _newss = newSampleSet;
+                    catch (ExperimentException | IOException | ValidationException e)
+                    {
+                        errors.reject(ERROR_MSG, e.getMessage());
+                    }
                 }
-                catch (ExperimentException | IOException | ValidationException e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
-                }
+            }
+            finally
+            {
+                // Success or failure, clear the sample set cache as the object may have been mutated - issue 27407
+                ExperimentService.get().clearCaches();
             }
 
             return !errors.hasErrors();

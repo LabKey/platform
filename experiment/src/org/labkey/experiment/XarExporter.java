@@ -769,7 +769,7 @@ public class XarExporter
 
         if (includeChildren)
         {
-            List<ExpProtocolAction> protocolActions = protocol.getSteps();
+            List<? extends ExpProtocolAction> protocolActions = protocol.getSteps();
 
             if (protocolActions.size() > 0)
             {
@@ -799,8 +799,7 @@ public class XarExporter
         xProtocolAction.setActionSequence(protocolAction.getActionSequence());
         xProtocolAction.setChildProtocolLSID(_relativizedLSIDs.relativize(lsid));
 
-        ProtocolActionPredecessor[] predecessors = ExperimentServiceImpl.get().getProtocolActionPredecessors(parentProtocol.getLSID(), lsid);
-        for (ProtocolActionPredecessor predecessor : predecessors)
+        for (ProtocolActionPredecessor predecessor : ExperimentServiceImpl.get().getProtocolActionPredecessors(parentProtocol.getLSID(), lsid))
         {
             ProtocolActionType.PredecessorAction xPredecessor = xProtocolAction.addNewPredecessorAction();
             xPredecessor.setActionSequenceRef(predecessor.getPredecessorSequence());

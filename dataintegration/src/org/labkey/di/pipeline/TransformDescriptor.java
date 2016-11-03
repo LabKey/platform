@@ -855,7 +855,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             Assert.assertTrue(String.format("Expected protocols to match: expected '%s', got '%s'", expectedProtocol, protocol.getName()),
                     protocol.getName().equalsIgnoreCase(expectedProtocol));
 
-            List<ExpProtocolAction> actions = protocol.getSteps();
+            List<? extends ExpProtocolAction> actions = protocol.getSteps();
             // ignore input and output actions in count
             assertEquals(d._stepMetaDatas.size(), actions.size() - 2);
 
