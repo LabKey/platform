@@ -408,20 +408,15 @@ public class PipelineServiceImpl extends PipelineService
         map.save();
     }
 
+    @Nullable
     public List<String> getLastSequenceDbPathsSetting(PipelineProtocolFactory factory, Container container, User user)
     {
-        try
-        {
-            Map<String, String> props = PropertyManager.getProperties(user, container, PipelineServiceImpl.KEY_PREFERENCES);
-            String dbPaths = props.get(PipelineServiceImpl.PREF_LASTSEQUENCEDBPATHS + "-" + factory.getName());
+        Map<String, String> props = PropertyManager.getProperties(user, container, PipelineServiceImpl.KEY_PREFERENCES);
+        String dbPaths = props.get(PipelineServiceImpl.PREF_LASTSEQUENCEDBPATHS + "-" + factory.getName());
 
-            if (null != dbPaths)
-                return parseArray(dbPaths);
-        }
-        catch (Exception e)
-        {
-            _log.error("Error", e);
-        }
+        if (null != dbPaths)
+            return parseArray(dbPaths);
+
         return null;
     }
 
