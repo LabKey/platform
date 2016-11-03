@@ -716,14 +716,8 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
 
         private void populateUserList(Integer groupId)
         {
-            getService().getUsersForGroup(groupId, new AsyncCallback<List<Map<String, String>>>()
+            getService().getUsersForGroup(groupId, new ErrorDialogAsyncCallback<List<Map<String, String>>>()
             {
-                @Override
-                public void onFailure(Throwable caught)
-                {
-                    Window.alert("ERROR: " + caught.getLocalizedMessage());
-                }
-
                 @Override
                 public void onSuccess(List<Map<String, String>> users)
                 {
