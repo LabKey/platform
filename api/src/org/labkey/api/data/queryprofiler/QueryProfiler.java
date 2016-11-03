@@ -413,7 +413,7 @@ public class QueryProfiler
 
         String fullPlan = StringUtils.join(executionPlan, "\n");
 
-        return new HtmlView(PageFlowUtil.filter(fullPlan, true));
+        return new HtmlView("<pre>" + PageFlowUtil.filter(fullPlan, true) + "</pre>");
     }
 
 
