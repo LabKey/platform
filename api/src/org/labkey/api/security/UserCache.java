@@ -126,7 +126,7 @@ class UserCache
 
     static @NotNull Map<ValidEmail, User> getUserEmailMap()
     {
-        return new HashMap<>(getUserCollections().getEmailMap());
+        return Collections.unmodifiableMap(getUserCollections().getEmailMap());
     }
 
     static int getActiveUserCount()
