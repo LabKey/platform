@@ -1524,7 +1524,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         var window = LABKEY.study.DataViewUtil.getManageCategoriesDialog();
 
         window.on('categorychange', function() {
-            this.getFullStore.load();
+            this.getFullStore().load();
         }, this);
 
         window.on('close', function() {
