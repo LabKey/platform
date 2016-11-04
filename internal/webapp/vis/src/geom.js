@@ -221,6 +221,7 @@ LABKEY.vis.Geom.Bin.prototype.render = function(renderer, grid, scales, data, la
  * @param {String} [config.color] (Optional) String used to determine the color of all paths. Defaults to black (#000000).
  * @param {Number} [config.size] (Optional) Number used to determine the size of all paths.  Defaults to 3.
  * @param {Number} [config.opacity] (Optional) Number between 0 and 1, used to determine the opacity of all paths. Useful
+ * @param {boolean} [config.dashed] (Optional) True for dashed path, false for solid path. Defaults to false.
  *      if there are many overlapping paths. Defaults to 1.
  */
 LABKEY.vis.Geom.Path = function(config){
@@ -232,6 +233,7 @@ LABKEY.vis.Geom.Path = function(config){
     this.color = ('color' in config && config.color != null && config.color != undefined) ? config.color : '#000000';
     this.size = ('size' in config && config.size != null && config.size != undefined) ? config.size : 3;
     this.opacity = ('opacity' in config && config.opacity != null && config.opacity != undefined) ? config.opacity : 1;
+    this.dashed = ('dashed' in config && config.dashed != null && config.dashed != undefined) ? config.dashed : false;
 
     return this;
 };
@@ -247,6 +249,47 @@ LABKEY.vis.Geom.Path.prototype.render = function(renderer, grid, scales, data, l
     this.sizeScale = scales.size;
 
     renderer.renderPathGeom(data, this);
+    return true;
+};
+
+/**
+ * @class Control range geom. Generally used in conjunction with a {@link LABKEY.vis.Geom.Point} and/or {@link LABKEY.vis.Geom.Path}
+ * geom to show upper and lower control range for a given point. In order to work the user must specify an upper or lower accessor
+ * in the config.aes object of the {LABKEY.vis.Plot} or {LABKEY.vis.Layer} object. This Geom also supports the color
+ * aesthetic from the {LABKEY.vis.Plot} and/or {LABKEY.vis.Layer} objects.
+ * @param config An object with the following properties:
+ * @param {String} [config.color] (Optional) String used to determine the color of all paths. Defaults to black (#000000).
+ * @param {Number} [config.size] (Optional) Number used to determine the size of all paths.  Defaults to 2.
+ * @param {Boolean} [config.dashed] (Optional) Whether or not to use dashed lines for path. Defaults to false.
+ */
+LABKEY.vis.Geom.ControlRange = function(config){
+    this.type = "ControlRange";
+
+    if(!config){
+        config = {};
+    }
+    this.color = ('color' in config && config.color != null && config.color != undefined) ? config.color : '#000000';
+    this.size = ('size' in config && config.size != null && config.size != undefined) ? config.size : 2;
+    this.dashed = ('dashed' in config && config.dashed != null && config.dashed != undefined) ? config.dashed : false;
+    this.width = ('width' in config && config.width != null && config.width != undefined) ? config.width : 6;
+
+    return this;
+};
+LABKEY.vis.Geom.ControlRange.prototype = new LABKEY.vis.Geom.XY();
+LABKEY.vis.Geom.ControlRange.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name, index){
+    if(!this.initAesthetics(scales, layerAes, parentAes, name, index)){
+        return false;
+    }
+
+    this.upperAes = layerAes.upper ? layerAes.upper : parentAes.upper;
+    this.lowerAes = layerAes.lower ? layerAes.lower : parentAes.lower;
+
+    if (!this.upperAes || !this.lowerAes) {
+        console.error("The upperAes or lowerAes aesthetic is required for the ControlRange geom.");
+        return false;
+    }
+
+    renderer.renderControlRangeGeom(data, this);
     return true;
 };
 

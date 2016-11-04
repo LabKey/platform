@@ -2008,6 +2008,56 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
+    var renderControlRange = function(layer, plot, geom, data) {
+        var colorAcc, sizeAcc, topFn, bottomFn, selection, newBars;
+
+        colorAcc = geom.colorAes && geom.colorScale ? function(row) {return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);} : geom.color;
+        sizeAcc = geom.sizeAes && geom.sizeScale ? function(row) {return geom.sizeScale.scale(geom.sizeAes.getValue(row));} : geom.size;
+        topFn = function(d) {
+            var x, y, control;
+            x = geom.getX(d);
+            control = geom.upperAes.getValue(d);
+            y = geom.yScale.scale(control);
+            return control == null || isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - geom.width, y, x + geom.width, y);
+        };
+
+        bottomFn = function(d) {
+            var x, y, control;
+            x = geom.getX(d);
+            control = geom.lowerAes.getValue(d);
+            y = geom.yScale.scale(control);
+            return control == null || isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - geom.width, y, x + geom.width, y);
+        };
+
+        selection = layer.selectAll('.control-bar').data(data);
+        selection.exit().remove();
+
+        newBars = selection.enter().append('g').attr('class', 'control-bar');
+        if (geom.upperAes)
+            newBars.append('path').attr('class','control-line-upper');
+        if (geom.lowerAes)
+            newBars.append('path').attr('class','control-line-lower');
+
+        if (geom.upperAes)
+            selection.selectAll('.control-line-upper').attr('d', topFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
+        if (geom.lowerAes)
+            selection.selectAll('.control-line-lower').attr('d', bottomFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
+
+        if (geom.dashed) {
+            selection.selectAll('.control-line-upper').style("stroke-dasharray", ("2, 1"));
+            selection.selectAll('.control-line-lower').style("stroke-dasharray", ("2, 1"));
+        }
+    };
+
+    var renderControlRangeGeom = function(data, geom) {
+        var layer = getLayer.call(this, geom);
+        layer.call(renderControlRange, plot, geom, data);
+
+        if (plot.clipRect) {
+            applyClipRect.call(this, layer);
+        }
+    };
+
     var renderErrorBar = function(layer, plot, geom, data) {
         var colorAcc, altColorAcc, sizeAcc, topFn, bottomFn, verticalFn, selection, newBars;
 
@@ -2321,6 +2371,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .attr('stroke-width', size)
                 .attr('stroke-opacity', geom.opacity)
                 .attr('fill', 'none');
+
+        if (geom.dashed) {
+            layer.selectAll('path').style("stroke-dasharray", ("3, 3"));
+            layer.selectAll('path').style("stroke-dasharray", ("3, 3"));
+        }
     };
 
     var renderPathGeom = function(data, geom) {
@@ -3204,6 +3259,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         renderDataspaceBoxPlotGeom: renderDataspaceBoxPlotGeom,
         renderBinGeom: renderBinGeom,
         renderBarPlotGeom: renderBarPlotGeom,
-        renderTimelinePlotGeom: renderTimelinePlotGeom
+        renderTimelinePlotGeom: renderTimelinePlotGeom,
+        renderControlRangeGeom: renderControlRangeGeom
     };
 };

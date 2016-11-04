@@ -153,3 +153,109 @@ LABKEY.vis.Stat.fn = function(fn, n, min, max){
 
     return data;
 };
+
+/**
+ * Returns the average value.
+ * @param values An array of numbers.
+ * @returns {Number}
+ */
+LABKEY.vis.Stat.getMean = function(values)
+{
+    return values.map(function(x,i,arr){return x/arr.length}).reduce(function(a,b){return a + b});
+};
+
+/**
+ * Returns the standard deviation.
+ * @param values An array of numbers.
+ * @returns {Number}
+ */
+LABKEY.vis.Stat.getStdDev = function(values)
+{
+    if (values == null)
+        throw "invalid input";
+    var mean = LABKEY.vis.Stat.getMean(values);
+    var squareDiffs =  values.map(function(value){
+        var diff = value - mean;
+        return diff * diff;
+    });
+    var avgSquareDiff = LABKEY.vis.Stat.getMean(squareDiffs);
+    return Math.sqrt(avgSquareDiff);
+};
+
+/**
+ * Returns the standard value (z-score).
+ * @param value The obseravation number.
+ * @param mean The mean.
+ * @param stdDev The standard deviation.
+ * @returns {Number}
+ */
+LABKEY.vis.Stat.getStandardizedValue = function(value, mean, stdDev)
+{
+    return (value - mean) / stdDev;
+};
+
+/**
+ * Return the transformed standardize normal quantity value so that it is sensitive to variability changes
+ * @param standardized The standard value (z-score).
+ * @returns {Number}
+ */
+LABKEY.vis.Stat.getVTransformation = function(standardized)
+{
+    return (Math.sqrt(Math.abs(standardized)) - 0.822) / 0.349;
+};
+
+// CUSUM_WEIGHT_FACTOR of 0.5 and CUSUM_CONTROL_LIMIT of 5 to achieve a 3*stdDev boundary
+LABKEY.vis.Stat.CUSUM_WEIGHT_FACTOR = 0.5;
+LABKEY.vis.Stat.CUSUM_CONTROL_LIMIT = 5;
+
+/**
+ * Calculates a variety of cumulative sums for a data array.
+ * @param values Array of data values to calculate from
+ * @param negative True to calculate CUSUM-, false to calculate CUSUM+. (default to false)
+ * @param transform True to calculate CUSUMv (Variability CUSUM), false to calculate CUSUMm (Mean CUSUM). (default to false)
+ * @returns {number[]}
+ */
+LABKEY.vis.Stat.getCUSUM = function(values, negative, transform)
+{
+    if (values == null)
+        return [];
+    var mean = LABKEY.vis.Stat.getMean(values);
+    var stdDev = LABKEY.vis.Stat.getStdDev(values);
+    var cusums = [0];
+    for (var i = 0; i < values.length; i++)
+    {
+        var standardized = LABKEY.vis.Stat.getStandardizedValue(values[i], mean, stdDev);
+        if (transform)
+            standardized = LABKEY.vis.Stat.getVTransformation(standardized);
+        if (negative)
+            standardized = standardized * -1;
+        var cusum = standardized - LABKEY.vis.Stat.CUSUM_WEIGHT_FACTOR + cusums[i];
+        if (cusum < 0)
+            cusum = 0;
+        cusums.push(cusum);
+    }
+    cusums.shift(); // remove the initial 0 value
+    return cusums;
+};
+
+// MOVING_RANGE_UPPER_LIMIT_WEIGHT is chosen to provide a type I error rate of 0.0027 which guarantees 3*stdDev
+LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT = 3.268;
+LABKEY.vis.Stat.MOVING_RANGE_LOWER_LIMIT = 0;
+
+/**
+ * Calculate the moving range values for a data array, which are sequential differences between two successive values.
+ * @param values Array of data values to calculate from
+ * @returns {number[]}
+ */
+LABKEY.vis.Stat.getMovingRanges = function(values)
+{
+    if (values == null)
+        return [];
+    var mR = [0]; //mR[0] is always 0
+    for (var i = 1; i < values.length; i++)
+    {
+        mR.push(Math.abs(values[i] - values[i-1]));
+    }
+    return mR;
+};
+
