@@ -865,6 +865,8 @@ public class Table
         List<ColumnInfo> columns = table.getColumns();
         ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
 
+        // Issue 22873: user could attempt to updateRow with no columns in the table; avoid SQL error and log warning
+        boolean hasFieldsToSet = false;
         for (ColumnInfo column : columns)
         {
             if (column.isVersionColumn() && column != colModified)
@@ -877,6 +879,7 @@ public class Table
                     setSQL.append("=");
                     setSQL.append(expr);
                     comma = ", ";
+                    hasFieldsToSet = true;
                     continue;
                 }
             }
@@ -911,34 +914,40 @@ public class Table
             }
 
             comma = ", ";
+            hasFieldsToSet = true;
         }
 
-        // UNDONE: reselect
-        SQLFragment updateSQL = new SQLFragment("UPDATE " + table.getSelectName() + "\n\t" +
-                "SET " + setSQL + "\n\t" +
-                whereSQL);
-
-        updateSQL.addAll(parametersSet);
-        updateSQL.addAll(parametersWhere);
-
-        try
+        if (hasFieldsToSet)
         {
-            int count = new SqlExecutor(table.getSchema()).execute(updateSQL);
+            // UNDONE: reselect
+            SQLFragment updateSQL = new SQLFragment("UPDATE " + table.getSelectName() + "\n\t" +
+                                                    "SET " + setSQL + "\n\t" +
+                                                    whereSQL);
 
-            // check for concurrency problem
-            if (count == 0)
+            updateSQL.addAll(parametersSet);
+            updateSQL.addAll(parametersWhere);
+
+            try
             {
-                throw OptimisticConflictException.create(ERROR_DELETED);
-            }
+                int count = new SqlExecutor(table.getSchema()).execute(updateSQL);
 
-            _copyUpdateSpecialFields(table, fieldsIn, fields);
-            notifyTableUpdate(table);
+                // check for concurrency problem
+                if (count == 0)
+                {
+                    throw OptimisticConflictException.create(ERROR_DELETED);
+                }
+
+                _copyUpdateSpecialFields(table, fieldsIn, fields);
+                notifyTableUpdate(table);
+            }
+            catch (OptimisticConflictException e)
+            {
+                logException(updateSQL, null, e.getSQLException(), level);
+                throw (e);
+            }
         }
-        catch(OptimisticConflictException e)
-        {
-            logException(updateSQL, null, e.getSQLException(), level);
-            throw(e);
-        }
+        else
+            _log.warn("Attempt to update table '" + table.getName() + "' with no valid fields.");
 
         return (fieldsIn instanceof Map && !(fieldsIn instanceof BoundMap)) ? (K)fields : fieldsIn;
     }
