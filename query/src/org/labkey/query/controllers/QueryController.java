@@ -3422,9 +3422,9 @@ public static class ExportSqlForm
                 //issue 13967: provide better message for OptimisticConflictException
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
             }
-            catch (ConversionException | DuplicateKeyException e)
+            catch (ConversionException | DuplicateKeyException | DataIntegrityViolationException e)
             {
-                //Issue 14294: improve handling of ConversionException (and DuplicateKeyException (Issue 28037))
+                //Issue 14294: improve handling of ConversionException (and DuplicateKeyException (Issue 28037), and DataIntegrity (uniqueness) (Issue 22779)
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
             }
             catch (BatchValidationException e)
