@@ -2501,6 +2501,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         if (selLayer) {
             bindMouseEvents(selLayer.sel, geom, layer);
         }
+
+        if (plot.clipRect) {
+            applyClipRect.call(this, layer);
+        }
     };
 
     var renderDataspaceBoxes = function(selection, plot, geom) {
@@ -2900,6 +2904,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             // Render legend for Individual vs Total bars
             if (!plot.legendData)
                 plot.legendData = [{text: 'Total', color: geom.fillTotal}, {text: 'Individual', color: geom.fill}];
+        }
+
+        if (plot.clipRect) {
+            applyClipRect.call(this, layer);
         }
     };
 
