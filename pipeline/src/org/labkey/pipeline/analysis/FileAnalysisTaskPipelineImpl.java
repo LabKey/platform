@@ -368,8 +368,10 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 //        if (xpipeline.isSetDefaultDisplay())
 //            pipeline._defaultDisplayState = PipelineActionConfig.displayState.valueOf(xpipeline.getDefaultDisplayState());
 
-        // UNDONE: Infer 'splittable' from the TaskPath 'splitFiles' flag or add a 'splittable' flag in the pipeline xsd
+        // CONSIDER: Infer 'splittable' from the TaskPath 'splitFiles' flag
         pipeline._splittable = false;
+        if (xpipeline.isSetSplittable())
+            pipeline._splittable = xpipeline.getSplittable();
 
         // For now, only write out the job info file for file-based pipeline jobs.
         pipeline._writeJobInfoFile = true;

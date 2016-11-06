@@ -58,7 +58,7 @@
 <%
     if (study != null)
     {
-        %>This section shows the assay schedule for this study. Each treatment may consist of several immunogens and adjuvants.<br/><%
+        %>This section shows the assay schedule for this study.<br/><%
 
         if (canEdit)
         {

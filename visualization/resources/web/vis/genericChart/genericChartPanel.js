@@ -12,7 +12,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     editable : false,
     minWidth : 800,
 
-    dataLimit : 5000,
     hideViewData : false,
 
     constructor : function(config)
@@ -687,8 +686,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             removeableFilters     : userFilters,
             removeableSort        : userSort,
             showSurroundingBorder : false,
-            showPagination        : false, // TODO why don't we show pagination on this QWP?
-            maxRows               : this.dataLimit,
             allowHeaderLock       : false,
             buttonBar   : {
                 includeStandardButton: false,
@@ -738,7 +735,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             dataRegionName: this.dataRegionName,
             queryLabel  : this.queryLabel,
             parameters  : this.parameters,
-            maxRows     : this.dataLimit, // TODO: should only limit rows for scatter plot, not box plot
             requiredVersion : 12.1,
             method: 'POST'
         };
@@ -904,22 +900,38 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             config.geomOptions.gradientPercentage = this.options.general.gradientPercentage;
             config.geomOptions.gradientColor = this.options.general.gradientColor;
             config.geomOptions.colorPaletteScale = this.options.general.colorPaletteScale;
+            config.geomOptions.binShape = this.options.general.binShapeGroup;
+            config.geomOptions.binThreshold = this.options.general.binThreshold;
+            config.geomOptions.colorRange = this.options.general.binColorGroup;
+            config.geomOptions.binSingleColor = this.options.general.binSingleColor;
         }
 
-        if (this.options.x && !config.labels.x)
+        if (this.options.x)
         {
-            config.labels.x = this.options.x.label;
-            config.scales.x = {
-                trans: this.options.x.trans || this.options.x.scaleTrans
-            };
+            if (!config.labels.x) {
+                config.labels.x = this.options.x.label;
+                config.scales.x = {
+                    trans: this.options.x.trans || this.options.x.scaleTrans
+                };
+            }
+            if (this.options.x.scaleRangeType == "manual" && this.options.x.scaleRange) {
+                config.scales.x.min = this.options.x.scaleRange.min;
+                config.scales.x.max = this.options.x.scaleRange.max;
+            }
         }
 
-        if (this.options.y && !config.labels.y)
+        if (this.options.y)
         {
-            config.labels.y = this.options.y.label;
-            config.scales.y = {
-                trans: this.options.y.trans || this.options.y.scaleTrans
-            };
+            if (!config.labels.y) {
+                config.labels.y = this.options.y.label;
+                config.scales.y = {
+                    trans: this.options.y.trans || this.options.y.scaleTrans
+                };
+            }
+            if (this.options.y.scaleRangeType == "manual" && this.options.y.scaleRange) {
+                config.scales.y.min = this.options.y.scaleRange.min;
+                config.scales.y.max = this.options.y.scaleRange.max;
+            }
         }
 
         if (this.options.developer)
@@ -1452,6 +1464,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             xAxisType = this.getXAxisType(chartConfig.measures.x);
 
         chartType = LABKEY.vis.GenericChartHelper.getChartType(this.renderType, xAxisType);
+        if (chartType == 'scatter_plot' && this.chartData.rowCount > chartConfig.geomOptions.binThreshold) {
+            chartConfig.geomOptions.binned = true;
+            this.addWarningText("The number of individual points exceeds the limit set in the Chart Layout options. The data will be displayed according to point density in a heat map.");
+        }
 
         aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, this.chartData.schemaName, this.chartData.queryName);
         if (customRenderType && customRenderType.generateAes)
@@ -1479,9 +1495,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             var plot = new LABKEY.vis.Plot(plotConfig);
             plot.render();
         }
-
-        if (this.chartData.rows.length == this.dataLimit)
-            this.addWarningText("The data limit for plotting has been reached. Consider filtering your data.");
 
         if (this.warningText !== null)
         {

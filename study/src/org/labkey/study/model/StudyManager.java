@@ -4018,14 +4018,17 @@ public class StudyManager
         {
             for (DatasetDefinitionEntry datasetDefinitionEntry : datasetDefEntryMap.values())
             {
-                if (domainsMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI()) == null)
+                if (!domainsMap.containsKey(datasetDefinitionEntry.datasetDefinition.getTypeURI()))
                 {
                     Domain domain =
                             PropertyService.get().getDomain(
                                     datasetDefinitionEntry.datasetDefinition.getDefinitionContainer(),
                                     datasetDefinitionEntry.datasetDefinition.getTypeURI());
-                    populateDomainExistingPropertiesMap(domainsPropertiesMap, domain);
-                    domainsMap.put(datasetDefinitionEntry.datasetDefinition.getTypeURI(), domain);
+                    if (domain != null)
+                    {
+                        populateDomainExistingPropertiesMap(domainsPropertiesMap, domain);
+                        domainsMap.put(datasetDefinitionEntry.datasetDefinition.getTypeURI(), domain);
+                    }
                 }
             }
         }

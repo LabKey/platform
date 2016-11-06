@@ -42,7 +42,7 @@
 <% if (form.getIsChangeEmailRequest()) {%>
 <form <%=formAction(ChangeEmailAction.class, Method.Post)%>><labkey:csrf/>
     <% if (!isSiteAdmin) {%>
-        <p>NOTE: You will need to know your account password and have access to your current email address to change your email address!</p>
+        <p>NOTE: You will need to know your account password and have access to your new email address to change your email address!</p>
     <% } %>
     <table><%=formatMissedErrorsInTable("form", 2)%>
         <tr>
@@ -88,7 +88,7 @@
     <input type="hidden" name="isPasswordPrompt" value="true">
 </form>
 <% } else if (form.getIsVerifyRedirect()) {%>
-<p>We have sent a verification email to <%=h(currentEmail)%>. Please follow the link in the email to continue the email update process.
+<p>We have sent a verification email to <%=h(form.getRequestedEmail())%>. Please follow the link in the email to continue the email update process.
     If you do not see the email in your inbox, please check your spam folder, and add the message sender to your address book if the email has been marked as spam.</p>
 <% } else if (form.getIsFromVerifiedLink())  { // only still set here when there are errors in verification link processing %>
 <p><%=formatMissedErrors("form")%></p>

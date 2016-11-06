@@ -858,7 +858,14 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                                     if (itemEntry.contains(","))
                                     {
                                         String[] parts = itemEntry.split(",");
-                                        aliasNames.addAll(Arrays.asList(parts));
+                                        for (String part : parts)
+                                        {
+                                            part = part.trim();
+                                            if (part.startsWith("\"") && part.endsWith("\""))
+                                                part = part.substring(1, part.length() - 1).trim();
+                                            if (part.length() > 0)
+                                                aliasNames.add(part);
+                                        }
                                     }
                                     else
                                         aliasNames.add(itemEntry);

@@ -18,6 +18,8 @@ package org.labkey.mothership;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -64,6 +66,8 @@ public class MothershipManager
     private static final String CREATE_ISSUE_URL_PROP = "createIssueURL";
     private static final String ISSUES_CONTAINER_PROP = "issuesContainer";
     private static final ReentrantLock INSERT_EXCEPTION_LOCK = new ReentrantLock();
+
+    private static final Logger log = Logger.getLogger(MothershipManager.class);
 
     public static MothershipManager get()
     {
@@ -317,7 +321,7 @@ public class MothershipManager
                 existingSession.setDistribution(getBestString(existingSession.getDistribution(), session.getDistribution()));
                 existingSession.setUsageReportingLevel(getBestString(existingSession.getUsageReportingLevel(), session.getUsageReportingLevel()));
                 existingSession.setExceptionReportingLevel(getBestString(existingSession.getExceptionReportingLevel(), session.getExceptionReportingLevel()));
-                existingSession.setJsonMetrics(getBestJson(existingSession.getJsonMetrics(), session.getJsonMetrics()));
+                existingSession.setJsonMetrics(getBestJson(existingSession.getJsonMetrics(), session.getJsonMetrics(), existingSession.getServerSessionGUID()));
 
                 session = Table.update(null, getTableInfoServerSession(), existingSession, existingSession.getServerSessionId());
             }
@@ -354,11 +358,25 @@ public class MothershipManager
         return newValue;
     }
 
-    private String getBestJson(String currentValue, String newValue)
+    private String getBestJson(String currentValue, String newValue, String serverSessionGUID)
     {
-        if (newValue == null)
+        if (StringUtils.isEmpty(newValue))
         {
             return currentValue;
+        }
+        else if (StringUtils.isEmpty(currentValue))
+        {
+            // Verify the newValue as valid json; if it is, return it. Otherwise, return null.
+            try
+            {
+                new ObjectMapper().readTree(newValue);
+                return newValue;
+            }
+            catch (IOException e)
+            {
+                logJsonError(newValue, serverSessionGUID, e);
+                return null;
+            }
         }
 
         // Rather than overwrite the current json map, merge the new with the current.
@@ -372,8 +390,14 @@ public class MothershipManager
         }
         catch (IOException e)
         {
-            return currentValue; // TODO: And log
+            logJsonError(newValue, serverSessionGUID, e);
+            return currentValue;
         }
+    }
+
+    private void logJsonError(String newValue, String serverSessionGUID, Exception e)
+    {
+        log.error("Malformed json in mothership report from server session '"+serverSessionGUID + "': " + newValue, e);
     }
 
     public TableInfo getTableInfoExceptionStackTrace()

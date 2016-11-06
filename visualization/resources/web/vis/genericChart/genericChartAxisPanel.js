@@ -51,6 +51,48 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             ]
         });
 
+        this.scaleRangeMinField = Ext4.create('Ext.form.field.Number', {
+            name: 'rangeMin',
+            emptyText: 'Min',
+            style: 'margin-right: 10px',
+            width: 64
+        });
+
+        this.scaleRangeMaxField = Ext4.create('Ext.form.field.Number', {
+            name: 'rangeMax',
+            emptyText: 'Max',
+            width: 64
+        });
+
+        this.scaleRangeRadioGroup = Ext4.create('Ext.form.RadioGroup', {
+            fieldLabel: 'Range',
+            columns: 1,
+            vertical: true,
+            submitEmptyText: false,
+            items: [{
+                    boxLabel: 'Automatic',
+                    name: 'scale',
+                    inputValue: 'automatic',
+                    checked: true
+                },
+                {
+                    xtype: 'container',
+                    layout: 'hbox',
+                    items: [
+                        {
+                            xtype: 'radio',
+                            boxLabel: 'Manual',
+                            name: 'scale',
+                            inputValue: 'manual',
+                            style: 'margin-right: 10px'
+                        },
+                        this.scaleRangeMinField,
+                        this.scaleRangeMaxField
+                    ]
+                }
+            ]
+        });
+
         this.items = this.getInputFields();
         
         this.callParent();
@@ -60,7 +102,8 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
     {
         return [
             this.axisLabelField,
-            this.scaleTypeRadioGroup
+            this.scaleTypeRadioGroup,
+            this.scaleRangeRadioGroup
         ];
     },
 
@@ -78,7 +121,9 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
     {
         return {
             label: this.getAxisLabel(),
-            scaleTrans: this.getScaleType()
+            scaleTrans: this.getScaleType(),
+            scaleRangeType: this.getScaleRangeType(),
+            scaleRange: this.getScaleRange()
         };
     },
 
@@ -91,6 +136,8 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             this.setScaleTrans(config.trans);
         else if (config.scaleTrans)
             this.setScaleTrans(config.scaleTrans);
+
+        this.setScaleRange(config);
     },
 
     getAxisLabel: function(){
@@ -105,6 +152,36 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         return this.scaleTypeRadioGroup.getValue().scaleType;
     },
 
+    getScaleRangeType: function() {
+        return this.scaleRangeRadioGroup.getValue().scale;
+    },
+
+    setScaleRangeType: function(value) {
+        this.scaleRangeRadioGroup.setValue(value);
+        var radioComp = this.scaleRangeRadioGroup.down('radio[inputValue="' + value + '"]');
+        if (radioComp)
+            radioComp.setValue(true);
+    },
+
+    getScaleRange: function () {
+        var range = {};
+        range.min = this.scaleRangeMinField.getValue();
+        range.max = this.scaleRangeMaxField.getValue();
+        return range;
+    },
+
+    setScaleRange: function(range) {
+        var hasMin = range.min != null,
+            hasMax = range.max != null;
+
+        if (hasMin)
+            this.scaleRangeMinField.setValue(range.min);
+        if (hasMax)
+            this.scaleRangeMaxField.setValue(range.max);
+
+        this.setScaleRangeType(hasMin || hasMax ? 'manual' : 'automatic');
+    },
+
     setScaleTrans: function(value){
         this.scaleTypeRadioGroup.setValue(value);
         var radioComp = this.scaleTypeRadioGroup.down('radio[inputValue="' + value + '"]');
@@ -112,15 +189,54 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             radioComp.setValue(true);
     },
 
+    validateManualScaleRange: function() {
+        var range = this.getScaleRange();
+
+        if (range.min != null || range.max != null)
+            if (range.min != null && range.max != null && range.min >= range.max) {
+                this.scaleRangeMinField.markInvalid("Value must be a number less than the Max");
+                this.scaleRangeMaxField.markInvalid("Value must be a number greater than the Min");
+                return false;
+            } else {
+                return true;
+            }
+        else {
+            this.scaleRangeMinField.markInvalid("Value must be a number less than the Max");
+            this.scaleRangeMaxField.markInvalid("Value must be a number greater than the Min");
+        }
+    },
+
+    adjustScaleOptions: function(properties) {
+        var type = LABKEY.vis.GenericChartHelper.getMeasureType(properties);
+        //disable for non-numeric types
+      if ((this.axisName == 'x' || this.axisName == 'y') && (type != "int" && type != "float")) {
+          this.scaleRangeRadioGroup.hideForDatatype = true;
+          this.scaleTypeRadioGroup.hideForDatatype = true;
+      } else {
+          this.scaleRangeRadioGroup.hideForDatatype = false;
+          this.scaleTypeRadioGroup.hideForDatatype = false;
+      }
+    },
+
+    validateChanges : function ()
+    {
+        if (this.getScaleRangeType() == 'manual') {
+            return this.validateManualScaleRange();
+        }
+        return true; //else automatic scale, which is valid
+    },
+
     onMeasureChange : function(measures, renderType)
     {
         if (!this.userEditedLabel)
         {
             var properties = measures[this.axisName];
-            if (Ext4.isDefined(properties))
+            if (Ext4.isDefined(properties)) {
                 this.setAxisLabel(LABKEY.vis.GenericChartHelper.getDefaultLabel(renderType, this.axisName, properties));
-            else
+                this.adjustScaleOptions(properties);
+            } else {
                 this.setAxisLabel('');
+            }
         }
     }
 });

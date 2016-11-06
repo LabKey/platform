@@ -57,7 +57,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     {name: 'color', label: 'Color', nonNumericOnly: true},
                     {name: 'shape', label: 'Shape', nonNumericOnly: true}
                 ],
-                layoutOptions: {point: true, box: false, line: false, opacity: true, axisBased: true}
+                layoutOptions: {point: true, box: false, line: false, opacity: true, axisBased: true, binnable: true}
             }
         ];
     };
@@ -203,6 +203,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 scaleType: 'continuous',
                 trans: savedScales.y ? savedScales.y.trans : 'linear'
             };
+
         }
 
         for (var i = 0; i < fields.length; i++) {
@@ -227,6 +228,14 @@ LABKEY.vis.GenericChartHelper = new function(){
             } else if (measures.x && fields[i].name == measures.x.name && measures.x.name == subjectColumn && LABKEY.demoMode) {
                     scales.x.tickFormat = function(){return '******'};
             }
+        }
+
+        if (savedScales.x && (savedScales.x.min != null || savedScales.x.max != null)) {
+            scales.x.domain = [savedScales.x.min, savedScales.x.max]
+        }
+
+        if (savedScales.y && (savedScales.y.min != null || savedScales.y.max != null)) {
+            scales.y.domain = [savedScales.y.min, savedScales.y.max]
         }
 
         return scales;
@@ -522,6 +531,28 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     /**
+     * Generates the Bin Geom used to bin a set of points.
+     * @param {Object} chartOptions The saved chartOptions object from the chart config.
+     * @returns {LABKEY.vis.Geom.Bin}
+     */
+    var generateBinGeom = function(chartOptions) {
+        var colorRange = ["#e6e6e6", "#085D90"]; //light-gray and labkey blue is default
+        if (chartOptions.binColorGroup == 'SingleColor') {
+            var color = '#' + chartOptions.binSingleColor;
+            colorRange = ["#FFFFFF", color];
+        }
+        else if (chartOptions.binColorGroup == 'Heat') {
+            colorRange = ["#fff6bc", "#e23202"];
+        }
+
+        return new LABKEY.vis.Geom.Bin({
+            shape: chartOptions.binShape,
+            colorRange: colorRange,
+            size: chartOptions.binShape == 'square' ? 10 : 5
+        })
+    };
+
+    /**
      * Generates a Geom based on the chartType.
      * @param {String} chartType The chart type from getChartType.
      * @param {Object} chartOptions The chartOptions object from the saved chart config.
@@ -531,7 +562,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         if (chartType == "box_plot")
             return generateBoxplotGeom(chartOptions);
         else if (chartType == "scatter_plot")
-            return generatePointGeom(chartOptions);
+            return chartOptions.binned ? generateBinGeom(chartOptions) : generatePointGeom(chartOptions);
         else if (chartType == "bar_chart")
             return generateBarGeom(chartOptions);
     };
@@ -598,7 +629,7 @@ LABKEY.vis.GenericChartHelper = new function(){
     var generatePlotConfig = function(renderTo, chartConfig, labels, aes, scales, geom, data)
     {
         var renderType = chartConfig.renderType,
-            layers = [],
+            layers = [], clipRect,
             plotConfig = {
                 renderTo: renderTo,
                 rendererType: 'd3',
@@ -609,14 +640,20 @@ LABKEY.vis.GenericChartHelper = new function(){
         if (renderType == 'pie_chart')
             return _generatePieChartConfig(plotConfig, chartConfig, labels, data);
 
+        clipRect = (scales.x && Ext4.isArray(scales.x.domain)) || (scales.y && Ext4.isArray(scales.y.domain));
+
         if (renderType == 'bar_chart')
         {
             aes = { x: 'label', y: 'value' };
 
-            var values = Ext4.Array.pluck(data, 'value'),
-                min = Math.min(0, Ext4.Array.min(values)),
-                max = Math.max(0, Ext4.Array.max(values));
-            scales.y = { domain: [min, max] };
+            if (scales.y.domain) {
+                scales.y = { domain: scales.y.domain };
+            } else {
+                var values = Ext4.Array.pluck(data, 'value'),
+                        min = Math.min(0, Ext4.Array.min(values)),
+                        max = Math.max(0, Ext4.Array.max(values));
+                scales.y = { domain: [min, max] };
+            }
         }
         else if (renderType == 'box_plot' && chartConfig.pointType == 'all')
         {
@@ -637,6 +674,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         );
 
         plotConfig = Ext4.apply(plotConfig, {
+            clipRect: clipRect,
             data: data,
             labels: labels,
             aes: aes,
@@ -797,6 +835,7 @@ LABKEY.vis.GenericChartHelper = new function(){
          * @function
          */
         getRenderTypes: getRenderTypes,
+        getMeasureType: _getMeasureType,
         getChartType: getChartType,
         getDefaultLabel: getDefaultLabel,
         generateLabels: generateLabels,

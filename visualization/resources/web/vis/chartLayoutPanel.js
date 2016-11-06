@@ -300,9 +300,17 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                 {
                     Ext4.each(panel.getInputFields(), function(inputField)
                     {
-                        var includeLayoutField = !Ext4.isString(inputField.layoutOptions) || chartTypeLayoutOptions[inputField.layoutOptions];
-                        inputField.setDisabled(!includeLayoutField);
+                        var includeLayoutField;
+                        if (inputField.hideForDatatype) {
+                            includeLayoutField = false;
+                        } else {
+                            includeLayoutField = !Ext4.isString(inputField.layoutOptions) || chartTypeLayoutOptions[inputField.layoutOptions];
+                        }
                         inputField.setVisible(includeLayoutField);
+
+                        //If the component has an explicit 'disabledButVisible: true' property, show the component, but in a disabled state
+                        inputField.disabledButVisible ? inputField.setDisabled(inputField.disabledButVisible) : inputField.setDisabled(!includeLayoutField);
+
                     }, this);
                 }
             }, this);

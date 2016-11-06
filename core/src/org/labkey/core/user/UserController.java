@@ -1884,7 +1884,7 @@ public class UserController extends SpringActionController
                         verifyLinkUrl.addParameter("verificationToken", verificationToken);
                         verifyLinkUrl.addParameter("isFromVerifiedLink", true);
 
-                        SecurityManager.sendEmail(c, user, getRequestEmailMessage(userEmail, validRequestedEmail.getEmailAddress()), userEmail, verifyLinkUrl);
+                        SecurityManager.sendEmail(c, user, getRequestEmailMessage(userEmail, validRequestedEmail.getEmailAddress()), validRequestedEmail.getEmailAddress(), verifyLinkUrl);
                     }
                     else
                     {
@@ -1893,7 +1893,6 @@ public class UserController extends SpringActionController
                         ActionURL passwordPromptRetryUrl = getChangeEmailAction(c, user);
                         passwordPromptRetryUrl.addParameter("isPasswordPrompt", true);
                         passwordPromptRetryUrl.addParameter("requestedEmail", form.getRequestedEmail());
-                        //form.setReturnUrl(passwordPromptRetryUrl.);
                     }
                 }
                 else  // something strange happened
@@ -1931,6 +1930,7 @@ public class UserController extends SpringActionController
                     Container c = getContainer();
                     ActionURL verifyRedirectUrl = getChangeEmailAction(c, user);
                     verifyRedirectUrl.addParameter("isVerifyRedirect", true);
+                    verifyRedirectUrl.addParameter("requestedEmail", form.getRequestedEmail());
                     return verifyRedirectUrl;
                 }
                 else  // actually making self-service email change, so redirect to user details page
