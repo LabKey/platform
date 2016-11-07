@@ -102,6 +102,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+.chart-type-panel .field-selections .field-selection-display .field-selection-sub {
+    color: white;
+    opacity: 0.5;
+}
 .chart-type-panel .field-selections .field-selection-display .field-selection-remove {
     display: none;
     position: absolute;
@@ -117,6 +121,14 @@
 }
 .chart-type-panel .field-selections .field-selection-display .field-selection-remove:hover {
     color: #404040;
+}
+.chart-type-panel .field-selections .alternate-field-selection {
+    width: 100%;
+    margin-bottom: 10px;
+    background-color: #eeeeee;
+}
+.chart-type-panel .field-selections .alternate-field-selection .x4-form-checkboxgroup-body {
+    padding: 5px 10px;
 }
 
 .chart-type-panel .types-panel {

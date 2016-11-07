@@ -26,38 +26,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             {
                 this.getEl().mask('Loading Data...');
 
-                if (!this.initialColumnList)
+                if (this.editMode && !this.initialColumnList)
                 {
-                    var params = {
-                        schemaName  : this.schemaName,
-                        queryName   : this.queryName,
-                        viewName    : this.viewName,
-                        dataRegionName : this.dataRegionName,
-                        includeCohort : true,
-                        includeParticipantCategory : true
-                    };
-                    Ext4.Ajax.request({
-                        url     : LABKEY.ActionURL.buildURL('visualization', 'getGenericReportColumns.api'),
-                        method  : 'GET',
-                        params  : params,
-                        success : function(response){
-                            var o = Ext4.decode(response.responseText);
-                            this.initialColumnList = o.columns.all;
-                            this.columnTypes = o.columns;
-
-                            this.subject = o.subject;
-                            this.requestData();
-                            this.requestRender();
-                        },
-                        failure : this.onFailure,
-                        scope   : this
-                    });
-
+                    this.queryGenericChartColumns();
+                    this.queryStudyMeasures();
                 }
-                else {
+                else
                     this.requestData();
-                    this.requestRender();
-                }
             }
 
         }, this);
@@ -79,16 +54,101 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.callParent([config]);
     },
 
+    queryGenericChartColumns : function()
+    {
+        LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('visualization', 'getGenericReportColumns.api'),
+            method: 'GET',
+            params: {
+                schemaName: this.schemaName,
+                queryName: this.queryName,
+                viewName: this.viewName,
+                dataRegionName: this.dataRegionName,
+                includeCohort: true,
+                includeParticipantCategory : true
+            },
+            success : function(response){
+                var o = Ext4.decode(response.responseText);
+                this.initialColumnList = o.columns.all;
+                this.columnTypes = o.columns;
+                this.subject = o.subject;
+
+                this.queryColumnMetadata();
+            },
+            failure : this.onFailure,
+            scope   : this
+        });
+    },
+
+    queryColumnMetadata : function()
+    {
+        // use maxRows 0 so that we just get the query metadata
+        LABKEY.Query.selectRows({
+            maxRows: 0,
+            schemaName: this.schemaName,
+            queryName: this.queryName,
+            viewName: this.viewName,
+            parameters: this.parameters,
+            requiredVersion: 9.1,
+            columns: this.initialColumnList,
+            success: function(response){
+                this.queryColumnList = response.metaData.fields;
+                this.columnQueriesComplete();
+            },
+            failure : function(response) {
+                // this likely means that the query no longer exists, the other selectRows call with show the
+                // proper error message to the user
+                this.queryColumnList = [];
+                this.columnQueriesComplete();
+            },
+            scope   : this
+        });
+    },
+
+    queryStudyMeasures : function()
+    {
+        if (LABKEY.vis.GenericChartHelper.getStudyTimepointType() != null)
+        {
+            LABKEY.Query.Visualization.getMeasures({
+                filters: ['study|~'],
+                dateMeasures: false,
+                success: function (measures, response)
+                {
+                    var o = Ext4.JSON.decode(response.responseText);
+                    this.studyMeasureList = o.measures;
+                    this.columnQueriesComplete();
+                },
+                failure: this.onFailure,
+                scope: this
+            });
+        }
+        else
+        {
+            this.studyMeasureList = [];
+            this.columnQueriesComplete();
+        }
+    },
+
+    columnQueriesComplete : function()
+    {
+        if (Ext4.isDefined(this.queryColumnList) && Ext4.isDefined(this.studyMeasureList))
+        {
+            this.loadQueryColumns();
+            this.loadStudyColumns();
+
+            this.requestData();
+        }
+    },
+
     initComponent : function()
     {
         this.measures = {};
         this.options = {};
 
-        var fk, params;
         // boolean to check if we should allow things like export to PDF
         this.supportedBrowser = !(Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8);
 
-        params = LABKEY.ActionURL.getParameters();
+        var params = LABKEY.ActionURL.getParameters();
         this.editMode = (params.edit == "true" || !this.reportId) && this.allowEditMode;
         this.useRaphael = params.useRaphael != null ? params.useRaphael : false;
         this.parameters = LABKEY.Filter.getQueryParamsFromUrl(params['filterUrl'], this.dataRegionName);
@@ -97,9 +157,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         Ext4.each(['autoColumnXName', 'autoColumnYName', 'autoColumnName'], function(autoColPropName)
         {
             if (this[autoColPropName])
-            {
                 this[autoColPropName] = LABKEY.FieldKey.fromString(this[autoColPropName]);
-            }
         }, this);
 
         // for backwards compatibility, map auto_plot to box_plot
@@ -128,9 +186,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.on('render', this.ensureQuerySettings, this);
         }
 
-        this.on('dataRequested', this.requestData, this);
-
-        // customization
+        // TODO are these needed?
         this.on('enableCustomMode',  this.onEnableCustomMode,  this);
         this.on('disableCustomMode', this.onDisableCustomMode, this);
 
@@ -145,9 +201,17 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 overflowY   : 'auto',
                 ui          : 'custom',
                 listeners   : {
-                    activate  : this.viewPanelActivate,
-                    resize    : function(p) { if (this.chartData) { this.requestRender(); }}, // only re-render after the initial chart rendering
-                    scope: this
+                    scope: this,
+                    activate: function()
+                    {
+                        this.updateChartTask.delay(500);
+                    },
+                    resize: function(p)
+                    {
+                        // only re-render after the initial chart rendering
+                        if (this.chartData)
+                            this.requestRender();
+                    }
                 }
             });
         }
@@ -495,6 +559,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 selectedFields: this.measures,
                 restrictColumnsEnabled: this.restrictColumnsEnabled,
                 customRenderTypes: this.customRenderTypes,
+                baseQueryKey: this.schemaName + '|' + this.queryName,
+                studyQueryName: this.schemaName == 'study' ? this.queryName : null,
                 listeners: {
                     scope: this,
                     cancel: function(panel)
@@ -735,7 +801,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             dataRegionName: this.dataRegionName,
             queryLabel  : this.queryLabel,
             parameters  : this.parameters,
-            requiredVersion : 12.1,
+            requiredVersion : 9.1,
             method: 'POST'
         };
 
@@ -799,7 +865,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             {
                 var f = filters[i];
                 newFilters.push({name : f.getColumnName(), value : f.getValue(), type : f.getFilterType().getURLSuffix()});
-            } filters = newFilters;
+            }
+
+            filters = newFilters;
         }
         config['filterArray'] = filters;
 
@@ -810,7 +878,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         var columns = null;
 
-        if (!this.editMode || this.firstLoad)
+        if (!this.editMode)
         {
             // If we're not in edit mode or if this is the first load we need to only load the minimum amount of data.
             columns = [];
@@ -948,210 +1016,53 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     ensureQuerySettings : function()
     {
-
         if (!this.schemaName || !this.queryName)
         {
             this.schemaName = 'study';
-
-            var dialog = Ext4.create('LABKEY.vis.ChartWizardWindow', {
-                panelToMask: this,
-                items : [this.getQuerySettingsPanel()]
-            });
-
-            dialog.show();
+            this.getChartQueryWindow().show();
         }
     },
 
-    getQuerySettingsPanel : function()
+    getChartQueryWindow : function()
+    {
+        if (!this.chartQueryWindow)
+        {
+            var panel = this.getChartQueryPanel();
+
+            this.chartQueryWindow = Ext4.create('LABKEY.vis.ChartWizardWindow', {
+                panelToMask: this,
+                onEsc: function() {
+                    panel.cancelHandler.call(panel);
+                },
+                items: [panel]
+            });
+        }
+
+        return this.chartQueryWindow;
+    },
+
+    getChartQueryPanel : function()
     {
         if (!this.querySettingsPanel)
         {
-            var schemaCombo, queryCombo;
-
-            schemaCombo = Ext4.create('Ext.form.field.ComboBox', {
-                fieldLabel  : 'Schema',
-                name        : 'schema',
-                store       : this.initializeSchemaStore(),
-                editable    : false,
-                value       : this.schemaName,
-                queryMode      : 'local',
-                displayField   : 'name',
-                valueField     : 'name',
-                emptyText      : 'None',
-                padding     : '10px 10px 0 10px',
-                listeners   : {
-                    scope : this,
-                    change : function(cmp, newValue)
+            this.querySettingsPanel = Ext4.create('LABKEY.vis.ChartQueryPanel', {
+                schemaName: this.schemaName,
+                listeners: {
+                    scope: this,
+                    ok: function(panel, schemaName, queryName, queryLabel)
                     {
-                        this.schemaName = newValue;
+                        this.schemaName = schemaName;
+                        this.queryName = queryName;
+                        this.queryLabel = queryLabel;
 
-                        var proxy = queryCombo.getStore().getProxy();
-                        if (proxy)
-                        {
-                            proxy.extraParams = {schemaName : newValue};
-                            queryCombo.getStore().load();
-                        }
-
-                        queryCombo.clearValue();
-                        okBtn.disable();
-                    }
-                }
-            });
-
-            queryCombo = Ext4.create('Ext.form.field.ComboBox', {
-                fieldLabel  : 'Query',
-                name        : 'query',
-                store       : this.initializeQueryStore(),
-                editable    : false,
-                allowBlank  : false,
-                displayField   : 'queryLabel',
-                triggerAction  : 'all',
-                typeAhead      : true,
-                valueField     : 'name',
-                emptyText      : 'None',
-                padding     : 10,
-                listeners   : {
-                    scope : this,
-                    change : function(cmp, newValue)
-                    {
-                        var selected = cmp.getStore().getAt(cmp.getStore().find('name', newValue));
-                        this.queryLabel = selected ? selected.data.title : null;
-                        this.queryName = selected ? selected.data.name : null;
-                        okBtn.enable();
-                    }
-                }
-            });
-
-            queryCombo.getStore().addListener('beforeload', function(){
-                okBtn.disable();
-            }, this);
-
-
-            var okBtn = Ext4.create('Ext.button.Button', {
-                text : 'OK',
-                disabled: true,
-                handler : function(btn) {
-                    var dialog = btn.up('window');
-                    var form = dialog.down('form').getForm();
-
-                    if (form.isValid())
-                    {
-                        dialog.hide();
                         this.updateChartTask.delay(500);
+                        this.getChartQueryWindow().hide();
                     }
-                },
-                scope   : this
-            });
-
-            var cancelBtn = Ext4.create('Ext.button.Button', {
-                text : 'Cancel',
-                handler : function(btn) {
-                    window.history.back()
                 }
-            });
-
-            this.querySettingsPanel = Ext4.create('LABKEY.vis.ChartWizardPanel', {
-                cls: 'chart-wizard-panel chart-query-panel',
-                height: 210,
-                width: 440,
-                items: [
-                    Ext4.create('Ext.panel.Panel', {
-                        region: 'north',
-                        cls: 'region-panel title-panel',
-                        border: false,
-                        html: 'Select a query'
-                    }),
-                    Ext4.create('Ext.form.Panel', {
-                        region: 'center',
-                        cls: 'region-panel',
-                        fieldDefaults: {
-                            labelWidth: 75,
-                            width: 375
-                        },
-                        items : [schemaCombo, queryCombo]
-                    }),
-                    Ext4.create('Ext.toolbar.Toolbar', {
-                        region: 'south',
-                        cls: 'region-panel button-bar',
-                        border: false,
-                        ui: 'footer',
-                        defaults: {width: 65},
-                        items: ['->', cancelBtn, okBtn]
-                    })
-                ]
             });
         }
 
         return this.querySettingsPanel;
-    },
-
-    /**
-     * Create the store for the schema
-     */
-    initializeSchemaStore : function()
-    {
-
-        if (!Ext4.ModelManager.isRegistered('LABKEY.data.Schema')) {
-            Ext4.define('LABKEY.data.Schema', {
-                extend: 'Ext.data.Model',
-                fields: [
-                    {name: 'name'},
-                    {name: 'description'}
-                ]
-            });
-        }
-
-        // manually define for now, we could query at some point
-        var schemaStore = Ext4.create('Ext.data.Store', {
-            model : 'LABKEY.data.Schema',
-            data  : [
-                {name : 'assay'},
-                {name : 'lists'},
-                {name : 'study'}
-            ]
-        });
-
-        return schemaStore;
-    },
-
-    /**
-     * Create the store for the schema
-     */
-    initializeQueryStore : function()
-    {
-
-        Ext4.define('LABKEY.data.Queries', {
-            extend : 'Ext.data.Model',
-            fields : [
-                {name : 'name'},
-                {name : 'title'},
-                {name : 'queryLabel', convert: function(value, record){
-                    return record.data.name != record.data.title ? record.data.name + ' (' + record.data.title + ')' : record.data.title;
-                }},
-                {name : 'description'},
-                {name : 'isUserDefined', type : 'boolean'}
-            ]
-        });
-
-        var config = {
-            model   : 'LABKEY.data.Queries',
-            autoLoad: false,
-            pageSize: 10000,
-            proxy   : {
-                type   : 'ajax',
-                url : LABKEY.ActionURL.buildURL('query', 'getQueries'),
-                extraParams : {
-                    schemaName  : 'study'
-                },
-                reader : {
-                    type : 'json',
-                    root : 'queries'
-                }
-            },
-            sorters : [{property: 'title', direction: 'ASC'}]
-        };
-
-        return Ext4.create('Ext.data.Store', config);
     },
 
     markDirty : function(dirty)
@@ -1204,7 +1115,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (data.isSaveAs)
             reportConfig.reportId = null;
 
-        Ext4.Ajax.request({
+        LABKEY.Ajax.request({
             url     : LABKEY.ActionURL.buildURL('visualization', 'saveGenericReport.api'),
             method  : 'POST',
             headers : {
@@ -1256,19 +1167,19 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     onFailure : function(resp)
     {
-        var error = Ext4.decode(resp.responseText).exception;
+        var error = Ext4.isString(resp) ? Ext4.decode(resp.responseText).exception : resp.exception;
         if (error) {
             Ext4.Msg.alert('Error', error);
         }
         else {
-            Ext4.Msg.alert('Error', 'An unknown error has occurred, unable to save the chart.');
+            Ext4.Msg.alert('Error', 'An unknown error has occurred.');
         }
     },
 
     loadReport : function(reportId)
     {
         this.reportLoaded = false;
-        Ext4.Ajax.request({
+        LABKEY.Ajax.request({
             url     : LABKEY.ActionURL.buildURL('visualization', 'getGenericReport.api'),
             method  : 'GET',
             params  : {reportId : reportId},
@@ -1436,6 +1347,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (this.getViewPanel().isHidden() || this.getChartTypeWindow().isVisible())
             return;
 
+        // initMeasures returns false and opens the Chart Type panel if a required measure is not chosen by the user.
+        if (!this.initMeasures())
+            return;
+
         this.getEl().mask('Rendering Chart...');
         this.clearChartPanel();
 
@@ -1446,10 +1361,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.handleNoData(hasNoDataMsg);
             return;
         }
-
-        // initMeasures returns false and opens the Chart Type panel if a required measure is not chosen by the user.
-        if (!this.initMeasures())
-            return;
 
         var newChartDiv = Ext4.create('Ext.container.Container', {
             border: 1,
@@ -1641,7 +1552,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         // Initialize the x and y measures on first chart load. Returns false if we're missing the x or y measure.
         var measure, fk,
-            measureStore = this.getChartTypePanel().getStore(),
+            measureStore = this.getChartTypePanel().getQueryColumnsStore(),
             requiredFieldNames = this.getChartTypePanel().getRequiredFieldNames(),
             requiresX = requiredFieldNames.indexOf('x') > -1,
             requiresY = requiredFieldNames.indexOf('y') > -1;
@@ -1653,7 +1564,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 fk = this.autoColumnYName || this.autoColumnName;
                 measure = this.getMeasureFromFieldKey(fk);
                 if (measure)
-                    this.setYAxisMeasure(measure, true);
+                    this.setYAxisMeasure(measure);
             }
 
             if (requiresY && !this.measures.y)
@@ -1673,7 +1584,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     fk = this.autoColumnXName || this.autoColumnName;
                     measure = this.getMeasureFromFieldKey(fk);
                     if (measure)
-                        this.setXAxisMeasure(measure, true);
+                        this.setXAxisMeasure(measure);
                 }
 
                 if (requiresX && !this.measures.x)
@@ -1687,7 +1598,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             {
                 measure = measureStore.findRecord('label', 'Study: Cohort', 0, false, true, true);
                 if (measure)
-                    this.setXAxisMeasure(measure, true);
+                    this.setXAxisMeasure(measure);
 
                 this.autoColumnYName = null;
             }
@@ -1698,12 +1609,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     getMeasureFromFieldKey : function(fk)
     {
-        var measureStore = this.getChartTypePanel().getStore(),
+        var measureStore = this.getChartTypePanel().getQueryColumnsStore(),
             fkName = fk.getParts().length > 1 ? fk.toString() : fk.getName();
         return measureStore.findRecord('name', fkName, 0, false, true, true);
     },
 
-    setYAxisMeasure : function(measure, suppressEvents)
+    setYAxisMeasure : function(measure)
     {
         if (measure)
         {
@@ -1712,7 +1623,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
     },
 
-    setXAxisMeasure : function(measure, suppressEvents)
+    setXAxisMeasure : function(measure)
     {
         if (measure)
         {
@@ -1723,7 +1634,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     validateMeasuresExist: function(measureNames, requiredMeasureNames)
     {
-        var store = this.getChartTypePanel().getStore(),
+        var store = this.getChartTypePanel().getQueryColumnsStore(),
             valid = true,
             message = null,
             sep = '';
@@ -1963,11 +1874,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.getExportScriptWindow().show();
     },
 
-    viewPanelActivate : function()
-    {
-        this.updateChartTask.delay(500);
-    },
-
     createFilterString : function(filterArray)
     {
         var filterParams = [];
@@ -1982,8 +1888,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         this.chartData = response;
 
-        var queryFields = this.getQueryFields(this.chartData.metaData.fields);
-        this.getChartTypePanel().loadQueryColumns(queryFields);
+        // when not in edit mode, we'll use the column metadata from the data query
+        if (!this.editMode)
+        {
+            this.queryColumnList = this.chartData.metaData.fields;
+            this.loadQueryColumns();
+        }
 
         this.setDataLoading(false);
 
@@ -2000,14 +1910,18 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 // this time we have the data to render.
                 this.requestRender();
             }
-
-            if (this.firstLoad)
-            {
-                // Set first load to false after our first sucessful callback.
-                this.firstLoad = false;
-                this.fireEvent('dataRequested');
-            }
         }
+    },
+
+    loadQueryColumns : function()
+    {
+        var queryFields = this.getQueryFields(this.queryColumnList);
+        this.getChartTypePanel().loadQueryColumns(queryFields);
+    },
+
+    loadStudyColumns : function()
+    {
+        this.getChartTypePanel().loadStudyColumns(this.studyMeasureList);
     },
 
     getQueryFields : function(fields)
@@ -2017,19 +1931,24 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         Ext4.each(fields, function(field)
         {
             var f = Ext4.clone(field);
+            f.schemaName = this.schemaName;
+            f.queryName = this.queryName;
             f.isCohortColumn = false;
             f.isSubjectGroupColumn = false;
 
             // issue 23224: distinguish cohort and subject group fields in the list of query columns
-            if (this.columnTypes.cohort && this.columnTypes.cohort.indexOf(f.name) > -1)
+            if (Ext4.isDefined(this.columnTypes))
             {
-                f.shortCaption = 'Study: ' + f.shortCaption;
-                f.isCohortColumn = true;
-            }
-            else if (this.columnTypes.subjectGroup && this.columnTypes.subjectGroup.indexOf(f.name) > -1)
-            {
-                f.shortCaption = this.subject.nounSingular + ' Group: ' + f.shortCaption;
-                f.isSubjectGroupColumn = true;
+                if (this.columnTypes.cohort && this.columnTypes.cohort.indexOf(f.name) > -1)
+                {
+                    f.shortCaption = 'Study: ' + f.shortCaption;
+                    f.isCohortColumn = true;
+                }
+                else if (this.columnTypes.subjectGroup && this.columnTypes.subjectGroup.indexOf(f.name) > -1)
+                {
+                    f.shortCaption = this.subject.nounSingular + ' Group: ' + f.shortCaption;
+                    f.isSubjectGroupColumn = true;
+                }
             }
 
             queryFields.push(f);
@@ -2118,6 +2037,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         this.setDataLoading(true);
         LABKEY.Query.selectRows(this.getQueryConfig());
+        this.requestRender();
     },
 
     requestRender : function()

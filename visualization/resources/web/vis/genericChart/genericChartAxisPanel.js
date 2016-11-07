@@ -231,10 +231,13 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         if (!this.userEditedLabel)
         {
             var properties = measures[this.axisName];
-            if (Ext4.isDefined(properties)) {
-                this.setAxisLabel(LABKEY.vis.GenericChartHelper.getDefaultLabel(renderType, this.axisName, properties));
+            if (Ext4.isDefined(properties))
+            {
+                this.setAxisLabel(LABKEY.vis.GenericChartHelper.getSelectedMeasureLabel(renderType, this.axisName, properties));
                 this.adjustScaleOptions(properties);
-            } else {
+            }
+            else
+            {
                 this.setAxisLabel('');
             }
         }

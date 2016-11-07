@@ -57,7 +57,27 @@ LABKEY.vis.GenericChartHelper = new function(){
                     {name: 'color', label: 'Color', nonNumericOnly: true},
                     {name: 'shape', label: 'Shape', nonNumericOnly: true}
                 ],
-                layoutOptions: {point: true, box: false, line: false, opacity: true, axisBased: true, binnable: true}
+                layoutOptions: {point: true, opacity: true, axisBased: true, binnable: true}
+            },
+            {
+                name: 'time_chart',
+                title: 'Time',
+                hidden: true, //TODO getStudyTimepointType() == null,
+                imgUrl: LABKEY.contextPath + '/visualization/images/timechart.png',
+                fields: [
+                    {name: 'time', label: 'X Axis', required: true,
+                        altFieldType: 'Ext.form.RadioGroup',
+                        altFieldConfig: {
+                            columns: 1,
+                            items: [
+                                {name: 'time', inputValue: 'date', boxLabel: 'Date-based', checked: true},
+                                {name: 'time', inputValue: 'visit', boxLabel: 'Visit-based', disabled: getStudyTimepointType() == 'DATE'}
+                            ]
+                        }
+                    },
+                    {name: 'y', label: 'Y Axis', required: true, numericOnly: true, allowMultiple: true}
+                ],
+                layoutOptions: {time: true}
             }
         ];
     };
@@ -93,7 +113,7 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param measureName - the chart type's measure name
      * @param properties - properties for the selected column
      */
-    var getDefaultLabel = function(renderType, measureName, properties)
+    var getSelectedMeasureLabel = function(renderType, measureName, properties)
     {
         var label = properties ? properties.label || properties.queryName : '';
 
@@ -183,14 +203,15 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
         else
         {
-            var xMeasureType = _getMeasureType(measures.x);
-            if (xMeasureType == "float" || xMeasureType == "int")
+            var xMeasureType = getMeasureType(measures.x);
+            if (_isNumericType(xMeasureType))
             {
                 scales.x = {
                     scaleType: 'continuous',
                     trans: savedScales.x ? savedScales.x.trans : 'linear'
                 };
-            } else
+            }
+            else
             {
                 scales.x = {
                     scaleType: 'discrete',
@@ -203,13 +224,12 @@ LABKEY.vis.GenericChartHelper = new function(){
                 scaleType: 'continuous',
                 trans: savedScales.y ? savedScales.y.trans : 'linear'
             };
-
         }
 
         for (var i = 0; i < fields.length; i++) {
             var type = fields[i].displayFieldJsonType ? fields[i].displayFieldJsonType : fields[i].type;
 
-            if (type == 'int' || type == 'float') {
+            if (_isNumericType(type)) {
                 if (measures.x && fields[i].name == measures.x.name) {
                     if (fields[i].extFormatFn) {
                         scales.x.tickFormat = eval(fields[i].extFormatFn);
@@ -252,28 +272,30 @@ LABKEY.vis.GenericChartHelper = new function(){
      */
     var generateAes = function(chartType, measures, schemaName, queryName) {
         var aes = {},
-            xMeasureType = _getMeasureType(measures.x),
-            yMeasureType = _getMeasureType(measures.y);
+            xMeasureType = getMeasureType(measures.x),
+            yMeasureType = getMeasureType(measures.y);
 
-        if(chartType == "box_plot" && !measures.x) {
+        if(chartType == "box_plot" && !measures.x)
             aes.x = generateMeasurelessAcc(queryName);
-        } else if (xMeasureType == "float" || xMeasureType == "int") {
+        else if (_isNumericType(xMeasureType))
             aes.x = generateContinuousAcc(measures.x.name);
-        } else {
+        else
             aes.x = generateDiscreteAcc(measures.x.name, measures.x.label);
-        }
 
         if (measures.y)
         {
-            if (yMeasureType == "float" || yMeasureType == "int")
+            if (_isNumericType(yMeasureType))
                 aes.y = generateContinuousAcc(measures.y.name);
             else
                 aes.y = generateDiscreteAcc(measures.y.name, measures.y.label);
         }
 
-        if (chartType === "scatter_plot") {
+        if (chartType === "scatter_plot")
+        {
             aes.hoverText = generatePointHover(measures);
-        } else if (chartType === "box_plot") {
+        }
+        else if (chartType === "box_plot")
+        {
             if (measures.color) {
                 aes.outlierColor = generateGroupingAcc(measures.color.name);
             }
@@ -400,7 +422,8 @@ LABKEY.vis.GenericChartHelper = new function(){
         return function(row){
             var value = null;
 
-            if(row[measureName]){
+            if (row[measureName])
+            {
                 value = row[measureName].value;
 
                 if(Math.abs(value) === Infinity){
@@ -412,9 +435,9 @@ LABKEY.vis.GenericChartHelper = new function(){
                 }
 
                 return value;
-            } else {
-                return undefined;
             }
+
+            return undefined;
         }
     };
 
@@ -646,12 +669,16 @@ LABKEY.vis.GenericChartHelper = new function(){
         {
             aes = { x: 'label', y: 'value' };
 
-            if (scales.y.domain) {
+            if (scales.y.domain)
+            {
                 scales.y = { domain: scales.y.domain };
-            } else {
+            }
+            else
+            {
                 var values = Ext4.Array.pluck(data, 'value'),
-                        min = Math.min(0, Ext4.Array.min(values)),
-                        max = Math.max(0, Ext4.Array.max(values));
+                    min = Math.min(0, Ext4.Array.min(values)),
+                    max = Math.max(0, Ext4.Array.max(values));
+
                 scales.y = { domain: [min, max] };
             }
         }
@@ -824,8 +851,19 @@ LABKEY.vis.GenericChartHelper = new function(){
         return this.validateAxisMeasure(chartType, chartConfig, 'y', aes, scales, data);
     };
 
-    var _getMeasureType = function(measure) {
+    var getMeasureType = function(measure) {
         return measure ? (measure.normalizedType || measure.type) : null;
+    };
+
+    var _isNumericType = function(type) {
+        var t = type.toLowerCase();
+        return t == 'int' || t == 'integer' || t == 'float' || t == 'double';
+    };
+
+    var getStudyTimepointType = function()
+    {
+        var studyCtx = LABKEY.getModuleContext("study");
+        return Ext4.isDefined(studyCtx) && Ext4.isDefined(studyCtx.timepointType) ? studyCtx.timepointType : null;
     };
 
     return {
@@ -835,9 +873,10 @@ LABKEY.vis.GenericChartHelper = new function(){
          * @function
          */
         getRenderTypes: getRenderTypes,
-        getMeasureType: _getMeasureType,
         getChartType: getChartType,
-        getDefaultLabel: getDefaultLabel,
+        getStudyTimepointType: getStudyTimepointType,
+        getSelectedMeasureLabel: getSelectedMeasureLabel,
+        getMeasureType: getMeasureType,
         generateLabels: generateLabels,
         generateScales: generateScales,
         generateAes: generateAes,

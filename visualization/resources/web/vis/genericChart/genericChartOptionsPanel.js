@@ -551,7 +551,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         if (!this.userEditedSubtitle)
         {
             if (renderType == 'pie_chart' && Ext4.isDefined(measures.x) && measures.x.hasOwnProperty('label'))
-                this.setSubtitle(LABKEY.vis.GenericChartHelper.getDefaultLabel(renderType, 'x', measures.x));
+                this.setSubtitle(LABKEY.vis.GenericChartHelper.getSelectedMeasureLabel(renderType, 'x', measures.x));
             else
                 this.setSubtitle('');
         }
@@ -559,7 +559,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         if (!this.userEditedFooter)
         {
             if (renderType == 'pie_chart' && Ext4.isDefined(measures.y) && measures.y.hasOwnProperty('label'))
-                this.setFooter(LABKEY.vis.GenericChartHelper.getDefaultLabel(renderType, 'y', measures.y));
+                this.setFooter(LABKEY.vis.GenericChartHelper.getSelectedMeasureLabel(renderType, 'y', measures.y));
             else
                 this.setFooter('');
         }
@@ -567,12 +567,17 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     validateChanges : function()
     {
-        if (this.getBinThreshold() == null ) {
+        if (this.getBinThreshold() == null )
+        {
             this.binFieldContainer.getComponent('binThresholdField').markInvalid("You must specify a threshold between 1 and 10,000");
-        } else {
-            return (this.widthBox.isDisabled() || this.getWidth() == null || this.getWidth() > 0)
-                    && (this.heightBox.isDisabled() || this.getHeight() == null || this.getHeight() > 0)
-                    && (this.getBinThreshold() <= 10000 && this.getBinThreshold() >= 1);
+        }
+        else
+        {
+            var hasValidWidth = this.widthBox.isDisabled() || this.getWidth() == null || this.getWidth() > 0,
+                hasValidHeight = this.heightBox.isDisabled() || this.getHeight() == null || this.getHeight() > 0,
+                hasValidBinThreshold = this.getBinThreshold() <= 10000 && this.getBinThreshold() >= 1;
+
+            return hasValidWidth && hasValidHeight && hasValidBinThreshold;
         }
     },
 
@@ -919,5 +924,4 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         if (value != null && value != 'none')
             this.binSingleColorPicker.select(value);
     }
-
 });

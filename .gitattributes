@@ -3038,6 +3038,7 @@ visualization/resources/web/vis/ColumnVisualizationAnalytics.css -text
 visualization/resources/web/vis/ColumnVisualizationAnalytics.js -text
 visualization/resources/web/vis/baseExportScriptPanel.js -text
 visualization/resources/web/vis/chartLayoutPanel.js -text
+visualization/resources/web/vis/chartQueryPanel.js -text
 visualization/resources/web/vis/chartTypePanel.js -text
 visualization/resources/web/vis/chartWizardPanel.css -text
 visualization/resources/web/vis/chartWizardWindow.js -text
