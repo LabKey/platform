@@ -940,7 +940,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
             reportsStore.add(this.reportsArray);  // so load with initial data
         }
         reportsStore.filterBy(function (record) {  // filter out all reports except the ones in the selected category
-            if(record.get('category').rowid === menuItem.raw.rowId)
+            if(record && record.get('category').rowid === menuItem.raw.rowId)
                 return true;
             else
                 return false;
