@@ -1467,9 +1467,13 @@ boxPlot.render();
  * @param {String} [config.data.negative] CUSUM plot only. True for CUSUM-, false for CUSUM+. Default false;
  * @param {Object} [config.properties] An object that contains the properties specific to the Levey-Jennings plot
  * @param {String} [config.properties.value] The data property name for the value to be plotted on the left y-axis.
- *                          Used by LeveyJennings and MovingRange.
+ *                          Used by LeveyJennings.
  * @param {String} [config.properties.valueRight] The data property name for the value to be plotted on the right y-axis.
- *                          Used by LeveyJennings and MovingRange.
+ *                          Used by LeveyJennings.
+ * @param {String} [config.properties.valueMR] The data property name for the moving range value to be plotted on the left y-axis.
+ *                          Used by MovingRange.
+ * @param {String} [config.properties.valueRightMR] The data property name for the moving range to be plotted on the right y-axis.
+ *                          Used by MovingRange.
  * @param {String} [config.properties.positiveValue] The data property name for the value to be plotted on the left y-axis for CUSUM+.
  *                          Used by CUSUM only.
  * @param {String} [config.properties.positiveValueRight] The data property name for the value to be plotted on the right y-axis for CUSUM+.
@@ -1479,7 +1483,9 @@ boxPlot.render();
  * @param {String} [config.properties.negativeValueRight] The data property name for the value to be plotted on the right y-axis for CUSUM-.
  *                          Used by CUSUM only.
  * @param {String} [config.properties.mean] The data property name for the mean of the expected range.
- *                          Used by LeveyJennings and MovingRange.
+ *                          Used by LeveyJennings.
+ * @param {String} [config.properties.meanMR] The data property name for the mean of the moving range.
+ *                          Used MovingRange.
  * @param {String} [config.properties.stdDev] The data property name for the standard deviation of the expected range.
  *                          Used by LeveyJennings only.
  * @param {String} [config.properties.xTickLabel] The data property name for the x-axis tick label.
@@ -1539,9 +1545,9 @@ boxPlot.render();
             }
         }
         else if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.MovingRange) {
-            if (config.properties.value == null) {
+            if (config.properties.valueMR == null) {
                 throw new Error("Unable to create " + plotTypeLabel + " plot, value object not specified. "
-                        + "Required: value, xTickLabel. Optional: mean, color, colorRange, hoverTextFn, "
+                        + "Required: value, xTickLabel. Optional: meanMR, color, colorRange, hoverTextFn, "
                         + "pointClickFn, showTrendLine, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
             }
         }
@@ -1563,7 +1569,7 @@ boxPlot.render();
         // also, pull out the meanStdDev data for the unique x-axis values and calculate average values for the (LJ) trend line data
         var tickLabelMap = {}, index = -1, distinctColorValues = [], meanStdDevData = [],
             groupedTrendlineData = [], groupedTrendlineSeriesData = {},
-            hasYRightMetric = config.properties.valueRight != undefined;
+            hasYRightMetric = config.properties.valueRight != undefined || config.properties.positiveValueRight || config.properties.valueRightMR;
 
         for (var i = 0; i < config.data.length; i++)
         {
@@ -1603,25 +1609,48 @@ boxPlot.render();
                     }
                 };
 
+                var addAllValuesToTrendLineData = function(dataArr, seqValue, arrKey, row, hasYRightMetric)
+                {
+                    var plotValueName = config.properties.value, plotValueNameRight = config.properties.valueRight;
+                    var plotValueNamePositive = config.properties.positiveValue, plotValueNameRightPositive = config.properties.positiveValueRight;
+                    if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.MovingRange)
+                    {
+                        plotValueName = config.properties.valueMR;
+                        plotValueNameRight = config.properties.valueRightMR;
+                    }
+                    else if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM)
+                    {
+                        plotValueName = config.properties.negativeValue;
+                        plotValueNameRight = config.properties.negativeValueRight;
+                    }
+
+                    addValueToTrendLineData(dataArr, seqValue, arrKey, plotValueName, row[plotValueName], 'sum1', 'count1');
+                    if (hasYRightMetric)
+                    {
+                        addValueToTrendLineData(dataArr, seqValue, arrKey, plotValueNameRight, row[plotValueNameRight], 'sum2', 'count2');
+                    }
+
+                    if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM)
+                    {
+                        addValueToTrendLineData(dataArr, seqValue, arrKey, plotValueNamePositive, row[plotValueNamePositive], 'sum3', 'count3');
+                        if (hasYRightMetric)
+                        {
+                            addValueToTrendLineData(dataArr, seqValue, arrKey, plotValueNameRightPositive, row[plotValueNameRightPositive], 'sum4', 'count4');
+                        }
+                    }
+                };
+
                 index = uniqueXAxisLabels.indexOf(row[config.properties.xTick]);
 
                 // calculate average values for the trend line data (used when grouping x by unique value)
-                addValueToTrendLineData(groupedTrendlineData, index, index, config.properties.value, row[config.properties.value], 'sum1', 'count1');
-                if (hasYRightMetric)
-                {
-                    addValueToTrendLineData(groupedTrendlineData, index, index, config.properties.valueRight, row[config.properties.valueRight], 'sum2', 'count2');
-                }
+                addAllValuesToTrendLineData(groupedTrendlineData, index, index, row, hasYRightMetric);
 
                 // calculate average values for trend line data for each series (used when grouping x by unique value with a groupBy series property)
                 if (config.properties.groupBy && row[config.properties.groupBy]) {
                     var series = row[config.properties.groupBy];
                     var key = series + '|' + index;
 
-                    addValueToTrendLineData(groupedTrendlineSeriesData, index, key, config.properties.value, row[config.properties.value], 'sum1', 'count1');
-                    if (hasYRightMetric)
-                    {
-                        addValueToTrendLineData(groupedTrendlineSeriesData, index, key, config.properties.valueRight, row[config.properties.valueRight], 'sum2', 'count2');
-                    }
+                    addAllValuesToTrendLineData(groupedTrendlineSeriesData, index, key, row, hasYRightMetric);
 
                     groupedTrendlineSeriesData[key][config.properties.groupBy] = series;
                 }
@@ -1812,7 +1841,7 @@ boxPlot.render();
                     geom: new LABKEY.vis.Geom.ControlRange({size: 1, color: 'red', dashed: true, altColor: 'darkgrey', width: barWidth}),
                     data: config.data,
                     aes: {
-                        upper: function(row){return row[config.properties.mean] * LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT;},
+                        upper: function(row){return row[config.properties.meanMR] * LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT;},
                         lower: function(){return LABKEY.vis.Stat.MOVING_RANGE_LOWER_LIMIT;},
                         yLeft: config.properties.mean
                     }
@@ -1873,15 +1902,27 @@ boxPlot.render();
             {
                 if (hasYRightMetric)
                 {
-                    config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yLeft', config.properties.negativeValue, 0, true)));
-                    config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yRight', config.properties.negativeValueRight, 1, false)));
-                    config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yLeft', config.properties.positiveValue, 0, true)));
-                    config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yRight', config.properties.positiveValueRight, 1, false)));
+                    config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yLeft', config.properties.negativeValue, 1, true)));
+                    config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yRight', config.properties.negativeValueRight, 0, true)));
+                    config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yLeft', config.properties.positiveValue, 1, false)));
+                    config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yRight', config.properties.positiveValueRight, 0, false)));
                 }
                 else
                 {
                     config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yLeft', config.properties.negativeValue, undefined, true)));
                     config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yLeft', config.properties.positiveValue, undefined, false)));
+                }
+            }
+            else if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.MovingRange)
+            {
+                if (hasYRightMetric)
+                {
+                    config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yLeft', config.properties.valueMR, 0)));
+                    config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yRight', config.properties.valueRightMR, 1)));
+                }
+                else
+                {
+                    config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yLeft', config.properties.valueMR)));
                 }
             }
             else
@@ -1947,16 +1988,28 @@ boxPlot.render();
         {
             if (hasYRightMetric)
             {
-                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.negativeValue, 0)));
-                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.negativeValueRight, 1)));
-                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.positiveValue, 0)));
-                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.positiveValueRight, 1)));
+                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.negativeValue, 1)));
+                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.negativeValueRight, 0)));
+                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.positiveValue, 1)));
+                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.positiveValueRight, 0)));
 
             }
             else
             {
                 config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.negativeValue)));
                 config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.positiveValue)));
+            }
+        }
+        else if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.MovingRange)
+        {
+            if (hasYRightMetric)
+            {
+                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.valueMR, 0)));
+                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.valueRightMR, 1)));
+            }
+            else
+            {
+                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.valueMR)));
             }
         }
         else

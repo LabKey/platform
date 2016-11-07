@@ -230,7 +230,7 @@ LABKEY.vis.Stat.getCUSUM = function(values, negative, transform)
         if (negative)
             standardized = standardized * -1;
         var cusum = standardized - LABKEY.vis.Stat.CUSUM_WEIGHT_FACTOR + cusums[i];
-        if (cusum < 0)
+        if (cusum < 0) //TODO math is incorrect, need revision
             cusum = 0;
         cusums.push(cusum);
     }
