@@ -57,6 +57,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.labkey.test.util.DataRegionTable.DataRegion;
 import static org.labkey.test.util.PasswordUtil.getUsername;
 
 @Category({Specimen.class, DailyC.class})
@@ -545,7 +546,7 @@ public class StudyTest extends StudyBaseTest
     {
         startCreateParticipantGroup();
         setFormElement(Locator.name(LABEL_FIELD), listName);
-        DataRegionTable table = new DataRegionTable("demoDataRegion", this);
+        DataRegionTable table = DataRegion(getDriver()).withName("demoDataRegion").waitFor();
 
         if(filtered)
         {
