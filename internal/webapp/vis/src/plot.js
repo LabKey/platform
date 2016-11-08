@@ -1749,11 +1749,24 @@ boxPlot.render();
                 }
             }
 
-            config.scales.color = {
-                scale: function(group) {
-                    return legendColorMap[group];
-                }
-            };
+            if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM)
+            {
+                config.scales.color = {
+                    scale: function(group) {
+                        var normalizedGroup = group.replace('CUSUMmN', 'CUSUMm').replace('CUSUMmP', 'CUSUMm');
+                        normalizedGroup = normalizedGroup.replace('CUSUMvN', 'CUSUMv').replace('CUSUMvP', 'CUSUMv');
+                        return legendColorMap[normalizedGroup];
+                    }
+                };
+            }
+            else
+            {
+                config.scales.color = {
+                    scale: function(group) {
+                        return legendColorMap[group];
+                    }
+                };
+            }
         }
 
         if(!config.margins) {
