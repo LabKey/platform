@@ -104,6 +104,15 @@ public interface ColumnTransform extends Serializable
     default boolean requiresTargetColumnName() {return false;}
 
     /**
+     * Called at the start of every run. Implement if there are transient cached values which should be cleared/reset
+     * across runs.
+     */
+    default void reset()
+    {
+        // No-op in default
+    }
+
+    /**
      * Returns the row value for the configured source column
      * @return the value in this row
      */
@@ -136,6 +145,7 @@ public interface ColumnTransform extends Serializable
      */
     @NotNull
     Set<ColumnInfo> addTransform(ContainerUser cu, @NotNull SimpleTranslator data, int transformRunId, @Nullable Integer inputPosition);
+
 
     /**
      * Wrapping class for exceptions caught in the Supplier to addOutputColumn(), such as implementations of
