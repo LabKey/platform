@@ -145,6 +145,7 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
             {
                 for (ColumnTransform ct : _columnTransforms.get(c.getColumnName()))
                 {
+                    ct.reset();
                     outCols.addAll(ct.addTransform(((TransformPipelineJob)_job).getTransformJobContext(), out, _transformRunId, i));
                 }
             }
@@ -159,6 +160,7 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
         {
             for (ColumnTransform ct : _columnTransforms.get(null))
             {
+                ct.reset();
                 outCols.addAll(ct.addTransform(((TransformPipelineJob)_job).getTransformJobContext(), out, _transformRunId, null));
             }
         }
