@@ -495,6 +495,7 @@ public class StudyTest extends StudyBaseTest
         assertEquals(newPids, editedPids);
 
         clickButtonContainingText("Cancel", 0);
+        _extHelper.waitForExt3MaskToDisappear(WAIT_FOR_JAVASCRIPT);
     }
 
     // select the list name from the main classification page
