@@ -253,8 +253,7 @@ public class MothershipTest extends BaseWebDriverTest
 
     private ShowExceptionsPage goToMothership()
     {
-        clickProject(MOTHERSHIP_PROJECT);
-        return new ShowExceptionsPage(getDriver());
+        return ShowExceptionsPage.beginAt(this);
     }
 
     protected int ensureUnassignedException()

@@ -244,7 +244,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         clickButton("Submit");
 
         clickFolder(FOLDER_2);
-        clickFolder(CROSS_STUDY_SNAPSHOT);
+        clickAndWait(Locator.linkWithText(CROSS_STUDY_SNAPSHOT));
         waitForSnapshotUpdate("Unknown");
         
         clickFolder(FOLDER_2);
@@ -256,7 +256,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         clickButton("Submit");
 
         clickFolder(FOLDER_2);
-        clickFolder(CROSS_STUDY_SNAPSHOT);
+        clickAndWait(Locator.linkWithText(CROSS_STUDY_SNAPSHOT));
         waitForSnapshotUpdate("Undecided");
 
         _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
