@@ -83,10 +83,11 @@ public class QueryHelper
         return _viewName;
     }
 
+    @Nullable
     public TableInfo getTableInfo()
     {
         UserSchema schema = getUserSchema();
-        return schema.getTable(_queryName);
+        return schema == null ? null : schema.getTable(_queryName);
     }
 
     public UserSchema getUserSchema()
