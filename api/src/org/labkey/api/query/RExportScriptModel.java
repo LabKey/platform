@@ -92,7 +92,7 @@ public class RExportScriptModel extends ExportScriptModel
         sb.append("\n");
         sb.append("# Select rows into a data frame called 'mydata'").append("\n");
         sb.append("\n");
-        sb.append("mydata <- labkey.selectRows(").append("\n");
+        sb.append("labkey.data <- labkey.selectRows(").append("\n");
         sb.append(indent).append("baseUrl=").append(doubleQuote(getBaseUrl())).append(",").append("\n");
         sb.append(indent).append("folderPath=").append(doubleQuote(getFolderPath())).append(",").append("\n");
         sb.append(indent).append("schemaName=").append(doubleQuote(getSchemaName())).append(",").append("\n");

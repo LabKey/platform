@@ -663,6 +663,19 @@ public class PageFlowUtil
         return ret;
     }
 
+
+    @Nullable
+    public static Cookie getCookie(HttpServletRequest request, String cookieName)
+    {
+        for (Cookie cookie : request.getCookies())
+        {
+            if (cookieName.equals(cookie.getName()))
+                return cookie;
+        }
+        return null;
+    }
+
+
     // Cookie helper function -- loops through Cookie array and returns matching value (or defaultValue if not found)
     public static String getCookieValue(Cookie[] cookies, String cookieName, @Nullable String defaultValue)
     {
