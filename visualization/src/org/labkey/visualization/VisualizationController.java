@@ -995,22 +995,31 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    private String getReportKey(GetVisualizationForm form)
+    private String getReportKey(String schema, String query)
     {
-        String schema = form.getSchemaName();
         if (schema == null)
             schema = "none";
-        String query = form.getQueryName();
+
         if (query == null)
             query = "none";
+
         return ReportUtil.getReportKey(schema, query);
+    }
+
+    private Report getReport(GenericReportForm form) throws SQLException
+    {
+        return getReport(form.getReportId(), form.getName(), form.getSchemaName(), form.getQueryName());
     }
 
     private Report getReport(GetVisualizationForm form) throws SQLException
     {
-        try {
+        return getReport(form.getReportId(), form.getName(), form.getSchemaName(), form.getQueryName());
+    }
 
-            ReportIdentifier reportId = form.getReportId();
+    private Report getReport(ReportIdentifier reportId, String reportName, String schemaName, String queryName) throws SQLException
+    {
+        try
+        {
             if (reportId != null)
             {
                 Report report = reportId.getReport(getViewContext());
@@ -1021,15 +1030,15 @@ public class VisualizationController extends SpringActionController
             // try to match on report name if we don't have a valid report identifier
             Collection<Report> currentReports;
 
-            if (form.getSchemaName() != null && form.getQueryName() != null)
-                currentReports = ReportService.get().getReports(getUser(), getContainer(), getReportKey(form));
+            if (schemaName != null && queryName != null)
+                currentReports = ReportService.get().getReports(getUser(), getContainer(), getReportKey(schemaName, queryName));
             else
                 currentReports = ReportService.get().getReports(getUser(), getContainer());
 
             for (Report report : currentReports)
             {
                 if (report.getDescriptor().getReportName() != null &&
-                    report.getDescriptor().getReportName().equals(form.getName()))
+                    report.getDescriptor().getReportName().equals(reportName))
                 {
                     return report;
                 }
@@ -1173,7 +1182,7 @@ public class VisualizationController extends SpringActionController
                 throw new IllegalStateException("_currentReport should always be set in validateForm");
             VisualizationReportDescriptor vizDescriptor = (VisualizationReportDescriptor) _currentReport.getDescriptor();
             vizDescriptor.setReportName(form.getName());
-            vizDescriptor.setReportKey(getReportKey(form));
+            vizDescriptor.setReportKey(getReportKey(form.getSchemaName(), form.getQueryName()));
             vizDescriptor.setJSON(form.getJson());
             vizDescriptor.setContainer(getContainer().getId());
             vizDescriptor.setReportDescription(form.getDescription());
@@ -1383,29 +1392,6 @@ public class VisualizationController extends SpringActionController
                     descriptor.setOwner(null);
             }
             return report;
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class GetGenericReportAction extends ApiAction<GenericReportForm>
-    {
-        @Override
-        public ApiResponse execute(GenericReportForm form, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            Report report = null;
-            if (form.getReportId() != null)
-                report = form.getReportId().getReport(getViewContext());
-
-            if (report != null)
-            {
-                response.put("reportConfig", GenericReportForm.toJSON(getUser(), getContainer(), report));
-                response.put("success", true);
-            }
-            else
-                throw new IllegalStateException("Unable to find specified report");
-
-            return response;
         }
     }
 
@@ -1641,28 +1627,6 @@ public class VisualizationController extends SpringActionController
             Object json = props.get("jsonData");
             if (json != null)
                 _jsonData = json.toString();
-        }
-
-        public static JSONObject toJSON(User user, Container container, Report report)
-        {
-            JSONObject json = ReportUtil.JsonReportForm.toJSON(user, container, report);
-            GenericChartReportDescriptor descriptor = (GenericChartReportDescriptor) report.getDescriptor();
-
-            json.put("renderType", descriptor.getProperty(GenericChartReportDescriptor.Prop.renderType));
-            json.put("dataRegionName", descriptor.getProperty(ReportDescriptor.Prop.dataRegionName));
-            json.put("jsonData", descriptor.getProperty(ReportDescriptor.Prop.json));
-            json.put("thumbnailURL", ReportUtil.getThumbnailUrl(container, report));
-
-            try
-            {
-                json.put("reportProps", descriptor.getReportProps());
-            }
-            catch (Exception e)
-            {
-                json.put("reportProps", new JSONObject());
-            }
-
-            return json;
         }
     }
 

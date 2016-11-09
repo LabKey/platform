@@ -3037,6 +3037,7 @@ visualization/resources/web/timechart.lib.xml -text
 visualization/resources/web/vis/ColumnVisualizationAnalytics.css -text
 visualization/resources/web/vis/ColumnVisualizationAnalytics.js -text
 visualization/resources/web/vis/baseExportScriptPanel.js -text
+visualization/resources/web/vis/chartFilterPanel.js -text
 visualization/resources/web/vis/chartLayoutPanel.js -text
 visualization/resources/web/vis/chartQueryPanel.js -text
 visualization/resources/web/vis/chartTypePanel.js -text
@@ -3053,11 +3054,9 @@ visualization/resources/web/vis/mainTitleOptionsPanel.js -text
 visualization/resources/web/vis/saveOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/aestheticOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/baseAxisOptionsPanel.js -text
-visualization/resources/web/vis/timeChart/groupSelector.js -text
 visualization/resources/web/vis/timeChart/groupingOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/initialMeasurePanel.js -text
 visualization/resources/web/vis/timeChart/measureOptionsPanel.js -text
-visualization/resources/web/vis/timeChart/participantSelector.js -text
 visualization/resources/web/vis/timeChart/timeChartHelper.js -text
 visualization/resources/web/vis/timeChart/timeChartPanel.js -text
 visualization/resources/web/vis/timeChart/timeChartScriptPanel.js -text

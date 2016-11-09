@@ -20,7 +20,12 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
 
     initComponent : function()
     {
-        var typesArr = LABKEY.vis.GenericChartHelper.getRenderTypes();
+        var typesArr = [];
+        Ext4.each(LABKEY.vis.GenericChartHelper.getRenderTypes(), function(renderType)
+        {
+            if (!renderType.hidden)
+                typesArr.push(renderType);
+        }, this);
 
         if (this.customRenderTypes)
         {
@@ -720,7 +725,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
         Ext4.each(this.chartType.get('fields'), function(field)
         {
             var fieldSelection = this.selection ? this.selection[field.name] : undefined;
-            if (fieldSelection)
+            if (fieldSelection && Ext4.isString(fieldSelection.schemaName) && Ext4.isString(fieldSelection.queryName))
             {
                 var queryKey = fieldSelection.schemaName + '|' + fieldSelection.queryName;
                 if (this.baseQueryKey.toLowerCase() != queryKey.toLowerCase())

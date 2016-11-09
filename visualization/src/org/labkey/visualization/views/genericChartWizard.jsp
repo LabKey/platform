@@ -47,17 +47,14 @@
     Container c = getContainer();
     User user = getUser();
     VisualizationController.GenericReportForm form = me.getModelBean();
+
     String numberFormat = PropertyManager.getProperties(c, "DefaultStudyFormatStrings").get("NumberFormatString");
-    String numberFormatFn;
+    if (numberFormat == null)
+        numberFormat = Formats.f1.toPattern();
+    String numberFormatFn = ExtUtil.toExtNumberFormatFn(numberFormat);
+
     boolean canEdit = false;
     ActionURL editUrl = null;
-
-    if(numberFormat == null)
-    {
-        numberFormat = Formats.f1.toPattern();
-    }
-    numberFormatFn = ExtUtil.toExtNumberFormatFn(numberFormat);
-
     if (form.getReportId() != null)
     {
 
@@ -70,21 +67,58 @@
     }
     else
     {
-        canEdit = ctx.hasPermission(ReadPermission.class) && ! user.isGuest();
+        canEdit = ctx.hasPermission(ReadPermission.class) && !user.isGuest();
     }
 
     String renderId = "generic-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
+
 <labkey:scriptDependency/>
 <div id="<%=h(renderId)%>" style="width:100%;"></div>
+
 <script type="text/javascript">
-    Ext4.QuickTips.init();
+    var init = function()
+    {
+        var reportId = <%=q(form.getReportId() != null ? form.getReportId().toString() : null) %>;
+        if (reportId != null)
+        {
+            LABKEY.Query.Visualization.get({
+                reportId: reportId,
+                success: function(result)
+                {
+                    if (result.type == LABKEY.Query.Visualization.Type.GenericChart)
+                        initializeChartPanel(result);
+                    else
+                        displayErrorMsg("The saved chart does not match one of the expected chart types.");
+                },
+                failure: function (response)
+                {
+                    displayErrorMsg("No time chart report found for reportId:" + reportId + ".");
+                },
+                scope: this
+            });
+        }
+        else
+        {
+            initializeChartPanel();
+        }
+    };
 
-    Ext4.onReady(function(){
-
+    var initializeChartPanel = function(savedReportInfo)
+    {
         var panel = Ext4.create('LABKEY.ext4.GenericChartPanel', {
-            height          : 600, // TODO set this as a min height and max to page height
-            reportId        : <%=q(form.getReportId() != null ? form.getReportId().toString() : null) %>,
+            renderTo: <%=q(renderId)%>,
+            height: 650,
+            canEdit: <%=canEdit%>,
+            canShare: <%=c.hasPermission(user, ShareReportPermission.class)%>,
+            isDeveloper: <%=user.isDeveloper()%>,
+            defaultNumberFormat: eval("<%=text(numberFormatFn)%>"),
+            allowEditMode: <%=form.allowToggleMode()%>,
+            editModeURL: <%=q(editUrl != null ? editUrl.toString() : null) %>,
+            hideSave        : <%=user.isGuest()%>,
+            restrictColumnsEnabled: <%=FolderSettingsCache.areRestrictedColumnsEnabled(c)%>,
+
+            savedReportInfo: savedReportInfo,
             schemaName      : <%=q(form.getSchemaName() != null ? form.getSchemaName() : null) %>,
             queryName       : <%=q(form.getQueryName() != null ? form.getQueryName() : null) %>,
             queryLabel      : <%=q(ReportUtil.getQueryLabelByName(user, c, form.getSchemaName(), form.getQueryName()))%>,
@@ -93,19 +127,10 @@
             renderType      : <%=q(form.getRenderType())%>,
             id              : <%=q(form.getComponentId()) %>,
             baseUrl         : <%=q(getActionURL().toString())%>,
-            renderTo        : '<%=text(renderId)%>',
-            canEdit         : <%=canEdit%>,
-            allowShare      : <%=c.hasPermission(user, ShareReportPermission.class)%>,
-            isDeveloper     : <%=user.isDeveloper()%>,
-            hideSave        : <%=user.isGuest()%>,
+
             autoColumnName  : <%=q(form.getAutoColumnName() != null ? form.getAutoColumnName() : null) %>,
             autoColumnYName  : <%=q(form.getAutoColumnYName() != null ? form.getAutoColumnYName() : null) %>,
-            autoColumnXName  : <%=q(form.getAutoColumnXName() != null ? form.getAutoColumnXName() : null) %>,
-            defaultNumberFormat: eval("<%=text(numberFormatFn)%>"),
-            allowEditMode: <%=form.allowToggleMode()%>,
-            editModeURL: <%=q(editUrl != null ? editUrl.toString() : null) %>,
-            restrictColumnsEnabled: <%=FolderSettingsCache.areRestrictedColumnsEnabled(c)%>,
-            firstLoad: true
+            autoColumnXName  : <%=q(form.getAutoColumnXName() != null ? form.getAutoColumnXName() : null) %>
         });
 
         var resize = function() {
@@ -113,7 +138,13 @@
         };
 
         Ext4.EventManager.onWindowResize(resize);
-    });
+    };
 
+    var displayErrorMsg = function(msg)
+    {
+        Ext4.get(<%=q(renderId)%>).update("<span class='labkey-error'>" + msg + "</span>");
+    };
+
+    Ext4.onReady(function(){ init(); });
 </script>
 

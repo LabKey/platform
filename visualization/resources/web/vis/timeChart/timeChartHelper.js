@@ -1276,6 +1276,90 @@ LABKEY.vis.TimeChartHelper = new function() {
         return {success: true, message: message};
     };
 
+    /**
+     * Support backwards compatibility for charts saved prior to chartInfo reconfiguration (2011-08-31).
+     * Support backwards compatibility for save thumbnail options (2012-06-19).
+     * @param chartInfo
+     * @param savedReportInfo
+     */
+    var convertSavedReportConfig = function(chartInfo, savedReportInfo)
+    {
+        if (Ext4.isDefined(chartInfo))
+        {
+            Ext4.applyIf(chartInfo, {
+                axis: [],
+                //This is for charts saved prior to 2011-10-07
+                chartSubjectSelection: chartInfo.chartLayout == 'per_group' ? 'groups' : 'subjects',
+                displayIndividual: true,
+                displayAggregate: false
+            });
+            for (var i = 0; i < chartInfo.measures.length; i++)
+            {
+                var md = chartInfo.measures[i];
+
+                Ext4.applyIf(md.measure, {yAxis: "left"});
+
+                // if the axis info is in md, move it to the axis array
+                if (md.axis)
+                {
+                    console.log('here in convert 4');
+                    // default the y-axis to the left side if not specified
+                    if (md.axis.name == "y-axis")
+                        Ext4.applyIf(md.axis, {side: "left"});
+
+                    // move the axis info to the axis array
+                    if (LABKEY.vis.TimeChartHelper.getAxisIndex(chartInfo.axis, md.axis.name, md.axis.side) == -1)
+                        chartInfo.axis.push(Ext4.apply({}, md.axis));
+
+                    // if the chartInfo has an x-axis measure, move the date info it to the related y-axis measures
+                    if (md.axis.name == "x-axis")
+                    {
+                        for (var j = 0; j < chartInfo.measures.length; j++)
+                        {
+                            var schema = md.measure.schemaName;
+                            var query = md.measure.queryName;
+                            if (chartInfo.measures[j].axis && chartInfo.measures[j].axis.name == "y-axis"
+                                    && chartInfo.measures[j].measure.schemaName == schema
+                                    && chartInfo.measures[j].measure.queryName == query)
+                            {
+                                chartInfo.measures[j].dateOptions = {
+                                    dateCol: Ext4.apply({}, md.measure),
+                                    zeroDateCol: Ext4.apply({}, md.dateOptions.zeroDateCol),
+                                    interval: md.dateOptions.interval
+                                };
+                            }
+                        }
+                        console.log('here in convert 3');
+
+                        // remove the x-axis date measure from the measures array
+                        chartInfo.measures.splice(i, 1);
+                        i--;
+                    }
+                    else
+                    {
+                        console.log('here in convert 2');
+                        // remove the axis property from the measure
+                        delete md.axis;
+                    }
+                }
+            }
+        }
+
+        if (Ext4.isObject(chartInfo) && Ext4.isObject(savedReportInfo))
+        {
+            if (chartInfo.saveThumbnail != undefined)
+            {
+                if (savedReportInfo.reportProps == null)
+                    savedReportInfo.reportProps = {};
+
+                console.log('here in convert 1');
+                Ext4.applyIf(savedReportInfo.reportProps, {
+                    thumbnailType: !chartInfo.saveThumbnail ? 'NONE' : 'AUTO'
+                });
+            }
+        }
+    };
+
     return {
         /**
          * Loads all of the required dependencies for a Time Chart.
@@ -1297,6 +1381,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         getAxisIndex : getAxisIndex,
         getChartData : getChartData,
         validateChartConfig : validateChartConfig,
-        validateChartData : validateChartData
+        validateChartData : validateChartData,
+        convertSavedReportConfig : convertSavedReportConfig
     };
 };

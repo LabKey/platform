@@ -6,6 +6,7 @@
         <script path="vis/developerOptionsPanel.js"/>
         <script path="vis/saveOptionsPanel.js"/>
         <script path="vis/baseExportScriptPanel.js"/>
+        <script path="vis/chartFilterPanel.js"/>
 
         <script path="vis/timeChart/initialMeasurePanel.js"/>
         <script path="vis/timeChart/measureOptionsPanel.js"/>
@@ -14,8 +15,6 @@
         <script path="vis/timeChart/xAxisOptionsPanel.js"/>
         <script path="vis/timeChart/groupingOptionsPanel.js"/>
         <script path="vis/timeChart/aestheticOptionsPanel.js"/>
-        <script path="vis/timeChart/participantSelector.js"/>
-        <script path="vis/timeChart/groupSelector.js"/>
         <script path="vis/timeChart/timeChartHelper.js"/>
         <script path="vis/timeChart/timeChartScriptPanel.js"/>
         <script path="vis/timeChart/timeChartPanel.js"/>

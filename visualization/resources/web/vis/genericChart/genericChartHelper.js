@@ -62,7 +62,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             {
                 name: 'time_chart',
                 title: 'Time',
-                hidden: true, //TODO getStudyTimepointType() == null,
+                hidden: true, //getStudyTimepointType() == null,
                 imgUrl: LABKEY.contextPath + '/visualization/images/timechart.png',
                 fields: [
                     {name: 'time', label: 'X Axis', required: true,
@@ -89,20 +89,21 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param {String} xAxisType The datatype of the x-axis, i.e. String, Boolean, Number.
      * @returns {String}
      */
-    var getChartType = function(renderType, xAxisType) {
-        if (renderType === "bar_chart" || renderType === "pie_chart"
-            || renderType === "box_plot" || renderType === "scatter_plot") {
+    var getChartType = function(renderType, xAxisType)
+    {
+        if (renderType === 'time_chart' || renderType === "bar_chart" || renderType === "pie_chart"
+            || renderType === "box_plot" || renderType === "scatter_plot")
+        {
             return renderType;
         }
 
-        if(!xAxisType) {
+        if (!xAxisType)
+        {
             // On some charts (non-study box plots) we don't require an x-axis, instead we generate one box plot for
             // all of the data of your y-axis. If there is no xAxisType, then we have a box plot. Scatter plots require
             // an x-axis measure.
             return 'box_plot';
         }
-
-
 
         return (xAxisType === 'string' || xAxisType === 'boolean') ? 'box_plot' : 'scatter_plot';
     };
@@ -163,10 +164,9 @@ LABKEY.vis.GenericChartHelper = new function(){
         var scales = {};
         var data = responseData.rows;
         var fields = responseData.metaData.fields;
-        var subjectColumn = 'ParticipantId';
 
-        if (LABKEY.moduleContext.study && LABKEY.moduleContext.study.subject)
-            subjectColumn = LABKEY.moduleContext.study.subject.columnName;
+        var studyCtx = _getStudyModuleContext();
+        var subjectColumn = Ext4.isDefined(studyCtx.subject) ? studyCtx.subject.columnName : 'ParticipantId';
 
         if (chartType === "box_plot")
         {
@@ -764,7 +764,7 @@ LABKEY.vis.GenericChartHelper = new function(){
      */
     var validateResponseHasData = function(response, includeFilterMsg)
     {
-        if (!response || !response.rows || response.rows.length == 0)
+        if (!Ext4.isDefined(response) || !Ext4.isArray(response.rows) || response.rows.length == 0)
         {
             return 'The response returned 0 rows of data. The query may be empty or the applied filters may be too strict.'
                 + (includeFilterMsg ? 'Try removing or adjusting any filters if possible.' : '');
@@ -862,8 +862,14 @@ LABKEY.vis.GenericChartHelper = new function(){
 
     var getStudyTimepointType = function()
     {
+        var studyCtx = _getStudyModuleContext();
+        return Ext4.isDefined(studyCtx.timepointType) ? studyCtx.timepointType : null;
+    };
+
+    var _getStudyModuleContext = function()
+    {
         var studyCtx = LABKEY.getModuleContext("study");
-        return Ext4.isDefined(studyCtx) && Ext4.isDefined(studyCtx.timepointType) ? studyCtx.timepointType : null;
+        return Ext4.isDefined(studyCtx) ? studyCtx : {};
     };
 
     return {
