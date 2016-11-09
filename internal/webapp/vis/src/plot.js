@@ -69,7 +69,7 @@
  *          <li><strong>tickMouseOver:</strong> Handler for axis label mouse over. Binds to mouse area rect around label.</li>
  *          <li><strong>tickMouseOut:</strong> Handler for axis label mouse out. Binds to mouse area rect around label.</li>
  *      </ul>
- * @param {Object} [config.labels] (Optional) An object with the following properties: main, x, y (or yLeft), yRight.
+ * @param {Object} [config.labels] (Optional) An object with the following properties: main, subtitle, x, y (or yLeft), yRight.
  *      Each property can have a {String} value, {Boolean} lookClickable, {Object} listeners, and other properties listed below.
  *      The value is the text that will appear on the label, lookClickable toggles if the label will appear clickable, and the
  *      listeners property allows the user to specify listeners on the labels such as click, hover, etc, as well as the functions to
@@ -281,7 +281,7 @@ boxPlot.render();
 
  */
 (function(){
-    var initMargins = function(userMargins, legendPos, allAes, scales){
+    var initMargins = function(userMargins, legendPos, allAes, scales, labels){
         var margins = {}, top = 75, right = 75, bottom = 50, left = 75; // Defaults.
         var foundLegendScale = false, foundYRight = false;
 
@@ -303,7 +303,7 @@ boxPlot.render();
         }
 
         if(typeof userMargins.top === 'undefined'){
-            margins.top = top;
+            margins.top = top + (labels && labels.subtitle ? 20 : 0);
         } else {
             margins.top = userMargins.top;
         }
@@ -965,7 +965,7 @@ boxPlot.render();
          * Renders the plot.
          */
         this.render = function(){
-            margins = initMargins(userMargins, this.legendPos, allAes, this.scales);
+            margins = initMargins(userMargins, this.legendPos, allAes, this.scales, this.labels);
             this.grid = initGridDimensions(this.grid, margins);
             this.renderer.initCanvas(); // Get the canvas prepped for render time.
             var allData = [this.data];
@@ -1137,7 +1137,7 @@ boxPlot.render();
          */
         this.setMargins = function(newMargins, render){
             userMargins = newMargins;
-            margins = initMargins(userMargins, this.legendPos, allAes, this.scales);
+            margins = initMargins(userMargins, this.legendPos, allAes, this.scales, this.labels);
 
             if(render !== undefined && render !== null && render === true) {
                 this.render();

@@ -108,7 +108,8 @@ var coffeePlot = new LABKEY.vis.Plot({
     width: 900,
     height: 300,
     labels: {
-        main: {value: 'Efficiency (%) Over Time'},
+        main: {value: 'Efficiency'},
+        subtitle: {value: '(% over time)', color: '#777777'},
         xTop: {value: 'Time (PST)'},
         yLeft: {value: 'Efficiency (%)'}
     },
@@ -141,7 +142,6 @@ var coffeePlot = new LABKEY.vis.Plot({
         }
     },
     margins: {
-        top: 90,
         bottom: 15
     }
 });

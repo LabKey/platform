@@ -628,7 +628,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         brush = null, brushSel = null, brushSelectionType = null,
         xHandleBrush = null, xHandleSel = null, yHandleBrush = null, yHandleSel = null,
         defaultBrushFillColor = '#EBF7F8', defaultBrushFillOpacity = .75, defaultBrushStrokeColor = '#14C9CC',
-        defaultAxisFontSize = 14, defaultMainFontSize = 18, defaultHandleLen = 30;
+        defaultAxisFontSize = 14, defaultMainFontSize = 18, defaultSubtitleFontSize = 16, defaultHandleLen = 30;
 
     var isMainPlot = plot.isMainPlot, xLogGutter = plot.xLogGutter, yLogGutter = plot.yLogGutter,
         isShowYAxisGutter = plot.isShowYAxisGutter, isShowXAxisGutter = plot.isShowXAxisGutter;
@@ -716,6 +716,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         labelBkgds.yRight = appendLabelBkgd('yRight', this.canvas, 30, null);
 
         labelElements.main = appendLabelElement('main', defaultMainFontSize);
+        labelElements.subtitle = appendLabelElement('subtitle', defaultSubtitleFontSize);
         labelElements.x = appendLabelElement('x', defaultAxisFontSize);
         labelElements.xTop = appendLabelElement('xTop', defaultAxisFontSize);
         labelElements.y = appendLabelElement('yLeft', defaultAxisFontSize);
@@ -1690,6 +1691,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         } else if (name == 'main') {
             x = plot.grid.width / 2;
             y = plot.labels[name].position != undefined ? plot.labels[name].position : 30;
+        }else if (name == 'subtitle') {
+            x = plot.grid.width / 2;
+            y = plot.labels[name].position != undefined ? plot.labels[name].position : 50;
         }
 
         if (this.canvas && plot.labels[name] && plot.labels[name].value) {
