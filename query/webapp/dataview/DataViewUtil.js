@@ -15,6 +15,13 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
         this.defineModels();
     },
 
+    initComponent : function() {
+
+        this.reportsArray = [];
+
+        this.callParent();
+    },
+
     defineModels : function() {
 
         if (!Ext4.ModelManager.isRegistered('Dataset.Browser.View')) {
@@ -936,14 +943,13 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
         var reportsStore = this.reportsStore;  // should have been set by makeReportsPanel() when the dialog rendered
 
         reportsStore.clearFilter();
-        if(reportsStore.data.items.length === 0) {  // (probably) never loaded before
+        if (reportsStore.count() === 0 && this.reportsArray.length > 0) {  // never loaded before
             reportsStore.add(this.reportsArray);  // so load with initial data
         }
-        reportsStore.filterBy(function (record) {  // filter out all reports except the ones in the selected category
-            if(record && record.get('category').rowid === menuItem.raw.rowId)
+        reportsStore.filterBy(function(record) {  // filter out all reports except the ones in the selected category
+            if (record && record.get('category').rowid === menuItem.raw.rowId)
                 return true;
-            else
-                return false;
+            return false;
         });
     },
 
