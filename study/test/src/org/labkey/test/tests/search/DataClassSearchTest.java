@@ -287,8 +287,14 @@ public class DataClassSearchTest extends BaseWebDriverTest
         deleteRowsCommand.addRow(deletedRow);
         deleteRowsCommand.execute(connection, getCurrentContainerPath());
 
+        // commented out due to intermittently failing on TeamCity
+        // TODO: if issue #26116 is ever resolved, re-enable this part of the test
+        //testSearchAfterModifyingDomain();
+    }
+
+    private void testSearchAfterModifyingDomain() throws Exception
+    {
         // alter domain
-        // keep an eye on these tests, see issue #26116
 
         PostCommand saveDomainCommand = new PostCommand("property", "saveDomain");
         JSONObject domainJson = new JSONObject();
@@ -339,7 +345,6 @@ public class DataClassSearchTest extends BaseWebDriverTest
         _searchHelper.enqueueSearchItem("ein \nzwei \ndrei", Locator.linkContainingText(DATA_CLASS_2_NAME));
         _searchHelper.verifySearchResults("/" + getProjectName(), false);
         _searchHelper.clearSearchQueue();
-
     }
 
     private void deleteSearchableDataClasses() throws Exception
