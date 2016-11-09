@@ -797,7 +797,11 @@ LABKEY.Query.Visualization.Type = {
     /**
      * Plots data over time, aligning different series based on configurable start dates.
      */
-    TimeChart : 'ReportService.TimeChartReport'
+    TimeChart : 'ReportService.TimeChartReport',
+    /**
+     * Plot types that are not study specific (i.e. Bar, Box, Pie, and Scatter).
+     */
+    GenericChart : 'ReportService.GenericChartReport'
 };
 
 /**
