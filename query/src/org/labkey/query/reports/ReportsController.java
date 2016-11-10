@@ -132,6 +132,7 @@ import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SortHelpers;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GWTView;
@@ -1147,6 +1148,7 @@ public class ReportsController extends SpringActionController
                 PageFlowUtil.getJavaScriptFiles(getContainer(), dependencies, includes, implicitIncludes);
 
                 MockHttpServletResponse mr = new MockHttpServletResponse();
+                mr.setCharacterEncoding(StringUtilsLabKey.DEFAULT_CHARSET.displayName());
                 resultsView.render(getViewContext().getRequest(), mr);
 
                 if (mr.getStatus() != HttpServletResponse.SC_OK){

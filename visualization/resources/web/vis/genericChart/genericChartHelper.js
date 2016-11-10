@@ -57,7 +57,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     {name: 'color', label: 'Color', nonNumericOnly: true},
                     {name: 'shape', label: 'Shape', nonNumericOnly: true}
                 ],
-                layoutOptions: {point: true, opacity: true, axisBased: true, binnable: true}
+                layoutOptions: {point: true, box: false, line: false, opacity: true, axisBased: true, binnable: true}
             },
             {
                 name: 'time_chart',
@@ -224,6 +224,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 scaleType: 'continuous',
                 trans: savedScales.y ? savedScales.y.trans : 'linear'
             };
+
         }
 
         for (var i = 0; i < fields.length; i++) {
@@ -879,6 +880,7 @@ LABKEY.vis.GenericChartHelper = new function(){
          * @function
          */
         getRenderTypes: getRenderTypes,
+        getMeasureType: _getMeasureType,
         getChartType: getChartType,
         getStudyTimepointType: getStudyTimepointType,
         getSelectedMeasureLabel: getSelectedMeasureLabel,

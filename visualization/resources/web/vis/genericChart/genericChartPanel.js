@@ -1390,6 +1390,27 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         this.getEl().mask('Rendering Chart...');
+        // initMeasures returns false and opens the Chart Type panel if a required measure is not chosen by the user.
+        if (!this.initMeasures())
+            return;
+
+        var newChartDiv = Ext4.create('Ext.container.Container', {
+            border: 1,
+            cls: 'chart-display',
+            autoEl: {tag: 'div'}
+        });
+        this.getViewPanel().add(newChartDiv);
+
+        var chartType, aes, scales, plotConfig,
+            chartConfig = this.getChartConfig(),
+            customRenderType = this.customRenderTypes ? this.customRenderTypes[this.renderType] : undefined,
+            xAxisType = this.getXAxisType(chartConfig.measures.x);
+
+        chartType = LABKEY.vis.GenericChartHelper.getChartType(this.renderType, xAxisType);
+        if (chartType == 'scatter_plot' && this.chartData.rowCount > chartConfig.geomOptions.binThreshold) {
+            chartConfig.geomOptions.binned = true;
+            this.addWarningText("The number of individual points exceeds the limit set in the Chart Layout options. The data will be displayed according to point density in a heat map.");
+        }
 
         aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, this.chartData.schemaName, this.chartData.queryName);
 

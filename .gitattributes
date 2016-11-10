@@ -94,12 +94,14 @@ audit/module.properties -text
 audit/resources/schemas/dbscripts/postgresql/audit-0.00-14.10.sql -text
 audit/resources/schemas/dbscripts/postgresql/audit-16.20-16.21.sql -text
 audit/resources/schemas/dbscripts/postgresql/audit-16.20-16.30.sql -text
+audit/resources/schemas/dbscripts/postgresql/audit-16.30-16.31.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-0.00-12.10.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-0.00-12.30.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-13.30-14.10.sql -text
 audit/resources/schemas/dbscripts/sqlserver/audit-0.00-14.10.sql -text
 audit/resources/schemas/dbscripts/sqlserver/audit-16.20-16.21.sql -text
 audit/resources/schemas/dbscripts/sqlserver/audit-16.20-16.30.sql -text
+audit/resources/schemas/dbscripts/sqlserver/audit-16.30-16.31.sql -text
 audit/resources/schemas/dbscripts/sqlserver/obsolete/audit-0.00-12.10.sql -text
 audit/resources/schemas/dbscripts/sqlserver/obsolete/audit-0.00-12.30.sql -text
 audit/resources/schemas/dbscripts/sqlserver/obsolete/audit-13.30-14.10.sql -text
@@ -107,6 +109,7 @@ audit/src/org/labkey/audit/AuditController.java -text
 audit/src/org/labkey/audit/AuditLogImpl.java -text
 audit/src/org/labkey/audit/AuditModule.java -text
 audit/src/org/labkey/audit/AuditSchema.java -text
+audit/src/org/labkey/audit/AuditUpgradeCode.java -text
 audit/src/org/labkey/audit/SiteSettingsAuditDetailsModel.java -text
 audit/src/org/labkey/audit/auditLog.jsp -text
 audit/src/org/labkey/audit/model/LogManager.java -text

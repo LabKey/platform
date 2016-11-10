@@ -217,6 +217,11 @@ public class QAggregate extends QExpr
         _distinct = distinct;
     }
 
+    public boolean isDistinct()
+    {
+        return _distinct;
+    }
+
     @Override
     public boolean equalsNode(QNode other)
     {

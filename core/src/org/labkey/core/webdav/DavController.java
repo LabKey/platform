@@ -4397,16 +4397,18 @@ public class DavController extends SpringActionController
     }
 
 
-
     static Cache<Path,JSONObject> exceptionCache = CacheManager.getCache(1000, 5*CacheManager.MINUTE, "webdav errors");
 
     private Path getErrorCacheKey()
     {
         Path path = getResourcePath();
-        String sessionId = getRequest().getSession(true).getId();
-        String pageId = StringUtils.defaultIfBlank(getRequest().getParameter("pageId"), "-");
-        Path p;
-        p = new Path(sessionId).append(String.valueOf(pageId));
+        HttpServletRequest request = getRequest();
+        HttpSession session =  request.getSession(true);
+        if (null == session)
+            return null;
+        String sessionId = session.getId();
+        String pageId = StringUtils.defaultIfBlank(request.getParameter("pageId"), "-");
+        Path p = new Path(sessionId).append(String.valueOf(pageId));
         if (null != path)
             p = p.append(path);
         return p;
@@ -4418,16 +4420,17 @@ public class DavController extends SpringActionController
         if (WebdavStatus.SC_NOT_FOUND == error.status)
             return;
         Path key = getErrorCacheKey();
-        exceptionCache.put(key, error.toJSON());
+        if (null != key)
+            exceptionCache.put(key, error.toJSON());
     }
 
 
     private void clearLastError()
     {
         Path key = getErrorCacheKey();
-        exceptionCache.remove(key);
+        if (null != key)
+            exceptionCache.remove(key);
     }
-
 
     /*
      * JSON clients can use this API for more robust/easier error description than might be available over web-dav

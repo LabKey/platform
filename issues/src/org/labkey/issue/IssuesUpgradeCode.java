@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -41,6 +42,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -128,7 +130,7 @@ public class IssuesUpgradeCode implements UpgradeCode
                         IssueListDef def = createNewIssueListDef(upgradeUser, plan.getIssueDefName(), defContainer);
 
                         // initialize the domain with the saved settings
-                        configureIssueDomain(upgradeUser, def, plan.getConfig());
+                        configureIssueDomain(upgradeUser, def, plan);
 
                         // now create individual issue lists that share this configuration (if in a different container)
                         for (Container folder : plan.getFolders())
@@ -273,8 +275,9 @@ public class IssuesUpgradeCode implements UpgradeCode
     /**
      * Initializes the issue definition domain, adding any custom field configurations and legacy picklists
      */
-    void configureIssueDomain(User user, IssueListDef def, IssueAdminConfig config) throws Exception
+    void configureIssueDomain(User user, IssueListDef def, IssueMigrationPlan plan) throws Exception
     {
+        IssueAdminConfig config = plan.getConfig();
         Domain domain = def.getDomain(user);
         if (domain != null)
         {
@@ -312,7 +315,12 @@ public class IssuesUpgradeCode implements UpgradeCode
                     prop.setLabel(col.getCaption());
 
                     if (requiredFields.contains(col.getName()))
-                        prop.setRequired(true);
+                    {
+                        if (!hasNullValues(plan.getFolders(), col.getName()))
+                            prop.setRequired(true);
+                        else
+                            _log.warn("Unable to mark field: '" + col.getName() + "' as required due to existing NULL values.");
+                    }
                     if (!col.getPermission().equals(ReadPermission.class))
                         prop.setProtected(true);
 
@@ -352,7 +360,13 @@ public class IssuesUpgradeCode implements UpgradeCode
                 {
                     DomainProperty prop = domain.getPropertyByName(colName);
                     if (requiredFields.contains(prop.getName()))
-                        prop.setRequired(true);
+                    {
+                        if (!hasNullValues(plan.getFolders(), colName))
+                            prop.setRequired(true);
+                        else
+                            _log.warn("Unable to mark field: '" + colName + "' as required due to existing NULL values.");
+                    }
+
                     if (prop != null && prop.getLookup() != null)
                     {
                         String defaultValue = populateLookupTable(domain.getContainer(), user, prop, prop.getLookup(), keywordMap.get(colName));
@@ -379,6 +393,22 @@ public class IssuesUpgradeCode implements UpgradeCode
                     DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
             }
         }
+    }
+
+    private boolean hasNullValues(Collection<Container> folders, String colName)
+    {
+        if (!folders.isEmpty())
+        {
+            SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
+            SQLFragment sql = new SQLFragment("SELECT * FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "x").append(" WHERE ");
+
+            sql.append("x.").append(dialect.makeLegalIdentifier(colName.toLowerCase())).append(" IS NULL");
+            sql.append(" AND x.container ");
+            dialect.appendInClauseSql(sql, folders);
+
+            return new SqlSelector(IssuesSchema.getInstance().getSchema(), sql).exists();
+        }
+        return false;
     }
 
     /**

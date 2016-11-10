@@ -924,4 +924,5 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         if (value != null && value != 'none')
             this.binSingleColorPicker.select(value);
     }
+
 });

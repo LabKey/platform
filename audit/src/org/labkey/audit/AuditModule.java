@@ -18,8 +18,10 @@ package org.labkey.audit;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.view.WebPartFactory;
@@ -51,7 +53,7 @@ public class AuditModule extends DefaultModule
 
     public double getVersion()
     {
-        return 16.30;
+        return 16.31;
     }
 
     protected void init()
@@ -85,5 +87,12 @@ public class AuditModule extends DefaultModule
     public Set<String> getProvisionedSchemaNames()
     {
         return Collections.singleton(AuditSchema.SCHEMA_NAME);
+    }
+
+    @Nullable
+    @Override
+    public UpgradeCode getUpgradeCode()
+    {
+        return new AuditUpgradeCode();
     }
 }
