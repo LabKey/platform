@@ -16,26 +16,26 @@
  * limitations under the License.
 
  -->
-<ns:tables xmlns:ns="http://labkey.org/data/xml">
- <ns:table tableName="CrawlCollections" tableDbType="TABLE">
-  <ns:columns>
-   <ns:column columnName="id" />
-   <ns:column columnName="Parent" />
-   <ns:column columnName="Name" />
-   <ns:column columnName="Path" />
+<tables xmlns="http://labkey.org/data/xml">
+ <table tableName="CrawlCollections" tableDbType="TABLE">
+  <columns>
+   <column columnName="id" />
+   <column columnName="Parent" />
+   <column columnName="Name" />
+   <column columnName="Path" />
    <!--ns:column columnName="csPath" /-->
-   <ns:column columnName="Modified" />
-   <ns:column columnName="LastCrawled" />
-   <ns:column columnName="ChangeInterval" />
-   <ns:column columnName="NextCrawl" />
-  </ns:columns>
- </ns:table>
- <ns:table tableName="CrawlResources" tableDbType="TABLE">
-  <ns:columns>
-   <ns:column columnName="Parent" />
-   <ns:column columnName="Name" />
-   <ns:column columnName="Modified" />
-   <ns:column columnName="LastIndexed" />
-  </ns:columns>
- </ns:table>
-</ns:tables>
+   <column columnName="Modified" />
+   <column columnName="LastCrawled" />
+   <column columnName="ChangeInterval" />
+   <column columnName="NextCrawl" />
+  </columns>
+ </table>
+ <table tableName="CrawlResources" tableDbType="TABLE">
+  <columns>
+   <column columnName="Parent" />
+   <column columnName="Name" />
+   <column columnName="Modified" />
+   <column columnName="LastIndexed" />
+  </columns>
+ </table>
+</tables>

@@ -16,145 +16,145 @@
  * limitations under the License.
 
  -->
-<ns:tables xsi:schemaLocation="http://labkey.org/data/xml ..\..\..\..\..\schemas\tableInfo.xsd" xmlns:ns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-	<ns:table tableName="Comments" tableDbType="TABLE">
-		<ns:columns>
-            <ns:column columnName="EntityId"/>
-			<ns:column columnName="CommentId"/>
-			<ns:column columnName="IssueId">
-				<ns:columnTitle>Issue Id</ns:columnTitle>
-				<ns:inputType>select</ns:inputType>
-				<ns:inputLength>10</ns:inputLength>
-				<ns:nullable>false</ns:nullable>
-				<ns:isAutoInc>false</ns:isAutoInc>
-				<ns:isReadOnly>false</ns:isReadOnly>
-				<ns:isUserEditable>false</ns:isUserEditable>
-				<ns:fk>
-					<ns:fkColumnName>IssueId</ns:fkColumnName>
-					<ns:fkTable>Issues</ns:fkTable>
-				</ns:fk>
-			</ns:column>
-			<ns:column columnName="CreatedBy"/>
-			<ns:column columnName="Created">
-				<ns:columnTitle>Created</ns:columnTitle>
-				<ns:inputType>text</ns:inputType>
-				<ns:inputLength>23</ns:inputLength>
-				<ns:nullable>false</ns:nullable>
-				<ns:isAutoInc>false</ns:isAutoInc>
-				<ns:isReadOnly>false</ns:isReadOnly>
-				<ns:isUserEditable>true</ns:isUserEditable>
-			</ns:column>
-			<ns:column columnName="Comment">
-				<ns:columnTitle>Comment</ns:columnTitle>
-				<ns:inputType>text</ns:inputType>
-				<ns:scale>1073741823</ns:scale>
-				<ns:inputLength>40</ns:inputLength>
-				<ns:isReadOnly>false</ns:isReadOnly>
-				<ns:isUserEditable>true</ns:isUserEditable>
-			</ns:column>
-		</ns:columns>
-		<ns:tableTitle>Comments</ns:tableTitle>
-		<ns:pkColumnName>Created,IssueId</ns:pkColumnName>
-		<ns:titleColumn>IssueId</ns:titleColumn>
-	</ns:table>
-	<ns:table tableName="IssueKeywords" tableDbType="TABLE">
-		<ns:columns>
-			<ns:column columnName="Container"/>
-			<ns:column columnName="Type"/>
-			<ns:column columnName="Keyword"/>
-            <ns:column columnName="Default"/>
-		</ns:columns>
-	</ns:table>
-	<ns:table tableName="Issues" tableDbType="TABLE">
-        <ns:description>Contains a row for each issue created in this folder.</ns:description>
-		<ns:columns>
-			<ns:column columnName="_ts">
-				<ns:columnTitle>_ts</ns:columnTitle>
-				<ns:inputType>text</ns:inputType>
-				<ns:inputLength>8</ns:inputLength>
-				<ns:isReadOnly>true</ns:isReadOnly>
-			</ns:column>
-			<ns:column columnName="Container">
-				<ns:columnTitle>Container</ns:columnTitle>
-				<ns:inputType>text</ns:inputType>
-				<ns:inputLength>36</ns:inputLength>
-				<ns:nullable>true</ns:nullable>
-				<ns:isReadOnly>false</ns:isReadOnly>
-			</ns:column>
-			<ns:column columnName="IssueId">
-				<ns:columnTitle>Issue</ns:columnTitle>
-				<ns:inputType>text</ns:inputType>
-				<ns:displayWidth>50</ns:displayWidth>
-				<ns:inputLength>10</ns:inputLength>
-				<ns:nullable>false</ns:nullable>
-				<ns:isReadOnly>true</ns:isReadOnly>
-				<ns:isUserEditable>false</ns:isUserEditable>
-                <ns:url>org.labkey.issue.IssuesController$DetailsAction.class?issueId=${IssueId}</ns:url>
-			</ns:column>
-			<ns:column columnName="Duplicate">
-				<ns:columnTitle>Duplicate</ns:columnTitle>
-				<ns:inputType>text</ns:inputType>
-				<ns:inputLength>10</ns:inputLength>
-				<ns:isReadOnly>false</ns:isReadOnly>
-				<ns:isUserEditable>true</ns:isUserEditable>
-			</ns:column>
-			<ns:column columnName="EntityId">
-				<ns:columnTitle>Entity Id</ns:columnTitle>
-				<ns:inputType>text</ns:inputType>
-				<ns:inputLength>36</ns:inputLength>
-				<ns:isReadOnly>true</ns:isReadOnly>
-			</ns:column>
-            <ns:column columnName="LastIndexed">
-                <ns:isReadOnly>true</ns:isReadOnly>
-            </ns:column>
-			<ns:column columnName="IssueDefId">
-				<ns:fk>
-					<ns:fkColumnName>RowId</ns:fkColumnName>
-					<ns:fkTable>IssueListDef</ns:fkTable>
-				</ns:fk>
-			</ns:column>
-        </ns:columns>
-		<ns:tableTitle>Issues</ns:tableTitle>
-		<ns:pkColumnName>IssueId</ns:pkColumnName>
-		<ns:versionColumnName>_ts</ns:versionColumnName>
-	</ns:table>
-    <ns:table tableName="EmailPrefs" tableDbType="TABLE">
-        <ns:columns>
-            <ns:column columnName="Container"/>
-            <ns:column columnName="UserId"/>
-            <ns:column columnName="EmailOption"/>
-        </ns:columns>
-    </ns:table>
-    <ns:table tableName="CustomColumns" tableDbType="TABLE">
-        <ns:columns>
-            <ns:column columnName="Container"/>
-            <ns:column columnName="Name"/>
-            <ns:column columnName="Caption"/>
-            <ns:column columnName="PickList"/>
-            <ns:column columnName="Permission"/>
-        </ns:columns>
-    </ns:table>
-    <ns:table tableName="RelatedIssues" tableDbType="TABLE">
-        <ns:columns>
-            <ns:column columnName="IssueId"/>
-            <ns:column columnName="RelatedIssueId"/>
-        </ns:columns>
-    </ns:table>
-	<ns:table tableName="IssueListDef" tableDbType="TABLE">
-		<ns:columns>
-			<ns:column columnName="RowId">
-				<ns:isHidden>true</ns:isHidden>
-			</ns:column>
-			<ns:column columnName="Name">
-				<ns:isHidden>true</ns:isHidden>
-			</ns:column>
-			<ns:column columnName="Label"/>
-			<ns:column columnName="Kind"/>
-			<ns:column columnName="Container"/>
-			<ns:column columnName="Created"/>
-			<ns:column columnName="Modified"/>
-			<ns:column columnName="CreatedBy"/>
-			<ns:column columnName="ModifiedBy"/>
-		</ns:columns>
-	</ns:table>
-</ns:tables>
+<tables xsi:schemaLocation="http://labkey.org/data/xml ..\..\..\..\..\schemas\tableInfo.xsd" xmlns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<table tableName="Comments" tableDbType="TABLE">
+		<columns>
+            <column columnName="EntityId"/>
+			<column columnName="CommentId"/>
+			<column columnName="IssueId">
+				<columnTitle>Issue Id</columnTitle>
+				<inputType>select</inputType>
+				<inputLength>10</inputLength>
+				<nullable>false</nullable>
+				<isAutoInc>false</isAutoInc>
+				<isReadOnly>false</isReadOnly>
+				<isUserEditable>false</isUserEditable>
+				<fk>
+					<fkColumnName>IssueId</fkColumnName>
+					<fkTable>Issues</fkTable>
+				</fk>
+			</column>
+			<column columnName="CreatedBy"/>
+			<column columnName="Created">
+				<columnTitle>Created</columnTitle>
+				<inputType>text</inputType>
+				<inputLength>23</inputLength>
+				<nullable>false</nullable>
+				<isAutoInc>false</isAutoInc>
+				<isReadOnly>false</isReadOnly>
+				<isUserEditable>true</isUserEditable>
+			</column>
+			<column columnName="Comment">
+				<columnTitle>Comment</columnTitle>
+				<inputType>text</inputType>
+				<scale>1073741823</scale>
+				<inputLength>40</inputLength>
+				<isReadOnly>false</isReadOnly>
+				<isUserEditable>true</isUserEditable>
+			</column>
+		</columns>
+		<tableTitle>Comments</tableTitle>
+		<pkColumnName>Created,IssueId</pkColumnName>
+		<titleColumn>IssueId</titleColumn>
+	</table>
+	<table tableName="IssueKeywords" tableDbType="TABLE">
+		<columns>
+			<column columnName="Container"/>
+			<column columnName="Type"/>
+			<column columnName="Keyword"/>
+            <column columnName="Default"/>
+		</columns>
+	</table>
+	<table tableName="Issues" tableDbType="TABLE">
+        <description>Contains a row for each issue created in this folder.</description>
+		<columns>
+			<column columnName="_ts">
+				<columnTitle>_ts</columnTitle>
+				<inputType>text</inputType>
+				<inputLength>8</inputLength>
+				<isReadOnly>true</isReadOnly>
+			</column>
+			<column columnName="Container">
+				<columnTitle>Container</columnTitle>
+				<inputType>text</inputType>
+				<inputLength>36</inputLength>
+				<nullable>true</nullable>
+				<isReadOnly>false</isReadOnly>
+			</column>
+			<column columnName="IssueId">
+				<columnTitle>Issue</columnTitle>
+				<inputType>text</inputType>
+				<displayWidth>50</displayWidth>
+				<inputLength>10</inputLength>
+				<nullable>false</nullable>
+				<isReadOnly>true</isReadOnly>
+				<isUserEditable>false</isUserEditable>
+                <url>org.labkey.issue.IssuesController$DetailsAction.class?issueId=${IssueId}</url>
+			</column>
+			<column columnName="Duplicate">
+				<columnTitle>Duplicate</columnTitle>
+				<inputType>text</inputType>
+				<inputLength>10</inputLength>
+				<isReadOnly>false</isReadOnly>
+				<isUserEditable>true</isUserEditable>
+			</column>
+			<column columnName="EntityId">
+				<columnTitle>Entity Id</columnTitle>
+				<inputType>text</inputType>
+				<inputLength>36</inputLength>
+				<isReadOnly>true</isReadOnly>
+			</column>
+            <column columnName="LastIndexed">
+                <isReadOnly>true</isReadOnly>
+            </column>
+			<column columnName="IssueDefId">
+				<fk>
+					<fkColumnName>RowId</fkColumnName>
+					<fkTable>IssueListDef</fkTable>
+				</fk>
+			</column>
+        </columns>
+		<tableTitle>Issues</tableTitle>
+		<pkColumnName>IssueId</pkColumnName>
+		<versionColumnName>_ts</versionColumnName>
+	</table>
+    <table tableName="EmailPrefs" tableDbType="TABLE">
+        <columns>
+            <column columnName="Container"/>
+            <column columnName="UserId"/>
+            <column columnName="EmailOption"/>
+        </columns>
+    </table>
+    <table tableName="CustomColumns" tableDbType="TABLE">
+        <columns>
+            <column columnName="Container"/>
+            <column columnName="Name"/>
+            <column columnName="Caption"/>
+            <column columnName="PickList"/>
+            <column columnName="Permission"/>
+        </columns>
+    </table>
+    <table tableName="RelatedIssues" tableDbType="TABLE">
+        <columns>
+            <column columnName="IssueId"/>
+            <column columnName="RelatedIssueId"/>
+        </columns>
+    </table>
+	<table tableName="IssueListDef" tableDbType="TABLE">
+		<columns>
+			<column columnName="RowId">
+				<isHidden>true</isHidden>
+			</column>
+			<column columnName="Name">
+				<isHidden>true</isHidden>
+			</column>
+			<column columnName="Label"/>
+			<column columnName="Kind"/>
+			<column columnName="Container"/>
+			<column columnName="Created"/>
+			<column columnName="Modified"/>
+			<column columnName="CreatedBy"/>
+			<column columnName="ModifiedBy"/>
+		</columns>
+	</table>
+</tables>

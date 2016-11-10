@@ -16,87 +16,87 @@
  * limitations under the License.
 
  -->
-<ns:tables xsi:schemaLocation="http://labkey.org/data/xml ..\..\..\..\schemas\tableInfo.xsd" xmlns:ns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <ns:table tableName="SurveyDesigns" tableDbType="TABLE">
-      <ns:description>Contains a row for each survey design.</ns:description>
-      <ns:columns>
-        <ns:column columnName="RowId"/>
-        <ns:column columnName="Container"/>
-        <ns:column columnName="Label"/>
-        <ns:column columnName="Description"/>
-        <ns:column columnName="CreatedBy">
-          <ns:fk>
-            <ns:fkColumnName>UserId</ns:fkColumnName>
-            <ns:fkDbSchema>core</ns:fkDbSchema>
-            <ns:fkTable>Users</ns:fkTable>
-          </ns:fk>
-        </ns:column>
-        <ns:column columnName="Created"/>
-        <ns:column columnName="ModifiedBy">
-          <ns:fk>
-            <ns:fkColumnName>UserId</ns:fkColumnName>
-            <ns:fkDbSchema>core</ns:fkDbSchema>
-            <ns:fkTable>Users</ns:fkTable>
-          </ns:fk>
-        </ns:column>
-        <ns:column columnName="Modified"/>
-        <ns:column columnName="QueryName"/>
-        <ns:column columnName="SchemaName"/>
-        <ns:column columnName="Metadata"/>
-      </ns:columns>
-    </ns:table>
-    <ns:table tableName="Surveys" tableDbType="TABLE">
-      <ns:description>Contains a row for each user survey instance.</ns:description>
-      <ns:columns>
-        <ns:column columnName="RowId"/>
-        <ns:column columnName="Container"/>
-        <ns:column columnName="EntityId">
-          <ns:columnTitle>Entity Id</ns:columnTitle>
-          <ns:inputType>text</ns:inputType>
-          <ns:inputLength>36</ns:inputLength>
-          <ns:isReadOnly>true</ns:isReadOnly>
-          <ns:isHidden>true</ns:isHidden>
-          <ns:fk>
-            <ns:fkTable>object</ns:fkTable>
-            <ns:fkColumnName>ObjectURI</ns:fkColumnName>
-            <ns:fkDbSchema>exp</ns:fkDbSchema>
-          </ns:fk>
-        </ns:column>
-        <ns:column columnName="Label"/>
-        <ns:column columnName="CreatedBy">
-          <ns:fk>
-            <ns:fkColumnName>UserId</ns:fkColumnName>
-            <ns:fkDbSchema>core</ns:fkDbSchema>
-            <ns:fkTable>Users</ns:fkTable>
-          </ns:fk>
-        </ns:column>
-        <ns:column columnName="Created"/>
-        <ns:column columnName="ModifiedBy">
-          <ns:fk>
-            <ns:fkColumnName>UserId</ns:fkColumnName>
-            <ns:fkDbSchema>core</ns:fkDbSchema>
-            <ns:fkTable>Users</ns:fkTable>
-          </ns:fk>
-        </ns:column>
-        <ns:column columnName="Modified"/>
-        <ns:column columnName="SubmittedBy">
-          <ns:fk>
-            <ns:fkColumnName>UserId</ns:fkColumnName>
-            <ns:fkDbSchema>core</ns:fkDbSchema>
-            <ns:fkTable>Users</ns:fkTable>
-          </ns:fk>
-        </ns:column>
-        <ns:column columnName="Submitted"/>
-        <ns:column columnName="Status"/>
-        <ns:column columnName="SurveyDesignId">
-          <ns:fk>
-            <ns:fkTable>SurveyDesign</ns:fkTable>
-            <ns:fkColumnName>RowId</ns:fkColumnName>
-            <ns:fkDbSchema>survey</ns:fkDbSchema>
-          </ns:fk>
-        </ns:column>
-        <ns:column columnName="ResponsesPk">
-        </ns:column>
-      </ns:columns>
-    </ns:table>
-</ns:tables>
+<tables xsi:schemaLocation="http://labkey.org/data/xml ..\..\..\..\schemas\tableInfo.xsd" xmlns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <table tableName="SurveyDesigns" tableDbType="TABLE">
+      <description>Contains a row for each survey design.</description>
+      <columns>
+        <column columnName="RowId"/>
+        <column columnName="Container"/>
+        <column columnName="Label"/>
+        <column columnName="Description"/>
+        <column columnName="CreatedBy">
+          <fk>
+            <fkColumnName>UserId</fkColumnName>
+            <fkDbSchema>core</fkDbSchema>
+            <fkTable>Users</fkTable>
+          </fk>
+        </column>
+        <column columnName="Created"/>
+        <column columnName="ModifiedBy">
+          <fk>
+            <fkColumnName>UserId</fkColumnName>
+            <fkDbSchema>core</fkDbSchema>
+            <fkTable>Users</fkTable>
+          </fk>
+        </column>
+        <column columnName="Modified"/>
+        <column columnName="QueryName"/>
+        <column columnName="SchemaName"/>
+        <column columnName="Metadata"/>
+      </columns>
+    </table>
+    <table tableName="Surveys" tableDbType="TABLE">
+      <description>Contains a row for each user survey instance.</description>
+      <columns>
+        <column columnName="RowId"/>
+        <column columnName="Container"/>
+        <column columnName="EntityId">
+          <columnTitle>Entity Id</columnTitle>
+          <inputType>text</inputType>
+          <inputLength>36</inputLength>
+          <isReadOnly>true</isReadOnly>
+          <isHidden>true</isHidden>
+          <fk>
+            <fkTable>object</fkTable>
+            <fkColumnName>ObjectURI</fkColumnName>
+            <fkDbSchema>exp</fkDbSchema>
+          </fk>
+        </column>
+        <column columnName="Label"/>
+        <column columnName="CreatedBy">
+          <fk>
+            <fkColumnName>UserId</fkColumnName>
+            <fkDbSchema>core</fkDbSchema>
+            <fkTable>Users</fkTable>
+          </fk>
+        </column>
+        <column columnName="Created"/>
+        <column columnName="ModifiedBy">
+          <fk>
+            <fkColumnName>UserId</fkColumnName>
+            <fkDbSchema>core</fkDbSchema>
+            <fkTable>Users</fkTable>
+          </fk>
+        </column>
+        <column columnName="Modified"/>
+        <column columnName="SubmittedBy">
+          <fk>
+            <fkColumnName>UserId</fkColumnName>
+            <fkDbSchema>core</fkDbSchema>
+            <fkTable>Users</fkTable>
+          </fk>
+        </column>
+        <column columnName="Submitted"/>
+        <column columnName="Status"/>
+        <column columnName="SurveyDesignId">
+          <fk>
+            <fkTable>SurveyDesign</fkTable>
+            <fkColumnName>RowId</fkColumnName>
+            <fkDbSchema>survey</fkDbSchema>
+          </fk>
+        </column>
+        <column columnName="ResponsesPk">
+        </column>
+      </columns>
+    </table>
+</tables>

@@ -16,98 +16,98 @@
  * limitations under the License.
 
  -->
-<ns:tables xsi:schemaLocation="http://labkey.org/data/xml ..\..\..\..\..\schemas\tableInfo.xsd" xmlns:ns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <ns:table tableName="PipelineRoots" tableDbType="TABLE">
-    <ns:cacheSize>5000</ns:cacheSize>
-    <ns:columns>
-      <ns:column columnName="_ts"/>
-      <ns:column columnName="CreatedBy"/>
-      <ns:column columnName="Created"/>
-      <ns:column columnName="ModifiedBy"/>
-      <ns:column columnName="Modified"/>
-      <ns:column columnName="Container"/>
-      <ns:column columnName="EntityId"/>
-      <ns:column columnName="PipelineRootId"/>
-      <ns:column columnName="Path"/>
-      <ns:column columnName="SupplementalPath"/>
-      <ns:column columnName="Providers"/>
-      <ns:column columnName="Type"/>
-      <ns:column columnName="Searchable"/>
-    </ns:columns>
-  </ns:table>
-  <ns:table tableName="StatusFiles" tableDbType="TABLE">
-    <ns:columns>
-      <ns:column columnName="_ts">
-          <ns:isHidden>true</ns:isHidden>
-          <ns:description>Contains system-managed version information</ns:description>
-      </ns:column>
-      <ns:column columnName="CreatedBy">
-          <ns:description>Contains the user who originally created this job record</ns:description>
-      </ns:column>
-      <ns:column columnName="Created">
-        <ns:formatString>DateTime</ns:formatString>
-        <ns:displayWidth>160</ns:displayWidth>
-        <ns:description>Contains the time at which this job was created</ns:description>
-      </ns:column>
-      <ns:column columnName="ModifiedBy">
-          <ns:description>Contains the user who last modified this job record</ns:description>
-      </ns:column>
-      <ns:column columnName="Modified">
-        <ns:formatString>DateTime</ns:formatString>
-        <ns:description>Contains the time at which this job record was modified</ns:description>
-      </ns:column>
-      <ns:column columnName="Container">
-        <ns:description>Contains this job's project or folder</ns:description>
-      </ns:column>
-      <ns:column columnName="EntityId">
-        <ns:description>Contains a unique entity id</ns:description>
-      </ns:column>
-      <ns:column columnName="RowId">
-        <ns:description>Contains an auto-incrementing id</ns:description>
-      </ns:column>
-      <ns:column columnName="Status">
-        <ns:displayWidth>120</ns:displayWidth>
-        <ns:url>/pipeline-status/details.view?rowId=${RowId}</ns:url>
-        <ns:description>Contains the short status of this job, such as WAITING, ERROR, or COMPLETE</ns:description>
-      </ns:column>
-      <ns:column columnName="Info">
-        <ns:description>Contains status information about this job, most frequently an error message if the job failed</ns:description>
-      </ns:column>
-      <ns:column columnName="FilePath">
-        <ns:displayWidth>500</ns:displayWidth>
-        <ns:description>Contains the path to the log file for this job</ns:description>
-      </ns:column>
-      <ns:column columnName="Email">
-        <ns:description>Contains email addresses for notification on job success or failure</ns:description>
-      </ns:column>
-      <ns:column columnName="DataUrl">
-        <ns:description>Contains a URL where the results of this job are available for display</ns:description>
-      </ns:column>
-      <ns:column columnName="Description">
-          <ns:displayWidth>500</ns:displayWidth>
-          <ns:description>Contains a short description of this job, often including file and/or analysis protocol names</ns:description>
-      </ns:column>
-      <ns:column columnName="HadError">
-        <ns:description>Indicates if this job has failed at some point in the past</ns:description>
-      </ns:column>
-      <ns:column columnName="Job">
-        <ns:description>Contains an internal entity id reference to the job, used to manage communication within the system and with external systems</ns:description>
-      </ns:column>
-      <ns:column columnName="Provider">
-        <ns:description>Contains the name of the PipelineProvider that created this job</ns:description>
-      </ns:column>
-      <ns:column columnName="JobParent">
-        <ns:description>Contains the entityId for the parent of this job, if any</ns:description>
-      </ns:column>
-      <ns:column columnName="JobStore">
-        <ns:description>Contains a serialized XML description of this job</ns:description>
-      </ns:column>
-      <ns:column columnName="ActiveTaskId">
-        <ns:description>Contains a pipeline-configuration identifier for the active task in the sequence of tasks</ns:description>
-      </ns:column>
-      <ns:column columnName="ActiveHostName">
-        <ns:description>The assigned server for jobs in a RUNNING state. NULL for local webserver jobs, an arbitrary value for locations handled by remote servers</ns:description>
-      </ns:column>
-    </ns:columns>
-  </ns:table>
-</ns:tables>
+<tables xsi:schemaLocation="http://labkey.org/data/xml ..\..\..\..\..\schemas\tableInfo.xsd" xmlns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <table tableName="PipelineRoots" tableDbType="TABLE">
+    <cacheSize>5000</cacheSize>
+    <columns>
+      <column columnName="_ts"/>
+      <column columnName="CreatedBy"/>
+      <column columnName="Created"/>
+      <column columnName="ModifiedBy"/>
+      <column columnName="Modified"/>
+      <column columnName="Container"/>
+      <column columnName="EntityId"/>
+      <column columnName="PipelineRootId"/>
+      <column columnName="Path"/>
+      <column columnName="SupplementalPath"/>
+      <column columnName="Providers"/>
+      <column columnName="Type"/>
+      <column columnName="Searchable"/>
+    </columns>
+  </table>
+  <table tableName="StatusFiles" tableDbType="TABLE">
+    <columns>
+      <column columnName="_ts">
+          <isHidden>true</isHidden>
+          <description>Contains system-managed version information</description>
+      </column>
+      <column columnName="CreatedBy">
+          <description>Contains the user who originally created this job record</description>
+      </column>
+      <column columnName="Created">
+        <formatString>DateTime</formatString>
+        <displayWidth>160</displayWidth>
+        <description>Contains the time at which this job was created</description>
+      </column>
+      <column columnName="ModifiedBy">
+          <description>Contains the user who last modified this job record</description>
+      </column>
+      <column columnName="Modified">
+        <formatString>DateTime</formatString>
+        <description>Contains the time at which this job record was modified</description>
+      </column>
+      <column columnName="Container">
+        <description>Contains this job's project or folder</description>
+      </column>
+      <column columnName="EntityId">
+        <description>Contains a unique entity id</description>
+      </column>
+      <column columnName="RowId">
+        <description>Contains an auto-incrementing id</description>
+      </column>
+      <column columnName="Status">
+        <displayWidth>120</displayWidth>
+        <url>/pipeline-status/details.view?rowId=${RowId}</url>
+        <description>Contains the short status of this job, such as WAITING, ERROR, or COMPLETE</description>
+      </column>
+      <column columnName="Info">
+        <description>Contains status information about this job, most frequently an error message if the job failed</description>
+      </column>
+      <column columnName="FilePath">
+        <displayWidth>500</displayWidth>
+        <description>Contains the path to the log file for this job</description>
+      </column>
+      <column columnName="Email">
+        <description>Contains email addresses for notification on job success or failure</description>
+      </column>
+      <column columnName="DataUrl">
+        <description>Contains a URL where the results of this job are available for display</description>
+      </column>
+      <column columnName="Description">
+          <displayWidth>500</displayWidth>
+          <description>Contains a short description of this job, often including file and/or analysis protocol names</description>
+      </column>
+      <column columnName="HadError">
+        <description>Indicates if this job has failed at some point in the past</description>
+      </column>
+      <column columnName="Job">
+        <description>Contains an internal entity id reference to the job, used to manage communication within the system and with external systems</description>
+      </column>
+      <column columnName="Provider">
+        <description>Contains the name of the PipelineProvider that created this job</description>
+      </column>
+      <column columnName="JobParent">
+        <description>Contains the entityId for the parent of this job, if any</description>
+      </column>
+      <column columnName="JobStore">
+        <description>Contains a serialized XML description of this job</description>
+      </column>
+      <column columnName="ActiveTaskId">
+        <description>Contains a pipeline-configuration identifier for the active task in the sequence of tasks</description>
+      </column>
+      <column columnName="ActiveHostName">
+        <description>The assigned server for jobs in a RUNNING state. NULL for local webserver jobs, an arbitrary value for locations handled by remote servers</description>
+      </column>
+    </columns>
+  </table>
+</tables>

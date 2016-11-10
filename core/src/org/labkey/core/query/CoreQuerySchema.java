@@ -494,31 +494,31 @@ public class CoreQuerySchema extends UserSchema
                 "  Groups.Container\n" +
                 "FROM Groups");
         def.setMetadataXml(
-                "<ns:tables xmlns:ns=\"http://labkey.org/data/xml\">\n" +
-                        "  <ns:table tableName=\"UsersAndGroups\" tableDbType=\"NOT_IN_DB\">\n" +
-                        "    <ns:description>Union of the Users and Groups tables</ns:description>\n" +
-                        "    <ns:pkColumnName>UserId</ns:pkColumnName>\n" +
-                        "    <ns:columns>\n" +
-                        "      <ns:column columnName=\"UserId\">\n" +
-                        "        <ns:isKeyField>true</ns:isKeyField>\n" +
-                        "        <ns:dimension>true</ns:dimension>\n" +
-                        "        <ns:fk>\n" +
-                        "          <ns:fkDbSchema>core</ns:fkDbSchema>\n" +
-                        "          <ns:fkTable>Users</ns:fkTable>\n" +
-                        "          <ns:fkColumnName>UserId</ns:fkColumnName>\n" +
-                        "        </ns:fk>\n" +
-                        "      </ns:column>\n" +
-                        "      <ns:column columnName=\"Container\">\n" +
-                        "        <ns:dimension>true</ns:dimension>\n" +
-                        "        <ns:fk>\n" +
-                        "          <ns:fkDbSchema>core</ns:fkDbSchema>\n" +
-                        "          <ns:fkTable>Containers</ns:fkTable>\n" +
-                        "          <ns:fkColumnName>EntityId</ns:fkColumnName>\n" +
-                        "        </ns:fk>\n" +
-                        "      </ns:column>\n" +
-                        "    </ns:columns>\n" +
-                        "  </ns:table>\n" +
-                        "</ns:tables>");
+                "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
+                        "  <table tableName=\"UsersAndGroups\" tableDbType=\"NOT_IN_DB\">\n" +
+                        "    <description>Union of the Users and Groups tables</description>\n" +
+                        "    <pkColumnName>UserId</pkColumnName>\n" +
+                        "    <columns>\n" +
+                        "      <column columnName=\"UserId\">\n" +
+                        "        <isKeyField>true</isKeyField>\n" +
+                        "        <dimension>true</dimension>\n" +
+                        "        <fk>\n" +
+                        "          <fkDbSchema>core</fkDbSchema>\n" +
+                        "          <fkTable>Users</fkTable>\n" +
+                        "          <fkColumnName>UserId</fkColumnName>\n" +
+                        "        </fk>\n" +
+                        "      </column>\n" +
+                        "      <column columnName=\"Container\">\n" +
+                        "        <dimension>true</dimension>\n" +
+                        "        <fk>\n" +
+                        "          <fkDbSchema>core</fkDbSchema>\n" +
+                        "          <fkTable>Containers</fkTable>\n" +
+                        "          <fkColumnName>EntityId</fkColumnName>\n" +
+                        "        </fk>\n" +
+                        "      </column>\n" +
+                        "    </columns>\n" +
+                        "  </table>\n" +
+                        "</tables>");
         List<QueryException> errors = new ArrayList<>();
         TableInfo t;
         t = def.getTable(this, errors, true);

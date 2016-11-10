@@ -16,123 +16,123 @@
  * limitations under the License.
 
  -->
-<ns:tables xmlns:ns="http://labkey.org/data/xml">
-  <ns:table tableName="QueryDef" tableDbType="TABLE">
-    <ns:cacheSize>100000</ns:cacheSize>
-    <ns:columns>
-      <ns:column columnName="QueryDefId"/>
-      <ns:column columnName="EntityId"/>
-      <ns:column columnName="Created"/>
-      <ns:column columnName="CreatedBy"/>
-      <ns:column columnName="Modified"/>
-      <ns:column columnName="ModifiedBy"/>
-      <ns:column columnName="Container"/>
-      <ns:column columnName="Name"/>
-      <ns:column columnName="Schema"/>
-      <ns:column columnName="Sql"/>
-      <ns:column columnName="MetaData"/>
-      <ns:column columnName="SchemaVersion"/>
-      <ns:column columnName="Flags"/>
-      <ns:column columnName="Description"/>
-    </ns:columns>
-  </ns:table>
-    <ns:table tableName="CustomView" tableDbType="TABLE">
-      <ns:cacheSize>100000</ns:cacheSize>
-      <ns:columns>
-        <ns:column columnName="CustomViewId"/>
-        <ns:column columnName="EntityId"/>
-        <ns:column columnName="Created"/>
-        <ns:column columnName="CreatedBy"/>
-        <ns:column columnName="Modified"/>
-        <ns:column columnName="ModifiedBy"/>
-        <ns:column columnName="Schema"/>
-        <ns:column columnName="QueryName"/>
-        <ns:column columnName="Container"/>
-        <ns:column columnName="Name"/>
-        <ns:column columnName="CustomViewOwner"/>
-        <ns:column columnName="Columns"/>
-        <ns:column columnName="Filter" />
-        <ns:column columnName="Flags"/>
-      </ns:columns>
-    </ns:table>
-    <ns:table tableName="ExternalSchema" tableDbType="TABLE">
-        <ns:cacheSize>0</ns:cacheSize><!-- Unlimited, since size scales with Container count -->
-        <ns:columns>
-            <ns:column columnName="ExternalSchemaId" />
-            <ns:column columnName="EntityId" />
-            <ns:column columnName="Created" />
-            <ns:column columnName="CreatedBy" />
-            <ns:column columnName="Modified" />
-            <ns:column columnName="ModifiedBy" />
-            <ns:column columnName="Container" />
-            <ns:column columnName="DataSource">
-                <ns:columnTitle>Data Source</ns:columnTitle>
-                <ns:description>JNDI name of the DataSource associated with this schema.</ns:description>
-            </ns:column>
-            <ns:column columnName="UserSchemaName">
-                <ns:columnTitle>Schema Name</ns:columnTitle>
-                <ns:description>Name of the schema as referred to from within LabKey Server.</ns:description>
-            </ns:column>
-            <ns:column columnName="SourceSchemaName">
-                <ns:columnTitle>Source Schema Name</ns:columnTitle>
-                <ns:description>The name of the physical schema in the underlying database.</ns:description>
-            </ns:column>
-            <ns:column columnName="Editable">
-                <ns:description>Allows insert/update/delete. Caveat: This setting only works if you have a single primary key in your table.</ns:description>
-            </ns:column>
-            <ns:column columnName="Indexable">
-                <ns:description>Determines whether the schema should be indexed for full-text searching.</ns:description>
-            </ns:column>
-            <ns:column columnName="Tables">
-                <ns:description>Allows exposing selected tables in the schema.</ns:description>
-            </ns:column>
-            <ns:column columnName="MetaData">
-                <ns:description>You can use a specialized XML format to specify which columns are look-ups, formats, captions, etc.</ns:description>
-            </ns:column>
-            <ns:column columnName="SchemaType">
-                <ns:description>Type of schema; either "external" or "linked".</ns:description>
-                <ns:isHidden>true</ns:isHidden>
-            </ns:column>
-            <ns:column columnName="SchemaTemplate">
-                <ns:description>Name of schema template defined in a module.</ns:description>
-                <ns:isHidden>true</ns:isHidden>
-            </ns:column>
-        </ns:columns>
-    </ns:table>
-    <ns:table tableName="QuerySnapshotDef" tableDbType="TABLE">
-        <ns:columns>
-            <ns:column columnName="RowId"/>
-            <ns:column columnName="QueryDefId"/>
-            <ns:column columnName="EntityId"/>
-            <ns:column columnName="Created"/>
-            <ns:column columnName="CreatedBy"/>
-            <ns:column columnName="Modified"/>
-            <ns:column columnName="ModifiedBy"/>
-            <ns:column columnName="Container"/>
-            <ns:column columnName="Name"/>
-            <ns:column columnName="Schema"/>
-            <ns:column columnName="Columns"/>
-            <ns:column columnName="Filter"/>
-            <ns:column columnName="ParticipantGroups"/>
-            <ns:column columnName="LastUpdated"/>
-            <ns:column columnName="NextUpdate"/>
-            <ns:column columnName="UpdateDelay"/>
-            <ns:column columnName="QueryTableName"/>
-            <ns:column columnName="QueryTableContainer"/>
-            <ns:column columnName="OptionsId"/>
-        </ns:columns>
-    </ns:table>
-    <ns:table tableName="OlapDef" tableDbType="TABLE">
-        <ns:columns>
-            <ns:column columnName="RowId"/>
-            <ns:column columnName="Created"/>
-            <ns:column columnName="CreatedBy"/>
-            <ns:column columnName="Modified"/>
-            <ns:column columnName="ModifiedBy"/>
-            <ns:column columnName="Container"/>
-            <ns:column columnName="Name"/>
-            <ns:column columnName="Module"/>
-            <ns:column columnName="Definition"/>
-        </ns:columns>
-    </ns:table>
-</ns:tables>
+<tables xmlns="http://labkey.org/data/xml">
+  <table tableName="QueryDef" tableDbType="TABLE">
+    <cacheSize>100000</cacheSize>
+    <columns>
+      <column columnName="QueryDefId"/>
+      <column columnName="EntityId"/>
+      <column columnName="Created"/>
+      <column columnName="CreatedBy"/>
+      <column columnName="Modified"/>
+      <column columnName="ModifiedBy"/>
+      <column columnName="Container"/>
+      <column columnName="Name"/>
+      <column columnName="Schema"/>
+      <column columnName="Sql"/>
+      <column columnName="MetaData"/>
+      <column columnName="SchemaVersion"/>
+      <column columnName="Flags"/>
+      <column columnName="Description"/>
+    </columns>
+  </table>
+    <table tableName="CustomView" tableDbType="TABLE">
+      <cacheSize>100000</cacheSize>
+      <columns>
+        <column columnName="CustomViewId"/>
+        <column columnName="EntityId"/>
+        <column columnName="Created"/>
+        <column columnName="CreatedBy"/>
+        <column columnName="Modified"/>
+        <column columnName="ModifiedBy"/>
+        <column columnName="Schema"/>
+        <column columnName="QueryName"/>
+        <column columnName="Container"/>
+        <column columnName="Name"/>
+        <column columnName="CustomViewOwner"/>
+        <column columnName="Columns"/>
+        <column columnName="Filter" />
+        <column columnName="Flags"/>
+      </columns>
+    </table>
+    <table tableName="ExternalSchema" tableDbType="TABLE">
+        <cacheSize>0</cacheSize><!-- Unlimited, since size scales with Container count -->
+        <columns>
+            <column columnName="ExternalSchemaId" />
+            <column columnName="EntityId" />
+            <column columnName="Created" />
+            <column columnName="CreatedBy" />
+            <column columnName="Modified" />
+            <column columnName="ModifiedBy" />
+            <column columnName="Container" />
+            <column columnName="DataSource">
+                <columnTitle>Data Source</columnTitle>
+                <description>JNDI name of the DataSource associated with this schema.</description>
+            </column>
+            <column columnName="UserSchemaName">
+                <columnTitle>Schema Name</columnTitle>
+                <description>Name of the schema as referred to from within LabKey Server.</description>
+            </column>
+            <column columnName="SourceSchemaName">
+                <columnTitle>Source Schema Name</columnTitle>
+                <description>The name of the physical schema in the underlying database.</description>
+            </column>
+            <column columnName="Editable">
+                <description>Allows insert/update/delete. Caveat: This setting only works if you have a single primary key in your table.</description>
+            </column>
+            <column columnName="Indexable">
+                <description>Determines whether the schema should be indexed for full-text searching.</description>
+            </column>
+            <column columnName="Tables">
+                <description>Allows exposing selected tables in the schema.</description>
+            </column>
+            <column columnName="MetaData">
+                <description>You can use a specialized XML format to specify which columns are look-ups, formats, captions, etc.</description>
+            </column>
+            <column columnName="SchemaType">
+                <description>Type of schema; either "external" or "linked".</description>
+                <isHidden>true</isHidden>
+            </column>
+            <column columnName="SchemaTemplate">
+                <description>Name of schema template defined in a module.</description>
+                <isHidden>true</isHidden>
+            </column>
+        </columns>
+    </table>
+    <table tableName="QuerySnapshotDef" tableDbType="TABLE">
+        <columns>
+            <column columnName="RowId"/>
+            <column columnName="QueryDefId"/>
+            <column columnName="EntityId"/>
+            <column columnName="Created"/>
+            <column columnName="CreatedBy"/>
+            <column columnName="Modified"/>
+            <column columnName="ModifiedBy"/>
+            <column columnName="Container"/>
+            <column columnName="Name"/>
+            <column columnName="Schema"/>
+            <column columnName="Columns"/>
+            <column columnName="Filter"/>
+            <column columnName="ParticipantGroups"/>
+            <column columnName="LastUpdated"/>
+            <column columnName="NextUpdate"/>
+            <column columnName="UpdateDelay"/>
+            <column columnName="QueryTableName"/>
+            <column columnName="QueryTableContainer"/>
+            <column columnName="OptionsId"/>
+        </columns>
+    </table>
+    <table tableName="OlapDef" tableDbType="TABLE">
+        <columns>
+            <column columnName="RowId"/>
+            <column columnName="Created"/>
+            <column columnName="CreatedBy"/>
+            <column columnName="Modified"/>
+            <column columnName="ModifiedBy"/>
+            <column columnName="Container"/>
+            <column columnName="Name"/>
+            <column columnName="Module"/>
+            <column columnName="Definition"/>
+        </columns>
+    </table>
+</tables>

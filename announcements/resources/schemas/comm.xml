@@ -16,656 +16,656 @@
  * limitations under the License.
 
  -->
-<ns:tables xsi:schemaLocation="http://cpas.fhcrc.org/data/xml ..\..\..\..\schemas\tableInfo.xsd" xmlns:ns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <ns:table tableName="Announcements" tableDbType="TABLE">
-    <ns:columns>
-      <ns:column columnName="RowId">
-        <ns:columnTitle>Row Id</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>10</ns:inputLength>
-        <ns:nullable>false</ns:nullable>
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:isKeyField>true</ns:isKeyField>
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-      <ns:column columnName="EntityId">
-          <ns:isHidden>true</ns:isHidden>
-          <ns:description>GUID that uniquely identifies this row</ns:description>
-      </ns:column>
-      <ns:column columnName="CreatedBy">
-        <ns:datatype>int</ns:datatype>
-        <ns:columnTitle>Created By</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>10</ns:inputLength>
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:fk>
-          <ns:fkColumnName>UserId</ns:fkColumnName>
-          <ns:fkTable>Users</ns:fkTable>
-          <ns:fkDbSchema>core</ns:fkDbSchema>
-        </ns:fk>
-      </ns:column>
-      <ns:column columnName="Created">
-        <ns:columnTitle>Created</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:formatString>DateTime</ns:formatString>
-        <ns:inputLength>23</ns:inputLength>
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="ModifiedBy">
-        <ns:datatype>int</ns:datatype>
-        <ns:columnTitle>Modified By</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>10</ns:inputLength>
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:fk>
-          <ns:fkColumnName>UserId</ns:fkColumnName>
-          <ns:fkTable>Users</ns:fkTable>
-          <ns:fkDbSchema>core</ns:fkDbSchema>
-        </ns:fk>
-      </ns:column>
-      <ns:column columnName="Modified">
-        <ns:columnTitle>Modified</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:formatString>DateTime</ns:formatString>
-        <ns:inputLength>23</ns:inputLength>
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="AssignedTo">
-        <ns:datatype>int</ns:datatype>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>10</ns:inputLength>
-        <ns:isReadOnly>false</ns:isReadOnly>
-        <ns:fk>
-          <ns:fkColumnName>UserId</ns:fkColumnName>
-          <ns:fkTable>Users</ns:fkTable>
-          <ns:fkDbSchema>core</ns:fkDbSchema>
-        </ns:fk>
-      </ns:column>
-      <ns:column columnName="Container"/>
-      <ns:column columnName="Parent">
-          <ns:description>EntityId of top-level announcement to which this is a reply, or null if this is a top-level posting</ns:description>
-      </ns:column>
-      <ns:column columnName="Title">
-        <ns:columnTitle>Title</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>40</ns:inputLength>
-        <ns:isReadOnly>false</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="Expires">
-        <ns:columnTitle>Expires</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>23</ns:inputLength>
-        <ns:isReadOnly>false</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="Body">
-        <ns:columnTitle>Body</ns:columnTitle>
-        <ns:inputType>textarea</ns:inputType>
-        <ns:scale>1073741823</ns:scale>
-        <ns:inputLength>60</ns:inputLength>
-        <ns:isReadOnly>false</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="RendererType">
-        <ns:columnTitle>RendererType</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>50</ns:inputLength>
-        <ns:isReadOnly>false</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="Status">
-        <ns:displayWidth>20</ns:displayWidth>
-      </ns:column>
-      <ns:column columnName="DiscussionSrcIdentifier">
-          <ns:description>EntityId of the object to which this announcement is attached. Null for rows that are part of the default forum for the container</ns:description>
-      </ns:column>
-      <ns:column columnName="DiscussionSrcURL">
-          <ns:description>URL to the display the object to which this message is attached. Always null for rows that are part of the default forum for the container</ns:description>
-      </ns:column>
-      <ns:column columnName="LastIndexed">
-          <ns:isReadOnly>true</ns:isReadOnly>
-          <ns:isUserEditable>false</ns:isUserEditable>
-          <ns:description>When this row was last indexed by the full-text search service</ns:description>
-      </ns:column>
-    </ns:columns>
-    <ns:tableTitle>Announcements</ns:tableTitle>
-    <ns:pkColumnName>RowId</ns:pkColumnName>
-    <ns:versionColumnName>Modified</ns:versionColumnName>
-    <ns:titleColumn>Title</ns:titleColumn>
-  </ns:table>
-  <ns:table tableName="Pages" tableDbType="TABLE">
-    <ns:columns>
-      <ns:column columnName="RowId">
-        <ns:columnTitle>Row Id</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>10</ns:inputLength>
-        <ns:nullable>false</ns:nullable>
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:isKeyField>true</ns:isKeyField>
-      </ns:column>
-      <ns:column columnName="EntityId">
-        <ns:datatype>uniqueidentifier</ns:datatype>
-        <ns:columnTitle>Entity Id</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>36</ns:inputLength>
-        <ns:nullable>true</ns:nullable>
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="CreatedBy">
-        <ns:datatype>int</ns:datatype>
-        <ns:columnTitle>Created By</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>10</ns:inputLength>
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:fk>
-          <ns:fkColumnName>UserId</ns:fkColumnName>
-          <ns:fkTable>Users</ns:fkTable>
-          <ns:fkDbSchema>core</ns:fkDbSchema>
-        </ns:fk>
-      </ns:column>
-      <ns:column columnName="Created">
-        <ns:columnTitle>Created</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>23</ns:inputLength>
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="ModifiedBy">
-        <ns:datatype>int</ns:datatype>
-        <ns:columnTitle>Modified By</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>10</ns:inputLength>
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:fk>
-          <ns:fkColumnName>UserId</ns:fkColumnName>
-          <ns:fkTable>Users</ns:fkTable>
-          <ns:fkDbSchema>core</ns:fkDbSchema>
-        </ns:fk>
-      </ns:column>
-      <ns:column columnName="Modified">
-        <ns:columnTitle>Modified</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>23</ns:inputLength>
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="Owner">
-        <ns:datatype>int</ns:datatype>
-        <ns:columnTitle>Owner</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>10</ns:inputLength>
-        <ns:isReadOnly>false</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="Container">
-        <ns:datatype>nvarchar</ns:datatype>
-        <ns:columnTitle>Container</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:scale>255</ns:scale>
-        <ns:inputLength>40</ns:inputLength>
-        <ns:nullable>true</ns:nullable>
-        <ns:isReadOnly>false</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="Name">
-        <ns:columnTitle>Name</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:scale>195</ns:scale>
-        <ns:inputLength>40</ns:inputLength>
-        <ns:nullable>true</ns:nullable>
-        <ns:isReadOnly>false</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="Parent"/>
-      <ns:column columnName="DisplayOrder"/>
-      <ns:column columnName="PageVersionId"/>
-      <ns:column columnName="ShowAttachments"/>
-      <ns:column columnName="LastIndexed">
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="ShouldIndex">
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-    </ns:columns>
-    <ns:tableTitle>Pages</ns:tableTitle>
-    <ns:pkColumnName>RowId</ns:pkColumnName>
-    <ns:versionColumnName>Modified</ns:versionColumnName>
-    <ns:titleColumn>EntityId</ns:titleColumn>
-  </ns:table>
-  <ns:table tableName="PageVersions" tableDbType="TABLE">
-    <ns:columns>
-      <ns:column columnName="RowId">
-        <ns:nullable>false</ns:nullable>
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:isKeyField>true</ns:isKeyField>
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-      <ns:column columnName="PageEntityId"/>
-      <ns:column columnName="CreatedBy">
-        <ns:datatype>int</ns:datatype>
-        <ns:columnTitle>Created By</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>10</ns:inputLength>
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:fk>
-          <ns:fkColumnName>UserId</ns:fkColumnName>
-          <ns:fkTable>Users</ns:fkTable>
-          <ns:fkDbSchema>core</ns:fkDbSchema>
-        </ns:fk>
-      </ns:column>
-      <ns:column columnName="Created">
-        <ns:formatString>DateTime</ns:formatString>
-      </ns:column>
-      <ns:column columnName="Owner"/>
-      <ns:column columnName="Version">
-          <ns:url>org.labkey.wiki.WikiController$VersionAction.class?name=${PageEntityId/Name}&amp;version=${Version}</ns:url>
-      </ns:column>
-      <ns:column columnName="Title"/>
-      <ns:column columnName="Body"/>
-      <ns:column columnName="RendererType"/>
-    </ns:columns>
-  </ns:table>
-  <ns:table tableName="PagePaths" tableDbType="VIEW">
-    <ns:columns>
-      <ns:column columnName="RowId">
-        <ns:columnTitle>Row Id</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>10</ns:inputLength>
-        <ns:nullable>false</ns:nullable>
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:isKeyField>true</ns:isKeyField>
-      </ns:column>
-      <ns:column columnName="EntityId">
-        <ns:datatype>uniqueidentifier</ns:datatype>
-        <ns:columnTitle>Entity Id</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>36</ns:inputLength>
-        <ns:nullable>true</ns:nullable>
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="CreatedBy">
-        <ns:datatype>int</ns:datatype>
-        <ns:columnTitle>Created By</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>10</ns:inputLength>
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:fk>
-          <ns:fkColumnName>UserId</ns:fkColumnName>
-          <ns:fkTable>Users</ns:fkTable>
-          <ns:fkDbSchema>core</ns:fkDbSchema>
-        </ns:fk>
-      </ns:column>
-      <ns:column columnName="Created">
-        <ns:columnTitle>Created</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>23</ns:inputLength>
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="ModifiedBy">
-        <ns:datatype>int</ns:datatype>
-        <ns:columnTitle>Modified By</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>10</ns:inputLength>
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:fk>
-          <ns:fkColumnName>UserId</ns:fkColumnName>
-          <ns:fkTable>Users</ns:fkTable>
-          <ns:fkDbSchema>core</ns:fkDbSchema>
-        </ns:fk>
-      </ns:column>
-      <ns:column columnName="Modified">
-        <ns:columnTitle>Modified</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>23</ns:inputLength>
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="Owner">
-        <ns:datatype>int</ns:datatype>
-        <ns:columnTitle>Owner</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:inputLength>10</ns:inputLength>
-        <ns:isReadOnly>false</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="Container">
-        <ns:datatype>nvarchar</ns:datatype>
-        <ns:columnTitle>Container</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:scale>255</ns:scale>
-        <ns:inputLength>40</ns:inputLength>
-        <ns:nullable>true</ns:nullable>
-        <ns:isReadOnly>false</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="Name">
-        <ns:columnTitle>Name</ns:columnTitle>
-        <ns:inputType>text</ns:inputType>
-        <ns:scale>195</ns:scale>
-        <ns:inputLength>40</ns:inputLength>
-        <ns:nullable>true</ns:nullable>
-        <ns:isReadOnly>false</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="Path">
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="PathParts">
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="Depth">
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-      <ns:column columnName="Parent"/>
-      <ns:column columnName="DisplayOrder"/>
-      <ns:column columnName="PageVersionId"/>
-      <ns:column columnName="ShowAttachments"/>
-      <ns:column columnName="LastIndexed">
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="ShouldIndex">
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-    </ns:columns>
-    <ns:tableTitle>PagePaths</ns:tableTitle>
-    <ns:pkColumnName>RowId</ns:pkColumnName>
-    <ns:versionColumnName>Modified</ns:versionColumnName>
-    <ns:titleColumn>EntityId</ns:titleColumn>
-  </ns:table>
-  <ns:table tableName="CurrentWikiVersions" tableDbType="VIEW">
-    <ns:description>Contains one row per wiki page joined to its most current wiki version</ns:description>
-    <ns:tableUrl>/wiki/page.view?name=${Name}</ns:tableUrl>
-    <ns:columns>
-      <ns:column columnName="RowId">
-        <ns:nullable>false</ns:nullable>
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:isKeyField>true</ns:isKeyField>
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-      <ns:column columnName="Container">
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-      <ns:column columnName="Name">
-        <ns:url>/wiki/page.view?name=${Name}</ns:url>
-      </ns:column>
-      <ns:column columnName="Path">
-        <ns:url>/wiki/page.view?name=${Part}</ns:url>
-        <ns:displayColumnFactory>
-          <ns:className>org.labkey.wiki.query.PathDisplayColumn$Factory</ns:className>
-        </ns:displayColumnFactory>
-      </ns:column>
-      <ns:column columnName="PathParts">
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-      <ns:column columnName="Depth">
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-      <ns:column columnName="Title"/>
-      <ns:column columnName="Version">
-        <ns:url>/wiki/version.view?name=${Name}&amp;version=${Version}</ns:url>
-      </ns:column>
-      <ns:column columnName="Body">
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-      <ns:column columnName="CreatedBy"/>
-      <ns:column columnName="Created">
-        <ns:formatString>DateTime</ns:formatString>
-      </ns:column>
-      <ns:column columnName="ModifiedBy"/>
-      <ns:column columnName="Modified">
-        <ns:formatString>DateTime</ns:formatString>
-      </ns:column>
-    </ns:columns>
-  </ns:table>
-  <ns:table tableName="AllWikiVersions" tableDbType="VIEW">
-    <ns:description>Contains one row per wiki version joined to its parent wiki page, providing the full version history of all pages</ns:description>
-    <ns:tableUrl>/wiki/version.view?name=${Name}&amp;version=${Version}</ns:tableUrl>
-    <ns:columns>
-      <ns:column columnName="RowId">
-        <ns:nullable>false</ns:nullable>
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:isKeyField>true</ns:isKeyField>
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-      <ns:column columnName="Container">
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-      <ns:column columnName="Name">
-        <ns:url>/wiki/page.view?name=${Name}</ns:url>
-      </ns:column>
-      <ns:column columnName="Path">
-        <ns:displayColumnFactory>
-          <ns:className>org.labkey.wiki.query.PathDisplayColumn$Factory</ns:className>
-        </ns:displayColumnFactory>
-      </ns:column>
-      <ns:column columnName="PathParts">
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-      <ns:column columnName="Depth">
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-      <ns:column columnName="Title"/>
-      <ns:column columnName="Version">
-        <ns:url>/wiki/version.view?name=${Name}&amp;version=${Version}</ns:url>
-      </ns:column>
-      <ns:column columnName="Body">
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-      <ns:column columnName="CreatedBy"/>
-      <ns:column columnName="Created">
-        <ns:formatString>DateTime</ns:formatString>
-      </ns:column>
-      <ns:column columnName="ModifiedBy"/>
-      <ns:column columnName="Modified">
-        <ns:formatString>DateTime</ns:formatString>
-      </ns:column>
-    </ns:columns>
-  </ns:table>
-  <ns:table tableName="EmailFormats" tableDbType="TABLE">
-    <ns:description>Contains one row per email format option (HTML/plain text)</ns:description>
-    <ns:columns>
-      <ns:column columnName="EmailFormatId"/>
-      <ns:column columnName="EmailFormat"/>
-    </ns:columns>
-  </ns:table>
-  <ns:table tableName="EmailOptions" tableDbType="TABLE">
-    <ns:description>Contains one row per subscription type, such as all messages in a given forum, no email at all, etc and daily digest options</ns:description>
-      <ns:columns>
-      <ns:column columnName="EmailOptionId"/>
-      <ns:column columnName="EmailOption"/>
-      <ns:column columnName="Type"/>
-    </ns:columns>
-  </ns:table>
-  <ns:table tableName="PageTypes" tableDbType="TABLE">
-    <ns:columns>
-      <ns:column columnName="PageTypeId"/>
-      <ns:column columnName="PageType"/>
-    </ns:columns>
-  </ns:table>
-  <ns:table tableName="EmailPrefs" tableDbType="TABLE">
-    <ns:description>Contains one row per user-specific subscription</ns:description>
-    <ns:columns>
-      <ns:column columnName="Container"/>
-      <ns:column columnName="UserId"/>
-      <ns:column columnName="Type"/>
-      <ns:column columnName="EmailOptionId"/>
-      <ns:column columnName="EmailFormatId"/>
-      <ns:column columnName="PageTypeId"/>
-      <ns:column columnName="LastModifiedBy"/>
-      <ns:column columnName="SrcIdentifier"/>
-    </ns:columns>
-  </ns:table>
-  <ns:table tableName="UserList" tableDbType="TABLE">
-      <ns:description>Contains one row per user-specific thread-level subscription.</ns:description>
-    <ns:columns>
-      <ns:column columnName="MessageId"/>
-      <ns:column columnName="UserId"/>
-    </ns:columns>
-  </ns:table>
-  <ns:table tableName="Threads" tableDbType="VIEW">
-    <ns:columns>
-      <ns:column columnName="RowId"/>
-      <ns:column columnName="EntityId"/>
-      <ns:column columnName="CreatedBy">
-        <ns:fk>
-          <ns:fkColumnName>UserId</ns:fkColumnName>
-          <ns:fkTable>Users</ns:fkTable>
-          <ns:fkDbSchema>core</ns:fkDbSchema>
-        </ns:fk>
-      </ns:column>
-      <ns:column columnName="Created">
-        <ns:formatString>DateTime</ns:formatString>
-        <ns:displayWidth>150</ns:displayWidth>
-      </ns:column>
-      <ns:column columnName="ResponseCreatedBy">
-        <ns:columnTitle>Most Recent Post By</ns:columnTitle>
-        <ns:displayWidth>150</ns:displayWidth>
-        <ns:fk>
-          <ns:fkColumnName>UserId</ns:fkColumnName>
-          <ns:fkTable>Users</ns:fkTable>
-          <ns:fkDbSchema>core</ns:fkDbSchema>
-        </ns:fk>
-      </ns:column>
-      <ns:column columnName="ResponseCreated">
-        <ns:columnTitle>Most Recent Post</ns:columnTitle>
-        <ns:formatString>DateTime</ns:formatString>
-        <ns:displayWidth>150</ns:displayWidth>
-      </ns:column>
-      <ns:column columnName="AssignedTo">
-        <ns:displayWidth>150</ns:displayWidth>
-        <ns:fk>
-          <ns:fkColumnName>UserId</ns:fkColumnName>
-          <ns:fkTable>Users</ns:fkTable>
-          <ns:fkDbSchema>core</ns:fkDbSchema>
-        </ns:fk>
-      </ns:column>
-      <ns:column columnName="Container"/>
-      <ns:column columnName="Title">
-        <ns:displayWidth>300</ns:displayWidth>
-        <ns:url>org.labkey.announcements.AnnouncementsController$ThreadAction.class?rowId=${RowId}</ns:url>
-      </ns:column>
-      <ns:column columnName="Body"/>
-      <ns:column columnName="RendererType"/>
-      <ns:column columnName="Expires">
-        <ns:displayWidth>100</ns:displayWidth>
-      </ns:column>
-      <ns:column columnName="Status">
-        <ns:displayWidth>20</ns:displayWidth>
-      </ns:column>
-      <ns:column columnName="LatestId"/>
-      <ns:column columnName="discussionsrcidentifier"/>
-      <ns:column columnName="discussionsrcurl"/>
-      <ns:column columnName="ResponseCount"/>
-        <ns:column columnName="Modified">
-          <ns:columnTitle>Modified</ns:columnTitle>
-          <ns:inputType>text</ns:inputType>
-          <ns:inputLength>23</ns:inputLength>
-          <ns:isReadOnly>true</ns:isReadOnly>
-        </ns:column>
-      <ns:column columnName="LastIndexed">
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-    </ns:columns>
-    <ns:pkColumnName>RowId</ns:pkColumnName>
-  </ns:table>
-    <ns:table tableName="RSSFeeds" tableDbType="TABLE">
-        <ns:columns>
-            <ns:column columnName="RowId">
-                <ns:columnTitle>Row Id</ns:columnTitle>
-                <ns:inputType>text</ns:inputType>
-                <ns:inputLength>10</ns:inputLength>
-                <ns:nullable>false</ns:nullable>
-                <ns:isReadOnly>true</ns:isReadOnly>
-                <ns:isKeyField>true</ns:isKeyField>
-                <ns:isHidden>true</ns:isHidden>
-            </ns:column>
-            <ns:column columnName="EntityId">
-                <ns:isHidden>true</ns:isHidden>
-                <ns:description>GUID that uniquely identifies this row</ns:description>
-            </ns:column>
-            <ns:column columnName="CreatedBy">
-                <ns:datatype>int</ns:datatype>
-                <ns:columnTitle>Created By</ns:columnTitle>
-                <ns:inputType>text</ns:inputType>
-                <ns:inputLength>10</ns:inputLength>
-                <ns:isReadOnly>true</ns:isReadOnly>
-                <ns:fk>
-                    <ns:fkColumnName>UserId</ns:fkColumnName>
-                    <ns:fkTable>Users</ns:fkTable>
-                    <ns:fkDbSchema>core</ns:fkDbSchema>
-                </ns:fk>
-            </ns:column>
-            <ns:column columnName="Created">
-                <ns:columnTitle>Created</ns:columnTitle>
-                <ns:inputType>text</ns:inputType>
-                <ns:formatString>DateTime</ns:formatString>
-                <ns:inputLength>23</ns:inputLength>
-                <ns:isReadOnly>true</ns:isReadOnly>
-            </ns:column>
-            <ns:column columnName="ModifiedBy">
-                <ns:datatype>int</ns:datatype>
-                <ns:columnTitle>Modified By</ns:columnTitle>
-                <ns:inputType>text</ns:inputType>
-                <ns:inputLength>10</ns:inputLength>
-                <ns:isReadOnly>true</ns:isReadOnly>
-                <ns:fk>
-                    <ns:fkColumnName>UserId</ns:fkColumnName>
-                    <ns:fkTable>Users</ns:fkTable>
-                    <ns:fkDbSchema>core</ns:fkDbSchema>
-                </ns:fk>
-            </ns:column>
-            <ns:column columnName="Container"/>
-            <ns:column columnName="Modified">
-                <ns:columnTitle>Modified</ns:columnTitle>
-                <ns:inputType>text</ns:inputType>
-                <ns:formatString>DateTime</ns:formatString>
-                <ns:inputLength>23</ns:inputLength>
-                <ns:isReadOnly>true</ns:isReadOnly>
-            </ns:column>
-            <ns:column columnName="FeedName">
-                <ns:columnTitle>Feed Name</ns:columnTitle>
-                <ns:description>Friendly name for this feed</ns:description>
-                <ns:inputType>text</ns:inputType>
-            </ns:column>
-            <ns:column columnName="FeedURL">
-                <ns:columnTitle>Feed URL</ns:columnTitle>
-                <ns:description>The feed's source URL</ns:description>
-                <ns:inputType>text</ns:inputType>
-            </ns:column>
-            <ns:column columnName="LastRead">
-                <ns:columnTitle>Last Read</ns:columnTitle>
-                <ns:description>The last date the Feed URL was read</ns:description>
-                <ns:isHidden>true</ns:isHidden>
-                <ns:inputType>text</ns:inputType>
-                <ns:formatString>DateTime</ns:formatString>
-                <ns:isReadOnly>true</ns:isReadOnly>
-            </ns:column>
-            <ns:column columnName="Content">
-                <ns:columnTitle>Content</ns:columnTitle>
-                <ns:isHidden>true</ns:isHidden>
-                <ns:inputType>text</ns:inputType>
-                <ns:isReadOnly>true</ns:isReadOnly>
-            </ns:column>
-        </ns:columns>
-    </ns:table>
-    <ns:table tableName="Tours" tableDbType="TABLE">
-      <ns:description>Contains data for user tours.</ns:description>
-      <ns:columns>
-        <ns:column columnName="RowId">
-          <ns:description>Unique ID of the tour.</ns:description>
-        </ns:column>
-        <ns:column columnName="Title">
-          <ns:description>Title displayed to user.</ns:description>
-        </ns:column>
-        <ns:column columnName="Description">
-        </ns:column>
-        <ns:column columnName="Container">
-        </ns:column>
-        <ns:column columnName="EntityId">
-        </ns:column>
-        <ns:column columnName="Created">
-        </ns:column>
-        <ns:column columnName="CreatedBy">
-        </ns:column>
-        <ns:column columnName="Modified">
-        </ns:column>
-        <ns:column columnName="ModifiedBy">
-        </ns:column>
-        <ns:column columnName="Json">
-          <ns:description>JSON containing the tour steps.</ns:description>
-        </ns:column>
-        <ns:column columnName="Mode">
-          <ns:description>Tour mode (0)Off, (1)Show Once, (2)Always Show</ns:description>
-        </ns:column>
-      </ns:columns>
-    </ns:table>
-</ns:tables>
+<tables xsi:schemaLocation="http://cpas.fhcrc.org/data/xml ..\..\..\..\schemas\tableInfo.xsd" xmlns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <table tableName="Announcements" tableDbType="TABLE">
+    <columns>
+      <column columnName="RowId">
+        <columnTitle>Row Id</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>10</inputLength>
+        <nullable>false</nullable>
+        <isReadOnly>true</isReadOnly>
+        <isKeyField>true</isKeyField>
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="EntityId">
+          <isHidden>true</isHidden>
+          <description>GUID that uniquely identifies this row</description>
+      </column>
+      <column columnName="CreatedBy">
+        <datatype>int</datatype>
+        <columnTitle>Created By</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>10</inputLength>
+        <isReadOnly>true</isReadOnly>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="Created">
+        <columnTitle>Created</columnTitle>
+        <inputType>text</inputType>
+        <formatString>DateTime</formatString>
+        <inputLength>23</inputLength>
+        <isReadOnly>true</isReadOnly>
+      </column>
+      <column columnName="ModifiedBy">
+        <datatype>int</datatype>
+        <columnTitle>Modified By</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>10</inputLength>
+        <isReadOnly>true</isReadOnly>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="Modified">
+        <columnTitle>Modified</columnTitle>
+        <inputType>text</inputType>
+        <formatString>DateTime</formatString>
+        <inputLength>23</inputLength>
+        <isReadOnly>true</isReadOnly>
+      </column>
+      <column columnName="AssignedTo">
+        <datatype>int</datatype>
+        <inputType>text</inputType>
+        <inputLength>10</inputLength>
+        <isReadOnly>false</isReadOnly>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="Container"/>
+      <column columnName="Parent">
+          <description>EntityId of top-level announcement to which this is a reply, or null if this is a top-level posting</description>
+      </column>
+      <column columnName="Title">
+        <columnTitle>Title</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>40</inputLength>
+        <isReadOnly>false</isReadOnly>
+      </column>
+      <column columnName="Expires">
+        <columnTitle>Expires</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>23</inputLength>
+        <isReadOnly>false</isReadOnly>
+      </column>
+      <column columnName="Body">
+        <columnTitle>Body</columnTitle>
+        <inputType>textarea</inputType>
+        <scale>1073741823</scale>
+        <inputLength>60</inputLength>
+        <isReadOnly>false</isReadOnly>
+      </column>
+      <column columnName="RendererType">
+        <columnTitle>RendererType</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>50</inputLength>
+        <isReadOnly>false</isReadOnly>
+      </column>
+      <column columnName="Status">
+        <displayWidth>20</displayWidth>
+      </column>
+      <column columnName="DiscussionSrcIdentifier">
+          <description>EntityId of the object to which this announcement is attached. Null for rows that are part of the default forum for the container</description>
+      </column>
+      <column columnName="DiscussionSrcURL">
+          <description>URL to the display the object to which this message is attached. Always null for rows that are part of the default forum for the container</description>
+      </column>
+      <column columnName="LastIndexed">
+          <isReadOnly>true</isReadOnly>
+          <isUserEditable>false</isUserEditable>
+          <description>When this row was last indexed by the full-text search service</description>
+      </column>
+    </columns>
+    <tableTitle>Announcements</tableTitle>
+    <pkColumnName>RowId</pkColumnName>
+    <versionColumnName>Modified</versionColumnName>
+    <titleColumn>Title</titleColumn>
+  </table>
+  <table tableName="Pages" tableDbType="TABLE">
+    <columns>
+      <column columnName="RowId">
+        <columnTitle>Row Id</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>10</inputLength>
+        <nullable>false</nullable>
+        <isReadOnly>true</isReadOnly>
+        <isKeyField>true</isKeyField>
+      </column>
+      <column columnName="EntityId">
+        <datatype>uniqueidentifier</datatype>
+        <columnTitle>Entity Id</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>36</inputLength>
+        <nullable>true</nullable>
+        <isReadOnly>true</isReadOnly>
+      </column>
+      <column columnName="CreatedBy">
+        <datatype>int</datatype>
+        <columnTitle>Created By</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>10</inputLength>
+        <isReadOnly>true</isReadOnly>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="Created">
+        <columnTitle>Created</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>23</inputLength>
+        <isReadOnly>true</isReadOnly>
+      </column>
+      <column columnName="ModifiedBy">
+        <datatype>int</datatype>
+        <columnTitle>Modified By</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>10</inputLength>
+        <isReadOnly>true</isReadOnly>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="Modified">
+        <columnTitle>Modified</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>23</inputLength>
+        <isReadOnly>true</isReadOnly>
+      </column>
+      <column columnName="Owner">
+        <datatype>int</datatype>
+        <columnTitle>Owner</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>10</inputLength>
+        <isReadOnly>false</isReadOnly>
+      </column>
+      <column columnName="Container">
+        <datatype>nvarchar</datatype>
+        <columnTitle>Container</columnTitle>
+        <inputType>text</inputType>
+        <scale>255</scale>
+        <inputLength>40</inputLength>
+        <nullable>true</nullable>
+        <isReadOnly>false</isReadOnly>
+      </column>
+      <column columnName="Name">
+        <columnTitle>Name</columnTitle>
+        <inputType>text</inputType>
+        <scale>195</scale>
+        <inputLength>40</inputLength>
+        <nullable>true</nullable>
+        <isReadOnly>false</isReadOnly>
+      </column>
+      <column columnName="Parent"/>
+      <column columnName="DisplayOrder"/>
+      <column columnName="PageVersionId"/>
+      <column columnName="ShowAttachments"/>
+      <column columnName="LastIndexed">
+        <isReadOnly>true</isReadOnly>
+      </column>
+      <column columnName="ShouldIndex">
+        <isHidden>true</isHidden>
+      </column>
+    </columns>
+    <tableTitle>Pages</tableTitle>
+    <pkColumnName>RowId</pkColumnName>
+    <versionColumnName>Modified</versionColumnName>
+    <titleColumn>EntityId</titleColumn>
+  </table>
+  <table tableName="PageVersions" tableDbType="TABLE">
+    <columns>
+      <column columnName="RowId">
+        <nullable>false</nullable>
+        <isReadOnly>true</isReadOnly>
+        <isKeyField>true</isKeyField>
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="PageEntityId"/>
+      <column columnName="CreatedBy">
+        <datatype>int</datatype>
+        <columnTitle>Created By</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>10</inputLength>
+        <isReadOnly>true</isReadOnly>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="Created">
+        <formatString>DateTime</formatString>
+      </column>
+      <column columnName="Owner"/>
+      <column columnName="Version">
+          <url>org.labkey.wiki.WikiController$VersionAction.class?name=${PageEntityId/Name}&amp;version=${Version}</url>
+      </column>
+      <column columnName="Title"/>
+      <column columnName="Body"/>
+      <column columnName="RendererType"/>
+    </columns>
+  </table>
+  <table tableName="PagePaths" tableDbType="VIEW">
+    <columns>
+      <column columnName="RowId">
+        <columnTitle>Row Id</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>10</inputLength>
+        <nullable>false</nullable>
+        <isReadOnly>true</isReadOnly>
+        <isKeyField>true</isKeyField>
+      </column>
+      <column columnName="EntityId">
+        <datatype>uniqueidentifier</datatype>
+        <columnTitle>Entity Id</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>36</inputLength>
+        <nullable>true</nullable>
+        <isReadOnly>true</isReadOnly>
+      </column>
+      <column columnName="CreatedBy">
+        <datatype>int</datatype>
+        <columnTitle>Created By</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>10</inputLength>
+        <isReadOnly>true</isReadOnly>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="Created">
+        <columnTitle>Created</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>23</inputLength>
+        <isReadOnly>true</isReadOnly>
+      </column>
+      <column columnName="ModifiedBy">
+        <datatype>int</datatype>
+        <columnTitle>Modified By</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>10</inputLength>
+        <isReadOnly>true</isReadOnly>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="Modified">
+        <columnTitle>Modified</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>23</inputLength>
+        <isReadOnly>true</isReadOnly>
+      </column>
+      <column columnName="Owner">
+        <datatype>int</datatype>
+        <columnTitle>Owner</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>10</inputLength>
+        <isReadOnly>false</isReadOnly>
+      </column>
+      <column columnName="Container">
+        <datatype>nvarchar</datatype>
+        <columnTitle>Container</columnTitle>
+        <inputType>text</inputType>
+        <scale>255</scale>
+        <inputLength>40</inputLength>
+        <nullable>true</nullable>
+        <isReadOnly>false</isReadOnly>
+      </column>
+      <column columnName="Name">
+        <columnTitle>Name</columnTitle>
+        <inputType>text</inputType>
+        <scale>195</scale>
+        <inputLength>40</inputLength>
+        <nullable>true</nullable>
+        <isReadOnly>false</isReadOnly>
+      </column>
+      <column columnName="Path">
+        <isReadOnly>true</isReadOnly>
+      </column>
+      <column columnName="PathParts">
+        <isReadOnly>true</isReadOnly>
+      </column>
+      <column columnName="Depth">
+        <isReadOnly>true</isReadOnly>
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="Parent"/>
+      <column columnName="DisplayOrder"/>
+      <column columnName="PageVersionId"/>
+      <column columnName="ShowAttachments"/>
+      <column columnName="LastIndexed">
+        <isReadOnly>true</isReadOnly>
+      </column>
+      <column columnName="ShouldIndex">
+        <isHidden>true</isHidden>
+      </column>
+    </columns>
+    <tableTitle>PagePaths</tableTitle>
+    <pkColumnName>RowId</pkColumnName>
+    <versionColumnName>Modified</versionColumnName>
+    <titleColumn>EntityId</titleColumn>
+  </table>
+  <table tableName="CurrentWikiVersions" tableDbType="VIEW">
+    <description>Contains one row per wiki page joined to its most current wiki version</description>
+    <tableUrl>/wiki/page.view?name=${Name}</tableUrl>
+    <columns>
+      <column columnName="RowId">
+        <nullable>false</nullable>
+        <isReadOnly>true</isReadOnly>
+        <isKeyField>true</isKeyField>
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="Container">
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="Name">
+        <url>/wiki/page.view?name=${Name}</url>
+      </column>
+      <column columnName="Path">
+        <url>/wiki/page.view?name=${Part}</url>
+        <displayColumnFactory>
+          <className>org.labkey.wiki.query.PathDisplayColumn$Factory</className>
+        </displayColumnFactory>
+      </column>
+      <column columnName="PathParts">
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="Depth">
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="Title"/>
+      <column columnName="Version">
+        <url>/wiki/version.view?name=${Name}&amp;version=${Version}</url>
+      </column>
+      <column columnName="Body">
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="CreatedBy"/>
+      <column columnName="Created">
+        <formatString>DateTime</formatString>
+      </column>
+      <column columnName="ModifiedBy"/>
+      <column columnName="Modified">
+        <formatString>DateTime</formatString>
+      </column>
+    </columns>
+  </table>
+  <table tableName="AllWikiVersions" tableDbType="VIEW">
+    <description>Contains one row per wiki version joined to its parent wiki page, providing the full version history of all pages</description>
+    <tableUrl>/wiki/version.view?name=${Name}&amp;version=${Version}</tableUrl>
+    <columns>
+      <column columnName="RowId">
+        <nullable>false</nullable>
+        <isReadOnly>true</isReadOnly>
+        <isKeyField>true</isKeyField>
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="Container">
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="Name">
+        <url>/wiki/page.view?name=${Name}</url>
+      </column>
+      <column columnName="Path">
+        <displayColumnFactory>
+          <className>org.labkey.wiki.query.PathDisplayColumn$Factory</className>
+        </displayColumnFactory>
+      </column>
+      <column columnName="PathParts">
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="Depth">
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="Title"/>
+      <column columnName="Version">
+        <url>/wiki/version.view?name=${Name}&amp;version=${Version}</url>
+      </column>
+      <column columnName="Body">
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="CreatedBy"/>
+      <column columnName="Created">
+        <formatString>DateTime</formatString>
+      </column>
+      <column columnName="ModifiedBy"/>
+      <column columnName="Modified">
+        <formatString>DateTime</formatString>
+      </column>
+    </columns>
+  </table>
+  <table tableName="EmailFormats" tableDbType="TABLE">
+    <description>Contains one row per email format option (HTML/plain text)</description>
+    <columns>
+      <column columnName="EmailFormatId"/>
+      <column columnName="EmailFormat"/>
+    </columns>
+  </table>
+  <table tableName="EmailOptions" tableDbType="TABLE">
+    <description>Contains one row per subscription type, such as all messages in a given forum, no email at all, etc and daily digest options</description>
+      <columns>
+      <column columnName="EmailOptionId"/>
+      <column columnName="EmailOption"/>
+      <column columnName="Type"/>
+    </columns>
+  </table>
+  <table tableName="PageTypes" tableDbType="TABLE">
+    <columns>
+      <column columnName="PageTypeId"/>
+      <column columnName="PageType"/>
+    </columns>
+  </table>
+  <table tableName="EmailPrefs" tableDbType="TABLE">
+    <description>Contains one row per user-specific subscription</description>
+    <columns>
+      <column columnName="Container"/>
+      <column columnName="UserId"/>
+      <column columnName="Type"/>
+      <column columnName="EmailOptionId"/>
+      <column columnName="EmailFormatId"/>
+      <column columnName="PageTypeId"/>
+      <column columnName="LastModifiedBy"/>
+      <column columnName="SrcIdentifier"/>
+    </columns>
+  </table>
+  <table tableName="UserList" tableDbType="TABLE">
+      <description>Contains one row per user-specific thread-level subscription.</description>
+    <columns>
+      <column columnName="MessageId"/>
+      <column columnName="UserId"/>
+    </columns>
+  </table>
+  <table tableName="Threads" tableDbType="VIEW">
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="EntityId"/>
+      <column columnName="CreatedBy">
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="Created">
+        <formatString>DateTime</formatString>
+        <displayWidth>150</displayWidth>
+      </column>
+      <column columnName="ResponseCreatedBy">
+        <columnTitle>Most Recent Post By</columnTitle>
+        <displayWidth>150</displayWidth>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="ResponseCreated">
+        <columnTitle>Most Recent Post</columnTitle>
+        <formatString>DateTime</formatString>
+        <displayWidth>150</displayWidth>
+      </column>
+      <column columnName="AssignedTo">
+        <displayWidth>150</displayWidth>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="Container"/>
+      <column columnName="Title">
+        <displayWidth>300</displayWidth>
+        <url>org.labkey.announcements.AnnouncementsController$ThreadAction.class?rowId=${RowId}</url>
+      </column>
+      <column columnName="Body"/>
+      <column columnName="RendererType"/>
+      <column columnName="Expires">
+        <displayWidth>100</displayWidth>
+      </column>
+      <column columnName="Status">
+        <displayWidth>20</displayWidth>
+      </column>
+      <column columnName="LatestId"/>
+      <column columnName="discussionsrcidentifier"/>
+      <column columnName="discussionsrcurl"/>
+      <column columnName="ResponseCount"/>
+        <column columnName="Modified">
+          <columnTitle>Modified</columnTitle>
+          <inputType>text</inputType>
+          <inputLength>23</inputLength>
+          <isReadOnly>true</isReadOnly>
+        </column>
+      <column columnName="LastIndexed">
+        <isReadOnly>true</isReadOnly>
+      </column>
+    </columns>
+    <pkColumnName>RowId</pkColumnName>
+  </table>
+    <table tableName="RSSFeeds" tableDbType="TABLE">
+        <columns>
+            <column columnName="RowId">
+                <columnTitle>Row Id</columnTitle>
+                <inputType>text</inputType>
+                <inputLength>10</inputLength>
+                <nullable>false</nullable>
+                <isReadOnly>true</isReadOnly>
+                <isKeyField>true</isKeyField>
+                <isHidden>true</isHidden>
+            </column>
+            <column columnName="EntityId">
+                <isHidden>true</isHidden>
+                <description>GUID that uniquely identifies this row</description>
+            </column>
+            <column columnName="CreatedBy">
+                <datatype>int</datatype>
+                <columnTitle>Created By</columnTitle>
+                <inputType>text</inputType>
+                <inputLength>10</inputLength>
+                <isReadOnly>true</isReadOnly>
+                <fk>
+                    <fkColumnName>UserId</fkColumnName>
+                    <fkTable>Users</fkTable>
+                    <fkDbSchema>core</fkDbSchema>
+                </fk>
+            </column>
+            <column columnName="Created">
+                <columnTitle>Created</columnTitle>
+                <inputType>text</inputType>
+                <formatString>DateTime</formatString>
+                <inputLength>23</inputLength>
+                <isReadOnly>true</isReadOnly>
+            </column>
+            <column columnName="ModifiedBy">
+                <datatype>int</datatype>
+                <columnTitle>Modified By</columnTitle>
+                <inputType>text</inputType>
+                <inputLength>10</inputLength>
+                <isReadOnly>true</isReadOnly>
+                <fk>
+                    <fkColumnName>UserId</fkColumnName>
+                    <fkTable>Users</fkTable>
+                    <fkDbSchema>core</fkDbSchema>
+                </fk>
+            </column>
+            <column columnName="Container"/>
+            <column columnName="Modified">
+                <columnTitle>Modified</columnTitle>
+                <inputType>text</inputType>
+                <formatString>DateTime</formatString>
+                <inputLength>23</inputLength>
+                <isReadOnly>true</isReadOnly>
+            </column>
+            <column columnName="FeedName">
+                <columnTitle>Feed Name</columnTitle>
+                <description>Friendly name for this feed</description>
+                <inputType>text</inputType>
+            </column>
+            <column columnName="FeedURL">
+                <columnTitle>Feed URL</columnTitle>
+                <description>The feed's source URL</description>
+                <inputType>text</inputType>
+            </column>
+            <column columnName="LastRead">
+                <columnTitle>Last Read</columnTitle>
+                <description>The last date the Feed URL was read</description>
+                <isHidden>true</isHidden>
+                <inputType>text</inputType>
+                <formatString>DateTime</formatString>
+                <isReadOnly>true</isReadOnly>
+            </column>
+            <column columnName="Content">
+                <columnTitle>Content</columnTitle>
+                <isHidden>true</isHidden>
+                <inputType>text</inputType>
+                <isReadOnly>true</isReadOnly>
+            </column>
+        </columns>
+    </table>
+    <table tableName="Tours" tableDbType="TABLE">
+      <description>Contains data for user tours.</description>
+      <columns>
+        <column columnName="RowId">
+          <description>Unique ID of the tour.</description>
+        </column>
+        <column columnName="Title">
+          <description>Title displayed to user.</description>
+        </column>
+        <column columnName="Description">
+        </column>
+        <column columnName="Container">
+        </column>
+        <column columnName="EntityId">
+        </column>
+        <column columnName="Created">
+        </column>
+        <column columnName="CreatedBy">
+        </column>
+        <column columnName="Modified">
+        </column>
+        <column columnName="ModifiedBy">
+        </column>
+        <column columnName="Json">
+          <description>JSON containing the tour steps.</description>
+        </column>
+        <column columnName="Mode">
+          <description>Tour mode (0)Off, (1)Show Once, (2)Always Show</description>
+        </column>
+      </columns>
+    </table>
+</tables>
