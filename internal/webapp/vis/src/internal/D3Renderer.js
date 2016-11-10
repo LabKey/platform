@@ -426,7 +426,14 @@ LABKEY.vis.internal.Axis = function() {
             hasOverlap = false;
             for (i = 0; i < textEls[0].length - 1; i++) {
                 bBoxA = textEls[0][i].getBBox();
+
+                // find the next visible x-axis tick label to check for overlap of the bounding box
                 bBoxB = textEls[0][i + 1].getBBox();
+                while (bBoxB.x <= 0 && i < textEls[0].length - 2) {
+                    i++;
+                    bBoxB = textEls[0][i + 1].getBBox();
+                }
+
                 if (bBoxB.x > 0 && bBoxA.x + bBoxA.width >= bBoxB.x) {
                     hasOverlap = true;
                     break;

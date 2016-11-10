@@ -18,6 +18,7 @@ package org.labkey.api.data.triggers;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
@@ -25,6 +26,7 @@ import org.labkey.api.script.ScriptReference;
 import org.labkey.api.util.UnexpectedException;
 
 import javax.script.ScriptException;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -62,13 +64,13 @@ import java.util.Map;
     @Override
     public void init(TableInfo table, Container c, TableInfo.TriggerType event, BatchValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(c, "init", errors, extraContext, event.name().toLowerCase());
+        invokeTableScript(table, c, "init", errors, extraContext, event.name().toLowerCase());
     }
 
     @Override
     public void complete(TableInfo table, Container c, TableInfo.TriggerType event, BatchValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(c, "complete", errors, extraContext, event.name().toLowerCase());
+        invokeTableScript(table, c, "complete", errors, extraContext, event.name().toLowerCase());
     }
 
 
@@ -77,7 +79,7 @@ import java.util.Map;
                              @Nullable Map<String, Object> newRow,
                              ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
-        invokeTableScript(c, "beforeInsert", errors, extraContext, newRow);
+        invokeTableScript(table, c, "beforeInsert", errors, extraContext, newRow);
     }
 
     @Override
@@ -85,7 +87,7 @@ import java.util.Map;
                              @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
                              ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
-        invokeTableScript(c, "beforeUpdate", errors, extraContext, newRow, oldRow);
+        invokeTableScript(table, c, "beforeUpdate", errors, extraContext, newRow, oldRow);
     }
 
     @Override
@@ -93,7 +95,7 @@ import java.util.Map;
                              @Nullable Map<String, Object> oldRow,
                              ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
-        invokeTableScript(c, "beforeDelete", errors, extraContext, oldRow);
+        invokeTableScript(table, c, "beforeDelete", errors, extraContext, oldRow);
     }
 
     @Override
@@ -101,7 +103,7 @@ import java.util.Map;
                             @Nullable Map<String, Object> newRow,
                             ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
-        invokeTableScript(c, "afterInsert", errors, extraContext, newRow);
+        invokeTableScript(table, c, "afterInsert", errors, extraContext, newRow);
     }
 
     @Override
@@ -109,7 +111,7 @@ import java.util.Map;
                             @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
                             ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
-        invokeTableScript(c, "afterUpdate", errors, extraContext, newRow, oldRow);
+        invokeTableScript(table, c, "afterUpdate", errors, extraContext, newRow, oldRow);
     }
 
     @Override
@@ -117,28 +119,35 @@ import java.util.Map;
                             @Nullable Map<String, Object> oldRow,
                             ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
-        invokeTableScript(c, "afterDelete", errors, extraContext, oldRow);
+        invokeTableScript(table, c, "afterDelete", errors, extraContext, oldRow);
     }
 
-    protected void invokeTableScript(Container c, String methodName, BatchValidationException errors, Map<String, Object> extraContext, Object... args)
+
+    protected void invokeTableScript(TableInfo table, Container c, String methodName, BatchValidationException errors, Map<String, Object> extraContext, Object... args)
     {
         Object[] allArgs = Arrays.copyOf(args, args.length+1);
         allArgs[allArgs.length-1] = errors;
-        Boolean success = invokeTableScript(c, Boolean.class, methodName, extraContext, allArgs);
+        Boolean success = _invokeTableScript(c, Boolean.class, methodName, extraContext, allArgs);
         if (success != null && !success)
             errors.addRowError(new ValidationException(methodName + " validation failed"));
+        if (isConnectionClosed(table.getSchema().getScope()))
+            errors.addRowError(new ValidationException("script error: " + methodName + " trigger closed the connection, possibly due to constraint violation"));
     }
 
-    protected void invokeTableScript(Container c, String methodName, ValidationException errors, Map<String, Object> extraContext, Object... args)
+
+    protected void invokeTableScript(TableInfo table, Container c, String methodName, ValidationException errors, Map<String, Object> extraContext, Object... args)
     {
         Object[] allArgs = Arrays.copyOf(args, args.length+1);
         allArgs[allArgs.length-1] = errors;
-        Boolean success = invokeTableScript(c, Boolean.class, methodName, extraContext, allArgs);
+        Boolean success = _invokeTableScript(c, Boolean.class, methodName, extraContext, allArgs);
         if (success != null && !success)
             errors.addGlobalError(methodName + " validation failed");
+        if (isConnectionClosed(table.getSchema().getScope()))
+            errors.addGlobalError("script error: " + methodName + " trigger closed the connection, possibly due to constraint violation");
     }
 
-    protected <T> T invokeTableScript(Container c, Class<T> resultType, String methodName, Map<String, Object> extraContext, Object... args)
+
+    private <T> T _invokeTableScript(Container c, Class<T> resultType, String methodName, Map<String, Object> extraContext, Object... args)
     {
         try
         {
@@ -167,4 +176,19 @@ import java.util.Map;
         return null;
     }
 
+
+    private boolean isConnectionClosed(DbScope scope)
+    {
+        DbScope.Transaction tx = scope.getCurrentTransaction();
+        if (null == tx)
+            return false;
+        try
+        {
+            return tx.getConnection().isClosed();
+        }
+        catch (SQLException x)
+        {
+            return true;
+        }
+    }
 }

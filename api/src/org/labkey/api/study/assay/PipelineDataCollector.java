@@ -168,6 +168,29 @@ import java.util.Map;
         return true;
     }
 
+    // When importing via pipeline, the file is already on the server so return the path of that file
+    @Nullable
+    @Override
+    protected File getFilePath(ContextType context, @Nullable ExpRun run, File tempDirFile) throws ExperimentException
+    {
+        Map<String, File> files = getFileQueue(context).get(0);
+        for (File file : files.values())
+        {
+            if(file.getName().equals(tempDirFile.getName()))
+                return file;
+        }
+
+        return null;
+    }
+
+    // Default case in AbstractTempDirDataCollector is to create a copy of the input file to the assayData directory.
+    // We already have the input file on the server so don't need to make a copy.
+    @Override
+    protected void handleTempFile(File tempDirFile, File assayDirFile) throws IOException
+    {
+        // Do not move the file
+    }
+
     public Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
     {
         Map<String, File> result = super.uploadComplete(context, run);

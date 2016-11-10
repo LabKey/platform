@@ -196,6 +196,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     private boolean differ(PropertyDescriptor pd, DomainProperty dp, Container c)
     {
         return dp.getScale() != pd.getScale()
+                || !dp.getRangeURI().equals(pd.getRangeURI())
 //                || !dp.getLabel().equals(pd.getLabel())
 //                || dp.isRequired() != pd.isRequired()
 //                || dp.isHidden() != pd.isHidden()
@@ -208,7 +209,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
     private void copyTo(DomainProperty dp, PropertyDescriptor pd, Container c)
     {
-        dp.setType(PropertyService.get().getType(c, pd.getPropertyURI()));
+        dp.setRangeURI(pd.getRangeURI());
         dp.setLabel(pd.getLabel());
         dp.setRequired(pd.isRequired());
         dp.setHidden(pd.isHidden());

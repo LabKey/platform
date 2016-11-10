@@ -186,13 +186,14 @@ public class AuthFilter implements Filter
             else
                 UserManager.updateActiveUser(user);
 
-            req = new AuthenticatedRequest(req, user);
+            req = AuthenticatedRequest.create(req, user);
 
             if (null != e)
             {
                 // Render unauthorized impersonation exception so admin knows what's going on
                 ExceptionUtil.handleException(req, resp, e, null, false);
                 SecurityManager.stopImpersonating(req, e.getFactory());    // Needs to happen after rendering exception page, otherwise session gets messed up
+                ((AuthenticatedRequest)req).close();
                 return;
             }
         }
@@ -211,6 +212,7 @@ public class AuthFilter implements Filter
             
             // Clear all the request attributes that have been set. This helps memtracker.  See #10747.
             assert clearRequestAttributes(req);
+            ((AuthenticatedRequest)req).close();
         }
     }
 

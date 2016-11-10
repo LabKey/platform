@@ -16,6 +16,7 @@
 package org.labkey.api.study.assay;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
@@ -40,6 +41,8 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
 {
     protected boolean _uploadComplete = false;
     private static final String TMPFILE = "tmp";
+
+    private static final Logger LOG = Logger.getLogger(AbstractTempDirDataCollector.class);
 
     private void removeTempDir(ContextType context) throws ExperimentException
     {
@@ -157,6 +160,20 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
         }
     }
 
+    // This is the default case to get a unique file name in the assayData directory for the primary file
+    @Nullable
+    protected File getFilePath(ContextType context, @Nullable ExpRun run, File tempDirFile) throws ExperimentException
+    {
+        File assayDir = ensureUploadDirectory(context.getContainer());
+        return findUniqueFileName(tempDirFile.getName(), assayDir);
+    }
+
+    // This is the default case to move the primary file from the temp directory to the assayData directory
+    protected void handleTempFile(File tempDirFile, File assayDirFile) throws IOException
+    {
+        FileUtils.moveFile(tempDirFile, assayDirFile);
+    }
+
     public Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
     {
         Map<File, String> fileToName = new HashMap<>();
@@ -176,33 +193,41 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
             File tempDir = getFileTargetDir(context);
             for (File tempDirFile : tempDir.listFiles())
             {
-                File assayDirFile = findUniqueFileName(tempDirFile.getName(), assayDir);
-                String uploadName = fileToName.get(tempDirFile);
-                if (uploadName != null)
+                File assayDirFile = getFilePath(context, run, tempDirFile);
+                if(assayDirFile != null)
                 {
-                    result.put(uploadName, assayDirFile);
-                }
-                for (ExpData expData : allData)
-                {
-                    if (tempDirFile.equals(expData.getFile()))
+                    String uploadName = fileToName.get(tempDirFile);
+                    if (uploadName != null)
                     {
-                        expData.setDataFileURI(assayDirFile.toURI());
-                        expData.save(context.getUser());
+                        result.put(uploadName, assayDirFile);
                     }
+                    for (ExpData expData : allData)
+                    {
+                        if (tempDirFile.equals(expData.getFile()))
+                        {
+                            expData.setDataFileURI(assayDirFile.toURI());
+                            expData.save(context.getUser());
+                        }
+                    }
+                    if (run != null)
+                    {
+                        // Fixup the path in the run itself so that it's not pointed at the temp directory
+                        run.setFilePathRoot(assayDir);
+
+                        // If the run name is the filename, and the filename was changed to another unique value, change the run name.
+                        if (run.getName().equals(tempDirFile.getName()))
+                        {
+                            run.setName(getPreferredAssayId(assayDirFile));
+                        }
+
+                        run.save(context.getUser());
+                    }
+                    handleTempFile(tempDirFile, assayDirFile);
                 }
-                if (run != null)
+                else
                 {
-                    // Fixup the path in the run itself so that it's not pointed at the temp directory
-                    run.setFilePathRoot(assayDir);
-
-                    // If the run name is the filename, and the filename was changed to another unique value, change the run name.
-                    if (run.getName().equals(tempDirFile.getName()) ) {
-                        run.setName(getPreferredAssayId(assayDirFile));
-                    }
-
-                    run.save(context.getUser());
+                    LOG.warn("Unable to resolve import/upload file location for file: " + tempDirFile);
                 }
-                FileUtils.moveFile(tempDirFile, assayDirFile);
             }
             FileUtils.deleteDirectory(tempDir);
         }

@@ -29,6 +29,7 @@ import java.io.File;
 public class SessionTempFileHolder implements HttpSessionBindingListener
 {
     private final File file;
+    private boolean deleted = false;
 
     public SessionTempFileHolder(File file)
     {
@@ -40,6 +41,12 @@ public class SessionTempFileHolder implements HttpSessionBindingListener
         return file;
     }
 
+    public boolean delete()
+    {
+        deleted = true;
+        return this.file.delete();
+    }
+
     public void valueBound(HttpSessionBindingEvent event)
     {
         // nothing to do
@@ -47,6 +54,7 @@ public class SessionTempFileHolder implements HttpSessionBindingListener
 
     public void valueUnbound(HttpSessionBindingEvent event)
     {
-        file.delete();
+        if (!deleted)
+            file.delete();
     }
 }

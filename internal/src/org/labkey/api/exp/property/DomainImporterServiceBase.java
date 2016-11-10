@@ -44,6 +44,7 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
     /** The number of sample data rows to return **/
     private static final int NUM_SAMPLE_ROWS = 5;
 
+    protected  SessionTempFileHolder _sessionFileHolder;
     protected File _importFile;
     private int _numSampleRows = NUM_SAMPLE_ROWS;
 
@@ -58,9 +59,8 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
         // Retrieve the file from the session now, so we can delete it later. If we're importing in a background thread,
         // we won't have a session at the end of import.
         HttpSession session = getViewContext().getSession();
-        SessionTempFileHolder fileHolder = (SessionTempFileHolder)session.getAttribute("org.labkey.domain.tempFile");
-        
-        _importFile = (null == fileHolder ? null : fileHolder.getFile());
+        _sessionFileHolder = (SessionTempFileHolder)session.getAttribute("org.labkey.domain.tempFile");
+        _importFile = (null == _sessionFileHolder ? null : _sessionFileHolder.getFile());
     }
 
     public List<InferencedColumn> inferenceColumns() throws GWTImportException
@@ -82,20 +82,11 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
 
     protected void deleteImportFile()
     {
-        try
-        {
-            //noinspection ResultOfMethodCallIgnored
-            getImportFile().delete();
-            HttpSession session = getViewContext().getRequest().getSession(false);
-
-            // No session if we're running in a background thread
-            if (null != session)
-                session.removeAttribute("org.labkey.domain.tempFile");
-        }
-        catch (GWTImportException ie)
-        {
-            // Nothing to do here -- we don't care if we couldn't find the file
-        }
+        assert null == _sessionFileHolder || null == _importFile || _importFile == _sessionFileHolder.getFile();
+        if (null != _sessionFileHolder)
+            _sessionFileHolder.delete();
+        else if (null != _importFile)
+            _importFile.delete();
     }
 
     @NotNull

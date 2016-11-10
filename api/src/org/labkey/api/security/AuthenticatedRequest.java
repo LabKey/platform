@@ -28,7 +28,9 @@ import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SessionHelper;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpSession;
@@ -53,7 +55,7 @@ import java.util.concurrent.TimeUnit;
  * Date: Feb 5, 2009
  * Time: 8:51:07 AM
  */
-public class AuthenticatedRequest extends HttpServletRequestWrapper
+public class AuthenticatedRequest extends HttpServletRequestWrapper implements AutoCloseable
 {
     private static final Logger _log = Logger.getLogger(AuthenticatedRequest.class);
 
@@ -61,6 +63,12 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
     boolean _loggedIn = false;
     private HttpSession _session = null;
 
+    public static AuthenticatedRequest create(@NotNull HttpServletRequest request, @NotNull User user)
+    {
+        if (AuthenticatedRequest.class.desiredAssertionStatus() || _log.isDebugEnabled())
+            return new AuthenticatedRequestDebug(request, user);
+        return new AuthenticatedRequest(request, user);
+    }
 
     public AuthenticatedRequest(@NotNull HttpServletRequest request, @NotNull User user)
     {
@@ -69,6 +77,10 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
         _loggedIn = !_user.isGuest();
     }
 
+    @Override
+    public void close()
+    {
+    }
 
     public Principal getUserPrincipal()
     {
@@ -174,7 +186,13 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
         {
             HttpSession s = AuthenticatedRequest.super.getSession(true);
             if (null == s)
-                return null;
+            {
+                ServletRequest inner = null;
+                try { inner = getInnermostRequest(); } catch (Exception x){}
+                if (null == inner)
+                    inner = getRequest();
+                throw new NullPointerException("Request.getSession(true) returned null: " + inner.getClass().getName());
+            }
             if (s.isNew())
             {
                 _log.debug("Created HttpSession: " + s.getId() + " " + _user.getEmail());
@@ -552,6 +570,241 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
         synchronized boolean isActive()
         {
             return _accessedTime[0] != 0;
+        }
+    }
+
+
+
+    private static class AuthenticatedRequestDebug extends AuthenticatedRequest
+    {
+        // for debugging
+        private final Thread _allocationThread;
+        private boolean _closed = false;
+
+        AuthenticatedRequestDebug(HttpServletRequest request, User user)
+        {
+            super(request, user);
+            _allocationThread = Thread.currentThread();
+        }
+
+
+        @Override
+        public void close()
+        {
+            checkClosed();
+            _closed = true;
+        }
+
+        private boolean checkClosed()
+        {
+            if (_closed)
+            {
+                if (_allocationThread != Thread.currentThread())
+                    throw new IllegalStateException("Using request closed by a different thread");
+                else
+                    throw new IllegalStateException("Requset has been closed");
+            }
+            return true;
+        }
+
+        @Override
+        public void setAttribute(String name, Object o)
+        {
+            checkClosed();
+            super.setAttribute(name, o);
+        }
+
+        @Override
+        public HttpSession getSession(boolean create)
+        {
+            checkClosed();
+            final HttpSession s = super.getSession(create);
+            if (null == s)
+                return null;
+            return new HttpSession()
+            {
+                @Override
+                public long getCreationTime()
+                {
+                    checkClosed();
+                    return s.getCreationTime();
+                }
+
+                @Override
+                public String getId()
+                {
+                    checkClosed();
+                    return s.getId();
+                }
+
+                @Override
+                public long getLastAccessedTime()
+                {
+                    checkClosed();
+                    return getLastAccessedTime();
+                }
+
+                @Override
+                public ServletContext getServletContext()
+                {
+                    checkClosed();
+                    return getServletContext();
+                }
+
+                @Override
+                public void setMaxInactiveInterval(int i)
+                {
+                    checkClosed();
+                    setMaxInactiveInterval(i);
+                }
+
+                @Override
+                public int getMaxInactiveInterval()
+                {
+                    checkClosed();
+                    return getMaxInactiveInterval();
+                }
+
+                @Override
+                public HttpSessionContext getSessionContext()
+                {
+                    checkClosed();
+                    return s.getSessionContext();
+                }
+
+                @Override
+                public Object getAttribute(String a)
+                {
+                    checkClosed();
+                    return s.getAttribute(a);
+                }
+
+                @Override
+                public Object getValue(String v)
+                {
+                    checkClosed();
+                    return s.getValue(v);
+                }
+
+                @Override
+                public Enumeration<String> getAttributeNames()
+                {
+                    checkClosed();
+                    return s.getAttributeNames();
+                }
+
+                @Override
+                public String[] getValueNames()
+                {
+                    checkClosed();
+                    return s.getValueNames();
+                }
+
+                @Override
+                public void setAttribute(String a, Object o)
+                {
+                    checkClosed();
+                    s.setAttribute(a,o);
+                }
+
+                @Override
+                public void putValue(String v, Object o)
+                {
+                    checkClosed();
+                    s.putValue(v,o);
+                }
+
+                @Override
+                public void removeAttribute(String a)
+                {
+                    checkClosed();
+                    s.removeAttribute(a);
+                }
+
+                @Override
+                public void removeValue(String v)
+                {
+                    checkClosed();
+                    s.removeValue(v);
+                }
+
+                @Override
+                public void invalidate()
+                {
+                    checkClosed();
+                    s.invalidate();
+                }
+
+                @Override
+                public boolean isNew()
+                {
+                    checkClosed();
+                    return s.isNew();
+                }
+            };
+        }
+
+        @Override
+        public String getRequestURI()
+        {
+            checkClosed();
+            return super.getRequestURI();
+        }
+
+        @Override
+        public StringBuffer getRequestURL()
+        {
+            checkClosed();
+            return super.getRequestURL();
+        }
+
+        @Override
+        public Object getAttribute(String name)
+        {
+            checkClosed();
+            return super.getAttribute(name);
+        }
+
+        @Override
+        public String getParameter(String name)
+        {
+            checkClosed();
+            return super.getParameter(name);
+        }
+
+        @Override
+        public Map<String, String[]> getParameterMap()
+        {
+            checkClosed();
+            return super.getParameterMap();
+        }
+
+        @Override
+        public Enumeration<String> getParameterNames()
+        {
+            checkClosed();
+            return super.getParameterNames();
+        }
+
+        @Override
+        public String[] getParameterValues(String name)
+        {
+            checkClosed();
+            return super.getParameterValues(name);
+        }
+
+        @Override
+        public void removeAttribute(String name)
+        {
+            checkClosed();
+            super.removeAttribute(name);
+        }
+
+        @Override
+        public RequestDispatcher getRequestDispatcher(String path)
+        {
+            checkClosed();
+            return super.getRequestDispatcher(path);
         }
     }
 }

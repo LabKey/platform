@@ -152,7 +152,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     @Override
     public Object getDisplayValue(RenderContext ctx)
     {
-        return getDisplayValues(ctx).stream().map(Object::toString).collect(Collectors.joining(", "));
+        return getDisplayValues(ctx).stream().map(o -> o == null ? " " : o.toString()).collect(Collectors.joining(", "));
     }
 
     @Override

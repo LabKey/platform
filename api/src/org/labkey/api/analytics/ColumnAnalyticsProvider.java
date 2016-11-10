@@ -80,9 +80,10 @@ public abstract class ColumnAnalyticsProvider implements AnalyticsProvider, Comp
         Integer a = this.getSortOrder();
         Integer b = o.getSortOrder();
 
+        // if the sort order Integer values match, sort by name
         if ((a == null && b == null) || (a != null && a.equals(b)))
             return this.getName().compareTo(o.getName());
-        else
-            return a != null ? a.compareTo(b) : 1;
+
+        return b == null ? -1 : (a == null ? 1 : a.compareTo(b));
     }
 }
