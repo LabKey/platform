@@ -11,8 +11,11 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
     width: 900,
     height: 525,
     isDeveloper: false,
+    renderType: null,
     defaultChartLabel: null,
     defaultOpacity: null,
+    defaultLineWidth: null,
+    isSavedReport: false,
 
     initComponent : function()
     {
@@ -35,9 +38,9 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
 
         // on show, stash the initial values so we can use for comparison and cancel reset
         this.initValues = {};
-        this.on('show', function(panel, selectedChartType) {
+        this.on('show', function(panel, selectedChartType, measures) {
             this.initValues = this.getValues();
-            this.updateVisibleLayoutOptions(selectedChartType);
+            this.updateVisibleLayoutOptions(selectedChartType, measures);
         }, this);
     },
 
@@ -52,7 +55,14 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                 cardClass: 'LABKEY.vis.GenericChartOptionsPanel',
                 config: {
                     defaultChartLabel: this.defaultChartLabel,
-                    defaultOpacity: this.defaultOpacity
+                    defaultOpacity: this.defaultOpacity,
+                    defaultLineWidth: this.defaultLineWidth,
+                    listeners: {
+                        scope: this,
+                        chartLayoutChange: function(newChartLayout) {
+                            this.onChartLayoutChange(newChartLayout != 'single');
+                        }
+                    }
                 }
             },{
                 name: 'x',
@@ -61,7 +71,9 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                 layoutOptions: 'axisBased',
                 cardClass: 'LABKEY.vis.GenericChartAxisPanel',
                 config: {
-                    axisName: 'x'
+                    axisName: 'x',
+                    multipleCharts: this.multipleCharts,
+                    isSavedReport: this.isSavedReport
                 }
             },{
                 name: 'y',
@@ -70,7 +82,20 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                 layoutOptions: 'axisBased',
                 cardClass: 'LABKEY.vis.GenericChartAxisPanel',
                 config: {
-                    axisName: 'y'
+                    axisName: 'y',
+                    multipleCharts: this.multipleCharts,
+                    isSavedReport: this.isSavedReport
+                }
+            },{
+                name: 'yRight',
+                cardId: 'card-4',
+                label: 'Y-Axis (Right)',
+                layoutOptions: 'axisBased',
+                cardClass: 'LABKEY.vis.GenericChartAxisPanel',
+                config: {
+                    axisName: 'yRight',
+                    multipleCharts: this.multipleCharts,
+                    isSavedReport: this.isSavedReport
                 }
             }];
 
@@ -79,13 +104,12 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                 data.push({
                     name: 'developer',
                     label: 'Developer',
-                    cardId: 'card-4',
-                    layoutOptions: 'point',
+                    cardId: 'card-5',
+                    layoutOptions: ['point', 'time'],
                     cardClass: 'LABKEY.vis.DeveloperOptionsPanel',
                     config: {
                         isDeveloper: this.isDeveloper,
-                        defaultPointClickFn: this.getDefaultPointClickFn(),
-                        pointClickFnHelp: this.getPointClickFnHelp()
+                        renderType: this.renderType
                     }
                 });
             }
@@ -281,7 +305,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
         }
     },
 
-    updateVisibleLayoutOptions : function(selectedChartType)
+    updateVisibleLayoutOptions : function(selectedChartType, measures)
     {
         // allow the selected chart type to dictate which layout options are visible
         var chartTypeLayoutOptions = selectedChartType != null && Ext4.isObject(selectedChartType.layoutOptions) ? selectedChartType.layoutOptions : null;
@@ -291,30 +315,78 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
             {
                 // hide/show the whole center panel based on if it has a specific layoutOption type
                 var navRecord = this.getNavigationPanel().getStore().findRecord('cardId', panel.itemId),
-                    includeLayoutPanel = (panel.layoutOptions == null || chartTypeLayoutOptions[panel.layoutOptions]) || false;
+                    includeLayoutPanel = (panel.layoutOptions == null || this.hasMatchingLayoutOption(chartTypeLayoutOptions, panel.layoutOptions)) || false;
+
+                // special case for axis based panels to hide/show based on selected measures
+                if (includeLayoutPanel && panel.hasOwnProperty('axisName'))
+                    includeLayoutPanel = this.shouldIncludeAxisPanel(selectedChartType, measures, panel.axisName);
+
                 panel.setDisabled(!includeLayoutPanel);
                 navRecord.set('visible', includeLayoutPanel);
+
+                this.updateNavPanelTitle(selectedChartType, measures, navRecord);
 
                 // hide/show individual panel items based on their specific layoutOption type
                 if (panel.getInputFields)
                 {
                     Ext4.each(panel.getInputFields(), function(inputField)
                     {
-                        var includeLayoutField;
-                        if (inputField.hideForDatatype) {
-                            includeLayoutField = false;
-                        } else {
-                            includeLayoutField = !Ext4.isString(inputField.layoutOptions) || chartTypeLayoutOptions[inputField.layoutOptions];
-                        }
+                        var includeLayoutField = inputField.hideForDatatype ? false : this.hasMatchingLayoutOption(chartTypeLayoutOptions, inputField.layoutOptions);
                         inputField.setVisible(includeLayoutField);
-
-                        //If the component has an explicit 'disabledButVisible: true' property, show the component, but in a disabled state
-                        inputField.disabledButVisible ? inputField.setDisabled(inputField.disabledButVisible) : inputField.setDisabled(!includeLayoutField);
-
                     }, this);
                 }
             }, this);
         }
+    },
+
+    shouldIncludeAxisPanel : function(selectedChartType, measures, axisName)
+    {
+        if (selectedChartType.name == 'time_chart')
+        {
+            var sides = LABKEY.vis.TimeChartHelper.getDistinctYAxisSides(measures),
+                showX = axisName == 'x',
+                showLeft = axisName == 'y' && sides.indexOf('left') > -1,
+                showRight = axisName == 'yRight' && sides.indexOf('right') > -1;
+
+            return showX || showLeft || showRight;
+        }
+        else
+        {
+            return Ext4.Object.getKeys(measures).indexOf(axisName) > -1;
+        }
+    },
+
+    updateNavPanelTitle : function(selectedChartType, measures, navRecord)
+    {
+        // for time charts, if both y-axis sides are in use, update the labels to make it clear
+        if (selectedChartType.name == 'time_chart' && (navRecord.get('name') == 'y' || navRecord.get('name') == 'yRight'))
+        {
+            var sides = LABKEY.vis.TimeChartHelper.getDistinctYAxisSides(measures),
+                label = sides.length == 2 ? '(' + (navRecord.get('name') == 'y' ? 'Left' : 'Right') + ')' : '';
+            navRecord.set('label', 'Y-Axis ' + label);
+        }
+    },
+
+    hasMatchingLayoutOption : function(expectedOptionsMap, layoutOptions)
+    {
+        if (Ext4.isString(layoutOptions))
+        {
+            return expectedOptionsMap.hasOwnProperty(layoutOptions) && expectedOptionsMap[layoutOptions];
+        }
+        else if (Ext4.isArray(layoutOptions))
+        {
+            var includeLayoutField = false;
+            Ext4.each(layoutOptions, function(fieldLayoutOption) {
+                if (expectedOptionsMap[fieldLayoutOption])
+                {
+                    includeLayoutField = true;
+                    return false; // break
+                }
+            });
+            return includeLayoutField;
+        }
+
+        return true;
     },
 
     getValues : function()
@@ -367,51 +439,26 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
         }
     },
 
-    getDefaultPointClickFn : function()
+    onChartSubjectSelectionChange : function(asGroups)
     {
-        return "function (data, measureInfo, clickEvent) {\n"
-            + "   // use LABKEY.ActionURL.buildURL to generate a link\n"
-            + "   // to a different controller/action within LabKey server\n"
-            + "   var queryHref = LABKEY.ActionURL.buildURL('query', 'executeQuery',\n"
-            + "                      LABKEY.container.path, {\n"
-            + "                          schemaName: measureInfo[\"schemaName\"],\n"
-            + "                          \"query.queryName\": measureInfo[\"queryName\"]\n"
-            + "                      }\n"
-            + "                   );\n\n"
-            + "   // display an Ext message box with some information from the function parameters\n"
-            + "   var info = 'Schema: ' + measureInfo[\"schemaName\"]\n"
-            + "       + '<br/> Query: <a href=\"' + queryHref + '\">'\n"
-            + "       + measureInfo[\"queryName\"] + '</a>';\n"
-            + "   for (var key in measureInfo)\n"
-            + "   {\n"
-            + "       if (measureInfo.hasOwnProperty(key) && data[measureInfo[key]])\n"
-            + "       {\n"
-            + "           info += '<br/>' + measureInfo[key] + ': '\n"
-            + "                + (data[measureInfo[key]].displayValue\n"
-            + "                   ? data[measureInfo[key]].displayValue\n"
-            + "                   : data[measureInfo[key]].value);\n"
-            + "       }\n"
-            + "   }\n"
-            + "   Ext4.Msg.alert('Data Point Information', info);\n\n"
-            + "   // you could also directly navigate away from the chart using window.location\n"
-            + "   // window.location = queryHref;\n"
-            + "}";
+        // give each of the layout options tabs a chance to update on subject selection change
+        for (var i = 0; i < this.getNavigationPanel().getStore().getCount(); i++)
+        {
+            var generalOptionsPanel = this.getCenterPanel().getLayout().getLayoutItems()[i];
+            if (generalOptionsPanel.onChartSubjectSelectionChange)
+                generalOptionsPanel.onChartSubjectSelectionChange(asGroups);
+        }
     },
 
-    getPointClickFnHelp : function()
+    onChartLayoutChange : function(multipleCharts)
     {
-        return 'Your code should define a single function to be called when a data point in the chart is clicked. '
-            + 'The function will be called with the following parameters:<br/>'
-            + '<ul>'
-            + '<li><b>data:</b> the set of data values for the selected data point. Example: </li>'
-            + '<div style="margin-left: 40px;">{</div>'
-            + '<div style="margin-left: 60px;">YAxisMeasure: {displayValue: "250", value: 250},<br/>XAxisMeasure: {displayValue: "0.45", value: 0.45000},<br/>ColorMeasure: {value: "Color Value 1"},<br/>PointMeasure: {value: "Point Value 1"}</div>'
-            + '<div style="margin-left: 40px;">}</div>'
-            + '<li><b>measureInfo:</b> the schema name, query name, and measure names selected for the plot. Example:</li>'
-            + '<div style="margin-left: 40px;">{</div>'
-            + '<div style="margin-left: 60px;">schemaName: "study",<br/>queryName: "Dataset1",<br/>yAxis: "YAxisMeasure",<br/>xAxis: "XAxisMeasure",<br/>colorName: "ColorMeasure",<br/>pointName: "PointMeasure"</div>'
-            + '<div style="margin-left: 40px;">}</div>'
-            + '<li><b>clickEvent:</b> information from the browser about the click event (i.e. target, position, etc.)</li></ul>';
+        // give each of the layout options tabs a chance to update on chart layout change
+        for (var i = 0; i < this.getNavigationPanel().getStore().getCount(); i++)
+        {
+            var generalOptionsPanel = this.getCenterPanel().getLayout().getLayoutItems()[i];
+            if (generalOptionsPanel.onChartLayoutChange)
+                generalOptionsPanel.onChartLayoutChange(multipleCharts);
+        }
     }
 });
 

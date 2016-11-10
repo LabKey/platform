@@ -1,29 +1,34 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
         <script path="vis/chartWizardWindow.js"/>
+        <script path="vis/chartFilterPanel.js"/>
+        <script path="vis/chartLayoutPanel.js"/>
+        <script path="vis/chartWizardPanel.css"/>
+
         <script path="vis/genericOptionsPanel.js"/>
-        <script path="vis/mainTitleOptionsPanel.js"/>
         <script path="vis/developerOptionsPanel.js"/>
         <script path="vis/saveOptionsPanel.js"/>
         <script path="vis/baseExportScriptPanel.js"/>
-        <script path="vis/chartFilterPanel.js"/>
 
         <script path="vis/timeChart/initialMeasurePanel.js"/>
         <script path="vis/timeChart/measureOptionsPanel.js"/>
         <script path="vis/timeChart/baseAxisOptionsPanel.js"/>
-        <script path="vis/timeChart/yAxisOptionsPanel.js"/>
         <script path="vis/timeChart/xAxisOptionsPanel.js"/>
-        <script path="vis/timeChart/groupingOptionsPanel.js"/>
-        <script path="vis/timeChart/aestheticOptionsPanel.js"/>
         <script path="vis/timeChart/timeChartHelper.js"/>
         <script path="vis/timeChart/timeChartScriptPanel.js"/>
         <script path="vis/timeChart/timeChartPanel.js"/>
+
+        <script path="vis/genericChart/genericChartHelper.js"/>
+        <script path="vis/genericChart/genericChartOptionsPanel.js"/>
+        <script path="vis/genericChart/genericChartAxisPanel.js"/>
     </library>
     <dependencies>
         <dependency path="Ext4ClientApi"/>
         <dependency path="vis/vis"/>
         <dependency path="codemirror"/>
-        <dependency path="study/MeasurePicker.js"/> <!-- Required by timeChartPanel.js -->
-        <dependency path="study/ParticipantFilter"/> <!-- Required by timeChartPanel.js -->
+
+        <!-- Required by timeChartPanel.js -->
+        <dependency path="study/MeasurePicker.js"/>
+        <dependency path="study/ParticipantFilter"/>
     </dependencies>
 </libraries>

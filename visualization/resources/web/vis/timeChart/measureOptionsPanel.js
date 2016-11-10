@@ -1103,16 +1103,6 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         return label;
     },
 
-    getDefaultTitle: function(){
-        var title = "";
-        Ext4.each(this.measures, function(m){
-            var measureQueryLabel = m.measure.queryLabel || m.queryName;
-            if (title.indexOf(measureQueryLabel) == -1)
-                title += (title.length > 0 ? ", " : "") + measureQueryLabel;
-        });
-        return title;
-    },
-
     getPanelOptionValues : function() {
         return {
             dataFilterUrl: this.dataFilterUrl,

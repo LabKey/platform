@@ -57,7 +57,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     {name: 'color', label: 'Color', nonNumericOnly: true},
                     {name: 'shape', label: 'Shape', nonNumericOnly: true}
                 ],
-                layoutOptions: {point: true, box: false, line: false, opacity: true, axisBased: true, binnable: true}
+                layoutOptions: {point: true, opacity: true, axisBased: true, binnable: true}
             },
             {
                 name: 'time_chart',
@@ -77,7 +77,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     },
                     {name: 'y', label: 'Y Axis', required: true, numericOnly: true, allowMultiple: true}
                 ],
-                layoutOptions: {time: true}
+                layoutOptions: {time: true, axisBased: true}
             }
         ];
     };
@@ -125,6 +125,37 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     /**
+     * Generate a plot title based on the selected measures array or object.
+     * @param renderType
+     * @param measures
+     * @returns {string}
+     */
+    var getTitleFromMeasures = function(renderType, measures)
+    {
+        var queryLabels = [];
+
+        if (Ext4.isObject(measures))
+        {
+            if (Ext4.isArray(measures.y))
+            {
+                Ext4.each(measures.y, function(m)
+                {
+                    var measureQueryLabel = m.queryLabel || m.queryName;
+                    if (queryLabels.indexOf(measureQueryLabel) == -1)
+                        queryLabels.push(measureQueryLabel);
+                });
+            }
+            else
+            {
+                var m = measures.x || measures.y;
+                queryLabels.push(m.queryLabel || m.queryName);
+            }
+        }
+
+        return queryLabels.join(', ');
+    };
+
+    /**
      * Given the saved labels object we convert it to include all label types (main, x, and y). Each label type defaults
      * to empty string ('').
      * @param {Object} labels The saved labels object.
@@ -164,9 +195,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         var scales = {};
         var data = responseData.rows;
         var fields = responseData.metaData.fields;
-
-        var studyCtx = _getStudyModuleContext();
-        var subjectColumn = Ext4.isDefined(studyCtx.subject) ? studyCtx.subject.columnName : 'ParticipantId';
+        var subjectColumn = getStudySubjectInfo().columnName;
 
         if (chartType === "box_plot")
         {
@@ -204,7 +233,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         else
         {
             var xMeasureType = getMeasureType(measures.x);
-            if (_isNumericType(xMeasureType))
+            if (isNumericType(xMeasureType))
             {
                 scales.x = {
                     scaleType: 'continuous',
@@ -224,13 +253,12 @@ LABKEY.vis.GenericChartHelper = new function(){
                 scaleType: 'continuous',
                 trans: savedScales.y ? savedScales.y.trans : 'linear'
             };
-
         }
 
         for (var i = 0; i < fields.length; i++) {
             var type = fields[i].displayFieldJsonType ? fields[i].displayFieldJsonType : fields[i].type;
 
-            if (_isNumericType(type)) {
+            if (isNumericType(type)) {
                 if (measures.x && fields[i].name == measures.x.name) {
                     if (fields[i].extFormatFn) {
                         scales.x.tickFormat = eval(fields[i].extFormatFn);
@@ -278,14 +306,14 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         if(chartType == "box_plot" && !measures.x)
             aes.x = generateMeasurelessAcc(queryName);
-        else if (_isNumericType(xMeasureType))
+        else if (isNumericType(xMeasureType))
             aes.x = generateContinuousAcc(measures.x.name);
         else
             aes.x = generateDiscreteAcc(measures.x.name, measures.x.label);
 
         if (measures.y)
         {
-            if (_isNumericType(yMeasureType))
+            if (isNumericType(yMeasureType))
                 aes.y = generateContinuousAcc(measures.y.name);
             else
                 aes.y = generateDiscreteAcc(measures.y.name, measures.y.label);
@@ -856,8 +884,9 @@ LABKEY.vis.GenericChartHelper = new function(){
         return measure ? (measure.normalizedType || measure.type) : null;
     };
 
-    var _isNumericType = function(type) {
-        var t = type.toLowerCase();
+    var isNumericType = function(type)
+    {
+        var t = Ext4.isString(type) ? type.toLowerCase() : null;
         return t == 'int' || t == 'integer' || t == 'float' || t == 'double';
     };
 
@@ -865,6 +894,17 @@ LABKEY.vis.GenericChartHelper = new function(){
     {
         var studyCtx = _getStudyModuleContext();
         return Ext4.isDefined(studyCtx.timepointType) ? studyCtx.timepointType : null;
+    };
+
+    var getStudySubjectInfo = function()
+    {
+        var studyCtx = _getStudyModuleContext();
+        return Ext4.isObject(studyCtx.subject) ? studyCtx.subject : {
+            tableName: 'Participant',
+            columnName: 'ParticipantId',
+            nounPlural: 'Participants',
+            nounSingular: 'Participant'
+        };
     };
 
     var _getStudyModuleContext = function()
@@ -882,8 +922,11 @@ LABKEY.vis.GenericChartHelper = new function(){
         getRenderTypes: getRenderTypes,
         getChartType: getChartType,
         getStudyTimepointType: getStudyTimepointType,
+        getStudySubjectInfo: getStudySubjectInfo,
         getSelectedMeasureLabel: getSelectedMeasureLabel,
+        getTitleFromMeasures: getTitleFromMeasures,
         getMeasureType: getMeasureType,
+        isNumericType: isNumericType,
         generateLabels: generateLabels,
         generateScales: generateScales,
         generateAes: generateAes,

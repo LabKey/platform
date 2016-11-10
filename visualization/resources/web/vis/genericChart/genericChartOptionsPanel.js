@@ -9,32 +9,230 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     layout: 'column',
 
+    defaultLabelWidth: 95,
     pointType: 'outliers',
     defaultOpacity: null,
     defaultChartLabel: null,
     defaultColorPaletteScale: 'ColorDiscrete',
+    defaultLineWidth: null,
+    userEditedLabel: false,
     userEditedSubtitle: false,
     userEditedFooter: false,
 
-    initComponent : function() {
+    initComponent : function()
+    {
+        this.defineGeneralOptions();
+        this.defineLineOptions();
+        this.definePointOptions();
+        this.defineBoxOptions();
+        this.defineOpacityOptions();
+        this.definePieOptions();
+        this.defineBinningOptions();
+        this.defineTimeOptions();
 
-        var labelWidth = 95;
+        this.items = [{
+            columnWidth: 0.5,
+            border: false,
+            padding: '0 20px 0 0',
+            items: this.getColumnOneFields()
+        },{
+            columnWidth: 0.5,
+            border: false,
+            items: this.getColumnTwoFields()
+        }];
 
+        this.callParent();
+
+        this.addEvents('chartLayoutChange');
+    },
+
+    defineGeneralOptions : function()
+    {
         this.labelBox = Ext4.create('Ext.form.field.Text', {
             name: 'label',
             getInputValue: this.getLabel,
             fieldLabel: 'Title',
-            labelWidth: labelWidth,
+            labelWidth: this.defaultLabelWidth,
             width: 275,
             padding: '0 0 10px 0',
+            enableKeyEvents: true,
             value: this.defaultChartLabel
         });
+        this.labelBox.addListener('keyup', function(){
+            this.userEditedLabel = this.labelBox.getValue() != '';
+        }, this, {buffer: 500});
 
+        this.widthBox = Ext4.create('Ext.form.field.Number', {
+            name: 'width',
+            getInputValue: this.getWidth,
+            fieldLabel: 'Width',
+            labelWidth: this.defaultLabelWidth,
+            width: 275,
+            padding: '0 0 10px 0',
+            allowDecimals: false,
+            minValue: 250,
+            step: 50
+        });
+
+        this.heightBox = Ext4.create('Ext.form.field.Number', {
+            name: 'height',
+            getInputValue: this.getHeight,
+            fieldLabel: 'Height',
+            labelWidth: this.defaultLabelWidth,
+            width: 275,
+            padding: '0 0 10px 0',
+            allowDecimals: false,
+            minValue: 250,
+            step: 50
+        });
+    },
+
+    defineLineOptions : function()
+    {
+        this.lineColorLabel = Ext4.create('Ext.form.Label', {
+            width: this.defaultLabelWidth,
+            cls: 'option-label',
+            style: 'position: absolute;',
+            text: 'Line Color:',
+            layoutOptions: 'line'
+        });
+
+        this.lineColorPicker = Ext4.create('Ext.picker.Color', {
+            name: 'lineColor',
+            getInputValue: this.getLineColor,
+            value: '000000',  // initial selected color
+            width: 280,
+            padding: '0 0 0 100px',
+            layoutOptions: 'line'
+        });
+
+        this.fillColorLabel = Ext4.create('Ext.form.Label', {
+            width: this.defaultLabelWidth,
+            cls: 'option-label',
+            style: 'position: absolute;',
+            text: 'Fill Color:',
+            layoutOptions: 'line'
+        });
+
+        this.fillColorPicker = Ext4.create('Ext.picker.Color', {
+            name: 'boxFillColor',
+            getInputValue: this.getFillColor,
+            value: '3366FF',  // initial selected color
+            width: 280,
+            padding: '0 0 0 100px',
+            layoutOptions: 'line'
+        });
+
+        this.lineWidthSlider = Ext4.create('Ext.slider.Single', {
+            name: 'lineWidth',
+            getInputValue: this.getLineWidth,
+            labelWidth: this.defaultLabelWidth,
+            fieldLabel: 'Line Width',
+            width: 270,
+            padding: '0 0 10px 0',
+            layoutOptions: ['line', 'time'],
+            value: this.defaultLineWidth || 1,
+            increment: 1,
+            minValue: 1,
+            maxValue: 10
+        });
+    },
+
+    definePointOptions : function()
+    {
+        this.jitterCheckbox = Ext4.create('Ext.form.field.Checkbox', {
+            name: 'position',
+            getInputValue: this.getPosition,
+            fieldLabel: 'Jitter Points',
+            labelWidth: this.defaultLabelWidth,
+            padding: '0 0 10px 0',
+            layoutOptions: 'point',
+            value: this.position == 'jitter'
+        });
+
+        this.pointSizeSlider = Ext4.create('Ext.slider.Single', {
+            name: 'pointSize',
+            getInputValue: this.getPointSize,
+            labelWidth: this.defaultLabelWidth,
+            fieldLabel: 'Point Size',
+            width: 270,
+            padding: '0 0 10px 0',
+            layoutOptions: 'point',
+            value: 5,
+            increment: 1,
+            minValue: 1,
+            maxValue: 10
+        });
+
+        this.colorLabel = Ext4.create('Ext.form.Label', {
+            width: this.defaultLabelWidth,
+            cls: 'option-label',
+            style: 'position: absolute;',
+            text: 'Point Color:',
+            layoutOptions: 'point'
+        });
+
+        this.pointColorPicker = Ext4.create('Ext.picker.Color', {
+            name: 'pointFillColor',
+            getInputValue: this.getPointColor,
+            value: '3366FF',  // initial selected color
+            width: 280,
+            padding: '0 0 0 100px',
+            layoutOptions: 'point'
+        });
+    },
+
+    defineBoxOptions : function()
+    {
+        this.pointTypeCombo = Ext4.create('Ext.form.ComboBox', {
+            name: 'pointType',
+            getInputValue: this.getPointType,
+            fieldLabel: 'Show Points',
+            store: Ext4.create('Ext.data.Store', {
+                fields: ['pointType', 'label'],
+                data: [
+                    {pointType: 'outliers', label: 'Outliers Only'},
+                    {pointType: 'all', label: 'All'},
+                    {pointType: 'none', label: 'None'}
+                ]
+            }),
+            labelWidth: this.defaultLabelWidth,
+            width: 275,
+            padding: '0 0 10px 0',
+            layoutOptions: 'box',
+            queryMode: 'local',
+            editable: false,
+            forceSelection: true,
+            displayField: 'label',
+            valueField: 'pointType',
+            value: this.pointType
+        });
+    },
+
+    defineOpacityOptions : function()
+    {
+        this.opacitySlider = Ext4.create('Ext.slider.Single', {
+            name: 'opacity',
+            getInputValue: this.getOpacity,
+            labelWidth: this.defaultLabelWidth,
+            fieldLabel: 'Opacity',
+            width: 270,
+            padding: '0 0 10px 0',
+            layoutOptions: 'opacity',
+            value: this.defaultOpacity || 50,
+            increment: 5,
+            minValue: 10,
+            maxValue: 100
+        });
+    },
+
+    definePieOptions : function()
+    {
         this.subtitleBox = Ext4.create('Ext.form.field.Text', {
             name: 'subtitle',
             getInputValue: this.getSubtitle,
             fieldLabel: 'Subtitle',
-            labelWidth: labelWidth,
+            labelWidth: this.defaultLabelWidth,
             width: 275,
             padding: '0 0 10px 0',
             enableKeyEvents: true,
@@ -48,7 +246,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             name: 'footer',
             getInputValue: this.getFooter,
             fieldLabel: 'Footer',
-            labelWidth: labelWidth,
+            labelWidth: this.defaultLabelWidth,
             width: 275,
             padding: '0 0 10px 0',
             enableKeyEvents: true,
@@ -57,30 +255,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.footerBox.addListener('keyup', function(){
             this.userEditedFooter = this.footerBox.getValue() != '';
         }, this, {buffer: 500});
-
-        this.widthBox = Ext4.create('Ext.form.field.Number', {
-            name: 'width',
-            getInputValue: this.getWidth,
-            fieldLabel: 'Width',
-            labelWidth: labelWidth,
-            width: 275,
-            padding: '0 0 10px 0',
-            allowDecimals: false,
-            minValue: 250,
-            step: 50
-        });
-
-        this.heightBox = Ext4.create('Ext.form.field.Number', {
-            name: 'height',
-            getInputValue: this.getHeight,
-            fieldLabel: 'Height',
-            labelWidth: labelWidth,
-            width: 275,
-            padding: '0 0 10px 0',
-            allowDecimals: false,
-            minValue: 250,
-            step: 50
-        });
 
         this.showPiePercentagesCheckBox = Ext4.create('Ext.form.field.Checkbox', {
             name: 'showPiePercentages',
@@ -107,7 +281,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         });
 
         this.piePercentagesColorLabel = Ext4.create('Ext.form.Label', {
-            width: labelWidth,
+            width: this.defaultLabelWidth,
             cls: 'option-label',
             style: 'position: absolute;',
             text: 'Percentages Color:',
@@ -126,7 +300,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.gradientSlider = Ext4.create('Ext.slider.Single', {
             name: 'gradientPercentage',
             getInputValue: this.getGradientPercentage,
-            labelWidth: labelWidth,
+            labelWidth: this.defaultLabelWidth,
             fieldLabel: 'Gradient %',
             width: 270,
             padding: '0 0 10px 0',
@@ -138,7 +312,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         });
 
         this.gradientColorLabel = Ext4.create('Ext.form.Label', {
-            width: labelWidth,
+            width: this.defaultLabelWidth,
             cls: 'option-label',
             style: 'position: absolute;',
             text: 'Gradient Color:',
@@ -168,7 +342,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             name: 'colorPaletteScale',
             fieldLabel: 'Color palette',
             getInputValue: this.getColorPalette,
-            labelWidth: labelWidth,
+            labelWidth: this.defaultLabelWidth,
             width: 275,
             layoutOptions: 'pie',
             editable: false,
@@ -214,140 +388,15 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             minValue: 0,
             maxValue: 100
         });
+    },
 
-        this.jitterCheckbox = Ext4.create('Ext.form.field.Checkbox', {
-            name: 'position',
-            getInputValue: this.getPosition,
-            fieldLabel: 'Jitter Points',
-            labelWidth: labelWidth,
-            padding: '0 0 10px 0',
-            layoutOptions: 'point',
-            value: this.position == 'jitter'
-        });
-
-        this.opacitySlider = Ext4.create('Ext.slider.Single', {
-            name: 'opacity',
-            getInputValue: this.getOpacity,
-            labelWidth: labelWidth,
-            fieldLabel: 'Opacity',
-            width: 270,
-            padding: '0 0 10px 0',
-            layoutOptions: 'opacity',
-            value: this.defaultOpacity || 50,
-            increment: 5,
-            minValue: 10,
-            maxValue: 100
-        });
-
-        this.pointSizeSlider = Ext4.create('Ext.slider.Single', {
-            name: 'pointSize',
-            getInputValue: this.getPointSize,
-            labelWidth: labelWidth,
-            fieldLabel: 'Point Size',
-            width: 270,
-            padding: '0 0 10px 0',
-            layoutOptions: 'point',
-            value: 5,
-            increment: 1,
-            minValue: 1,
-            maxValue: 10
-        });
-
-        this.colorLabel = Ext4.create('Ext.form.Label', {
-            width: labelWidth,
-            cls: 'option-label',
-            style: 'position: absolute;',
-            text: 'Point Color:',
-            layoutOptions: 'point'
-        });
-
-        this.pointColorPicker = Ext4.create('Ext.picker.Color', {
-            name: 'pointFillColor',
-            getInputValue: this.getPointColor,
-            value: '3366FF',  // initial selected color
-            width: 280,
-            padding: '0 0 0 100px',
-            layoutOptions: 'point'
-        });
-
-        this.lineColorLabel = Ext4.create('Ext.form.Label', {
-            width: labelWidth,
-            cls: 'option-label',
-            style: 'position: absolute;',
-            text: 'Line Color:',
-            layoutOptions: 'line'
-        });
-
-        this.lineColorPicker = Ext4.create('Ext.picker.Color', {
-            name: 'lineColor',
-            getInputValue: this.getLineColor,
-            value: '000000',  // initial selected color
-            width: 280,
-            padding: '0 0 0 100px',
-            layoutOptions: 'line'
-        });
-
-        this.fillColorLabel = Ext4.create('Ext.form.Label', {
-            width: labelWidth,
-            cls: 'option-label',
-            style: 'position: absolute;',
-            text: 'Fill Color:',
-            layoutOptions: 'line'
-        });
-
-        this.fillColorPicker = Ext4.create('Ext.picker.Color', {
-            name: 'boxFillColor',
-            getInputValue: this.getFillColor,
-            value: '3366FF',  // initial selected color
-            width: 280,
-            padding: '0 0 0 100px',
-            layoutOptions: 'line'
-        });
-
-        this.lineWidthSlider = Ext4.create('Ext.slider.Single', {
-            name: 'lineWidth',
-            getInputValue: this.getLineWidth,
-            labelWidth: labelWidth,
-            fieldLabel: 'Line Width',
-            width: 270,
-            padding: '0 0 10px 0',
-            layoutOptions: 'line',
-            value: 1,
-            increment: 1,
-            minValue: 1,
-            maxValue: 10
-        });
-
-        this.pointTypeCombo = Ext4.create('Ext.form.ComboBox', {
-            name: 'pointType',
-            getInputValue: this.getPointType,
-            fieldLabel: 'Show Points',
-            store: Ext4.create('Ext.data.Store', {
-                fields: ['pointType', 'label'],
-                data: [
-                    {pointType: 'outliers', label: 'Outliers Only'},
-                    {pointType: 'all', label: 'All'},
-                    {pointType: 'none', label: 'None'}
-                ]
-            }),
-            labelWidth: labelWidth,
-            width: 275,
-            padding: '0 0 10px 0',
-            layoutOptions: 'box',
-            queryMode: 'local',
-            editable: false,
-            forceSelection: true,
-            displayField: 'label',
-            valueField: 'pointType',
-            value: this.pointType
-        });
-
-
+    defineBinningOptions : function()
+    {
         this.binFieldContainer = Ext4.create('Ext.form.FieldContainer', {
             fieldLabel: '',
             name: 'binThreshold',
             layoutOptions: 'binnable',
-            labelWidth: labelWidth,
+            labelWidth: this.defaultLabelWidth,
             getInputValue: this.getBinThreshold,
             layout: 'hbox',
             padding: '0 0 10px 0',
@@ -381,20 +430,11 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             fieldLabel: 'Bin Shape',
             getInputValue: this.getBinShape,
             columns: 1,
+            padding: '0 0 10px 0',
             layoutOptions: 'binnable',
             items: [
-                    Ext4.create('Ext.form.field.Radio', {
-                        width: 100,
-                        boxLabel: 'Hexagon',
-                        inputValue: 'hex',
-                        name: 'binShape',
-                        checked: true
-                    }),
-                    Ext4.create('Ext.form.field.Radio', {
-                        boxLabel: 'Square',
-                        inputValue: 'square',
-                        name: 'binShape'
-                    })
+                {boxLabel: 'Hexagon', inputValue: 'hex', name: 'binShape', checked: true},
+                {boxLabel: 'Square', inputValue: 'square', name: 'binShape'}
             ]
         });
 
@@ -404,59 +444,168 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             getInputValue: this.getBinColor,
             columns: 1,
             layoutOptions: 'binnable',
-            listeners: {
-                scope: this,
-                change: function(component, newValue, oldValue) {
-                    if (newValue.binColor == 'SingleColor') {
-                        this.binSingleColorPicker.setDisabled(false);
-                    } else {
-                        this.binSingleColorPicker.setDisabled(true);
-                    }
-                }
-            },
             items: [
-                Ext4.create('Ext.form.field.Radio', {
-                    width: 100,
-                    boxLabel: 'Blue & White',
-                    inputValue: 'BlueWhite',
-                    name: 'binColor',
-                    checked: true
-                }),
-                Ext4.create('Ext.form.field.Radio', {
-                    boxLabel: 'Heat',
-                    inputValue: 'Heat',
-                    name: 'binColor'
-                }),
-                Ext4.create('Ext.form.field.Radio', {
-                    boxLabel: 'Single Color:',
-                    inputValue: 'SingleColor',
-                    name: 'binColor'
-                })
+                {boxLabel: 'Blue & White', inputValue: 'BlueWhite', name: 'binColor', checked: true},
+                {boxLabel: 'Heat', inputValue: 'Heat', name: 'binColor'},
+                {boxLabel: 'Single Color:', inputValue: 'SingleColor', name: 'binColor'}
             ]
         });
 
         this.binSingleColorPicker = Ext4.create('Ext.picker.Color', {
             name: 'binSingleColor',
             getInputValue: this.getBinColorPicker,
-            disabledButVisible: true,
             value: '000000',
             width: 280,
-            padding: '0 0 0 100px',
+            padding: '0 0 0 125px',
             layoutOptions: 'binnable'
         });
+    },
 
-        this.items = [{
-            columnWidth: 0.5,
-            border: false,
-            padding: '0 20px 0 0',
-            items: this.getColumnOneFields()
-        },{
-            columnWidth: 0.5,
-            border: false,
-            items: this.getColumnTwoFields()
-        }];
+    defineTimeOptions : function()
+    {
+        var subjectInfo = LABKEY.vis.GenericChartHelper.getStudySubjectInfo();
 
-        this.callParent();
+        this.hideDataPointsCheckbox = Ext4.create('Ext.form.field.Checkbox', {
+            name: 'hideDataPoints',
+            getInputValue: this.getHideDataPoints,
+            fieldLabel: 'Hide Data Points',
+            labelWidth: 135,
+            padding: '0 0 10px 0',
+            layoutOptions: 'time',
+            value: false
+        });
+
+        this.chartLayoutRadioGroup = Ext4.create('Ext.form.RadioGroup', {
+            name: 'chartLayout',
+            fieldLabel: 'Number of Charts',
+            labelWidth: 135,
+            getInputValue: this.getChartLayout,
+            columns: 1,
+            padding: '0 0 10px 0',
+            layoutOptions: 'time',
+            items: [
+                {boxLabel: 'One Chart', inputValue: 'single', name: 'chartLayoutOption', checked: true},
+                {boxLabel: 'One Per Group', inputValue: 'per_group', name: 'chartLayoutOption', hidden: true},
+                {boxLabel: 'One Per ' + subjectInfo.nounSingular, inputValue: 'per_subject', name: 'chartLayoutOption'},
+                {boxLabel: 'One Per Measure/Dimension', inputValue: 'per_dimension', name: 'chartLayoutOption'}
+            ]
+        });
+
+        // on render attach a change listener so other tabs can be notified of chart layout changes
+        this.chartLayoutRadioGroup.on('render', function(rg) {
+            rg.on('change', function(rg, newValue) { this.fireEvent('chartLayoutChange', newValue.chartLayoutOption);}, this);
+        }, this);
+
+        this.chartSubjectSelectionRadioGroup = Ext4.create('Ext.form.RadioGroup', {
+            name: 'chartSubjectSelection',
+            fieldLabel: 'Subject Selection',
+            labelWidth: 135,
+            getInputValue: this.getChartSubjectSelection,
+            columns: 1,
+            layoutOptions: 'time',
+            items: [
+                {boxLabel: subjectInfo.nounPlural, inputValue: 'subjects', name: 'chartSubjectSelectionOption', checked: true},
+                {boxLabel: subjectInfo.nounPlural + ' Groups', inputValue: 'groups', name: 'chartSubjectSelectionOption'}
+            ],
+            listeners: {
+                scope: this,
+                change: function(rg, newValue)
+                {
+                    var groupsOptionSelected = newValue.chartSubjectSelectionOption == 'groups';
+
+                    // toggle which of the per_group/per_subject radio options are visible
+                    // and transfer radio button selection between them
+                    var perGroupRadio = this.getChartLayoutRadioByValue('per_group'),
+                        perSubjectRadio = this.getChartLayoutRadioByValue('per_subject');
+                    perGroupRadio.setVisible(groupsOptionSelected);
+                    perSubjectRadio.setVisible(!groupsOptionSelected);
+                    if (perGroupRadio.checked && perGroupRadio.isHidden())
+                        this.setChartLayout('per_subject');
+                    else if (perSubjectRadio.checked && perSubjectRadio.isHidden())
+                        this.setChartLayout('per_group');
+
+                    this.displayIndividualLinesCheckbox.setDisabled(!groupsOptionSelected);
+                    this.setDisplayIndividualLines(!groupsOptionSelected);
+
+                    this.displayAggregateLinesCheckbox.setDisabled(!groupsOptionSelected);
+                    this.setDisplayAggregateLines(groupsOptionSelected);
+                    this.errorBarsCombobox.setDisabled(!groupsOptionSelected);
+                    this.setErrorBars('None');
+                }
+            }
+        });
+
+        this.displayIndividualLinesCheckbox = Ext4.create('Ext.form.field.Checkbox', {
+            name: 'displayIndividual',
+            getInputValue: this.getDisplayIndividualLines,
+            hideFieldLabel: true,
+            boxLabel: 'Show Individual Lines',
+            width: 160,
+            disabled: true,
+            checked: true
+        });
+
+        this.showIndividualLinesFieldContainer = Ext4.create('Ext.form.FieldContainer', {
+            hideFieldLabel: true,
+            layoutOptions: 'time',
+            width: 450,
+            padding: '0 0 0 160px',
+            items: [this.displayIndividualLinesCheckbox]
+        });
+
+        this.displayAggregateLinesCheckbox = Ext4.create('Ext.form.field.Checkbox', {
+            name: 'displayAggregate',
+            getInputValue: this.getDisplayAggregateLines,
+            hideFieldLabel: true,
+            boxLabel: 'Show Mean',
+            width: 90,
+            disabled: true,
+            checked: false,
+            listeners : {
+                scope : this,
+                change : function(cmp, checked){
+                    // enable/disable the error bars combo box accordingly
+                    this.errorBarsCombobox.setDisabled(!checked);
+                    if (!checked)
+                        this.setErrorBars('None');
+                }
+            }
+        });
+
+        this.errorBarsCombobox = Ext4.create('Ext.form.field.ComboBox', {
+            name: 'errorBars',
+            getInputValue: this.getErrorBars,
+            hideFieldLabel: true,
+            width: 80,
+            triggerAction: 'all',
+            mode: 'local',
+            store: Ext4.create('Ext.data.ArrayStore', {
+                fields: ['value', 'display'],
+                data: [
+                    ['None', 'None'],
+                    ['SD', 'Std Dev'],
+                    ['SEM', 'Std Err']
+                ]
+            }),
+            disabled: true,
+            forceSelection: 'true',
+            editable: false,
+            valueField: 'value',
+            displayField: 'display',
+            value: 'None'
+        });
+
+        this.showMeanPlusErrorBarFieldContainer = Ext4.create('Ext.form.FieldContainer', {
+            hideFieldLabel: true,
+            layoutOptions: 'time',
+            layout: 'hbox',
+            width: 450,
+            padding: '0 0 10px 160px',
+            items: [
+                this.displayAggregateLinesCheckbox,
+                this.errorBarsCombobox
+            ]
+        });
     },
 
     colorToStrConverter: function(colorSet)
@@ -503,6 +652,9 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.opacitySlider,
             this.pointSizeSlider,
             this.colorLabel, this.pointColorPicker,
+            this.chartSubjectSelectionRadioGroup,
+            this.showIndividualLinesFieldContainer,
+            this.showMeanPlusErrorBarFieldContainer,
             this.colorPaletteComboBox,
             this.colorPaletteFieldContainer,
             this.pieInnerRadiusSlider,
@@ -516,6 +668,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.lineWidthSlider,
             this.lineColorLabel, this.lineColorPicker,
             this.fillColorLabel, this.fillColorPicker,
+            this.hideDataPointsCheckbox,
+            this.chartLayoutRadioGroup,
             this.showPiePercentagesCheckBox,
             this.piePercentageHideNumber,
             this.piePercentagesColorLabel, this.piePercentagesColorPicker,
@@ -539,8 +693,20 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         Ext4.each(this.getInputFields(), function(field)
         {
-            if (field.name && field.getInputValue && !field.isDisabled())
-                values[field.name] = field.getInputValue.call(this);
+            if (!field.isDisabled())
+            {
+                if (field.name && field.getInputValue)
+                {
+                    values[field.name] = field.getInputValue.call(this);
+                }
+                else if (field.getXType() == 'fieldcontainer')
+                {
+                    Ext4.each(field.items.items, function(subField) {
+                        if (subField.name && subField.getInputValue)
+                            values[subField.name] = subField.getInputValue.call(this);
+                    }, this);
+                }
+            }
         }, this);
 
         return values;
@@ -548,6 +714,14 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     onMeasureChange : function(measures, renderType)
     {
+        this.defaultChartLabel = LABKEY.vis.GenericChartHelper.getTitleFromMeasures(renderType, measures);
+
+        if (!this.userEditedLabel)
+        {
+            if (renderType == 'time_chart')
+                this.setLabel(this.defaultChartLabel);
+        }
+
         if (!this.userEditedSubtitle)
         {
             if (renderType == 'pie_chart' && Ext4.isDefined(measures.x) && measures.x.hasOwnProperty('label'))
@@ -563,6 +737,11 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             else
                 this.setFooter('');
         }
+    },
+
+    onChartSubjectSelectionChange : function(asGroups)
+    {
+        this.setChartSubjectSelection(asGroups ? 'groups' : 'subjects');
     },
 
     validateChanges : function()
@@ -645,6 +824,24 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         if (Ext4.isDefined(chartConfig.boxFillColor))
             this.setFillColor(chartConfig.boxFillColor);
+
+        if (Ext4.isDefined(chartConfig.hideDataPoints))
+            this.setHideDataPoints(chartConfig.hideDataPoints);
+
+        if (Ext4.isDefined(chartConfig.chartLayout))
+            this.setChartLayout(chartConfig.chartLayout);
+
+        if (Ext4.isDefined(chartConfig.chartSubjectSelection))
+            this.setChartSubjectSelection(chartConfig.chartSubjectSelection);
+
+        if (Ext4.isDefined(chartConfig.displayIndividual))
+            this.setDisplayIndividualLines(chartConfig.displayIndividual);
+
+        if (Ext4.isDefined(chartConfig.displayAggregate))
+            this.setDisplayAggregateLines(chartConfig.displayAggregate);
+
+        if (Ext4.isDefined(chartConfig.errorBars))
+            this.setErrorBars(chartConfig.errorBars);
 
         if (Ext4.isDefined(chartConfig.binThreshold))
             this.setBinThreshold(chartConfig.binThreshold);
@@ -778,6 +975,64 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.fillColorPicker.select(value);
     },
 
+    getHideDataPoints: function() {
+        return this.hideDataPointsCheckbox.getValue();
+    },
+
+    setHideDataPoints: function(value) {
+        this.hideDataPointsCheckbox.setValue(value);
+    },
+
+    getChartLayout: function() {
+        return this.chartLayoutRadioGroup.getValue().chartLayoutOption;
+    },
+
+    setChartLayout: function(value) {
+        this.chartLayoutRadioGroup.setValue(value);
+        var radioComp = this.getChartLayoutRadioByValue(value);
+        if (radioComp)
+            radioComp.setValue(true);
+    },
+
+    getChartLayoutRadioByValue: function(value) {
+        return this.chartLayoutRadioGroup.down('radio[inputValue="' + value + '"]');
+    },
+
+    getChartSubjectSelection: function() {
+        return this.chartSubjectSelectionRadioGroup.getValue().chartSubjectSelectionOption;
+    },
+
+    setChartSubjectSelection: function(value) {
+        this.chartSubjectSelectionRadioGroup.setValue(value);
+        var radioComp = this.chartSubjectSelectionRadioGroup.down('radio[inputValue="' + value + '"]');
+        if (radioComp)
+            radioComp.setValue(true);
+    },
+
+    getDisplayIndividualLines: function() {
+        return this.displayIndividualLinesCheckbox.getValue();
+    },
+
+    setDisplayIndividualLines: function(value) {
+        this.displayIndividualLinesCheckbox.setValue(value);
+    },
+
+    getDisplayAggregateLines: function() {
+        return this.displayAggregateLinesCheckbox.getValue();
+    },
+
+    setDisplayAggregateLines: function(value) {
+        this.displayAggregateLinesCheckbox.setValue(value);
+    },
+
+    getErrorBars: function() {
+        return this.errorBarsCombobox.getValue();
+    },
+
+    setErrorBars: function(value) {
+        this.errorBarsCombobox.setValue(value);
+    },
+
     getWidth: function(){
         return this.widthBox.getValue();
     },
@@ -800,6 +1055,9 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     setLabel: function(value){
         this.labelBox.setValue(value);
+
+        if (this.defaultChartLabel != value)
+            this.userEditedLabel = true;
     },
 
     getSubtitle: function() {
@@ -810,7 +1068,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
        this.subtitleBox.setValue(value);
     },
 
-    getFooter: function () {
+    getFooter: function() {
         return this.footerBox.getValue();
     },
 
@@ -896,7 +1154,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         return this.binShapeRadioGroup.getValue().binShape;
     },
 
-    setBinShape: function (value) {
+    setBinShape: function(value) {
         this.binShapeRadioGroup.setValue(value);
         var radioComp = this.binShapeRadioGroup.down('radio[inputValue="' + value + '"]');
         if (radioComp)
@@ -924,5 +1182,4 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         if (value != null && value != 'none')
             this.binSingleColorPicker.select(value);
     }
-
 });

@@ -8,26 +8,14 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
     extend : 'LABKEY.vis.GenericOptionsPanel',
 
     isDeveloper: false,
-    defaultPointClickFn : null,
-    pointClickFnHelp : null,
-    showButtons: false,
-
-    constructor : function(config)
-    {
-        this.callParent([config]);
-
-        this.addEvents(
-            'chartDefinitionChanged',
-            'closeOptionsWindow'
-        );
-    },
+    renderType: null,
 
     initComponent : function(){
         this.id = 'developerPanel-' + Ext4.id();
 
         this.fnErrorDiv = 'error-' + Ext4.id();
         this.pointClickFnDesc = Ext4.create('Ext.container.Container', {
-            width: 670,
+            width: 650,
             html: 'A developer can provide a JavaScript function that will be called when a data point in the chart is clicked. '
                     + 'See the "Help" tab for more information on the parameters available to the function.'
                     + '<br/><div id="' + this.fnErrorDiv + '">&nbsp;</div>'
@@ -70,6 +58,12 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             }
         });
 
+        this.pointClickHelpPanel = Ext4.create('Ext.panel.Panel', {
+            border: false,
+            padding: 10,
+            html: this.getPointClickFnHelp()
+        });
+
         this.pointClickFnTabPanel = Ext4.create('Ext.tab.Panel', {
             items: [
                 Ext4.create('Ext.Panel', {
@@ -81,12 +75,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
                     title: 'Help',
                     height: 280,
                     autoScroll: true,
-                    items: [{
-                        xtype: 'panel',
-                        border: false,
-                        padding: 10,
-                        html: this.getPointClickFnHelp()
-                    }]
+                    items: [this.pointClickHelpPanel]
                 })
             ]
         });
@@ -108,35 +97,27 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             ];
         }
 
-        if (this.showButtons)
-        {
-            this.buttons = [{
-                text: 'OK',
-                handler: this.applyChangesButtonClicked,
-                scope: this
-            }, {
-                text: 'Cancel',
-                handler: this.cancelChangesButtonClicked,
-                scope: this
-            }];
-        }
-
         this.callParent();
     },
 
-    togglePointClickFn: function() {
+    togglePointClickFn: function()
+    {
         if (this.pointClickTextAreaHtml.isDisabled())
         {
+            this.pointClickFnTabPanel.setActiveTab(0);
             this.setEditorEnabled(this.getDefaultPointClickFn());
         }
         else
         {
             Ext4.Msg.show({
                 title:'Confirmation...',
-                msg: 'Disabling this feature will delete any code that you have provided. Would you like to proceed?',
+                msg: 'Disabling this feature will delete any code that you have provided.<br/>Would you like to proceed?',
                 buttons: Ext4.Msg.YESNO,
-                fn: function(btnId, text, opt){
-                    if(btnId == 'yes'){
+                fn: function(btnId)
+                {
+                    if (btnId == 'yes')
+                    {
+                        this.pointClickFnTabPanel.setActiveTab(0);
                         this.setEditorDisabled();
                     }
                 },
@@ -165,10 +146,6 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
         this.pointClickFnBtn.setText('Enable');
     },
 
-    getDefaultPointClickFn: function() {
-        return this.defaultPointClickFn != null ? this.defaultPointClickFn : "function () {\n\n}";
-    },
-
     removeLeadingComments: function(fnText) {
         // issue 15679: allow comments before function definition
         fnText = fnText.trim();
@@ -190,28 +167,6 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
         }
 
         return fnText;
-    },
-
-    getPointClickFnHelp: function() {
-        return this.pointClickFnHelp != null ? this.pointClickFnHelp : "";
-    },
-
-    applyChangesButtonClicked: function() {
-
-        if (!this.pointClickTextAreaHtml.isDisabled())
-        {
-            // true param to verify the pointClickFn for JS errors
-            this.pointClickFn = this.getPointClickFnValue(true);
-            if (this.pointClickFn == null)
-                return; // don't close window as there was a validation error
-        }
-
-        this.fireEvent('closeOptionsWindow', false);
-        this.checkForChangesAndFireEvents();
-    },
-
-    cancelChangesButtonClicked: function(){
-        this.fireEvent('closeOptionsWindow', true);
     },
 
     getPointClickFnValue : function(validate)
@@ -260,21 +215,121 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
         return this.pointClickTextAreaHtml.isDisabled() || this.getPointClickFnValue(true) != null;
     },
 
-    restoreValues : function(initValues) {
-        if (initValues && initValues.hasOwnProperty("pointClickFn"))
+    setPanelOptionValues: function(config){
+        if (config && config.hasOwnProperty("pointClickFn"))
         {
-            if (initValues.pointClickFn != null)
-                this.setEditorEnabled(initValues.pointClickFn);
+            if (config.pointClickFn != null)
+                this.setEditorEnabled(config.pointClickFn);
             else
                 this.setEditorDisabled();
         }
     },
 
-    setPanelOptionValues: function(config){
-        this.restoreValues(config);
+    onMeasureChange : function(measures, renderType)
+    {
+        this.renderType = renderType;
+        this.pointClickHelpPanel.update(this.getPointClickFnHelp());
     },
 
-    checkForChangesAndFireEvents : function() {
-        this.fireEvent('chartDefinitionChanged', false);
+    getDefaultPointClickFn : function()
+    {
+        if (this.renderType == 'time_chart')
+        {
+            return "function (data, columnMap, measureInfo, clickEvent) {\n"
+                + "   var participant = columnMap[\"participant\"] ? \n"
+                + "                     data[columnMap[\"participant\"]].value : null;\n"
+                + "   var group = columnMap[\"group\"] ? \n"
+                + "                     data[columnMap[\"group\"]].displayValue : null;\n\n"
+                + "   // use LABKEY.ActionURL.buildURL to generate a link to a different \n"
+                + "   // controller/action within LabKey server\n"
+                + "   var ptidHref = LABKEY.ActionURL.buildURL('study', 'participant', \n"
+                + "                  LABKEY.container.path, {participantId: participant});\n"
+                + "   var queryHref = LABKEY.ActionURL.buildURL('query', 'executeQuery', \n"
+                + "                   LABKEY.container.path, {schemaName: measureInfo[\"schemaName\"], \n"
+                + "                   \"query.queryName\": measureInfo[\"queryName\"]});\n\n"
+                + "   // display a message box with some information from the function parameters\n"
+                + "   var subjectLabel = (group != null ? 'Group: ' + group : \n"
+                + "                'Participant: <a href=\"' + ptidHref + '\">' + participant + '</a>');\n"
+                + "   Ext4.Msg.alert('Data Point Information',\n"
+                + "       subjectLabel\n"
+                + "       + '<br/> Interval: ' + data[columnMap[\"interval\"]].value\n"
+                + "       + '<br/> Value: ' + data[columnMap[\"measure\"]].value\n"
+                + "       + '<br/> Measure Name: ' + measureInfo[\"name\"]\n"
+                + "       + '<br/> Schema Name: ' + measureInfo[\"schemaName\"]\n"
+                + "       + '<br/> Query Name: <a href=\"' + queryHref + '\">' + \n"
+                + "                    measureInfo[\"queryName\"] + '</a>'\n"
+                + "   );\n\n"
+                + "   // you could also directly navigate away from the chart using window.location\n"
+                + "   // window.location = queryHref;\n"
+                + "}";
+        }
+        else
+        {
+            return "function (data, measureInfo, clickEvent) {\n"
+                + "   // use LABKEY.ActionURL.buildURL to generate a link\n"
+                + "   // to a different controller/action within LabKey server\n"
+                + "   var queryHref = LABKEY.ActionURL.buildURL('query', 'executeQuery',\n"
+                + "                      LABKEY.container.path, {\n"
+                + "                          schemaName: measureInfo[\"schemaName\"],\n"
+                + "                          \"query.queryName\": measureInfo[\"queryName\"]\n"
+                + "                      }\n"
+                + "                   );\n\n"
+                + "   // display an Ext message box with some information from the function parameters\n"
+                + "   var info = 'Schema: ' + measureInfo[\"schemaName\"]\n"
+                + "       + '<br/> Query: <a href=\"' + queryHref + '\">'\n"
+                + "       + measureInfo[\"queryName\"] + '</a>';\n"
+                + "   for (var key in measureInfo)\n"
+                + "   {\n"
+                + "       if (measureInfo.hasOwnProperty(key) && data[measureInfo[key]])\n"
+                + "       {\n"
+                + "           info += '<br/>' + measureInfo[key] + ': '\n"
+                + "                + (data[measureInfo[key]].displayValue\n"
+                + "                   ? data[measureInfo[key]].displayValue\n"
+                + "                   : data[measureInfo[key]].value);\n"
+                + "       }\n"
+                + "   }\n"
+                + "   Ext4.Msg.alert('Data Point Information', info);\n\n"
+                + "   // you could also directly navigate away from the chart using window.location\n"
+                + "   // window.location = queryHref;\n"
+                + "}";
+        }
+    },
+
+    getPointClickFnHelp : function()
+    {
+        if (this.renderType == 'time_chart')
+        {
+            return 'Your code should define a single function to be called when a data point in the chart is clicked. '
+                + 'The function will be called with the following parameters:<br/>'
+                + '<ul>'
+                + '<li><b>data:</b> the set of data values for the selected data point. Example: </li>'
+                + '<div style="margin-left: 40px;">{</div>'
+                + '<div style="margin-left: 60px;">Days: {value: 10},<br/>study_Dataset1_Measure1: {value: 250}<br/>study_Dataset1_ParticipantId: {value: "123456789"}</div>'
+                + '<div style="margin-left: 40px;">}</div>'
+                + '<li><b>columnMap:</b> a mapping from participant, interval, and measure to use when looking up values in the data object</li>'
+                + '<div style="margin-left: 40px;">{</div>'
+                + '<div style="margin-left: 60px;">participant: "study_Dataset1_ParticipantId",<br/>measure: "study_Dataset1_Measure1"<br/>interval: "Days"</div>'
+                + '<div style="margin-left: 40px;">}</div>'
+                + '<li><b>measureInfo:</b> the schema name, query name, and measure name for the selected series</li>'
+                + '<div style="margin-left: 40px;">{</div>'
+                + '<div style="margin-left: 60px;">name: "Measure1",<br/>queryName: "Dataset1"<br/>schemaName: "study"</div>'
+                + '<div style="margin-left: 40px;">}</div>'
+                + '<li><b>clickEvent:</b> information from the browser about the click event (i.e. target, position, etc.)</li></ul>';
+        }
+        else
+        {
+            return 'Your code should define a single function to be called when a data point in the chart is clicked. '
+                + 'The function will be called with the following parameters:<br/>'
+                + '<ul>'
+                + '<li><b>data:</b> the set of data values for the selected data point. Example: </li>'
+                + '<div style="margin-left: 40px;">{</div>'
+                + '<div style="margin-left: 60px;">YAxisMeasure: {displayValue: "250", value: 250},<br/>XAxisMeasure: {displayValue: "0.45", value: 0.45000},<br/>ColorMeasure: {value: "Color Value 1"},<br/>PointMeasure: {value: "Point Value 1"}</div>'
+                + '<div style="margin-left: 40px;">}</div>'
+                + '<li><b>measureInfo:</b> the schema name, query name, and measure names selected for the plot. Example:</li>'
+                + '<div style="margin-left: 40px;">{</div>'
+                + '<div style="margin-left: 60px;">schemaName: "study",<br/>queryName: "Dataset1",<br/>yAxis: "YAxisMeasure",<br/>xAxis: "XAxisMeasure",<br/>colorName: "ColorMeasure",<br/>pointName: "PointMeasure"</div>'
+                + '<div style="margin-left: 40px;">}</div>'
+                + '<li><b>clickEvent:</b> information from the browser about the click event (i.e. target, position, etc.)</li></ul>';
+        }
     }
 });

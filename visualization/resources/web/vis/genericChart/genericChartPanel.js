@@ -571,7 +571,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         this.measures = values.fields;
 
                         this.getChartLayoutPanel().onMeasuresChange(this.measures, this.renderType);
-                        this.getChartLayoutPanel().updateVisibleLayoutOptions(this.getSelectedChartTypeData());
+                        this.getChartLayoutPanel().updateVisibleLayoutOptions(this.getSelectedChartTypeData(), this.measures);
                         this.ensureChartLayoutOptions();
 
                         this.renderChart();
@@ -607,7 +607,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             // propagate the show event to the panel so it can stash the initial values
             this.chartLayoutWindow.on('show', function(window)
             {
-                this.getChartLayoutPanel().fireEvent('show', this.getChartLayoutPanel(), this.getSelectedChartTypeData());
+                this.getChartLayoutPanel().fireEvent('show', this.getChartLayoutPanel(), this.getSelectedChartTypeData(), this.measures);
             }, this);
         }
 
@@ -621,8 +621,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.chartLayoutPanel = Ext4.create('LABKEY.vis.ChartLayoutPanel', {
                 options: this.options,
                 isDeveloper: this.isDeveloper,
+                renderType: this.renderType,
                 defaultChartLabel: this.getDefaultTitle(),
                 defaultOpacity: this.renderType == 'bar_chart' ? 100 : undefined,
+                isSavedReport: !this.isNew(),
                 listeners: {
                     scope: this,
                     cancel: function(panel)
@@ -631,7 +633,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     },
                     apply: function(panel, values)
                     {
-                        // note: this event will only fire if a change was made in the Chart Type panel
+                        // note: this event will only fire if a change was made in the Chart Layout panel
                         this.ensureChartLayoutOptions();
                         this.renderChart();
                         this.getChartLayoutWindow().hide();
@@ -1198,7 +1200,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             queryConfig = config.visualizationConfig.queryConfig;
             chartConfig = config.visualizationConfig.chartConfig;
         }
-        console.log(config);
 
         this.schemaName = queryConfig.schemaName;
         this.queryName = queryConfig.queryName;
@@ -1390,27 +1391,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         this.getEl().mask('Rendering Chart...');
-        // initMeasures returns false and opens the Chart Type panel if a required measure is not chosen by the user.
-        if (!this.initMeasures())
-            return;
-
-        var newChartDiv = Ext4.create('Ext.container.Container', {
-            border: 1,
-            cls: 'chart-display',
-            autoEl: {tag: 'div'}
-        });
-        this.getViewPanel().add(newChartDiv);
-
-        var chartType, aes, scales, plotConfig,
-            chartConfig = this.getChartConfig(),
-            customRenderType = this.customRenderTypes ? this.customRenderTypes[this.renderType] : undefined,
-            xAxisType = this.getXAxisType(chartConfig.measures.x);
-
-        chartType = LABKEY.vis.GenericChartHelper.getChartType(this.renderType, xAxisType);
-        if (chartType == 'scatter_plot' && this.chartData.rowCount > chartConfig.geomOptions.binThreshold) {
-            chartConfig.geomOptions.binned = true;
-            this.addWarningText("The number of individual points exceeds the limit set in the Chart Layout options. The data will be displayed according to point density in a heat map.");
-        }
 
         aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, this.chartData.schemaName, this.chartData.queryName);
 

@@ -150,10 +150,7 @@ Ext4.define('LABKEY.vis.ChartFilterParticipantSelector', {
 
     getStudyModuleSubjectContext: function()
     {
-        var studyCtx = LABKEY.getModuleContext('study');
-        return Ext4.isDefined(studyCtx) && Ext4.isDefined(studyCtx.subject) ? studyCtx.subject : {
-            nounSingular: 'Participant', nounPlural: 'Participants', columnName: 'ParticipantId'
-        };
+        return LABKEY.vis.GenericChartHelper.getStudySubjectInfo();
     },
 
     getSubjectValues: function()
