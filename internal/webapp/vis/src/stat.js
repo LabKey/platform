@@ -207,6 +207,7 @@ LABKEY.vis.Stat.getVTransformation = function(standardized)
 // CUSUM_WEIGHT_FACTOR of 0.5 and CUSUM_CONTROL_LIMIT of 5 to achieve a 3*stdDev boundary
 LABKEY.vis.Stat.CUSUM_WEIGHT_FACTOR = 0.5;
 LABKEY.vis.Stat.CUSUM_CONTROL_LIMIT = 5;
+LABKEY.vis.Stat.CUSUM_CONTROL_LIMIT_LOWER = 0;
 
 /**
  * Calculates a variety of cumulative sums for a data array.

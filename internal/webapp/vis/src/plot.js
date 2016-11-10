@@ -1843,7 +1843,7 @@ boxPlot.render();
                     data: config.data,
                     aes: {
                         upper: function(){return LABKEY.vis.Stat.CUSUM_CONTROL_LIMIT;},
-                        lower: function(){return LABKEY.vis.Stat.CUSUM_CONTROL_LIMIT * -1;},
+                        lower: function(){return LABKEY.vis.Stat.CUSUM_CONTROL_LIMIT_LOWER;},
                         yLeft: config.properties.mean
                     }
                 });
