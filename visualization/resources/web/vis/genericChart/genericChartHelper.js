@@ -880,7 +880,6 @@ LABKEY.vis.GenericChartHelper = new function(){
          * @function
          */
         getRenderTypes: getRenderTypes,
-        getMeasureType: _getMeasureType,
         getChartType: getChartType,
         getStudyTimepointType: getStudyTimepointType,
         getSelectedMeasureLabel: getSelectedMeasureLabel,
