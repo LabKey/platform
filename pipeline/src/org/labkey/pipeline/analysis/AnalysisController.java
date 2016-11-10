@@ -28,13 +28,19 @@ import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineProtocolFactory;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineValidationException;
@@ -45,32 +51,42 @@ import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
-import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
-import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.Button;
 import org.labkey.api.util.DotRunner;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewForm;
+import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * <code>AnalysisController</code>
@@ -125,6 +141,11 @@ public class AnalysisController extends SpringActionController
 
     private @Nullable AbstractFileAnalysisProtocol getProtocol(PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory, String protocolName)
     {
+        return getProtocol(root, dirData, factory, protocolName, false);
+    }
+
+    private @Nullable AbstractFileAnalysisProtocol getProtocol(PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory, String protocolName, boolean archived)
+    {
         try
         {
             File protocolFile = factory.getParametersFile(dirData, protocolName, root);
@@ -138,7 +159,7 @@ public class AnalysisController extends SpringActionController
             }
             else
             {
-                result = factory.load(root, protocolName);
+                result = factory.load(root, protocolName, archived);
             }
             return result;
         }
@@ -148,7 +169,7 @@ public class AnalysisController extends SpringActionController
         }
     }
 
-    private TaskPipeline getTaskPipeline(String taskIdString)
+    private static TaskPipeline getTaskPipeline(String taskIdString)
     {
         try
         {
@@ -164,19 +185,9 @@ public class AnalysisController extends SpringActionController
         }
     }
 
-    private AbstractFileAnalysisProtocolFactory getProtocolFactory(TaskPipeline taskPipeline)
+    private static AbstractFileAnalysisProtocolFactory getProtocolFactory(TaskPipeline taskPipeline)
     {
-        AbstractFileAnalysisProvider provider = (AbstractFileAnalysisProvider)
-                PipelineService.get().getPipelineProvider(FileAnalysisPipelineProvider.name);
-        if (provider == null)
-            throw new NotFoundException("No pipeline provider found for task pipeline: " + taskPipeline);
-
-        if (!(taskPipeline instanceof FileAnalysisTaskPipeline))
-            throw new NotFoundException("Task pipeline is not a FileAnalysisTaskPipeline: " + taskPipeline);
-
-        FileAnalysisTaskPipeline fatp = (FileAnalysisTaskPipeline)taskPipeline;
-        //noinspection unchecked
-        return provider.getProtocolFactory(fatp);
+        return PipelineJobService.get().getProtocolFactory(taskPipeline);
     }
 
     /**
@@ -235,6 +246,9 @@ public class AnalysisController extends SpringActionController
                         protocol.saveDefinition(root);
                         PipelineService.get().rememberLastProtocolSetting(protocol.getFactory(),
                                 getContainer(), getUser(), protocol.getName());
+                        String message = "Created protocol file " + protocol.getName() + " for factory " + factory.getName() + ".";
+                        AuditLogService.get().addEvent(getUser(), new AuditTypeEvent(ProtocolManagementAuditProvider.EVENT, getContainer(), message));
+
                     }
                 }
                 else
@@ -403,7 +417,7 @@ public class AnalysisController extends SpringActionController
 
             protocol.put("name", protocolName);
             protocol.put("description", pipelineProtocol.getDescription());
-            protocol.put("xmlParameters", pipelineProtocol.getXml());
+            protocol.put("xmlParameters", pipelineProtocol.getFormattedXml());
             protocol.put("containerPath", root.getContainer().getPath());
             ParamParser parser = PipelineJobService.get().createParamParser();
             parser.parse(new ReaderInputStream(new StringReader(pipelineProtocol.getXml())));
@@ -584,6 +598,283 @@ public class AnalysisController extends SpringActionController
         public void setAllowNonExistentFiles(Boolean allowNonExistentFiles)
         {
             this.allowNonExistentFiles = allowNonExistentFiles;
+        }
+    }
+
+    /**
+     * For management of protocol files
+     */
+    enum ProtocolTask
+    {
+        delete
+            {
+                @Override
+                boolean doIt(PipeRoot root, PipelineProtocolFactory factory, String name)
+                {
+                    return factory.deleteProtocolFile(root, name);
+                }
+            },
+        archive
+            {
+                @Override
+                boolean doIt(PipeRoot root, PipelineProtocolFactory factory, String name)
+                {
+                    return factory.archiveProtocolFile(root, name, true);
+                }
+            },
+        unarchive
+            {
+                @Override
+                boolean doIt(PipeRoot root, PipelineProtocolFactory factory, String name)
+                {
+                    return factory.archiveProtocolFile(root, name, false);
+                }
+            };
+
+        abstract boolean doIt(PipeRoot root, PipelineProtocolFactory factory, String name);
+
+        boolean run(ContainerUser cu, Map<String, List<String>> selected)
+        {
+            PipeRoot root = PipelineService.get().findPipelineRoot(cu.getContainer());
+
+            // selected is a map of taskId -> list of protocol names.
+            // Find the correct factory for each taskId, then perform operation on list of names. Fail and return on first error
+            return selected.entrySet().stream().allMatch( entry -> {
+                PipelineProtocolFactory factory = getProtocolFactory(getTaskPipeline(entry.getKey()));
+                return entry.getValue().stream().allMatch( name -> {
+                    if (doIt(root, factory, name))
+                    {
+                        String message = StringUtils.capitalize(this.toString()) + "d protocol file " + name + " for factory " + factory.getName() + ".";
+                        AuditLogService.get().addEvent(cu.getUser(), new AuditTypeEvent(ProtocolManagementAuditProvider.EVENT, cu.getContainer(), message));
+                        return true;
+                    }
+                    else
+                        return false;
+                });
+            });
+        }
+
+        public static boolean isInEnum(String value) {
+            return Arrays.stream(ProtocolTask.values()).anyMatch(e -> e.name().equals(value));
+        }
+    }
+
+    @RequiresPermission(DeletePermission.class)
+    public class ProtocolManagementAction extends FormHandlerAction<ProtocolManagementForm>
+    {
+
+        @Override
+        public void validateCommand(ProtocolManagementForm form, Errors errors)
+        {
+            if (!ProtocolTask.isInEnum(form.getAction()))
+                errors.reject("An invalid action was passed: " + form.getAction());
+            try
+            {
+                form.getSelected();
+            }
+            catch (Exception e)
+            {
+                errors.reject("Invalid selection");
+            }
+        }
+
+        @Override
+        public boolean handlePost(ProtocolManagementForm form, BindException errors) throws Exception
+        {
+            try
+            {
+                return ProtocolTask.valueOf(form.getAction()).run(getViewContext(), form.getSelected());
+            }
+            catch (Exception e)
+            {
+                LOG.error("Error processing protocol management action.", e);
+                errors.reject("Error processing action. See server log for more details.");
+                return false;
+            }
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ProtocolManagementForm form)
+        {
+            return form.getReturnActionURL();
+        }
+
+
+    }
+
+    public static class ProtocolManagementForm extends ViewForm
+    {
+        String action;
+        Map<String, List<String>> selected = null;
+        String taskId = null;
+        String name = null;
+
+        public String getAction()
+        {
+            return action;
+        }
+
+        public void setAction(String action)
+        {
+            this.action = action;
+        }
+
+        public void setTaskId(String taskId)
+        {
+            this.taskId = taskId;
+        }
+
+        public void setName(String name)
+        {
+            this.name = name;
+        }
+
+        public Map<String, List<String>> getSelected()
+        {
+            if (selected == null)
+            {
+                if (null != taskId && null != name) // came in from the Details page, not the grid view
+                {
+                    selected = new HashMap<>();
+                    selected.put(taskId, Collections.singletonList(name));
+                }
+                else
+                {
+                    selected = parseSelected(DataRegionSelection.getSelected(getViewContext(), true));
+                }
+            }
+            return selected;
+        }
+
+        /**
+         * The select set are comma separated pairs of taskId, protocol name
+         * Split into a map of taskId -> list of names
+         */
+        private Map<String, List<String>> parseSelected(Set<String> selected)
+        {
+            Map<String, List<String>> parsedSelected = new HashMap<>();
+            for (String pair : selected)
+            {
+                String[] split = pair.split(",", 2);
+                List<String> names = parsedSelected.get(split[0]);
+                if (null == names)
+                {
+                    names = new ArrayList<>();
+                    parsedSelected.put(split[0], names);
+                }
+                names.add(split[1]);
+            }
+            return parsedSelected;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class ProtocolDetailsAction extends SimpleViewAction<ProtocolDetailsForm>
+    {
+        private String _protocolName;
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Protocol: " + _protocolName);
+            return root;
+        }
+
+        @Override
+        public ModelAndView getView(ProtocolDetailsForm form, BindException errors) throws Exception
+        {
+            _protocolName = form.getName();
+            PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
+            AbstractFileAnalysisProtocolFactory factory = getProtocolFactory(getTaskPipeline(form.getTaskId()));
+            return new ProtocolView(getProtocol(root, null, factory, _protocolName, form.isArchived()), form);
+        }
+    }
+
+    public static class ProtocolDetailsForm extends ReturnUrlForm
+    {
+        private String _taskId;
+        private String _name;
+        private boolean _archived;
+
+        public String getTaskId()
+        {
+            return _taskId;
+        }
+
+        public void setTaskId(String taskId)
+        {
+            _taskId = taskId;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public boolean isArchived()
+        {
+            return _archived;
+        }
+
+        public void setArchived(boolean archived)
+        {
+            _archived = archived;
+        }
+    }
+
+    private static class ProtocolView extends HttpView<AbstractFileAnalysisProtocol>
+    {
+        private String _taskId;
+        private boolean _archived;
+        private URLHelper _returnUrl;
+
+        private ProtocolView(@Nullable AbstractFileAnalysisProtocol protocol, ProtocolDetailsForm form)
+        {
+            super(protocol);
+            _taskId = form.getTaskId();
+            _archived = form.isArchived();
+            _returnUrl = form.getReturnActionURL(PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(getContextContainer()));
+        }
+
+        @Override
+        protected void renderInternal(AbstractFileAnalysisProtocol protocol, PrintWriter out) throws Exception
+        {
+            if (null != protocol)
+            {
+                out.println("<pre>");
+                out.println(PageFlowUtil.filter(protocol.getFormattedXml()));
+                out.println("</pre>");
+
+                if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), DeletePermission.class))
+                {
+                    ActionURL urlBase = new ActionURL(ProtocolManagementAction.class, getViewContext().getContainer());
+                    urlBase.addParameter("taskId", _taskId);
+                    urlBase.addParameter("name", protocol.getName());
+                    urlBase.addReturnURL(_returnUrl);
+                    out.println("<form method='POST'>");
+                    out.println(makeButton(_archived ? ProtocolTask.unarchive : ProtocolTask.archive, urlBase));
+                    out.println(makeButton(ProtocolTask.delete, urlBase));
+                    out.println("</form>");
+                }
+            }
+            else
+            {
+                out.println("<font class=labkey-error>Protocol not found.</font><br/><br/>");
+                out.println(PageFlowUtil.button("Back").href(_returnUrl));
+            }
+       }
+
+        private Button.ButtonBuilder makeButton(ProtocolTask action, ActionURL urlBase)
+        {
+            String actionStr = action.toString();
+            String confirmMsg = "Are you sure you want to " + actionStr + " this protocol?";
+            String urlStr = urlBase.clone().addParameter("action", actionStr).toLocalString(true);
+            return PageFlowUtil.button(actionStr).onClick("if (!window.confirm('"+confirmMsg + "')) {return false;} this.form.action='" + urlStr + "'").submit(true);
         }
     }
 

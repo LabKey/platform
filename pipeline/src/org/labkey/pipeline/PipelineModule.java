@@ -18,6 +18,7 @@ package org.labkey.pipeline;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -47,12 +48,15 @@ import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.DefaultWebPartFactory;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartConfigurationException;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.pipeline.analysis.AnalysisController;
 import org.labkey.pipeline.analysis.CommandTaskImpl;
 import org.labkey.pipeline.analysis.FileAnalysisPipelineProvider;
+import org.labkey.pipeline.analysis.ProtocolManagementAuditProvider;
+import org.labkey.pipeline.analysis.ProtocolManagementWebPart;
 import org.labkey.pipeline.api.ExecTaskFactory;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
@@ -173,7 +177,16 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
                 }
             },
 
-            new DefaultWebPartFactory("Pipeline Files", PipelineController.BrowseWebPart.class)
+            new DefaultWebPartFactory("Pipeline Files", PipelineController.BrowseWebPart.class),
+            new BaseWebPartFactory(ProtocolManagementWebPart.getName())
+            {
+                @Override
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart) throws WebPartConfigurationException
+                {
+                    return new ProtocolManagementWebPart(portalCtx);
+                }
+            }
+
         ));
     }
 
@@ -228,6 +241,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         {
             svc.registerProvider(getName(), new PipelineSetupValidator());
         }
+
+        AuditLogService.registerAuditType(new ProtocolManagementAuditProvider());
     }
 
 

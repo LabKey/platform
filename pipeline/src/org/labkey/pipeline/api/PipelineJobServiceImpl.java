@@ -46,6 +46,9 @@ import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.TaskPipelineSettings;
 import org.labkey.api.pipeline.WorkDirFactory;
 import org.labkey.api.pipeline.XMLBeanTaskFactoryFactory;
+import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
+import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
+import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.util.FileUtil;
@@ -54,6 +57,8 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URIUtil;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.pipeline.analysis.FileAnalysisPipelineProvider;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesImpl;
 import org.labkey.pipeline.api.properties.ConfigPropertiesImpl;
 import org.labkey.pipeline.cluster.NoOpPipelineStatusWriter;
@@ -781,6 +786,22 @@ public class PipelineJobServiceImpl extends PipelineJobService
         _prependVersionWithDot = prependVersionWithDot;
     }
 
+    @NotNull
+    @Override
+    public AbstractFileAnalysisProtocolFactory getProtocolFactory(TaskPipeline taskPipeline)
+    {
+        AbstractFileAnalysisProvider provider = (AbstractFileAnalysisProvider)
+                PipelineService.get().getPipelineProvider(FileAnalysisPipelineProvider.name);
+        if (provider == null)
+            throw new NotFoundException("No pipeline provider found for task pipeline: " + taskPipeline);
+
+        if (!(taskPipeline instanceof FileAnalysisTaskPipeline))
+            throw new NotFoundException("Task pipeline is not a FileAnalysisTaskPipeline: " + taskPipeline);
+
+        FileAnalysisTaskPipeline fatp = (FileAnalysisTaskPipeline)taskPipeline;
+        //noinspection unchecked
+        return provider.getProtocolFactory(fatp);
+    }
 
     public static class TestCase extends Assert
     {
