@@ -154,7 +154,13 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
     @Override
     public String[] getProtocolNames(PipeRoot root, File dirData)
     {
-        String[] protocolNames = super.getProtocolNames(root, dirData);
+        return getProtocolNames(root, dirData, false);
+    }
+
+    @Override
+    public String[] getProtocolNames(PipeRoot root, File dirData, boolean archived)
+    {
+        String[] protocolNames = super.getProtocolNames(root, dirData, archived);
 
         // The default parameters file is not really a protocol so remove it from the list.
         return ArrayUtils.removeElement(protocolNames, DEFAULT_PARAMETERS_NAME);
@@ -203,7 +209,12 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
 
     public T load(PipeRoot root, String name) throws IOException
     {
-        T instance = loadInstance(getProtocolFile(root, name));
+        return load(root, name, false);
+    }
+
+    public T load(PipeRoot root, String name, boolean archived) throws IOException
+    {
+        T instance = loadInstance(getProtocolFile(root, name, archived));
 
         // Don't allow the XML to override the name passed in.  This
         // can be extremely confusing.

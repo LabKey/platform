@@ -25,11 +25,20 @@ import org.labkey.api.pipeline.PipelineProtocol;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.PrintWriters;
+import org.xml.sax.InputSource;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +55,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
 
     protected String description;
     protected String xml;
+    protected String formattedXml = null;
 
     protected String email;
 
@@ -75,6 +85,30 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
     public void setXml(String xml)
     {
         this.xml = xml;
+    }
+
+    public String getFormattedXml()
+    {
+        if (formattedXml == null)
+        {
+            try
+            {
+                String strippedXml = xml.replace("\r\n\r\n", "\r\n").replace("\n\n", "\n");
+                DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+                DOMSource xmlInput = new DOMSource(db.parse(new InputSource(new StringReader(strippedXml))));
+                StreamResult xmlOutput = new StreamResult(new StringWriter());
+                Transformer transformer = TransformerFactory.newInstance().newTransformer();
+                transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+                transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+                transformer.transform(xmlInput, xmlOutput);
+                formattedXml = xmlOutput.getWriter().toString();
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        return formattedXml;
     }
 
     public String getEmail()

@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
+import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
 import org.labkey.api.util.Path;
 import org.labkey.pipeline.xml.TaskType;
 
@@ -129,4 +130,6 @@ public interface TaskPipelineRegistry
      */
     TaskFactory createTaskFactory(TaskId taskId, TaskType xtask, Path tasksDir);
 
+    @NotNull
+    AbstractFileAnalysisProtocolFactory getProtocolFactory(TaskPipeline taskPipeline);
 }

@@ -66,8 +66,10 @@ public abstract class PipelineProtocol
     {
         validate(root);
 
-        if (getFactory().exists(root, name))
+        if (getFactory().exists(root, name, false))
             throw new PipelineValidationException("A protocol named '" + name + "' already exists.");
+        else if (getFactory().exists(root, name, true))
+            throw new PipelineValidationException("An archived protocol named '" + name + "' already exists.");
     }
     
     public void validate(PipeRoot root) throws PipelineValidationException

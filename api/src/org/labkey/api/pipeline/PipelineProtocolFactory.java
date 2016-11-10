@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline;
 
+import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.pipeline.protocol.xml.PipelineProtocolPropsDocument;
 import org.labkey.api.util.NetworkDrive;
@@ -35,7 +36,10 @@ import java.util.Map;
  */
 public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 {
-    protected static String _pipelineProtocolDir = "protocols";
+    protected static final String _pipelineProtocolDir = "protocols";
+    private static final String _archivedProtocolDir = "archived";
+
+    private static final Logger LOG = Logger.getLogger(PipelineProtocolFactory.class);
 
     public static File getProtocolRootDir(PipeRoot root)
     {
@@ -121,28 +125,47 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         return true;
     }
 
-    public boolean exists(PipeRoot root, String name)
+    public boolean exists(PipeRoot root, String name, boolean archived)
     {
-        return getProtocolFile(root, name).exists();
+        return getProtocolFile(root, name, archived).exists();
     }
 
     public File getProtocolDir(PipeRoot root)
     {
-        return new File(getProtocolRootDir(root), getName());
+        return getProtocolDir(root, false);
+    }
+
+    public File getProtocolDir(PipeRoot root, boolean archived)
+    {
+        File protocolDir = new File(getProtocolRootDir(root), getName());
+        if (archived)
+            protocolDir = new File(protocolDir, _archivedProtocolDir);
+        return protocolDir;
     }
 
     public File getProtocolFile(PipeRoot root, String name)
     {
-        return new File(getProtocolDir(root), name + ".xml");
+        return getProtocolFile(root, name, false);
+    }
+
+    public File getProtocolFile(PipeRoot root, String name, boolean archived)
+    {
+        return new File(getProtocolDir(root, archived), name + ".xml");
     }
 
     /** @return sorted list of protocol names */
     public String[] getProtocolNames(PipeRoot root, File dirData)
     {
+        return getProtocolNames(root, dirData, false);
+    }
+
+    /** @return sorted list of protocol names */
+    public String[] getProtocolNames(PipeRoot root, File dirData, boolean archived)
+    {
         HashSet<String> setNames = new HashSet<>();
 
         // Add <protocol-name>.xml files
-        File[] files = getProtocolDir(root).listFiles(f -> f.getName().endsWith(".xml") && !f.isDirectory());
+        File[] files = getProtocolDir(root, archived).listFiles(f -> f.getName().endsWith(".xml") && !f.isDirectory());
         if (files != null)
         {
             for (File file : files)
@@ -153,7 +176,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         }
 
         // Add all directories that already exist in the analysis root.
-        if (dirData != null)
+        if (dirData != null && !archived)
         {
             files = new File(dirData, getName()).listFiles(File::isDirectory);
 
@@ -167,5 +190,40 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         String[] vals = setNames.toArray(new String[setNames.size()]);
         Arrays.sort(vals, String.CASE_INSENSITIVE_ORDER);
         return vals;
+    }
+
+    public boolean archiveProtocolFile(PipeRoot root, String name, boolean toArchive)
+    {
+        if (exists(root, name, !toArchive))
+        {
+            if (toArchive)
+            {
+               File archiveDir = getProtocolDir(root, true);
+               if (!archiveDir.exists())
+               {
+                   archiveDir.mkdir();
+               }
+               else if (archiveDir.isFile())
+               {
+                   LOG.error("Unable to create archived directory because a file with that name exists in the protocol directory: "
+                           + getProtocolDir(root).getAbsolutePath());
+                   return false;
+               }
+            }
+            return getProtocolFile(root, name, !toArchive).renameTo(getProtocolFile(root, name, toArchive));
+        }
+        return true; // That means we don't care if the file doesn't exist (maybe was already in the destination?)
+    }
+
+    public boolean deleteProtocolFile(PipeRoot root, String name)
+    {
+        File protocolFile = getProtocolFile(root, name);
+        if (!protocolFile.exists())
+            protocolFile = getProtocolFile(root, name, true);
+        if (!protocolFile.exists())
+        {
+            return true; // That means we don't care if the file doesn't exist
+        }
+        return protocolFile.delete();
     }
 }
