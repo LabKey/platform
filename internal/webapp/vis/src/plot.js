@@ -1450,7 +1450,7 @@ boxPlot.render();
  * @class TrendingLinePlot Wrapper to create a plot which shows data points compared to expected ranges
  *                          For LeveyJennings, the range is +/- 3 standard deviations from a mean.
  *                          For MovingRange, the range is [0, 3.268*mean(mR)].
- *                          For CUSUM, the range is [-5, +5].
+ *                          For CUSUM, the range is [0, +5].
  * @description This helper will take the input data and generate a sequencial x-axis so that all data points are the same distance apart.
  * @param {Object} config An object that contains the following properties
  * @param {String} [config.renderTo] The id of the div/span to insert the svg element into.
@@ -1494,7 +1494,7 @@ boxPlot.render();
  * @param {Boolean} [config.properties.disableRangeDisplay] (Optional) Whether or not to show the control ranges in the plot. Defaults to false.
  *                          For LeveyJennings, the range is +/- 3 standard deviations from a mean.
  *                          For MovingRange, the range is [0, 3.268*mean(mR)].
- *                          For CUSUM, the range is [-5, +5].
+ *                          For CUSUM, the range is [0, +5].
  * @param {String} [config.properties.xTick] (Optional) The data property to use for unique x-axis tick marks. Defaults to sequence from 1:data length.
  * @param {String} [config.properties.yAxisScale] (Optional) Whether the y-axis should be plotted with linear or log scale. Default linear.
  * @param {Array} [config.properties.yAxisDomain] (Optional) Y-axis min/max values. Example: [0,20].
