@@ -57,6 +57,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                     defaultChartLabel: this.defaultChartLabel,
                     defaultOpacity: this.defaultOpacity,
                     defaultLineWidth: this.defaultLineWidth,
+                    isSavedReport: this.isSavedReport,
                     listeners: {
                         scope: this,
                         chartLayoutChange: function(newChartLayout) {
@@ -362,8 +363,8 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
         if (selectedChartType.name == 'time_chart' && (navRecord.get('name') == 'y' || navRecord.get('name') == 'yRight'))
         {
             var sides = LABKEY.vis.TimeChartHelper.getDistinctYAxisSides(measures),
-                label = sides.length == 2 ? '(' + (navRecord.get('name') == 'y' ? 'Left' : 'Right') + ')' : '';
-            navRecord.set('label', 'Y-Axis ' + label);
+                label = sides.length == 2 ? ' (' + (navRecord.get('name') == 'y' ? 'Left' : 'Right') + ')' : '';
+            navRecord.set('label', 'Y-Axis' + label);
         }
     },
 

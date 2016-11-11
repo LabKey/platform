@@ -177,6 +177,13 @@
     color: #000000;
 }
 
+/*.chart-layout-panel .revert-label-button {*/
+.revert-label-button .x4-btn-icon-el {
+    font-size: 14px;
+    padding-top: 1px;
+    padding-left: 2px;
+}
+
 .save-form-panel {
     padding: 10px;
     background-color: #ffffff !important;

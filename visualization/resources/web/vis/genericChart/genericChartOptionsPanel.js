@@ -18,9 +18,12 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     userEditedLabel: false,
     userEditedSubtitle: false,
     userEditedFooter: false,
+    isSavedReport: false,
 
     initComponent : function()
     {
+        this.userEditedLabel = this.isSavedReport;
+
         this.defineGeneralOptions();
         this.defineLineOptions();
         this.definePointOptions();
@@ -51,16 +54,37 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.labelBox = Ext4.create('Ext.form.field.Text', {
             name: 'label',
             getInputValue: this.getLabel,
-            fieldLabel: 'Title',
-            labelWidth: this.defaultLabelWidth,
-            width: 275,
+            hideFieldLabel: true,
+            width: 153,
             padding: '0 0 10px 0',
             enableKeyEvents: true,
             value: this.defaultChartLabel
         });
         this.labelBox.addListener('keyup', function(){
             this.userEditedLabel = this.labelBox.getValue() != '';
+            this.labelBoxResetButton.enable();
         }, this, {buffer: 500});
+
+        this.labelBoxResetButton = Ext4.create('Ext.Button', {
+            disabled: !this.userEditedLabel,
+            cls: 'revert-label-button',
+            iconCls: 'fa fa-refresh',
+            tooltip: 'Reset the title to the default value based on the Chart Type dialog selections.',
+            handler: function() {
+                this.labelBoxResetButton.disable();
+                this.userEditedLabel = false;
+                this.setLabel(this.defaultChartLabel);
+            },
+            scope: this
+        });
+
+        this.labelBoxFieldContainer = Ext4.create('Ext.form.FieldContainer', {
+            fieldLabel: 'Title',
+            labelWidth: this.defaultLabelWidth,
+            width: 275,
+            layout: 'hbox',
+            items: [this.labelBox, this.labelBoxResetButton]
+        });
 
         this.widthBox = Ext4.create('Ext.form.field.Number', {
             name: 'width',
@@ -505,7 +529,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             layoutOptions: 'time',
             items: [
                 {boxLabel: subjectInfo.nounPlural, inputValue: 'subjects', name: 'chartSubjectSelectionOption', checked: true},
-                {boxLabel: subjectInfo.nounPlural + ' Groups', inputValue: 'groups', name: 'chartSubjectSelectionOption'}
+                {boxLabel: subjectInfo.nounSingular + ' Groups', inputValue: 'groups', name: 'chartSubjectSelectionOption'}
             ],
             listeners: {
                 scope: this,
@@ -642,7 +666,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     getColumnOneFields: function()
     {
         return [
-            this.labelBox,
+            this.labelBoxFieldContainer,
             this.subtitleBox,
             this.footerBox,
             this.widthBox,

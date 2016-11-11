@@ -19,14 +19,35 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
 
         this.axisLabelField =  Ext4.create('Ext.form.field.Text', {
             name: 'label',
-            fieldLabel: 'Label',
+            hideFieldLabel: true,
             enableKeyEvents: true,
-            width: 360
+            width: 232
         });
 
         this.axisLabelField.addListener('keyup', function(){
             this.userEditedLabel = this.axisLabelField.getValue() != '';
+            this.axisLabelResetButton.enable();
         }, this, {buffer: 500});
+
+        this.axisLabelResetButton = Ext4.create('Ext.Button', {
+            disabled: !this.userEditedLabel,
+            cls: 'revert-label-button',
+            iconCls: 'fa fa-refresh',
+            tooltip: 'Reset the label to the default value based on the Chart Type dialog selections.',
+            handler: function() {
+                this.axisLabelResetButton.disable();
+                this.userEditedLabel = false;
+                this.setAxisLabel(this.defaultAxisLabel);
+            },
+            scope: this
+        });
+
+        this.axisLabelFieldContainer = Ext4.create('Ext.form.FieldContainer', {
+            fieldLabel: 'Label',
+            layout: 'hbox',
+            width: 360,
+            items: [this.axisLabelField, this.axisLabelResetButton]
+        });
 
         this.scaleTypeRadioGroup = Ext4.create('Ext.form.RadioGroup', {
             fieldLabel: 'Scale Type',
@@ -139,20 +160,10 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
     getInputFields : function()
     {
         return [
-            this.axisLabelField,
+            this.axisLabelFieldContainer,
             this.scaleTypeRadioGroup,
             this.scaleRangeRadioGroup
         ];
-    },
-
-    getDefaultLabel: function(){
-        var label;
-        if(this.measure) {
-            label = this.measure.label;
-        } else {
-            label = this.queryName;
-        }
-        return label;
     },
 
     getPanelOptionValues: function()
@@ -311,8 +322,9 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             this.adjustScaleOptions(true);
 
             var side = this.axisName == 'y' ? 'left' : 'right';
+            this.defaultAxisLabel = LABKEY.vis.TimeChartHelper.getMeasuresLabelBySide(measures.y, side);
             if (!this.userEditedLabel)
-                this.setAxisLabel(LABKEY.vis.TimeChartHelper.getMeasuresLabelBySide(measures.y, side));
+                this.setAxisLabel(this.defaultAxisLabel);
         }
     },
 
@@ -324,10 +336,11 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
 
         this.adjustScaleOptions(isNumeric);
 
+        this.defaultAxisLabel = LABKEY.vis.GenericChartHelper.getSelectedMeasureLabel(renderType, this.axisName, properties);
         if (!this.userEditedLabel)
         {
             if (Ext4.isDefined(properties))
-                this.setAxisLabel(LABKEY.vis.GenericChartHelper.getSelectedMeasureLabel(renderType, this.axisName, properties));
+                this.setAxisLabel(this.defaultAxisLabel);
             else
                 this.setAxisLabel('');
         }

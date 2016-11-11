@@ -31,6 +31,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
@@ -930,12 +931,11 @@ public class StudyPublishTest extends StudyProtectedExportTest
         waitForText("No calculated interval values");
 
         // Add point click function
-        clickButton("Developer", 0);
-        waitForElement(Ext4Helper.Locators.ext4Button("Cancel"));
-        clickButton("Enable", 0);
-        setFormElement(Locator.name("point-click-fn-textarea"), TestFileUtils.getFileContents(TEST_DATA_API_PATH + "/timeChartPointClickTestFn.js"));
-        waitAndClick(Ext4Helper.Locators.ext4Button("OK"));
-        _ext4Helper.waitForMaskToDisappear();
+        clickButton("Chart Layout", 0);
+        LookAndFeelTimeChart lookAndFeelDialog = new LookAndFeelTimeChart(getDriver());
+        lookAndFeelDialog.clickDeveloperEnable()
+                .setDeveloperSourceContent(TestFileUtils.getFileContents(TEST_DATA_API_PATH + "/timeChartPointClickTestFn.js"))
+                .clickApply();
 
         // Visit-based chart
         waitForElement(Locator.css("svg text").containing("Days Since Contact Date"));

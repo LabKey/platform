@@ -25,7 +25,8 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyA;
-import org.labkey.test.components.ChartLayoutDialog;
+import org.labkey.test.components.LookAndFeelScatterPlot;
+import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.components.ext4.Window;
 import org.labkey.test.components.study.DatasetFacetPanel;
 import org.labkey.test.util.DataRegionTable;
@@ -518,7 +519,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     private void verifyTimeChart(String datasetName, String datasetLabel)
     {
-        log("Verfiy dataset label to name fixup for Time Chart");
+        log("Verify dataset label to name fix-up for Time Chart");
         goToManageViews();
         clickViewDetailsLink(TIME_CHART_REPORT_NAME);
         clickAndWait(Locator.linkContainingText("Edit Report"));
@@ -529,10 +530,13 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         assertTextPresent("Query Name:" + datasetName);
         assertTextNotPresent("Query Name:" + datasetLabel);
         clickButton("OK", 0);
-        goToSvgAxisTab("APX Main Title");
-        waitAndClick(Locator.xpath("//span[contains(@class, 'iconReload')]"));
-        assertEquals(datasetLabel, getFormElement(Locator.name("chart-title-textfield")));
-        clickButton("Cancel", 0);
+        waitForElement(Locator.css("svg"));
+
+        clickButton("Chart Layout", 0);
+        LookAndFeelTimeChart lookAndFeelDialog = new LookAndFeelTimeChart(getDriver());
+        lookAndFeelDialog.clickResetTitle();
+        assertEquals(datasetLabel, lookAndFeelDialog.getPlotTitle());
+        lookAndFeelDialog.clickCancel();
     }
 
     @LogMethod
@@ -547,7 +551,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         // verify that the main title reset goes back to the dataset label - measue name
         waitForElement(Ext4Helper.Locators.ext4Button("Chart Layout").enabled());
         clickButton("Chart Layout", 0);
-        ChartLayoutDialog layoutDialog = new ChartLayoutDialog(this);
+        LookAndFeelScatterPlot layoutDialog = new LookAndFeelScatterPlot(getDriver());
         layoutDialog.setPlotTitle("test");
         layoutDialog.clickCancel();
         assertTextPresent("APX Main Title", 2); // The count is 2 because the text is present on the plot, and in the dialog (which is now hidden).
