@@ -53,7 +53,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 imgUrl: LABKEY.contextPath + '/visualization/images/scatterplot.png',
                 fields: [
                     {name: 'x', label: 'X Axis', required: true},
-                    {name: 'y', label: 'Y Axis', required: true, numericOnly: true},
+                    {name: 'y', label: 'Y Axis', required: true, numericOnly: true, allowMultiple: true},
                     {name: 'color', label: 'Color', nonNumericOnly: true},
                     {name: 'shape', label: 'Shape', nonNumericOnly: true}
                 ],

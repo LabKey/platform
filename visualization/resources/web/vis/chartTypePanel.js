@@ -664,9 +664,14 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
 
         // enable drop target based on allowable column types for the given field
         var selectedColType = LABKEY.vis.GenericChartHelper.getMeasureType(selectedCol.data);
+        var isMeasure = selectedCol.data.measure;
+        var isDimension = selectedCol.data.dimension;
+
         Ext4.each(this.query('panel'), function(fieldSelPanel)
         {
-            if (fieldSelPanel.getAllowableTypes().indexOf(selectedColType) > -1)
+            if ((fieldSelPanel.getAllowableTypes().indexOf(selectedColType) > -1) ||
+                    (fieldSelPanel.field.numericOnly && isMeasure) ||
+                    (fieldSelPanel.field.nonNumericOnly && isDimension))
             {
                 var dropTarget = fieldSelPanel.createDropTarget(grid, ddGroup);
 

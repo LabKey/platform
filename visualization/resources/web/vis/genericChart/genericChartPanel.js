@@ -1381,7 +1381,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     renderGenericChart : function(chartType, chartConfig)
     {
-        var aes, scales, plot, plotConfig, customRenderType, hasNoDataMsg, newChartDiv;
+        var aes, scales, plot, plotConfig, customRenderType, hasNoDataMsg, newChartDiv, droppedValues, measuresForProcessing = {};
 
         hasNoDataMsg = LABKEY.vis.GenericChartHelper.validateResponseHasData(this.chartData, true);
         if (hasNoDataMsg != null)
@@ -1397,6 +1397,32 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         customRenderType = this.customRenderTypes ? this.customRenderTypes[this.renderType] : undefined;
         if (customRenderType && customRenderType.generateAes)
             aes = customRenderType.generateAes(this, chartConfig, aes);
+
+        if (chartConfig.measures.x.measure) {
+            measuresForProcessing.x = {};
+            measuresForProcessing.x.name = chartConfig.measures.x.name;
+            measuresForProcessing.x.label = chartConfig.measures.x.label;
+        }
+        if (chartConfig.measures.y.measure) {
+            measuresForProcessing.y = {};
+            measuresForProcessing.y.name = chartConfig.measures.y.name;
+            measuresForProcessing.y.label = chartConfig.measures.y.label;
+        }
+        if (!Ext4.Object.isEmpty(measuresForProcessing)) {
+            droppedValues = this.processMeasureData(this.chartData.rows, aes, measuresForProcessing);
+
+            for (var measure in droppedValues) {
+                if (droppedValues.hasOwnProperty(measure)) {
+                    if (droppedValues[measure].numDropped) {
+                        this.addWarningText("The "
+                                + measure + "-axis measure '"
+                                + droppedValues[measure].label + "' had "
+                                + droppedValues[measure].numDropped +
+                                " value(s) that could not be converted to a number and are not included in the plot.");
+                    }
+                }
+            }
+        }
 
         scales = LABKEY.vis.GenericChartHelper.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, this.chartData, this.defaultNumberFormat);
         if (customRenderType && customRenderType.generateScales)
@@ -1426,6 +1452,47 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         this.afterRenderPlotComplete(newChartDiv);
+    },
+
+    processMeasureData : function (rows, aes, measuresForProcessing)
+    {
+        var droppedValues = {};
+
+        for (var i = 0; i < rows.length; i++) {
+            for (var measure in measuresForProcessing) {
+                if (measuresForProcessing.hasOwnProperty(measure)) {
+                    droppedValues[measure] = {};
+                    droppedValues[measure].label = measuresForProcessing[measure].label;
+                    droppedValues[measure].numDropped = 0;
+
+                    if (aes.hasOwnProperty(measure)) {
+                        var value = aes[measure](rows[i]);
+
+                        if (typeof value !== 'number' && value !== null) {
+
+                            //only try to convert strings to numbers
+                            if (typeof value === 'string') {
+                                value = value.trim();
+                            } else {
+                                //dates, objects, booleans etc. to be assigned value: NULL
+                                value = '';
+                            }
+
+                            var n = Number(value);
+                            // empty strings convert to 0, which we must explicitly deny
+                            if (value === '' || isNaN(n)) {
+                                rows[i][measuresForProcessing[measure].name].value = null;
+                                droppedValues[measure].numDropped++;
+                            } else {
+                                rows[i][measuresForProcessing[measure].name].value = n;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return droppedValues;
     },
 
     getNewChartDisplayDiv : function()
