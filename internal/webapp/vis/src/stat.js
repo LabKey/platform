@@ -208,15 +208,18 @@ LABKEY.vis.Stat.getVTransformation = function(standardized)
 LABKEY.vis.Stat.CUSUM_WEIGHT_FACTOR = 0.5;
 LABKEY.vis.Stat.CUSUM_CONTROL_LIMIT = 5;
 LABKEY.vis.Stat.CUSUM_CONTROL_LIMIT_LOWER = 0;
+LABKEY.vis.Stat.CUSUM_EPSILON = 0.0000001;
 
 /**
  * Calculates a variety of cumulative sums for a data array.
  * @param values Array of data values to calculate from
  * @param negative True to calculate CUSUM-, false to calculate CUSUM+. (default to false)
  * @param transform True to calculate CUSUMv (Variability CUSUM), false to calculate CUSUMm (Mean CUSUM). (default to false)
+ * @param forcePositiveResult True to force all result values to be no less than a specified positive value, usually used for log scale. (default to false)
+ * @param epsilon The smallest value that all returned value can be, only used if forcePositiveResult is true. (default to LABKEY.vis.Stat.CUSUM_EPSILON)
  * @returns {number[]}
  */
-LABKEY.vis.Stat.getCUSUM = function(values, negative, transform)
+LABKEY.vis.Stat.getCUSUM = function(values, negative, transform, forcePositiveResult, epsilon)
 {
     if (values == null)
         return [];
@@ -236,19 +239,30 @@ LABKEY.vis.Stat.getCUSUM = function(values, negative, transform)
         cusums.push(cusum);
     }
     cusums.shift(); // remove the initial 0 value
+    if (forcePositiveResult)
+    {
+        var lowerBound = epsilon ? epsilon : LABKEY.vis.Stat.CUSUM_EPSILON;
+        for (var j = 0; j < cusums.length; j++)
+        {
+            cusums[j] = Math.max(cusums[j], lowerBound);
+        }
+    }
     return cusums;
 };
 
 // MOVING_RANGE_UPPER_LIMIT_WEIGHT is chosen to provide a type I error rate of 0.0027 which guarantees 3*stdDev
 LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT = 3.268;
 LABKEY.vis.Stat.MOVING_RANGE_LOWER_LIMIT = 0;
+LABKEY.vis.Stat.MOVING_RANGE_EPSILON = 0.0000001;
 
 /**
  * Calculate the moving range values for a data array, which are sequential differences between two successive values.
  * @param values Array of data values to calculate from
+ * @param forcePositiveResult True to force all result values to be no less than a specified positive value, usually used for log scale. (default to false)
+ * @param epsilon The smallest value that all returned value can be, only used if forcePositiveResult is true. (default to LABKEY.vis.Stat.MOVING_RANGE_EPSILON)
  * @returns {number[]}
  */
-LABKEY.vis.Stat.getMovingRanges = function(values)
+LABKEY.vis.Stat.getMovingRanges = function(values, forcePositiveResult, epsilon)
 {
     if (values == null)
         return [];
@@ -256,6 +270,14 @@ LABKEY.vis.Stat.getMovingRanges = function(values)
     for (var i = 1; i < values.length; i++)
     {
         mR.push(Math.abs(values[i] - values[i-1]));
+    }
+    if (forcePositiveResult)
+    {
+        var lowerBound = epsilon ? epsilon : LABKEY.vis.Stat.MOVING_RANGE_EPSILON;
+        for (var j = 0; j < mR.length; j++)
+        {
+            mR[j] = Math.max(lowerBound, mR[j]);
+        }
     }
     return mR;
 };
