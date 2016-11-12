@@ -762,8 +762,8 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectData.class)
     public class NewQueryAction extends FormViewAction<NewQueryForm>
     {
-        NewQueryForm _form;
-        ActionURL _successUrl;
+        private NewQueryForm _form;
+        private ActionURL _successUrl;
 
         public void validateCommand(NewQueryForm target, org.springframework.validation.Errors errors)
         {
@@ -773,7 +773,6 @@ public class QueryController extends SpringActionController
                 //errors.rejectValue("ff_newQueryName", ERROR_REQUIRED);
         }
 
-        @SuppressWarnings({"UnusedDeclaration"})
         public ModelAndView getView(NewQueryForm form, boolean reshow, BindException errors) throws Exception
         {
             if (form.getSchema() == null)
