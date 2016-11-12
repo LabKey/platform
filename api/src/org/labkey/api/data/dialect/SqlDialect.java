@@ -476,7 +476,7 @@ public abstract class SqlDialect
     public abstract String addReselect(SQLFragment sql, ColumnInfo column, @Nullable String proposedVariable);
 
     // Could be INSERT, UPDATE, or DELETE statement
-    public abstract @Nullable ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException;
+    public abstract @NotNull ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException;
 
     private static final InClauseGenerator DEFAULT_GENERATOR = new ParameterMarkerInClauseGenerator();
 

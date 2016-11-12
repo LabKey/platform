@@ -161,7 +161,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException
+    public @NotNull ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }

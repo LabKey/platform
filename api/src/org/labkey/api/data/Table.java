@@ -760,18 +760,14 @@ public class Table
             else
             {
                 rs = table.getSqlDialect().executeWithResults(stmt);
+                rs.next();
 
-                if (null != rs)
-                {
-                    rs.next();
-
-                    // Explicitly retrieve the new rowId based on the autoIncrement type.  We shouldn't use getObject()
-                    // here because PostgreSQL sequences always return Long, and we expect Integer in many places.
-                    if (autoIncColumn.getJavaClass().isAssignableFrom(Long.TYPE))
-                        _setProperty(returnObject, autoIncColumn.getName(), rs.getLong(1));
-                    else
-                        _setProperty(returnObject, autoIncColumn.getName(), rs.getInt(1));
-                }
+                // Explicitly retrieve the new rowId based on the autoIncrement type.  We shouldn't use getObject()
+                // here because PostgreSQL sequences always return Long, and we expect Integer in many places.
+                if (autoIncColumn.getJavaClass().isAssignableFrom(Long.TYPE))
+                    _setProperty(returnObject, autoIncColumn.getName(), rs.getLong(1));
+                else
+                    _setProperty(returnObject, autoIncColumn.getName(), rs.getInt(1));
             }
 
             _copyInsertSpecialFields(returnObject, fields);
