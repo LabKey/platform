@@ -31,6 +31,7 @@ import org.labkey.api.util.Filter;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Set;
 
 /**
  * User: matthewb
@@ -238,6 +239,12 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
     public int removeUsingFilter(Filter<String> filter)
     {
         return _sharedCache.removeUsingFilter(filter);
+    }
+
+    @Override
+    public Set<String> getKeys()
+    {
+        return _sharedCache.getKeys();
     }
 
     @Override

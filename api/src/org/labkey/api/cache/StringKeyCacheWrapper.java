@@ -19,6 +19,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.Filter;
 
+import java.util.Set;
+
 /**
  * User: adam
  * Date: Jul 8, 2010
@@ -77,6 +79,12 @@ public class StringKeyCacheWrapper<V> implements StringKeyCache<V>
     public int removeUsingFilter(Filter<String> stringFilter)
     {
         return _cache.removeUsingFilter(stringFilter);
+    }
+
+    @Override
+    public Set<String> getKeys()
+    {
+        return _cache.getKeys();
     }
 
     @Override

@@ -19,6 +19,8 @@ package org.labkey.api.cache;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.Filter;
 
+import java.util.Set;
+
 /**
  * User: adam
  * Date: Jul 8, 2010
@@ -44,6 +46,8 @@ public interface Cache<K, V>
      * Returns the number of elements that were removed.
      */
     int removeUsingFilter(Filter<K> filter);
+
+    Set<K> getKeys();
 
     void clear();
 

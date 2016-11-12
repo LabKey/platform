@@ -24,6 +24,7 @@ import org.labkey.api.view.ViewServlet;
 
 import javax.management.DynamicMBean;
 import javax.management.StandardMBean;
+import java.util.Set;
 
 /**
  * User: adam
@@ -152,6 +153,12 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         return trackRemoves(_cache.removeUsingFilter(kFilter));
     }
 
+
+    @Override
+    public Set<K> getKeys()
+    {
+        return _cache.getKeys();
+    }
 
     @Override
     public void clear()

@@ -18,6 +18,9 @@ package org.labkey.api.cache;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.Filter;
 
+import java.util.Collections;
+import java.util.Set;
+
 import static org.labkey.api.cache.CacheType.DeterministicLRU;
 
 /**
@@ -64,6 +67,12 @@ public class NoopCacheProvider implements CacheProvider
         public int removeUsingFilter(Filter<K> filter)
         {
             return 0;
+        }
+
+        @Override
+        public Set<K> getKeys()
+        {
+            return Collections.emptySet();
         }
 
         @Override

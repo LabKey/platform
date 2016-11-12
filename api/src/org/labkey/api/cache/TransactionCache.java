@@ -18,6 +18,8 @@ package org.labkey.api.cache;
 
 import org.labkey.api.util.Filter;
 
+import java.util.Set;
+
 /**
  * A read-through, transaction-specific cache.  Reads through to the shared cache until any write occurs, at which point it
  * switches to using a private cache for the remainder of the transaction.
@@ -108,6 +110,12 @@ public class TransactionCache<K, V> implements Cache<K, V>
     {
         _hasWritten = true;
         return _privateCache.removeUsingFilter(filter);
+    }
+
+    @Override
+    public Set<K> getKeys()
+    {
+        return null;
     }
 
     @Override

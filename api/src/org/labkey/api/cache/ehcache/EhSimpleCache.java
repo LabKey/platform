@@ -23,8 +23,9 @@ import org.labkey.api.cache.CacheType;
 import org.labkey.api.cache.SimpleCache;
 import org.labkey.api.util.Filter;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
 * User: adam
@@ -89,6 +90,13 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     }
 
     @Override
+    public Set<K> getKeys()
+    {
+        // EhCache provides keys as a "set-like" list; make it a real Set
+        return new HashSet<K>(_cache.getKeys());
+    }
+
+    @Override
     public void clear()
     {
         _cache.removeAll();
@@ -133,10 +141,9 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     @Override
     public void log()
     {
-        List<K> keys = new ArrayList<K>(_cache.getKeys());
         StringBuilder sb = new StringBuilder();
 
-        for (K key : keys)
+        for (K key : (List<K>)_cache.getKeys())
         {
             sb.append(key).append(" -> ").append(get(key)).append("\n");
         }
