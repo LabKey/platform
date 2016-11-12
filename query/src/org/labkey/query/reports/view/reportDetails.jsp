@@ -19,15 +19,14 @@
 <%@ page import="org.labkey.api.reports.model.ReportPropsManager" %>
 <%@ page import="org.labkey.api.reports.report.ModuleReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
-<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportDesignBean" %>
+<%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.Date" %>
-<%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportDesignBean> me = (JspView<ReportDesignBean>) HttpView.currentView();
@@ -56,7 +55,7 @@
     String status = "";
     try
     {
-        category = reportDescriptor.getCategory().getLabel();
+        category = reportDescriptor.getCategory(bean.getContainer()).getLabel();
         status =  ReportPropsManager.get().getPropertyValue(reportDescriptor.getEntityId(), bean.getContainer(), "status").toString();
         authorId = ((Double) ReportPropsManager.get().getPropertyValue(reportDescriptor.getEntityId(), bean.getContainer(), "author")).intValue();
         refreshDate = (Date) ReportPropsManager.get().getPropertyValue(reportDescriptor.getEntityId(), bean.getContainer(), "refreshDate");

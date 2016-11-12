@@ -160,8 +160,10 @@ public class ReportViewProvider implements DataViewProvider
                 info.setSchemaName(schema);
                 info.setQueryName(query);
 
-                if (descriptor.getCategory() != null)
-                    info.setCategory(descriptor.getCategory());
+                ViewCategory category = descriptor.getCategory(c);
+
+                if (category != null)
+                    info.setCategory(category);
                 else
                     info.setCategory(ReportUtil.getDefaultCategory(c, schema, query));
 
@@ -310,16 +312,18 @@ public class ReportViewProvider implements DataViewProvider
                 try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
                     ReportDescriptor descriptor = report.getDescriptor();
-                    ViewCategory category = null;
+                    Integer categoryId = null;
 
                     // save the category information then the dataset information
                     if (props.containsKey(Property.category.name()))
                     {
-                        int categoryId = NumberUtils.toInt(String.valueOf(props.get(Property.category.name())));
-                        category = ViewCategoryManager.getInstance().getCategory(context.getContainer(), categoryId);
+                        // Validate that categoryId matches a category in this container
+                        categoryId = NumberUtils.toInt(String.valueOf(props.get(Property.category.name())));
+                        ViewCategory category = ViewCategoryManager.getInstance().getCategory(context.getContainer(), categoryId);
+                        categoryId = null != category ? category.getRowId() : null;
                     }
 
-                    descriptor.setCategory(category);
+                    descriptor.setCategoryId(categoryId);
 
                     if (props.containsKey(Property.viewName.name()))
                         descriptor.setReportName(StringUtils.trimToNull(String.valueOf(props.get(Property.viewName.name()))));

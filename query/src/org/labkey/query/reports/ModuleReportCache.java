@@ -21,10 +21,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveArrayListValuedMap;
-import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCache2;
 import org.labkey.api.module.ModuleResourceCacheHandler2;
+import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryRReportDescriptor;
@@ -32,7 +32,6 @@ import org.labkey.api.reports.report.ModuleQueryReportDescriptor;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
 
 import java.io.FilenameFilter;
@@ -57,19 +56,19 @@ public class ModuleReportCache
     private static final FilenameFilter moduleReportFilter = (dir, name) -> ModuleRReportDescriptor.accept(name) || StringUtils.endsWithIgnoreCase(name, ModuleJavaScriptReportDescriptor.FILE_EXTENSION);
     private static final FilenameFilter moduleReportFilterWithQuery = (dir, name) -> moduleReportFilter.accept(dir, name) || StringUtils.endsWithIgnoreCase(name, ModuleQueryReportDescriptor.FILE_EXTENSION);
 
-    private static final ModuleResourceCache2<ReportCollections> MODULE_REPORT_DESCRIPTOR_CACHE = new ModuleResourceCache2<>("Module report cache", new ModuleReportHandler(), REPORT_PATH);
+    private static final ModuleResourceCache2<ReportCollections> MODULE_REPORT_DESCRIPTOR_CACHE = ModuleResourceCaches.create(REPORT_PATH, new ModuleReportHandler(), "Module report cache");
 
     @Nullable
-    static ReportDescriptor getModuleReportDescriptor(Module module, Container c, User user, String path)
+    static ReportDescriptor getModuleReportDescriptor(Module module, String path)
     {
-        ReportCollections collections = MODULE_REPORT_DESCRIPTOR_CACHE.getResourceMap(module, c, user);
+        ReportCollections collections = MODULE_REPORT_DESCRIPTOR_CACHE.getResourceMap(module);
         return collections.getDescriptor(path);
     }
 
     @NotNull
-    static List<ReportDescriptor> getModuleReportDescriptors(Module module, Container c, User user, @Nullable String path)
+    static List<ReportDescriptor> getModuleReportDescriptors(Module module, @Nullable String path)
     {
-        ReportCollections collections = MODULE_REPORT_DESCRIPTOR_CACHE.getResourceMap(module, c, user);
+        ReportCollections collections = MODULE_REPORT_DESCRIPTOR_CACHE.getResourceMap(module);
         return collections.getDescriptors(path);
     }
 
@@ -129,19 +128,19 @@ public class ModuleReportCache
     private static class ModuleReportHandler implements ModuleResourceCacheHandler2<ReportCollections>
     {
         @Override
-        public ReportCollections load(@Nullable Resource dir, Module module, Container c, User user)
+        public ReportCollections load(@Nullable Resource dir, Module module)
         {
             if (null == dir)
                 return EMPTY_REPORT_COLLECTIONS;
 
             CaseInsensitiveArrayListValuedMap<ReportDescriptor> mmap = new CaseInsensitiveArrayListValuedMap<>();
             Map<String, ReportDescriptor> map = new HashMap<>();
-            addReports(module, dir, map, mmap, c, user);
+            addReports(module, dir, map, mmap);
 
             return new ReportCollections(mmap, map);
         }
 
-        private void addReports(Module module, Resource dir, Map<String, ReportDescriptor> map, MultiValuedMap<String, ReportDescriptor> mmap, Container c, User user)
+        private void addReports(Module module, Resource dir, Map<String, ReportDescriptor> map, MultiValuedMap<String, ReportDescriptor> mmap)
         {
             Map<Path, ReportDescriptor> descriptors = new HashMap<>();
             HashMap<String, Resource> possibleQueryReportFiles = new HashMap<>();
@@ -162,7 +161,7 @@ public class ModuleReportCache
                         if (StringUtils.endsWithIgnoreCase(name, ModuleQueryReportDescriptor.FILE_EXTENSION))
                             possibleQueryReportFiles.put(name, resource);
                         else
-                            descriptors.put(resource.getPath(), createModuleReportDescriptorInstance(module, resource, c, user));  // TODO: Should have version that doesn't take Container and User
+                            descriptors.put(resource.getPath(), createModuleReportDescriptorInstance(module, resource));
                     }
                 }
             }
@@ -175,7 +174,7 @@ public class ModuleReportCache
             // Anything left in this map should be a Query Report
             for (Resource resource : possibleQueryReportFiles.values())
             {
-                descriptors.put(resource.getPath(), createModuleReportDescriptorInstance(module, resource, c, user));  // TODO: Should have version that doesn't take Container and User
+                descriptors.put(resource.getPath(), createModuleReportDescriptorInstance(module, resource));
             }
 
             Path path = dir.getPath();
@@ -189,7 +188,7 @@ public class ModuleReportCache
 
             for (Resource childDir : directories)
             {
-                addReports(module, childDir, map, mmap, c, user);
+                addReports(module, childDir, map, mmap);
             }
         }
 
@@ -199,7 +198,7 @@ public class ModuleReportCache
         }
 
         // TODO: Create and register factories for these descriptors
-        private static @NotNull ReportDescriptor createModuleReportDescriptorInstance(Module module, Resource reportFile, Container container, User user)
+        private static @NotNull ReportDescriptor createModuleReportDescriptorInstance(Module module, Resource reportFile)
         {
             Path path = reportFile.getPath();
             String parent = path.getParent().toString();
@@ -207,14 +206,14 @@ public class ModuleReportCache
 
             // Create R Report Descriptor
             if (ModuleQueryRReportDescriptor.accept(lower))
-                return new ModuleQueryRReportDescriptor(module, parent, reportFile, path, container, user);
+                return new ModuleQueryRReportDescriptor(module, parent, reportFile, path);
 
             // Create JS Report Descriptor
             if (lower.endsWith(ModuleQueryJavaScriptReportDescriptor.FILE_EXTENSION))
-                return new ModuleQueryJavaScriptReportDescriptor(module, parent, reportFile, path, container, user);
+                return new ModuleQueryJavaScriptReportDescriptor(module, parent, reportFile, path);
 
             // Create Query Report Descriptor
-            return new ModuleQueryReportDescriptor(module, parent, reportFile, path, container, user);
+            return new ModuleQueryReportDescriptor(module, parent, reportFile, path);
         }
     }
 }

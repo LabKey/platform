@@ -125,7 +125,6 @@ import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MimeMap;
@@ -1733,8 +1732,10 @@ public class ReportsController extends SpringActionController
             form.setDescription(report.getDescriptor().getReportDescription());
             form.setShared(report.getDescriptor().isShared());
 
-            if (null != report.getDescriptor().getCategory())
-                form.setCategory(report.getDescriptor().getCategory().getRowId());
+            ViewCategory category = report.getDescriptor().getCategory(getContainer());
+
+            if (null != category)
+                form.setCategory(category.getRowId());
 
             Integer authorId = report.getDescriptor().getAuthor();
             if (null != authorId)
@@ -1797,7 +1798,6 @@ public class ReportsController extends SpringActionController
             {
                 // save the category information then the report
                 Integer categoryId = form.getCategory();
-                ViewCategory category = null != categoryId ? ViewCategoryManager.getInstance().getCategory(getContainer(), categoryId) : null;
 
                 R report = initializeReportForSave(form);
                 ReportDescriptor descriptor = report.getDescriptor();
@@ -1807,7 +1807,11 @@ public class ReportsController extends SpringActionController
                 descriptor.setModified(form.getModifiedDate());
 
                 descriptor.setReportDescription(form.getDescription());
-                descriptor.setCategory(category);
+
+                // Validate that categoryId matches a category in this container
+                ViewCategory category = null != categoryId ? ViewCategoryManager.getInstance().getCategory(getContainer(), categoryId) : null;
+                if (null != category)
+                    descriptor.setCategoryId(category.getRowId());
 
                 // Note: Keep this code in sync with ReportViewProvider.updateProperties()
                 boolean isPrivate = !form.getShared();

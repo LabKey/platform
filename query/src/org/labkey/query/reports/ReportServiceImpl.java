@@ -172,15 +172,15 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     }
 
     @Nullable
-    public ReportDescriptor getModuleReportDescriptor(Module module, Container container, User user, String path)
+    public ReportDescriptor getModuleReportDescriptor(Module module, String path)
     {
-        return ModuleReportCache.getModuleReportDescriptor(module, container, user, path);
+        return ModuleReportCache.getModuleReportDescriptor(module, path);
     }
 
     @NotNull
-    public List<ReportDescriptor> getModuleReportDescriptors(Module module, Container container, User user, @Nullable String path)
+    public List<ReportDescriptor> getModuleReportDescriptors(Module module, @Nullable String path)
     {
-        return ModuleReportCache.getModuleReportDescriptors(module, container, user, path);
+        return ModuleReportCache.getModuleReportDescriptors(module, path);
     }
 
     public void registerReport(Report report)
@@ -431,7 +431,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                     descriptor.setDisplayOrder(r.getDisplayOrder());
 
                     if (r.getCategoryId() != null)
-                        descriptor.setCategory(ViewCategoryManager.getInstance().getCategory(r.getContainerId(), r.getCategoryId()));
+                        descriptor.setCategoryId(r.getCategoryId());
 
                     descriptor.initProperties();
 
@@ -517,7 +517,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
         for (Module module : c.getActiveModules())
         {
-            moduleReportDescriptors.addAll(getModuleReportDescriptors(module, c, user, key));
+            moduleReportDescriptors.addAll(getModuleReportDescriptors(module, key));
         }
 
         List<Report> reports = new ArrayList<>();
@@ -893,10 +893,10 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         @Override
         public void categoryDeleted(User user, ViewCategory category) throws Exception
         {
-            for (Report report : getReportsForCategory(category))
+            for (Report report : getDatabaseReportsForCategory(category))
             {
                 Container c = ContainerManager.getForId(category.getContainerId());
-                report.getDescriptor().setCategory(null);
+                report.getDescriptor().setCategoryId(null);
                 
                 if (c != null)
                     _instance.saveReport(new DefaultContainerUser(c, user), report.getDescriptor().getReportKey(), report, true);
@@ -909,13 +909,14 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         @Override
         public void categoryUpdated(User user, ViewCategory category) throws Exception {}
 
-        private Collection<Report> getReportsForCategory(ViewCategory category)
+        private Collection<Report> getDatabaseReportsForCategory(ViewCategory category)
         {
             if (category != null)
             {
+                Integer categoryId = category.getRowId();
                 return DatabaseReportCache.getReports(category.lookupContainer())
                     .stream()
-                    .filter(report -> category.equals(report.getDescriptor().getCategory()))
+                    .filter(report -> categoryId.equals(report.getDescriptor().getCategoryId()))  // These are all database reports, so we can use getCategoryId()
                     .collect(Collectors.toList());
             }
             return Collections.emptyList();
