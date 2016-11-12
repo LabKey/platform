@@ -16,14 +16,14 @@
  */
 %>
 <%@ page import="org.labkey.api.reports.model.ReportPropsManager" %>
+<%@ page import="org.labkey.api.reports.model.ViewCategory" %>
 <%@ page import="org.labkey.api.reports.report.RedirectReport" %>
-<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
+<%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -52,8 +52,9 @@
         author = UserManager.getDisplayNameOrUserId(authorId, getUser());
 
     String category = null;
-    if (report.getDescriptor().getCategory() != null)
-        category = report.getDescriptor().getCategory().getLabel();
+    ViewCategory viewCategory = report.getDescriptor().getCategory(getContainer());
+    if (viewCategory != null)
+        category = viewCategory.getLabel();
 
 %>
 <a href='<%=h(url)%>'>

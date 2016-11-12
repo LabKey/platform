@@ -15,10 +15,8 @@
  */
 package org.labkey.api.reports.report;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -30,9 +28,9 @@ import java.util.LinkedHashSet;
  */
 public class ModuleQueryJavaScriptReportDescriptor extends ModuleJavaScriptReportDescriptor
 {
-    public ModuleQueryJavaScriptReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath, Container container, User user)
+    public ModuleQueryJavaScriptReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath)
     {
-        super(module, reportKey, sourceFile, reportPath, container, user);
+        super(module, reportKey, sourceFile, reportPath);
 
         if (null == getProperty(ReportDescriptor.Prop.schemaName))
         {

@@ -16,10 +16,8 @@
 package org.labkey.api.module;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.User;
 
 /**
  * User: adam
@@ -33,7 +31,7 @@ public interface ModuleResourceCacheHandler2<V>
      *
      * @return A Map or similar data structure that gives callers access to those resources
      */
-    V load(@Nullable Resource dir, Module module, Container c, User user);
+    V load(@Nullable Resource dir, Module module);
 
     /**
      * If needed, returns a FileSystemDirectoryListener that implements resource-specific file change handling. The

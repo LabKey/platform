@@ -17,10 +17,8 @@ package org.labkey.api.reports.report;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
-import org.labkey.api.data.Container;
 import org.labkey.api.reports.RScriptEngine;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.User;
 import org.labkey.query.xml.FunctionType;
 import org.labkey.query.xml.FunctionsType;
 import org.labkey.query.xml.ReportDescriptorType;
@@ -77,9 +75,9 @@ public class ModuleRReportResource extends ModuleReportDependenciesResource
     }
 
     @Override
-    protected ReportDescriptorType loadMetaData(Container container, User user)
+    protected ReportDescriptorType loadMetaData()
     {
-        ReportDescriptorType d = super.loadMetaData(container, user);
+        ReportDescriptorType d = super.loadMetaData();
 
         if (null != d)
         {

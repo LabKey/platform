@@ -17,9 +17,7 @@ package org.labkey.api.reports.report;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
-import org.labkey.api.data.Container;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.User;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.query.xml.DependenciesType;
 import org.labkey.query.xml.DependencyType;
@@ -49,9 +47,10 @@ public class ModuleReportDependenciesResource extends ModuleReportResource
         throw new XmlException("Metadata associated with a Report must have a ReportType of JavaScript");
     }
 
-    protected ReportDescriptorType loadMetaData(Container container, User user)
+    @Override
+    protected ReportDescriptorType loadMetaData()
     {
-        ReportDescriptorType d = super.loadMetaData(container, user);
+        ReportDescriptorType d = super.loadMetaData();
 
         if (null != d)
         {

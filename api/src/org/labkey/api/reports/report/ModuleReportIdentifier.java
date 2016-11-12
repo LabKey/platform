@@ -31,8 +31,8 @@ public class ModuleReportIdentifier extends AbstractReportIdentifier
 {
     protected static final String PREFIX = "module:";
 
-    private Module _module;
-    private Path _reportPath;
+    private final Module _module;
+    private final Path _reportPath;
 
     public ModuleReportIdentifier(Module module, Path reportPath)
     {
@@ -107,7 +107,7 @@ public class ModuleReportIdentifier extends AbstractReportIdentifier
         {
             ReportService.I service = ReportService.get();
             ReportDescriptor d = service.getModuleReportDescriptor(
-                    getModule(), cu.getContainer(), cu.getUser(), getReportPath().toString("","")
+                    getModule(), getReportPath().toString("","")
             );
 
             if (null != d)

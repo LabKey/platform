@@ -17,9 +17,7 @@ package org.labkey.api.reports.report;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
-import org.labkey.api.data.Container;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.query.xml.ReportDescriptorType;
 
@@ -60,7 +58,7 @@ public class ModuleReportResource
         }
     }
 
-    protected ReportDescriptorType loadMetaData(Container container, User user)
+    protected ReportDescriptorType loadMetaData()
     {
         ReportDescriptorType d = null;
         if (null != _metaDataFile && _metaDataFile.isFile())
@@ -68,7 +66,7 @@ public class ModuleReportResource
             try
             {
                 String xml = getFileContents(_metaDataFile);
-                d = _reportDescriptor.setDescriptorFromXML(container, user, xml);
+                d = _reportDescriptor.setDescriptorFromXML(xml);
             }
             catch(IOException e)
             {

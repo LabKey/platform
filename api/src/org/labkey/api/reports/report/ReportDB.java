@@ -62,7 +62,7 @@ public class ReportDB
             if (_contentModified == null)
                 _contentModified = new java.sql.Timestamp(System.currentTimeMillis());
 
-            ViewCategory category = descriptor.getCategory();
+            ViewCategory category = descriptor.getCategory(c);
             if (category != null)
                 _categoryId = category.getRowId();
         }

@@ -30,9 +30,7 @@ import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.resource.MergedDirectoryResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceWrapper;
-import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
-import org.labkey.api.writer.DefaultContainerUser;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -78,11 +76,11 @@ public final class ModuleResourceCache2<V>
             @Override
             public V load(Module module, Object argument)
             {
-                ContainerUserCache cuc = (ContainerUserCache)argument;
+                ModuleResourceCache2 cache = (ModuleResourceCache2)argument;
                 Resource dir = module.getModuleResource(root);
-                Resource wrappedDir = (null != dir && dir.isCollection() ? new FileListenerResource(dir, module, cuc.getCache()) : null);
+                Resource wrappedDir = (null != dir && dir.isCollection() ? new FileListenerResource(dir, module, cache) : null);
 
-                return _handler.load(wrappedDir, module, cuc.getContainer(), cuc.getUser());
+                return _handler.load(wrappedDir, module);
             }
         };
 
@@ -110,28 +108,6 @@ public final class ModuleResourceCache2<V>
     public @NotNull V getResourceMap(Module module)
     {
         return _cache.get(module, this);
-    }
-
-    @Deprecated // This is temporary, until the ModuleReportCache work is finished
-    public @NotNull V getResourceMap(Module module, Container c, User user)
-    {
-        return _cache.get(module, new ContainerUserCache(c, user, this));
-    }
-
-    private static class ContainerUserCache extends DefaultContainerUser
-    {
-        private final ModuleResourceCache2 _cache;
-
-        public ContainerUserCache(Container container, User user, ModuleResourceCache2 cache)
-        {
-            super(container, user);
-            _cache = cache;
-        }
-
-        public ModuleResourceCache2 getCache()
-        {
-            return _cache;
-        }
     }
 
     /**

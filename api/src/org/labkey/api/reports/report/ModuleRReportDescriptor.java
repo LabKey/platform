@@ -17,10 +17,8 @@ package org.labkey.api.reports.report;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
 import org.labkey.query.xml.ReportDescriptorType;
 
@@ -45,7 +43,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor implements Module
 
     protected final ModuleReportResource _resource;
 
-    public ModuleRReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath, Container container, User user)
+    public ModuleRReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath)
     {
         _module = module;
         _reportPath = reportPath;
@@ -56,7 +54,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor implements Module
         setReportType(getDefaultReportType(reportKey));
 
         _resource = getModuleReportResource(sourceFile);
-        loadMetaData(container, user);
+        loadMetaData();
         _resource.loadScript();
     }
 
@@ -98,9 +96,9 @@ public class ModuleRReportDescriptor extends RReportDescriptor implements Module
     }
 
     @Nullable
-    protected ReportDescriptorType loadMetaData(Container container, User user)
+    protected ReportDescriptorType loadMetaData()
     {
-        return _resource.loadMetaData(container, user);
+        return _resource.loadMetaData();
     }
 
     @Override

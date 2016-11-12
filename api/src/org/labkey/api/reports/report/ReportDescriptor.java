@@ -93,7 +93,8 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
     private String _reportKey;
     private Integer _owner;
     private int _flags;
-    private ViewCategory _category;
+    private String[] _categoryParts = null;
+    private Integer _categoryId = null;
     private int _displayOrder;
     private boolean _wasShared = false; // Used only by the save process
     private Date _contentModified;
@@ -508,8 +509,10 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         descriptor.setReportKey(getReportKey());
         descriptor.setHidden(isHidden());
 
-        if (getCategory() != null)
-            descriptor.setCategory(ViewCategoryManager.getInstance().encode(getCategory()));
+        ViewCategory category = getCategory(c);
+
+        if (category != null)
+            descriptor.setCategory(ViewCategoryManager.getInstance().encode(category));
 
         ReportPropertyList props = descriptor.addNewProperties();
         for (Map.Entry<String, Object> entry : _props.entrySet())
@@ -703,8 +706,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
             if (d.getCategory() != null)
             {
                 String[] parts = ViewCategoryManager.getInstance().decode(d.getCategory());
-                ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, parts);
-                descriptor.setCategory(category);
+                descriptor.setCategoryParts(parts);
             }
 
             PropertyList tags = d.getTags();
@@ -721,7 +723,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return null;
     }
 
-    public ReportDescriptorType setDescriptorFromXML(@Nullable Container container, @Nullable User user, String xmlString) throws IOException, XmlException
+    public ReportDescriptorType setDescriptorFromXML(String xmlString) throws IOException, XmlException
     {
         ReportDescriptorType d;
 
@@ -740,11 +742,10 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
         setProperties(props);
 
-        if (d.getCategory() != null && container != null && user != null)
+        if (d.getCategory() != null)
         {
             String[] parts = ViewCategoryManager.getInstance().decode(d.getCategory());
-            ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, parts);
-            setCategory(category);
+            setCategoryParts(parts);
         }
 
         if (d.getLabel() != null)
@@ -879,14 +880,34 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return true;
     }
 
-    public ViewCategory getCategory()
+    public ViewCategory getCategory(Container c)
     {
-        return _category;
+        final ViewCategory category;
+
+        // Database reports are saved with a category id whereas file-based reports have a category name
+        if (null != _categoryId)
+            category = ViewCategoryManager.getInstance().getCategory(c, _categoryId);
+        else if (null != _categoryParts)
+            category = ViewCategoryManager.getInstance().getCategory(c, _categoryParts);
+        else
+            category = null;
+
+        return category;
     }
 
-    public void setCategory(ViewCategory category)
+    public Integer getCategoryId()
     {
-        _category = category;
+        return _categoryId;
+    }
+
+    public void setCategoryId(Integer categoryId)
+    {
+        _categoryId = categoryId;
+    }
+
+    public void setCategoryParts(String[] categoryParts)
+    {
+        _categoryParts = categoryParts;
     }
 
     public int getDisplayOrder()

@@ -16,10 +16,8 @@
 package org.labkey.api.reports.report;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
 
 /**
@@ -36,7 +34,7 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor implement
     private final Path _reportPath;
     private final ModuleQueryReportResource _resource;
 
-    public ModuleQueryReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath, Container container, User user)
+    public ModuleQueryReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath)
     {
         _module = module;
         _reportPath = reportPath;
@@ -48,7 +46,7 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor implement
         setDescriptorType(TYPE);
         setReportType(getDefaultReportType(reportKey));
         _resource = new ModuleQueryReportResource(this, sourceFile);
-        loadMetaData(container, user);
+        loadMetaData();
     }
 
     public String getDefaultReportType(String reportKey)
@@ -56,9 +54,9 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor implement
         return QueryReport.TYPE;
     }
 
-    protected void loadMetaData(Container container, User user)
+    protected void loadMetaData()
     {
-        _resource.loadMetaData(container, user);
+        _resource.loadMetaData();
     }
 
     @Override
