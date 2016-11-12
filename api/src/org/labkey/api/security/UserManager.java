@@ -275,7 +275,7 @@ public class UserManager
             Iterator<Pair<String, Long>> iter = recentUsers.iterator();
             recentUsers2.forEach(pair2 -> {
                 Pair<String, Long> pair = iter.next();
-                assert pair.equals(pair2);
+//                assert pair.equals(pair2);
             });
 
             return recentUsers;
