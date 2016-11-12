@@ -67,15 +67,6 @@ public final class ModuleResourceCache<T>
         return (T)_cache.get(resourceName, null, cacheLoader);
     }
 
-    @Deprecated // This is temporary, until the ModuleReportCache work is finished
-    @SuppressWarnings("unchecked")
-    @Nullable
-    public T getResource(String resourceName, @Nullable Object argument)
-    {
-        CacheLoader<String, Object> cacheLoader = (CacheLoader<String, Object>) _handler.getResourceLoader();
-        return (T)_cache.get(resourceName, argument, cacheLoader);
-    }
-
     /**
      *  Return a collection of all resources managed by this cache that are defined in the active modules
      *  in the specified Container.

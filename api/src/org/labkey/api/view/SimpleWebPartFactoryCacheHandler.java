@@ -26,13 +26,10 @@ import org.labkey.api.module.SimpleWebPartFactory;
 import java.nio.file.Path;
 
 /**
+ * Creates and caches the file-based web parts defined by modules. File changes result in dynamic reloading and re-initialization of webpart-related maps.
  * User: adam
  * Date: 12/29/13
  * Time: 12:38 PM
- */
-
-/**
- * Creates and caches the file-based webparts defined by modules. File changes result in dynamic reloading and re-initization of webpart-related maps.
  */
 public class SimpleWebPartFactoryCacheHandler implements ModuleResourceCacheHandler<String, SimpleWebPartFactory>
 {
@@ -57,15 +54,11 @@ public class SimpleWebPartFactoryCacheHandler implements ModuleResourceCacheHand
     @Override
     public CacheLoader<String, SimpleWebPartFactory> getResourceLoader()
     {
-        return new CacheLoader<String, SimpleWebPartFactory>()
+        return (key, argument) ->
         {
-            @Override
-            public SimpleWebPartFactory load(String key, @Nullable Object argument)
-            {
-                ModuleResourceCache.CacheId tid = ModuleResourceCache.parseCacheKey(key);
+            ModuleResourceCache.CacheId tid = ModuleResourceCache.parseCacheKey(key);
 
-                return new SimpleWebPartFactory(tid.getModule(), tid.getName());
-            }
+            return new SimpleWebPartFactory(tid.getModule(), tid.getName());
         };
     }
 

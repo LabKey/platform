@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
@@ -73,8 +74,6 @@ public class SimpleModule extends SpringModule
     public static String PROPERTY_NAMESPACE_PREFIX_TEMPLATE = NAMESPACE_PREFIX + "-${SchemaName}-${TableName}";
     public static String PROPERTY_LSID_TEMPLATE = "${FolderLSIDBase}:${GUID}";
 
-    private Collection<String> _schemaNames;
-
     public SimpleModule()
     {
     }
@@ -90,7 +89,6 @@ public class SimpleModule extends SpringModule
         if (getName() == null || getName().length() == 0)
             throw new ConfigurationException("Simple module must have a name");
 
-        getSchemaNames(true);
         addController(getName().toLowerCase(), SimpleController.class);
     }
 
@@ -131,47 +129,11 @@ public class SimpleModule extends SpringModule
     @NotNull
     public Collection<String> getSchemaNames()
     {
-        return getSchemaNames(false);
-    }
+        List<String> schemaNames = DbScope.getSchemaNames(this);
+        Collections.sort(schemaNames);  // Alphabetical is better than random
 
-    private Collection<String> getSchemaNames(final boolean throwOnError)
-    {
-        if (_schemaNames == null)
-        {
-            Resource schemasDir = getModuleResource(QueryService.MODULE_SCHEMAS_DIRECTORY);
-            if (schemasDir != null && schemasDir.isCollection())
-            {
-                final List<String> schemaNames = new ArrayList<>();
-                schemasDir.list().forEach(resource -> {
-                    String name = resource.getName();
-                    if (name.endsWith(".xml") && !name.endsWith(QueryService.SCHEMA_TEMPLATE_EXTENSION))
-                    {
-                        try
-                        {
-                            TablesDocument.Factory.parse(resource.getInputStream());
-                            String schemaName = name.substring(0, name.length() - ".xml".length());
-                            schemaNames.add(schemaName);
-                        }
-                        catch (XmlException | IOException e)
-                        {
-                            if (throwOnError)
-                                throw new ConfigurationException("Error in '" + name + "' schema file: " + e.getMessage());
-                            else
-                                _log.error("Skipping '" + name + "' schema file: " + e.getMessage());
-                        }
-                    }
-                });
-                Collections.sort(schemaNames);  // Alphabetical is better than random
-                _schemaNames = Collections.unmodifiableList(schemaNames);
-            }
-            else
-            {
-                _schemaNames = Collections.emptySet();
-            }
-        }
-        return _schemaNames;
+        return Collections.unmodifiableList(schemaNames);
     }
-
 
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)

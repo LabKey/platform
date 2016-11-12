@@ -69,7 +69,7 @@ public final class ModuleResourceCache2<V>
     private final FileSystemWatcher _watcher = FileSystemWatchers.get();
     private final Set<String> _pathsWithListeners = new ConcurrentHashSet<>();
 
-    public ModuleResourceCache2(String description, ModuleResourceCacheHandler2<V> handler, Path root)
+    ModuleResourceCache2(Path root, ModuleResourceCacheHandler2<V> handler, String description)
     {
         CacheLoader<Module, V> wrapper = new CacheLoader<Module, V>()
         {

@@ -29,7 +29,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCache2;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceResolver;
 import org.labkey.api.query.QueryService;
@@ -114,8 +114,8 @@ public class DbScope
     private static final Map<Thread, Thread> _sharedConnections = new WeakHashMap<>();
     private static final Map<String, Throwable> _dataSourceFailures = new HashMap<>();
     // Cache for schema metadata XML files, shared across the whole server
-    private static final ModuleResourceCache<TablesDocument> SCHEMA_XML_CACHE = ModuleResourceCaches.create(
-            new Path(SchemaXmlCacheHandler.DIR_NAME), "Parsed schema XML metadata", new SchemaXmlCacheHandler());
+    private static final ModuleResourceCache2<Map<String, TablesDocument>> SCHEMA_XML_CACHE =
+        ModuleResourceCaches.create(new Path(QueryService.MODULE_SCHEMAS_DIRECTORY), new SchemaXmlCacheHandler(), "Parsed schema XML metadata");
 
     private static DbScope _labkeyScope = null;
 
@@ -539,14 +539,14 @@ public class DbScope
             {
                 // Acquire the requested locks BEFORE entering the synchronized block for mapping the transaction
                 // to the current thread
-                List<Lock> serverLocks = Arrays.asList(locks).stream()
+                List<Lock> serverLocks = Arrays.stream(locks)
                         .filter((l) -> l instanceof ServerLock)
                         .collect(Collectors.toList());
                 List<Lock> memoryLocks;
                 if (serverLocks.isEmpty())
                     memoryLocks = Arrays.asList(locks);
                 else
-                    memoryLocks = Arrays.asList(locks).stream()
+                    memoryLocks = Arrays.stream(locks)
                         .filter((l) -> !(l instanceof ServerLock))
                         .collect(Collectors.toList());
 
@@ -563,7 +563,7 @@ public class DbScope
                     transactions.add(result);
                     stackDepth = transactions.size();
                 }
-                serverLocks.stream().forEach(Lock::lock);
+                serverLocks.forEach(Lock::lock);
                 if (stackDepth > 2)
                     LOG.info("Transaction stack for thread '" + getEffectiveThread().getName() + "' is " + stackDepth);
             }
@@ -900,11 +900,19 @@ public class DbScope
             assert resolver instanceof ModuleResourceResolver;
             Module module = ((ModuleResourceResolver) resolver).getModule();
 
-            TablesDocument tablesDoc = SCHEMA_XML_CACHE.getResource(ModuleResourceCache.createCacheKey(module, filename));
+            TablesDocument tablesDoc = SCHEMA_XML_CACHE.getResourceMap(module).get(filename);
 
             if (null != tablesDoc)
                 schema.setTablesDocument(tablesDoc);
         }
+    }
+
+
+    public static @NotNull List<String> getSchemaNames(Module module)
+    {
+        return SCHEMA_XML_CACHE.getResourceMap(module).keySet().stream()
+            .map(filename -> filename.substring(0, filename.length() - ".xml".length()))
+            .collect(Collectors.toCollection(ArrayList::new));
     }
 
 

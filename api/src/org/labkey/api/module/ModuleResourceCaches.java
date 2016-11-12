@@ -52,6 +52,20 @@ public class ModuleResourceCaches
     }
 
     /**
+     * Create a new ModuleResourceCache.
+     *
+     * @param path Path representing the root of the resource directory
+     * @param handler ModuleResourceCacheHandler that customizes this cache's behavior
+     * @param description Short description of the cache
+     * @param <T> Object type of the resource map that this cache manages
+     * @return A ModuleResourceCache
+     */
+    public static <T> ModuleResourceCache2<T> create(Path path, ModuleResourceCacheHandler2<T> handler, String description)
+    {
+        return new ModuleResourceCache2<>(path, handler, description);
+    }
+
+    /**
      * Create a new ModuleResourceCache. This method is needed only in cases where multiple caches, handling different
      * object types, need to operate on the same resource directory. This method lets caches share a ModuleResourceDirectory,
      * which shares the underlying FileSystemDirectoryListener.

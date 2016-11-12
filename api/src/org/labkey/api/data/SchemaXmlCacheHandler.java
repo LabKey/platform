@@ -17,75 +17,60 @@ package org.labkey.api.data;
 
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleResourceCache;
-import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCacheHandler2;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.Path;
 import org.labkey.data.xml.TablesDocument;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: adam
  * Date: 5/10/2014
  * Time: 1:18 PM
  */
-public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<String, TablesDocument>
+public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler2<Map<String, TablesDocument>>
 {
-    static final String DIR_NAME = "schemas";
-
     @Override
-    public boolean isResourceFile(String filename)
+    public Map<String, TablesDocument> load(@Nullable Resource dir, Module module)
     {
-        return filename.endsWith(".xml");
-    }
+        if (null == dir)
+            return Collections.emptyMap();
 
-    @Override
-    public String getResourceName(Module module, String filename)
-    {
-        return filename;
-    }
+        Map<String, TablesDocument> map = new HashMap<>();
 
-    @Override
-    public String createCacheKey(Module module, String resourceName)
-    {
-        return ModuleResourceCache.createCacheKey(module, resourceName);
-    }
+        dir.list().stream()
+                .filter(resource -> !resource.isCollection() && resource.getName().endsWith(".xml") && !resource.getName().endsWith(QueryService.SCHEMA_TEMPLATE_EXTENSION))
+                .forEach(resource -> {
+                    assert null != resource : "Expected schema metadata xml file";
+                    TablesDocument doc = null;
 
-    @Override
-    public CacheLoader<String, TablesDocument> getResourceLoader()
-    {
-        return (key, argument) ->
-        {
-            ModuleResourceCache.CacheId id = ModuleResourceCache.parseCacheKey(key);
-            Module module = id.getModule();
-            String filename = id.getName();
-            Path path = new Path(DIR_NAME, filename);
-            Resource resource  = module.getModuleResolver().lookup(path);
+                    try (InputStream xmlStream = resource.getInputStream())
+                    {
+                        if (null != xmlStream)
+                        {
+                            doc = TablesDocument.Factory.parse(xmlStream);
+                        }
+                    }
+                    catch (IOException | XmlException e)
+                    {
+                        ExceptionUtil.logExceptionToMothership(null, e);
+                    }
 
-            assert null != resource : "Expected schema metadata xml file";
+                    if (null != doc)
+                        map.put(resource.getName(), doc);
+                });
 
-            try (InputStream xmlStream = resource.getInputStream())
-            {
-                if (null != xmlStream)
-                {
-                    return TablesDocument.Factory.parse(xmlStream);
-                }
-            }
-            catch (IOException | XmlException e)
-            {
-                ExceptionUtil.logExceptionToMothership(null, e);
-            }
-
-            return null;
-        };
+        return Collections.unmodifiableMap(map);
     }
 
     @Nullable
