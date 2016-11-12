@@ -62,7 +62,7 @@ public class Pair<Type1, Type2> implements Map.Entry<Type1, Type2>, java.io.Seri
 
     public String toString()
     {
-        return super.toString() + " (" + String.valueOf(first) + "," + String.valueOf(second) + ")";
+        return "(" + String.valueOf(first) + ", " + String.valueOf(second) + ")";
     }
 
     public Pair<Type1, Type2> copy()

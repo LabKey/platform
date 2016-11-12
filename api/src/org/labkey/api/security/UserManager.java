@@ -65,6 +65,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -245,6 +246,8 @@ public class UserManager
     }
 
 
+    private static final Comparator<Pair<String, Long>> RECENT_USER_COMPARATOR = Comparator.comparing(Pair<String, Long>::getKey).thenComparing(Pair::getValue);
+
     /** Returns all users who have logged in during this server session since the specified interval */
     public static List<Pair<String, Long>> getRecentUsers(long since)
     {
@@ -265,18 +268,43 @@ public class UserManager
                 }
             }
 
-            // Sort by number of minutes
-            Collections.sort(recentUsers, (o1, o2) -> (o1.second).compareTo(o2.second));
+            // Sort by number of minutes, then user email
+            Collections.sort(recentUsers, RECENT_USER_COMPARATOR);
 
             List<Pair<String, Long>> recentUsers2 = getRecentUsers2(since);
 
-            assert recentUsers.size() == recentUsers2.size();
+            boolean equal = true;
 
             Iterator<Pair<String, Long>> iter = recentUsers.iterator();
-            recentUsers2.forEach(pair2 -> {
-                Pair<String, Long> pair = iter.next();
-//                assert pair.equals(pair2);
-            });
+            for (Pair<String, Long> pair2 : recentUsers2)
+            {
+                if (iter.hasNext())
+                {
+                    Pair<String, Long> pair = iter.next();
+
+                    if (!pair.equals(pair2))
+                    {
+                        equal = false;
+                        break;
+                    }
+                }
+                else
+                {
+                    equal = false;
+                    break;
+                }
+            }
+
+            if (!equal)
+            {
+                StringBuilder message = new StringBuilder("Recent users discrepancy.\n");
+                message.append("Old approach:\n");
+                message.append(recentUsers);
+                message.append("\nNew approach:\n");
+                message.append(recentUsers2);
+
+                LOG.info(message);
+            }
 
             return recentUsers;
         }
@@ -285,10 +313,11 @@ public class UserManager
     public static List<Pair<String, Long>> getRecentUsers2(long since)
     {
         long now = System.currentTimeMillis();
-        List<Pair<String, Long>> recentUsers = new ArrayList<>(RECENT_USERS.size());
+        Set<Integer> keys = RECENT_USER_CACHE.getKeys();
+        List<Pair<String, Long>> recentUsers = new ArrayList<>(keys.size());
 
         RECENT_USER_CACHE.getKeys().forEach(id -> {
-            long lastActivity = RECENT_USERS.get(id);
+            long lastActivity = RECENT_USER_CACHE.get(id);
 
             if (lastActivity >= since)
             {
@@ -298,8 +327,8 @@ public class UserManager
             }
         });
 
-        // Sort by number of minutes
-        Collections.sort(recentUsers, (o1, o2) -> (o1.second).compareTo(o2.second));
+        // Sort by number of minutes, then user email
+        Collections.sort(recentUsers, RECENT_USER_COMPARATOR);
 
         return recentUsers;
     }
