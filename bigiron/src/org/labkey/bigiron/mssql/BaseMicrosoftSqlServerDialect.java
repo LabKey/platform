@@ -445,7 +445,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public @Nullable ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException
+    public @NotNull ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException
     {
         return stmt.executeQuery();
     }

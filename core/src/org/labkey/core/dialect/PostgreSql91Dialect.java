@@ -282,7 +282,7 @@ class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException
+    public @NotNull ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException
     {
         return stmt.executeQuery();
     }
