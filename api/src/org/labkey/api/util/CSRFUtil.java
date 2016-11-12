@@ -62,7 +62,7 @@ public class CSRFUtil
                 }
                 catch (Exception x)
                 {
-                    // response already commited or something I suppose
+                    // response already committed or something I suppose
                     ExceptionUtil.logExceptionToMothership(request, x);
                 }
             }

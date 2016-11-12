@@ -24,7 +24,6 @@ import org.labkey.api.security.AuthenticatedRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
