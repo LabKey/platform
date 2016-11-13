@@ -16,44 +16,80 @@
 package org.labkey.di.pipeline;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleResourceCacheHandler2;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Path;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
 /**
  * User: adam
  * Date: 9/13/13
  * Time: 4:26 PM
  */
-public class DescriptorCacheHandler implements ModuleResourceCacheHandler2<Map<String, ScheduledPipelineJobDescriptor>>
+public class DescriptorCacheHandlerOld implements ModuleResourceCacheHandler<String, ScheduledPipelineJobDescriptor>
 {
     private static final TransformManager _transformManager = TransformManager.get();
 
     static final String DIR_NAME = "etls";
 
     @Override
-    public Map<String, ScheduledPipelineJobDescriptor> load(@Nullable Resource dir, Module module)
+    public String createCacheKey(Module module, String resourceName)
     {
-        if (null == dir)
-            return Collections.emptyMap();
-
-        Map<String, ScheduledPipelineJobDescriptor> map = dir.list().stream()
-            .filter(resource -> resource.isFile() && _transformManager.isConfigFile(resource.getName()))
-            .map(resource -> _transformManager.parseETL(resource, module))
-            .filter(descriptor -> null != descriptor)
-            .collect(Collectors.toMap(descriptor -> _transformManager.createConfigId(module, descriptor.getName()), Function.identity()));
-
-        return Collections.unmodifiableMap(map);
+        return _transformManager.createConfigId(module, resourceName);
     }
+
+    @Override
+    public boolean isResourceFile(String filename)
+    {
+        return _transformManager.isConfigFile(filename);
+    }
+
+    @Override
+    public String getResourceName(Module module, String filename)
+    {
+        assert isResourceFile(filename) : "Configuration filename \"" + filename + "\" does not end with .xml";
+        return FileUtil.getBaseName(filename);
+    }
+
+    @Override
+    public CacheLoader<String, ScheduledPipelineJobDescriptor> getResourceLoader()
+    {
+        return DESCRIPTOR_LOADER;
+    }
+
+    private static final Pattern CONFIG_ID_PATTERN = Pattern.compile("\\{(" + ModuleLoader.MODULE_NAME_REGEX + ")\\}/(.+)");
+
+    private static final CacheLoader<String, ScheduledPipelineJobDescriptor> DESCRIPTOR_LOADER = new CacheLoader<String, ScheduledPipelineJobDescriptor>()
+    {
+        @Override
+        public ScheduledPipelineJobDescriptor load(String configId, @Nullable Object argument)
+        {
+            ModuleResourceCache.CacheId tid = ModuleResourceCache.parseCacheKey(configId, CONFIG_ID_PATTERN);
+            Module module = tid.getModule();
+            String configName = tid.getName();
+
+            if (null == module)
+                return null;
+            Path configPath = new Path(DIR_NAME, configName + ".xml");
+            Resource config = module.getModuleResolver().lookup(configPath);
+
+            if (config != null && config.isFile())
+                return _transformManager.parseETL(config, module);
+            else
+                return null;
+        }
+    };
+
 
     @Nullable
     @Override

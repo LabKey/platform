@@ -196,8 +196,6 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
                 // We expect only one row
                 assertFalse(iter.next());
             }
-
         }
     }
-
 }

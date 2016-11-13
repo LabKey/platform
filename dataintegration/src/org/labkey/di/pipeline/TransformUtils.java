@@ -150,9 +150,9 @@ public class TransformUtils
         return TransformManager.get().getDescriptors(c);
     }
 
-    public static void resetState(String transofrmId, String containerPath, int userId)
+    public static void resetState(String transformId, String containerPath, int userId)
     {
-        resetState(transofrmId, ContainerManager.getForPath(containerPath), UserManager.getUser(userId));
+        resetState(transformId, ContainerManager.getForPath(containerPath), UserManager.getUser(userId));
     }
 
     public static void resetState(String transformId, Container c, User u)
@@ -162,9 +162,9 @@ public class TransformUtils
         saveTransformConfiguration(config, u);
     }
 
-    public static Integer runEtl(String transofrmId, String containerPath, int userId) throws PipelineJobException
+    public static Integer runEtl(String transformId, String containerPath, int userId) throws PipelineJobException
     {
-        return runEtl(transofrmId, ContainerManager.getForPath(containerPath), UserManager.getUser(userId));
+        return runEtl(transformId, ContainerManager.getForPath(containerPath), UserManager.getUser(userId));
     }
 
     /**

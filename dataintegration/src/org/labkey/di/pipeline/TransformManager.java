@@ -35,7 +35,6 @@ import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.ParameterDescriptionImpl;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -49,6 +48,8 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCache.CacheId;
+import org.labkey.api.module.ModuleResourceCache2;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -132,6 +133,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -143,7 +145,8 @@ public class TransformManager implements DataIntegrationService.Interface
     private static final TransformManager INSTANCE = new TransformManager();
     private static final Logger LOG = Logger.getLogger(TransformManager.class);
     private static final String JOB_GROUP_NAME = "org.labkey.di.pipeline.ETLManager";
-    private static final ModuleResourceCache<ScheduledPipelineJobDescriptor> DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(DescriptorCacheHandler.DIR_NAME), "ETL job descriptors", new DescriptorCacheHandler());
+    private static final ModuleResourceCache<ScheduledPipelineJobDescriptor> DESCRIPTOR_CACHE_OLD = ModuleResourceCaches.create(new Path(DescriptorCacheHandler.DIR_NAME), "ETL job descriptors", new DescriptorCacheHandlerOld());
+    private static final ModuleResourceCache2<Map<String, ScheduledPipelineJobDescriptor>> DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(DescriptorCacheHandler.DIR_NAME), new DescriptorCacheHandler(), "ETL job descriptors");
     private static final String JOB_PENDING_MSG = "Not queuing job because ETL is already pending";
 
     private Map<String, StepProvider> _providers = new CaseInsensitiveHashMap<>();
@@ -308,6 +311,13 @@ public class TransformManager implements DataIntegrationService.Interface
         return "{" + module.getName() + "}/" + configName;
     }
 
+    private static final Pattern CONFIG_ID_PATTERN = Pattern.compile("\\{(" + ModuleLoader.MODULE_NAME_REGEX + ")\\}/(.+)");
+
+    CacheId parseConfigId(String configId)
+    {
+        return ModuleResourceCache.parseCacheKey(configId, CONFIG_ID_PATTERN);
+    }
+
     private FilterStrategy.Factory createFilterFactory(FilterType filterTypeXML)
     {
         String className = StringUtils.defaultString(filterTypeXML.getClassName().toString(), ModifiedSinceFilterStrategy.class.getName());
@@ -378,23 +388,39 @@ public class TransformManager implements DataIntegrationService.Interface
     {
         if (!c.isRoot())
         {
-            return DESCRIPTOR_CACHE.getResources(c);
+            Collection<ScheduledPipelineJobDescriptor> oldDescriptors = DESCRIPTOR_CACHE_OLD.getResources(c);
+            Collection<ScheduledPipelineJobDescriptor> newDescriptors = DESCRIPTOR_CACHE.getResourceMaps(c).stream().map(Map::values).flatMap(Collection::stream).collect(Collectors.toList());
+
+            return oldDescriptors;
         }
         else
         {
             Collection<ScheduledPipelineJobDescriptor> descriptors = new LinkedList<>();
+            Collection<ScheduledPipelineJobDescriptor> newDescriptors = new LinkedList<>();
             for (Module module : ModuleLoader.getInstance().getModules())
             {
-                descriptors.addAll(DESCRIPTOR_CACHE.getResources(module).stream().filter(ScheduledPipelineJobDescriptor::isSiteScope).collect(Collectors.toList()));
+                descriptors.addAll(DESCRIPTOR_CACHE_OLD.getResources(module).stream().filter(ScheduledPipelineJobDescriptor::isSiteScope).collect(Collectors.toList()));
+                newDescriptors.addAll(DESCRIPTOR_CACHE.getResourceMap(module).values().stream().filter(ScheduledPipelineJobDescriptor::isSiteScope).collect(Collectors.toList()));
             }
             return Collections.unmodifiableCollection(descriptors);
         }
     }
 
     @Nullable
-    public ScheduledPipelineJobDescriptor getDescriptor(String id)
+    public ScheduledPipelineJobDescriptor getDescriptor(String configId)
     {
-        return DESCRIPTOR_CACHE.getResource(id);
+        ScheduledPipelineJobDescriptor oldDescriptor = DESCRIPTOR_CACHE_OLD.getResource(configId);
+
+        CacheId id = parseConfigId(configId);
+        Module module = id.getModule();
+
+        ScheduledPipelineJobDescriptor newDescriptor;
+
+//      TODO: This causes re-entrancy in the cache loader... fix that and uncomment
+//        if (null != module)
+//            newDescriptor = DESCRIPTOR_CACHE.getResourceMap(module).get(id.getName());
+
+        return oldDescriptor;
     }
 
     synchronized Integer runNowPipeline(ScheduledPipelineJobDescriptor descriptor, Container container, User user,
@@ -737,22 +763,27 @@ public class TransformManager implements DataIntegrationService.Interface
         DbSchema schema = DataIntegrationQuerySchema.getSchema();
         SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE enabled=?", true);
 
-        new SqlSelector(schema, sql).forEach(new Selector.ForEachBlock<TransformConfiguration>(){
-            @Override
-            public void exec(TransformConfiguration config) throws SQLException
-            {
-                // CONSIDER explicit runAs user
-                int runAsUserId = config.getModifiedBy();
-                User runAsUser = UserManager.getUser(runAsUserId);
+        new SqlSelector(schema, sql).forEach(config ->
+        {
+            // CONSIDER explicit runAs user
+            int runAsUserId = config.getModifiedBy();
+            User runAsUser = UserManager.getUser(runAsUserId);
 
-                ScheduledPipelineJobDescriptor descriptor = DESCRIPTOR_CACHE.getResource(config.getTransformId());
-                if (null == descriptor)
-                    return;
-                Container c = ContainerManager.getForId(config.getContainerId());
-                if (null == c)
-                    return;
-                schedule(descriptor, c, runAsUser, config.isVerboseLogging());
-            }
+            ScheduledPipelineJobDescriptor descriptor = DESCRIPTOR_CACHE_OLD.getResource(config.getTransformId());
+
+            CacheId id = parseConfigId(config.getTransformId());
+            Module module = id.getModule();
+            ScheduledPipelineJobDescriptor descriptor2;
+
+            if (null != module)
+                descriptor2 = DESCRIPTOR_CACHE.getResourceMap(module).get(id.getName());
+
+            if (null == descriptor)
+                return;
+            Container c = ContainerManager.getForId(config.getContainerId());
+            if (null == c)
+                return;
+            schedule(descriptor, c, runAsUser, config.isVerboseLogging());
         }, TransformConfiguration.class);
     }
 
