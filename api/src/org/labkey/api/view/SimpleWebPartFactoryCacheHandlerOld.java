@@ -16,16 +16,14 @@
 package org.labkey.api.view;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleResourceCacheHandler2;
+import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.SimpleWebPartFactory;
-import org.labkey.api.resource.Resource;
 
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.stream.Collectors;
 
 /**
  * Creates and caches the file-based web parts defined by modules. File changes result in dynamic reloading and re-initialization of webpart-related maps.
@@ -33,20 +31,35 @@ import java.util.stream.Collectors;
  * Date: 12/29/13
  * Time: 12:38 PM
  */
-public class SimpleWebPartFactoryCacheHandler implements ModuleResourceCacheHandler2<Collection<SimpleWebPartFactory>>
+public class SimpleWebPartFactoryCacheHandlerOld implements ModuleResourceCacheHandler<String, SimpleWebPartFactory>
 {
     @Override
-    public Collection<SimpleWebPartFactory> load(@Nullable Resource dir, Module module)
+    public boolean isResourceFile(String filename)
     {
-        if (null == dir)
-            return Collections.emptyList();
+        return SimpleWebPartFactory.isWebPartFile(filename);
+    }
 
-        Collection<SimpleWebPartFactory> webPartFactories = dir.list().stream()
-            .filter(resource -> resource.isFile() && SimpleWebPartFactory.isWebPartFile(resource.getName()))
-            .map(resource -> new SimpleWebPartFactory(module, resource))
-            .collect(Collectors.toList());
+    @Override
+    public String getResourceName(Module module, String filename)
+    {
+        return filename;
+    }
 
-        return Collections.unmodifiableCollection(webPartFactories);
+    @Override
+    public String createCacheKey(Module module, String resourceName)
+    {
+        return ModuleResourceCache.createCacheKey(module, resourceName);
+    }
+
+    @Override
+    public CacheLoader<String, SimpleWebPartFactory> getResourceLoader()
+    {
+        return (key, argument) ->
+        {
+            ModuleResourceCache.CacheId tid = ModuleResourceCache.parseCacheKey(key);
+
+            return new SimpleWebPartFactory(tid.getModule(), tid.getName());
+        };
     }
 
     @Nullable

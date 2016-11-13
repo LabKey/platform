@@ -87,6 +87,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         return null;
     }
 
+    @Deprecated  // Use Resource version
     public SimpleWebPartFactory(Module module, String filename)
     {
         super(getNameFromFilename(filename));
@@ -94,6 +95,14 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         Path resourcePath = new Path(SimpleController.VIEWS_DIRECTORY, filename);
         loadDefinition(module.getModuleResource(new Path(SimpleController.VIEWS_DIRECTORY, filename)));
         _resourceName = resourcePath.getName();
+    }
+
+    public SimpleWebPartFactory(Module module, Resource resource)
+    {
+        super(getNameFromFilename(resource.getName()));
+        setModule(module);
+        loadDefinition(resource);
+        _resourceName = resource.getName();
     }
 
     private static String getNameFromFilename(String filename)

@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Created by adam on 5/8/2015.
@@ -48,7 +49,8 @@ public class FolderTypeManager
     /** PropertyManager category name for folder type enabled state properties */
     private static final String FOLDER_TYPE_ENABLED_STATE = "FolderTypeEnabledState";
 
-    private final ModuleResourceCache<SimpleFolderType> CACHE = ModuleResourceCaches.create(new Path(SIMPLE_TYPE_DIR_NAME), "File-based folder types", new SimpleFolderTypeCacheHandler());
+    private final ModuleResourceCache<SimpleFolderType> CACHE_OLD = ModuleResourceCaches.create(new Path(SIMPLE_TYPE_DIR_NAME), "File-based folder types", new SimpleFolderTypeCacheHandlerOld());
+    private final ModuleResourceCache2<Collection<SimpleFolderType>> CACHE = ModuleResourceCaches.create(new Path(SIMPLE_TYPE_DIR_NAME), new SimpleFolderTypeCacheHandler(), "File-based folder types");
     private final Map<String, FolderType> _javaFolderTypes = new ConcurrentHashMap<>();  // Map of folder types that are registered via java code
     private final Object FOLDER_TYPE_LOCK = new Object();
 
@@ -237,10 +239,15 @@ public class FolderTypeManager
 
     private Collection<SimpleFolderType> getSimpleFolderTypes(Module module)
     {
-        return CACHE.getResources(module);
+        Collection<SimpleFolderType> old = CACHE_OLD.getResources(module);
+        Collection<SimpleFolderType> coll = CACHE.getResourceMap(module);
+
+        assert old.size() == coll.size();
+
+        return coll;
     }
 
-    private static class SimpleFolderTypeCacheHandler implements ModuleResourceCacheHandler<String, SimpleFolderType>
+    private static class SimpleFolderTypeCacheHandlerOld implements ModuleResourceCacheHandler<String, SimpleFolderType>
     {
         @Override
         public boolean isResourceFile(String filename)
@@ -263,20 +270,64 @@ public class FolderTypeManager
         @Override
         public CacheLoader<String, SimpleFolderType> getResourceLoader()
         {
-            return new CacheLoader<String, SimpleFolderType>()
+            return (key, argument) ->
+            {
+                ModuleResourceCache.CacheId id = ModuleResourceCache.parseCacheKey(key);
+                Module module = id.getModule();
+                String filename = id.getName();
+                Path path = new Path(SIMPLE_TYPE_DIR_NAME, filename);
+                Resource resource  = module.getModuleResolver().lookup(path);
+
+                return SimpleFolderType.create(resource);
+            };
+        }
+
+        @Nullable
+        @Override
+        public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        {
+            return new FileSystemDirectoryListener()
             {
                 @Override
-                public SimpleFolderType load(String key, @Nullable Object argument)
+                public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
                 {
-                    ModuleResourceCache.CacheId id = ModuleResourceCache.parseCacheKey(key);
-                    Module module = id.getModule();
-                    String filename = id.getName();
-                    Path path = new Path(SIMPLE_TYPE_DIR_NAME, filename);
-                    Resource resource  = module.getModuleResolver().lookup(path);
+                    FolderTypeManager.get().clearAllFolderTypes();
+                }
 
-                    return SimpleFolderType.create(resource);
+                @Override
+                public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
+                {
+                    FolderTypeManager.get().clearAllFolderTypes();
+                }
+
+                @Override
+                public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
+                {
+                    FolderTypeManager.get().clearAllFolderTypes();
+                }
+
+                @Override
+                public void overflow()
+                {
+                    FolderTypeManager.get().clearAllFolderTypes();
                 }
             };
+        }
+    }
+
+    private static class SimpleFolderTypeCacheHandler implements ModuleResourceCacheHandler2<Collection<SimpleFolderType>>
+    {
+        @Override
+        public Collection<SimpleFolderType> load(@Nullable Resource dir, Module module)
+        {
+            if (null == dir)
+                return Collections.emptyList();
+
+            Collection<SimpleFolderType> folderTypes = dir.list().stream()
+                .filter(resource -> resource.isFile() && StringUtils.endsWithIgnoreCase(resource.getName(), SIMPLE_TYPE_FILE_EXTENSION))
+                .map(SimpleFolderType::create).collect(Collectors.toList());
+
+            return Collections.unmodifiableCollection(folderTypes);
         }
 
         @Nullable

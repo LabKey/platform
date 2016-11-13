@@ -1621,6 +1621,7 @@ api/src/org/labkey/api/view/SimpleFolderTab.java -text
 api/src/org/labkey/api/view/SimpleTextDisplayElement.java -text
 api/src/org/labkey/api/view/SimpleWebPartFactory.java -text
 api/src/org/labkey/api/view/SimpleWebPartFactoryCacheHandler.java -text
+api/src/org/labkey/api/view/SimpleWebPartFactoryCacheHandlerOld.java -text
 api/src/org/labkey/api/view/SpringErrorView.java -text
 api/src/org/labkey/api/view/Stats.java -text
 api/src/org/labkey/api/view/TabStripView.java -text

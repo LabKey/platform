@@ -49,26 +49,26 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler2<Map<St
         Map<String, TablesDocument> map = new HashMap<>();
 
         dir.list().stream()
-                .filter(resource -> !resource.isCollection() && resource.getName().endsWith(".xml") && !resource.getName().endsWith(QueryService.SCHEMA_TEMPLATE_EXTENSION))
-                .forEach(resource -> {
-                    assert null != resource : "Expected schema metadata xml file";
-                    TablesDocument doc = null;
+            .filter(resource -> resource.isFile() && resource.getName().endsWith(".xml") && !resource.getName().endsWith(QueryService.SCHEMA_TEMPLATE_EXTENSION))
+            .forEach(resource -> {
+                assert null != resource : "Expected schema metadata xml file";
+                TablesDocument doc = null;
 
-                    try (InputStream xmlStream = resource.getInputStream())
+                try (InputStream xmlStream = resource.getInputStream())
+                {
+                    if (null != xmlStream)
                     {
-                        if (null != xmlStream)
-                        {
-                            doc = TablesDocument.Factory.parse(xmlStream);
-                        }
+                        doc = TablesDocument.Factory.parse(xmlStream);
                     }
-                    catch (IOException | XmlException e)
-                    {
-                        ExceptionUtil.logExceptionToMothership(null, e);
-                    }
+                }
+                catch (IOException | XmlException e)
+                {
+                    ExceptionUtil.logExceptionToMothership(null, e);
+                }
 
-                    if (null != doc)
-                        map.put(resource.getName(), doc);
-                });
+                if (null != doc)
+                    map.put(resource.getName(), doc);
+            });
 
         return Collections.unmodifiableMap(map);
     }

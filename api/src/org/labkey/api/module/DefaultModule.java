@@ -361,7 +361,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 }
 
                 // File-based webpart factories; no need to call setModule() since module is initialized in constructor
-                wpf.addAll(Portal.WEB_PART_FACTORY_CACHE.getResources(this));
+                Collection<SimpleWebPartFactory> newWebparts = Portal.WEB_PART_FACTORY_CACHE.getResourceMap(this);
+                Collection<SimpleWebPartFactory> oldWebparts = Portal.WEB_PART_FACTORY_CACHE_OLD.getResources(this);
+                assert newWebparts.size() == oldWebparts.size();
+                wpf.addAll(newWebparts);
 
                 _webPartFactories = wpf;
             }
