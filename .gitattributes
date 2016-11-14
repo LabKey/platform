@@ -1274,6 +1274,7 @@ pipeline/src/org/labkey/pipeline/analysis/ProtocolManagementWebPart.java -text
 pipeline/src/org/labkey/pipeline/analysis/analyze.jsp -text
 pipeline/src/org/labkey/pipeline/analysis/internalListPipelines.jsp -text
 pipeline/src/org/labkey/pipeline/analysis/internalListTasks.jsp -text
+pipeline/src/org/labkey/pipeline/analysis/protocolDetail.jsp -text
 pipeline/src/org/labkey/pipeline/api/AbstractPipelineQueue.java -text
 pipeline/src/org/labkey/pipeline/api/AbstractWorkDirectory.java -text
 pipeline/src/org/labkey/pipeline/api/ExecTaskFactory.java -text

@@ -56,7 +56,7 @@ public class FileAnalysisProtocolFactory extends AbstractFileAnalysisProtocolFac
             return xml;
         
         // TODO: get defaults from the task factories
-        return PipelineJobService.get().createParamParser().getXMLFromMap(new HashMap<String, String>());
+        return PipelineJobService.get().createParamParser().getXMLFromMap(new HashMap<>());
     }
 
     public FileAnalysisProtocol createProtocolInstance(String name, String description, String xml)

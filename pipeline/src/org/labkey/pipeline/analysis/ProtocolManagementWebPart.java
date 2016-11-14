@@ -94,7 +94,6 @@ public class ProtocolManagementWebPart extends GridView
             params.put("archived", "archived");
             ActionURL actionURL = new ActionURL(AnalysisController.ProtocolDetailsAction.class, getViewContext().getContainer());
             DetailsURL url = new DetailsURL(actionURL.addReturnURL(getContextURLHelper()), params);
-
             colInfos.get(1).setURL(url);
             setResults(new ResultsImpl(rs, colInfos));
             getDataRegion().setColumns(colInfos);
@@ -118,15 +117,23 @@ public class ProtocolManagementWebPart extends GridView
                 .sorted((tp1, tp2) -> tp1.getDescription().compareToIgnoreCase(tp2.getDescription()))
                 .forEach(tp ->
                 {
-                    protocols.addAll(getFactoryProtocols(root, tp, false));
-                    protocols.addAll(getFactoryProtocols(root, tp, true));
+                    protocols.addAll(getTaskPipelineProtocols(root, tp, false));
+                    protocols.addAll(getTaskPipelineProtocols(root, tp, true));
                 });
         return protocols;
     }
 
-    private List<Protocol> getFactoryProtocols(PipeRoot root, TaskPipeline taskPipeline, boolean archived)
+    private List<Protocol> getTaskPipelineProtocols(PipeRoot root, TaskPipeline taskPipeline, boolean archived)
     {
         PipelineProtocolFactory factory = PipelineJobService.get().getProtocolFactory(taskPipeline);
+        return getFactoryProtocols(root, taskPipeline, archived, factory);
+    }
+
+    private List<Protocol> getFactoryProtocols(PipeRoot root, TaskPipeline taskPipeline, boolean archived, PipelineProtocolFactory factory)
+    {
+        // The code in AnalysisController.GetSavedProtocolsAction suggests that we may need to call getProtocolNames() with
+        // workbook roots/dirDatas, and or a non-null dirData  in some cases, but I can't find any code path in which
+        // those would have been set.
         return Arrays.stream(factory.getProtocolNames(root, null, archived)).sorted(String.CASE_INSENSITIVE_ORDER)
                 .map(protocolName -> new Protocol(taskPipeline, protocolName, archived))
                 .collect(Collectors.toList());

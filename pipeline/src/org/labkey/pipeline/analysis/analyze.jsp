@@ -26,6 +26,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("Ext4");
+        dependencies.add("codemirror");
     }
 %>
 <%
@@ -87,7 +88,7 @@
         if (document.getElementById("protocolSelect").selectedIndex == 0)
         {
             config.protocolDescription = document.getElementById("protocolDescriptionInput").value; 
-            config.xmlParameters = document.getElementById("xmlParametersInput").value;
+            config.xmlParameters = this.codeMirror.getValue();
         }
         LABKEY.Pipeline.startAnalysis(config);
     }
@@ -136,6 +137,13 @@
         }
     }
 
+    function resetStyles(disabled)
+    {
+        document.getElementsByClassName("CodeMirror")[0].style.backgroundColor = window.getComputedStyle(document.getElementById("protocolNameInput")).backgroundColor;
+        this.codeMirror.setOption("readOnly", disabled);
+        document.getElementById("protocolName").style.visibility = disabled ? "hidden" : "visible";
+    }
+
     /** @return true if an existing, saved protocol is selected */
     function changeProtocol(selectedProtocolName)
     {
@@ -147,7 +155,7 @@
             disabledState = true;
             document.getElementById("protocolNameInput").value = selectedProtocol.name;
             document.getElementById("protocolDescriptionInput").value = selectedProtocol.description;
-            document.getElementById("xmlParametersInput").value = selectedProtocol.xmlParameters;
+            this.codeMirror.setValue(selectedProtocol.xmlParameters);
             showFileStatus("<em>(Refreshing status)</em>");
             LABKEY.Pipeline.getFileStatus(
             {
@@ -163,17 +171,19 @@
             disabledState = false;
             document.getElementById("protocolNameInput").value = "";
             document.getElementById("protocolDescriptionInput").value = "";
-            document.getElementById("xmlParametersInput").value = "<?xml version=\"1.0\"?>\n" +
+            this.codeMirror.setValue("<?xml version=\"1.0\"?>\n" +
                         "<bioml>\n" +
-                            "<!-- Override default parameters here. Example:-->\n" +
-                            "<!-- <note label=\"myParameterName\" type=\"input\">overrideValue</note>-->\n" +
-                        "</bioml>";
+                            "  <!-- Override default parameters here. Example:-->\n" +
+                            "  <!-- <note label=\"myParameterName\" type=\"input\">overrideValue</note>-->\n" +
+                        "</bioml>");
             showFileStatus("", "Analyze");
         }
         for (var i = 0; i < inputs.length; i++)
         {
             inputs[i].disabled = disabledState;
         }
+
+        resetStyles(disabledState);
         return disabledState;
     }
 
@@ -187,6 +197,16 @@
         }
         showFileStatus("<em>(Refreshing status)</em>");
         LABKEY.Pipeline.getProtocols({ taskId: taskId, successCallback: getProtocolsCallback });
+        var el = Ext4.get("xmlParametersInput");
+        if (el)
+        {
+            this.codeMirror = CodeMirror.fromTextArea(el.dom, {
+                mode: "xml",
+                lineNumbers: true
+            });
+            LABKEY.codemirror.RegisterEditorInstance('xmlParameters', this.codeMirror);
+            document.getElementsByClassName("CodeMirror")[0].style.border = window.getComputedStyle(document.getElementById("protocolDescriptionInput")).border;
+        }
     });
 </script>
 
@@ -200,18 +220,15 @@
             <select id="protocolSelect" name="protocol" onchange="changeProtocol(this.options[this.selectedIndex].value);">
                 <option>&lt;Loading...&gt;</option>
             </select>
-        </td>
-    </tr>
-
-    <tr>
-        <td class='labkey-form-label'>Protocol Name:</td>
-        <td>
-            <input disabled="true" id="protocolNameInput" class="protocol-input" type="text" name="protocolName" size="40" />
+            <span id="protocolName">
+                <label for="protocolNameInput" >&nbsp;Name:</label>
+                <input disabled id="protocolNameInput" class="protocol-input" type="text" name="protocolName" size="40" />
+            </span>
         </td>
     </tr>
     <tr>
         <td class='labkey-form-label'>Protocol Description:</td>
-        <td><textarea disabled="true" id="protocolDescriptionInput" class="protocol-input" style="width: 100%;" name="protocolDescription" cols="150" rows="4"></textarea></td>
+        <td><textarea disabled id="protocolDescriptionInput" class="protocol-input" style="width: 100%;" name="protocolDescription" cols="150" rows="4"></textarea></td>
     </tr>
 
     <tr>
@@ -221,13 +238,13 @@
     <tr id="parametersRow">
         <td class='labkey-form-label'>Parameters:</td>
         <td>
-            <textarea disabled="true" id="xmlParametersInput" class="protocol-input" style="width: 100%;" name="xmlParameters" cols="150" rows="15"></textarea>
+            <textarea id="xmlParametersInput" class="protocol-input" style="width: 100%;" name="xmlParameters" cols="150" rows="15"></textarea>
         </td>
     </tr>
     <tr>
         <td/>
         <td>
-            <input type="checkbox" class="protocol-input" disabled="true" id="saveProtocolInput" name="saveProtocol" checked/>
+            <input type="checkbox" class="protocol-input" disabled id="saveProtocolInput" name="saveProtocol" checked/>
             <label for="saveProtocolInput">Save protocol for future use</label>
         </td>
     </tr>

@@ -51,13 +51,11 @@ import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
-import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.Button;
 import org.labkey.api.util.DotRunner;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
@@ -66,7 +64,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -78,7 +75,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -417,7 +413,7 @@ public class AnalysisController extends SpringActionController
 
             protocol.put("name", protocolName);
             protocol.put("description", pipelineProtocol.getDescription());
-            protocol.put("xmlParameters", pipelineProtocol.getFormattedXml());
+            protocol.put("xmlParameters", pipelineProtocol.getXml());
             protocol.put("containerPath", root.getContainer().getPath());
             ParamParser parser = PipelineJobService.get().createParamParser();
             parser.parse(new ReaderInputStream(new StringReader(pipelineProtocol.getXml())));
@@ -604,7 +600,7 @@ public class AnalysisController extends SpringActionController
     /**
      * For management of protocol files
      */
-    enum ProtocolTask
+    public enum ProtocolTask
     {
         delete
             {
@@ -776,8 +772,7 @@ public class AnalysisController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Protocol: " + _protocolName);
-            return root;
+            return root.addChild("Protocol: " + _protocolName);
         }
 
         @Override
@@ -786,7 +781,10 @@ public class AnalysisController extends SpringActionController
             _protocolName = form.getName();
             PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
             AbstractFileAnalysisProtocolFactory factory = getProtocolFactory(getTaskPipeline(form.getTaskId()));
-            return new ProtocolView(getProtocol(root, null, factory, _protocolName, form.isArchived()), form);
+            AbstractFileAnalysisProtocol protocol = getProtocol(root, null, factory, _protocolName, form.isArchived());
+            if (null != protocol)
+                form.setXml(protocol.getXml());
+            return new JspView<>("/org/labkey/pipeline/analysis/protocolDetail.jsp", form);
         }
     }
 
@@ -795,6 +793,7 @@ public class AnalysisController extends SpringActionController
         private String _taskId;
         private String _name;
         private boolean _archived;
+        private String _xml = null;
 
         public String getTaskId()
         {
@@ -825,56 +824,15 @@ public class AnalysisController extends SpringActionController
         {
             _archived = archived;
         }
-    }
 
-    private static class ProtocolView extends HttpView<AbstractFileAnalysisProtocol>
-    {
-        private String _taskId;
-        private boolean _archived;
-        private URLHelper _returnUrl;
-
-        private ProtocolView(@Nullable AbstractFileAnalysisProtocol protocol, ProtocolDetailsForm form)
+        public String getXml()
         {
-            super(protocol);
-            _taskId = form.getTaskId();
-            _archived = form.isArchived();
-            _returnUrl = form.getReturnActionURL(PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(getContextContainer()));
+            return _xml;
         }
 
-        @Override
-        protected void renderInternal(AbstractFileAnalysisProtocol protocol, PrintWriter out) throws Exception
+        public void setXml(String xml)
         {
-            if (null != protocol)
-            {
-                out.println("<pre>");
-                out.println(PageFlowUtil.filter(protocol.getFormattedXml()));
-                out.println("</pre>");
-
-                if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), DeletePermission.class))
-                {
-                    ActionURL urlBase = new ActionURL(ProtocolManagementAction.class, getViewContext().getContainer());
-                    urlBase.addParameter("taskId", _taskId);
-                    urlBase.addParameter("name", protocol.getName());
-                    urlBase.addReturnURL(_returnUrl);
-                    out.println("<form method='POST'>");
-                    out.println(makeButton(_archived ? ProtocolTask.unarchive : ProtocolTask.archive, urlBase));
-                    out.println(makeButton(ProtocolTask.delete, urlBase));
-                    out.println("</form>");
-                }
-            }
-            else
-            {
-                out.println("<font class=labkey-error>Protocol not found.</font><br/><br/>");
-                out.println(PageFlowUtil.button("Back").href(_returnUrl));
-            }
-       }
-
-        private Button.ButtonBuilder makeButton(ProtocolTask action, ActionURL urlBase)
-        {
-            String actionStr = action.toString();
-            String confirmMsg = "Are you sure you want to " + actionStr + " this protocol?";
-            String urlStr = urlBase.clone().addParameter("action", actionStr).toLocalString(true);
-            return PageFlowUtil.button(actionStr).onClick("if (!window.confirm('"+confirmMsg + "')) {return false;} this.form.action='" + urlStr + "'").submit(true);
+            _xml = xml;
         }
     }
 
