@@ -1398,12 +1398,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (customRenderType && customRenderType.generateAes)
             aes = customRenderType.generateAes(this, chartConfig, aes);
 
-        if (chartConfig.measures.x.measure) {
+        if (Ext4.isObject(chartConfig.measures.x) && chartConfig.measures.x.measure) {
             measuresForProcessing.x = {};
             measuresForProcessing.x.name = chartConfig.measures.x.name;
             measuresForProcessing.x.label = chartConfig.measures.x.label;
         }
-        if (chartConfig.measures.y.measure) {
+        if (Ext4.isObject(chartConfig.measures.y) && chartConfig.measures.y.measure) {
             measuresForProcessing.y = {};
             measuresForProcessing.y.name = chartConfig.measures.y.name;
             measuresForProcessing.y.label = chartConfig.measures.y.label;
