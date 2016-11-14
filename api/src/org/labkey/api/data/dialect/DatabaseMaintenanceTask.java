@@ -25,8 +25,6 @@ import org.springframework.jdbc.BadSqlGrammarException;
 
 class DatabaseMaintenanceTask implements MaintenanceTask
 {
-    private static final Logger _log = Logger.getLogger(DatabaseMaintenanceTask.class);
-
     public String getDescription()
     {
         return "Database maintenance";
@@ -38,7 +36,7 @@ class DatabaseMaintenanceTask implements MaintenanceTask
         return "Database";
     }
 
-    public void run()
+    public void run(Logger log)
     {
         DbScope scope = DbScope.getLabKeyScope();
         String url = null;
@@ -47,12 +45,12 @@ class DatabaseMaintenanceTask implements MaintenanceTask
         {
             SqlDialect.DataSourceProperties props = new SqlDialect.DataSourceProperties(scope.getDataSourceName(), scope.getDataSource());
             url = props.getUrl();
-            _log.info("Database maintenance on " + url + " started");
+            log.info("Database maintenance on " + url + " started");
         }
         catch (Exception e)
         {
             // Shouldn't happen, but we can survive without the url
-            _log.error("Exception retrieving url", e);
+            log.error("Exception retrieving url", e);
         }
 
         String sql = scope.getSqlDialect().getDatabaseMaintenanceSql();
@@ -69,6 +67,6 @@ class DatabaseMaintenanceTask implements MaintenanceTask
         }
 
         if (null != url)
-            _log.info("Database maintenance on " + url + " complete");
+            log.info("Database maintenance on " + url + " complete");
     }
 }

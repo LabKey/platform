@@ -73,7 +73,7 @@ class MaintenancePipelineJob extends PipelineJob
 
             try
             {
-                task.run();
+                task.run(getLogger());
                 success = true;
             }
             catch (Throwable t)

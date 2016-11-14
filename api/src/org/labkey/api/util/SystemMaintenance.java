@@ -17,6 +17,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.PropertyManager;
@@ -227,7 +228,7 @@ public class SystemMaintenance
     /**
      * A specific piece of maintenance to be run as part of the overall {@link MaintenancePipelineJob}.
      */
-    public interface MaintenanceTask extends Runnable
+    public interface MaintenanceTask
     {
         /** Description used in logging and UI */
         String getDescription();
@@ -237,6 +238,22 @@ public class SystemMaintenance
          * Task name must be unique and cannot contain a comma
          */
         String getName();
+
+        /**
+         * Provides a mechanism to pass the pipeline log to each maintenance task, see #28464. Tasks override this method to
+         * gain access to the pipeline log. TODO: Remove run() and stop defaulting run(Logger) once tasks have been migrated.
+         *
+         * @param log Logger for maintenance tasks to use
+         */
+        default void run(Logger log)
+        {
+            run();
+        }
+
+        // TODO: Remove this once all tasks override run(Logger)
+        default void run()
+        {
+        }
 
         /** Can this task be disabled? */
         default boolean canDisable()

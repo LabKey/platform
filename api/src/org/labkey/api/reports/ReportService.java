@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports;
 
+import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -157,11 +158,11 @@ public class ReportService
         /**
          * Runs maintenance on the report service.
          */
-        void maintenance();
+        void maintenance(Logger log);
 
         /**
          * Validates whether a user has the appropriate permissions to save the report with the changed
-         * settings.  Use tryValidateReportPermissions if you don't want to throw a runtime exception
+         * settings. Use tryValidateReportPermissions if you don't want to throw a runtime exception
          * on permissions failure
          */
         void validateReportPermissions(ContainerUser context, Report report);

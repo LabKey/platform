@@ -305,8 +305,9 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     /**
      * Invoked from a maintenance task, clean up temporary report files and folders that are of a
      * certain age.
+     * @param log
      */
-    public static void scheduledFileCleanup()
+    public static void scheduledFileCleanup(Logger log)
     {
         final long cutoff = System.currentTimeMillis() - (1000 * 3600 * 24);
         File root = getTempRoot(ReportService.get().createDescriptorInstance(RReportDescriptor.TYPE));
@@ -315,7 +316,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         {
             if (file.isDirectory())
             {
-                _log.info("Deleting temporary report folder: " + file.getPath());
+                log.info("Deleting temporary report folder: " + file.getPath());
                 deleteReportDir(file, cutoff);
             }
             else
