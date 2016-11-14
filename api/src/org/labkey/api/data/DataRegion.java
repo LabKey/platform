@@ -138,6 +138,9 @@ public class DataRegion extends AbstractDataRegion
     public static final String CONTAINER_FILTER_NAME = ".containerFilterName";
     protected static final String TOGGLE_CHECKBOX_NAME = ".toggle";
 
+    public static final String DEFAULTDATE = "~~DEFAULTDATE~~";
+    public static final String DEFAULTDATETIME = "~~DEFAULTDATETIME~~";
+
     private class GroupTable
     {
         private List<DisplayColumnGroup> _groups = new ArrayList<>();
@@ -2434,6 +2437,10 @@ public class DataRegion extends AbstractDataRegion
                         dc.setFormatString(defaultDate);
                     else if ("Time".equalsIgnoreCase(formatString))
                         dc.setFormatString(defaultTime);
+                    else if (DEFAULTDATE.equals(formatString))
+                        dc.setFormatString(defaultDate);
+                    else if (DEFAULTDATETIME.equals(formatString))
+                        dc.setFormatString(defaultDateTime);
                 }
             }
             else if (null == formatString && col.isNumericType())
