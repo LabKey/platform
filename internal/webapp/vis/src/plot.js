@@ -115,6 +115,8 @@
  * @param {String} [config.legendPos] (Optional) Used to specify where the legend will render. Currently only supports
  *      "none" to disable the rendering of the legend. There are future plans to support "left" and "right" as well.
  *      Defaults to "right".
+ * @param {Boolean} [config.legendNoWrap] (Optional) True to force legend text in a single line.
+ *      Defaults to false.
  * @param {String} [config.bgColor] (Optional) The string representation of the background color. Defaults to white.
  * @param {String} [config.gridColor] (Optional) The string representation of the grid color. Defaults to white.
  * @param {String} [config.gridLineColor] (Optional) The string representation of the line colors used as part of the grid.
@@ -885,6 +887,7 @@ boxPlot.render();
         this.layers = config.layers ? config.layers : []; // An array of layers, required. (e.g. a layer for a CD4 line chart over time, and a layer for a Hemoglobin line chart over time).
         this.clipRect = config.clipRect ? config.clipRect : false;
         this.legendPos = config.legendPos;
+        this.legendNoWrap = config.legendNoWrap;
         this.throwErrors = config.throwErrors || false; // Allows the configuration to specify whether chart errors should be thrown or logged (default).
         this.brushing = ('brushing' in config && config.brushing != null && config.brushing != undefined) ? config.brushing : null;
         this.legendData = config.legendData ? config.legendData : null; // An array of rows for the legend text/color/etc. Optional.

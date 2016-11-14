@@ -1804,14 +1804,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         this.canvas.selectAll('.legend').remove();
     };
 
-    var appendTSpans = function(selection, width) {
+    var appendTSpans = function(selection, width, noWrap) {
         var i, words = selection.datum().text.split(' '), segments = [],
             partial = '', start = 0, isSeparator = selection.datum().separator === true;
 
         for (i = 0; i < words.length; i++) {
             partial = partial + words[i] + ' ';
             selection.text(partial);
-            if (selection.node().getBBox().width > width) {
+            if (selection.node().getBBox().width > width && !noWrap) {
                 segments.push(words.slice(start, i).join(' '));
                 partial = words[i];
                 start = i;
@@ -1850,7 +1850,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return "M" + -5 + "," + -2.5 + "L" + 5 + "," + -2.5 + " " + 5 + "," + 2.5 + " " + -5 + "," + 2.5 + "Z";
         };
         textNodes = selection.append('text').attr('x', textX).attr('y', yAcc);
-        textNodes.each(function(){d3.select(this).call(appendTSpans, plot.grid.width - textX);});
+        textNodes.each(function(){d3.select(this).call(appendTSpans, plot.grid.width - textX, plot.legendNoWrap);});
 
         // Now that we've rendered the text, iterate through the nodes and adjust the y values so they no longer overlap.
         // Instead of using selection.each we do this because we need access to the neighboring items.
