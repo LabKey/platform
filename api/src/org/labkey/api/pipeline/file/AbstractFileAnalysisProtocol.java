@@ -34,6 +34,7 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -55,7 +56,6 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
 
     protected String description;
     protected String xml;
-    protected String formattedXml = null;
 
     protected String email;
 
@@ -64,7 +64,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         super(name);
         
         this.description = description;
-        this.xml = xml;
+        setXml(xml);
     }
 
     public String getDescription()
@@ -82,33 +82,34 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         return xml;
     }
 
+    /**
+     * The xml string has bad formatting and extra whitespace from having had some parameters stripped after being read from file.
+     * Fix it for redisplay.
+     * @param xml The raw xml read from file
+     */
     public void setXml(String xml)
     {
-        this.xml = xml;
-    }
-
-    public String getFormattedXml()
-    {
-        if (formattedXml == null)
+        try
         {
-            try
-            {
-                String strippedXml = xml.replace("\r\n\r\n", "\r\n").replace("\n\n", "\n");
-                DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-                DOMSource xmlInput = new DOMSource(db.parse(new InputSource(new StringReader(strippedXml))));
-                StreamResult xmlOutput = new StreamResult(new StringWriter());
-                Transformer transformer = TransformerFactory.newInstance().newTransformer();
-                transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-                transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-                transformer.transform(xmlInput, xmlOutput);
-                formattedXml = xmlOutput.getWriter().toString();
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
-            }
+            BufferedReader reader = new BufferedReader(new StringReader(xml));
+            StringBuilder stripped = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null)
+                stripped.append(line.trim());
+            DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            DOMSource xmlInput = new DOMSource(db.parse(new InputSource(new StringReader(stripped.toString()))));
+            StreamResult xmlOutput = new StreamResult(new StringWriter());
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+            transformer.transform(xmlInput, xmlOutput);
+            this.xml = xmlOutput.getWriter().toString();
         }
-        return formattedXml;
+        catch (Exception e)
+        {
+            // This shouldn't happen; bad input xml would have been detected upstream of here.
+            throw new RuntimeException("Invalid xml format", e);
+        }
     }
 
     public String getEmail()
