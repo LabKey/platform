@@ -15,6 +15,7 @@
  */
 package org.labkey.study;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -38,7 +39,7 @@ public class DefragmentParticipantVisitIndexesTask implements MaintenanceTask
     }
 
     @Override
-    public void run()
+    public void run(Logger log)
     {
         TableInfo ti = StudySchema.getInstance().getTableInfoParticipantVisit();
         DbSchema schema = ti.getSchema();

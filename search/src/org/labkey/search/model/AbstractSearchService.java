@@ -1359,7 +1359,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             return "SearchService";
         }
 
-        public void run()
+        public void run(Logger log)
         {
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 

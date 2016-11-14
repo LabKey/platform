@@ -876,9 +876,9 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     }
 
     @Override
-    public void maintenance()
+    public void maintenance(Logger log)
     {
-        ScriptEngineReport.scheduledFileCleanup();
+        ScriptEngineReport.scheduledFileCleanup(log);
     }
 
     private static class CategoryListener implements ViewCategoryListener
@@ -936,9 +936,9 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             return "ReportService";
         }
 
-        public void run()
+        public void run(Logger log)
         {
-            ReportService.get().maintenance();
+            ReportService.get().maintenance(log);
         }
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.labkey.study;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -39,7 +40,7 @@ public class PurgeParticipantsMaintenanceTask implements MaintenanceTask
     }
 
     @Override
-    public void run()
+    public void run(Logger log)
     {
         for (StudyImpl study : StudyManager.getInstance().getAllStudies())
         {

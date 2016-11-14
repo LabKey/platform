@@ -42,8 +42,6 @@ import java.util.Collection;
  */
 public class SpecimenRefreshMaintainanceTask implements MaintenanceTask
 {
-    private static final Logger LOG = Logger.getLogger(SpecimenRefreshMaintainanceTask.class);
-
     @Override
     public String getDescription()
     {
@@ -63,7 +61,7 @@ public class SpecimenRefreshMaintainanceTask implements MaintenanceTask
     }
 
     @Override
-    public void run()
+    public void run(Logger log)
     {
         Collection<StudySnapshot> snapshots = StudyManager.getInstance().getRefreshStudySnapshots();
 
@@ -88,7 +86,7 @@ public class SpecimenRefreshMaintainanceTask implements MaintenanceTask
             {
                 try
                 {
-                    LOG.info("Refreshing specimen data from \"" + sourceStudy.getContainer().getPath() + "\" (" + sourceStudy.getLabel() +
+                    log.info("Refreshing specimen data from \"" + sourceStudy.getContainer().getPath() + "\" (" + sourceStudy.getLabel() +
                         ") to \"" + destinationStudy.getContainer().getPath() + "\" (" + destinationStudy.getLabel() + ")");
                     SnapshotSettings settings = snapshot.getSnapshotSettings();
 
