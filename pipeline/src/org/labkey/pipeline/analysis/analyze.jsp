@@ -217,7 +217,7 @@
     <tr>
         <td class='labkey-form-label'>Analysis Protocol:</td>
         <td>
-            <select id="protocolSelect" name="protocol" onchange="changeProtocol(this.options[this.selectedIndex].value);">
+            <select id="protocolSelect" name="protocol" onchange="if (!changeProtocol(this.options[this.selectedIndex].value)) {document.getElementById('protocolNameInput').focus();}">
                 <option>&lt;Loading...&gt;</option>
             </select>
             <span id="protocolName">
