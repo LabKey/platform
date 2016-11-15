@@ -589,7 +589,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     getDefaultTitle : function()
     {
-        return LABKEY.vis.GenericChartHelper.getTitleFromMeasures(this.renderType, this.getSelectedMeasures());
+        return LABKEY.vis.GenericChartHelper.getTitleFromMeasures(this.renderType, {y: this.getSelectedMeasures()});
     },
 
     resizeCharts : function(){

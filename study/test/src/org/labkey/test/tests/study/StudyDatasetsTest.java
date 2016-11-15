@@ -29,6 +29,7 @@ import org.labkey.test.components.LookAndFeelScatterPlot;
 import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.components.ext4.Window;
 import org.labkey.test.components.study.DatasetFacetPanel;
+import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
@@ -537,6 +538,9 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         lookAndFeelDialog.clickResetTitle();
         assertEquals(datasetLabel, lookAndFeelDialog.getPlotTitle());
         lookAndFeelDialog.clickCancel();
+
+        TimeChartWizard timeChartWizard = new TimeChartWizard(this);
+        timeChartWizard.reSaveReport();
     }
 
     @LogMethod

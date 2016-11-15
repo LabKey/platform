@@ -58,11 +58,15 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             width: 153,
             padding: '0 0 10px 0',
             enableKeyEvents: true,
-            value: this.defaultChartLabel
+            value: this.getDefaultChartLabel()
         });
-        this.labelBox.addListener('keyup', function(){
-            this.userEditedLabel = this.labelBox.getValue() != '';
-            this.labelBoxResetButton.enable();
+        this.labelBox.addListener('keyup', function()
+        {
+            if (this.getDefaultChartLabel() != null)
+            {
+                this.userEditedLabel = this.labelBox.getValue() != '';
+                this.labelBoxResetButton.enable();
+            }
         }, this, {buffer: 500});
 
         this.labelBoxResetButton = Ext4.create('Ext.Button', {
@@ -71,9 +75,12 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             iconCls: 'fa fa-refresh',
             tooltip: 'Reset the title to the default value based on the Chart Type dialog selections.',
             handler: function() {
-                this.labelBoxResetButton.disable();
-                this.userEditedLabel = false;
-                this.setLabel(this.defaultChartLabel);
+                if (this.getDefaultChartLabel() != null)
+                {
+                    this.labelBoxResetButton.disable();
+                    this.userEditedLabel = false;
+                    this.setLabel(this.getDefaultChartLabel());
+                }
             },
             scope: this
         });
@@ -736,6 +743,11 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         return values;
     },
 
+    getDefaultChartLabel : function()
+    {
+        return Ext4.isString(this.defaultChartLabel) && this.defaultChartLabel != '' ? this.defaultChartLabel : null;
+    },
+
     onMeasureChange : function(measures, renderType)
     {
         this.defaultChartLabel = LABKEY.vis.GenericChartHelper.getTitleFromMeasures(renderType, measures);
@@ -743,7 +755,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         if (!this.userEditedLabel)
         {
             if (renderType == 'time_chart')
-                this.setLabel(this.defaultChartLabel);
+                this.setLabel(this.getDefaultChartLabel());
         }
 
         if (!this.userEditedSubtitle)
@@ -1083,8 +1095,12 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     setLabel: function(value){
         this.labelBox.setValue(value);
 
-        if (this.defaultChartLabel != value)
+        if (this.getDefaultChartLabel() != value)
+        {
             this.userEditedLabel = true;
+            if (this.getDefaultChartLabel() == null)
+                this.defaultChartLabel = value;
+        }
     },
 
     getSubtitle: function() {
