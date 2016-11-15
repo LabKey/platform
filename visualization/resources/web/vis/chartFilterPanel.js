@@ -150,7 +150,7 @@ Ext4.define('LABKEY.vis.ChartFilterParticipantSelector', {
 
     getStudyModuleSubjectContext: function()
     {
-        return LABKEY.vis.GenericChartHelper.getStudySubjectInfo();
+        return LABKEY.vis.TimeChartHelper.getStudySubjectInfo();
     },
 
     getSubjectValues: function()

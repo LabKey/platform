@@ -63,8 +63,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 this.columnQueriesComplete();
             },
             failure : function(response) {
-                // this likely means that the query no longer exists, the other selectRows call with show the
-                // proper error message to the user
+                // this likely means that the query no longer exists, the other
+                // selectRows call with show the proper error message to the user
                 this.queryColumnList = [];
                 this.columnQueriesComplete();
             },
@@ -72,37 +72,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         });
     },
 
-    queryStudyMeasures : function()
-    {
-        // NOTE: disable loading of study measures until time chart incorporated
-        if (false && LABKEY.vis.GenericChartHelper.getStudyTimepointType() != null)
-        {
-            LABKEY.Query.Visualization.getMeasures({
-                filters: ['study|~'],
-                dateMeasures: false,
-                success: function (measures, response)
-                {
-                    var o = Ext4.JSON.decode(response.responseText);
-                    this.studyMeasureList = o.measures;
-                    this.columnQueriesComplete();
-                },
-                failure: this.onFailure,
-                scope: this
-            });
-        }
-        else
-        {
-            this.studyMeasureList = [];
-            this.columnQueriesComplete();
-        }
-    },
-
     columnQueriesComplete : function()
     {
         if (Ext4.isDefined(this.queryColumnList) && Ext4.isDefined(this.studyMeasureList))
         {
             this.loadQueryColumns();
-            this.loadStudyColumns();
+            this.getChartTypePanel().loadStudyColumns(this.studyMeasureList);
 
             this.requestData();
         }
@@ -147,7 +122,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 if (this.editMode && !this.initialColumnList)
                 {
                     this.queryGenericChartColumns();
-                    this.queryStudyMeasures();
+
+                    //LABKEY.vis.TimeChartHelper.getStudyMeasures(function(measures){
+                    //    this.studyMeasureList = measures;
+                    //    this.columnQueriesComplete();
+                    //}, this);
+                    this.studyMeasureList = [];
+                    this.columnQueriesComplete();
                 }
                 else
                 {
@@ -556,7 +537,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 selectedFields: this.measures,
                 restrictColumnsEnabled: this.restrictColumnsEnabled,
                 customRenderTypes: this.customRenderTypes,
-                baseQueryKey: this.schemaName + '|' + this.queryName,
+                baseQueryKey: this.schemaName + '.' + this.queryName,
                 studyQueryName: this.schemaName == 'study' ? this.queryName : null,
                 listeners: {
                     scope: this,
@@ -2019,11 +2000,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         var queryFields = this.getQueryFields(this.queryColumnList);
         this.getChartTypePanel().loadQueryColumns(queryFields);
-    },
-
-    loadStudyColumns : function()
-    {
-        this.getChartTypePanel().loadStudyColumns(this.studyMeasureList);
     },
 
     getQueryFields : function(fields)

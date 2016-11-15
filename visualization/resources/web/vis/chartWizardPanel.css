@@ -123,12 +123,13 @@
     color: #404040;
 }
 .chart-type-panel .field-selections .alternate-field-selection {
-    width: 100%;
-    margin-bottom: 10px;
     background-color: #eeeeee;
 }
-.chart-type-panel .field-selections .alternate-field-selection .x4-form-checkboxgroup-body {
-    padding: 5px 10px;
+.chart-type-panel .field-selections .alternate-field-selection .x4-form-item-label,
+.chart-type-panel .field-selections .alternate-field-selection .x4-form-cb-label,
+.chart-type-panel .x4-form-text {
+    font-size: 12px;
+    color: #404040;
 }
 
 .chart-type-panel .types-panel {

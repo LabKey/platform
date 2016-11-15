@@ -897,7 +897,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
 
         if (datasetMeasurePairs.length > 1)
         {
-            clickButton("Measures", 0);
+            clickButton("Measures", 0); // TODO needs to be converted since changes to Chart Type dialog measure selection
             waitForText("Divide data into Series");
             waitForElement(Ext4Helper.Locators.ext4Button("Add Measure"));
             for (int i = 1; i < datasetMeasurePairs.length; i++)

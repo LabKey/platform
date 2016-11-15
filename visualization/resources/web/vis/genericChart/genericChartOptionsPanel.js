@@ -487,7 +487,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     defineTimeOptions : function()
     {
-        var subjectInfo = LABKEY.vis.GenericChartHelper.getStudySubjectInfo();
+        var subjectInfo = LABKEY.vis.TimeChartHelper.getStudySubjectInfo();
 
         this.hideDataPointsCheckbox = Ext4.create('Ext.form.field.Checkbox', {
             name: 'hideDataPoints',
@@ -786,6 +786,9 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     setPanelOptionValues: function(chartConfig)
     {
+        if (!Ext4.isDefined(chartConfig))
+            return;
+
         if (Ext4.isDefined(chartConfig.label))
             this.setLabel(chartConfig.label);
 

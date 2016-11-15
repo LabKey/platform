@@ -7,6 +7,8 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
     extend : 'LABKEY.vis.GenericOptionsPanel',
 
+    loaderCount: 0,
+
     constructor : function(config){
         Ext4.applyIf(config, {
             measures: [],
@@ -113,10 +115,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                 data: this,
                 listeners: {
                     scope: this,
-                    'load': function(store, records) {
-                        if (this.measuresListsView && this.measuresListsView.rendered && records.length > 0)
-                            this.measuresListsView.getSelectionModel().select(records.length - 1, false, true);
-                    }
+                    load: this.selectFirstMeasureInList
                 }
             }),
             columns: [{
@@ -126,11 +125,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             }],
             listeners: {
                 scope: this,
-                'viewready': function(listView){
-                    // select the last measure in the list
-                    if (listView.getStore().getCount() > 0)
-                        listView.getSelectionModel().select(listView.getStore().getCount()-1, false, false);
-                },
+                'viewready': this.selectFirstMeasureInList,
                 'selectionchange': function(listView, selections){
                     // set the UI components for the measures series information
                     if (selections.length > 0)
@@ -156,23 +151,6 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             border: true,
             width: 400,
             items: [this.measuresListsView]
-        });
-
-        // add a button for the user to add a measure to the chart
-        this.addMeasureButton = Ext4.create('Ext.button.Button', {
-            text: 'Add Measure',
-            width: 105,
-            handler: this.showMeasureSelectionWindow,
-            scope: this
-        });
-
-       // add a button for the user to remove the selected measure
-        this.removeMeasureButton = Ext4.create('Ext.button.Button', {
-            text: 'Remove Measure',
-            width: 130,
-            disabled: this.measures.length == 0,
-            handler: this.removeSelectedMeasure,
-            scope: this
         });
 
         // combobox for choosing axis on left/right
@@ -431,8 +409,6 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                 items: columnOneItems,
                 buttonAlign: 'left',
                 buttons: [
-                    this.addMeasureButton,
-                    this.removeMeasureButton,
                     this.dataFilterRemoveButton
                 ]
             },{
@@ -465,6 +441,13 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
     cancelChangesButtonClicked: function(){
         this.fireEvent('closeOptionsWindow', true);
+    },
+
+    selectFirstMeasureInList: function()
+    {
+        if (this.measuresListsView && this.measuresListsView.getStore().getCount() > 0){
+            this.measuresListsView.getSelectionModel().select(0, false, false);
+        }
     },
 
     showDimensionFilterPanel: function() {
@@ -544,16 +527,18 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         this.yAxisSide.setValue(this.measures[measureIndex].measure.yAxis);
     },
 
-    setMeasureDateStore: function(measure, measureIndex, toFireEvent){
-        if (toFireEvent)
-            this.fireEvent('measureMetadataRequestPending');
+    setMeasureDateStore: function(measure, measureIndex)
+    {
+        this.loaderCount++;
+        this.fireEvent('measureMetadataRequestPending');
 
         // add a store for measureDateCombo to a measure.
-        this.measures[measureIndex].dateColStore = this.newMeasureDateStore(measure, measureIndex, toFireEvent);
+        this.measures[measureIndex].dateColStore = this.newMeasureDateStore(measure, measureIndex);
         this.measureDateCombo.bindStore(this.measures[measureIndex].dateColStore);
     },
 
-    newMeasureDateStore: function(measure, measureIndex, toFireEvent) {
+    newMeasureDateStore: function(measure, measureIndex)
+    {
         return Ext4.create('Ext.data.Store', {
             model: 'MeasureOptionsPanel.DimensionValue',
             proxy: {
@@ -607,51 +592,56 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                     }
 
                     // this is one of the requests being tracked, see if the rest are done
-                    if (toFireEvent)
-                        this.fireEvent('measureMetadataRequestComplete');
-
-                    // if this is the last loader for the given measure, reload the measure list store data
                     this.loaderCount--;
-                    if (this.loaderCount == 0)
-                    {
-                        // reload the measure listview store and select the new measure (last index)
-                        this.measuresListsView.getStore().loadRawData(this);
-                        this.removeMeasureButton.enable();
-                    }
+                    this.fireEvent('measureMetadataRequestComplete');
+                    this.loadMeasuresListData();
                 }
             }
         });
     },
 
-    showMeasureSelectionWindow: function() {
-        this.addMeasureButton.disable();
-        var win = Ext4.create('LABKEY.ext4.MeasuresDialog', {
-            cls: 'data-window',
-            allColumns: false,
-            multiSelect : false,
-            closeAction:'hide',
-            helpText: this.helpText,
-            listeners: {
-                scope: this,
-                'beforeMeasuresStoreLoad': function (mp, data) {
-                    // store the measure store JSON object for later use
-                    this.measuresStoreData = data;
-                },
-                'measuresSelected': function (records, userSelected){
-                    this.addMeasure(records[0].data, false);
-                    this.hasChanges = true;
-                    this.requireDataRefresh = true;
-                    win.hide();
-                },
-                'hide': function() {
-                    this.addMeasureButton.enable();
-                }
-            }
+    updateMeasures : function(newMeasures)
+    {
+        if (Ext4.isDefined(newMeasures) && !Ext4.isArray(newMeasures))
+            newMeasures = [newMeasures];
+
+        // map from current measure key to boolean indicating if it should be removed
+        var currentMeasureKeys = [], newMeasureKeys = [];
+        Ext4.each(this.measures, function(measure){
+            currentMeasureKeys.push(measure.queryName + '|' + measure.name);
         });
-        win.show(this);
+        Ext4.each(newMeasures, function(measure){
+            newMeasureKeys.push(measure.queryName + '|' + measure.name);
+        });
+
+        // remove any measures that were not in the newMeasures array
+        Ext4.each(currentMeasureKeys, function(key){
+            if (newMeasureKeys.indexOf(key) == -1)
+                this.removeMeasure(this.getMeasureIndexByKey(key))
+        }, this);
+
+        // loop through the new measures array and add any that did not previously exist
+        Ext4.each(newMeasures, function(newMeasure)
+        {
+            var newKey = newMeasure.queryName + '|' + newMeasure.name;
+            if (currentMeasureKeys.indexOf(newKey) == -1)
+                this.addMeasure(newMeasure);
+        }, this);
     },
 
-    addMeasure: function(newMeasure, initialMeasure){
+    getMeasureIndexByKey : function(measureKey)
+    {
+        for (var i = 0; i < this.measures.length; i++)
+        {
+            var key = this.measures[i].queryName + '|' + this.measures[i].name;
+            if (key == measureKey)
+                return i;
+        }
+        return -1;
+    },
+
+    addMeasure: function(newMeasure)
+    {
         // add the measure to this
         newMeasure.yAxis = newMeasure.yAxis || "left";
         this.measures.push({
@@ -665,14 +655,13 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         });
 
         var measureIndex = this.measures.length - 1;
-        this.loaderCount = 2; // keep track of the properties loading for the measure (dimension store and date store)
-        this.setDimensionStore(measureIndex, initialMeasure);
-        this.setMeasureDateStore(newMeasure, measureIndex, initialMeasure);
+        this.setDimensionStore(measureIndex);
+        this.setMeasureDateStore(newMeasure, measureIndex);
         this.setYAxisSide(measureIndex);
     },
 
-    removeSelectedMeasure: function(){
-        var index = this.getSelectedMeasureIndex();
+    removeMeasure: function(index)
+    {
         if (index != -1)
         {
             // remove the dimension selector panel, if necessary
@@ -683,24 +672,17 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
             // remove the measure from this object and reload the measure listview store
             this.measures.splice(index, 1);
-            this.measuresListsView.getStore().loadRawData(this);
-
-            // select the previous measure, if there is one
-            if (this.measures.length > 0){
-                this.measuresListsView.getSelectionModel().select(index > 0 ? index-1 : 0, false, true);
-                this.measuresListsView.fireEvent('selectionchange', this.measuresListsView, this.measuresListsView.getSelectionModel().getSelection());
-            }
-            else{
-                // if there are no other measure to select/remove, disable the remove button
-                this.removeMeasureButton.disable();
-            }
-
-            this.hasChanges = true;
-            this.requireDataRefresh = true;
+            this.loadMeasuresListData();
         }
     },
 
-    newDimensionStore: function(measure, dimension, toFireEvent) {
+    loadMeasuresListData : function()
+    {
+        if (this.loaderCount == 0)
+            this.measuresListsView.getStore().loadRawData(this);
+    },
+
+    newDimensionStore: function(measure, dimension) {
         return Ext4.create('Ext.data.Store', {
             model: 'MeasureOptionsPanel.DimensionValue',
             proxy: {
@@ -742,17 +724,9 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                     this.toggleDimensionOptions(dimension.name, measure.aggregate);
 
                     // this is one of the requests being tracked, see if the rest are done
-                    if (toFireEvent)
-                        this.fireEvent('measureMetadataRequestComplete');
-
-                    // if this is the last loader for the given measure, reload the measure list store data
                     this.loaderCount--;
-                    if (this.loaderCount == 0)
-                    {
-                        // reload the measure listview store and select the new measure (last index)
-                        this.measuresListsView.getStore().loadRawData(this);
-                        this.removeMeasureButton.enable();
-                    }
+                    this.fireEvent('measureMetadataRequestComplete');
+                    this.loadMeasuresListData();
                 }
             }
         })
@@ -1010,7 +984,8 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         }
     },
 
-    setDimensionStore: function(index, toFireEvent){
+    setDimensionStore: function(index)
+    {
         if (this.measures[index])
         {
             var measure = this.measures[index].measure;
@@ -1022,10 +997,11 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             else
                 this.setPerDimensionRadioWithoutEvents();
 
+            this.loaderCount++;
+            this.fireEvent('measureMetadataRequestPending');
+
             // initialize the dimension store and bind it to the combobox
-            if (toFireEvent)
-                this.fireEvent('measureMetadataRequestPending');
-            this.measures[index].dimensionStore = this.newDimensionStore(measure, dimension, toFireEvent);
+            this.measures[index].dimensionStore = this.newDimensionStore(measure, dimension);
             this.measureDimensionComboBox.bindStore(this.measures[index].dimensionStore);
 
             // if this is a saved chart with a dimension selected, show dimension selector tab
@@ -1117,12 +1093,6 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             this.panelsToDestroy = [];
             this.measures = Ext4.clone(initValues.measuresAndDimensions);
             this.measuresListsView.getStore().loadRawData(this);
-            if (this.measures.length > 0)
-            {
-                this.measuresListsView.getSelectionModel().select(this.measures.length > 0 ? this.measures.length-1 : 0, false, true);
-                this.measuresListsView.fireEvent('selectionchange', this.measuresListsView, this.measuresListsView.getSelectionModel().getSelection());
-                this.removeMeasureButton.enable();
-            }
         }
 
         if (initValues.hasOwnProperty("dataFilterUrl") && initValues.hasOwnProperty("dataFilterQuery"))

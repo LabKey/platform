@@ -151,7 +151,7 @@ LABKEY.vis.TimeChartHelper = new function() {
      */
     var generateIntervalKey = function(config, individualColumnAliases, aggregateColumnAliases, nounSingular)
     {
-        nounSingular = nounSingular || _getStudySubjectInfo().nounSingular;
+        nounSingular = nounSingular || getStudySubjectInfo().nounSingular;
 
         if (config.measures.length == 0)
             throw "There must be at least one specified measure in the chartInfo config!";
@@ -203,7 +203,7 @@ LABKEY.vis.TimeChartHelper = new function() {
      */
     var generateAes = function(config, visitMap, individualColumnAliases, intervalKey, nounColumnName)
     {
-        nounColumnName = nounColumnName || _getStudySubjectInfo().columnName;
+        nounColumnName = nounColumnName || getStudySubjectInfo().columnName;
 
         if (config.measures.length == 0)
             throw "There must be at least one specified measure in the chartInfo config!";
@@ -239,7 +239,7 @@ LABKEY.vis.TimeChartHelper = new function() {
      */
     var generateLayers = function(config, visitMap, individualColumnAliases, aggregateColumnAliases, aggregateData, seriesList, intervalKey, nounColumnName)
     {
-        nounColumnName = nounColumnName || _getStudySubjectInfo().columnName;
+        nounColumnName = nounColumnName || getStudySubjectInfo().columnName;
 
         if (config.measures.length == 0)
             throw "There must be at least one specified measure in the chartInfo config!";
@@ -502,7 +502,7 @@ LABKEY.vis.TimeChartHelper = new function() {
     // private function
     var generateDataSortArray = function(subject, firstMeasure, isDateBased, nounSingular)
     {
-        nounSingular = nounSingular || _getStudySubjectInfo().nounSingular;
+        nounSingular = nounSingular || getStudySubjectInfo().nounSingular;
 
         return [
             subject,
@@ -546,7 +546,7 @@ LABKEY.vis.TimeChartHelper = new function() {
      */
     var generateAcrossChartAxisRanges = function(config, data, seriesList, nounSingular)
     {
-        nounSingular = nounSingular || _getStudySubjectInfo().nounSingular;
+        nounSingular = nounSingular || getStudySubjectInfo().nounSingular;
 
         if (config.measures.length == 0)
             throw "There must be at least one specified measure in the chartInfo config!";
@@ -725,7 +725,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         var plotConfigInfoArr = [],
             subjectColumnName = null;
 
-        nounColumnName = nounColumnName || _getStudySubjectInfo().columnName;
+        nounColumnName = nounColumnName || getStudySubjectInfo().columnName;
         if (data.individual)
             subjectColumnName = LABKEY.vis.getColumnAlias(data.individual.columnAliases, nounColumnName);
 
@@ -1001,7 +1001,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                             response.hasNegativeValues[s.name] = true;
                     }
 
-                    var nounSingular = config.nounSingular || _getStudySubjectInfo().nounSingular;
+                    var nounSingular = config.nounSingular || getStudySubjectInfo().nounSingular;
                     var visitMappedName = LABKEY.vis.getColumnAlias(response.columnAliases, nounSingular + "Visit/Visit");
                     if (!isDateBased && row[visitMappedName])
                     {
@@ -1082,6 +1082,42 @@ LABKEY.vis.TimeChartHelper = new function() {
     };
 
     /**
+     * Get the set of measures from the tables/queries in the study schema.
+     * @param successCallback
+     */
+    var getStudyMeasures = function(successCallback, callbackScope)
+    {
+        if (getStudyTimepointType() != null)
+        {
+            LABKEY.Query.Visualization.getMeasures({
+                filters: ['study|~'],
+                dateMeasures: false,
+                success: function (measures, response)
+                {
+                    var o = Ext4.JSON.decode(response.responseText);
+                    successCallback.call(callbackScope, o.measures);
+                },
+                failure: this.onFailure,
+                scope: this
+            });
+        }
+        else
+        {
+            successCallback.call(callbackScope, []);
+        }
+    };
+
+    /**
+     * If this is a container with a configured study, get the timepoint type from the study module context.
+     * @returns {String|null}
+     */
+    var getStudyTimepointType = function()
+    {
+        var studyCtx = LABKEY.getModuleContext("study") || {};
+        return Ext4.isDefined(studyCtx.timepointType) ? studyCtx.timepointType : null;
+    };
+
+    /**
      * Generate the number format functions for the left and right y-axis and attach them to the chart data object
      * @param {Object} config The chart configuration object that defines the selected measures, axis info, subjects/groups, etc.
      * @param {Object} data The data object, from getChartData.
@@ -1155,7 +1191,7 @@ LABKEY.vis.TimeChartHelper = new function() {
 
         if (config.chartSubjectSelection == "subjects" && config.subject.values.length == 0)
         {
-            var nounSingular = _getStudySubjectInfo().nounSingular;
+            var nounSingular = getStudySubjectInfo().nounSingular;
             message = "No " + nounSingular.toLowerCase() + " selected. " +
                     "Please select at least one " + nounSingular.toLowerCase() + ".";
             return {success: false, message: message};
@@ -1183,7 +1219,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         var subjectLength = config.subject.values ? config.subject.values.length : 0;
         if (config.displayIndividual && subjectLength > 10000)
         {
-            var nounPlural = _getStudySubjectInfo().nounPlural;
+            var nounPlural = getStudySubjectInfo().nounPlural;
             message = "Unable to display individual series lines for greater than 10,000 total " + nounPlural.toLowerCase() + ".";
             return {success: false, message: message};
         }
@@ -1310,13 +1346,12 @@ LABKEY.vis.TimeChartHelper = new function() {
                 // if the axis info is in md, move it to the axis array
                 if (md.axis)
                 {
-                    console.log('here in convert 4');
                     // default the y-axis to the left side if not specified
                     if (md.axis.name == "y-axis")
                         Ext4.applyIf(md.axis, {side: "left"});
 
                     // move the axis info to the axis array
-                    if (LABKEY.vis.TimeChartHelper.getAxisIndex(chartInfo.axis, md.axis.name, md.axis.side) == -1)
+                    if (getAxisIndex(chartInfo.axis, md.axis.name, md.axis.side) == -1)
                         chartInfo.axis.push(Ext4.apply({}, md.axis));
 
                     // if the chartInfo has an x-axis measure, move the date info it to the related y-axis measures
@@ -1337,7 +1372,6 @@ LABKEY.vis.TimeChartHelper = new function() {
                                 };
                             }
                         }
-                        console.log('here in convert 3');
 
                         // remove the x-axis date measure from the measures array
                         chartInfo.measures.splice(i, 1);
@@ -1345,7 +1379,6 @@ LABKEY.vis.TimeChartHelper = new function() {
                     }
                     else
                     {
-                        console.log('here in convert 2');
                         // remove the axis property from the measure
                         delete md.axis;
                     }
@@ -1360,7 +1393,6 @@ LABKEY.vis.TimeChartHelper = new function() {
                 if (savedReportInfo.reportProps == null)
                     savedReportInfo.reportProps = {};
 
-                console.log('here in convert 1');
                 Ext4.applyIf(savedReportInfo.reportProps, {
                     thumbnailType: !chartInfo.saveThumbnail ? 'NONE' : 'AUTO'
                 });
@@ -1368,9 +1400,9 @@ LABKEY.vis.TimeChartHelper = new function() {
         }
     };
 
-    var _getStudySubjectInfo = function()
+    var getStudySubjectInfo = function()
     {
-        var studyCtx = Ext4.isDefined(LABKEY.getModuleContext("study")) ? LABKEY.getModuleContext("study") : {};
+        var studyCtx = LABKEY.getModuleContext("study") || {};
         return Ext4.isObject(studyCtx.subject) ? studyCtx.subject : {
             tableName: 'Participant',
             columnName: 'ParticipantId',
@@ -1417,6 +1449,9 @@ LABKEY.vis.TimeChartHelper = new function() {
         getAxisIndex : getAxisIndex,
         getMeasuresLabelBySide : getMeasuresLabelBySide,
         getDistinctYAxisSides : getDistinctYAxisSides,
+        getStudyTimepointType : getStudyTimepointType,
+        getStudySubjectInfo : getStudySubjectInfo,
+        getStudyMeasures : getStudyMeasures,
         getChartData : getChartData,
         validateChartConfig : validateChartConfig,
         validateChartData : validateChartData,

@@ -58,6 +58,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                     defaultOpacity: this.defaultOpacity,
                     defaultLineWidth: this.defaultLineWidth,
                     isSavedReport: this.isSavedReport,
+                    renderType: this.renderType,
                     listeners: {
                         scope: this,
                         chartLayoutChange: function(newChartLayout) {
@@ -74,7 +75,8 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                 config: {
                     axisName: 'x',
                     multipleCharts: this.multipleCharts,
-                    isSavedReport: this.isSavedReport
+                    isSavedReport: this.isSavedReport,
+                    renderType: this.renderType
                 }
             },{
                 name: 'y',
@@ -85,7 +87,8 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                 config: {
                     axisName: 'y',
                     multipleCharts: this.multipleCharts,
-                    isSavedReport: this.isSavedReport
+                    isSavedReport: this.isSavedReport,
+                    renderType: this.renderType
                 }
             },{
                 name: 'yRight',
@@ -96,7 +99,8 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                 config: {
                     axisName: 'yRight',
                     multipleCharts: this.multipleCharts,
-                    isSavedReport: this.isSavedReport
+                    isSavedReport: this.isSavedReport,
+                    renderType: this.renderType
                 }
             }];
 
@@ -180,7 +184,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
             newCardPanel = Ext4.create(record.get('cardClass'), config);
 
             // set initial values based on the config props loaded from the saved config
-            if (this.options[record.get('name')] && newCardPanel.setPanelOptionValues)
+            if (newCardPanel.setPanelOptionValues)
                 newCardPanel.setPanelOptionValues(this.options[record.get('name')]);
         }
         else

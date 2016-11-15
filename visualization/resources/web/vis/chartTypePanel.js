@@ -10,6 +10,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
     mainTitle: 'Create a plot',
     width: 900,
     selectedType: null,
+    hideNonSelectedType: false,
     selectedFields: null,
     requiredFieldNames: null,
     restrictColumnsEnabled: false,
@@ -23,7 +24,8 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         var typesArr = [];
         Ext4.each(LABKEY.vis.GenericChartHelper.getRenderTypes(), function(renderType)
         {
-            if (!renderType.hidden)
+            // show the selected type and all non-hidden types (unless specifically requested to only show selected)
+            if (this.selectedType == renderType.name || (!this.hideNonSelectedType && !renderType.hidden))
                 typesArr.push(renderType);
         }, this);
 
@@ -44,13 +46,13 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             data: typesArr
         });
 
-        var visibleTypeCount = this.typesStore.query('hidden', false).length;
-        this.height = Math.max((85 * visibleTypeCount) + 185, 525);
+        this.height = Math.max((85 * this.typesStore.getCount()) + 185, 525);
 
-        // lookup type by name, default to the first active chart type if none selected/found
+        // lookup type by name
         if (Ext4.isString(this.selectedType))
             this.selectedType = this.typesStore.findRecord('name', this.selectedType, 0, false, true, true);
-        if (!this.selectedType || this.selectedType.get('hidden'))
+        // default to the first active chart type if none selected/found
+        if (!this.selectedType)
             this.selectedType = this.typesStore.findRecord('active', true);
 
         // if no selectedFields pass in, create an empty object
@@ -87,12 +89,10 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         {
             var tpl = new Ext4.XTemplate(
                 '<tpl for=".">',
-                    '<tpl if="!hidden">',
-                        '<div class="item {[this.getItemCls(values)]}" id="chart-type-{name}">',
-                            '<img src="{imgUrl}" height="50" width="80"/>',
-                            '<div>{title}</div>',
-                        '</div>',
-                    '</tpl>',
+                    '<div class="item {[this.getItemCls(values)]}" id="chart-type-{name}">',
+                        '<img src="{imgUrl}" height="50" width="80"/>',
+                        '<div>{title}</div>',
+                    '</div>',
                 '</tpl>',
                 {
                     getItemCls : function(item) {
@@ -244,6 +244,9 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
 
                         this.getStudyQueryCombo().setValue(this.studyQueryName);
                         this.filterStudyColumnsGrid();
+
+                        if (this.getQueryColumnsPanel().getEl())
+                            this.getQueryColumnsPanel().getEl().unmask();
                     }
                 },
                 sorters: [{property: 'label'}]
@@ -466,9 +469,8 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             this.getTypesPanel().getSelectionModel().select(this.selectedType);
 
             this.selectedFields = this.initValues.fields;
+            this.selectedFields = Ext4.apply(this.selectedFields, this.initValues.altValues);
             this.getFieldSelectionsPanel().setSelection(this.selectedFields);
-
-            this.getFieldSelectionsPanel().setAltValues(this.initValues.altValues);
         }
 
         // deselect any grid columns
@@ -521,25 +523,45 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             if (this.initValues.type != newValues.type)
                 return true;
 
-            // see if any of the altValues keys have changed
-            if (!Ext4.Array.equals(Ext4.Object.getKeys(this.initValues.altValues), Ext4.Object.getKeys(newValues.altValues)))
-                return true;
-
-            // see if any of the altValues values have changed
-            if (!Ext4.Array.equals(Ext4.Object.getValues(this.initValues.altValues), Ext4.Object.getValues(newValues.altValues)))
+            // see if any of the altValues key/values have changed
+            if (Ext4.encode(this.initValues.altValues) != Ext4.encode(newValues.altValues))
                 return true;
 
             // see if any of the field keys have changed
             if (!Ext4.Array.equals(Ext4.Object.getKeys(this.initValues.fields), Ext4.Object.getKeys(newValues.fields)))
                 return true;
 
-            var initFieldNames = Ext4.Array.pluck(Ext4.Array.clean(Ext4.Object.getValues(this.initValues.fields)), 'name'),
-                newFieldNames = Ext4.Array.pluck(Ext4.Array.clean(Ext4.Object.getValues(newValues.fields)), 'name');
+            // see if any of the field values have changed
+            var initFieldNames = this.getFieldValueKeys(this.initValues.fields),
+                newFieldNames = this.getFieldValueKeys(newValues.fields);
             if (!Ext4.Array.equals(initFieldNames, newFieldNames))
                 return true;
         }
 
         return false;
+    },
+
+    getFieldValueKeys : function(fieldValueMap)
+    {
+        var keys = [];
+
+        Ext4.Object.each(fieldValueMap, function(key, value){
+            if (Ext4.isArray(value))
+            {
+                Ext4.each(value, function(v){
+                    keys.push(this.getFieldValueKey(key, v));
+                }, this);
+            }
+            else
+                keys.push(this.getFieldValueKey(key, value));
+        }, this);
+
+        return keys;
+    },
+
+    getFieldValueKey : function(fieldName, value)
+    {
+        return fieldName + '|' + value.queryName + '|' + value.name;
     },
 
     allowTypeSelect : function(view, selected)
@@ -603,29 +625,43 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
 
     getValues : function()
     {
-        var type = this.selectedType != null ? this.selectedType.get('name') : null,
-            altValues = this.getAlternateFieldValues(),
-            fields = {};
-
-        Ext4.Object.each(this.selectedFields, function(key, val)
-        {
-            fields[key] = Ext4.clone(val);
-        });
-
         return {
-            type: type,
-            fields: fields,
-            altValues: altValues
+            type: this.selectedType != null ? this.selectedType.get('name') : null,
+            fields: this.getSelectedFieldValues(),
+            altValues: this.getAlternateFieldValues()
         };
+    },
+
+    getSelectedFieldValues : function()
+    {
+        var values = {};
+
+        Ext4.each(this.selectedType.get('fields'), function(field)
+        {
+            var fieldName = field.name;
+            if (!Ext4.isDefined(field.altFieldType) && Ext4.isDefined(this.selectedFields[fieldName]))
+                values[fieldName] = Ext4.clone(this.selectedFields[fieldName]);
+        }, this);
+
+        return values;
     },
 
     getAlternateFieldValues : function()
     {
         var values = {};
 
-        Ext4.each(this.getFieldSelectionsPanel().query('panel'), function(fieldSelPanel)
+        Ext4.each(this.selectedType.get('fields'), function(field)
         {
-            Ext4.apply(values, fieldSelPanel.getAlternateFieldValue());
+            if (Ext4.isDefined(field.altFieldType))
+            {
+                // first check the selectedFields object for the initValues case
+                // otherwise get the value from the component itself
+                var fieldName = field.name;
+                if (Ext4.isDefined(this.selectedFields[fieldName]))
+                    values[fieldName] = Ext4.clone(this.selectedFields[fieldName]);
+                else
+                    values[fieldName] = Ext4.clone(field.altFieldCmp.getValue());
+            }
         }, this);
 
         return values;
@@ -664,14 +700,15 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
 
         // enable drop target based on allowable column types for the given field
         var selectedColType = LABKEY.vis.GenericChartHelper.getMeasureType(selectedCol.data);
-        var isMeasure = selectedCol.data.measure;
-        var isDimension = selectedCol.data.dimension;
+        var isMeasure = selectedCol.get('measure');
+        var isDimension = selectedCol.get('dimension');
 
-        Ext4.each(this.query('panel'), function(fieldSelPanel)
+        Ext4.each(this.query('charttypefield'), function(fieldSelPanel)
         {
-            if ((fieldSelPanel.getAllowableTypes().indexOf(selectedColType) > -1) ||
-                    (fieldSelPanel.field.numericOnly && isMeasure) ||
-                    (fieldSelPanel.field.nonNumericOnly && isDimension))
+            var hasMatchingType = fieldSelPanel.getAllowableTypes().indexOf(selectedColType) > -1,
+                isMeasureDimensionMatch = (fieldSelPanel.field.numericOnly && isMeasure) || (fieldSelPanel.field.nonNumericOnly && isDimension);
+
+            if (hasMatchingType || isMeasureDimensionMatch)
             {
                 var dropTarget = fieldSelPanel.createDropTarget(grid, ddGroup);
 
@@ -692,7 +729,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
     destroyFieldSelectionDropTargets : function()
     {
         // remove the cls used for display drop target and remove any click listeners
-        Ext4.each(this.query('panel'), function(fieldSelPanel)
+        Ext4.each(this.query('charttypefield'), function(fieldSelPanel)
         {
             fieldSelPanel.removeDropTargetCls();
             fieldSelPanel.getEl().removeAllListeners();
@@ -709,7 +746,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
 
     flagRequiredFields : function()
     {
-        Ext4.each(this.query('panel'), function(fieldSelPanel)
+        Ext4.each(this.query('charttypefield'), function(fieldSelPanel)
         {
             fieldSelPanel.flagIfRequired();
         }, this);
@@ -732,7 +769,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
             var fieldSelection = this.selection ? this.selection[field.name] : undefined;
             if (fieldSelection && Ext4.isString(fieldSelection.schemaName) && Ext4.isString(fieldSelection.queryName))
             {
-                var queryKey = fieldSelection.schemaName + '|' + fieldSelection.queryName;
+                var queryKey = fieldSelection.schemaName + '.' + fieldSelection.queryName;
                 if (this.baseQueryKey.toLowerCase() != queryKey.toLowerCase())
                     fieldSelection = undefined;
             }
@@ -750,17 +787,6 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
         }));
     },
 
-    setAltValues : function(altValues)
-    {
-        if (Ext4.isObject(altValues))
-        {
-            Ext4.each(this.query('panel'), function(fieldSelPanel)
-            {
-                fieldSelPanel.setAltValues(altValues);
-            }, this);
-        }
-    },
-
     setSelection : function(selection)
     {
         if (Ext4.isObject(selection))
@@ -774,7 +800,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
     {
         this.selection = {};
 
-        Ext4.each(this.query('panel'), function(fieldSelPanel)
+        Ext4.each(this.query('charttypefield'), function(fieldSelPanel)
         {
             if (fieldSelPanel.getSelection() != null)
                 this.selection[fieldSelPanel.field.name] = fieldSelPanel.getSelection();
@@ -786,6 +812,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
 
 Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
     extend: 'Ext.panel.Panel',
+    alias: 'widget.charttypefield',
 
     border: false,
     field: null,
@@ -806,7 +833,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
             Ext4.each(this.selection, function(selection)
             {
                 var selectionType = LABKEY.vis.GenericChartHelper.getMeasureType(selection);
-                if (Ext4.isDefined(selectionType) && allowableTypes.indexOf(selectionType) > -1)
+                if (!Ext4.isDefined(selectionType) || allowableTypes.indexOf(selectionType) > -1)
                     matchingSelection.push(selection);
             }, this);
 
@@ -816,19 +843,11 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
                 this.selection = matchingSelection.length > 1 ? matchingSelection : matchingSelection[0];
         }
 
-        var items = [this.getFieldTitle()];
-
-        if (Ext4.isString(this.field.altFieldType) && Ext4.isObject(this.field.altFieldConfig))
-        {
-            var config = Ext4.apply({cls: 'alternate-field-selection'}, this.field.altFieldConfig);
-            this.field.altFieldCmp = Ext4.create(this.field.altFieldType, config);
-            items.push(this.field.altFieldCmp);
-        }
-        else
-        {
-            items.push(this.getFieldArea());
-            items.push(this.getFieldAreaDropText());
-        }
+        var items = [
+            this.getFieldTitle(),
+            this.getFieldArea(),
+            this.getFieldAreaDropText()
+        ];
 
         this.items = items;
         this.callParent();
@@ -864,41 +883,62 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
     {
         if (!this.fieldAreaCmp)
         {
-            this.fieldAreaCmp = Ext4.create('Ext.view.View', {
-                cls: 'field-area',
-                minHeight: 50,
-                data: this.selection,
-                tpl: new Ext4.XTemplate(
-                    '<tpl for=".">',
-                        '<tpl if="name">',
-                            '<div class="field-selection-display">',
-                                '{[this.getFieldSelectionDisplay("' + this.chartTypeName + '", "' + this.field.name + '", values)]}',
-                                '<div class="fa fa-times field-selection-remove" fieldName="{name}"></div>',
-                            '</div>',
-                        '</tpl>',
-                    '</tpl>',
-                    {
-                        getFieldSelectionDisplay: function(chartTypeName, fieldName, values)
-                        {
-                            var label = Ext4.String.htmlEncode(LABKEY.vis.GenericChartHelper.getSelectedMeasureLabel(chartTypeName, fieldName, values));
-
-                            // for time chart, add query label to display
-                            if (chartTypeName == 'time_chart')
-                                label += ' <span class="field-selection-sub">(' + Ext4.String.htmlEncode(values.queryLabel) + ')</span>';
-
-                            return label;
-                        }
-                    }
-                )
-            });
-
-            this.fieldAreaCmp.on('refresh', function(view)
+            if (Ext4.isString(this.field.altFieldType))
             {
-                var removeEls = view.getEl().query('div.field-selection-remove');
-                Ext4.each(removeEls, function(removeEl) {
-                    Ext4.get(removeEl).on('click', this.removeSelection, this);
+                this.field.altFieldCmp = Ext4.create(this.field.altFieldType, Ext4.apply({
+                    cls: 'alternate-field-selection',
+                    initData: this.selection
+                }, this.field.altFieldConfig || {}));
+
+                this.fieldAreaCmp = Ext4.create('Ext.panel.Panel', {
+                    cls: 'field-area',
+                    border: false,
+                    minHeight: 50,
+                    items: [this.field.altFieldCmp]
+                });
+
+                // clear the selection value for this altField
+                this.selection = null;
+            }
+            else
+            {
+                this.fieldAreaCmp = Ext4.create('Ext.view.View', {
+                    cls: 'field-area',
+                    minHeight: 50,
+                    data: this.selection,
+                    tpl: new Ext4.XTemplate(
+                            '<tpl for=".">',
+                            '<tpl if="name">',
+                            '<div class="field-selection-display">',
+                            '{[this.getFieldSelectionDisplay("' + this.chartTypeName + '", "' + this.field.name + '", values)]}',
+                            '<div class="fa fa-times field-selection-remove" fieldName="{name}"></div>',
+                            '</div>',
+                            '</tpl>',
+                            '</tpl>',
+                            {
+                                getFieldSelectionDisplay: function (chartTypeName, fieldName, values)
+                                {
+                                    var label = Ext4.String.htmlEncode(LABKEY.vis.GenericChartHelper.getSelectedMeasureLabel(chartTypeName, fieldName, values));
+
+                                    // for time chart, add query label to display
+                                    if (chartTypeName == 'time_chart')
+                                        label += ' <span class="field-selection-sub">(' + Ext4.String.htmlEncode(values.queryLabel) + ')</span>';
+
+                                    return label;
+                                }
+                            }
+                    )
+                });
+
+                this.fieldAreaCmp.on('refresh', function (view)
+                {
+                    var removeEls = view.getEl().query('div.field-selection-remove');
+                    Ext4.each(removeEls, function (removeEl)
+                    {
+                        Ext4.get(removeEl).on('click', this.removeSelection, this);
+                    }, this);
                 }, this);
-            }, this);
+            }
         }
 
         return this.fieldAreaCmp;
@@ -954,8 +994,8 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
 
     flagIfRequired : function()
     {
-        var missingAltFieldValue = this.hasAlternateField() && Object.keys(this.getAlternateFieldValue()).length == 0;
-        var missingSelection = !this.hasAlternateField() && this.selection == null;
+        var missingAltFieldValue = this.hasAlternateField() && this.field.altFieldCmp.getValue() == null,
+            missingSelection = !this.hasAlternateField() && this.selection == null;
 
         if (this.field.required && (missingSelection || missingAltFieldValue))
         {
@@ -964,31 +1004,9 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
         }
     },
 
-    setAltValues : function(altValues)
-    {
-        if (this.hasAlternateField())
-            this.field.altFieldCmp.setValue(altValues);
-    },
-
     hasAlternateField : function()
     {
         return Ext4.isDefined(this.field.altFieldCmp);
-    },
-
-    getAlternateFieldValue : function()
-    {
-        var values = {};
-
-        if (this.hasAlternateField())
-        {
-            var val = this.field.altFieldCmp.getValue();
-            if (Ext4.isObject(val))
-                Ext4.apply(values, val);
-            else
-                values[this.field.name] = val;
-        }
-
-        return values;
     },
 
     removeSelection : function(evt, el)
@@ -1086,7 +1104,9 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
             var numericTypes = ['int', 'float', 'double', 'INTEGER', 'DOUBLE'],
                 nonNumericTypes = ['string', 'date', 'boolean', 'STRING', 'TEXT', 'DATE', 'BOOLEAN'];
 
-            if (this.field.numericOnly)
+            if (this.field.altSelectionOnly)
+                this.allowableTypes = [];
+            else if (this.field.numericOnly)
                 this.allowableTypes = numericTypes;
             else if (this.field.nonNumericOnly)
                 this.allowableTypes = nonNumericTypes;

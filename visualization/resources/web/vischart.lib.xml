@@ -10,6 +10,7 @@
         <script path="vis/developerOptionsPanel.js"/>
         <script path="vis/saveOptionsPanel.js"/>
 
+        <script path="vis/timeChart/timeChartHelper.js"/>
         <script path="vis/genericChart/genericChartHelper.js"/>
         <script path="vis/genericChart/genericChartOptionsPanel.js"/>
         <script path="vis/genericChart/genericChartAxisPanel.js"/>

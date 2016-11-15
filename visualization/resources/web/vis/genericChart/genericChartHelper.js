@@ -62,19 +62,10 @@ LABKEY.vis.GenericChartHelper = new function(){
             {
                 name: 'time_chart',
                 title: 'Time',
-                hidden: true, //getStudyTimepointType() == null,
+                hidden: true, //_getStudyTimepointType() == null,
                 imgUrl: LABKEY.contextPath + '/visualization/images/timechart.png',
                 fields: [
-                    {name: 'time', label: 'X Axis', required: true,
-                        altFieldType: 'Ext.form.RadioGroup',
-                        altFieldConfig: {
-                            columns: 1,
-                            items: [
-                                {name: 'time', inputValue: 'date', boxLabel: 'Date-based', checked: true},
-                                {name: 'time', inputValue: 'visit', boxLabel: 'Visit-based', disabled: getStudyTimepointType() == 'DATE'}
-                            ]
-                        }
-                    },
+                    {name: 'x', label: 'X Axis', required: true, altSelectionOnly: true, altFieldType: 'LABKEY.vis.TimeChartXAxisField'},
                     {name: 'y', label: 'Y Axis', required: true, numericOnly: true, allowMultiple: true}
                 ],
                 layoutOptions: {time: true, axisBased: true}
@@ -195,7 +186,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         var scales = {};
         var data = responseData.rows;
         var fields = responseData.metaData.fields;
-        var subjectColumn = getStudySubjectInfo().columnName;
+        var subjectColumn = _getStudySubjectInfo().columnName;
 
         if (chartType === "box_plot")
         {
@@ -890,15 +881,9 @@ LABKEY.vis.GenericChartHelper = new function(){
         return t == 'int' || t == 'integer' || t == 'float' || t == 'double';
     };
 
-    var getStudyTimepointType = function()
+    var _getStudySubjectInfo = function()
     {
-        var studyCtx = _getStudyModuleContext();
-        return Ext4.isDefined(studyCtx.timepointType) ? studyCtx.timepointType : null;
-    };
-
-    var getStudySubjectInfo = function()
-    {
-        var studyCtx = _getStudyModuleContext();
+        var studyCtx = LABKEY.getModuleContext("study") || {};
         return Ext4.isObject(studyCtx.subject) ? studyCtx.subject : {
             tableName: 'Participant',
             columnName: 'ParticipantId',
@@ -907,10 +892,10 @@ LABKEY.vis.GenericChartHelper = new function(){
         };
     };
 
-    var _getStudyModuleContext = function()
+    var _getStudyTimepointType = function()
     {
-        var studyCtx = LABKEY.getModuleContext("study");
-        return Ext4.isDefined(studyCtx) ? studyCtx : {};
+        var studyCtx = LABKEY.getModuleContext("study") || {};
+        return Ext4.isDefined(studyCtx.timepointType) ? studyCtx.timepointType : null;
     };
 
     return {
@@ -921,8 +906,6 @@ LABKEY.vis.GenericChartHelper = new function(){
          */
         getRenderTypes: getRenderTypes,
         getChartType: getChartType,
-        getStudyTimepointType: getStudyTimepointType,
-        getStudySubjectInfo: getStudySubjectInfo,
         getSelectedMeasureLabel: getSelectedMeasureLabel,
         getTitleFromMeasures: getTitleFromMeasures,
         getMeasureType: getMeasureType,

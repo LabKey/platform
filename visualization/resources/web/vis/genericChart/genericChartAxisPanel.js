@@ -24,9 +24,13 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             width: 232
         });
 
-        this.axisLabelField.addListener('keyup', function(){
-            this.userEditedLabel = this.axisLabelField.getValue() != '';
-            this.axisLabelResetButton.enable();
+        this.axisLabelField.addListener('keyup', function()
+        {
+            if (this.getDefaultAxisLabel() != null)
+            {
+                this.userEditedLabel = this.axisLabelField.getValue() != '';
+                this.axisLabelResetButton.enable();
+            }
         }, this, {buffer: 500});
 
         this.axisLabelResetButton = Ext4.create('Ext.Button', {
@@ -37,7 +41,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             handler: function() {
                 this.axisLabelResetButton.disable();
                 this.userEditedLabel = false;
-                this.setAxisLabel(this.defaultAxisLabel);
+                this.resetAxisLabel();
             },
             scope: this
         });
@@ -133,25 +137,6 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             }
         });
 
-        this.timeAxisIntervalCombo = Ext4.create('Ext.form.field.ComboBox', {
-            //name: 'interval',
-            //getInputValue: this.getTimeAxisInterval,
-            fieldLabel: 'Time Interval',
-            store: Ext4.create('Ext.data.ArrayStore', {
-                fields: ['value'],
-                data: [['Days'], ['Weeks'], ['Months'], ['Years']]
-            }),
-            width: 200,
-            padding: '0 0 10px 0',
-            layoutOptions: 'time',
-            queryMode: 'local',
-            editable: false,
-            forceSelection: true,
-            displayField: 'value',
-            valueField: 'value',
-            value: 'Days'
-        });
-
         this.items = this.getInputFields();
         
         this.callParent();
@@ -179,7 +164,10 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
     setPanelOptionValues: function(config)
     {
         if (!Ext4.isDefined(config))
+        {
+            this.userEditedLabel = false;
             return;
+        }
 
         if (config.label)
             this.setAxisLabel(config.label);
@@ -188,9 +176,6 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             this.setScaleTrans(config.trans);
         else if (config.scaleTrans)
             this.setScaleTrans(config.scaleTrans);
-
-        if (config.interval)
-            this.setTimeAxisInterval(config.interval);
 
         this.setScaleRange(config);
     },
@@ -201,6 +186,18 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
 
     setAxisLabel: function(value){
         this.axisLabelField.setValue(value);
+    },
+
+    resetAxisLabel: function()
+    {
+        var label = this.getDefaultAxisLabel();
+        if (label != null)
+            this.setAxisLabel(label);
+    },
+
+    getDefaultAxisLabel : function()
+    {
+        return Ext4.isString(this.defaultAxisLabel) ? this.defaultAxisLabel : null;
     },
 
     getScaleType: function(){
@@ -260,14 +257,6 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             radioComp.setValue(true);
     },
 
-    getTimeAxisInterval: function(){
-        return this.timeAxisIntervalCombo.getValue();
-    },
-
-    setTimeAxisInterval: function(value){
-        this.timeAxisIntervalCombo.setValue(value);
-    },
-
     validateManualScaleRange: function() {
         var range = this.getScaleRange();
 
@@ -302,6 +291,8 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
 
     onMeasureChange : function(measures, renderType)
     {
+        this.renderType = renderType;
+
         if (renderType == 'time_chart')
             this.onMeasureChangeTimeChart(measures);
         else
@@ -310,12 +301,23 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
 
     onMeasureChangeTimeChart : function(measures)
     {
-        // special case for x-xis: no label change and always hide log/linear
         if (this.axisName == 'x')
         {
-            var isVisitBased = measures.time == 'visit';
             this.adjustScaleOptions(false);
+
+            // if visit based time chart, set range type to Automatic and hide range options
+            var isVisitBased = measures.time == 'visit';
             this.scaleRangeRadioGroup.hideForDatatype = isVisitBased;
+            if (isVisitBased)
+                this.setScaleRangeType('automatic');
+
+            if (isVisitBased)
+                this.defaultAxisLabel = 'Visit';
+            else
+                this.defaultAxisLabel = measures.interval + (Ext4.isObject(measures.zeroDateCol) ? ' Since ' + measures.zeroDateCol.label : '');
+
+            if (!this.userEditedLabel)
+                this.resetAxisLabel();
         }
         else
         {
@@ -324,7 +326,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             var side = this.axisName == 'y' ? 'left' : 'right';
             this.defaultAxisLabel = LABKEY.vis.TimeChartHelper.getMeasuresLabelBySide(measures.y, side);
             if (!this.userEditedLabel)
-                this.setAxisLabel(this.defaultAxisLabel);
+                this.resetAxisLabel();
         }
     },
 
@@ -340,7 +342,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         if (!this.userEditedLabel)
         {
             if (Ext4.isDefined(properties))
-                this.setAxisLabel(this.defaultAxisLabel);
+                this.resetAxisLabel();
             else
                 this.setAxisLabel('');
         }
@@ -349,7 +351,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
     onChartLayoutChange : function(multipleCharts)
     {
         var automaticRadio = this.getScaleRangeTypeRadioByValue('automatic'),
-                automaticPerChartRadio = this.getScaleRangeTypeRadioByValue('automatic_per_chart');
+            automaticPerChartRadio = this.getScaleRangeTypeRadioByValue('automatic_per_chart');
 
         automaticRadio.setBoxLabel(multipleCharts ? 'Automatic Across Charts' : 'Automatic');
         automaticPerChartRadio.setVisible(multipleCharts);

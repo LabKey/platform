@@ -2,6 +2,7 @@
     <library compileInProductionMode="true">
         <script path="vis/chartWizardWindow.js"/>
         <script path="vis/chartFilterPanel.js"/>
+        <script path="vis/chartTypePanel.js"/>
         <script path="vis/chartLayoutPanel.js"/>
         <script path="vis/chartWizardPanel.css"/>
 
@@ -10,11 +11,9 @@
         <script path="vis/saveOptionsPanel.js"/>
         <script path="vis/baseExportScriptPanel.js"/>
 
-        <script path="vis/timeChart/initialMeasurePanel.js"/>
         <script path="vis/timeChart/measureOptionsPanel.js"/>
-        <script path="vis/timeChart/baseAxisOptionsPanel.js"/>
-        <script path="vis/timeChart/xAxisOptionsPanel.js"/>
         <script path="vis/timeChart/timeChartHelper.js"/>
+        <script path="vis/timeChart/timeChartXAxisField.js"/>
         <script path="vis/timeChart/timeChartScriptPanel.js"/>
         <script path="vis/timeChart/timeChartPanel.js"/>
 
