@@ -81,7 +81,9 @@ public class PopupDeveloperView extends PopupMenuView
             ActionURL url = rstudio.getRStudioLink(context.getUser());
             if (null != url)
             {
-                items.add(new NavTree("RStudio Server",url));
+                NavTree rss = new NavTree("RStudio Server",url+"&method=LAUNCH");
+                rss.setTarget("labkey_rstudio");
+                items.add(rss);
             }
         }
         return items;

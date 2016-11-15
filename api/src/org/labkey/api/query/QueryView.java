@@ -38,11 +38,13 @@ import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.reports.report.view.ScriptReportBean;
+import org.labkey.api.rstudio.RStudioService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.study.UnionTable;
@@ -1200,9 +1202,24 @@ public class QueryView extends WebPartView<Object>
         if (_allowExportExternalQuery)
         {
             addExportScriptItems(exportButton);
+            //addExportRStudio(exportButton, hasRecordSelectors ? getSettings().getSelectionKey() : null);
         }
         return exportButton;
     }
+
+
+    public void addExportRStudio(PanelButton exportButton, String selectionKey)
+    {
+        RStudioService rss = ServiceRegistry.get(RStudioService.class);
+        if (null == rss || null == rss.getRStudioLink(getUser()))
+            return;
+        if (null == getExportScriptFactory("r"))
+            return;
+        ActionURL exportUrl = urlFor(QueryAction.exportScript).replaceParameter("scriptType","r");
+        TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getExportRegionName(), selectionKey, getColumnHeaderType(), exportUrl);
+        exportButton.addSubPanel("RStudio", new JspView<>("/org/labkey/api/query/rstudioExport.jsp", textBean));
+    }
+
 
     public void addExportScriptItems(PanelButton button)
     {

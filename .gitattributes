@@ -990,6 +990,7 @@ api/src/org/labkey/api/query/ViewOptions.java -text
 api/src/org/labkey/api/query/createExportScript.jsp -text
 api/src/org/labkey/api/query/excelExportOptions.jsp -text
 api/src/org/labkey/api/query/import.jsp -text
+api/src/org/labkey/api/query/rstudioExport.jsp -text
 api/src/org/labkey/api/query/scriptExportOptions.jsp -text
 api/src/org/labkey/api/query/snapshot/AbstractSnapshotProvider.java -text
 api/src/org/labkey/api/query/snapshot/AbstractTableMethodInfo.java -text
