@@ -28,7 +28,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.beans.Introspector;
 import java.lang.reflect.Array;
@@ -196,7 +195,7 @@ public class BuilderObjectFactory<K> implements ObjectFactory<K>
     @Override
     public K fromMap(K bean, Map<String, ?> m)
     {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
 
