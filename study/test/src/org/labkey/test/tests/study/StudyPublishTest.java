@@ -31,9 +31,10 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.components.ChartTypeDialog;
 import org.labkey.test.components.LookAndFeelTimeChart;
+import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.util.DataRegionTable;
-import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
@@ -880,69 +881,42 @@ public class StudyPublishTest extends StudyProtectedExportTest
     {
         goToManageViews();
         _extHelper.clickExtMenuButton(true, Locator.linkContainingText("Add Chart"), "Time Chart");
-
-        waitForElement(Ext4Helper.Locators.ext4Button("Choose a Measure"), WAIT_FOR_JAVASCRIPT);
-        click(Ext4Helper.Locators.ext4Button("Choose a Measure"));
-        _extHelper.waitForExtDialog("Add Measure...");
-        _extHelper.waitForLoadingMaskToDisappear(WAIT_FOR_JAVASCRIPT);
-
-        String measureXpath = _extHelper.getExtDialogXPath("Add Measure...") + "//table/tbody/tr/td[div[starts-with(text(), '"+datasetMeasurePairs[0][1]+"')]]";
-        waitForElement(Locator.xpath("(" + measureXpath + ")[2]"));
-        setFormElement(Locator.name("filterSearch"), datasetMeasurePairs[0][0]);
-        waitForElementToDisappear(Locator.xpath("(" + measureXpath + ")[2]"), WAIT_FOR_JAVASCRIPT); // Wait for filter to remove any duplicates
-        waitForElement(Locator.xpath(measureXpath));
-        click(Locator.xpath(measureXpath));
-        click(Ext4Helper.Locators.ext4Button("Select"));
-        waitForText(WAIT_FOR_JAVASCRIPT, "No data found for the following measures/dimensions");
+        TimeChartWizard timeChartWizard = new TimeChartWizard(this);
+        ChartTypeDialog chartTypeDialog = new ChartTypeDialog(getDriver());
+        chartTypeDialog.selectStudyQuery(datasetMeasurePairs[0][0])
+                .setYAxis(datasetMeasurePairs[0][1])
+                .clickApply();
+        timeChartWizard.waitForWarningMessage("No data found for the following measures/dimensions", true);
 
         if (datasetMeasurePairs.length > 1)
         {
-            clickButton("Measures", 0); // TODO needs to be converted since changes to Chart Type dialog measure selection
-            waitForText("Divide data into Series");
-            waitForElement(Ext4Helper.Locators.ext4Button("Add Measure"));
+            chartTypeDialog = timeChartWizard.clickChartTypeButton();
             for (int i = 1; i < datasetMeasurePairs.length; i++)
             {
-                click(Ext4Helper.Locators.ext4Button("Add Measure"));
-                _extHelper.waitForExtDialog("Add Measure...");
-                _extHelper.waitForLoadingMaskToDisappear(WAIT_FOR_JAVASCRIPT);
-
-                measureXpath = _extHelper.getExtDialogXPath("Add Measure...") + "//table/tbody/tr/td[div[starts-with(text(), '"+datasetMeasurePairs[i][1]+"')]]";
-                waitForElement(Locator.xpath("("+measureXpath+")[2]"));
-                setFormElement(Locator.name("filterSearch").index(i), datasetMeasurePairs[i][0]);
-                waitForElementToDisappear(Locator.xpath("("+measureXpath+")[2]"), WAIT_FOR_JAVASCRIPT); // Wait for filter to remove any duplicates
-                waitForElement(Locator.xpath(measureXpath));
-                click(Locator.xpath(measureXpath));
-                click(Ext4Helper.Locators.ext4Button("Select"));
-
-                waitForText(datasetMeasurePairs[i][1] + " from " + datasetMeasurePairs[i][0]);
+                chartTypeDialog.selectStudyQuery(datasetMeasurePairs[i][0])
+                        .setYAxis(datasetMeasurePairs[i][1], true);
             }
-            click(Ext4Helper.Locators.ext4Button("OK"));
+            chartTypeDialog.clickApply();
         }
 
         _ext4Helper.checkGridRowCheckbox("All");
         _ext4Helper.uncheckGridRowCheckbox("All");
-        waitForElement(Locator.tagWithText("div", "No mouse selected. Please select at least one mouse."));
+        timeChartWizard.waitForWarningMessage("No mouse selected. Please select at least one mouse.");
+        // Select all of the Mice in GROUP1
         for (String mouseId : GROUP1_PTIDS)
-        {
-            // Select all of the Mice in GROUP1
             _ext4Helper.checkGridRowCheckbox(mouseId);
-        }
-        _extHelper.waitForLoadingMaskToDisappear(WAIT_FOR_JAVASCRIPT); // Make sure charts are rendered
-        waitForText("No calculated interval values");
+        timeChartWizard.waitForWarningMessage("No calculated interval values (i.e. Days, Months, etc.) for the selected 'Measure Date' and 'Interval Start Date'.");
 
         // Add point click function
-        clickButton("Chart Layout", 0);
-        LookAndFeelTimeChart lookAndFeelDialog = new LookAndFeelTimeChart(getDriver());
+        LookAndFeelTimeChart lookAndFeelDialog = timeChartWizard.clickChartLayoutButton();
         lookAndFeelDialog.clickDeveloperEnable()
                 .setDeveloperSourceContent(TestFileUtils.getFileContents(TEST_DATA_API_PATH + "/timeChartPointClickTestFn.js"))
                 .clickApply();
-
-        // Visit-based chart
         waitForElement(Locator.css("svg text").containing("Days Since Contact Date"));
-        fireEvent(Locator.css("svg text").containing("Days Since Contact Date").waitForElement(getDriver(), WAIT_FOR_JAVASCRIPT), SeleniumEvent.click);
-        waitForElement(Ext4Helper.Locators.ext4Button("Cancel")); // Axis label windows always have a cancel button. It should be the only one on the page
-        _ext4Helper.selectRadioButton("Chart Type:", "Visit Based Chart");
-        waitAndClick(Ext4Helper.Locators.ext4Button("OK"));
+
+        // Switch to Visit-based chart
+        chartTypeDialog = timeChartWizard.clickChartTypeButton();
+        chartTypeDialog.setTimeAxisType(ChartTypeDialog.TimeAxisType.Visit).clickApply();
         waitForElement(Locator.css("svg text").containing("Visit"));
 
         clickButton("Save", 0);

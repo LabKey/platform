@@ -9,7 +9,6 @@
         <script path="vis/genericOptionsPanel.js"/>
         <script path="vis/developerOptionsPanel.js"/>
         <script path="vis/saveOptionsPanel.js"/>
-        <script path="vis/baseExportScriptPanel.js"/>
 
         <script path="vis/timeChart/measureOptionsPanel.js"/>
         <script path="vis/timeChart/timeChartHelper.js"/>

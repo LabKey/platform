@@ -3043,7 +3043,6 @@ visualization/resources/config/module.xml -text
 visualization/resources/web/timechart.lib.xml -text
 visualization/resources/web/vis/ColumnVisualizationAnalytics.css -text
 visualization/resources/web/vis/ColumnVisualizationAnalytics.js -text
-visualization/resources/web/vis/baseExportScriptPanel.js -text
 visualization/resources/web/vis/chartFilterPanel.js -text
 visualization/resources/web/vis/chartLayoutPanel.js -text
 visualization/resources/web/vis/chartQueryPanel.js -text
