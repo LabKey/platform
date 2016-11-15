@@ -187,13 +187,11 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
             HttpSession s = AuthenticatedRequest.super.getSession(true);
             if (null == s)
             {
-                return null;
-                /* un-comment for debugging purposes
                 ServletRequest inner = null;
                 try { inner = getInnermostRequest(); } catch (Exception x){}
                 if (null == inner)
                     inner = getRequest();
-                throw new NullPointerException("Request.getSession(true) returned null: " + inner.getClass().getName()); */
+                throw new NullPointerException("Request.getSession(true) returned null: " + inner.getClass().getName());
             }
             if (s.isNew())
             {
