@@ -133,7 +133,7 @@ ExportScriptFactory sf = QueryView.getExportScriptFactory("r");
     {
         $('#rstudioStatus').html("Opening window...");
 
-        if (rstudioWindow)
+        if (rstudioWindow && rstudioWindow.window)
         {
             if (rstudioWindow.location.pathname !== LABKEY.contextPath + "/_rstudio/")
                 rstudioWindow.location = LABKEY.contextPath + "/_rstudio/";
