@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 20156LabKey Corporation
+ * Copyright (c) 2016 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@
 
 <%
 QueryView.TextExportOptionsBean bean = (QueryView.TextExportOptionsBean)HttpView.currentView().getModelBean();
-ExportScriptFactory sf = QueryView.getExportScriptFactory("r");
 %>
 
 <table class=labkey-export-tab-contents>
@@ -131,7 +130,8 @@ ExportScriptFactory sf = QueryView.getExportScriptFactory("r");
 
     function openwindow()
     {
-        $('#rstudioStatus').html("Opening window...");
+        var status = $('#rstudioStatus');
+        status.html("Opening window...");
 
         if (rstudioWindow && rstudioWindow.window)
         {
@@ -145,12 +145,12 @@ ExportScriptFactory sf = QueryView.getExportScriptFactory("r");
         if (rstudioWindow)
         {
             rstudioWindow.focus();
-            $('#rstudioStatus').html("Done. Rstudio may be in hidden window or tab.");
+            status.html("Done. Rstudio may be in hidden window or tab.");
         }
         else
         {
             // sometimes the open must be directly in response to a user click, so give the user something to click on
-            $('#rstudioStatus').html(' <b><a id=openinnewwindow href="#" target="labkey_rstudio">Click here to open RStudio in new window/tab</a></b>');
+            status.html(' <b><a id=openinnewwindow href="#" target="labkey_rstudio">Click here to open RStudio in new window/tab</a></b>');
             $('#openinnewwindow').click(openwindow);
         }
         return false;
