@@ -700,8 +700,10 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
 
         // enable drop target based on allowable column types for the given field
         var selectedColType = LABKEY.vis.GenericChartHelper.getMeasureType(selectedCol.data);
-        var isMeasure = selectedCol.get('measure');
-        var isDimension = selectedCol.get('dimension');
+        if (this.chartType.data.name !== 'box_plot' && this.chartType.data.name !== 'bar_chart') {
+            var isMeasure = selectedCol.get('measure');
+            var isDimension = selectedCol.get('dimension');
+        }
 
         Ext4.each(this.query('charttypefield'), function(fieldSelPanel)
         {
