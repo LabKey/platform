@@ -36,11 +36,16 @@ ExportScriptFactory sf = QueryView.getExportScriptFactory("r");
 
 (function($)
 {
+    function startsWith(s,start)
+    {
+        return s.lastIndexOf(start,0) != -1;
+    }
+
     function json_from_response(response)
     {
         try
         {
-            if (response.getResponseHeader("Content-Type").startsWith("application/json"))
+            if (startsWith(response.getResponseHeader("Content-Type"),"application/json"))
                 return JSON.parse(response.responseText);
         }
         catch (x)
