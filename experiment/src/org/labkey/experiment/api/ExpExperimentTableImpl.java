@@ -126,7 +126,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         }
         else
         {
-            sql = new SQLFragment("DUMMY SQL - SHOULD NOT BE EXECUTED");
+            sql = new SQLFragment("?", false);
         }
 
         ColumnInfo expRowIdCol = getColumn(Column.RowId);
