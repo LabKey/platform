@@ -161,6 +161,8 @@ LABKEY.vis.Stat.fn = function(fn, n, min, max){
  */
 LABKEY.vis.Stat.getMean = function(values)
 {
+    if (values == null || values.length == 0)
+        throw "invalid input";
     return values.map(function(x,i,arr){return x/arr.length}).reduce(function(a,b){return a + b});
 };
 
@@ -221,7 +223,7 @@ LABKEY.vis.Stat.CUSUM_EPSILON = 0.0000001;
  */
 LABKEY.vis.Stat.getCUSUM = function(values, negative, transform, forcePositiveResult, epsilon)
 {
-    if (values == null)
+    if (values == null || values.length < 2)
         return [];
     var mean = LABKEY.vis.Stat.getMean(values);
     var stdDev = LABKEY.vis.Stat.getStdDev(values);
@@ -264,7 +266,7 @@ LABKEY.vis.Stat.MOVING_RANGE_EPSILON = 0.0000001;
  */
 LABKEY.vis.Stat.getMovingRanges = function(values, forcePositiveResult, epsilon)
 {
-    if (values == null)
+    if (values == null || values.length < 1)
         return [];
     var mR = [0]; //mR[0] is always 0
     for (var i = 1; i < values.length; i++)
