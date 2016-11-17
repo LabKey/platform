@@ -1418,7 +1418,6 @@ public class ReportsController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             return _appendNavTrail(root, "Create Chart View", _datasetId, 0);
-            //return root.addChild("Create Chart View");
         }
     }
 

@@ -76,7 +76,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
 
         // font icons - some report image icons dont have corresponding font icon replacements yet
 //      _typeToIconClsMap.put(RReport.TYPE, "/reports/r_logo.svg");
-        _typeToIconClsMap.put(ChartQueryReport.TYPE, "fa fa-bar-chart");
+        _typeToIconClsMap.put(ChartQueryReport.TYPE, "fa fa-area-chart");
 //      _typeToIconClsMap.put(JavaScriptReport.TYPE, "/reports/js.png");
         _typeToIconClsMap.put(AttachmentReport.TYPE, "fa fa-paperclip");
         _typeToIconClsMap.put(LinkReport.TYPE, "fa fa-external-link-square");
@@ -153,7 +153,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         if (study == null)
         {
             // Study registers its own 'Chart View'
-            designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View", "XY and Time Charts",
+            designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View (deprecated)", "XY and Time Charts",
                     ReportUtil.getChartDesignerURL(context, chartBean), _getIconPath(ChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION, _getIconCls(ChartQueryReport.TYPE)));
         }
 

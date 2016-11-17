@@ -880,7 +880,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
     private void createTimeChart(String name, String[]... datasetMeasurePairs)
     {
         goToManageViews();
-        _extHelper.clickExtMenuButton(true, Locator.linkContainingText("Add Chart"), "Time Chart");
+        _extHelper.clickExtMenuButton(true, Locator.linkContainingText("Add Time Chart"));
         TimeChartWizard timeChartWizard = new TimeChartWizard(this);
         ChartTypeDialog chartTypeDialog = new ChartTypeDialog(getDriver());
         chartTypeDialog.selectStudyQuery(datasetMeasurePairs[0][0])

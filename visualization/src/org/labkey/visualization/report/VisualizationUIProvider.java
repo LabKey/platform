@@ -51,15 +51,10 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
                     "/visualization/report/timechart.gif", ReportService.DesignerType.VISUALIZATION, "fa fa-line-chart"));
         }
 
-        for (GenericChartReport.RenderType renderType : GenericChartReport.RenderType.values())
-        {
-            if (renderType.isActive())
-            {
-                ActionURL url = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, renderType);
-                info.add(new DesignerInfoImpl(GenericChartReport.TYPE, renderType.getName(), null, url,
-                        renderType.getIconPath(), ReportService.DesignerType.VISUALIZATION, renderType.getIconCls()));
-            }
-        }
+        GenericChartReport.RenderType renderType = GenericChartReport.RenderType.BAR_PLOT;
+        ActionURL url = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, null);
+        info.add(new DesignerInfoImpl(GenericChartReport.TYPE, "Chart", null, url,
+                renderType.getIconPath(), ReportService.DesignerType.VISUALIZATION, renderType.getIconCls()));
 
         return info;
     }
@@ -84,15 +79,10 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
             designers.add(info);
         }
 
-        for (GenericChartReport.RenderType renderType : GenericChartReport.RenderType.values())
-        {
-            if (renderType.isActive())
-            {
-                ActionURL url = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), null, renderType);
-                designers.add(new DesignerInfoImpl(GenericChartReport.TYPE, renderType.getName(), null, url,
-                        renderType.getIconPath(), ReportService.DesignerType.VISUALIZATION, renderType.getIconCls()));
-            }
-        }
+        GenericChartReport.RenderType renderType = GenericChartReport.RenderType.BAR_PLOT;
+        ActionURL url = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), null, null);
+        designers.add(new DesignerInfoImpl(GenericChartReport.TYPE, "Chart", null, url,
+                renderType.getIconPath(), ReportService.DesignerType.VISUALIZATION, renderType.getIconCls()));
 
         return designers;
     }

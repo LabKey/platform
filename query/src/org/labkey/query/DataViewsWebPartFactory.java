@@ -73,9 +73,6 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
 
         if (portalCtx.hasPermission(ReadPermission.class) && !portalCtx.getUser().isGuest())
         {
-            NavTree reportMenu = new NavTree("Add Report");
-            NavTree chartMenu = new NavTree("Add Chart");
-
             List<ReportService.DesignerInfo> reportDesigners = new ArrayList<>();
             List<ReportService.DesignerInfo> chartDesigners = new ArrayList<>();
             for (ReportService.UIProvider provider : ReportService.get().getUIProviders())
@@ -100,15 +97,15 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
             Collections.sort(reportDesigners, comparator);
             Collections.sort(chartDesigners, comparator);
 
+            NavTree reportMenu = new NavTree("Add Report");
             for (ReportService.DesignerInfo info : reportDesigners)
-                reportMenu.addChild(getItem(info));
-            for (ReportService.DesignerInfo info : chartDesigners)
-                chartMenu.addChild(getItem(info));
-
+                reportMenu.addChild(getItem(info, null));
             if (!reportDesigners.isEmpty())
                 menu.addChild(reportMenu);
-            if (!chartDesigners.isEmpty())
-                menu.addChild(chartMenu);
+
+            // "Add Chart" and "Add Time Chart" options
+            for (ReportService.DesignerInfo info : chartDesigners)
+                menu.addChild(getItem(info, "Add "));
         }
 
 
@@ -187,12 +184,13 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
         return view;
     }
 
-    private NavTree getItem(ReportService.DesignerInfo info)
+    private NavTree getItem(ReportService.DesignerInfo info, String prefix)
     {
+        String label = (prefix != null ? prefix : "") + info.getLabel();
         URLHelper iconURL = info.getIconURL();
         String iconCls = info.getIconCls();
-        NavTree item = new NavTree(info.getLabel(), info.getDesignerURL().getLocalURIString(), null != iconURL ? iconURL.getLocalURIString() : null, iconCls);
 
+        NavTree item = new NavTree(label, info.getDesignerURL().getLocalURIString(), null != iconURL ? iconURL.getLocalURIString() : null, iconCls);
         item.setId(info.getId());
         item.setDisabled(info.isDisabled());
 

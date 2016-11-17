@@ -72,9 +72,9 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
 
         // font icons - some report image icons dont have corresponding font icon replacements yet
 //      _typeToIconClsMap.put(StudyRReport.TYPE, "/reports/r_logo.svg");
-        _typeToIconClsMap.put(ChartReportView.TYPE, "fa fa-bar-chart");
+        _typeToIconClsMap.put(ChartReportView.TYPE, "fa fa-area-chart");
         _typeToIconClsMap.put(StudyQueryReport.TYPE, "fa fa-table");
-        _typeToIconClsMap.put(StudyChartQueryReport.TYPE, "fa fa-bar-chart");
+        _typeToIconClsMap.put(StudyChartQueryReport.TYPE, "fa fa-area-chart");
         _typeToIconClsMap.put(ExportExcelReport.TYPE, "fa fa-file-excel-o");
         _typeToIconClsMap.put(ExternalReport.TYPE, "fa fa-cogs");
         _typeToIconClsMap.put(ParticipantReport.TYPE, "fa fa-clipboard");
@@ -175,7 +175,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             url.addParameter(DatasetDefinition.DATASETKEY, NumberUtils.toInt(context.getActionURL().getParameter(DatasetDefinition.DATASETKEY), 0));
             url.setAction(ReportsController.DesignChartAction.class);
 
-            designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View", null, url, _getIconPath(StudyChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION, _getIconCls(StudyChartQueryReport.TYPE)));
+            designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View (deprecated)", null, url, _getIconPath(StudyChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION, _getIconCls(StudyChartQueryReport.TYPE)));
 
             // r report
             if (ReportUtil.canCreateScript(context) && RReport.isEnabled())
