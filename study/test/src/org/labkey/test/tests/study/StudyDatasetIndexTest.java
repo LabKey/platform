@@ -71,6 +71,20 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         assertTextPresentCaseInsensitive("dem_minus_1_indexedColumn");
         assertTextPresentCaseInsensitive("dem_minus_1_sharedColumn");
 
+        // Verify size columns specified in datasets_metadata
+        assertTableRowOnPage("indexedColumn", 28, 1);
+        assertTableRowOnPage("20", 28, 4);
+
+        assertTableRowOnPage("sharedColumn", 34, 1);
+        assertTableRowOnPage("20", 34, 4);
+
+        // Verify default sizes
+        assertTableRowOnPage("multiLineColumn", 32, 1);
+        assertTableRowOnPage("4000", 32, 4);
+
+        assertTableRowOnPage("flagColumn", 33, 1);
+        assertTableRowOnPage("4000", 33, 4);
+
         beginAt("/query/" + getProjectName() + "/" + getFolderName()  + "/schema.view?schemaName=study");
         selectQueryInSubfolder("study","built-in queries & tables", "DEM-2");
         waitForText(10000, "view raw table metadata");
