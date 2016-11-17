@@ -120,6 +120,7 @@ audit/src/org/labkey/audit/query/AuditQueryView.java -text
 audit/src/org/labkey/audit/siteSettingsAuditDetails.jsp -text
 bigiron/BigIron.iml -text
 bigiron/module.properties -text
+bigiron/src/org/labkey/bigiron/BigIronController.java -text
 bigiron/src/org/labkey/bigiron/BigIronModule.java -text
 bigiron/src/org/labkey/bigiron/mssql/BaseMicrosoftSqlServerDialect.java -text
 bigiron/src/org/labkey/bigiron/mssql/GroupConcatInstallationManager.java -text

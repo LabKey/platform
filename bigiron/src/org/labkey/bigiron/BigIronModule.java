@@ -58,6 +58,7 @@ public class BigIronModule extends CodeOnlyModule
     protected void init()
     {
         QueryView.register(new SasExportScriptFactory());
+        addController("bigiron", BigIronController.class);
     }
 
     public void doStartup(ModuleContext moduleContext)

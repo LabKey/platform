@@ -40,7 +40,7 @@ import java.sql.Connection;
  */
 public class GroupConcatInstallationManager
 {
-    private static final String INITIAL_VERISON = "1.00.11845";
+    private static final String INITIAL_VERSION = "1.00.11845";
     private static final String CURRENT_GROUP_CONCAT_VERSION = "1.00.23696";
 
     private final @Nullable String _installedVersion;
@@ -67,7 +67,7 @@ public class GroupConcatInstallationManager
         }
         catch (Exception e)
         {
-            return INITIAL_VERISON;
+            return INITIAL_VERSION;
         }
     }
 
@@ -107,14 +107,13 @@ public class GroupConcatInstallationManager
         }
     }
 
-    private void install(ModuleContext context, String scriptName)
+    private void install(ModuleContext context)
     {
-        FileSqlScriptProvider provider = new FileSqlScriptProvider(ModuleLoader.getInstance().getCoreModule());
-        SqlScriptRunner.SqlScript script = new FileSqlScriptProvider.FileSqlScript(provider, CoreSchema.getInstance().getSchema(), scriptName, "core");
+        SqlScriptRunner.SqlScript script = getInstallScript();
 
         try (Connection conn = CoreSchema.getInstance().getSchema().getScope().getUnpooledConnection())
         {
-            SqlScriptManager.get(provider, script.getSchema()).runScript(context.getUpgradeUser(), script, context, conn);
+            SqlScriptManager.get(script.getProvider(), script.getSchema()).runScript(context.getUpgradeUser(), script, context, conn);
         }
         catch (Throwable t)
         {
@@ -127,6 +126,14 @@ public class GroupConcatInstallationManager
             ExceptionUtil.logExceptionToMothership(null, wrap);
             ModuleLoader.getInstance().addModuleFailure("Core", wrap);
         }
+    }
+
+    @NotNull
+    public static SqlScriptRunner.SqlScript getInstallScript()
+    {
+        String scriptName = "group_concat_install_" + CURRENT_GROUP_CONCAT_VERSION + ".sql";
+        FileSqlScriptProvider provider = new FileSqlScriptProvider(ModuleLoader.getInstance().getCoreModule());
+        return new FileSqlScriptProvider.FileSqlScript(provider, CoreSchema.getInstance().getSchema(), scriptName, "core");
     }
 
     private boolean isInstalled(String version)
@@ -170,7 +177,7 @@ public class GroupConcatInstallationManager
             return;
 
         // Attempt to install the new version
-        manager.install(context, "group_concat_install_1.00.23696.sql");
+        manager.install(context);
     }
 
     public static class TestCase extends Assert

@@ -24,25 +24,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Constraint;
-import org.labkey.api.data.DatabaseMetaDataWrapper;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.InClauseGenerator;
-import org.labkey.api.data.InlineInClauseGenerator;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MetadataSqlSelector;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableChange;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TempTableInClauseGenerator;
-import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.PkMetaDataReader;
@@ -52,6 +34,8 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.bigiron.BigIronController;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -1668,7 +1652,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     public void addAdminWarningMessages(Collection<String> messages)
     {
         if (!_groupConcatInstalled)
-            messages.add("The GROUP_CONCAT aggregate function is not installed. This function is required for optimal operation of this server. " + new HelpTopic("groupconcatinstall").getSimpleLinkHtml("View installation instructions."));
+        {
+            ActionURL downloadURL = new ActionURL(BigIronController.DownloadGroupConcatInstallScriptAction.class, ContainerManager.getRoot());
+            messages.add("The GROUP_CONCAT aggregate function is not installed. This function is required for optimal operation of this server. <a href=\"" + downloadURL + "\">Download installation script.</a> " + new HelpTopic("groupconcatinstall").getSimpleLinkHtml("View installation instructions."));
+        }
 
         if ("2008R2".equals(getProductVersion()))
             messages.add("LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED);
