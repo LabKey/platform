@@ -109,7 +109,7 @@ LABKEY.vis.GenericChartHelper = new function(){
     {
         var label = properties ? properties.label || properties.queryName : '';
 
-        if ((renderType == 'bar_chart' || renderType == 'pie_chart') && measureName == 'y')
+        if (label != '' && measureName == 'y' && (renderType == 'bar_chart' || renderType == 'pie_chart'))
             label = 'Sum of ' + label;
 
         return label;

@@ -58,9 +58,11 @@
     border: solid #c0c0c0 1px;
 }
 
-.chart-type-panel .mapping-panel .mapping-query-col,
+.chart-type-panel .mapping-panel .mapping-query-col {
+    padding: 15px 0 15px 15px;
+}
 .chart-type-panel .mapping-panel .field-selections {
-    padding: 15px
+    padding: 15px;
 }
 .chart-type-panel .mapping-panel .mapping-query-col .description {
     padding-bottom: 15px;

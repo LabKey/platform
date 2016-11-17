@@ -318,10 +318,20 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         hrefTarget: '_blank',
                         href: 'https://www.labkey.org/wiki/home/Documentation/page.view?name=reportsAndViews'
                     },{
+                        text: 'Bar Plots',
+                        iconCls: 'fa fa-bar-chart',
+                        hrefTarget: '_blank',
+                        href: 'https://www.labkey.org/wiki/home/Documentation/page.view?name=barchart'
+                    },{
                         text: 'Box Plots',
                         iconCls: 'fa fa-sliders fa-rotate-90',
                         hrefTarget: '_blank',
                         href: 'https://www.labkey.org/wiki/home/Documentation/page.view?name=boxplot'
+                    },{
+                        text: 'Pie Charts',
+                        iconCls: 'fa fa-pie-chart',
+                        hrefTarget: '_blank',
+                        href: 'https://www.labkey.org/wiki/home/Documentation/page.view?name=piechart'
                     },{
                         text: 'Scatter Plots',
                         iconCls: 'fa fa-area-chart',
@@ -1821,12 +1831,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         if (Ext4.isString(this.renderType) && this.renderType !== 'auto_plot')
             return this.renderType;
-        else if (!this.measures.x || this.isBoxPlot(this.renderType, this.getXAxisType(this.measures.x)))
+        else if (this.measures.x || this.isBoxPlot(this.renderType, this.getXAxisType(this.measures.x)))
             return 'box_plot';
         else if (this.measures.x && this.isScatterPlot(this.renderType, this.getXAxisType(this.measures.x)))
             return 'scatter_plot';
 
-        return null;
+        return 'bar_plot';
     },
 
     getXAxisType : function(xMeasure)

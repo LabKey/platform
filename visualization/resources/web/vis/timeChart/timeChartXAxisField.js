@@ -100,7 +100,7 @@ Ext4.define('LABKEY.vis.TimeChartXAxisField', {
                 fieldLabel: 'Interval Start Date',
                 disabled: this.isVisitBased,
                 labelWidth: 110,
-                width: 300,
+                width: 295,
                 padding: '0 0 0 5px',
                 store: this.getZeroDateStore(),
                 queryMode: 'local',

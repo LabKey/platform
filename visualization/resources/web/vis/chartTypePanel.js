@@ -140,7 +140,10 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 region: 'center',
                 cls: 'region-panel mapping-panel',
                 border: false,
-                layout: 'column',
+                layout: {
+                    type: 'column',
+                    reserveScrollbar: true
+                },
                 autoScroll: true,
                 items: [{
                     columnWidth: 0.5,
@@ -203,7 +206,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 hidden: !this.isTimeChartTypeSelected(),
                 hideFieldLabel: true,
                 padding: '0 0 15px 0',
-                width: 330,
+                width: 336,
                 store: store,
                 queryMode: 'local',
                 editable: false,
@@ -350,7 +353,10 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 height: this.height - 165,
                 enableColumnHide: false,
                 columns: this.getGridColumnConfig(),
-                viewConfig: { plugins: this.getGridViewDragPluginConfig() },
+                viewConfig: {
+                    plugins: this.getGridViewDragPluginConfig(),
+                    forceFit: true,
+                },
                 stripeRows: true,
                 selModel: new Ext4.selection.RowModel({ singleSelect: true }),
                 allowDeselect: true,
@@ -378,6 +384,8 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         return [{
             header: 'Columns',
             dataIndex: 'label',
+            menuDisabled: true,
+            resizable: false,
             flex: 1,
             renderer: function(value)
             {
@@ -932,8 +940,8 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
                                 label += '<div class="field-selection-subtext">Query: ' + Ext4.String.htmlEncode(values.queryLabel) + '</div>';
 
                                 // also allow Y Axis Side selection for the measures
-                                var leftSide = '<i class="fa fa-arrow-left ' + (values.yAxis != 'left' ? 'unselected' : '') + '"></i>',
-                                    rightSide = '<i class="fa fa-arrow-right ' + (values.yAxis != 'right' ? 'unselected' : '') + '"></i>';
+                                var leftSide = '<i class="fa fa-arrow-circle-left ' + (values.yAxis != 'left' ? 'unselected' : '') + '"></i>',
+                                    rightSide = '<i class="fa fa-arrow-circle-right ' + (values.yAxis != 'right' ? 'unselected' : '') + '"></i>';
                                 label += '<div class="field-selection-subtext">Y Axis Side: ' + leftSide + ' ' + rightSide + '</div>';
                             }
 

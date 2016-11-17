@@ -135,8 +135,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var toolbarButtons = [
             this.viewGridBtn,
             this.viewChartBtn,
-            this.exportMenuBtn
-            //TODO add help menu button
+            this.exportMenuBtn,
+            this.getHelpBtn()
         ];
         if (this.editMode)
         {
@@ -274,6 +274,33 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         }
 
         return this.savePanel;
+    },
+
+    getHelpBtn : function()
+    {
+        if (!this.helpBtn)
+        {
+            this.helpBtn = Ext4.create('Ext.button.Button', {
+                text: 'Help',
+                scope: this,
+                menu: {
+                    showSeparator: false,
+                    items: [{
+                        text: 'Reports and Visualizations',
+                        iconCls: 'fa fa-table',
+                        hrefTarget: '_blank',
+                        href: 'https://www.labkey.org/wiki/home/Documentation/page.view?name=reportsAndViews'
+                    },{
+                        text: 'Time Charts',
+                        iconCls: 'fa fa-line-chart',
+                        hrefTarget: '_blank',
+                        href: 'https://www.labkey.org/wiki/home/Documentation/page.view?name=timeChart'
+                    }]
+                }
+            });
+        }
+
+        return this.helpBtn;
     },
 
     getChartTypeBtn : function()
@@ -851,6 +878,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.buttonsToShow = [];
             if (!this.exportMenuBtn.isHidden())
                 this.buttonsToShow.push(this.exportMenuBtn.hide());
+            if (!this.getHelpBtn().isHidden())
+                this.buttonsToShow.push(this.getHelpBtn().hide());
             if (!this.getChartTypeBtn().isHidden())
                 this.buttonsToShow.push(this.getChartTypeBtn().hide());
             if (!this.getChartLayoutBtn().isHidden())
