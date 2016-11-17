@@ -141,6 +141,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
 
         if (!success || !store || !LABKEY.ext4.Util.hasStoreLoaded(store)){
             this.add({tag: 'div', html: 'Error loading data'});
+            LABKEY.Utils.signalWebDriverTest('extSearchPanelLoaded', 'error');
             return;
         }
 
@@ -154,6 +155,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             toAdd.push(Ext4.apply(this.getRowCfg(), {
                 bodyStyle: 'background-color: transparent;',
                 items: [{
+                    cls: 'search-panel-row-label',
                     html: 'Container Filter:',
                     bodyStyle: 'background-color: transparent;',
                     width: this.LABEL_WIDTH
@@ -171,6 +173,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             toAdd.push(Ext4.apply(this.getRowCfg(), {
                 bodyStyle: 'background-color: transparent;',
                 items: [{
+                    cls: 'search-panel-row-label',
                     html: 'View:',
                     bodyStyle: 'background-color: transparent;',
                     width: this.LABEL_WIDTH
@@ -188,6 +191,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         }
 
         this.add(toAdd);
+        LABKEY.Utils.signalWebDriverTest('extSearchPanelLoaded', 'success');
     },
 
     getRowCfg: function(){
@@ -196,6 +200,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             layout: 'hbox',
             bodyStyle: 'padding: 5px;',
             border: false,
+            cls: 'search-panel-row',
             defaults: {
                 style: 'margin: 2px;',
                 border: false
@@ -257,9 +262,11 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         theField.value = null;
         theField.disabled = false;
         theField.hidden = false;
+        theField.cls = 'search-panel-row-value';
 
         //the label
         row.push({
+            cls: 'search-panel-row-label',
             html: meta.caption + ':', width: this.LABEL_WIDTH,
             bodyStyle: 'background-color: transparent;'
         });
@@ -309,6 +316,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             theField.opField = id;
             row.push({
                 xtype: 'labkey-operatorcombo',
+                cls: 'search-panel-row-operator',
                 jsonType: meta.jsonType,
                 mvEnabled: meta.mvEnabled,
                 itemId: id,
