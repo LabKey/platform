@@ -415,6 +415,10 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
         return this.down('#filterPanel[hidden=false]');
     },
 
+    getFilterPanelGrid : function() {
+        return this.getFilterPanel().getFilterPanels()[0].getGrid();
+    },
+
     getFilterArray: function(){
         //TODO: we need server-side changes in order to support this properly
     },

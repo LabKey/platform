@@ -10,9 +10,10 @@
         <script path="vis/developerOptionsPanel.js"/>
         <script path="vis/saveOptionsPanel.js"/>
 
-        <script path="vis/timeChart/measureOptionsPanel.js"/>
         <script path="vis/timeChart/timeChartHelper.js"/>
+        <script path="vis/timeChart/timeChartDimensionFilterPanel.js"/>
         <script path="vis/timeChart/timeChartXAxisField.js"/>
+        <script path="vis/timeChart/timeChartYMeasureField.js"/>
         <script path="vis/timeChart/timeChartScriptPanel.js"/>
         <script path="vis/timeChart/timeChartPanel.js"/>
 
@@ -26,7 +27,6 @@
         <dependency path="codemirror"/>
 
         <!-- Required by timeChartPanel.js -->
-        <dependency path="study/MeasurePicker.js"/>
         <dependency path="study/ParticipantFilter"/>
     </dependencies>
 </libraries>

@@ -1,4 +1,5 @@
-.generic-chart-panel .x4-mask {
+.generic-chart-panel .x4-mask,
+.time-chart-panel .x4-mask {
     opacity: .75;
     background: #ffffff;
 }
@@ -45,6 +46,12 @@
 
 .chart-type-panel .query-columns .x4-grid-cell {
     cursor: pointer;
+}
+
+.chart-type-panel .query-combo-mask {
+    height: 22px;
+    width: 100%;
+    border: none;
 }
 
 .chart-type-panel .mapping-panel {
@@ -98,13 +105,26 @@
     color: white;
     border-radius: 8px;
     border: solid transparent 1px;
+}
+.chart-type-panel .field-selections .field-selection-display .field-selection-text {
+    color: #ffffff;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.chart-type-panel .field-selections .field-selection-display .field-selection-sub {
-    color: white;
-    opacity: 0.5;
+.chart-type-panel .field-selections .field-selection-display .field-selection-subtext {
+    display: none; /*only show the active/selected one*/
+    color: #707070;
+}
+.chart-type-panel .field-selections .field-selection-display .field-selection-subtext .unselected {
+    opacity: 0.3;
+}
+.chart-type-panel .field-selections .field-selection-display .field-selection-subtext .unselected:hover {
+    opacity: 1;
+    color: #404040;
+}
+.chart-type-panel .field-selections .field-selection-display.x4-item-selected .field-selection-subtext {
+    display: block;
 }
 .chart-type-panel .field-selections .field-selection-display .field-selection-remove {
     display: none;
@@ -112,6 +132,7 @@
     right: 17px;
     color: #707070;
 }
+.chart-type-panel .field-selections .field-selection-display.x4-item-selected,
 .chart-type-panel .field-selections .field-selection-display:hover {
     border-color: #707070;
     cursor: default;
@@ -178,11 +199,43 @@
     color: #000000;
 }
 
-/*.chart-layout-panel .revert-label-button {*/
-.revert-label-button .x4-btn-icon-el {
+.chart-layout-panel .revert-label-button .x4-btn-icon-el {
     font-size: 14px;
     padding-top: 1px;
     padding-left: 2px;
+}
+
+.chart-layout-panel .y-measure-form .y-measure-label {
+    font-weight: bold;
+}
+.chart-layout-panel .y-measure-form:first-of-type .y-measure-label {
+    padding-top: 15px;
+}
+.chart-layout-panel .y-measure-form:not(:first-of-type) .y-measure-label {
+    padding-top: 30px;
+}
+
+.chart-filter-panel .x4-grid-row-alt .x4-grid-td {
+    background-color: transparent;
+}
+
+.chart-filter-panel .x4-column-header-text {
+    padding-top: 1px;
+    font-weight: bold;
+}
+
+.chart-filter-panel .x4-column-header-over {
+    cursor: default !important;
+}
+
+.chart-filter-panel .query-filter ul {
+    padding-left: 25px;
+}
+
+.chart-filter-panel .query-filter ul li {
+    padding: 5px 0;
+    font-weight: bold;
+    font-size: 90%;
 }
 
 .save-form-panel {

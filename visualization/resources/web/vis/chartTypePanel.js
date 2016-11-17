@@ -245,8 +245,8 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                         this.getStudyQueryCombo().setValue(this.studyQueryName);
                         this.filterStudyColumnsGrid();
 
-                        if (this.getQueryColumnsPanel().getEl())
-                            this.getQueryColumnsPanel().getEl().unmask();
+                        if (this.getStudyQueryCombo().getEl())
+                            this.getStudyQueryCombo().getEl().unmask();
                     }
                 },
                 sorters: [{property: 'label'}]
@@ -536,12 +536,18 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 newFieldNames = this.getFieldValueKeys(newValues.fields);
             if (!Ext4.Array.equals(initFieldNames, newFieldNames))
                 return true;
+
+            // see if any of the yAxis sides have changed
+            var initYAxisSides = this.getFieldValueKeys(this.initValues.fields, 'yAxis'),
+                newYAxisSides = this.getFieldValueKeys(newValues.fields, 'yAxis');
+            if (!Ext4.Array.equals(initYAxisSides, newYAxisSides))
+                return true;
         }
 
         return false;
     },
 
-    getFieldValueKeys : function(fieldValueMap)
+    getFieldValueKeys : function(fieldValueMap, additionalPropName)
     {
         var keys = [];
 
@@ -549,19 +555,19 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             if (Ext4.isArray(value))
             {
                 Ext4.each(value, function(v){
-                    keys.push(this.getFieldValueKey(key, v));
+                    keys.push(this.getFieldValueKey(key, v, additionalPropName));
                 }, this);
             }
             else
-                keys.push(this.getFieldValueKey(key, value));
+                keys.push(this.getFieldValueKey(key, value, additionalPropName));
         }, this);
 
         return keys;
     },
 
-    getFieldValueKey : function(fieldName, value)
+    getFieldValueKey : function(fieldName, value, additionalPropName)
     {
-        return fieldName + '|' + value.queryName + '|' + value.name;
+        return fieldName + '|' + value.queryName + '|' + value.name + (additionalPropName ? '|' + value[additionalPropName] : '');
     },
 
     allowTypeSelect : function(view, selected)
@@ -889,7 +895,8 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
             {
                 this.field.altFieldCmp = Ext4.create(this.field.altFieldType, Ext4.apply({
                     cls: 'alternate-field-selection',
-                    initData: this.selection
+                    initData: this.selection,
+                    bubbleEvents: ['invalidChartOptions']
                 }, this.field.altFieldConfig || {}));
 
                 this.fieldAreaCmp = Ext4.create('Ext.panel.Panel', {
@@ -904,42 +911,87 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
             }
             else
             {
+                var tpl = new Ext4.XTemplate(
+                    '<tpl for=".">',
+                        '<div class="field-selection-display">',
+                            '<div class="fa fa-times field-selection-remove" fieldName="{[this.getFieldName(values)]}"></div>',
+                            '{[this.getFieldSelectionDisplay("' + this.chartTypeName + '", "' + this.field.name + '", values)]}',
+                        '</div>',
+                    '</tpl>',
+                    {
+                        getFieldSelectionDisplay: function (chartTypeName, fieldName, record)
+                        {
+                            var values = record.data || record,
+                                label = '<div class="field-selection-text">'
+                                    + Ext4.String.htmlEncode(LABKEY.vis.GenericChartHelper.getSelectedMeasureLabel(chartTypeName, fieldName, values))
+                                    + '</div>';
+
+                            if (chartTypeName == 'time_chart')
+                            {
+                                // for time chart, add query label to display since the UI allows cross query measure selection
+                                label += '<div class="field-selection-subtext">Query: ' + Ext4.String.htmlEncode(values.queryLabel) + '</div>';
+
+                                // also allow Y Axis Side selection for the measures
+                                var leftSide = '<i class="fa fa-arrow-left ' + (values.yAxis != 'left' ? 'unselected' : '') + '"></i>',
+                                    rightSide = '<i class="fa fa-arrow-right ' + (values.yAxis != 'right' ? 'unselected' : '') + '"></i>';
+                                label += '<div class="field-selection-subtext">Y Axis Side: ' + leftSide + ' ' + rightSide + '</div>';
+                            }
+
+                            return label;
+                        },
+
+                        getFieldName: function(record)
+                        {
+                            var values = record.data || record;
+                            return values.name;
+                        }
+                    }
+                );
+
+                var dataArr = [];
+                if (Ext4.isObject(this.selection))
+                    dataArr = [this.selection];
+                else if (Ext4.isArray(this.selection))
+                    dataArr = this.selection;
+
                 this.fieldAreaCmp = Ext4.create('Ext.view.View', {
                     cls: 'field-area',
                     minHeight: 50,
-                    data: this.selection,
-                    tpl: new Ext4.XTemplate(
-                            '<tpl for=".">',
-                            '<tpl if="name">',
-                            '<div class="field-selection-display">',
-                            '{[this.getFieldSelectionDisplay("' + this.chartTypeName + '", "' + this.field.name + '", values)]}',
-                            '<div class="fa fa-times field-selection-remove" fieldName="{name}"></div>',
-                            '</div>',
-                            '</tpl>',
-                            '</tpl>',
+                    store: Ext4.create('Ext.data.Store', {
+                        model: 'LABKEY.vis.QueryColumnModel',
+                        data: dataArr
+                    }),
+                    itemSelector: 'div.field-selection-display',
+                    tpl: tpl,
+                    listeners: {
+                        scope: this,
+                        beforeitemclick: function(view, record, item, index, event)
+                        {
+                            var targetTag = event.target.tagName,
+                                targetCls = event.target.getAttribute('class');
+
+                            if (targetCls.indexOf('field-selection-remove') > -1)
                             {
-                                getFieldSelectionDisplay: function (chartTypeName, fieldName, values)
-                                {
-                                    var label = Ext4.String.htmlEncode(LABKEY.vis.GenericChartHelper.getSelectedMeasureLabel(chartTypeName, fieldName, values));
-
-                                    // for time chart, add query label to display
-                                    if (chartTypeName == 'time_chart')
-                                        label += ' <span class="field-selection-sub">(' + Ext4.String.htmlEncode(values.queryLabel) + ')</span>';
-
-                                    return label;
-                                }
+                                this.removeSelection(index, record);
+                                return false;
                             }
-                    )
+                            else if (targetTag.toLowerCase() == 'i' && targetCls.indexOf('unselected') > -1)
+                            {
+                                this.toggleYAxisSide(index, record);
+                                return false;
+                            }
+                        },
+                        deselect: this.doLayout,// needed for resetting the field panel height
+                        select: function(view, record)
+                        {
+                            view.select(record, false);// force single selection
+                            this.doLayout();// needed for resetting the field panel height
+                        }
+                    }
                 });
 
-                this.fieldAreaCmp.on('refresh', function (view)
-                {
-                    var removeEls = view.getEl().query('div.field-selection-remove');
-                    Ext4.each(removeEls, function (removeEl)
-                    {
-                        Ext4.get(removeEl).on('click', this.removeSelection, this);
-                    }, this);
-                }, this);
+                // 'SIMPLE' mode allows for single click select and deselect
+                this.fieldAreaCmp.getSelectionModel().setSelectionMode('SIMPLE');
             }
         }
 
@@ -1011,19 +1063,28 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
         return Ext4.isDefined(this.field.altFieldCmp);
     },
 
-    removeSelection : function(evt, el)
+    toggleYAxisSide : function(index, record)
     {
-        // if the selection is an array, just remove the selected element
+        var newSide = record.get('yAxis') == 'left' ? 'right' : 'left';
+
+        if (Ext4.isObject(this.selection))
+            this.selection.yAxis = newSide;
+        else if (Ext4.isArray(this.selection))
+            this.selection[index].yAxis = newSide;
+
+        record.set('yAxis', newSide);
+    },
+
+    removeSelection : function(index, record)
+    {
+        // if the selection is an array, just remove the selected record
+        // otherwise, we are clearing the only selection so reset to an empty field area
         if (Ext4.isArray(this.selection) && this.selection.length > 1)
         {
-            var selIndex = Ext4.Array.pluck(this.selection, 'name').indexOf(el.getAttribute('fieldName'));
-            if (selIndex > -1)
-            {
-                this.selection.splice(selIndex, 1);
-                this.updateFieldAreaDisplay();
-            }
+            this.selection.splice(index, 1);
+            this.getFieldArea().getStore().remove(record);
+            this.fireEvent('selectionchange', this);
         }
-        // otherwise, we are clearing the only selection so reset to an empty field area
         else
         {
             this.setSelection(null);
@@ -1035,10 +1096,15 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
 
     setSelection : function(column)
     {
-        var newSelection = Ext4.clone(column && column.data ? column.data : column);
+        var newSelection = Ext4.clone(column && column.data ? column.data : column),
+            newRecord;
 
         if (newSelection != null)
         {
+            // default new selections to left side
+            if (this.field.allowMultiple)
+                newSelection.yAxis = 'left';
+
             if (this.field.allowMultiple && this.selection != null)
             {
                 // first check if this column is already in the selection, in which case do nothing
@@ -1061,12 +1127,21 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
                         this.selection.push(newSelection);
                     else
                         this.selection = [this.selection, newSelection];
+
+                    newRecord = this.getFieldArea().getStore().add(newSelection);
                 }
             }
             else
             {
                 this.selection = newSelection;
+
+                this.getFieldArea().getStore().removeAll();
+                newRecord = this.getFieldArea().getStore().add(newSelection);
             }
+
+            // tell the view to select this new item
+            if (this.field.allowMultiple && newRecord)
+                this.getFieldArea().getSelectionModel().select(newRecord);
 
             this.removeCls('missing-required');
             this.setFieldTitle();
@@ -1074,15 +1149,9 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
         else
         {
             this.selection = null;
+            this.getFieldArea().getStore().removeAll();
         }
 
-        this.updateFieldAreaDisplay();
-    },
-
-    updateFieldAreaDisplay : function()
-    {
-        this.getFieldArea().update(this.selection);
-        this.getFieldArea().fireEvent('refresh', this.getFieldArea());
         this.fireEvent('selectionchange', this);
     },
 
@@ -1168,7 +1237,8 @@ Ext4.define('LABKEY.vis.QueryColumnModel',{
                 return record.data.displayFieldJsonType;
 
             return record.data.type;
-        }}
+        }},
+        {name: 'yAxis', defaultValue: undefined}
     ]
 });
 

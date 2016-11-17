@@ -8,11 +8,6 @@ Ext4.define('LABKEY.vis.TimeChartXAxisField', {
     initData: null,
     isVisitBased: false,
 
-    constructor : function(config)
-    {
-        this.callParent([config]);
-    },
-
     initComponent : function()
     {
         if (this.initData == null)
@@ -65,6 +60,10 @@ Ext4.define('LABKEY.vis.TimeChartXAxisField', {
         return this.timeTypeRadioGroup;
     },
 
+    getTimeTypeRadioByValue: function(value) {
+        return this.getTimeTypeRadioGroup().down('radio[inputValue="' + value + '"]');
+    },
+
     getIntervalCombo : function()
     {
         if (!this.intervalCombo)
@@ -101,7 +100,7 @@ Ext4.define('LABKEY.vis.TimeChartXAxisField', {
                 fieldLabel: 'Interval Start Date',
                 disabled: this.isVisitBased,
                 labelWidth: 110,
-                width: 305,
+                width: 300,
                 padding: '0 0 0 5px',
                 store: this.getZeroDateStore(),
                 queryMode: 'local',
@@ -137,11 +136,22 @@ Ext4.define('LABKEY.vis.TimeChartXAxisField', {
                 sorters: {property: 'longlabel', direction: 'ASC'},
                 listeners: {
                     scope: this,
-                    load: function (store, records)
+                    load: function (store)
                     {
-                        if (records.length == 0)
+                        if (store.getCount() == 0)
                         {
-                            this.fireEvent('noDemographicData');
+                            // disable the Date-Based option and try to select the Visit-Based option
+                            this.getTimeTypeRadioByValue('date').disable();
+                            var visitRadio = this.getTimeTypeRadioByValue('visit');
+                            if (!visitRadio.isDisabled())
+                            {
+                                visitRadio.setValue(true);
+                            }
+                            else
+                            {
+                                this.fireEvent('invalidChartOptions', 'There are no demographic date options available in this study. '
+                                    + 'Please contact an administrator to have them configure the study to work with the Time Chart wizard.');
+                            }
                         }
                         else if (Ext4.isObject(this.initData.zeroDateCol))
                         {
@@ -188,10 +198,10 @@ Ext4.define('LABKEY.vis.TimeChartXAxisField', {
     },
 
     getZeroDateColData: function(){
-        var value = this.zeroDateColCombo.getValue();
+        var value = this.getZeroDateColCombo().getValue();
         if (value)
         {
-            var record = this.zeroDateColCombo.findRecordByValue(value);
+            var record = this.getZeroDateColCombo().findRecordByValue(value);
             if (record)
                 return Ext4.clone(record.data);
         }
@@ -210,19 +220,4 @@ Ext4.define('LABKEY.vis.TimeChartXAxisField', {
 
         return values;
     }
-});
-
-Ext4.define('LABKEY.vis.DimensionModel', {
-    extend: 'Ext.data.Model',
-    fields: [
-        {name: 'id'},
-        {name:'name'},
-        {name:'label'},
-        {name:'longlabel'},
-        {name:'description'},
-        {name:'isUserDefined'},
-        {name:'queryName'},
-        {name:'schemaName'},
-        {name:'type'}
-    ]
 });

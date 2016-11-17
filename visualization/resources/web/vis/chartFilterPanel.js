@@ -2,6 +2,7 @@
 Ext4.define('LABKEY.vis.ChartFilterPanel', {
     extend: 'Ext.panel.Panel',
 
+    cls: 'chart-filter-panel',
     layout: 'accordion',
     fill: false,
     width: 220,
@@ -99,6 +100,14 @@ Ext4.define('LABKEY.vis.ChartFilterPanel', {
         }
     },
 
+    expandDefaultPanel : function()
+    {
+        if (this.getParticipantSelector().isVisible())
+            this.getParticipantSelector().expand();
+        else
+            this.getGroupSelector().expand();
+    },
+
     getSubject : function(asGroups, displayIndividual)
     {
         if (!this.hasValidStudy())
@@ -121,7 +130,6 @@ Ext4.define('LABKEY.vis.ChartFilterPanel', {
 });
 
 Ext4.define('LABKEY.vis.ChartFilterParticipantSelector', {
-
     extend : 'Ext.panel.Panel',
 
     border: false,
@@ -135,10 +143,10 @@ Ext4.define('LABKEY.vis.ChartFilterParticipantSelector', {
         this.callParent([config]);
 
         this.addEvents(
-                'chartDefinitionChanged',
-                'switchToGroupLayout',
-                'measureMetadataRequestPending',
-                'measureMetadataRequestComplete'
+            'chartDefinitionChanged',
+            'switchToGroupLayout',
+            'measureMetadataRequestPending',
+            'measureMetadataRequestComplete'
         );
 
         // fix the issue with the ptid list hidden for saved chart with a measure dimension panel
@@ -256,6 +264,11 @@ Ext4.define('LABKEY.vis.ChartFilterParticipantSelector', {
         });
         this.add(this.ptidFilterPanel);
 
+        this.ptidFilterPanel.getFilterPanelGrid().getStore().on('load', function(store){
+            if (store.getCount() == 0)
+                this.fireEvent('measureMetadataRequestComplete');
+        }, this);
+
         this.ptidFilterPanel.on('selectionchange', function(){
             this.fireChangeTask.delay(100);
         }, this, {buffer: 1000});
@@ -278,36 +291,22 @@ Ext4.define('LABKEY.vis.ChartFilterParticipantSelector', {
 });
 
 Ext4.define('LABKEY.vis.ChartFilterGroupSelector', {
-
     extend : 'Ext.panel.Panel',
 
-    constructor : function(config){
-        Ext4.apply(config, {
-            title: 'Groups',
-            border: false,
-            cls: 'rpf',
-            autoScroll: true,
-            maxInitSelection: 5
-        });
+    title: 'Groups',
+    border: false,
+    cls: 'rpf',
+    autoScroll: true,
+    maxInitSelection: 5,
 
-        Ext4.define('GroupSelector.ParticipantCategory', {
-            extend: 'Ext.data.Model',
-            fields : [
-                {name : 'id'},
-                {name : 'categoryId'},
-                {name : 'label'},
-                {name : 'description'},
-                {name : 'participantIds'},
-                {name : 'type'}
-            ]
-        });
-
+    constructor : function(config)
+    {
         this.callParent([config]);
 
         this.addEvents(
-                'chartDefinitionChanged',
-                'measureMetadataRequestPending',
-                'measureMetadataRequestComplete'
+            'chartDefinitionChanged',
+            'measureMetadataRequestPending',
+            'measureMetadataRequestComplete'
         );
 
         // fix the issue with the group list hidden for saved chart with a measure dimension panel
@@ -453,4 +452,16 @@ Ext4.define('LABKEY.vis.ChartFilterGroupSelector', {
 
         return results;
     }
+});
+
+Ext4.define('GroupSelector.ParticipantCategory', {
+    extend: 'Ext.data.Model',
+    fields : [
+        {name : 'id'},
+        {name : 'categoryId'},
+        {name : 'label'},
+        {name : 'description'},
+        {name : 'participantIds'},
+        {name : 'type'}
+    ]
 });

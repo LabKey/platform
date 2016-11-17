@@ -178,6 +178,8 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             this.setScaleTrans(config.scaleTrans);
 
         this.setScaleRange(config);
+
+        this.adjustScaleAndRangeOptions();
     },
 
     getAxisLabel: function(){
@@ -186,6 +188,13 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
 
     setAxisLabel: function(value){
         this.axisLabelField.setValue(value);
+
+        if (this.getDefaultAxisLabel() != value)
+        {
+            this.userEditedLabel = true;
+            if (this.getDefaultAxisLabel() == null)
+                this.defaultAxisLabel = value;
+        }
     },
 
     resetAxisLabel: function()
@@ -274,11 +283,31 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         }
     },
 
-    adjustScaleOptions: function(isNumeric)
+    adjustScaleAndRangeOptions: function(isNumeric, overrideAsHidden)
     {
         //disable for non-numeric types
-        this.scaleRangeRadioGroup.hideForDatatype = !isNumeric;
-        this.scaleTypeRadioGroup.hideForDatatype = !isNumeric;
+        if (Ext4.isBoolean(isNumeric))
+        {
+            this.setRangeOptionVisible(isNumeric);
+            this.setScaleTypeOptionVisible(isNumeric);
+        }
+
+        //some render type axis options should just alwasy be hidden
+        if ((this.axisName == 'x' && (this.renderType == 'bar_chart' || this.renderType == 'box_plot')) || overrideAsHidden)
+        {
+            this.setRangeOptionVisible(false);
+            this.setScaleTypeOptionVisible(false);
+        }
+    },
+
+    setRangeOptionVisible : function(visible)
+    {
+        this.scaleRangeRadioGroup.hideForDatatype = !visible;
+    },
+
+    setScaleTypeOptionVisible : function(visible)
+    {
+        this.scaleTypeRadioGroup.hideForDatatype = !visible;
     },
 
     validateChanges : function ()
@@ -303,25 +332,25 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
     {
         if (this.axisName == 'x')
         {
-            this.adjustScaleOptions(false);
+            this.adjustScaleAndRangeOptions(false);
 
             // if visit based time chart, set range type to Automatic and hide range options
-            var isVisitBased = measures.time == 'visit';
-            this.scaleRangeRadioGroup.hideForDatatype = isVisitBased;
+            var isVisitBased = measures.x.time == 'visit';
+            this.setRangeOptionVisible(!isVisitBased);
             if (isVisitBased)
                 this.setScaleRangeType('automatic');
 
             if (isVisitBased)
                 this.defaultAxisLabel = 'Visit';
             else
-                this.defaultAxisLabel = measures.interval + (Ext4.isObject(measures.zeroDateCol) ? ' Since ' + measures.zeroDateCol.label : '');
+                this.defaultAxisLabel = measures.x.interval + (Ext4.isObject(measures.x.zeroDateCol) ? ' Since ' + measures.x.zeroDateCol.label : '');
 
             if (!this.userEditedLabel)
                 this.resetAxisLabel();
         }
         else
         {
-            this.adjustScaleOptions(true);
+            this.adjustScaleAndRangeOptions(true);
 
             var side = this.axisName == 'y' ? 'left' : 'right';
             this.defaultAxisLabel = LABKEY.vis.TimeChartHelper.getMeasuresLabelBySide(measures.y, side);
@@ -336,7 +365,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             type = LABKEY.vis.GenericChartHelper.getMeasureType(properties),
             isNumeric = LABKEY.vis.GenericChartHelper.isNumericType(type);
 
-        this.adjustScaleOptions(isNumeric);
+        this.adjustScaleAndRangeOptions(isNumeric);
 
         this.defaultAxisLabel = LABKEY.vis.GenericChartHelper.getSelectedMeasureLabel(renderType, this.axisName, properties);
         if (!this.userEditedLabel)

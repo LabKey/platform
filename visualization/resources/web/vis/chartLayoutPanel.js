@@ -394,6 +394,22 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
         return true;
     },
 
+    getOptionPanelByName : function(name)
+    {
+        var matchingPanel = null;
+
+        Ext4.each(this.getCenterPanel().items.items, function(panel)
+        {
+            if (panel.panelName == name)
+            {
+                matchingPanel = panel;
+                return false; // break
+            }
+        }, this);
+
+        return matchingPanel;
+    },
+
     getValues : function()
     {
         var values = {};

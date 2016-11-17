@@ -24,16 +24,7 @@ Ext4.define('LABKEY.vis.GenericOptionsPanel', {
         this.callParent([config]);
     },
 
-    specialKeyPressed: function(f, e) {
-        if(e.getKey() == e.ENTER){
-            this.applyChangesButtonClicked();
-        }
-    },
-
-    applyChangesButtonClicked: function() // TODO remove after time chart wizard conversion to new UI
-    {},
-
-    cancelChangesButtonClicked: function() // TODO remove after time chart wizard conversion to new UI
+    cancelChangesButtonClicked: function()
     {},
 
     getInputFields : function()
@@ -45,9 +36,6 @@ Ext4.define('LABKEY.vis.GenericOptionsPanel', {
     {
         return {};
     },
-
-    checkForChangesAndFireEvents : function()
-    {},
 
     validateChanges : function()
     {
@@ -63,8 +51,6 @@ Ext4.define('LABKEY.vis.GenericOptionsPanel', {
     onChartLayoutChange : function(multipleCharts)
     {},
 
-    // called to reset the panel components based on the values in the parameter object,
-    // this will likely be called on window cancel, ESC key, or when the close X is clicked 
-    restoreValues : function(initValues) // TODO remove after time chart wizard conversion to new UI
+    restoreValues : function(initValues)
     {}
 });

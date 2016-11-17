@@ -1411,6 +1411,14 @@ LABKEY.vis.TimeChartHelper = new function() {
         };
     };
 
+    var getMeasureAlias = function(measure)
+    {
+        if (Ext4.isString(measure.alias))
+            return measure.alias;
+        else
+            return measure.schemaName + '_' + measure.queryName + '_' + measure.name;
+    };
+
     var getMeasuresLabelBySide = function(measures, side)
     {
         var labels = [];
@@ -1447,6 +1455,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         generateTickMap : generateTickMap,
         generateNumberFormats : generateNumberFormats,
         getAxisIndex : getAxisIndex,
+        getMeasureAlias : getMeasureAlias,
         getMeasuresLabelBySide : getMeasuresLabelBySide,
         getDistinctYAxisSides : getDistinctYAxisSides,
         getStudyTimepointType : getStudyTimepointType,
