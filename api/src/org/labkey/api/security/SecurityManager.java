@@ -111,6 +111,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Predicate;
 
 /**
  * Note should consider implementing a Tomcat REALM, but we've tried to avoid
@@ -138,6 +139,7 @@ public class SecurityManager
 
     private static final String USER_ID_KEY = User.class.getName() + "$userId";
     private static final String IMPERSONATION_CONTEXT_FACTORY_KEY = User.class.getName() + "$ImpersonationContextFactoryKey";
+    private static final String AUTHENTICATION_VALIDATORS_KEY = SecurityManager.class.getName() + "$AuthenticationValidators";
     private static final String AUTHENTICATION_METHOD = "SecurityManager.authenticationMethod";
     private static final Map<String, Integer> TRANSFORM_SESSIONID_MAP = new HashMap<>();
 
@@ -387,19 +389,16 @@ public class SecurityManager
             User sessionUser = null;
             HttpSession session = request.getSession(false);
 
-            Integer userId = null==session ? null : (Integer) session.getAttribute(USER_ID_KEY);
+            Integer userId = null == session ? null : (Integer) session.getAttribute(USER_ID_KEY);
 
             if (null != userId)
                 sessionUser = UserManager.getUser(userId);
 
             if (null != sessionUser)
             {
-                // We want groups membership to be calculated on every request (but just once)
-                // the cloned User will calculate groups exactly once
-                // NOTE: getUser() returns a cloned object
-                // u = sessionUser.cloneUser();
+                // NOTE: UserCache.getUser() above returns a cloned object so _groups should be null. This is important to ensure
+                // group memberships are calculated on every request (but just once)
                 assert sessionUser._groups == null;
-                sessionUser._groups = null;
 
                 ImpersonationContextFactory factory = (ImpersonationContextFactory)session.getAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY);
 
@@ -410,6 +409,34 @@ public class SecurityManager
                 else if ("true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
                 {
                     sessionUser.setImpersonationContext(DisallowGlobalRolesContext.get());
+                }
+
+                List<Predicate<HttpServletRequest>> validators = (List<Predicate<HttpServletRequest>>) session.getAttribute(AUTHENTICATION_VALIDATORS_KEY);
+
+                // If we have validators, enumerate them to validate the session user's current login (e.g., smart card is still present)
+                if (null != validators)
+                {
+                    boolean valid = true;
+
+                    // Enumerate all validators on every request (no short circuit) in case the validators have internal state or side effects
+                    for (Predicate<HttpServletRequest> validator : validators)
+                    {
+                        valid &= validator.test(request);
+                    }
+
+                    if (!valid)
+                    {
+                        // If impersonating, stop so it gets logged
+                        if (sessionUser.isImpersonated())
+                        {
+                            SecurityManager.stopImpersonating(request, factory);
+                            sessionUser = sessionUser.getImpersonatingUser(); // Need to logout the admin
+                        }
+
+                        // Now logout the session user
+                        logoutUser(request, sessionUser);
+                        sessionUser = null;
+                    }
                 }
 
                 u = sessionUser;
@@ -456,13 +483,12 @@ public class SecurityManager
         return null == u || u.isGuest() ? null : u;
     }
 
-    @NotNull
     /**
      * Works like a standard HTTP session but intended for transform scripts and other
      * API-style usage. Callers should call {@see endTransformSession} when finished, typically in a finally block
      * @return the ID for the newly started session
      */
-    public static String beginTransformSession(@NotNull User user)
+    public static @NotNull String beginTransformSession(@NotNull User user)
     {
         String token = GUID.makeHash();
         TRANSFORM_SESSIONID_MAP.put(token, user.getUserId());

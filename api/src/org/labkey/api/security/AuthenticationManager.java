@@ -959,7 +959,7 @@ public class AuthenticationManager
             {
                 return new AuthenticationResult(PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(c, null));
             }
-         }
+        }
 
         for (SecondaryAuthenticationProvider provider : getActiveSecondaryProviders())
         {
