@@ -713,16 +713,13 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
         this.destroyFieldSelectionDropTargets();
 
         // enable drop target based on allowable column types for the given field
-        var selectedColType = LABKEY.vis.GenericChartHelper.getMeasureType(selectedCol.data);
-        if (this.chartType.data.name !== 'box_plot' && this.chartType.data.name !== 'bar_chart') {
-            var isMeasure = selectedCol.get('measure');
-            var isDimension = selectedCol.get('dimension');
-        }
-
+        var selectedColType = LABKEY.vis.GenericChartHelper.getMeasureType(selectedCol.data),
+                isMeasure = selectedCol.get('measure'),
+                isDimension = selectedCol.get('dimension');
         Ext4.each(this.query('charttypefield'), function(fieldSelPanel)
         {
             var hasMatchingType = fieldSelPanel.getAllowableTypes().indexOf(selectedColType) > -1,
-                isMeasureDimensionMatch = (fieldSelPanel.field.numericOnly && isMeasure) || (fieldSelPanel.field.nonNumericOnly && isDimension);
+                isMeasureDimensionMatch = this.isMeasureDimensionMatch(this.chartType.data.name, fieldSelPanel, isMeasure, isDimension);
 
             if (hasMatchingType || isMeasureDimensionMatch)
             {
@@ -740,6 +737,19 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
                 this.fieldSelectionDropTargets.push(dropTarget);
             }
         }, this);
+    },
+
+    isMeasureDimensionMatch : function(chartType, fieldSelPanel, isMeasure, isDimension) {
+          if ((chartType === 'box_plot' || chartType === 'bar_chart')) {
+                //x-axis does not support 'measure' column types for these plot types
+              if (fieldSelPanel.field.name === 'x') {
+                  return isDimension;
+              } else {
+                  return isMeasure;
+              }
+          } else {
+                return (fieldSelPanel.field.numericOnly && isMeasure) || (fieldSelPanel.field.nonNumericOnly && isDimension);
+          }
     },
 
     destroyFieldSelectionDropTargets : function()
