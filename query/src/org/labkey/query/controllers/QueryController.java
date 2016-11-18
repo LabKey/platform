@@ -2851,6 +2851,7 @@ public class QueryController extends SpringActionController
 
             TableInfo t = view.getTable();
             boolean isEditable = null != t && isQueryEditable(view.getTable());
+            boolean arrayMultiValueColumns = getRequestedApiVersion() >= 16.2;
 
             // 13.2 introduced the getData API action, a condensed response wire format, and a js wrapper to consume the wire format. Support this as an option for legacy API's.
             if (getRequestedApiVersion() >= 13.2)
@@ -2858,6 +2859,7 @@ public class QueryController extends SpringActionController
                 ReportingApiQueryResponse response = new ReportingApiQueryResponse(view, isEditable, false, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null,
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
                 response.includeStyle(form.isIncludeStyle());
+                response.arrayMultiValueColumns(arrayMultiValueColumns);
                 return response;
             }
             if (getRequestedApiVersion() >= 9.1)
