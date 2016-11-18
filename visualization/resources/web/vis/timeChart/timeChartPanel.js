@@ -78,35 +78,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.getChartData();
         }, this);
 
-        // setup export menu (items to be added later)
-        this.exportPdfMenu = Ext4.create('Ext.menu.Menu', {showSeparator: false});
-        this.exportPngMenu = Ext4.create('Ext.menu.Menu', {showSeparator: false});
-        this.exportMenuBtn = Ext4.create('Ext.button.Button', {
-            text: 'Export',
-            disabled: true,
-            scope: this,
-            menu: Ext4.create('Ext.menu.Menu', {
-                showSeparator: false,
-                items: [{
-                    text: 'PDF',
-                    iconCls: 'fa fa-file-pdf-o',
-                    menu: this.exportPdfMenu
-                },{
-                    text: 'PNG',
-                    iconCls: 'fa fa-file-image-o',
-                    menu: this.exportPngMenu
-                },{
-                    text: 'Script',
-                    iconCls: 'fa fa-file-text-o',
-                    hidden: !this.isDeveloper,
-                    handler: this.exportChartToScript,
-                    scope: this
-                }]
-            })
-        });
-        if (!this.supportedBrowser)
-            this.exportMenuBtn.setTooltip("Export to PDF and PNG not supported for IE6, IE7, or IE8.");
-
         // setup buttons for the charting options panels (items to be added to the toolbar)
         this.saveButton = Ext4.create('Ext.button.Button', {text: 'Save', hidden: !this.canEdit,
                         handler: function(btn){
@@ -135,7 +106,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var toolbarButtons = [
             this.viewGridBtn,
             this.viewChartBtn,
-            this.exportMenuBtn,
             this.getHelpBtn()
         ];
         if (this.editMode)
@@ -876,8 +846,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.viewChartBtn.show();
 
             this.buttonsToShow = [];
-            if (!this.exportMenuBtn.isHidden())
-                this.buttonsToShow.push(this.exportMenuBtn.hide());
             if (!this.getHelpBtn().isHidden())
                 this.buttonsToShow.push(this.getHelpBtn().hide());
             if (!this.getChartTypeBtn().isHidden())
@@ -888,7 +856,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     },
 
     disableNonMeasureOptionButtons: function(){
-        this.exportMenuBtn.disable();
         this.viewGridBtn.disable();
         this.viewChartBtn.disable();
         this.getChartLayoutBtn().disable();
@@ -948,7 +915,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         if (!validation.success)
         {
             this.clearChartPanel(validation.message);
-            this.exportMenuBtn.disable();
             this.viewGridBtn.disable();
             this.viewChartBtn.disable();
             this.toggleSaveButtons(true);
@@ -1139,7 +1105,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         if (!validation.success)
         {
             this.clearChartPanel(validation.message);
-            this.exportMenuBtn.disable();
             this.viewGridBtn.disable();
             this.viewChartBtn.disable();
             this.toggleSaveButtons(true);
@@ -1163,7 +1128,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         if (!validation.success)
         {
             this.clearChartPanel(validation.message);
-            this.exportMenuBtn.disable();
             this.viewGridBtn.disable();
             this.viewChartBtn.disable();
             this.toggleSaveButtons(true);
@@ -1181,13 +1145,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         LABKEY.vis.TimeChartHelper.generateNumberFormats(this.chartInfo, this.chartData, this.defaultNumberFormat);
 
-        // remove any existing charts, remove items from the exportMenu button
+        // remove any existing charts
         this.chart.removeAll();
         this.chart.removeListener('resize', this.resizeCharts);
         this.plotConfigInfoArr = [];
-        this.exportPdfMenu.removeAll();
-        this.exportPngMenu.removeAll();
-
         var charts = [];
 
         this.toggleSaveButtons(false);
@@ -1203,33 +1164,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             var newChart = this.generatePlot(
                     configIndex,
                     this.plotConfigInfoArr[configIndex].height || (this.plotConfigInfoArr.length > 1 ? 380 : 600),
-                    this.plotConfigInfoArr[configIndex].style,
-                    false // forExport param
+                    this.plotConfigInfoArr[configIndex].style
                 );
             charts.push(newChart);
-
-            this.exportPdfMenu.add({
-                text: this.plotConfigInfoArr[configIndex].title,
-                cls: 'export-pdf-menu-item', // for selenium test
-                configIndex: configIndex,
-                exportType: 'pdf',
-                handler: this.exportChartToFile,
-                scope: this
-            });
-
-            this.exportPngMenu.add({
-                text: this.plotConfigInfoArr[configIndex].title,
-                cls: 'export-png-menu-item', // for selenium test
-                configIndex: configIndex,
-                exportType: 'png',
-                handler: this.exportChartToFile,
-                scope: this
-            });
         }
-
-        this.exportPdfMenu.setDisabled(!this.supportedBrowser);
-        this.exportPngMenu.setDisabled(!this.supportedBrowser);
-        this.exportMenuBtn.enable();
 
         // show warning message, if there is one
         if (this.warningText.length > 0)
@@ -1242,18 +1180,11 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         // if in edit mode, pass the svg for the first chart component to the save options panel for use in the thumbnail preview
         this.chartThumbnailSvgStr = null;
-        if (this.editMode && Raphael.svg && this.plotConfigInfoArr.length > 0)
+        var firstChartEl = this.chart.down('container[cls~=chart-render-div]');
+        if (this.editMode && this.supportedBrowser && firstChartEl != null)
         {
-            // create a temp chart that does not have the clickable looking elements
-            var tempChart = this.generatePlot(0, 610, null, true);
-            if (tempChart)
-            {
-                // set the svg string for the save dialog thumbnail
-                this.chartThumbnailSvgStr = LABKEY.vis.SVGConverter.svgToStr(Ext4.get(tempChart.renderTo).child('svg').dom);
-                this.getSavePanel().updateCurrentChartThumbnail(this.chartThumbnailSvgStr, Ext4.get(tempChart.renderTo).getSize());
-                // destroy the temp chart element
-                Ext4.getCmp(tempChart.renderTo).destroy();
-            }
+            this.chartThumbnailSvgStr = LABKEY.vis.SVGConverter.svgToStr(firstChartEl.getEl().child('svg').dom);
+            this.getSavePanel().updateCurrentChartThumbnail(this.chartThumbnailSvgStr, firstChartEl.getEl().getSize());
         }
 
         this.unmaskPanel();
@@ -1275,8 +1206,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         if (hasFilter && !hasUrlFilterPanel)
         {
-            var filterDescription = filterDescription.substring(1, filterDescription.length-1),
-                filterTxtArr = filterDescription.split(') AND ('),
+            filterDescription = filterDescription.substring(1, filterDescription.length-1);
+            var filterTxtArr = filterDescription.split(') AND ('),
                 html = 'The following filters are being applied to this chart:<br/>'
                     + '<ul><li>' + filterTxtArr.join('</li><li>') + '</li></ul>';
 
@@ -1312,23 +1243,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 this.getFiltersPanel().expandDefaultPanel();
 
             this.urlFilterPanel.destroy();
-        }
-    },
-
-    exportChartToFile : function(item) {
-        if (item.configIndex == undefined)
-        {
-            console.error("The item to be exported does not reference a plot config index.");
-            return;
-        }
-
-        // create a temp chart which does not have the clickable looking elements
-        var tempChart = this.generatePlot(item.configIndex, 610, null, true);
-        if (tempChart)
-        {
-            // export the temp chart as a pdf or png with the chart title as the file name
-            LABKEY.vis.SVGConverter.convert(Ext4.get(tempChart.renderTo).child('svg').dom, item.exportType, this.plotConfigInfoArr[item.configIndex].title);
-            Ext4.getCmp(tempChart.renderTo).destroy();
         }
     },
 
@@ -1371,18 +1285,21 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.getExportScriptWindow().show();
     },
 
-    generatePlot: function(configIndex, chartHeight, chartStyle, forExport){
+    generatePlot: function(configIndex, chartHeight, chartStyle){
         // This function generates a plot config and renders a plot for given data.
         // Should be used in per_subject, single, per_measure, and per_group
         var mainTitle = this.plotConfigInfoArr[configIndex].title;
+        var subtitle = this.plotConfigInfoArr[configIndex].subtitle;
         var seriesList = this.plotConfigInfoArr[configIndex].series;
         var individualData = this.plotConfigInfoArr[configIndex].individualData;
         var aggregateData = this.plotConfigInfoArr[configIndex].aggregateData;
         var applyClipRect = this.plotConfigInfoArr[configIndex].applyClipRect;
 
         var newChartDiv = Ext4.create('Ext.container.Container', {
+            cls: 'chart-render-div',
             style: chartStyle ? chartStyle : 'border: none;',
-            autoEl: {tag: 'div'}
+            autoEl: {tag: 'div'},
+            mainTitle: mainTitle + (subtitle ? ': ' + subtitle : '')
         });
         this.chart.add(newChartDiv);
 
@@ -1395,7 +1312,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var plotConfig = {
             renderTo: newChartDiv.getId(),
             clipRect: applyClipRect,
-            labels: LABKEY.vis.TimeChartHelper.generateLabels(mainTitle, this.chartInfo.axis),
+            labels: LABKEY.vis.TimeChartHelper.generateLabels(mainTitle, this.chartInfo.axis, subtitle),
             layers: LABKEY.vis.TimeChartHelper.generateLayers(this.chartInfo, visitMap, individualColumnAliases, aggregateColumnAliases, aggregateData, seriesList, intervalKey, this.SUBJECT.columnName),
             aes: LABKEY.vis.TimeChartHelper.generateAes(this.chartInfo, visitMap, individualColumnAliases, intervalKey, this.SUBJECT.columnName),
             scales: LABKEY.vis.TimeChartHelper.generateScales(this.chartInfo, tickMap, this.chartData.numberFormats),
@@ -1411,7 +1328,51 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var plot = new LABKEY.vis.Plot(plotConfig);
         plot.render();
 
+        if (this.supportedBrowser)
+        {
+            newChartDiv.add(this.createExportIcon('fa-file-pdf-o', 'Export to PDF', 0, function(){
+                this.exportChartToImage(newChartDiv, LABKEY.vis.SVGConverter.FORMAT_PDF);
+            }));
+
+            newChartDiv.add(this.createExportIcon('fa-file-image-o', 'Export to PNG', 1, function(){
+                this.exportChartToImage(newChartDiv, LABKEY.vis.SVGConverter.FORMAT_PNG);
+            }));
+        }
+        if (this.isDeveloper)
+        {
+            newChartDiv.add(this.createExportIcon('fa-file-code-o', 'Export as Script', this.supportedBrowser ? 2 : 0, function(){
+                this.exportChartToScript();
+            }));
+        }
+
         return plot;
+    },
+
+    createExportIcon : function(iconCls, tooltip, indexFromLeft, callbackFn)
+    {
+        return Ext4.create('Ext.Component', {
+            cls: 'export-icon',
+            style: 'right: ' + ((indexFromLeft*30) + 20) + 'px;',
+            html: '<i class="fa ' + iconCls + '"></i>',
+            listeners: {
+                scope: this,
+                render: function(cmp)
+                {
+                    Ext4.create('Ext.tip.ToolTip', {
+                        target: cmp.getEl(),
+                        html: tooltip
+                    });
+
+                    cmp.getEl().on('click', callbackFn, this);
+                }
+            }
+        });
+    },
+
+    exportChartToImage : function(chartDiv, type)
+    {
+        var exportType = type || LABKEY.vis.SVGConverter.FORMAT_PDF;
+        LABKEY.vis.SVGConverter.convert(chartDiv.getEl().child('svg').dom, exportType, chartDiv.mainTitle);
     },
 
     viewDataGrid: function() {

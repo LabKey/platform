@@ -6,7 +6,7 @@
 Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
     extend: 'LABKEY.vis.ChartWizardPanel',
 
-    mainTitle: 'Export script',
+    mainTitle: 'Export as script',
     codeMirrorMode: 'text/html',
     height: 485,
 

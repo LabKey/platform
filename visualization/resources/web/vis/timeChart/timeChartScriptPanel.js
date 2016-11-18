@@ -7,7 +7,7 @@
 Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
     extend: 'LABKEY.vis.ChartWizardPanel',
 
-    mainTitle: 'Export script',
+    mainTitle: 'Export as script',
     codeMirrorMode: 'text/html',
     height: 485,
 
@@ -90,7 +90,7 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
             "            var clipRect = plotConfigsArr[configIndex].applyClipRect;\n" +
             "            var series = plotConfigsArr[configIndex].series;\n" +
             "            var height = plotConfigsArr.length > 1 ? DEFAULT_MULTI_CHART_HEIGHT : DEFAULT_SINGLE_CHART_HEIGHT;\n" +
-            "            var labels = TCH.generateLabels(plotConfigsArr[configIndex].title, chartConfig.axis);\n" +
+            "            var labels = TCH.generateLabels(plotConfigsArr[configIndex].title, chartConfig.axis, plotConfigsArr[configIndex].subtitle);\n" +
             "            var layers = TCH.generateLayers(chartConfig, visitMap, individualColumnAliases, aggregateColumnAliases, plotConfigsArr[configIndex].aggregateData, series, intervalKey, STUDY_NOUN_COLUMN);\n" +
             "            var data = plotConfigsArr[configIndex].individualData ? plotConfigsArr[configIndex].individualData : plotConfigsArr[configIndex].aggregateData;\n" +
             "\n" +

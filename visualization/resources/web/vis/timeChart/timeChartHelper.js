@@ -16,10 +16,11 @@ LABKEY.vis.TimeChartHelper = new function() {
     /**
      * Generate the main title and axis labels for the chart based on the specified x-axis and y-axis (left and right) labels.
      * @param {String} mainTitle The label to be used as the main chart title.
+     * @param {String} subtitle The label to be used as the chart subtitle.
      * @param {Array} axisArr An array of axis information including the x-axis and y-axis (left and right) labels.
      * @returns {Object}
      */
-    var generateLabels = function(mainTitle, axisArr) {
+    var generateLabels = function(mainTitle, axisArr, subtitle) {
         var xTitle = '', yLeftTitle = '', yRightTitle = '';
         for (var i = 0; i < axisArr.length; i++)
         {
@@ -38,18 +39,11 @@ LABKEY.vis.TimeChartHelper = new function() {
         }
 
         return {
-            main : {
-                value : mainTitle
-            },
-            x : {
-                value : xTitle
-            },
-            yLeft : {
-                value : yLeftTitle
-            },
-            yRight : {
-                value : yRightTitle
-            }
+            main : { value : mainTitle },
+            subtitle : { value : subtitle, color: '#404040' },
+            x : { value : xTitle },
+            yLeft : { value : yLeftTitle },
+            yRight : { value : yRightTitle }
         };
     };
 
@@ -752,10 +746,6 @@ LABKEY.vis.TimeChartHelper = new function() {
             return dataByGroup;
         };
 
-        var concatChartTitle = function(mainTitle, subTitle) {
-            return mainTitle + (mainTitle ? ': ' : '') + subTitle;
-        };
-
         // four options: all series on one chart, one chart per subject, one chart per group, or one chart per measure/dimension
         if (config.chartLayout == "per_subject")
         {
@@ -769,7 +759,8 @@ LABKEY.vis.TimeChartHelper = new function() {
                         continue;
 
                     plotConfigInfoArr.push({
-                        title: concatChartTitle(config.title, participant),
+                        title: config.title ? config.title : participant,
+                        subtitle: config.title ? participant : undefined,
                         series: seriesList,
                         individualData: dataPerParticipant[participant].data,
                         style: config.subject.values.length > 1 ? 'border-bottom: solid black 1px;' : null,
@@ -805,7 +796,8 @@ LABKEY.vis.TimeChartHelper = new function() {
                 }
 
                 plotConfigInfoArr.push({
-                    title: concatChartTitle(config.title, group.label),
+                    title: config.title ? config.title : group.label,
+                    subtitle: config.title ? group.label : undefined,
                     series: seriesList,
                     individualData: groupedIndividualData && groupedIndividualData[group.label] ? groupedIndividualData[group.label] : null,
                     aggregateData: groupedAggregateData && groupedAggregateData[group.label] ? groupedAggregateData[group.label].data : null,
@@ -829,7 +821,8 @@ LABKEY.vis.TimeChartHelper = new function() {
                 }
 
                 plotConfigInfoArr.push({
-                    title: concatChartTitle(config.title, seriesList[i].label),
+                    title: config.title ? config.title : seriesList[i].label,
+                    subtitle: config.title ? seriesList[i].label : undefined,
                     series: [seriesList[i]],
                     individualData: data.individual ? data.individual.rows : null,
                     aggregateData: data.aggregate ? data.aggregate.rows : null,
