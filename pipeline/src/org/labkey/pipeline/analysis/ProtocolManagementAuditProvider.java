@@ -1,13 +1,17 @@
 package org.labkey.pipeline.analysis;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -20,6 +24,9 @@ public class ProtocolManagementAuditProvider extends AbstractAuditTypeProvider
 {
     public static final String EVENT = "pipelineProtocolEvent";
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+    private static final String COLUMNNAME_ACTION = "action";
+    private static final String COLUMNNAME_FACTORY = "factory";
+    private static final String COLUMNNAME_PROTOCOL = "protocol";
 
     static {
 
@@ -28,6 +35,9 @@ public class ProtocolManagementAuditProvider extends AbstractAuditTypeProvider
         defaultVisibleColumns.add(FieldKey.fromParts("ImpersonatedBy"));
         defaultVisibleColumns.add(FieldKey.fromParts("ProjectId"));
         defaultVisibleColumns.add(FieldKey.fromParts("Container"));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMNNAME_ACTION));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMNNAME_FACTORY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMNNAME_PROTOCOL));
         defaultVisibleColumns.add(FieldKey.fromParts("Comment"));
     }
 
@@ -53,7 +63,7 @@ public class ProtocolManagementAuditProvider extends AbstractAuditTypeProvider
     @Override
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
-        return (Class<K>)AuditTypeEvent.class;
+        return (Class<K>)ProtocolManagementEvent.class;
     }
 
     @Override
@@ -68,14 +78,75 @@ public class ProtocolManagementAuditProvider extends AbstractAuditTypeProvider
         return defaultVisibleColumns;
     }
 
+    public static class ProtocolManagementEvent extends AuditTypeEvent
+    {
+        private String _protocol;
+        private String _action;
+        private String _factory;
+
+        public ProtocolManagementEvent()
+        {
+            super();
+        }
+
+        public ProtocolManagementEvent(String eventType, Container container, String factory, String protocol, String action)
+        {
+            super(eventType, container, makeComment(factory, protocol, action));
+            _protocol = protocol;
+            _action = action.toUpperCase();
+            _factory = factory;
+        }
+
+        public String getProtocol()
+        {
+            return _protocol;
+        }
+
+        public void setProtocol(String protocol)
+        {
+            _protocol = protocol;
+        }
+
+        public String getAction()
+        {
+            return _action;
+        }
+
+        public void setAction(String action)
+        {
+            _action = action;
+        }
+
+        public String getFactory()
+        {
+            return _factory;
+        }
+
+        public void setFactory(String factory)
+        {
+            _factory = factory;
+        }
+
+        private static String makeComment(String factory, String protocol, String action)
+        {
+            return StringUtils.capitalize(action) + " protocol file " + protocol + " for factory " + factory + ".";
+        }
+    }
+
     public static class ProtocolManagementDomainKind extends AbstractAuditDomainKind
     {
         public static final String NAME = "PipelineProtocolDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
 
+        private final Set<PropertyDescriptor> _fields;
         public ProtocolManagementDomainKind()
         {
             super(EVENT);
+            Set<PropertyDescriptor> fields = new LinkedHashSet<>();
+            fields.add(createPropertyDescriptor(COLUMNNAME_ACTION, PropertyType.STRING, null, null, true));
+            fields.add(createPropertyDescriptor(COLUMNNAME_FACTORY, PropertyType.STRING, null, null, true));
+            fields.add(createPropertyDescriptor(COLUMNNAME_PROTOCOL, PropertyType.STRING, null, null, true));
+            _fields = Collections.unmodifiableSet(fields);
         }
 
         @Override
@@ -87,7 +158,7 @@ public class ProtocolManagementAuditProvider extends AbstractAuditTypeProvider
         @Override
         public Set<PropertyDescriptor> getProperties()
         {
-            return Collections.emptySet();
+            return _fields;
         }
 
         @Override

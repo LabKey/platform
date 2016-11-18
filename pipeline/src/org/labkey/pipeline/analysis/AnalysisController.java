@@ -33,7 +33,6 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.pipeline.ParamParser;
@@ -242,9 +241,9 @@ public class AnalysisController extends SpringActionController
                         protocol.saveDefinition(root);
                         PipelineService.get().rememberLastProtocolSetting(protocol.getFactory(),
                                 getContainer(), getUser(), protocol.getName());
-                        String message = "Created protocol file " + protocol.getName() + " for factory " + factory.getName() + ".";
-                        AuditLogService.get().addEvent(getUser(), new AuditTypeEvent(ProtocolManagementAuditProvider.EVENT, getContainer(), message));
-
+                        AuditLogService.get().addEvent(getUser(),
+                                new ProtocolManagementAuditProvider.ProtocolManagementEvent(ProtocolManagementAuditProvider.EVENT,
+                                        getContainer(), factory.getName(), protocol.getName(), "created"));
                     }
                 }
                 else
@@ -365,7 +364,7 @@ public class AnalysisController extends SpringActionController
         protected ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory)
         {
             JSONArray protocols = new JSONArray();
-            for (String protocolName : factory.getProtocolNames(root, dirData))
+            for (String protocolName : factory.getProtocolNames(root, dirData, false))
             {
                 protocols.put(getProtocolJson(protocolName, root, dirData, factory));
             }
@@ -388,7 +387,7 @@ public class AnalysisController extends SpringActionController
                                 continue;
                         }
 
-                        for (String protocolName : factory.getProtocolNames(wbRoot, wbDirData))
+                        for (String protocolName : factory.getProtocolNames(wbRoot, wbDirData, false))
                         {
                             protocols.put(getProtocolJson(protocolName, wbRoot, wbDirData, factory));
                         }
@@ -615,7 +614,7 @@ public class AnalysisController extends SpringActionController
                 @Override
                 boolean doIt(PipeRoot root, PipelineProtocolFactory factory, String name)
                 {
-                    return factory.archiveProtocolFile(root, name, true);
+                    return factory.changeArchiveStatus(root, name, true);
                 }
             },
         unarchive
@@ -623,11 +622,16 @@ public class AnalysisController extends SpringActionController
                 @Override
                 boolean doIt(PipeRoot root, PipelineProtocolFactory factory, String name)
                 {
-                    return factory.archiveProtocolFile(root, name, false);
+                    return factory.changeArchiveStatus(root, name, false);
                 }
             };
 
         abstract boolean doIt(PipeRoot root, PipelineProtocolFactory factory, String name);
+
+        String pastTense()
+        {
+            return this.toString() + "d";
+        }
 
         boolean run(ContainerUser cu, Map<String, List<String>> selected)
         {
@@ -640,8 +644,9 @@ public class AnalysisController extends SpringActionController
                 return entry.getValue().stream().allMatch( name -> {
                     if (doIt(root, factory, name))
                     {
-                        String message = StringUtils.capitalize(this.toString()) + "d protocol file " + name + " for factory " + factory.getName() + ".";
-                        AuditLogService.get().addEvent(cu.getUser(), new AuditTypeEvent(ProtocolManagementAuditProvider.EVENT, cu.getContainer(), message));
+                        AuditLogService.get().addEvent(cu.getUser(),
+                                new ProtocolManagementAuditProvider.ProtocolManagementEvent(ProtocolManagementAuditProvider.EVENT,
+                                        cu.getContainer(), factory.getName(), name, this.pastTense()));
                         return true;
                     }
                     else
@@ -752,13 +757,16 @@ public class AnalysisController extends SpringActionController
             for (String pair : selected)
             {
                 String[] split = pair.split(",", 2);
-                List<String> names = parsedSelected.get(split[0]);
-                if (null == names)
+                if (split.length == 2) // silently ignore malformed input
                 {
-                    names = new ArrayList<>();
-                    parsedSelected.put(split[0], names);
+                    List<String> names = parsedSelected.get(split[0]);
+                    if (null == names)
+                    {
+                        names = new ArrayList<>();
+                        parsedSelected.put(split[0], names);
+                    }
+                    names.add(split[1]);
                 }
-                names.add(split[1]);
             }
             return parsedSelected;
         }
