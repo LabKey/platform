@@ -96,7 +96,7 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
             contextualRoles.add(RoleManager.getRole(ReaderRole.class));
             elevatedUser = new LimitedUser(currentUser, currentUser.getGroups(), contextualRoles, false);
         }
-        else if (run.getCreatedBy().equals(getUser()) && !getContainer().hasPermission(getUser(), DeletePermission.class))
+        else if (getUser().equals(run.getCreatedBy()) && !getContainer().hasPermission(getUser(), DeletePermission.class))
         {
             User currentUser = getUser();
             Set<Role> contextualRoles = new HashSet<>(currentUser.getStandardContextualRoles());
