@@ -60,7 +60,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 
     public T load(PipeRoot root, String name) throws IOException
     {
-        return load(getProtocolFile(root, name));
+        return load(getProtocolFile(root, name, false));
     }
 
     public T loadInstance(File file) throws IOException
@@ -130,11 +130,6 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         return getProtocolFile(root, name, archived).exists();
     }
 
-    public File getProtocolDir(PipeRoot root)
-    {
-        return getProtocolDir(root, false);
-    }
-
     public File getProtocolDir(PipeRoot root, boolean archived)
     {
         File protocolDir = new File(getProtocolRootDir(root), getName());
@@ -143,20 +138,9 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         return protocolDir;
     }
 
-    public File getProtocolFile(PipeRoot root, String name)
-    {
-        return getProtocolFile(root, name, false);
-    }
-
     public File getProtocolFile(PipeRoot root, String name, boolean archived)
     {
         return new File(getProtocolDir(root, archived), name + ".xml");
-    }
-
-    /** @return sorted list of protocol names */
-    public String[] getProtocolNames(PipeRoot root, File dirData)
-    {
-        return getProtocolNames(root, dirData, false);
     }
 
     /** @return sorted list of protocol names */
@@ -192,11 +176,20 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         return vals;
     }
 
-    public boolean archiveProtocolFile(PipeRoot root, String name, boolean toArchive)
+    /**
+     *  Move the file for the specified protocol to or from the archived directory
+     * @param root pipeline root for the container
+     * @param name the protocol name
+     * @param moveToArchive true if archiving the protocol; false for unarchiving
+     * @return true if the file was successfully moved or does not exist; false on error moving or if the archived directory
+     * can't be created
+     */
+    public boolean changeArchiveStatus(PipeRoot root, String name, boolean moveToArchive)
     {
-        if (exists(root, name, !toArchive))
+        // Is the file's current location opposite the destination? No sense in moving it if it's already where the caller wants it.
+        if (exists(root, name, !moveToArchive))
         {
-            if (toArchive)
+            if (moveToArchive)
             {
                File archiveDir = getProtocolDir(root, true);
                if (!archiveDir.exists())
@@ -206,23 +199,30 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
                else if (archiveDir.isFile())
                {
                    LOG.error("Unable to create archived directory because a file with that name exists in the protocol directory: "
-                           + getProtocolDir(root).getAbsolutePath());
+                           + getProtocolDir(root, false).getAbsolutePath());
                    return false;
                }
             }
-            return getProtocolFile(root, name, !toArchive).renameTo(getProtocolFile(root, name, toArchive));
+            return getProtocolFile(root, name, !moveToArchive).renameTo(getProtocolFile(root, name, moveToArchive));
         }
-        return true; // That means we don't care if the file doesn't exist (maybe was already in the destination?)
+        return true; // We don't care if the file doesn't exist (maybe was already in the destination?)
     }
 
+    /**
+     *  Delete the xml file of the specified protocol. Tries to resolve the file in the main folder first.
+     *  If the file doesn't exist there, look in the archived folder
+     * @param root pipeline root for the container
+     * @param name the protocol name
+     * @return true if the file was successfully deleted or does not exist
+     */
     public boolean deleteProtocolFile(PipeRoot root, String name)
     {
-        File protocolFile = getProtocolFile(root, name);
+        File protocolFile = getProtocolFile(root, name, false);
         if (!protocolFile.exists())
             protocolFile = getProtocolFile(root, name, true);
         if (!protocolFile.exists())
         {
-            return true; // That means we don't care if the file doesn't exist
+            return true; // We don't care if the file doesn't exist
         }
         return protocolFile.delete();
     }

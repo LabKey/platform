@@ -137,7 +137,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
      */
     public File getDefaultParametersFile(PipeRoot root)
     {
-        return new File(getProtocolDir(root), getDefaultParametersFileName());
+        return new File(getProtocolDir(root, false), getDefaultParametersFileName());
     }
 
     /**
@@ -149,12 +149,6 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
     {
         if (!NetworkDrive.exists(getDefaultParametersFile(root)))
             setDefaultParametersXML(root, getDefaultParametersXML(root));
-    }
-
-    @Override
-    public String[] getProtocolNames(PipeRoot root, File dirData)
-    {
-        return getProtocolNames(root, dirData, false);
     }
 
     @Override
@@ -205,11 +199,6 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         instance.setEmail(email);
 
         return instance;
-    }
-
-    public T load(PipeRoot root, String name) throws IOException
-    {
-        return load(root, name, false);
     }
 
     public T load(PipeRoot root, String name, boolean archived) throws IOException

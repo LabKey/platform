@@ -87,7 +87,7 @@ public abstract class PipelineProtocol
 
     public File getDefinitionFile(PipeRoot root)
     {
-        return getFactory().getProtocolFile(root, name);
+        return getFactory().getProtocolFile(root, name, false);
     }
 
     public void saveDefinition(PipeRoot root) throws IOException

@@ -1202,7 +1202,7 @@ public class QueryView extends WebPartView<Object>
         if (_allowExportExternalQuery)
         {
             addExportScriptItems(exportButton);
-            //addExportRStudio(exportButton, hasRecordSelectors ? getSettings().getSelectionKey() : null);
+            addExportRStudio(exportButton, hasRecordSelectors ? getSettings().getSelectionKey() : null);
         }
         return exportButton;
     }

@@ -153,7 +153,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
     @Override
     public void saveDefinition(PipeRoot root) throws IOException
     {
-        save(getFactory().getProtocolFile(root, getName()), null, null);
+        save(getFactory().getProtocolFile(root, getName(), false), null, null);
     }
 
     public void saveInstance(File file, Container c) throws IOException
