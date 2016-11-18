@@ -53,7 +53,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 imgUrl: LABKEY.contextPath + '/visualization/images/scatterplot.png',
                 fields: [
                     {name: 'x', label: 'X Axis', required: true},
-                    {name: 'y', label: 'Y Axis', required: true, numericOnly: true, allowMultiple: true},
+                    {name: 'y', label: 'Y Axis', required: true, numericOnly: true},
                     {name: 'color', label: 'Color', nonNumericOnly: true},
                     {name: 'shape', label: 'Shape', nonNumericOnly: true}
                 ],
@@ -295,8 +295,9 @@ LABKEY.vis.GenericChartHelper = new function(){
             xMeasureType = getMeasureType(measures.x),
             yMeasureType = getMeasureType(measures.y);
 
-        if(chartType == "box_plot" && !measures.x)
+        if (chartType == "box_plot" && !measures.x)
             aes.x = generateMeasurelessAcc(queryName);
+
         else if (isNumericType(xMeasureType))
             aes.x = generateContinuousAcc(measures.x.name);
         else
@@ -316,6 +317,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
         else if (chartType === "box_plot")
         {
+
             if (measures.color) {
                 aes.outlierColor = generateGroupingAcc(measures.color.name);
             }
@@ -327,6 +329,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             aes.hoverText = generateBoxplotHover();
             aes.outlierHoverText = generatePointHover(measures);
         }
+
 
         // color/shape aes are not dependent on chart type. If we have a box plot with all points enabled, then we
         // create a second layer for points. So we'll need this no matter what.
