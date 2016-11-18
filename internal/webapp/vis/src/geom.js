@@ -459,6 +459,7 @@ LABKEY.vis.Geom.DataspaceBoxPlot.prototype.render = function(renderer, grid, sca
  * @class Bar plot geom, used to generate bar plots for a given set of data.
  * @param config An object with the following properties:
  * @param {Function} [config.clickFn] (Optional) A click function
+ * @param {Function} [config.hoverFn] (Optional) A hover function
  * @param {String} [config.color] (Optional) A string value used for the line colors in the bar plot. Defaults to black (#000000)
  * @param {String} [config.fill] (Optional) A string value used for the fill color in the bar plot. Defaults to white (#ffffff)
  * @param {Number} [config.lineWidth] (Optional) A used to set the width of the lines used in the bar plot. Defaults to 1.
@@ -476,6 +477,7 @@ LABKEY.vis.Geom.BarPlot = function(config){
         config = {};
     }
     this.clickFn = ('clickFn' in config && config.clickFn != null && config.clickFn != undefined) ? config.clickFn : undefined;
+    this.hoverFn = ('hoverFn' in config && config.hoverFn != null && config.hoverFn != undefined) ? config.hoverFn : undefined;
     this.color = ('color' in config && config.color != null && config.color != undefined) ? config.color : '#000000';
     this.colorTotal = ('colorTotal' in config && config.colorTotal != null && config.colorTotal != undefined) ? config.colorTotal : '#000000';
     this.fill = ('fill' in config && config.fill != null && config.fill != undefined) ? config.fill : '#c0c0c0';

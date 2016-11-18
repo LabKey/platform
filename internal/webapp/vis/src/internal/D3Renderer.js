@@ -2821,7 +2821,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         barWidth = binWidth / (geom.showCumulativeTotals ? 4 : 2);
         offsetWidth = (binWidth / (geom.showCumulativeTotals ? 3.5 : 4));
 
-        hoverFn = function(d) { return geom.yAes.getValue(d) };
+        hoverFn = geom.hoverFn ? geom.hoverFn : function(d) {
+            return geom.yAes.getValue(d);
+        };
         xAcc = function(d){ return geom.getX(d) - offsetWidth };
         yAcc = function(d){ return geom.getY(d) };
 
