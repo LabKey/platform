@@ -1772,7 +1772,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (renderType === 'scatter_plot')
             return true;
 
-        return (renderType === 'auto_plot' && (xAxisType == 'int' || xAxisType == 'float' || xAxisType == 'date'));
+        return (renderType === 'auto_plot' && LABKEY.vis.GenericChartHelper.isNumericType(xAxisType));
     },
 
     isBoxPlot: function(renderType, xAxisType)
@@ -1780,14 +1780,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (renderType === 'box_plot')
             return true;
 
-        return (renderType == 'auto_plot' && (xAxisType == 'string' || xAxisType == 'boolean'));
+        return (renderType == 'auto_plot' && !LABKEY.vis.GenericChartHelper.isNumericType(xAxisType));
     },
 
     getSelectedChartType : function()
     {
         if (Ext4.isString(this.renderType) && this.renderType !== 'auto_plot')
             return this.renderType;
-        else if (this.measures.x || this.isBoxPlot(this.renderType, this.getXAxisType(this.measures.x)))
+        else if (this.measures.x && this.isBoxPlot(this.renderType, this.getXAxisType(this.measures.x)))
             return 'box_plot';
         else if (this.measures.x && this.isScatterPlot(this.renderType, this.getXAxisType(this.measures.x)))
             return 'scatter_plot';

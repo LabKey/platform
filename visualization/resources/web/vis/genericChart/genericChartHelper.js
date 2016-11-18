@@ -297,7 +297,6 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         if (chartType == "box_plot" && !measures.x)
             aes.x = generateMeasurelessAcc(queryName);
-
         else if (isNumericType(xMeasureType))
             aes.x = generateContinuousAcc(measures.x.name);
         else
@@ -317,7 +316,6 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
         else if (chartType === "box_plot")
         {
-
             if (measures.color) {
                 aes.outlierColor = generateGroupingAcc(measures.color.name);
             }
@@ -329,7 +327,6 @@ LABKEY.vis.GenericChartHelper = new function(){
             aes.hoverText = generateBoxplotHover();
             aes.outlierHoverText = generatePointHover(measures);
         }
-
 
         // color/shape aes are not dependent on chart type. If we have a box plot with all points enabled, then we
         // create a second layer for points. So we'll need this no matter what.
