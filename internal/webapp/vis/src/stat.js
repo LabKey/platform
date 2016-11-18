@@ -227,6 +227,13 @@ LABKEY.vis.Stat.getCUSUM = function(values, negative, transform, forcePositiveRe
         return [];
     var mean = LABKEY.vis.Stat.getMean(values);
     var stdDev = LABKEY.vis.Stat.getStdDev(values);
+    if (stdDev == 0) // in the case when all values are equal, calculation has to abort, special case CUSUM to all be 0
+    {
+        var edgeCaseResults = [];
+        for (var k = 0; k < values.length; k++)
+            edgeCaseResults.push(0);
+        return edgeCaseResults;
+    }
     var cusums = [0];
     for (var i = 0; i < values.length; i++)
     {
