@@ -18,6 +18,7 @@ package org.labkey.test.tests.study;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.LogMethod;
@@ -71,19 +72,24 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         assertTextPresentCaseInsensitive("dem_minus_1_indexedColumn");
         assertTextPresentCaseInsensitive("dem_minus_1_sharedColumn");
 
-        // Verify size columns specified in datasets_metadata
-        assertTableRowOnPage("indexedColumn", 28, 1);
-        assertTableRowOnPage("20", 28, 4);
+        int colNameIndex = 1;
+        int colSizeIndex = 4;
+        if (WebTestHelper.getDatabaseType() == WebTestHelper.DatabaseType.PostgreSQL)
+        {
+            colNameIndex = 4;
+            colSizeIndex = 7;
+        }
 
-        assertTableRowOnPage("sharedColumn", 34, 1);
-        assertTableRowOnPage("20", 34, 4);
+        // Verify size column specified in datasets_metadata
+        assertTableRowOnPage("sharedcolumn", 34, colNameIndex);
+        assertTableRowOnPage("20", 34, colSizeIndex);
 
         // Verify default sizes
-        assertTableRowOnPage("multiLineColumn", 32, 1);
-        assertTableRowOnPage("4000", 32, 4);
+        assertTableRowOnPage("multilinecolumn", 32, colNameIndex);
+        assertTableRowOnPage("4000", 32, colSizeIndex);
 
-        assertTableRowOnPage("flagColumn", 33, 1);
-        assertTableRowOnPage("4000", 33, 4);
+        assertTableRowOnPage("flagcolumn", 33, colNameIndex);
+        assertTableRowOnPage("4000", 33, colSizeIndex);
 
         beginAt("/query/" + getProjectName() + "/" + getFolderName()  + "/schema.view?schemaName=study");
         selectQueryInSubfolder("study","built-in queries & tables", "DEM-2");
