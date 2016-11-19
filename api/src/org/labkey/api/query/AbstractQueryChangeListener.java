@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.security.User;
@@ -30,7 +31,7 @@ import java.util.List;
 public abstract class AbstractQueryChangeListener implements QueryChangeListener
 {
     @Override
-    public void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
     {
         for (String query : queries)
             queryCreated(user, container, scope, schema, query);
@@ -39,7 +40,7 @@ public abstract class AbstractQueryChangeListener implements QueryChangeListener
     protected abstract void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, String query);
 
     @Override
-    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryProperty property, Collection<QueryPropertyChange> changes)
+    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange> changes)
     {
         for (QueryPropertyChange change : changes)
             queryChanged(user, container, scope, schema, change);
@@ -48,7 +49,7 @@ public abstract class AbstractQueryChangeListener implements QueryChangeListener
     protected abstract void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryPropertyChange change);
 
     @Override
-    public void queryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void queryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
     {
         for (String query : queries)
             queryDeleted(user, container, scope, schema, query);
@@ -57,7 +58,7 @@ public abstract class AbstractQueryChangeListener implements QueryChangeListener
     protected abstract void queryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, String query);
 
     @Override
-    public Collection<String> queryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public Collection<String> queryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
     {
         List<String> ret = new ArrayList<>();
         for (String query : queries)
