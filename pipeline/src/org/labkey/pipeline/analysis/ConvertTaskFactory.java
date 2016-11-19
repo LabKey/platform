@@ -15,7 +15,7 @@
  */
 package org.labkey.pipeline.analysis;
 
-import common.Logger;
+import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;

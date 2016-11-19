@@ -15,7 +15,7 @@
  */
 package org.labkey.query;
 
-import common.Logger;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.QueryChangeListener;
