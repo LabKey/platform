@@ -16,6 +16,7 @@
 package org.labkey.query;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -52,21 +53,21 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
     private static final List<String> EXPECTED_PARENT_FKS = Arrays.asList("DataSets", "DataSet", "ParticipantVisit");
 
     @Override
-    public void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
     {
     }
 
     @Override
-    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryProperty property, Collection<QueryPropertyChange> changes)
+    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange> changes)
     {
-        if (property != null && property.equals(QueryProperty.Name))
+        if (property.equals(QueryProperty.Name))
         {
             _updateCustomViewQueryNameChange(user, container, schema, changes);
         }
     }
 
     @Override
-    public void queryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void queryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
     {
         HttpServletRequest request = new MockHttpServletRequest();
         QueryServiceImpl svc = QueryServiceImpl.get();
@@ -85,7 +86,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
     }
 
     @Override
-    public Collection<String> queryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public Collection<String> queryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
     {
         QueryServiceImpl svc = QueryServiceImpl.get();
         String schemaName = schema.toString();

@@ -17,6 +17,7 @@ package org.labkey.query.reports;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.CustomView;
@@ -65,26 +66,26 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
 
 
     @Override
-    public void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
     {
     }
 
     @Override
-    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryProperty property, Collection<QueryPropertyChange> changes)
+    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange> changes)
     {
-        if (property != null && property.equals(QueryProperty.Name))
+        if (property.equals(QueryProperty.Name))
         {
             _updateReportQueryNameChange(user, container, schema, changes);
         }
     }
 
     @Override
-    public void queryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void queryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
     {
     }
 
     @Override
-    public Collection<String> queryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public Collection<String> queryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
     {
         // UNDONE
         return Collections.emptyList();
