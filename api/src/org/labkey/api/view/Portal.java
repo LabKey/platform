@@ -89,8 +89,6 @@ public class Portal
     public static final String DEFAULT_PORTAL_PAGE_ID = "portal.default";
     public static final int MOVE_UP = 0;
     public static final int MOVE_DOWN = 1;
-    public static final ModuleResourceCache<SimpleWebPartFactory> WEB_PART_FACTORY_CACHE_OLD =
-        ModuleResourceCaches.create(new Path(SimpleController.VIEWS_DIRECTORY), "File-based webpart definitions", new SimpleWebPartFactoryCacheHandlerOld());
     public static final ModuleResourceCache2<Collection<SimpleWebPartFactory>> WEB_PART_FACTORY_CACHE =
         ModuleResourceCaches.create(new Path(SimpleController.VIEWS_DIRECTORY), new SimpleWebPartFactoryCacheHandler(), "File-based webpart definitions");
 

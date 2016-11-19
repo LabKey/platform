@@ -18,7 +18,6 @@ package org.labkey.api.module;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
@@ -49,7 +48,6 @@ public class FolderTypeManager
     /** PropertyManager category name for folder type enabled state properties */
     private static final String FOLDER_TYPE_ENABLED_STATE = "FolderTypeEnabledState";
 
-    private final ModuleResourceCache<SimpleFolderType> CACHE_OLD = ModuleResourceCaches.create(new Path(SIMPLE_TYPE_DIR_NAME), "File-based folder types", new SimpleFolderTypeCacheHandlerOld());
     private final ModuleResourceCache2<Collection<SimpleFolderType>> CACHE = ModuleResourceCaches.create(new Path(SIMPLE_TYPE_DIR_NAME), new SimpleFolderTypeCacheHandler(), "File-based folder types");
     private final Map<String, FolderType> _javaFolderTypes = new ConcurrentHashMap<>();  // Map of folder types that are registered via java code
     private final Object FOLDER_TYPE_LOCK = new Object();
@@ -239,80 +237,7 @@ public class FolderTypeManager
 
     private Collection<SimpleFolderType> getSimpleFolderTypes(Module module)
     {
-        Collection<SimpleFolderType> old = CACHE_OLD.getResources(module);
-        Collection<SimpleFolderType> coll = CACHE.getResourceMap(module);
-
-        assert old.size() == coll.size();
-
-        return coll;
-    }
-
-    private static class SimpleFolderTypeCacheHandlerOld implements ModuleResourceCacheHandler<String, SimpleFolderType>
-    {
-        @Override
-        public boolean isResourceFile(String filename)
-        {
-            return StringUtils.endsWithIgnoreCase(filename, SIMPLE_TYPE_FILE_EXTENSION);
-        }
-
-        @Override
-        public String getResourceName(Module module, String filename)
-        {
-            return filename;
-        }
-
-        @Override
-        public String createCacheKey(Module module, String resourceName)
-        {
-            return ModuleResourceCache.createCacheKey(module, resourceName);
-        }
-
-        @Override
-        public CacheLoader<String, SimpleFolderType> getResourceLoader()
-        {
-            return (key, argument) ->
-            {
-                ModuleResourceCache.CacheId id = ModuleResourceCache.parseCacheKey(key);
-                Module module = id.getModule();
-                String filename = id.getName();
-                Path path = new Path(SIMPLE_TYPE_DIR_NAME, filename);
-                Resource resource  = module.getModuleResolver().lookup(path);
-
-                return SimpleFolderType.create(resource);
-            };
-        }
-
-        @Nullable
-        @Override
-        public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
-        {
-            return new FileSystemDirectoryListener()
-            {
-                @Override
-                public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
-                {
-                    FolderTypeManager.get().clearAllFolderTypes();
-                }
-
-                @Override
-                public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
-                {
-                    FolderTypeManager.get().clearAllFolderTypes();
-                }
-
-                @Override
-                public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
-                {
-                    FolderTypeManager.get().clearAllFolderTypes();
-                }
-
-                @Override
-                public void overflow()
-                {
-                    FolderTypeManager.get().clearAllFolderTypes();
-                }
-            };
-        }
+        return CACHE.getResourceMap(module);
     }
 
     private static class SimpleFolderTypeCacheHandler implements ModuleResourceCacheHandler2<Collection<SimpleFolderType>>
