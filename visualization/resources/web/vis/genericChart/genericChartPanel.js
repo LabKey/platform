@@ -1446,13 +1446,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         var droppedValues = {};
 
-        for (var i = 0; i < rows.length; i++) {
-            for (var measure in measuresForProcessing) {
-                if (measuresForProcessing.hasOwnProperty(measure)) {
-                    droppedValues[measure] = {};
-                    droppedValues[measure].label = measuresForProcessing[measure].label;
-                    droppedValues[measure].numDropped = 0;
-
+        for (var measure in measuresForProcessing) {
+            if (measuresForProcessing.hasOwnProperty(measure)) {
+                droppedValues[measure] = {};
+                droppedValues[measure].label = measuresForProcessing[measure].label;
+                droppedValues[measure].numDropped = 0;
+                
+                for (var i = 0; i < rows.length; i++) {
                     if (aes.hasOwnProperty(measure)) {
                         var value = aes[measure](rows[i]);
 
@@ -1461,7 +1461,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                             //only try to convert strings to numbers
                             if (typeof value === 'string') {
                                 value = value.trim();
-                            } else {
+                            }
+                            else {
                                 //dates, objects, booleans etc. to be assigned value: NULL
                                 value = '';
                             }
@@ -1471,7 +1472,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                             if (value === '' || isNaN(n)) {
                                 rows[i][measuresForProcessing[measure].name].value = null;
                                 droppedValues[measure].numDropped++;
-                            } else {
+                            }
+                            else {
                                 rows[i][measuresForProcessing[measure].name].value = n;
                             }
                         }

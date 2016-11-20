@@ -858,8 +858,9 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
             var matchingSelection = [];
             Ext4.each(this.selection, function(selection)
             {
-                var selectionType = LABKEY.vis.GenericChartHelper.getMeasureType(selection);
-                if (!Ext4.isDefined(selectionType) || allowableTypes.indexOf(selectionType) > -1)
+                var selectionType = LABKEY.vis.GenericChartHelper.getMeasureType(selection),
+                        isMeasureDimensionMatch = (this.field.numericOnly && selection.measure) || (this.field.nonNumericOnly && selection.dimension);
+                if (!Ext4.isDefined(selectionType) || allowableTypes.indexOf(selectionType) > -1 || isMeasureDimensionMatch)
                     matchingSelection.push(selection);
             }, this);
 
