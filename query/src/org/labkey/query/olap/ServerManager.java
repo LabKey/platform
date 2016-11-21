@@ -39,6 +39,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCache2;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
@@ -87,6 +88,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
@@ -109,8 +111,9 @@ public class ServerManager
     private static final Map<String, ServerReferenceCount> SERVERS = new HashMap<>();
     private static final Object SERVERS_LOCK = new Object();
 
-    private static final ModuleResourceCache<OlapSchemaDescriptor> MODULE_DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), "Olap cube definitions (module)", new OlapSchemaCacheHandler());
-    private static final BlockingStringKeyCache<OlapSchemaDescriptor> DB_DESCRIPTOR_CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.HOUR, "Olap cube definitions (db) ", new OlapCacheLoader());
+    private static final ModuleResourceCache<OlapSchemaDescriptor> MODULE_DESCRIPTOR_CACHE_OLD = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), "Olap cube definitions (module)", new OlapSchemaCacheHandlerOld());
+    private static final ModuleResourceCache2<Map<String, OlapSchemaDescriptor>> MODULE_DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), new OlapSchemaCacheHandler(), "Olap cube definitions (module)");
+    private static final BlockingStringKeyCache<OlapSchemaDescriptor> DB_DESCRIPTOR_CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.HOUR, "Olap cube definitions (db)", new OlapCacheLoader());
 
     private static final BlockingStringKeyCache<Cube> CUBES = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, 2 * CacheManager.DAY, "cube cache", null);
 
@@ -204,12 +207,23 @@ public class ServerManager
         if (null != d && d.getModule() == id.getModule() && c.getActiveModules().contains(d.getModule()))
             return d;
 
-        // look for descriptor in active modules
-        d = MODULE_DESCRIPTOR_CACHE.getResource(schemaId);
-        if (null != d && c.getActiveModules().contains(d.getModule()))
-            return d;
+        OlapSchemaDescriptor ret = null;
 
-        return null;
+        // look for descriptor in active modules
+        d = MODULE_DESCRIPTOR_CACHE_OLD.getResource(schemaId);
+        if (null != d && c.getActiveModules().contains(d.getModule()))
+            ret = d;
+
+        OlapSchemaDescriptor ret2 = null;
+
+        OlapSchemaDescriptor d2 = MODULE_DESCRIPTOR_CACHE.getResourceMap(id.getModule()).get(id.getName());
+        if (null != d2 && c.getActiveModules().contains(d2.getModule()))
+            ret2 = d2;
+
+        // Either they're both null OR both not-null and id matches (ignoring case)
+        assert ((null == ret && null == ret2) || ((null != ret && null != ret2) && ret.getId().equalsIgnoreCase(ret2.getId())));
+
+        return ret;
     }
 
     @NotNull
@@ -218,24 +232,32 @@ public class ServerManager
         List<OlapSchemaDescriptor> ret = new ArrayList<>();
 
         // look for descriptor in active modules
-        for (OlapSchemaDescriptor osd : MODULE_DESCRIPTOR_CACHE.getResources(c))
-        {
-            if (osd.isExposed(c))
-                ret.add(osd);
-        }
+        ret.addAll(MODULE_DESCRIPTOR_CACHE_OLD.getResources(c).stream()
+            .filter(osd -> osd.isExposed(c))
+            .collect(Collectors.toList()));
 
-        // TODO: add list of all olap descriptors in the container to the cache
+        List<OlapSchemaDescriptor> ret2 = new ArrayList<>();
+
+        ret2.addAll(MODULE_DESCRIPTOR_CACHE.getResourceMaps(c).stream()
+            .map(Map::values)
+            .flatMap(Collection::stream)
+            .filter(osd -> osd.isExposed(c))
+            .collect(Collectors.toList()));
+
+        assert ret.size() == ret2.size();
+
+        // TODO: add list of all olap descriptors in the container to the db cache
         //List<OlapSchemaDescriptor> descriptors = DB_SCHEMA_DESCRIPTOR_CACHE.get(c.getId());
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         TableSelector s = new TableSelector(QueryManager.get().getTableInfoOlapDef(), Collections.singleton("name"), filter, null);
-        for (String name : s.getArrayList(String.class))
+        s.forEach(name ->
         {
             // look for descriptor in database by container and name
             String olapDefCacheKey = c.getId() + "/" + name;
             OlapSchemaDescriptor d = DB_DESCRIPTOR_CACHE.get(olapDefCacheKey);
             if (d != null)
                 ret.add(d);
-        }
+        }, String.class);
 
         return ret;
     }

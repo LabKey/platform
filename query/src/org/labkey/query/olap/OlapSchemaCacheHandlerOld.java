@@ -18,44 +18,22 @@ package org.labkey.query.olap;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
-import org.labkey.api.module.ModuleResourceCacheHandler2;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Path;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 
-public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler2<Map<String, OlapSchemaDescriptor>>
+public class OlapSchemaCacheHandlerOld implements ModuleResourceCacheHandler<String, OlapSchemaDescriptor>
 {
     public static final String DIR_NAME = "olap";
-
-    @Override
-    public Map<String, OlapSchemaDescriptor> load(@Nullable Resource dir, Module module)
-    {
-        if (null == dir)
-            return Collections.emptyMap();
-
-        Map<String, OlapSchemaDescriptor> map = new HashMap<>();
-
-        dir.list().stream()
-            .filter(resource -> resource.isFile() && resource.getName().endsWith(".xml"))
-            .forEach(resource -> {
-                String configName = FileUtil.getBaseName(resource.getName());
-                String configId = createOlapCacheKey(module, configName);
-                OlapSchemaDescriptor descriptor = configName.contains("junit") ? new JunitOlapSchemaDescriptor(configId, module, resource) : new ModuleOlapSchemaDescriptor(configId, module, resource);
-                map.put(configName, descriptor);
-            });
-
-
-        return Collections.unmodifiableMap(map);
-    }
 
     @Nullable
     @Override
@@ -64,7 +42,54 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler2<Map<S
         return new OlapDirectoryListener();
     }
 
+    @Override
+    public boolean isResourceFile(String filename)
+    {
+        return filename.endsWith(".xml");
+    }
+
+    @Override
+    public String getResourceName(Module module, String filename)
+    {
+        assert isResourceFile(filename) : "Configuration filename \"" + filename + "\" does not end with .xml";
+        return FileUtil.getBaseName(filename);
+    }
+
+    @Override
+    public String createCacheKey(Module module, String name)
+    {
+        return createOlapCacheKey(module, name);
+    }
+
     private static final Pattern CONFIG_ID_PATTERN = Pattern.compile("("+ ModuleLoader.MODULE_NAME_REGEX + "):/(.+)");
+
+    @Override
+    public CacheLoader<String, OlapSchemaDescriptor> getResourceLoader()
+    {
+        return DESCRIPTOR_LOADER;
+    }
+
+    private final CacheLoader<String, OlapSchemaDescriptor> DESCRIPTOR_LOADER = new CacheLoader<String, OlapSchemaDescriptor>()
+    {
+        @Override
+        public OlapSchemaDescriptor load(String configId, @Nullable Object argument)
+        {
+            ModuleResourceCache.CacheId tid = parseOlapCacheKey(configId);
+            Module module = tid.getModule();
+            String configName = tid.getName();
+            Path configPath = new Path(DIR_NAME, configName + ".xml");
+            Resource config  = module.getModuleResolver().lookup(configPath);
+
+            if (config != null && config.isFile())
+            {
+                if (configName.contains("junit"))
+                    return new JunitOlapSchemaDescriptor(configId, module, config);
+                return new ModuleOlapSchemaDescriptor(configId, module, config);
+            }
+
+            return null;
+        }
+    };
 
     public static String createOlapCacheKey(@NotNull Module module, @NotNull String name)
     {
@@ -84,7 +109,7 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler2<Map<S
     }
 
 
-    private static class OlapDirectoryListener implements FileSystemDirectoryListener
+    private class OlapDirectoryListener implements FileSystemDirectoryListener
     {
         private OlapDirectoryListener()
         {

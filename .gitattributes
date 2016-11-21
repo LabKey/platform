@@ -1516,6 +1516,7 @@ query/src/org/labkey/query/olap/ModuleOlapSchemaDescriptor.java -text
 query/src/org/labkey/query/olap/Olap4Js.java -text
 query/src/org/labkey/query/olap/OlapDef.java -text
 query/src/org/labkey/query/olap/OlapSchemaCacheHandler.java -text
+query/src/org/labkey/query/olap/OlapSchemaCacheHandlerOld.java -text
 query/src/org/labkey/query/olap/OlapSchemaDescriptor.java -text
 query/src/org/labkey/query/olap/Qube.java -text
 query/src/org/labkey/query/olap/QubeCellSet.java -text
