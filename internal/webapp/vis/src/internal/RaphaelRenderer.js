@@ -308,6 +308,12 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                 fontSize = fontSize != undefined ? fontSize : 18;
                 labelEl.text = this.paper.text(x, y, plot.labels[name].value)
                         .attr({font: fontSize + "px " + fontFamily});
+            } else if (name == 'subtitle') {
+                x = plot.grid.width / 2;
+                y = plot.labels[name].position != undefined ? plot.labels[name].position : 50;
+                fontSize = fontSize != undefined ? fontSize : 16;
+                labelEl.text = this.paper.text(x, y, plot.labels[name].value)
+                        .attr({font: fontSize + "px " + fontFamily});
             } else if (name == 'y' || name == 'yLeft') {
                 x = plot.grid.leftEdge - (plot.labels[name].position != undefined ? plot.labels[name].position : 55);
                 y = plot.grid.height / 2;
