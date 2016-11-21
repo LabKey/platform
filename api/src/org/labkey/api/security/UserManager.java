@@ -22,8 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
-import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -68,7 +66,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -81,10 +78,7 @@ public class UserManager
     private static final CoreSchema CORE = CoreSchema.getInstance();
 
     // NOTE: This static map will slowly grow, since user IDs & timestamps are added and never removed. It's a trivial amount of data, though.
-    @Deprecated // Use a real cache for this, with a one-hour expiration
     private static final Map<Integer, Long> RECENT_USERS = new HashMap<>(100);
-
-    private static final Cache<Integer, Long> RECENT_USER_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.HOUR, "Recent users");
 
     public static final String USER_AUDIT_EVENT = "UserAuditEvent";
 
@@ -223,8 +217,6 @@ public class UserManager
         {
             RECENT_USERS.put(user.getUserId(), HeartBeat.currentTimeMillis());
         }
-
-        RECENT_USER_CACHE.put(user.getUserId(), HeartBeat.currentTimeMillis());
     }
 
 
@@ -234,8 +226,6 @@ public class UserManager
         {
             RECENT_USERS.remove(user.getUserId());
         }
-
-        RECENT_USER_CACHE.remove(user.getUserId());
     }
 
 
@@ -271,66 +261,8 @@ public class UserManager
             // Sort by number of minutes, then user email
             Collections.sort(recentUsers, RECENT_USER_COMPARATOR);
 
-            List<Pair<String, Long>> recentUsers2 = getRecentUsers2(since);
-
-            boolean equal = true;
-
-            Iterator<Pair<String, Long>> iter = recentUsers.iterator();
-            for (Pair<String, Long> pair2 : recentUsers2)
-            {
-                if (iter.hasNext())
-                {
-                    Pair<String, Long> pair = iter.next();
-
-                    if (!pair.equals(pair2))
-                    {
-                        equal = false;
-                        break;
-                    }
-                }
-                else
-                {
-                    equal = false;
-                    break;
-                }
-            }
-
-            if (!equal)
-            {
-                StringBuilder message = new StringBuilder("Recent users discrepancy.\n");
-                message.append("Old approach:\n");
-                message.append(recentUsers);
-                message.append("\nNew approach:\n");
-                message.append(recentUsers2);
-
-                LOG.info(message);
-            }
-
             return recentUsers;
         }
-    }
-
-    public static List<Pair<String, Long>> getRecentUsers2(long since)
-    {
-        long now = System.currentTimeMillis();
-        Set<Integer> keys = RECENT_USER_CACHE.getKeys();
-        List<Pair<String, Long>> recentUsers = new ArrayList<>(keys.size());
-
-        RECENT_USER_CACHE.getKeys().forEach(id -> {
-            long lastActivity = RECENT_USER_CACHE.get(id);
-
-            if (lastActivity >= since)
-            {
-                User user = getUser(id);
-                String display = user != null ? user.getEmail() : "" + id;
-                recentUsers.add(new Pair<>(display, (now - lastActivity)/60000));
-            }
-        });
-
-        // Sort by number of minutes, then user email
-        Collections.sort(recentUsers, RECENT_USER_COMPARATOR);
-
-        return recentUsers;
     }
 
     private enum LoggedInOrOut {in, out}
