@@ -719,7 +719,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
         Ext4.each(this.query('charttypefield'), function(fieldSelPanel)
         {
             var hasMatchingType = fieldSelPanel.getAllowableTypes().indexOf(selectedColType) > -1,
-                isMeasureDimensionMatch = this.isMeasureDimensionMatch(this.chartType.data.name, fieldSelPanel, isMeasure, isDimension);
+                isMeasureDimensionMatch = this.isMeasureDimensionMatch(this.chartType.get('name'), fieldSelPanel, isMeasure, isDimension);
 
             if (hasMatchingType || isMeasureDimensionMatch)
             {
@@ -739,17 +739,18 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
         }, this);
     },
 
-    isMeasureDimensionMatch : function(chartType, fieldSelPanel, isMeasure, isDimension) {
-          if ((chartType === 'box_plot' || chartType === 'bar_chart')) {
-                //x-axis does not support 'measure' column types for these plot types
-              if (fieldSelPanel.field.name === 'x') {
-                  return isDimension;
-              } else {
-                  return isMeasure;
-              }
-          } else {
-                return (fieldSelPanel.field.numericOnly && isMeasure) || (fieldSelPanel.field.nonNumericOnly && isDimension);
-          }
+    isMeasureDimensionMatch : function(chartType, fieldSelPanel, isMeasure, isDimension)
+    {
+        if ((chartType === 'box_plot' || chartType === 'bar_chart'))
+        {
+            //x-axis does not support 'measure' column types for these plot types
+            if (fieldSelPanel.field.name === 'x')
+                return isDimension;
+            else
+                return isMeasure;
+        }
+
+        return (fieldSelPanel.field.numericOnly && isMeasure) || (fieldSelPanel.field.nonNumericOnly && isDimension);
     },
 
     destroyFieldSelectionDropTargets : function()

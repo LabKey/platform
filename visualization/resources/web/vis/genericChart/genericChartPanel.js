@@ -1345,12 +1345,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (customRenderType && customRenderType.generateAes)
             aes = customRenderType.generateAes(this, chartConfig, aes);
 
-        if (this.doValueConversion(chartConfig, aes)) {
+        if (this.doValueConversion(chartConfig, aes))
+        {
             //re-generate aes based on new converted values
             aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, this.chartData.schemaName, this.chartData.queryName);
             if (customRenderType && customRenderType.generateAes)
                 aes = customRenderType.generateAes(this, chartConfig, aes);
-        };
+        }
 
         scales = LABKEY.vis.GenericChartHelper.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, this.chartData, this.defaultNumberFormat);
         if (customRenderType && customRenderType.generateScales)
@@ -1382,7 +1383,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.afterRenderPlotComplete(newChartDiv);
     },
 
-    doValueConversion : function(chartConfig, aes) {
+    doValueConversion : function(chartConfig, aes)
+    {
         var droppedValues, measuresForProcessing = {}, dimensionsForProcessing = {};
 
         if (Ext4.isObject(chartConfig.measures.x) && chartConfig.measures.x.dimension) {
@@ -1391,7 +1393,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             dimensionsForProcessing.x.label = chartConfig.measures.x.label;
             if (LABKEY.vis.GenericChartHelper.isNumericType(chartConfig.measures.x.normalizedType)) {
                 chartConfig.measures.x.normalizedType = 'string'; //change measure type to converted value
-            };
+            }
         }
 
         if (Ext4.isObject(chartConfig.measures.y) && chartConfig.measures.y.dimension) {
@@ -1400,7 +1402,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             dimensionsForProcessing.y.label = chartConfig.measures.y.label;
             if (LABKEY.vis.GenericChartHelper.isNumericType(chartConfig.measures.y.normalizedType)) {
                 chartConfig.measures.x.normalizedType = 'string';
-            };
+            }
         }
 
         //right now we only only do measure conversion for scatter plot x-axes
