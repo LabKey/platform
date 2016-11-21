@@ -51,7 +51,6 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler2<Map<St
         dir.list().stream()
             .filter(resource -> resource.isFile() && resource.getName().endsWith(".xml") && !resource.getName().endsWith(QueryService.SCHEMA_TEMPLATE_EXTENSION))
             .forEach(resource -> {
-                assert null != resource : "Expected schema metadata xml file";
                 TablesDocument doc = null;
 
                 try (InputStream xmlStream = resource.getInputStream())
