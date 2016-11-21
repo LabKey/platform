@@ -275,7 +275,7 @@ Ext4.define('LABKEY.vis.TimeChartYMeasureField', {
                 return Ext4.clone(record.data);
         }
 
-        return {};
+        return this.selection.dimension || {};
     },
 
     getDimensionAggregateCombo : function()

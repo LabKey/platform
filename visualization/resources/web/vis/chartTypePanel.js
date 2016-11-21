@@ -165,7 +165,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
 
     showQueryMappingPanelCol : function()
     {
-        this.getStudyQueryCombo().setVisible(this.isTimeChartTypeSelected());
+        this.getStudyQueryComboContainer().setVisible(this.isTimeChartTypeSelected());
         this.getStudyColumnsGrid().getSelectionModel().deselectAll();
         this.getStudyColumnsGrid().setVisible(this.isTimeChartTypeSelected());
 
@@ -183,7 +183,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 cls: 'query-columns',
                 border: false,
                 items: [
-                    this.getStudyQueryCombo(),
+                    this.getStudyQueryComboContainer(),
                     this.getStudyColumnsGrid(),
                     this.getQueryColumnsGrid()
                 ]
@@ -203,10 +203,9 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             });
 
             this.studyQueryCombo = Ext4.create('Ext4.form.field.ComboBox', {
-                hidden: !this.isTimeChartTypeSelected(),
                 hideFieldLabel: true,
                 padding: '0 0 15px 0',
-                width: 336,
+                width: 311,
                 store: store,
                 queryMode: 'local',
                 editable: false,
@@ -223,6 +222,53 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         }
 
         return this.studyQueryCombo;
+    },
+
+    getStudyQueryComboHelp : function()
+    {
+        if (!this.studyQueryComboHelp)
+        {
+            var subjectInfo = LABKEY.vis.TimeChartHelper.getStudySubjectInfo(),
+                title = '<b>Which queries are included?</b>',
+                msg = '<p>The time chart type is currently only supported for datasets/queries in the \'study\' schema.</p>'
+                    + '<p>This list contains datasets which include columns that have been designated as \'measures\' from the dataset definition. '
+                    + 'It also includes queries in the study schema that contain both the \'' + subjectInfo.nounSingular + 'Id\' and \''
+                    + subjectInfo.nounSingular + 'Visit\' columns and have at least one \'measure\' column.</p>';
+
+            this.studyQueryComboHelp = Ext4.create('Ext.Component', {
+                hidden: !this.isTimeChartTypeSelected(),
+                padding: '2px 0 0 10px',
+                html: '<i class="fa fa-question-circle"></i>',
+                listeners: {
+                    scope: this,
+                    render: function(cmp)
+                    {
+                        Ext4.create('Ext.tip.ToolTip', {
+                            target: cmp.getEl(),
+                            autoHide: false,
+                            width: 250,
+                            html: title + msg
+                        });
+                    }
+                }
+            });
+        }
+
+        return this.studyQueryComboHelp;
+    },
+
+    getStudyQueryComboContainer : function()
+    {
+        if (!this.studyQueryComboContainer)
+        {
+            this.studyQueryComboContainer = Ext4.create('Ext.form.FieldContainer', {
+                width: 336,
+                layout: 'hbox',
+                items: [this.getStudyQueryCombo(), this.getStudyQueryComboHelp()]
+            });
+        }
+
+        return this.studyQueryComboContainer;
     },
 
     getStudyColumnsStore : function()
