@@ -58,9 +58,9 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 
     public abstract String getName();
 
-    public T load(PipeRoot root, String name) throws IOException
+    public T load(PipeRoot root, String name, boolean archived) throws IOException
     {
-        return load(getProtocolFile(root, name, false));
+        return load(getProtocolFile(root, name, archived));
     }
 
     public T loadInstance(File file) throws IOException
