@@ -69,7 +69,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         }
     }
 
-    static final String RECOMMENDED = PRODUCT_NAME + " 2014 is the recommended version.";
+    static final String RECOMMENDED = PRODUCT_NAME + " 2016 is the recommended version.";
 
     @Override
     public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings, boolean primaryDataSource) throws DatabaseNotSupportedException

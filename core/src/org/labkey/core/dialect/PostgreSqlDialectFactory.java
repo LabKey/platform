@@ -51,7 +51,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     }
 
     final static String PRODUCT_NAME = "PostgreSQL";
-    final static String RECOMMENDED = PRODUCT_NAME + " 9.5 is the recommended version.";
+    final static String RECOMMENDED = PRODUCT_NAME + " 9.6 is the recommended version.";
 
     @Override
     public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings, boolean primaryDataSource) throws DatabaseNotSupportedException
