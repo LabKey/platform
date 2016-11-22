@@ -47,7 +47,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     @Override
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
-        return "org.postgresql.Driver".equals(driverClassName) ? new PostgreSql91Dialect() : null;
+        return "org.postgresql.Driver".equals(driverClassName) ? new PostgreSql92Dialect() : null;
     }
 
     final static String PRODUCT_NAME = "PostgreSQL";
@@ -74,19 +74,19 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     {
         int version = versionNumber.getVersionInt();
 
-        // Version 9.1 or greater is allowed
-        if (version >= 91)
+        // Version 9.2 or greater is allowed
+        if (version >= 92)
         {
             // This approach is used when it's time to deprecate a version of PostgreSQL. Also, change the old dialect's
             // getAdminWarning() method to return a message that gets displayed in the page header for admins.
-            if (91 == version)
-            {
-                // PostgreSQL 9.1 is deprecated; support will be removed soon
-                if (logWarnings)
-                    _log.warn("LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
-
-                return new PostgreSql91Dialect();
-            }
+//            if (91 == version)
+//            {
+//                // PostgreSQL 9.1 is deprecated; support will be removed soon
+//                if (logWarnings)
+//                    _log.warn("LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
+//
+//                return new PostgreSql91Dialect();
+//            }
 
             if (92 == version)
                 return new PostgreSql92Dialect();
@@ -124,10 +124,10 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     @Override
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
-        // 9.2+ dialects are nearly identical to 9.1
+        // 9.3 dialects are nearly identical to 9.2
         return PageFlowUtil.set(
-            new PostgreSql91Dialect(true),
-            new PostgreSql91Dialect(false)
+            new PostgreSql92Dialect(true),
+            new PostgreSql92Dialect(false)
         );
     }
 
@@ -140,11 +140,10 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             badProductName("Postgres", 8.0, 9.6, "");
             badProductName("postgresql", 8.0, 9.6, "");
 
-            // < 9.1 should result in bad version number exception
-            badVersion("PostgreSQL", 0.0, 9.0, null);
+            // < 9.2 should result in bad version number exception
+            badVersion("PostgreSQL", 0.0, 9.1, null);
 
-            // >= 9.1 should be good
-            good("PostgreSQL", 9.1, 9.2, "", PostgreSql91Dialect.class);
+            // >= 9.2 should be good
             good("PostgreSQL", 9.2, 9.3, "", PostgreSql92Dialect.class);
             good("PostgreSQL", 9.3, 9.4, "", PostgreSql93Dialect.class);
             good("PostgreSQL", 9.4, 9.5, "", PostgreSql94Dialect.class);
@@ -176,7 +175,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                             "SELECT core.executeJaavUpgradeCode('upgradeCode');\n" +          // Misspell function name
                             "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
 
-            SqlDialect dialect = new PostgreSql91Dialect();
+            SqlDialect dialect = new PostgreSql92Dialect();
             TestUpgradeCode good = new TestUpgradeCode();
             dialect.runSql(null, goodSql, good, null, null);
             assertEquals(4, good.getCounter());
@@ -197,7 +196,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                 @Override
                 protected SqlDialect getDialect()
                 {
-                    return new PostgreSql91Dialect();
+                    return new PostgreSql92Dialect();
                 }
 
                 @NotNull

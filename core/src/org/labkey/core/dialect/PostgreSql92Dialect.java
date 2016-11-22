@@ -27,9 +27,13 @@ import java.util.Set;
  */
 public class PostgreSql92Dialect extends PostgreSql91Dialect
 {
-    @Override
-    public void addAdminWarningMessages(Collection<String> messages)
+    public PostgreSql92Dialect()
     {
+    }
+
+    public PostgreSql92Dialect(boolean standardConformingStrings)
+    {
+        super(standardConformingStrings);
     }
 
     @NotNull

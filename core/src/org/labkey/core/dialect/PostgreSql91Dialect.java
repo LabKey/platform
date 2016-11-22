@@ -75,14 +75,14 @@ import java.util.stream.Collectors;
  * Time: 8:58:25 AM
  */
 
-// Dialect specifics for PostgreSQL
-class PostgreSql91Dialect extends SqlDialect
+// Base dialect for PostgreSQL. PostgreSQL 9.1 is no longer supported, however, we keep this class versioned as "91" to
+// track changes we've implemented for each version over time.
+abstract class PostgreSql91Dialect extends SqlDialect
 {
-    private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<>();
-    private final AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
-
     private static final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
 
+    private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<>();
+    private final AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
     private final InClauseGenerator _tempTableInClauseGenerator = new TempTableInClauseGenerator();
 
     private InClauseGenerator _inClauseGenerator = null;
@@ -93,21 +93,20 @@ class PostgreSql91Dialect extends SqlDialect
     // when we prepare a new DbScope and use this when we escape and parse string literals.
     private Boolean _standardConformingStrings = null;
 
-    // Standard constructor used by factory and subclasses
-    PostgreSql91Dialect()
+    // Standard constructor used by subclasses
+    protected PostgreSql91Dialect()
     {
     }
 
     // Constructor used to test standardConformingStrings setting
-    PostgreSql91Dialect(boolean standardConformingStrings)
+    protected PostgreSql91Dialect(boolean standardConformingStrings)
     {
         _standardConformingStrings = standardConformingStrings;
     }
 
-    @Override
-    public void addAdminWarningMessages(Collection<String> messages)
+    public Boolean getStandardConformingStrings()
     {
-        messages.add("LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + ". " + PostgreSqlDialectFactory.RECOMMENDED);
+        return _standardConformingStrings;
     }
 
     @Override
@@ -1882,23 +1881,23 @@ class PostgreSql91Dialect extends SqlDialect
 
     public static class TestCase extends Assert
     {
-        PostgreSql91Dialect getDialect()
+        PostgreSql92Dialect getDialect()
         {
             DbSchema core = CoreSchema.getInstance().getSchema();
             SqlDialect d = core.getSqlDialect();
-            if (d instanceof PostgreSql91Dialect)
-                return (PostgreSql91Dialect)d;
+            if (d instanceof PostgreSql92Dialect)
+                return (PostgreSql92Dialect)d;
             return null;
         }
 
         @Test
         public void testParameterSubstitution()
         {
-            PostgreSql91Dialect d = getDialect();
+            PostgreSql92Dialect d = getDialect();
             if (null == d)
                 return;
 
-            if (Boolean.TRUE == d._standardConformingStrings)
+            if (Boolean.TRUE == d.getStandardConformingStrings())
             {
                 assert "'this'".equals(d.getStringHandler().quoteStringLiteral("this"));
                 assert "'th\\is'".equals(d.getStringHandler().quoteStringLiteral("th\\is"));
@@ -1921,7 +1920,7 @@ class PostgreSql91Dialect extends SqlDialect
         @Test
         public void testInClause()
         {
-            PostgreSql91Dialect d = getDialect();
+            PostgreSql92Dialect d = getDialect();
             if (null == d)
                 return;
             DbSchema core = CoreSchema.getInstance().getSchema();
