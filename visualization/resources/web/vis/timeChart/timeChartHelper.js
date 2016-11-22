@@ -8,8 +8,8 @@ if(!LABKEY.vis) {
 }
 
 /**
- * @namespace Namespace used to encapsulate functions related to creating study Time Charts. Used in the
- * Time Chart Wizard and when exporting Time Charts as scripts.
+ * @namespace Namespace used to encapsulate functions related to creating study Time Charts.
+ * Used in the Chart Wizard and when exporting Time Charts as scripts.
  */
 LABKEY.vis.TimeChartHelper = new function() {
 

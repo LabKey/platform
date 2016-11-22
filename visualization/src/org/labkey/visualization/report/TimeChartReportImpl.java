@@ -44,13 +44,11 @@ public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnail
     @Override
     public HttpView renderReport(ViewContext context) throws Exception
     {
-        VisualizationController.GetVisualizationForm form = new VisualizationController.GetVisualizationForm();
-
+        VisualizationController.ChartWizardReportForm form = new VisualizationController.ChartWizardReportForm();
         form.setReportId(getReportId());
         form.setAllowToggleMode(true);
 
         Report report = form.getReportId().getReport(context);
-
         if (null != report)
         {
             TimeChartReportDescriptor descriptor = (TimeChartReportDescriptor) report.getDescriptor();

@@ -150,7 +150,7 @@ Ext4.define('LABKEY.vis.TimeChartXAxisField', {
                             else
                             {
                                 this.fireEvent('invalidChartOptions', 'There are no demographic date options available in this study. '
-                                    + 'Please contact an administrator to have them configure the study to work with the Time Chart wizard.');
+                                    + 'Please contact an administrator to have them configure the study to work with the Chart Wizard.');
                             }
                         }
                         else if (Ext4.isObject(this.initData.zeroDateCol))

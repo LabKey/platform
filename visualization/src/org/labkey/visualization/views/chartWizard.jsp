@@ -32,6 +32,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.visualization.VisualizationController" %>
+<%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -42,24 +43,28 @@
     }
 %>
 <%
-    JspView<VisualizationController.GenericReportForm> me = (JspView<VisualizationController.GenericReportForm>) HttpView.currentView();
+    JspView<VisualizationController.ChartWizardReportForm> me = (JspView<VisualizationController.ChartWizardReportForm>) HttpView.currentView();
+    VisualizationController.ChartWizardReportForm form = me.getModelBean();
     ViewContext ctx = getViewContext();
     Container c = getContainer();
     User user = getUser();
-    VisualizationController.GenericReportForm form = me.getModelBean();
 
     String numberFormat = PropertyManager.getProperties(c, "DefaultStudyFormatStrings").get("NumberFormatString");
     if (numberFormat == null)
         numberFormat = Formats.f1.toPattern();
     String numberFormatFn = ExtUtil.toExtNumberFormatFn(numberFormat);
 
+    boolean canShare = ctx.hasPermission(ShareReportPermission.class);
+    boolean isDeveloper = user.isDeveloper();
+    boolean allowEditMode = !user.isGuest() && form.allowToggleMode();
     boolean canEdit = false;
     ActionURL editUrl = null;
-    if (form.getReportId() != null)
-    {
 
-        Report report = form.getReportId().getReport(ctx);
-        if(report != null)
+    ReportIdentifier id = form.getReportId();
+    if (id != null)
+    {
+        Report report = id.getReport(ctx);
+        if (report != null)
         {
             canEdit = report.canEdit(user, c);
             editUrl = report.getEditReportURL(ctx);
@@ -70,7 +75,7 @@
         canEdit = ctx.hasPermission(ReadPermission.class) && !user.isGuest();
     }
 
-    String renderId = "generic-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String renderId = "chart-wizard-report-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
 
 <labkey:scriptDependency/>
@@ -79,7 +84,9 @@
 <script type="text/javascript">
     var init = function()
     {
-        var reportId = <%=q(form.getReportId() != null ? form.getReportId().toString() : null) %>;
+        var reportId = <%=q(id != null ? id.toString() : null) %>;
+        var renderType = <%=q(form.getRenderType())%>;
+
         if (reportId != null)
         {
             LABKEY.Query.Visualization.get({
@@ -87,57 +94,75 @@
                 success: function(result)
                 {
                     if (result.type == LABKEY.Query.Visualization.Type.GenericChart)
-                        initializeChartPanel(result);
+                        initializeGenericChartPanel(result);
+                    else if (result.type == LABKEY.Query.Visualization.Type.TimeChart)
+                        initializeTimeChartPanel(result);
                     else
                         displayErrorMsg("The saved chart does not match one of the expected chart types.");
                 },
                 failure: function (response)
                 {
-                    displayErrorMsg("No time chart report found for reportId:" + reportId + ".");
+                    displayErrorMsg("No saved chart wizard report found for reportId:" + reportId + ".");
                 },
                 scope: this
             });
         }
+        else if (renderType == 'time_chart')
+        {
+            initializeTimeChartPanel();
+        }
         else
         {
-            initializeChartPanel();
+            initializeGenericChartPanel();
         }
     };
 
-    var initializeChartPanel = function(savedReportInfo)
+    var initializeGenericChartPanel = function(savedReportInfo)
     {
-        var panel = Ext4.create('LABKEY.ext4.GenericChartPanel', {
+        Ext4.create('LABKEY.ext4.GenericChartPanel', {
             renderTo: <%=q(renderId)%>,
             height: 650,
+            savedReportInfo: savedReportInfo,
             canEdit: <%=canEdit%>,
-            canShare: <%=c.hasPermission(user, ShareReportPermission.class)%>,
+            canShare: <%=canShare%>,
             isDeveloper: <%=user.isDeveloper()%>,
             defaultNumberFormat: eval("<%=text(numberFormatFn)%>"),
-            allowEditMode: <%=form.allowToggleMode()%>,
+            allowEditMode: <%=allowEditMode%>,
             editModeURL: <%=q(editUrl != null ? editUrl.toString() : null) %>,
-            hideSave        : <%=user.isGuest()%>,
-            restrictColumnsEnabled: <%=FolderSettingsCache.areRestrictedColumnsEnabled(c)%>,
+            hideSave: <%=user.isGuest()%>, // TODO review usage and apply this to time chart as well?
 
-            savedReportInfo: savedReportInfo,
-            schemaName      : <%=q(form.getSchemaName() != null ? form.getSchemaName() : null) %>,
-            queryName       : <%=q(form.getQueryName() != null ? form.getQueryName() : null) %>,
-            queryLabel      : <%=q(ReportUtil.getQueryLabelByName(user, c, form.getSchemaName(), form.getQueryName()))%>,
-            viewName        : <%=q(form.getViewName() != null ? form.getViewName() : null) %>,
-            dataRegionName  : <%=q(form.getDataRegionName())%>,
-            renderType      : <%=q(form.getRenderType())%>,
-            id              : <%=q(form.getComponentId()) %>,
-            baseUrl         : <%=q(getActionURL().toString())%>,
+            baseUrl: <%=q(getActionURL().toString())%>,
+            schemaName: <%=q(form.getSchemaName() != null ? form.getSchemaName() : null) %>,
+            queryName: <%=q(form.getQueryName() != null ? form.getQueryName() : null) %>,
+            queryLabel: <%=q(ReportUtil.getQueryLabelByName(user, c, form.getSchemaName(), form.getQueryName()))%>,
+            viewName: <%=q(form.getViewName() != null ? form.getViewName() : null) %>,
+            dataRegionName: <%=q(form.getDataRegionName())%>,
 
+            renderType: <%=q(form.getRenderType())%>,
             autoColumnName  : <%=q(form.getAutoColumnName() != null ? form.getAutoColumnName() : null) %>,
             autoColumnYName  : <%=q(form.getAutoColumnYName() != null ? form.getAutoColumnYName() : null) %>,
-            autoColumnXName  : <%=q(form.getAutoColumnXName() != null ? form.getAutoColumnXName() : null) %>
+            autoColumnXName  : <%=q(form.getAutoColumnXName() != null ? form.getAutoColumnXName() : null) %>,
+            restrictColumnsEnabled: <%=FolderSettingsCache.areRestrictedColumnsEnabled(c)%>
         });
+    };
 
-        var resize = function() {
-            if (panel && panel.doLayout) { panel.doLayout(); }
-        };
+    var initializeTimeChartPanel = function(savedReportInfo)
+    {
+        // TODO verify conversion for backwards compatibility
+        if (savedReportInfo)
+            LABKEY.vis.TimeChartHelper.convertSavedReportConfig(savedReportInfo.visualizationConfig, savedReportInfo);
 
-        Ext4.EventManager.onWindowResize(resize);
+        Ext4.create('LABKEY.vis.TimeChartPanel', {
+            renderTo: <%=q(renderId)%>,
+            height: 650,
+            savedReportInfo: savedReportInfo,
+            canEdit: <%=canEdit%>,
+            canShare: <%=canShare%>,
+            isDeveloper: <%=isDeveloper%>,
+            defaultNumberFormat: eval("<%=numberFormatFn%>"),
+            allowEditMode: <%=allowEditMode%>,
+            editModeURL: <%=q(editUrl != null ? editUrl.toString() : null) %>
+        });
     };
 
     var displayErrorMsg = function(msg)

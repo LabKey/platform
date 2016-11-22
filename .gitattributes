@@ -3042,7 +3042,6 @@ timeline/webapp/timeline/timeline_2.3.0/timeplot_js/timeplot-bundle.js -text
 visualization/Visualization.iml -text
 visualization/module.properties -text
 visualization/resources/config/module.xml -text
-visualization/resources/web/timechart.lib.xml -text
 visualization/resources/web/vis/ColumnVisualizationAnalytics.css -text
 visualization/resources/web/vis/ColumnVisualizationAnalytics.js -text
 visualization/resources/web/vis/chartFilterPanel.js -text
@@ -3082,8 +3081,7 @@ visualization/src/org/labkey/visualization/sql/VisualizationSQLGenerator.java -t
 visualization/src/org/labkey/visualization/sql/VisualizationSourceQuery.java -text
 visualization/src/org/labkey/visualization/test/VisTestSchema.java -text
 visualization/src/org/labkey/visualization/test/test.jsp -text
-visualization/src/org/labkey/visualization/views/genericChartWizard.jsp -text
-visualization/src/org/labkey/visualization/views/timeChartWizard.jsp -text
+visualization/src/org/labkey/visualization/views/chartWizard.jsp -text
 visualization/webapp/visualization/images/barchart.png -text
 visualization/webapp/visualization/images/boxplot.png -text
 visualization/webapp/visualization/images/piechart.png -text

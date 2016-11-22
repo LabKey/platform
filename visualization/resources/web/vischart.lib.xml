@@ -1,6 +1,7 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
         <script path="vis/chartWizardWindow.js"/>
+        <script path="vis/chartFilterPanel.js"/>
         <script path="vis/chartQueryPanel.js"/>
         <script path="vis/chartTypePanel.js"/>
         <script path="vis/chartLayoutPanel.js"/>
@@ -11,6 +12,12 @@
         <script path="vis/saveOptionsPanel.js"/>
 
         <script path="vis/timeChart/timeChartHelper.js"/>
+        <script path="vis/timeChart/timeChartDimensionFilterPanel.js"/>
+        <script path="vis/timeChart/timeChartXAxisField.js"/>
+        <script path="vis/timeChart/timeChartYMeasureField.js"/>
+        <script path="vis/timeChart/timeChartScriptPanel.js"/>
+        <script path="vis/timeChart/timeChartPanel.js"/>
+
         <script path="vis/genericChart/genericChartHelper.js"/>
         <script path="vis/genericChart/genericChartOptionsPanel.js"/>
         <script path="vis/genericChart/genericChartAxisPanel.js"/>
@@ -21,5 +28,8 @@
         <dependency path="Ext4"/>
         <dependency path="vis/vis"/>
         <dependency path="codemirror"/>
+
+        <!-- Required by timeChartPanel.js -->
+        <dependency path="study/ParticipantFilter"/>
     </dependencies>
 </libraries>

@@ -5,25 +5,30 @@
  */
 
 Ext4.define('LABKEY.vis.TimeChartPanel', {
-
     extend : 'Ext.panel.Panel',
 
     cls : 'time-chart-panel',
+    minWidth: 875,
     border : false,
     layout: 'border',
     bodyStyle: 'background-color: white;',
-    monitorResize: true,
 
     renderType: 'time_chart',
+    savedReportInfo: null,
+    chartInfo: null,
     maxCharts: 30,
     dataLimit: 10000,
     measureMetadataRequestCounter: 0,
+    autoResize: true,
 
     initComponent : function()
     {
         this.SUBJECT = LABKEY.vis.TimeChartHelper.getStudySubjectInfo();
 
         this.supportedBrowser = !(Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8); // issue 15372
+
+        if (this.savedReportInfo != null)
+            this.chartInfo = this.savedReportInfo.visualizationConfig;
 
         var chartInfoAxisArr = Ext4.isObject(this.chartInfo) ? this.chartInfo.axis : [],
             axisIndexMap = {
@@ -144,7 +149,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             items: []
         });
 
-        Ext4.applyIf(this, {autoResize: true});
         if (this.autoResize)
         {
             Ext4.EventManager.onWindowResize(function(w,h){
@@ -165,7 +169,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         // add a render listener load measure panel stores for saved report and to show chart type dialog if new chart
         this.on('render', function()
         {
-            if (Ext4.isObject(this.saveReportInfo))
+            if (Ext4.isObject(this.savedReportInfo))
             {
                 this.loadFiltersPanelValues();
                 this.initializeMeasureDimensionPanels();
@@ -229,7 +233,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         if (!this.savePanel)
         {
             this.savePanel = Ext4.create('LABKEY.vis.SaveOptionsPanel', {
-                reportInfo: this.saveReportInfo,
+                reportInfo: this.savedReportInfo,
                 canEdit: this.canEdit,
                 canShare: this.canShare,
                 listeners: {
@@ -768,9 +772,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         if (!this.rendered)
             return;
 
-        var padding = [20,0];
-        var xy = this.el.getXY();
-        var width = Math.max(875,w-xy[0]-padding[0]);
+        var width = Math.max(800, w - this.el.getX() - 20);
         this.setWidth(width);
     },
 
@@ -1601,8 +1603,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     saveChart: function(saveChartInfo) {
         // if queryName and schemaName are set on the URL then save them with the chart info
-        var schema = this.saveReportInfo ? this.saveReportInfo.schemaName : (LABKEY.ActionURL.getParameter("schemaName") || null);
-        var query = this.saveReportInfo ? this.saveReportInfo.queryName : (LABKEY.ActionURL.getParameter("queryName") || null);
+        var schema = this.savedReportInfo ? this.savedReportInfo.schemaName : (LABKEY.ActionURL.getParameter("schemaName") || null);
+        var query = this.savedReportInfo ? this.savedReportInfo.queryName : (LABKEY.ActionURL.getParameter("queryName") || null);
 
         var config = {
             replace: saveChartInfo.replace,
@@ -1723,7 +1725,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     },
 
     // clear the chart panel of any messages, charts, or grids
-    // if displaying a message, also make sure to unmask the time chart wizard element
+    // if displaying a message, also make sure to unmask the chart wizard element
     clearChartPanel: function(message){
         this.chart.removeAll();
         this.clearWarningText();

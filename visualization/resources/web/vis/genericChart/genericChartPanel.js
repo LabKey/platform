@@ -14,6 +14,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     hideViewData : false,
     reportLoaded : true,
+    autoResize: true,
 
     constructor : function(config)
     {
@@ -153,6 +154,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.items = [this.getCenterPanel()];
 
         this.callParent();
+
+        if (this.autoResize)
+        {
+            Ext4.EventManager.onWindowResize(function(w,h){
+                this.resizeToViewport(w,h);
+            }, this, {buffer: 500});
+        }
 
         if (this.savedReportInfo)
         {
@@ -2118,6 +2126,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         this.getEl().mask('Rendering Chart...');
         this.chartDefinitionChanged.delay(500);
+    },
+
+    resizeToViewport : function(w,h) {
+        if (!this.hasChartData())
+            return;
+
+        var width = Math.max(800, w - this.el.getX() - 20);
+        this.setWidth(width);
     },
 
     onSaveBtnClicked : function(isSaveAs)

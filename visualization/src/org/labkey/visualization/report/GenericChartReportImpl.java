@@ -20,14 +20,11 @@ import org.json.JSONObject;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.thumbnail.Thumbnail;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ThumbnailUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
@@ -47,7 +44,7 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
     @Override
     public HttpView renderReport(ViewContext context) throws Exception
     {
-        VisualizationController.GenericReportForm form = new VisualizationController.GenericReportForm();
+        VisualizationController.ChartWizardReportForm form = new VisualizationController.ChartWizardReportForm();
         form.setAllowToggleMode(true);
         form.setReportId(getReportId());
         form.setComponentId("generic-report-panel-" + UniqueID.getRequestScopedUID(context.getRequest()));

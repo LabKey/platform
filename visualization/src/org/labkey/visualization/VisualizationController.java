@@ -97,7 +97,6 @@ import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -152,6 +151,7 @@ public class VisualizationController extends SpringActionController
         private static final String VISUALIZATION_FILTER_URL = "filterUrl";
         private static final String VISUALIZATION_EDIT_PARAM = "edit";
         private static final String VISUALIZATION_ID_PARAM = "reportId";
+        private static final String VISUALIZATION_RENDERTYPE_PARAM = "renderType";
 
         @Override
         public ActionURL getTimeChartDesignerURL(Container container)
@@ -229,8 +229,9 @@ public class VisualizationController extends SpringActionController
 
         private ActionURL getBaseTimeChartURL(Container container, boolean editMode)
         {
-            ActionURL url = new ActionURL(TimeChartWizardAction.class, container);
+            ActionURL url = new ActionURL(GenericChartWizardAction.class, container);
             url.addParameter(VISUALIZATION_EDIT_PARAM, editMode);
+            url.addParameter(VISUALIZATION_RENDERTYPE_PARAM, "time_chart");
             return url;
         }
 
@@ -842,15 +843,19 @@ public class VisualizationController extends SpringActionController
         return svg;
     }
 
-    public static class SaveVisualizationForm extends GetVisualizationForm
+    public static class SaveVisualizationForm
     {
+        private String _type;
+        private String _name;
         private String _description;
         private String _json;
-        private String _type;
         private boolean _replace;
         private boolean _shared = true;
         private String _thumbnailType;
         private String _svg;
+        private String _schemaName;
+        private String _queryName;
+        private ReportIdentifier _reportId;
 
         public String getJson()
         {
@@ -923,16 +928,6 @@ public class VisualizationController extends SpringActionController
         {
             _svg = svg;
         }
-    }
-
-    public static class GetVisualizationForm
-    {
-        private String _schemaName;
-        private String _queryName;
-        private String _name;
-        private String _renderType;
-        private ReportIdentifier _reportId;
-        private boolean _allowToggleMode = false; // edit vs. view mode
 
         public String getName()
         {
@@ -973,26 +968,6 @@ public class VisualizationController extends SpringActionController
         {
             _reportId = reportId;
         }
-
-        public String getRenderType()
-        {
-            return _renderType;
-        }
-
-        public void setRenderType(String renderType)
-        {
-            _renderType = renderType;
-        }
-
-        public boolean allowToggleMode()
-        {
-            return _allowToggleMode;
-        }
-
-        public void setAllowToggleMode(boolean allowToggleMode)
-        {
-            _allowToggleMode = allowToggleMode;
-        }
     }
 
     private String getReportKey(String schema, String query)
@@ -1006,12 +981,12 @@ public class VisualizationController extends SpringActionController
         return ReportUtil.getReportKey(schema, query);
     }
 
-    private Report getReport(GenericReportForm form) throws SQLException
+    private Report getReport(SaveVisualizationForm form) throws SQLException
     {
         return getReport(form.getReportId(), form.getName(), form.getSchemaName(), form.getQueryName());
     }
 
-    private Report getReport(GetVisualizationForm form) throws SQLException
+    private Report getReport(ChartWizardReportForm form) throws SQLException
     {
         return getReport(form.getReportId(), form.getName(), form.getSchemaName(), form.getQueryName());
     }
@@ -1052,12 +1027,12 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetVisualizationAction extends ApiAction<GetVisualizationForm>
+    public class GetVisualizationAction extends ApiAction<ChartWizardReportForm>
     {
         private ReportDescriptor descriptor;
 
         @Override
-        public void validateForm(GetVisualizationForm form, Errors errors)
+        public void validateForm(ChartWizardReportForm form, Errors errors)
         {
             if (form.getName() == null && form.getReportId() == null)
             {
@@ -1096,7 +1071,7 @@ public class VisualizationController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(GetVisualizationForm form, BindException errors) throws Exception
+        public ApiResponse execute(ChartWizardReportForm form, BindException errors) throws Exception
         {
             VisualizationReportDescriptor vizDescriptor = (VisualizationReportDescriptor) descriptor;
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -1168,8 +1143,8 @@ public class VisualizationController extends SpringActionController
                     errors.reject(ERROR_MSG, "Report type \"" + form.getType() + "\" is not recognized.");
                 }
             }
-            ReportDescriptor descriptor = _currentReport.getDescriptor();
-            if (!(descriptor instanceof VisualizationReportDescriptor))
+
+            if (_currentReport != null && !(_currentReport.getDescriptor() instanceof VisualizationReportDescriptor))
             {
                 errors.reject(ERROR_MSG, "Report type \"" + form.getType() + "\" is not an available visualization type.");
             }
@@ -1210,28 +1185,25 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    public static final String TITLE = "Time Chart Wizard";
-
     @RequiresPermission(ReadPermission.class)
-    public class TimeChartWizardAction extends SimpleViewAction<GetVisualizationForm>
+    public class TimeChartWizardAction extends SimpleViewAction<ChartWizardReportForm>
     {
-        String _navTitle = TITLE;
+        String _navTitle = "Chart Wizard";
 
         @Override
-        public ModelAndView getView(GetVisualizationForm form, BindException errors) throws Exception
+        public ModelAndView getView(ChartWizardReportForm form, BindException errors) throws Exception
         {
-            Report report = getReport(form);
+            form.setAllowToggleMode(true);
+            form.setRenderType("time_chart");
 
-            // issue 27439: allow time chart report lookup by name if reportId not provided
+            // issue 27439: allow chart wizard report lookup by name if reportId not provided
+            Report report = getReport(form);
             if (form.getReportId() == null && report != null && report.getDescriptor() != null)
                 form.setReportId(report.getDescriptor().getReportId());
 
-            form.setAllowToggleMode(true);
-            JspView timeChartWizard = new JspView<>("/org/labkey/visualization/views/timeChartWizard.jsp", form);
-
-            timeChartWizard.setTitle(TITLE);
+            JspView timeChartWizard = new JspView<>("/org/labkey/visualization/views/chartWizard.jsp", form);
+            timeChartWizard.setTitle(_navTitle);
             timeChartWizard.setFrame(WebPartView.FrameType.NONE);
-
             VBox boxView = new VBox(timeChartWizard);
 
             if (report != null)
@@ -1260,34 +1232,44 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    @Action(ActionType.SelectData.class)
-    public class GenericChartWizardAction extends SimpleViewAction<GenericReportForm>
+    @Action(ActionType.SelectData.class) // TODO rename to just ChartWizardAction
+    public class GenericChartWizardAction extends SimpleViewAction<ChartWizardReportForm>
     {
+        String _navTitle = "Chart Wizard";
+
         @Override
-        public ModelAndView getView(GenericReportForm form, BindException errors) throws Exception
+        public ModelAndView getView(ChartWizardReportForm form, BindException errors) throws Exception
         {
             form.setAllowToggleMode(true);
-            form.setComponentId("generic-report-panel-" + UniqueID.getRequestScopedUID(getViewContext().getRequest()));
 
-            JspView view = new JspView<>("/org/labkey/visualization/views/genericChartWizard.jsp", form);
+            // issue 27439: allow chart wizard report lookup by name if reportId not provided
+            Report report = getReport(form);
+            if (form.getReportId() == null && report != null && report.getDescriptor() != null)
+                form.setReportId(report.getDescriptor().getReportId());
+
+            JspView view = new JspView<>("/org/labkey/visualization/views/chartWizard.jsp", form);
+            view.setTitle(_navTitle);
             view.setFrame(WebPartView.FrameType.NONE);
+
+            if (report != null)
+                _navTitle = report.getDescriptor().getReportName();
+
             return view;
         }
 
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic("quickchart");
-            root.addChild("Chart Wizard");
-            return root;
+            setHelpTopic("reportsAndViews");
+            return root.addChild(_navTitle);
         }
     }
 
     @RequiresLogin @RequiresPermission(ReadPermission.class)
-    public class SaveGenericReportAction extends ApiAction<GenericReportForm>
+    public class SaveGenericReportAction extends ApiAction<ChartWizardReportForm>
     {
         @Override
-        public void validateForm(GenericReportForm form, Errors errors)
+        public void validateForm(ChartWizardReportForm form, Errors errors)
         {
             List<ValidationError> reportErrors = new ArrayList<>();
 
@@ -1332,7 +1314,7 @@ public class VisualizationController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(GenericReportForm form, BindException errors) throws Exception
+        public ApiResponse execute(ChartWizardReportForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             String key = ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName());
@@ -1348,7 +1330,7 @@ public class VisualizationController extends SpringActionController
             return response;
         }
 
-        private Report getGenericReport(GenericReportForm form) throws Exception
+        private Report getGenericReport(ChartWizardReportForm form) throws Exception
         {
             Report report;
 
@@ -1510,7 +1492,7 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    public static class GenericReportForm extends ReportUtil.JsonReportForm
+    public static class ChartWizardReportForm extends ReportUtil.JsonReportForm
     {
         private String _renderType;
         private String _dataRegionName;
