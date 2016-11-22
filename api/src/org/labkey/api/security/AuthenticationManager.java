@@ -74,6 +74,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 /**
  * User: adam
@@ -487,8 +488,7 @@ public class AuthenticationManager
     }
 
 
-    public static @NotNull
-    PrimaryAuthenticationResult authenticate(HttpServletRequest request, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
+    public static @NotNull PrimaryAuthenticationResult authenticate(HttpServletRequest request, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
     {
         PrimaryAuthenticationResult result = null;
         try
@@ -506,8 +506,7 @@ public class AuthenticationManager
     }
 
 
-    private static @NotNull
-    PrimaryAuthenticationResult _authenticate(HttpServletRequest request, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
+    private static @NotNull PrimaryAuthenticationResult _authenticate(HttpServletRequest request, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
     {
         if (areNotBlank(id, password))
         {
@@ -528,39 +527,35 @@ public class AuthenticationManager
                     throw new RuntimeException(e);
                 }
 
-                // Null only if no form authentication provider... which is currently not possible
-                if (null != authResponse)
+                if (authResponse.isAuthenticated())
                 {
-                    if (authResponse.isAuthenticated())
+                    return finalizePrimaryAuthentication(request, authProvider, authResponse.getValidEmail());
+                }
+                else
+                {
+                    AuthenticationProvider.FailureReason reason = authResponse.getFailureReason();
+
+                    switch (reason.getReportType())
                     {
-                        return finalizePrimaryAuthentication(request, authProvider, authResponse.getValidEmail());
-                    }
-                    else
-                    {
-                        AuthenticationProvider.FailureReason reason = authResponse.getFailureReason();
+                        // Log the first one we encounter to the audit log, always
+                        case always:
+                            if (null == firstFailure)
+                                firstFailure = authResponse;
+                            break;
 
-                        switch (reason.getReportType())
-                        {
-                            // Log the first one we encounter to the audit log, always
-                            case always:
-                                if (null == firstFailure)
-                                    firstFailure = authResponse;
-                                break;
+                        // Log the first one we encounter to the audit log, but only if the login fails (i.e., this
+                        // login may succeed on another provider)
+                        case onFailure:
+                            if (logFailures && null == firstFailure)
+                                firstFailure = authResponse;
+                            break;
 
-                            // Log the first one we encounter to the audit log, but only if the login fails (i.e., this
-                            // login may succeed on another provider)
-                            case onFailure:
-                                if (logFailures && null == firstFailure)
-                                    firstFailure = authResponse;
-                                break;
+                        // Just not the right provider... ignore.
+                        case never:
+                            break;
 
-                            // Just not the right provider... ignore.
-                            case never:
-                                break;
-
-                            default:
-                                assert false : "Unknown AuthenticationProvider.ReportType: " + reason.getReportType();
-                        }
+                        default:
+                            assert false : "Unknown AuthenticationProvider.ReportType: " + reason.getReportType();
                     }
                 }
             }
@@ -644,15 +639,25 @@ public class AuthenticationManager
         {
             user = UserManager.getUser(email);
 
-            // If user is authenticated but doesn't exist in our system then add user to the database if we're configured to allow that...
-            if (null == user && isAutoCreateAccountsEnabled())
+            // If user is authenticated but doesn't exist in our system...
+            if (null == user)
             {
-                SecurityManager.NewUserStatus bean = SecurityManager.addUser(email, null, false);
-                user = bean.getUser();
-                UserManager.addToUserHistory(user, user.getEmail() + " authenticated successfully and was added to the system automatically.");
+                // ...are we configured to allow auto-creation?
+                if (isAutoCreateAccountsEnabled())
+                {
+                    // Yes: add user to the database
+                    SecurityManager.NewUserStatus bean = SecurityManager.addUser(email, null, false);
+                    user = bean.getUser();
+                    UserManager.addToUserHistory(user, user.getEmail() + " authenticated successfully and was added to the system automatically.");
+                }
+                else
+                {
+                    // No: log that we're not permitted to create accounts automatically
+                    addAuditEvent(User.guest, request, "User " + email + " successfully authenticated via " + authProvider.getName() + ". Login failed because account creation is disabled.");
+                    return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationNotAllowed);
+                }
             }
-            if (user != null)
-                UserManager.updateLogin(user);
+            UserManager.updateLogin(user);
         }
         catch (SecurityManager.UserManagementException e)
         {
@@ -661,13 +666,6 @@ public class AuthenticationManager
             ExceptionUtil.logExceptionToMothership(request, e);
 
             return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationError);
-        }
-
-        // didn't find the user on the system and we are not permitted to create accounts automatically
-        if (user == null && !isAutoCreateAccountsEnabled())
-        {
-            addAuditEvent(User.guest, request, "User " + email + " successfully authenticated via " + authProvider.getName() + ". Login failed because account creation is disabled.");
-            return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationNotAllowed);
         }
 
         if (!user.isActive())
@@ -1030,6 +1028,11 @@ public class AuthenticationManager
     {
         // goto "/" and let the default redirect happen
         return new URLHelper(true);
+    }
+
+
+    public interface AuthenticationValidator extends Predicate<HttpServletRequest>
+    {
     }
 
 
