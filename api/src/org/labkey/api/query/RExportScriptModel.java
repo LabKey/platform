@@ -120,7 +120,6 @@ public class RExportScriptModel extends ExportScriptModel
     public String getScriptExportText()
     {
         StringBuilder sb = new StringBuilder();
-        String indent = StringUtils.repeat(" ", 4);
 
         if (!clean)
         {
@@ -136,22 +135,24 @@ public class RExportScriptModel extends ExportScriptModel
             sb.append("# Select rows into a data frame called 'mydata'").append("\n");
             sb.append("\n");
         }
-        sb.append(variableName + " <- labkey.selectRows(").append("\n");
-        sb.append(indent).append("baseUrl=").append(doubleQuote(getBaseUrl())).append(",").append("\n");
-        sb.append(indent).append("folderPath=").append(doubleQuote(getFolderPath())).append(",").append("\n");
-        sb.append(indent).append("schemaName=").append(doubleQuote(getSchemaName())).append(",").append("\n");
-        sb.append(indent).append("queryName=").append(doubleQuote(getQueryName())).append(",").append("\n");
-        sb.append(indent).append("viewName=").append(doubleQuote(getViewName())).append(",").append("\n");
+        String nl = "\n"; //clean ? "" : "\n";
+        String indent = "    "; //clean ? StringUtils.repeat(" ", 4) : "";
+        sb.append(variableName + " <- labkey.selectRows(").append(nl);
+        sb.append(indent).append("baseUrl=").append(doubleQuote(getBaseUrl())).append(", ").append(nl);
+        sb.append(indent).append("folderPath=").append(doubleQuote(getFolderPath())).append(", ").append(nl);
+        sb.append(indent).append("schemaName=").append(doubleQuote(getSchemaName())).append(", ").append(nl);
+        sb.append(indent).append("queryName=").append(doubleQuote(getQueryName())).append(", ").append(nl);
+        sb.append(indent).append("viewName=").append(doubleQuote(getViewName())).append(", ").append(nl);
 
         String sort = getSort();
         if (sort != null)
-            sb.append(indent).append("colSort=").append(doubleQuote(getSort())).append(",").append("\n");
-        sb.append(indent).append("colFilter=").append(getFilters()).append(",").append("\n");
-        sb.append(indent).append("containerFilter=").append(getContainerFilterString()).append("\n");
+            sb.append(indent).append("colSort=").append(doubleQuote(getSort())).append(", ").append(nl);
+        sb.append(indent).append("colFilter=").append(getFilters()).append(", ").append(nl);
+        sb.append(indent).append("containerFilter=").append(getContainerFilterString()).append(nl);
         sb.append(")\n");
 
         if ("rstudio".equals(view))
-            sb.append("View(" + variableName + ")\n");
+            sb.append("\nsprintf(\"" + variableName + " has %d rows(s)\", nrow(" + variableName + "))");
         if ("r".equals(view))
             sb.append(variableName + "\n");
 
