@@ -318,6 +318,6 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
 
     public String getViewClass()
     {
-        return "/org/labkey/visualization/views/timeChartWizard.jsp";
+        return "/org/labkey/visualization/views/chartWizard.jsp";
     }
 }

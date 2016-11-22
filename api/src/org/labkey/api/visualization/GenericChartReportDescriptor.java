@@ -47,7 +47,7 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
 
     public String getViewClass()
     {
-        return "/org/labkey/visualization/views/genericChartWizard.jsp";
+        return "/org/labkey/visualization/views/chartWizard.jsp";
     }
 
     public Map<String, Object> getReportProps() throws Exception
