@@ -129,7 +129,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
         }
     }
 
-    /** For rows that have a RowId but lack values for the ID columns, try to fill in the ID columns */
+    /** For rows that have a RowId but lack values for the Name or ID columns, try to fill in the Name or ID columns */
     private void translateRowIdToIdCols(List<Map<String, Object>> rows)
     {
         for (Map<String, Object> row : rows)
@@ -139,11 +139,17 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
             {
                 // See if we already have values for all of the Id columns
                 boolean foundAllIdCols = true;
-                for (DomainProperty prop : _ss.getIdCols())
+                if (_ss.hasNameAsIdCol())
                 {
-                    if (row.get(prop.getName()) == null)
-                    {
+                    if (row.get("Name") == null)
                         foundAllIdCols = false;
+                }
+                else
+                {
+                    for (DomainProperty prop : _ss.getIdCols())
+                    {
+                        if (row.get(prop.getName()) == null)
+                            foundAllIdCols = false;
                     }
                 }
                 if (!foundAllIdCols)
@@ -157,11 +163,17 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
                         if (oldRowValues != null)
                         {
                             // Stick them into the row
-                            for (DomainProperty prop : _ss.getIdCols())
+                            if (_ss.hasNameAsIdCol())
                             {
-                                if (row.get(prop.getName()) == null)
+                                if (row.get("Name") == null)
+                                    row.put("Name", oldRowValues.get("Name"));
+                            }
+                            else
+                            {
+                                for (DomainProperty prop : _ss.getIdCols())
                                 {
-                                    row.put(prop.getName(), oldRowValues.get(prop.getName()));
+                                    if (row.get(prop.getName()) == null)
+                                        row.put(prop.getName(), oldRowValues.get(prop.getName()));
                                 }
                             }
                         }
