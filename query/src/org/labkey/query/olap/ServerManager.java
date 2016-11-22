@@ -111,7 +111,6 @@ public class ServerManager
     private static final Map<String, ServerReferenceCount> SERVERS = new HashMap<>();
     private static final Object SERVERS_LOCK = new Object();
 
-    private static final ModuleResourceCache<OlapSchemaDescriptor> MODULE_DESCRIPTOR_CACHE_OLD = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), "Olap cube definitions (module)", new OlapSchemaCacheHandlerOld());
     private static final ModuleResourceCache2<Map<String, OlapSchemaDescriptor>> MODULE_DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), new OlapSchemaCacheHandler(), "Olap cube definitions (module)");
     private static final BlockingStringKeyCache<OlapSchemaDescriptor> DB_DESCRIPTOR_CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.HOUR, "Olap cube definitions (db)", new OlapCacheLoader());
 
@@ -207,23 +206,12 @@ public class ServerManager
         if (null != d && d.getModule() == id.getModule() && c.getActiveModules().contains(d.getModule()))
             return d;
 
-        OlapSchemaDescriptor ret = null;
-
         // look for descriptor in active modules
-        d = MODULE_DESCRIPTOR_CACHE_OLD.getResource(schemaId);
+        d = MODULE_DESCRIPTOR_CACHE.getResourceMap(id.getModule()).get(id.getName());
         if (null != d && c.getActiveModules().contains(d.getModule()))
-            ret = d;
+            return d;
 
-        OlapSchemaDescriptor ret2 = null;
-
-        OlapSchemaDescriptor d2 = MODULE_DESCRIPTOR_CACHE.getResourceMap(id.getModule()).get(id.getName());
-        if (null != d2 && c.getActiveModules().contains(d2.getModule()))
-            ret2 = d2;
-
-        // Either they're both null OR both not-null and id matches (ignoring case)
-        assert ((null == ret && null == ret2) || ((null != ret && null != ret2) && ret.getId().equalsIgnoreCase(ret2.getId())));
-
-        return ret;
+        return null;
     }
 
     @NotNull
@@ -231,20 +219,11 @@ public class ServerManager
     {
         List<OlapSchemaDescriptor> ret = new ArrayList<>();
 
-        // look for descriptor in active modules
-        ret.addAll(MODULE_DESCRIPTOR_CACHE_OLD.getResources(c).stream()
-            .filter(osd -> osd.isExposed(c))
-            .collect(Collectors.toList()));
-
-        List<OlapSchemaDescriptor> ret2 = new ArrayList<>();
-
-        ret2.addAll(MODULE_DESCRIPTOR_CACHE.getResourceMaps(c).stream()
+        ret.addAll(MODULE_DESCRIPTOR_CACHE.getResourceMaps(c).stream()
             .map(Map::values)
             .flatMap(Collection::stream)
             .filter(osd -> osd.isExposed(c))
             .collect(Collectors.toList()));
-
-        assert ret.size() == ret2.size();
 
         // TODO: add list of all olap descriptors in the container to the db cache
         //List<OlapSchemaDescriptor> descriptors = DB_SCHEMA_DESCRIPTOR_CACHE.get(c.getId());
