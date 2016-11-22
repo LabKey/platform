@@ -906,6 +906,7 @@ var leveyJenningsPlot = LABKEY.vis.LeveyJenningsPlot({
         mean: 'mean',
         stdDev: 'stddev',
         xTickLabel: 'xaxislabel',
+        xTick: 'xaxislabel',
         yAxisDomain: [57500,69500],
         showTrendLine: true,
         color: 'colorlabel',
@@ -921,6 +922,52 @@ var leveyJenningsPlot = LABKEY.vis.LeveyJenningsPlot({
         y: {value: 'Value'},
         x: {value: 'Assay'}
     }
+});
+
+var CUSUMPlot = LABKEY.vis.TrendingLinePlot({
+    renderTo: 'meanCUSUM',
+    qcPlotType: LABKEY.vis.TrendingLinePlotType.CUSUM,
+    rendererType: 'd3',
+    width: 900,
+    height: 300,
+    data: CUSUMData,
+    properties: {
+        negativeValue: 'CUSUMmN',
+        positiveValue: 'CUSUMmP',
+        xTickLabel: 'xaxislabel',
+        xTick: 'xaxislabel',
+        yAxisDomain: [0, 6],
+        showTrendLine: true,
+        color: 'colorlabel',
+        colorRange: ['red', 'blue', 'green', 'brown'],
+        hoverTextFn: function(row, type){
+            var tip = 'X-Value: ' + row.xaxislabel + '\nColor: ' + row.colorlabel + '\nY-Value: ' + row.value + '\nGroup: ';
+            if (type == 'CUSUMmN')
+                tip += 'CUSUM-';
+            else
+                tip += 'CUSUM+';
+            return tip;
+        }
+    },
+    gridLineColor: 'white',
+    margins : {
+        top: 50
+    },
+    labels: {
+        main: {value: 'Example Mean CUSUM Plot'},
+        y: {value: 'Value'},
+        x: {value: 'Sampe Date'}
+    },
+    legendData: [
+        {"text":"CUSUM Group","separator":true},
+        {"text":"CUSUM-","color":"#000000", shape: function(){
+            return "M-9,-0.5L6,-0.5 6,0.5 -9,0.5Z"
+        }},
+        {"text":"CUSUM+","color":"#000000", shape: function(){
+            return " M3,-0.5L6,-0.5 6,0.5 3,0.5Z M-3,-0.5L0,-0.5 0,0.5 -3,0.5Z M-9,-0.5L-6,-0.5 -6,0.5 -9,0.5Z ";
+        }}
+    ],
+    legendNoWrap: true
 });
 
 var survivalCurvePlot = LABKEY.vis.SurvivalCurvePlot({
@@ -1016,6 +1063,7 @@ statFnPlot.render();
 barChart.render();
 barChart2.render();
 leveyJenningsPlot.render();
+CUSUMPlot.render();
 survivalCurvePlot.render();
 timelinePlot.render();
 console.log(new Date().getTime() - start);
