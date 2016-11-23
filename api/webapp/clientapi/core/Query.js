@@ -2626,7 +2626,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
 
 /**
 * @name LABKEY.Query.SelectRowsOptions
-* @class  ISelectRowsOptions class to describe
+* @class  SelectRowsOptions class to describe
            the third object passed to the successCallback function by
            {@link LABKEY.Query.selectRows}.  This object's properties are useful for
            matching requests to responses, as HTTP requests are typically
