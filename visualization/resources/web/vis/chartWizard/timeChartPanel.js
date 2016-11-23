@@ -374,7 +374,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.clearChartPanel();
 
         // only apply the values for the applicable chart type
-        if (values.type != 'time_chart')
+        if (Ext4.isObject(values) && values.type != 'time_chart')
             return;
 
         this.maskAndRemoveCharts();
@@ -913,12 +913,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     measureMetadataRequestPending:  function() {
         this.measureMetadataRequestCounter++;
-        //console.log(this.measureMetadataRequestCounter);
     },
 
     measureMetadataRequestComplete: function() {
         this.measureMetadataRequestCounter--;
-        //console.log(this.measureMetadataRequestCounter);
         this.getChartData();
     },
 
@@ -929,7 +927,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         // if all requests are complete, then we are ready to get the chart data
         if (this.measureMetadataRequestCounter > 0)
             return;
-        //console.log('getChartData');
 
         // Clear previous chart data, number formats, etc.
         this.chartData = undefined;

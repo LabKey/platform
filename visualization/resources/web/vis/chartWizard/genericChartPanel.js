@@ -16,6 +16,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     hideViewData : false,
     reportLoaded : true,
     autoResize: true,
+    hideSave: false,
 
     constructor : function(config)
     {
@@ -254,7 +255,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             this.saveBtn =  Ext4.create('Ext.button.Button', {
                 text: "Save",
-                hidden: LABKEY.user.isGuest,
+                hidden: LABKEY.user.isGuest || this.hideSave,
                 disabled: true,
                 handler: function(){
                     this.onSaveBtnClicked(false)
@@ -272,7 +273,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             this.saveAsBtn = Ext4.create('Ext.button.Button', {
                 text: "Save As",
-                hidden  : this.isNew() || LABKEY.user.isGuest,
+                hidden  : this.isNew() || LABKEY.user.isGuest || this.hideSave,
                 disabled: true,
                 handler: function(){
                     this.onSaveBtnClicked(true);
@@ -382,7 +383,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 }
             }
 
-            if (!LABKEY.user.isGuest)
+            if (!LABKEY.user.isGuest && !this.hideSave)
                 tbarItems.push(''); // horizontal spacer
             if (this.canEdit)
                 tbarItems.push(this.getSaveBtn());
@@ -478,7 +479,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.clearChartPanel();
 
         // only apply the values for the applicable chart type
-        if (values.type == 'time_chart')
+        if (Ext4.isObject(values) && values.type == 'time_chart')
             return;
 
         this.setRenderType(values.type);
@@ -928,12 +929,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     isDirty : function()
     {
-        return this.dirty;
+        return !LABKEY.user.isGuest && !this.hideSave && this.canEdit && this.dirty;
     },
 
     beforeUnload : function()
     {
-        if (!LABKEY.user.isGuest && this.isDirty()) {
+        if (this.isDirty()) {
             return 'please save your changes';
         }
     },
@@ -1178,7 +1179,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     loadInitialSelection : function()
     {
-        if (Ext4.isDefined(this.initialSelection))
+        if (Ext4.isObject(this.initialSelection))
         {
             this.applyChartTypeSelection(this.getChartTypePanel(), this.initialSelection, true);
             // clear the initial selection object so it isn't loaded again
