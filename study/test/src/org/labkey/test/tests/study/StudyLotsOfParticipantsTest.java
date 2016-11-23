@@ -71,9 +71,14 @@ public class StudyLotsOfParticipantsTest extends BaseWebDriverTest
     {
         // regression testing for issue 22254
         waitForText("Data is present for 132,070 Participants.");
+        goToManageViews();
+        _extHelper.clickExtMenuButton(true, Locator.linkContainingText("Add Chart"));
         TimeChartWizard timeChartWizard = new TimeChartWizard(this);
-        ChartTypeDialog chartTypeDialog = timeChartWizard.createNewChart();
-        chartTypeDialog.selectStudyQuery("Results").setYAxis("Value1").clickApply();
+        ChartTypeDialog chartTypeDialog = new ChartTypeDialog(getDriver());
+        chartTypeDialog.setChartType(ChartTypeDialog.ChartType.Time)
+                .selectStudyQuery("Results")
+                .setYAxis("Value1")
+                .clickApply();
         timeChartWizard.waitForWarningMessage("No calculated interval values (i.e. Days, Months, etc.) for the selected 'Measure Date' and 'Interval Start Date'.");
         chartTypeDialog = timeChartWizard.clickChartTypeButton();
         chartTypeDialog.setTimeAxisType(ChartTypeDialog.TimeAxisType.Visit).clickApply();

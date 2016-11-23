@@ -533,13 +533,12 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         clickButton("OK", 0);
         waitForElement(Locator.css("svg"));
 
-        clickButton("Chart Layout", 0);
-        LookAndFeelTimeChart lookAndFeelDialog = new LookAndFeelTimeChart(getDriver());
+        TimeChartWizard timeChartWizard = new TimeChartWizard(this);
+        LookAndFeelTimeChart lookAndFeelDialog = timeChartWizard.clickChartLayoutButton();
         lookAndFeelDialog.clickResetTitle();
         assertEquals(datasetLabel, lookAndFeelDialog.getPlotTitle());
         lookAndFeelDialog.clickCancel();
 
-        TimeChartWizard timeChartWizard = new TimeChartWizard(this);
         timeChartWizard.reSaveReport();
     }
 

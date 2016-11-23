@@ -1077,6 +1077,7 @@ LABKEY.vis.TimeChartHelper = new function() {
     /**
      * Get the set of measures from the tables/queries in the study schema.
      * @param successCallback
+     * @param callbackScope
      */
     var getStudyMeasures = function(successCallback, callbackScope)
     {

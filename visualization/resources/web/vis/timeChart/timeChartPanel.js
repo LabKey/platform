@@ -14,6 +14,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     bodyStyle: 'background-color: white;',
 
     renderType: 'time_chart',
+    initialSelection: null,
     savedReportInfo: null,
     chartInfo: null,
     maxCharts: 30,
@@ -84,14 +85,16 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         }, this);
 
         // setup buttons for the charting options panels (items to be added to the toolbar)
-        this.saveButton = Ext4.create('Ext.button.Button', {text: 'Save', hidden: !this.canEdit,
+        this.saveButton = Ext4.create('Ext.button.Button', {text: 'Save',
+                        hidden: !this.canEdit || LABKEY.user.isGuest,
                         handler: function(btn){
                                 this.getSavePanel().setSaveAs(false);
                                 this.getSavePanel().setMainTitle("Save");
                                 this.getSaveWindow().show();
                         }, scope: this});
 
-        this.saveAsButton = Ext4.create('Ext.button.Button', {text: 'Save As', hidden: !this.getSavePanel().isSavedReport() || LABKEY.Security.currentUser.isGuest,
+        this.saveAsButton = Ext4.create('Ext.button.Button', {text: 'Save As',
+                        hidden: !this.getSavePanel().isSavedReport() || LABKEY.user.isGuest,
                         handler: function(btn){
                                 this.getSavePanel().setSaveAs(true);
                                 this.getSavePanel().setMainTitle("Save As");
@@ -99,7 +102,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         }, scope: this});
 
         var params = LABKEY.ActionURL.getParameters();
-        this.editMode = (params.edit == "true" || !this.getSavePanel().isSavedReport()) && this.allowEditMode;
+        this.editMode = params.edit == "true" || !this.getSavePanel().isSavedReport();
         this.useRaphael = params.useRaphael != null ? params.useRaphael : false;
 
         // issue 21418: support for parameterized queries
@@ -177,7 +180,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             else
             {
                 this.toggleOptionButtons(true);
-                this.getChartTypeWindow().show();
+                this.loadInitialSelection();
             }
         }, this);
     },
@@ -195,7 +198,11 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     scope: this,
                     chartDefinitionChanged: this.chartDefinitionChanged,
                     measureMetadataRequestPending: this.measureMetadataRequestPending,
-                    measureMetadataRequestComplete: this.measureMetadataRequestComplete,
+                    measureMetadataRequestComplete: function()
+                    {
+                        this.chartFilterPanelLoadComplete = true;
+                        this.measureMetadataRequestComplete();
+                    },
                     expand: function ()
                     {
                         var hasGroupsSelected = this.chartLayoutOptions.general.chartSubjectSelection == 'groups';
@@ -284,9 +291,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.chartTypeBtn = Ext4.create('Ext.button.Button', {
                 text: 'Chart Type',
                 scope: this,
-                handler: function(){
-                    this.getChartTypeWindow().show();
-                }
+                handler: this.showChartTypeWindow
             });
         }
 
@@ -310,12 +315,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             // propagate the show event to the panel so it can stash the initial values
             this.chartTypeWindow.on('show', function(window)
             {
-                if (this.getChartTypePanel().getStudyColumnsStore().getCount() == 0)
-                {
-                    this.getChartTypePanel().getStudyQueryCombo().getEl().mask('Loading study measures...', 'query-combo-mask');
-                    LABKEY.vis.TimeChartHelper.getStudyMeasures(this.getChartTypePanel().loadStudyColumns, this.getChartTypePanel());
-                }
-
                 this.getChartTypePanel().fireEvent('show', this.getChartTypePanel());
             }, this);
         }
@@ -332,53 +331,67 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     y: this.chartTypeMeasures
                 },
                 baseSchemaName = measures.y.length > 0 ? measures.y[0].schemaName : this.getFilterSchemaName(),
-                baseQueryName = measures.y.length > 0 ? measures.y[0].queryName : this.getFilterQueryName(),
-                firstChartTypeSelection = true;
+                baseQueryName = measures.y.length > 0 ? measures.y[0].queryName : this.getFilterQueryName();
 
             this.chartTypePanel = Ext4.create('LABKEY.vis.ChartTypePanel', {
                 selectedType: 'time_chart',
                 hideNonSelectedType: true,
                 selectedFields: measures,
                 baseQueryKey: baseSchemaName + '.' + baseQueryName,
-                studyQueryName: baseSchemaName == 'study' ? baseQueryName : null,
-                listeners: {
-                    scope: this,
-                    invalidChartOptions: function(msg)
-                    {
-                        this.getChartTypeWindow().hide();
-                        this.displayErrorMsg(msg);
-                    },
-                    cancel: function(panel)
-                    {
-                        this.getChartTypeWindow().hide();
-                    },
-                    apply: function(panel, values)
-                    {
-                        this.maskAndRemoveCharts();
-
-                        if (firstChartTypeSelection && this.isNew())
-                            this.loadFiltersPanelValues();
-                        firstChartTypeSelection = false;
-
-                        this.chartTypeOptions = values.altValues.x;
-                        this.chartTypeMeasures = !Ext4.isArray(values.fields.y) ? [values.fields.y] : values.fields.y;
-
-                        // make sure that each measure has a y-axis side, default to left
-                        Ext4.each(this.chartTypeMeasures, function(measure){
-                            if (!Ext4.isString(measure.yAxis))
-                                measure.yAxis = 'left';
-                        }, this);
-
-                        this.measureSelectionChange();
-                        this.ensureChartLayoutOptions();
-                        this.chartDefinitionChanged(true);
-                        this.getChartTypeWindow().hide();
-                    }
-                }
+                studyQueryName: baseSchemaName == 'study' ? baseQueryName : null
             });
         }
 
+        if (!this.hasAttachedChartTypeListeners)
+        {
+            this.chartTypePanel.on('cancel', this.closeChartTypeWindow, this);
+            this.chartTypePanel.on('apply', this.applyChartTypeSelection, this);
+            this.hasAttachedChartTypeListeners = true;
+        }
+
         return this.chartTypePanel;
+    },
+
+    showChartTypeWindow : function()
+    {
+        // make sure the chartTypePanel is shown in the window
+        if (this.getChartTypeWindow().items.items.length == 0)
+            this.getChartTypeWindow().add(this.getChartTypePanel());
+
+        this.getChartTypeWindow().show();
+    },
+
+    closeChartTypeWindow : function(panel)
+    {
+        if (this.getChartTypeWindow().isVisible())
+            this.getChartTypeWindow().hide();
+    },
+
+    applyChartTypeSelection : function(panel, values)
+    {
+        // close the window and clear any previous charts
+        this.closeChartTypeWindow();
+        this.clearChartPanel();
+
+        // only apply the values for the applicable chart type
+        if (values.type != 'time_chart')
+            return;
+
+        this.maskAndRemoveCharts();
+        this.loadFiltersPanelValues();
+
+        this.chartTypeOptions = values.altValues.x;
+        this.chartTypeMeasures = !Ext4.isArray(values.fields.y) ? [values.fields.y] : values.fields.y;
+
+        // make sure that each measure has a y-axis side, default to left
+        Ext4.each(this.chartTypeMeasures, function(measure){
+            if (!Ext4.isString(measure.yAxis))
+                measure.yAxis = 'left';
+        }, this);
+
+        this.measureSelectionChange();
+        this.ensureChartLayoutOptions();
+        this.chartDefinitionChanged(true);
     },
 
     getChartLayoutBtn : function()
@@ -778,12 +791,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     getFilterSchemaName : function()
     {
-        return LABKEY.ActionURL.getParameter("schemaName");
+        return this.schemaName || LABKEY.ActionURL.getParameter('schemaName');
     },
 
     getFilterQueryName : function()
     {
-        return LABKEY.ActionURL.getParameter("queryName");
+        return this.queryName || LABKEY.ActionURL.getParameter('queryName');
     },
 
     getFilterQuery :  function()
@@ -798,8 +811,22 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     loadFiltersPanelValues : function()
     {
-        this.getFiltersPanel().getSubjectValues();
-        this.getFiltersPanel().getGroupValues();
+        if (!this.chartFilterPanelLoadComplete)
+        {
+            this.getFiltersPanel().getSubjectValues();
+            this.getFiltersPanel().getGroupValues();
+        }
+    },
+
+    loadInitialSelection : function()
+    {
+        // if we have an initial selection from the BaseChartWizardPanel apply it
+        if (Ext4.isDefined(this.initialSelection))
+        {
+            this.applyChartTypeSelection(this.getChartTypePanel(), this.initialSelection);
+            // clear the initial selection object so it isn't loaded again
+            this.initialSelection = undefined;
+        }
     },
 
     measureSelectionChange: function()
@@ -848,8 +875,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.viewChartBtn.show();
 
             this.buttonsToShow = [];
-            if (!this.getHelpBtn().isHidden())
-                this.buttonsToShow.push(this.getHelpBtn().hide());
             if (!this.getChartTypeBtn().isHidden())
                 this.buttonsToShow.push(this.getChartTypeBtn().hide());
             if (!this.getChartLayoutBtn().isHidden())
@@ -871,7 +896,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     },
 
     isDirty : function() {
-        return this.dirty;
+        return !LABKEY.user.isGuest && this.dirty;
     },
 
     markDirty : function(value) {
@@ -1392,8 +1417,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 items: [
                     {
                         xtype: 'displayfield',
-                        value: 'Note: filters applied to the data grid will not be reflected in the chart view.',
-                        style: 'font-style:italic;padding:10px'
+                        padding: '0 0 10px 0',
+                        value: 'Note: filters applied to the data grid will not be reflected in the chart(s).'
                     },
                     {
                         // add container to place QWP into
@@ -1456,7 +1481,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     maskAndRemoveCharts: function() {
         // mask panel and remove the chart(s)
-        if (!this.chart.getEl().isMasked())
+        if (this.chart.getEl() && !this.chart.getEl().isMasked())
         {
             this.chart.getEl().mask("loading...");
             this.clearChartPanel();
@@ -1516,7 +1541,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         config.displayIndividual = this.chartLayoutOptions.general.displayIndividual;
         config.displayAggregate = this.chartLayoutOptions.general.displayAggregate;
         config.errorBars = this.chartLayoutOptions.general.errorBars;
-        config.pointClickFn = this.chartLayoutOptions.developer.pointClickFn;
+
+        if (Ext4.isObject(this.chartLayoutOptions.developer))
+            config.pointClickFn = this.chartLayoutOptions.developer.pointClickFn;
 
         // get the url filter info
         config.filterUrl = this.chartInfo.filterUrl;
@@ -1603,8 +1630,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     saveChart: function(saveChartInfo) {
         // if queryName and schemaName are set on the URL then save them with the chart info
-        var schema = this.savedReportInfo ? this.savedReportInfo.schemaName : (LABKEY.ActionURL.getParameter("schemaName") || null);
-        var query = this.savedReportInfo ? this.savedReportInfo.queryName : (LABKEY.ActionURL.getParameter("queryName") || null);
+        var schema = this.savedReportInfo ? this.savedReportInfo.schemaName : (this.getFilterSchemaName() || null);
+        var query = this.savedReportInfo ? this.savedReportInfo.queryName : (this.getFilterQueryName() || null);
 
         var config = {
             replace: saveChartInfo.replace,
@@ -1711,16 +1738,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 }
             });
 
-            // if a new chart was created, we need to refresh the page with the correct report name on the URL
+            // if a new report was created, we need to refresh the page with the correct report id on the URL
             if (!this.getSavePanel().isSavedReport() || !replace)
-            {
-                window.location = LABKEY.ActionURL.buildURL("visualization", "timeChartWizard",
-                                    LABKEY.ActionURL.getContainer(),
-                                    Ext4.apply(LABKEY.ActionURL.getParameters(), {
-                                        reportId: result.visualizationId,
-                                        name: reportName
-                                    }));
-            }
+                window.location = LABKEY.ActionURL.buildURL('reports', 'runReport', null, {reportId: result.visualizationId});
         }
     },
 

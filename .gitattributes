@@ -3047,6 +3047,7 @@ visualization/resources/web/vis/chartFilterPanel.js -text
 visualization/resources/web/vis/chartLayoutPanel.js -text
 visualization/resources/web/vis/chartQueryPanel.js -text
 visualization/resources/web/vis/chartTypePanel.js -text
+visualization/resources/web/vis/chartWizard/baseChartWizardPanel.js -text
 visualization/resources/web/vis/chartWizardPanel.css -text
 visualization/resources/web/vis/chartWizardWindow.js -text
 visualization/resources/web/vis/developerOptionsPanel.js -text

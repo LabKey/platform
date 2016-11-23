@@ -31,6 +31,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.components.ChartQueryDialog;
 import org.labkey.test.components.ChartTypeDialog;
 import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.pages.TimeChartWizard;
@@ -880,12 +881,16 @@ public class StudyPublishTest extends StudyProtectedExportTest
     private void createTimeChart(String name, String[]... datasetMeasurePairs)
     {
         goToManageViews();
-        _extHelper.clickExtMenuButton(true, Locator.linkContainingText("Add Time Chart"));
-        TimeChartWizard timeChartWizard = new TimeChartWizard(this);
-        ChartTypeDialog chartTypeDialog = new ChartTypeDialog(getDriver());
-        chartTypeDialog.selectStudyQuery(datasetMeasurePairs[0][0])
+        _extHelper.clickExtMenuButton(true, Locator.linkContainingText("Add Chart"));
+        ChartQueryDialog queryDialog = new ChartQueryDialog(getDriver());
+        queryDialog.selectSchema("study").selectQuery("Visit");
+        ChartTypeDialog chartTypeDialog = queryDialog.clickOk();
+        chartTypeDialog.setChartType(ChartTypeDialog.ChartType.Time)
+                .selectStudyQuery(datasetMeasurePairs[0][0])
                 .setYAxis(datasetMeasurePairs[0][1])
                 .clickApply();
+
+        TimeChartWizard timeChartWizard = new TimeChartWizard(this);
         timeChartWizard.waitForWarningMessage("No data found for the following measures/dimensions", true);
 
         if (datasetMeasurePairs.length > 1)

@@ -103,7 +103,7 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
             if (!reportDesigners.isEmpty())
                 menu.addChild(reportMenu);
 
-            // "Add Chart" and "Add Time Chart" options
+            // "Add Chart" options
             for (ReportService.DesignerInfo info : chartDesigners)
                 menu.addChild(getItem(info, "Add "));
         }

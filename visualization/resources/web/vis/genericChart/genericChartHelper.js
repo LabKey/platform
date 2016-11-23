@@ -62,7 +62,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             {
                 name: 'time_chart',
                 title: 'Time',
-                hidden: true, //_getStudyTimepointType() == null,
+                hidden: _getStudyTimepointType() == null,
                 imgUrl: LABKEY.contextPath + '/visualization/images/timechart.png',
                 fields: [
                     {name: 'x', label: 'X Axis', required: true, altSelectionOnly: true, altFieldType: 'LABKEY.vis.TimeChartXAxisField'},
@@ -144,6 +144,100 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
 
         return queryLabels.join(', ');
+    };
+
+    /**
+     * Get the sorted set of column metadata for the given schema/query/view.
+     * @param queryConfig
+     * @param successCallback
+     * @param callbackScope
+     */
+    var getQueryColumns = function(queryConfig, successCallback, callbackScope)
+    {
+        LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('visualization', 'getGenericReportColumns.api'),
+            method: 'GET',
+            params: {
+                schemaName: queryConfig.schemaName,
+                queryName: queryConfig.queryName,
+                viewName: queryConfig.viewName,
+                dataRegionName: queryConfig.dataRegionName,
+                includeCohort: true,
+                includeParticipantCategory : true
+            },
+            success : function(response){
+                var columnList = Ext4.decode(response.responseText);
+                _queryColumnMetadata(queryConfig, columnList, successCallback, callbackScope)
+            },
+            scope   : this
+        });
+    };
+
+    var _queryColumnMetadata = function(queryConfig, columnList, successCallback, callbackScope)
+    {
+        LABKEY.Query.selectRows({
+            maxRows: 0, // use maxRows 0 so that we just get the query metadata
+            schemaName: queryConfig.schemaName,
+            queryName: queryConfig.queryName,
+            viewName: queryConfig.viewName,
+            parameters: queryConfig.parameters,
+            requiredVersion: 9.1,
+            columns: columnList.columns.all,
+            success: function(response){
+                var columnMetadata = _updateAndSortQueryFields(queryConfig, columnList, response.metaData.fields);
+                successCallback.call(callbackScope, columnMetadata);
+            },
+            failure : function(response) {
+                // this likely means that the query no longer exists
+                successCallback.call(callbackScope, columnList, []);
+            },
+            scope   : this
+        });
+    };
+
+    var _updateAndSortQueryFields = function(queryConfig, columnList, columnMetadata)
+    {
+        var queryFields = [],
+            columnTypes = Ext4.isDefined(columnList.columns) ? columnList.columns : {};
+
+        Ext4.each(columnMetadata, function(column)
+        {
+            var f = Ext4.clone(column);
+            f.schemaName = queryConfig.schemaName;
+            f.queryName = queryConfig.queryName;
+            f.isCohortColumn = false;
+            f.isSubjectGroupColumn = false;
+
+            // issue 23224: distinguish cohort and subject group fields in the list of query columns
+            if (columnTypes['cohort'] && columnTypes['cohort'].indexOf(f.name) > -1)
+            {
+                f.shortCaption = 'Study: ' + f.shortCaption;
+                f.isCohortColumn = true;
+            }
+            else if (columnTypes['subjectGroup'] && columnTypes['subjectGroup'].indexOf(f.name) > -1)
+            {
+                f.shortCaption = columnList.subject.nounSingular + ' Group: ' + f.shortCaption;
+                f.isSubjectGroupColumn = true;
+            }
+
+            if (f.name.toLowerCase() != 'lsid')
+                queryFields.push(f);
+        }, this);
+
+        // Sorts fields by their shortCaption, but put subject groups/categories/cohort at the end.
+        queryFields.sort(function(a, b)
+        {
+            if (a.isSubjectGroupColumn != b.isSubjectGroupColumn)
+                return a.isSubjectGroupColumn ? 1 : -1;
+            else if (a.isCohortColumn != b.isCohortColumn)
+                return a.isCohortColumn ? 1 : -1;
+            else if (a.shortCaption != b.shortCaption)
+                return a.shortCaption < b.shortCaption ? -1 : 1;
+
+            return 0;
+        });
+
+        return queryFields;
     };
 
     /**
@@ -909,6 +1003,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         getSelectedMeasureLabel: getSelectedMeasureLabel,
         getTitleFromMeasures: getTitleFromMeasures,
         getMeasureType: getMeasureType,
+        getQueryColumns : getQueryColumns,
         isNumericType: isNumericType,
         generateLabels: generateLabels,
         generateScales: generateScales,

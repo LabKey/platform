@@ -4,7 +4,6 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 Ext4.define('LABKEY.ext4.GenericChartPanel', {
-
     extend : 'Ext.panel.Panel',
 
     cls : 'generic-chart-panel',
@@ -12,6 +11,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     editable : false,
     minWidth : 800,
 
+    initialSelection : null,
+    savedReportInfo : null,
     hideViewData : false,
     reportLoaded : true,
     autoResize: true,
@@ -24,64 +25,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     queryGenericChartColumns : function()
     {
-        LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('visualization', 'getGenericReportColumns.api'),
-            method: 'GET',
-            params: {
-                schemaName: this.schemaName,
-                queryName: this.queryName,
-                viewName: this.viewName,
-                dataRegionName: this.dataRegionName,
-                includeCohort: true,
-                includeParticipantCategory : true
-            },
-            success : function(response){
-                var o = Ext4.decode(response.responseText);
-                this.initialColumnList = o.columns.all;
-                this.columnTypes = o.columns;
-                this.subject = o.subject;
-
-                this.queryColumnMetadata();
-            },
-            failure : this.onFailure,
-            scope   : this
-        });
-    },
-
-    queryColumnMetadata : function()
-    {
-        // use maxRows 0 so that we just get the query metadata
-        LABKEY.Query.selectRows({
-            maxRows: 0,
-            schemaName: this.schemaName,
-            queryName: this.queryName,
-            viewName: this.viewName,
-            parameters: this.parameters,
-            requiredVersion: 9.1,
-            columns: this.initialColumnList,
-            success: function(response){
-                this.queryColumnList = response.metaData.fields;
-                this.columnQueriesComplete();
-            },
-            failure : function(response) {
-                // this likely means that the query no longer exists, the other
-                // selectRows call with show the proper error message to the user
-                this.queryColumnList = [];
-                this.columnQueriesComplete();
-            },
-            scope   : this
-        });
-    },
-
-    columnQueriesComplete : function()
-    {
-        if (Ext4.isDefined(this.queryColumnList) && Ext4.isDefined(this.studyMeasureList))
+        LABKEY.vis.GenericChartHelper.getQueryColumns(this, function(columnMetadata)
         {
-            this.loadQueryColumns();
-            this.getChartTypePanel().loadStudyColumns(this.studyMeasureList);
-
+            this.getChartTypePanel().loadQueryColumns(columnMetadata);
             this.requestData();
-        }
+        }, this);
     },
 
     initComponent : function()
@@ -93,7 +41,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.supportedBrowser = !(Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8);
 
         var params = LABKEY.ActionURL.getParameters();
-        this.editMode = (params.edit == "true" || !this.savedReportInfo) && this.allowEditMode;
+        this.editMode = params.edit == "true" || !this.savedReportInfo;
         this.useRaphael = params.useRaphael != null ? params.useRaphael : false;
         this.parameters = LABKEY.Filter.getQueryParamsFromUrl(params['filterUrl'], this.dataRegionName);
 
@@ -120,21 +68,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             {
                 this.getEl().mask('Loading Data...');
 
-                if (this.editMode && !this.initialColumnList)
-                {
+                if (this.editMode && this.getChartTypePanel().getQueryColumnNames().length == 0)
                     this.queryGenericChartColumns();
-
-                    //LABKEY.vis.TimeChartHelper.getStudyMeasures(function(measures){
-                    //    this.studyMeasureList = measures;
-                    //    this.columnQueriesComplete();
-                    //}, this);
-                    this.studyMeasureList = [];
-                    this.columnQueriesComplete();
-                }
                 else
-                {
                     this.requestData();
-                }
             }
 
         }, this);
@@ -163,15 +100,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         if (this.savedReportInfo)
-        {
-            this.markDirty(false);
             this.loadSavedConfig();
-        }
         else
-        {
-            this.markDirty(false);
-            this.on('render', this.ensureQuerySettings, this);
-        }
+            this.loadInitialSelection();
 
         window.onbeforeunload = LABKEY.beforeunload(this.beforeUnload, this);
     },
@@ -323,7 +254,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             this.saveBtn =  Ext4.create('Ext.button.Button', {
                 text: "Save",
-                hidden: this.hideSave,
+                hidden: LABKEY.user.isGuest,
                 disabled: true,
                 handler: function(){
                     this.onSaveBtnClicked(false)
@@ -341,7 +272,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             this.saveAsBtn = Ext4.create('Ext.button.Button', {
                 text: "Save As",
-                hidden  : this.isNew() || this.hideSave,
+                hidden  : this.isNew() || LABKEY.user.isGuest,
                 disabled: true,
                 handler: function(){
                     this.onSaveBtnClicked(true);
@@ -451,7 +382,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 }
             }
 
-            if (!this.hideSave)
+            if (!LABKEY.user.isGuest)
                 tbarItems.push(''); // horizontal spacer
             if (this.canEdit)
                 tbarItems.push(this.getSaveBtn());
@@ -468,6 +399,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     showChartTypeWindow : function()
     {
+        // make sure the chartTypePanel is shown in the window
+        if (this.getChartTypeWindow().items.items.length == 0)
+            this.getChartTypeWindow().add(this.getChartTypePanel());
+
         this.getChartTypeWindow().show();
     },
 
@@ -510,36 +445,51 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!this.chartTypePanel)
         {
             this.chartTypePanel = Ext4.create('LABKEY.vis.ChartTypePanel', {
+                chartTypesToHide: ['time_chart'],
                 selectedType: this.getSelectedChartType(),
                 selectedFields: this.measures,
                 restrictColumnsEnabled: this.restrictColumnsEnabled,
                 customRenderTypes: this.customRenderTypes,
                 baseQueryKey: this.schemaName + '.' + this.queryName,
-                studyQueryName: this.schemaName == 'study' ? this.queryName : null,
-                listeners: {
-                    scope: this,
-                    cancel: function(panel)
-                    {
-                        this.getChartTypeWindow().hide();
-                    },
-                    apply: function(panel, values)
-                    {
-                        // note: this event will only fire if a change was made in the Chart Type panel
-                        this.setRenderType(values.type);
-                        this.measures = values.fields;
-
-                        this.getChartLayoutPanel().onMeasuresChange(this.measures, this.renderType);
-                        this.getChartLayoutPanel().updateVisibleLayoutOptions(this.getSelectedChartTypeData(), this.measures);
-                        this.ensureChartLayoutOptions();
-
-                        this.renderChart();
-                        this.getChartTypeWindow().hide();
-                    }
-                }
+                studyQueryName: this.schemaName == 'study' ? this.queryName : null
             });
         }
 
+        if (!this.hasAttachedChartTypeListeners)
+        {
+            this.chartTypePanel.on('cancel', this.closeChartTypeWindow, this);
+            this.chartTypePanel.on('apply', this.applyChartTypeSelection, this);
+            this.hasAttachedChartTypeListeners = true;
+        }
+
         return this.chartTypePanel;
+    },
+
+    closeChartTypeWindow : function(panel)
+    {
+        if (this.getChartTypeWindow().isVisible())
+            this.getChartTypeWindow().hide();
+    },
+
+    applyChartTypeSelection : function(panel, values, skipRender)
+    {
+        // close the window and clear any previous charts
+        this.closeChartTypeWindow();
+        this.clearChartPanel();
+
+        // only apply the values for the applicable chart type
+        if (values.type == 'time_chart')
+            return;
+
+        this.setRenderType(values.type);
+        this.measures = values.fields;
+
+        this.getChartLayoutPanel().onMeasuresChange(this.measures, this.renderType);
+        this.getChartLayoutPanel().updateVisibleLayoutOptions(this.getSelectedChartTypeData(), this.measures);
+        this.ensureChartLayoutOptions();
+
+        if (!skipRender)
+            this.renderChart();
     },
 
     getSelectedChartTypeData : function()
@@ -850,14 +800,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
             else
             {
-                // Check if we have cohorts available.
-                if (Ext4.isArray(this.initialColumnList))
+                // Check if we have cohorts available
+                var queryColumnNames = this.getChartTypePanel().getQueryColumnNames();
+                for (var i = 0; i < queryColumnNames.length; i++)
                 {
-                    for (var i = 0; i < this.initialColumnList.length; i++)
-                    {
-                        if (this.initialColumnList[i].indexOf('Cohort') > -1)
-                            columns.push(this.initialColumnList[i]);
-                    }
+                    if (queryColumnNames[i].indexOf('Cohort') > -1)
+                        columns.push(queryColumnNames[i]);
                 }
             }
 
@@ -878,8 +826,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         else
         {
             // If we're in edit mode then we can load all of the columns.
-            if (this.initialColumnList)
-                columns = this.initialColumnList;
+            columns = this.getChartTypePanel().getQueryColumnNames();
         }
 
         return columns;
@@ -973,57 +920,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return config;
     },
 
-    ensureQuerySettings : function()
-    {
-        if (!this.schemaName || !this.queryName)
-        {
-            this.schemaName = 'study';
-            this.getChartQueryWindow().show();
-        }
-    },
-
-    getChartQueryWindow : function()
-    {
-        if (!this.chartQueryWindow)
-        {
-            var panel = this.getChartQueryPanel();
-
-            this.chartQueryWindow = Ext4.create('LABKEY.vis.ChartWizardWindow', {
-                panelToMask: this,
-                onEsc: function() {
-                    panel.cancelHandler.call(panel);
-                },
-                items: [panel]
-            });
-        }
-
-        return this.chartQueryWindow;
-    },
-
-    getChartQueryPanel : function()
-    {
-        if (!this.querySettingsPanel)
-        {
-            this.querySettingsPanel = Ext4.create('LABKEY.vis.ChartQueryPanel', {
-                schemaName: this.schemaName,
-                listeners: {
-                    scope: this,
-                    ok: function(panel, schemaName, queryName, queryLabel)
-                    {
-                        this.schemaName = schemaName;
-                        this.queryName = queryName;
-                        this.queryLabel = queryLabel;
-
-                        this.updateChartTask.delay(500);
-                        this.getChartQueryWindow().hide();
-                    }
-                }
-            });
-        }
-
-        return this.querySettingsPanel;
-    },
-
     markDirty : function(dirty)
     {
         this.dirty = dirty;
@@ -1037,7 +933,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     beforeUnload : function()
     {
-        if (!this.hideSave && this.isDirty()) {
+        if (!LABKEY.user.isGuest && this.isDirty()) {
             return 'please save your changes';
         }
     },
@@ -1078,7 +974,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 'Content-Type' : 'application/json'
             },
             jsonData: reportConfig,
-            success : function(resp){
+            success : function(resp)
+            {
+                this.getSaveWindow().close();
+                this.markDirty(false);
+
                 // show success message and then fade the window out
                 var msgbox = Ext4.create('Ext.window.Window', {
                     html     : '<span class="labkey-message">Report saved successfully.</span>',
@@ -1101,23 +1001,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     }
                 });
 
-                this.updateNavTrailTitle(reportConfig.name);
-
-                var o = Ext4.decode(resp.responseText);
-                this.loadReportFromId(o.reportId);
-
-                this.getSaveWindow().close();
+                // if a new report was created, we need to refresh the page with the correct report id on the URL
+                if (this.isNew() || data.isSaveAs)
+                {
+                    var o = Ext4.decode(resp.responseText);
+                    window.location = LABKEY.ActionURL.buildURL('reports', 'runReport', null, {reportId: o.reportId});
+                }
             },
             failure : this.onFailure,
             scope   : this
         });
-    },
-
-    updateNavTrailTitle : function(title)
-    {
-        var navTitle = Ext4.query('*[class=labkey-nav-trail] *[class=labkey-nav-page-header]');
-        if (navTitle && (navTitle.length >= 1))
-            navTitle[0].innerHTML = LABKEY.Utils.encodeHtml(title);
     },
 
     onFailure : function(resp)
@@ -1283,6 +1176,20 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
     },
 
+    loadInitialSelection : function()
+    {
+        if (Ext4.isDefined(this.initialSelection))
+        {
+            this.applyChartTypeSelection(this.getChartTypePanel(), this.initialSelection, true);
+            // clear the initial selection object so it isn't loaded again
+            this.initialSelection = undefined;
+
+            this.markDirty(false);
+            this.reportLoaded = true;
+            this.updateChartTask.delay(500);
+        }
+    },
+
     handleNoData : function(errorMsg)
     {
         // Issue 18339
@@ -1310,7 +1217,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     renderPlot : function()
     {
         // Don't attempt to render if the view panel isn't visible or the chart type window is visible.
-        if (this.getViewPanel().isHidden() || this.getChartTypeWindow().isVisible())
+        if (!this.isVisible() || this.getViewPanel().isHidden() || this.getChartTypeWindow().isVisible())
             return;
 
         // initMeasures returns false and opens the Chart Type panel if a required measure is not chosen by the user.
@@ -1742,6 +1649,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (measure)
         {
             this.measures.y = measure.data ? measure.data : measure;
+            this.getChartTypePanel().setFieldSelection('y', this.measures.y);
             this.getChartLayoutPanel().onMeasuresChange(this.measures, this.renderType);
         }
     },
@@ -1751,6 +1659,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (measure)
         {
             this.measures.x = measure.data ? measure.data : measure;
+            this.getChartTypePanel().setFieldSelection('x', this.measures.x);
             this.getChartLayoutPanel().onMeasuresChange(this.measures, this.renderType);
         }
     },
@@ -1982,68 +1891,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         // when not in edit mode, we'll use the column metadata from the data query
         if (!this.editMode)
-        {
-            this.queryColumnList = this.chartData.metaData.fields;
-            this.loadQueryColumns();
-        }
+            this.getChartTypePanel().loadQueryColumns(this.chartData.metaData.fields);
 
         this.setDataLoading(false);
 
         // If it's already been requested then we just need to request it again, since this time we have the data to render.
         if (this.isRenderRequested())
             this.requestRender();
-    },
-
-    loadQueryColumns : function()
-    {
-        var queryFields = this.getQueryFields(this.queryColumnList);
-        this.getChartTypePanel().loadQueryColumns(queryFields);
-    },
-
-    getQueryFields : function(fields)
-    {
-        var queryFields = [];
-
-        Ext4.each(fields, function(field)
-        {
-            var f = Ext4.clone(field);
-            f.schemaName = this.schemaName;
-            f.queryName = this.queryName;
-            f.isCohortColumn = false;
-            f.isSubjectGroupColumn = false;
-
-            // issue 23224: distinguish cohort and subject group fields in the list of query columns
-            if (Ext4.isDefined(this.columnTypes))
-            {
-                if (this.columnTypes.cohort && this.columnTypes.cohort.indexOf(f.name) > -1)
-                {
-                    f.shortCaption = 'Study: ' + f.shortCaption;
-                    f.isCohortColumn = true;
-                }
-                else if (this.columnTypes.subjectGroup && this.columnTypes.subjectGroup.indexOf(f.name) > -1)
-                {
-                    f.shortCaption = this.subject.nounSingular + ' Group: ' + f.shortCaption;
-                    f.isSubjectGroupColumn = true;
-                }
-            }
-
-            queryFields.push(f);
-        }, this);
-
-        // Sorts fields by their shortCaption, but put subject groups/categories/cohort at the end.
-        queryFields.sort(function(a, b)
-        {
-            if (a.isSubjectGroupColumn != b.isSubjectGroupColumn)
-                return a.isSubjectGroupColumn ? 1 : -1;
-            else if (a.isCohortColumn != b.isCohortColumn)
-                return a.isCohortColumn ? 1 : -1;
-            else if (a.shortCaption != b.shortCaption)
-                return a.shortCaption < b.shortCaption ? -1 : 1;
-
-            return 0;
-        });
-
-        return queryFields;
     },
 
     getDefaultTitle : function()

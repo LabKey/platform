@@ -79,26 +79,20 @@
 %>
 
 <labkey:scriptDependency/>
-<div id="<%=h(renderId)%>" style="width:100%;"></div>
+<div id="<%=h(renderId)%>"></div>
 
 <script type="text/javascript">
     var init = function()
     {
         var reportId = <%=q(id != null ? id.toString() : null) %>;
-        var renderType = <%=q(form.getRenderType())%>;
-
         if (reportId != null)
         {
             LABKEY.Query.Visualization.get({
                 reportId: reportId,
                 success: function(result)
                 {
-                    if (result.type == LABKEY.Query.Visualization.Type.GenericChart)
-                        initializeGenericChartPanel(result);
-                    else if (result.type == LABKEY.Query.Visualization.Type.TimeChart)
-                        initializeTimeChartPanel(result);
-                    else
-                        displayErrorMsg("The saved chart does not match one of the expected chart types.");
+                    initializeChartWizardPanel(result);
+
                 },
                 failure: function (response)
                 {
@@ -107,29 +101,33 @@
                 scope: this
             });
         }
-        else if (renderType == 'time_chart')
-        {
-            initializeTimeChartPanel();
-        }
         else
         {
-            initializeGenericChartPanel();
+            initializeChartWizardPanel();
         }
     };
 
-    var initializeGenericChartPanel = function(savedReportInfo)
+    var initializeChartWizardPanel = function(savedReportInfo)
     {
-        Ext4.create('LABKEY.ext4.GenericChartPanel', {
+        var hasSavedReport = Ext4.isDefined(savedReportInfo),
+            saveReportIsGenericChart = hasSavedReport && savedReportInfo.type == LABKEY.Query.Visualization.Type.GenericChart,
+            saveReportIsTimeChart = hasSavedReport && savedReportInfo.type == LABKEY.Query.Visualization.Type.TimeChart;
+        if (hasSavedReport && !saveReportIsGenericChart && !saveReportIsTimeChart)
+        {
+            displayErrorMsg("The saved chart does not match one of the expected chart types.");
+            return;
+        }
+
+        Ext4.create('LABKEY.ext4.BaseChartWizardPanel', {
             renderTo: <%=q(renderId)%>,
             height: 650,
             savedReportInfo: savedReportInfo,
             canEdit: <%=canEdit%>,
             canShare: <%=canShare%>,
-            isDeveloper: <%=user.isDeveloper()%>,
+            isDeveloper: <%=isDeveloper%>,
             defaultNumberFormat: eval("<%=text(numberFormatFn)%>"),
             allowEditMode: <%=allowEditMode%>,
             editModeURL: <%=q(editUrl != null ? editUrl.toString() : null) %>,
-            hideSave: <%=user.isGuest()%>, // TODO review usage and apply this to time chart as well?
 
             baseUrl: <%=q(getActionURL().toString())%>,
             schemaName: <%=q(form.getSchemaName() != null ? form.getSchemaName() : null) %>,
@@ -143,25 +141,6 @@
             autoColumnYName  : <%=q(form.getAutoColumnYName() != null ? form.getAutoColumnYName() : null) %>,
             autoColumnXName  : <%=q(form.getAutoColumnXName() != null ? form.getAutoColumnXName() : null) %>,
             restrictColumnsEnabled: <%=FolderSettingsCache.areRestrictedColumnsEnabled(c)%>
-        });
-    };
-
-    var initializeTimeChartPanel = function(savedReportInfo)
-    {
-        // TODO verify conversion for backwards compatibility
-        if (savedReportInfo)
-            LABKEY.vis.TimeChartHelper.convertSavedReportConfig(savedReportInfo.visualizationConfig, savedReportInfo);
-
-        Ext4.create('LABKEY.vis.TimeChartPanel', {
-            renderTo: <%=q(renderId)%>,
-            height: 650,
-            savedReportInfo: savedReportInfo,
-            canEdit: <%=canEdit%>,
-            canShare: <%=canShare%>,
-            isDeveloper: <%=isDeveloper%>,
-            defaultNumberFormat: eval("<%=numberFormatFn%>"),
-            allowEditMode: <%=allowEditMode%>,
-            editModeURL: <%=q(editUrl != null ? editUrl.toString() : null) %>
         });
     };
 

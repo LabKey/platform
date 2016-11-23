@@ -11,6 +11,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
     width: 900,
     selectedType: null,
     hideNonSelectedType: false,
+    chartTypesToHide: null,
     selectedFields: null,
     requiredFieldNames: null,
     restrictColumnsEnabled: false,
@@ -25,7 +26,11 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         Ext4.each(LABKEY.vis.GenericChartHelper.getRenderTypes(), function(renderType)
         {
             // show the selected type and all non-hidden types (unless specifically requested to only show selected)
-            if (this.selectedType == renderType.name || (!this.hideNonSelectedType && !renderType.hidden))
+            var isSelectedType = this.selectedType == renderType.name,
+                explicitlyHidden = Ext4.isArray(this.chartTypesToHide) && this.chartTypesToHide.indexOf(renderType.name) > -1,
+                isNotHiddenType = !this.hideNonSelectedType && !renderType.hidden;
+
+            if ((isSelectedType || isNotHiddenType) && !explicitlyHidden)
                 typesArr.push(renderType);
         }, this);
 
@@ -78,7 +83,21 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
 
         // on show, stash the initial values so we can use for comparison and cancel reset
         this.initValues = {};
-        this.on('show', function() {
+        this.on('show', function()
+        {
+            // if we haven't populated the queryColumnsStore, make the request now
+            if (this.getQueryColumnsStore().getCount() == 0 && Ext4.isString(this.schemaName) && Ext4.isString(this.queryName))
+            {
+                LABKEY.vis.GenericChartHelper.getQueryColumns(this, this.loadQueryColumns, this);
+            }
+
+            // if we haven't populated the studyColumnsStore, make the request now
+            if (this.getStudyColumnsStore().getCount() == 0)
+            {
+                this.getStudyQueryCombo().getEl().mask('Loading study measures...', 'query-combo-mask');
+                LABKEY.vis.TimeChartHelper.getStudyMeasures(this.loadStudyColumns, this);
+            }
+
             this.initValues = this.getValues();
         }, this);
     },
@@ -236,7 +255,6 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                     + subjectInfo.nounSingular + 'Visit\' columns and have at least one \'measure\' column.</p>';
 
             this.studyQueryComboHelp = Ext4.create('Ext.Component', {
-                hidden: !this.isTimeChartTypeSelected(),
                 padding: '2px 0 0 10px',
                 html: '<i class="fa fa-question-circle"></i>',
                 listeners: {
@@ -262,6 +280,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         if (!this.studyQueryComboContainer)
         {
             this.studyQueryComboContainer = Ext4.create('Ext.form.FieldContainer', {
+                hidden: !this.isTimeChartTypeSelected(),
                 width: 336,
                 layout: 'hbox',
                 items: [this.getStudyQueryCombo(), this.getStudyQueryComboHelp()]
@@ -291,7 +310,8 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                             }
                         }, this);
 
-                        this.getStudyQueryCombo().setValue(this.studyQueryName);
+                        if (this.getStudyQueryCombo().getStore().findExact('queryName', this.studyQueryName) > -1)
+                            this.getStudyQueryCombo().setValue(this.studyQueryName);
                         this.filterStudyColumnsGrid();
 
                         if (this.getStudyQueryCombo().getEl())
@@ -324,6 +344,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         {
             this.studyColumnsGrid = Ext4.create('Ext.grid.Panel', {
                 hidden: !this.isTimeChartTypeSelected(),
+                cls: 'study-columns-grid',
                 store: this.getStudyColumnsStore(),
                 autoScroll: true,
                 height: this.height - 37/*studyQueryCombo height*/ - 165,
@@ -388,12 +409,18 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         this.getQueryColumnsStore().loadRawData(columns);
     },
 
+    getQueryColumnNames : function()
+    {
+        return this.getQueryColumnsStore().collect('name');
+    },
+
     getQueryColumnsGrid : function()
     {
         if (!this.queryColumnsGrid)
         {
             this.queryColumnsGrid = Ext4.create('Ext.grid.Panel', {
                 hidden: this.isTimeChartTypeSelected(),
+                cls: 'query-columns-grid',
                 store: this.getQueryColumnsStore(),
                 autoScroll: true,
                 height: this.height - 165,
@@ -678,6 +705,11 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         this.selectedFields = this.getFieldSelectionsPanel().getSelection();
     },
 
+    setFieldSelection : function(fieldName, measure)
+    {
+        this.selectedFields[fieldName] = measure;
+    },
+
     getSelectedType : function()
     {
         return this.selectedType;
@@ -719,7 +751,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 var fieldName = field.name;
                 if (Ext4.isDefined(this.selectedFields[fieldName]))
                     values[fieldName] = Ext4.clone(this.selectedFields[fieldName]);
-                else
+                else if (field.altFieldCmp)
                     values[fieldName] = Ext4.clone(field.altFieldCmp.getValue());
             }
         }, this);
@@ -840,11 +872,18 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
         Ext4.each(this.chartType.get('fields'), function(field)
         {
             var fieldSelection = this.selection ? this.selection[field.name] : undefined;
-            if (fieldSelection && Ext4.isString(fieldSelection.schemaName) && Ext4.isString(fieldSelection.queryName))
+
+            // drop the field selection from the previous chart type if the query key is not a match
+            if (Ext4.isObject(fieldSelection) && Ext4.isString(fieldSelection.schemaName) && Ext4.isString(fieldSelection.queryName))
             {
                 var queryKey = fieldSelection.schemaName + '.' + fieldSelection.queryName;
                 if (this.baseQueryKey.toLowerCase() != queryKey.toLowerCase())
                     fieldSelection = undefined;
+            }
+            // drop the field selection if it is an array and the field doesn't support multi select
+            else if (Ext4.isArray(fieldSelection) && !field.allowMultiple)
+            {
+                fieldSelection = undefined;
             }
 
             this.add(Ext4.create('LABKEY.vis.ChartTypeFieldSelectionPanel', {
@@ -961,8 +1000,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
             {
                 this.field.altFieldCmp = Ext4.create(this.field.altFieldType, Ext4.apply({
                     cls: 'alternate-field-selection',
-                    initData: this.selection,
-                    bubbleEvents: ['invalidChartOptions']
+                    initData: this.selection
                 }, this.field.altFieldConfig || {}));
 
                 this.fieldAreaCmp = Ext4.create('Ext.panel.Panel', {

@@ -196,7 +196,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
 
                     // the save button will not allow for replace if this is a new chart,
                     // but will force replace if this is a change to a saved chart
-                    var shared = typeof formVals.reportShared == "string" ? 'true' == formVals.reportShared : (new Boolean(formVals.reportShared)).valueOf();
+                    var shared = Ext4.isString(formVals.reportShared) ? 'true' == formVals.reportShared : (new Boolean(formVals.reportShared)).valueOf();
                     this.fireEvent('saveChart', {
                         isSaveAs: this.isSaveAs,
                         replace: !this.isSaveAs ? this.isSavedReport() : false,
@@ -247,7 +247,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
 
     isSavedReport : function()
     {
-        return (typeof this.reportInfo == "object");
+        return Ext4.isObject(this.reportInfo);
     },
 
     canSaveChanges : function()

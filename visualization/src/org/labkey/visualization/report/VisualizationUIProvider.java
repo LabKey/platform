@@ -19,9 +19,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -41,21 +38,14 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
     @Override
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings)
     {
-        List<ReportService.DesignerInfo> info = new ArrayList<>();
-        info.addAll(super.getDesignerInfo(context, settings));
         VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
-        if ("study".equalsIgnoreCase(settings.getSchemaName()))
-        {
-            ActionURL designerURL = urlProvider.getTimeChartDesignerURL(context.getContainer(), context.getUser(), settings);
-            info.add(new DesignerInfoImpl(TimeChartReport.TYPE, "Time Chart", null, designerURL,
-                    "/visualization/report/timechart.gif", ReportService.DesignerType.VISUALIZATION, "fa fa-line-chart"));
-        }
-
         GenericChartReport.RenderType renderType = GenericChartReport.RenderType.BAR_PLOT;
         ActionURL url = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, null);
+
+        List<ReportService.DesignerInfo> info = new ArrayList<>();
+        info.addAll(super.getDesignerInfo(context, settings));
         info.add(new DesignerInfoImpl(GenericChartReport.TYPE, "Chart", null, url,
                 renderType.getIconPath(), ReportService.DesignerType.VISUALIZATION, renderType.getIconCls()));
-
         return info;
     }
 
@@ -65,25 +55,13 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
     @Override
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context)
     {
-        List<ReportService.DesignerInfo> designers = new ArrayList<>();
-        Study study = StudyService.get().getStudy(context.getContainer());
         VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
-
-        if (study != null)
-        {
-            ActionURL designerURL = urlProvider.getTimeChartDesignerURL(context.getContainer());
-
-            DesignerInfoImpl info = new DesignerInfoImpl(TimeChartReport.TYPE, "Time Chart", null, designerURL,
-                    "/visualization/report/timechart.gif", ReportService.DesignerType.VISUALIZATION, "fa fa-line-chart");
-            info.setId("create_timeChart");
-            designers.add(info);
-        }
-
         GenericChartReport.RenderType renderType = GenericChartReport.RenderType.BAR_PLOT;
         ActionURL url = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), null, null);
+
+        List<ReportService.DesignerInfo> designers = new ArrayList<>();
         designers.add(new DesignerInfoImpl(GenericChartReport.TYPE, "Chart", null, url,
                 renderType.getIconPath(), ReportService.DesignerType.VISUALIZATION, renderType.getIconCls()));
-
         return designers;
     }
 

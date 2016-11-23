@@ -153,22 +153,7 @@ public class VisualizationController extends SpringActionController
         private static final String VISUALIZATION_ID_PARAM = "reportId";
         private static final String VISUALIZATION_RENDERTYPE_PARAM = "renderType";
 
-        @Override
-        public ActionURL getTimeChartDesignerURL(Container container)
-        {
-            return getBaseTimeChartURL(container, true);
-        }
-
-        @Override
-        public ActionURL getTimeChartDesignerURL(Container container, User user, QuerySettings settings)
-        {
-            ActionURL url = getBaseTimeChartURL(container, true);
-            addQueryParams(url, container, user, settings);
-
-            return url;
-        }
-
-        protected void addQueryParams(ActionURL url, Container container, User user, QuerySettings settings)
+        private void addQueryParams(ActionURL url, Container container, User user, QuerySettings settings)
         {
             String queryName = settings.getQueryName();
             if (queryName != null)
@@ -197,48 +182,34 @@ public class VisualizationController extends SpringActionController
             url.addParameter(VISUALIZATION_FILTER_URL, filterURL.getLocalURIString());
         }
 
-        @Override
-        public ActionURL getTimeChartDesignerURL(Container container, Report report)
-        {
-            ActionURL url = getBaseTimeChartURL(container, true);
-            String queryName = report.getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
-            if (queryName != null)
-                url.addParameter(QueryParam.queryName, queryName);
-            String schemaName = report.getDescriptor().getProperty(ReportDescriptor.Prop.schemaName);
-            if (schemaName != null)
-                url.addParameter(QueryParam.schemaName, schemaName);
-            url.addParameter(VISUALIZATION_ID_PARAM, report.getDescriptor().getReportId().toString());
-            url.addParameter(VISUALIZATION_NAME_PARAM, report.getDescriptor().getReportName());
-            return url;
-        }
-
-        @Override
-        public ActionURL getViewerURL(Container container, Report report)
-        {
-            ActionURL url = getBaseTimeChartURL(container, false);
-            String queryName = report.getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
-            if (queryName != null)
-                url.addParameter(QueryParam.queryName, queryName);
-            String schemaName = report.getDescriptor().getProperty(ReportDescriptor.Prop.schemaName);
-            if (schemaName != null)
-                url.addParameter(QueryParam.schemaName, schemaName);
-            url.addParameter(VISUALIZATION_ID_PARAM, report.getDescriptor().getReportId().toString());
-            url.addParameter(VISUALIZATION_NAME_PARAM, report.getDescriptor().getReportName());
-            return url;
-        }
-
-        private ActionURL getBaseTimeChartURL(Container container, boolean editMode)
+        private ActionURL getBaseGenericChartURL(Container container, boolean editMode)
         {
             ActionURL url = new ActionURL(GenericChartWizardAction.class, container);
-            url.addParameter(VISUALIZATION_EDIT_PARAM, editMode);
+            if (editMode)
+                url.addParameter(VISUALIZATION_EDIT_PARAM, true);
+            return url;
+        }
+
+        @Override
+        public ActionURL getTimeChartDesignerURL(Container container)
+        {
+            ActionURL url = getBaseGenericChartURL(container, true);
+            url.addParameter(QueryParam.schemaName, "study");
             url.addParameter(VISUALIZATION_RENDERTYPE_PARAM, "time_chart");
             return url;
         }
 
-        private ActionURL getBaseGenericChartURL(Container container, boolean editMode)
+        @Override
+        public ActionURL getTimeChartDesignerURL(Container container, Report report, boolean editMode)
         {
-            ActionURL url = new ActionURL(GenericChartWizardAction.class, container);
-            url.addParameter(VISUALIZATION_EDIT_PARAM, editMode);
+            ActionURL url = getBaseGenericChartURL(container, editMode);
+            String queryName = report.getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
+            if (queryName != null)
+                url.addParameter(QueryParam.queryName, queryName);
+            String schemaName = report.getDescriptor().getProperty(ReportDescriptor.Prop.schemaName);
+            if (schemaName != null)
+                url.addParameter(QueryParam.schemaName, schemaName);
+            url.addParameter(VISUALIZATION_ID_PARAM, report.getDescriptor().getReportId().toString());
             return url;
         }
 

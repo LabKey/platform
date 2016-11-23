@@ -82,6 +82,7 @@ Ext4.define('LABKEY.vis.ChartQueryPanel', {
                             this.getQueryCombo().getStore().load();
                         }
 
+                        this.getQueryCombo().enable();
                         this.getQueryCombo().clearValue();
                         this.getOkButton().disable();
                     }
@@ -115,6 +116,7 @@ Ext4.define('LABKEY.vis.ChartQueryPanel', {
             });
 
             this.queryCombo = Ext4.create('Ext.form.field.ComboBox', {
+                disabled: this.schemaName == null,
                 fieldLabel: 'Query',
                 name: 'query',
                 store: store,
