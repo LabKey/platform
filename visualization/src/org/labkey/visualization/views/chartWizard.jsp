@@ -25,7 +25,6 @@
 <%@ page import="org.labkey.api.settings.FolderSettingsCache" %>
 <%@ page import="org.labkey.api.util.ExtUtil" %>
 <%@ page import="org.labkey.api.util.Formats" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -75,59 +74,59 @@
         canEdit = ctx.hasPermission(ReadPermission.class) && !user.isGuest();
     }
 
-    String renderId = "chart-wizard-report-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String renderId = form.getComponentId() != null ? form.getComponentId() : "chart-wizard-report";
 %>
 
 <labkey:scriptDependency/>
 <div id="<%=h(renderId)%>"></div>
 
 <script type="text/javascript">
-    var init = function()
+
+    var init = function(reportId, renderTo, canEdit, editUrl)
     {
-        var reportId = <%=q(id != null ? id.toString() : null) %>;
         if (reportId != null)
         {
             LABKEY.Query.Visualization.get({
                 reportId: reportId,
                 success: function(result)
                 {
-                    initializeChartWizardPanel(result);
+                    initializeChartWizardPanel(renderTo, canEdit, editUrl, result);
 
                 },
                 failure: function (response)
                 {
-                    displayErrorMsg("No saved chart wizard report found for reportId:" + reportId + ".");
+                    displayErrorMsg(renderTo, "No saved chart wizard report found for reportId:" + reportId + ".");
                 },
                 scope: this
             });
         }
         else
         {
-            initializeChartWizardPanel();
+            initializeChartWizardPanel(renderTo, canEdit, editUrl);
         }
     };
 
-    var initializeChartWizardPanel = function(savedReportInfo)
+    var initializeChartWizardPanel = function(renderTo, canEdit, editUrl, savedReportInfo)
     {
         var hasSavedReport = Ext4.isDefined(savedReportInfo),
             saveReportIsGenericChart = hasSavedReport && savedReportInfo.type == LABKEY.Query.Visualization.Type.GenericChart,
             saveReportIsTimeChart = hasSavedReport && savedReportInfo.type == LABKEY.Query.Visualization.Type.TimeChart;
         if (hasSavedReport && !saveReportIsGenericChart && !saveReportIsTimeChart)
         {
-            displayErrorMsg("The saved chart does not match one of the expected chart types.");
+            displayErrorMsg(renderTo, "The saved chart does not match one of the expected chart types.");
             return;
         }
 
         Ext4.create('LABKEY.ext4.BaseChartWizardPanel', {
-            renderTo: <%=q(renderId)%>,
+            renderTo: renderTo,
             height: 650,
             savedReportInfo: savedReportInfo,
-            canEdit: <%=canEdit%>,
+            canEdit: canEdit,
             canShare: <%=canShare%>,
             isDeveloper: <%=isDeveloper%>,
             defaultNumberFormat: eval("<%=text(numberFormatFn)%>"),
             allowEditMode: <%=allowEditMode%>,
-            editModeURL: <%=q(editUrl != null ? editUrl.toString() : null) %>,
+            editModeURL: editUrl,
 
             baseUrl: <%=q(getActionURL().toString())%>,
             schemaName: <%=q(form.getSchemaName() != null ? form.getSchemaName() : null) %>,
@@ -144,11 +143,19 @@
         });
     };
 
-    var displayErrorMsg = function(msg)
+    var displayErrorMsg = function(renderTo, msg)
     {
-        Ext4.get(<%=q(renderId)%>).update("<span class='labkey-error'>" + msg + "</span>");
+        Ext4.get(renderTo).update("<span class='labkey-error'>" + msg + "</span>");
     };
 
-    Ext4.onReady(function(){ init(); });
+    Ext4.onReady(function()
+    {
+        var renderTo = <%=q(renderId)%>,
+            reportId = <%=q(id != null ? id.toString() : null) %>,
+            canEdit = <%=canEdit%>,
+            editUrl = <%=q(editUrl != null ? editUrl.toString() : null) %>;
+
+        init(reportId, renderTo, canEdit, editUrl);
+    });
 </script>
 

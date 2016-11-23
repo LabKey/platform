@@ -47,7 +47,7 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
         VisualizationController.ChartWizardReportForm form = new VisualizationController.ChartWizardReportForm();
         form.setAllowToggleMode(true);
         form.setReportId(getReportId());
-        form.setComponentId("generic-report-panel-" + UniqueID.getRequestScopedUID(context.getRequest()));
+        form.setComponentId("chart-wizard-report-" + getReportId().toString());
 
         JspView view = new JspView<>(getDescriptor().getViewClass(), form);
         view.setFrame(WebPartView.FrameType.NONE);
