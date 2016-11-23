@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -37,6 +38,8 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
@@ -45,10 +48,12 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleSet
 {
     private Domain _domain;
+    private StringExpression _nameExpression;
 
     public ExpSampleSetImpl(MaterialSource ms)
     {
@@ -84,7 +89,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public boolean canImportMoreSamples()
     {
-        return hasNameAsIdCol() || getIdCol1() != null;        
+        return hasNameAsIdCol() || getIdCol1() != null;
     }
 
     private DomainProperty getDomainProperty(String uri)
@@ -146,6 +151,9 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public void setIdColNames(@NotNull List<String> names)
     {
+        if (_object.getNameExpression() != null)
+            throw new IllegalArgumentException("Can't set both a name expression and idCols");
+
         if (names.size() > 0)
         {
             _object.setIdCol1(names.get(0));
@@ -195,6 +203,78 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     public DomainProperty getParentCol()
     {
         return getDomainProperty(_object.getParentCol());
+    }
+
+    public void setNameExpression(String expression)
+    {
+        if (hasIdColumns() && !hasNameAsIdCol())
+            throw new IllegalArgumentException("Can't set both a name expression and idCols");
+
+        _object.setNameExpression(expression);
+    }
+
+    @Override
+    @Nullable
+    public StringExpression getNameExpression()
+    {
+        if (_nameExpression == null)
+        {
+            String s = null;
+            if (_object.getNameExpression() != null)
+            {
+                s = _object.getNameExpression();
+            }
+            else if (hasNameAsIdCol())
+            {
+                s = "${name}";
+            }
+            else if (hasIdColumns())
+            {
+                List<DomainProperty> idCols = getIdCols();
+                StringBuilder expr = new StringBuilder();
+                String sep = "";
+                for (DomainProperty dp : idCols)
+                {
+                    expr.append(sep).append("${").append(dp.getName()).append("}");
+                    sep = "-";
+                }
+                s = expr.toString();
+            }
+            else
+            {
+                // CONSIDER: Create a default expression as a fallback? ${RowId}
+            }
+
+            if (s != null)
+                _nameExpression = StringExpressionFactory.create(s);
+        }
+
+        return _nameExpression;
+    }
+
+    @Override
+    public String createSampleName(@NotNull Map<String, Object> context, @Nullable Integer indexInGroup)
+    {
+        context = new CaseInsensitiveHashMap<>(context);
+
+        // If a name is already provided, just use it as is
+        if (context.get("name") != null)
+            return String.valueOf(context.get("name"));
+
+        StringExpression expr = getNameExpression();
+        if (expr == null)
+            return null;
+
+        // Add extra context variables
+        // CONSIDER: Container.RowId, Container.Name ?
+        if (indexInGroup != null)
+            context.put("IndexInGroup", indexInGroup);
+
+        String name = expr.eval(context);
+        if (name == null)
+            throw new IllegalArgumentException("Can't create new sample name in sample set '" + getName() + "' using the name expression: " + expr.getSource());
+
+        return name;
     }
 
     public void setDescription(String s)

@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -89,6 +90,7 @@ public class UploadSamplesHelper
 
     UploadMaterialSetForm _form;
     private MaterialSource _materialSource;
+    private ExpSampleSetImpl _sampleSet;
 
     public UploadSamplesHelper(UploadMaterialSetForm form)
     {
@@ -326,9 +328,11 @@ public class UploadSamplesHelper
                 _materialSource.setName(_form.getName());
                 setCols(usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI, _materialSource);
                 _materialSource.setMaterialLSIDPrefix(new Lsid("Sample", String.valueOf(_form.getContainer().getRowId()) + "." + setName, "").toString());
-                ExpSampleSetImpl sampleSet = new ExpSampleSetImpl(_materialSource);
-                sampleSet.save(_form.getUser());
-                _materialSource = sampleSet.getDataObject();
+                _sampleSet = new ExpSampleSetImpl(_materialSource);
+                _sampleSet.save(_form.getUser());
+                _materialSource = _sampleSet.getDataObject();
+
+                generateUniqueSampleNames(maps);
             }
             else
             {
@@ -338,9 +342,13 @@ public class UploadSamplesHelper
                     assert _materialSource.getName().equals(_form.getName());
                     assert _materialSource.getLSID().equals(ExperimentServiceImpl.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString());
                     setCols(usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI, _materialSource);
-                    ExpSampleSetImpl sampleSet = new ExpSampleSetImpl(_materialSource);
-                    sampleSet.save(_form.getUser());
-                    _materialSource = sampleSet.getDataObject();
+                    _sampleSet = new ExpSampleSetImpl(_materialSource);
+                    _sampleSet.save(_form.getUser());
+                    _materialSource = _sampleSet.getDataObject();
+                }
+                else
+                {
+                    _sampleSet = new ExpSampleSetImpl(_materialSource);
                 }
 
                 if (maps.size() > 0)
@@ -352,13 +360,16 @@ public class UploadSamplesHelper
                     }
                 }
 
+                generateUniqueSampleNames(maps);
+
                 UploadMaterialSetForm.InsertUpdateChoice insertUpdate = _form.getInsertUpdateChoiceEnum();
                 ListIterator<Map<String, Object>> li = maps.listIterator();
                 Lsid.LsidBuilder builder = new Lsid.LsidBuilder(_materialSource.getMaterialLSIDPrefix() + "ToBeReplaced");
                 while (li.hasNext())
                 {
                     Map<String, Object> map = li.next();
-                    String name = decideName(map, idColPropertyURIs);
+                    String name = (String)map.get("Name");
+                    assert name != null : "Name should have been generated";
                     String lsid = builder.setObjectId(name).toString();
                     ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
 
@@ -404,7 +415,7 @@ public class UploadSamplesHelper
                 }
             }
             materials = insertTabDelimitedMaterial(maps, new ArrayList<>(descriptors), _materialSource, reusedMaterialLSIDs, inputOutputColumns);
-            new ExpSampleSetImpl(_materialSource).onSamplesChanged(_form.getUser(), null);
+            _sampleSet.onSamplesChanged(_form.getUser(), null);
 
             transaction.commit();
         }
@@ -423,21 +434,40 @@ public class UploadSamplesHelper
     // Remember the actual set of properties that we received, so we don't end up deleting unspecified values.
     // Check for duplicate names and remove any rows that are duplicates if we are ignoring dupes.
     @NotNull
-    private Set<PropertyDescriptor> getPropertyDescriptors(Domain domain, List<String> idColPropertyURIs, List<Map<String, Object>> maps) throws ExperimentException
+    private Set<PropertyDescriptor> getPropertyDescriptors(Domain domain, List<String> idColPropertyURIs, List<Map<String, Object>> maps)
     {
-        InsertUpdateChoice insertUpdate = _form.getInsertUpdateChoiceEnum();
-
         Set<PropertyDescriptor> descriptors = new HashSet<>();
         descriptors.add(ExperimentProperty.COMMENT.getPropertyDescriptor());
 
+        ListIterator<Map<String, Object>> li = maps.listIterator();
+        while (li.hasNext())
+        {
+            Map<String, Object> map = li.next();
+            for (Map.Entry<String, Object> entry : map.entrySet())
+            {
+                DomainProperty prop = domain.getPropertyByURI(entry.getKey());
+                if (prop != null)
+                {
+                    descriptors.add(prop.getPropertyDescriptor());
+                }
+            }
+        }
+        return descriptors;
+    }
+
+    /**
+     * Generate a name for the sample row and check for any duplicates along the way.
+     */
+    private void generateUniqueSampleNames(List<Map<String, Object>> maps) throws ExperimentException
+    {
+        assert _sampleSet != null;
+        InsertUpdateChoice insertUpdate = _form.getInsertUpdateChoiceEnum();
         Set<String> newNames = new CaseInsensitiveHashSet();
         ListIterator<Map<String, Object>> li = maps.listIterator();
         while (li.hasNext())
         {
             Map<String, Object> map = li.next();
-
-            // Check for duplicate names
-            String name = decideName(map, idColPropertyURIs);
+            String name = decideName(map);
             if (!newNames.add(name))
             {
                 // Issue 23384: SampleSet: import should ignore duplicate rows when ignore duplicates is selected
@@ -450,17 +480,8 @@ public class UploadSamplesHelper
                     throw new ExperimentException("Duplicate material: " + name);
             }
 
-            for (Map.Entry<String, Object> entry : map.entrySet())
-            {
-                DomainProperty prop = domain.getPropertyByURI(entry.getKey());
-                if (prop != null)
-                {
-                    descriptors.add(prop.getPropertyDescriptor());
-                }
-
-            }
+            map.put("Name", name);
         }
-        return descriptors;
     }
 
     private boolean isNameHeader(String name)
@@ -547,20 +568,17 @@ public class UploadSamplesHelper
         }
     }
 
-    protected String decideName(Map<String, Object> rowMap, List<String> idCols)
+    // TODO: For multi-row inserts, add index in group (row number)
+    private String decideName(Map<String, Object> rowMap)
     {
-        StringBuilder ret = new StringBuilder(String.valueOf(rowMap.get(idCols.get(0))));
-        for (int i = 1; i < idCols.size(); i++)
+        assert _sampleSet.getNameExpression() != null;
+        Map<String, Object> ctx = new CaseInsensitiveHashMap<>(rowMap);
+        for (DomainProperty dp : _sampleSet.getIdCols())
         {
-            String col = idCols.get(i);
-            ret.append("-");
-            Object value = rowMap.get(col);
-            if (value != null)
-            {
-                ret.append(value);
-            }
+            if (rowMap.containsKey(dp.getPropertyURI()))
+                ctx.put(dp.getName(), rowMap.get(dp.getPropertyURI()));
         }
-        return ret.toString();
+        return _sampleSet.createSampleName(ctx, null);
     }
 
     public List<ExpMaterial> insertTabDelimitedMaterial(List<Map<String, Object>> rows, List<PropertyDescriptor> descriptors, MaterialSource source, Set<String> reusedMaterialLSIDs, Set<String> inputOutputColumns)
@@ -591,7 +609,8 @@ public class UploadSamplesHelper
 
         TableInfo aliasMap = ExperimentService.get().getTinfoMaterialAliasMap();
         rows.stream().filter(row -> row.containsKey("Alias")).forEach(row -> {
-            String name = decideName(row, idColumns);
+            String name = (String)row.get("Name");
+            assert name != null : "Name should have been generated";
             ExpMaterial material = materialMap.get(name);
             if (material != null)
             {
@@ -986,7 +1005,8 @@ public class UploadSamplesHelper
 
         public String beforeImportObject(Map<String, Object> map) throws SQLException
         {
-            String name = decideName(map, _idCols);
+            String name = (String)map.get("Name");
+            assert name != null : "Name should have been generated";
             String lsid = new Lsid.LsidBuilder(_source.getMaterialLSIDPrefix() + "ToBeReplaced").setObjectId(name).toString();
 
             ExpMaterialImpl material;

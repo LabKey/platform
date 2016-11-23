@@ -16,8 +16,13 @@
 
 package org.labkey.experiment;
 
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.*;
+import org.labkey.api.exp.DuplicateMaterialException;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.SamplePropertyHelper;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
@@ -27,7 +32,13 @@ import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -130,15 +141,20 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
 
     public String determineMaterialName(Map<DomainProperty, String> sampleProperties)
     {
-        String separator = "";
-        StringBuilder sb = new StringBuilder();
-        for (DomainProperty pd : getNamePDs())
+        if (_sampleSet != null)
         {
-            sb.append(separator);
-            separator = "-";
-            sb.append(sampleProperties.get(pd));
+            Map<String, Object> context = new CaseInsensitiveHashMap<>();
+            for (Map.Entry<DomainProperty, String> entry : sampleProperties.entrySet())
+            {
+                context.put(entry.getKey().getName(), entry.getValue());
+            }
+            return _sampleSet.createSampleName(context, null);
         }
-        return sb.toString();
+        else
+        {
+            assert _domainProperties.get(0).getName().equals("Name");
+            return sampleProperties.get(_nameProperty);
+        }
     }
 
     protected boolean isCopyable(DomainProperty pd)

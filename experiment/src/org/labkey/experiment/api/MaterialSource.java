@@ -33,6 +33,8 @@ public class MaterialSource extends IdentifiableEntity
     /** PropertyURI */
     private String _parentCol;
 
+    private String _nameExpression;
+
     public String getMaterialLSIDPrefix()
     {
         return materialLSIDPrefix;
@@ -99,5 +101,15 @@ public class MaterialSource extends IdentifiableEntity
     public void setParentCol(String parentCol)
     {
         _parentCol = parentCol;
+    }
+
+    public String getNameExpression()
+    {
+        return _nameExpression;
+    }
+
+    public void setNameExpression(String nameExpression)
+    {
+        _nameExpression = nameExpression;
     }
 }
