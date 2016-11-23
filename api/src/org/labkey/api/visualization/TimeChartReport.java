@@ -45,13 +45,13 @@ public abstract class TimeChartReport extends AbstractReport
     @Override
     public ActionURL getRunReportURL(ViewContext context)
     {
-        return PageFlowUtil.urlProvider(VisualizationUrls.class).getViewerURL(context.getContainer(), this);
+        return PageFlowUtil.urlProvider(VisualizationUrls.class).getTimeChartDesignerURL(context.getContainer(), this, false);
     }
 
     @Override
     public ActionURL getEditReportURL(ViewContext context)
     {
-        return PageFlowUtil.urlProvider(VisualizationUrls.class).getTimeChartDesignerURL(context.getContainer(), this);
+        return PageFlowUtil.urlProvider(VisualizationUrls.class).getTimeChartDesignerURL(context.getContainer(), this, true);
     }
 
     @Override

@@ -26,10 +26,6 @@ import org.labkey.api.view.ActionURL;
 public interface VisualizationUrls extends UrlProvider
 {
     ActionURL getTimeChartDesignerURL(Container container);
-    ActionURL getTimeChartDesignerURL(Container container, User user, QuerySettings settings);
-    ActionURL getTimeChartDesignerURL(Container container, Report report);
-    ActionURL getViewerURL(Container container, Report report);
-
-    // generic chart urls
+    ActionURL getTimeChartDesignerURL(Container container, Report report, boolean editMode);
     ActionURL getGenericChartDesignerURL(Container container, User user, @Nullable QuerySettings settings, @Nullable GenericChartReport.RenderType type);
 }

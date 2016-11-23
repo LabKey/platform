@@ -281,14 +281,6 @@ public abstract class GenericChartReport extends AbstractReport
     }
 
     @Override
-    public ActionURL getRunReportURL(ViewContext context)
-    {
-        ActionURL url =  super.getRunReportURL(context);
-        url.addParameter("edit", false);
-        return url;
-    }
-
-    @Override
     public ActionURL getEditReportURL(ViewContext context)
     {
         ActionURL url = super.getRunReportURL(context);
