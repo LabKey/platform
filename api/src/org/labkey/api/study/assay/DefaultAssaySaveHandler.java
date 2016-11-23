@@ -537,21 +537,11 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             else if (sampleSet != null && !sampleSet.hasNameAsIdCol() && materialObject.has(ExperimentJSONConverter.PROPERTIES))
             {
                 JSONObject properties = materialObject.getJSONObject(ExperimentJSONConverter.PROPERTIES);
-                StringBuilder sb = new StringBuilder();
-                for (DomainProperty dp : sampleSet.getIdCols())
-                {
-                    // XXX: may need to support all possible forms of the property name: label, import aliases, mv
-                    String val = properties.getString(dp.getName());
-                    if (val == null)
-                        throw new IllegalArgumentException("Can't create new sample for sample set '" + sampleSet.getName() + "'; missing required id column '" + dp.getName() + "'");
-                    if (sb.length() > 0)
-                        sb.append("-");
-                    sb.append(val);
-                }
 
-                if (sb.length() == 0)
+                // XXX: may need to support all possible forms of the property name: label, import aliases, mv
+                materialName = sampleSet.createSampleName(properties, null);
+                if (materialName.length() == 0)
                     throw new IllegalArgumentException("Failed to construct name for material from sample set '" + sampleSet.getName() + "' id columns");
-                materialName = sb.toString();
             }
 
             if (materialName != null && materialName.length() > 0)

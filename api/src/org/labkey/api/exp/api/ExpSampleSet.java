@@ -21,8 +21,10 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.util.StringExpression;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * A collection of {@link ExpMaterial}, with a custom {@link Domain} for additional properties.
@@ -75,6 +77,16 @@ public interface ExpSampleSet extends ExpObject
     /** @return column that contains parent sample names */
     @Nullable
     DomainProperty getParentCol();
+
+    /**
+     *  Get the name expression defined on this SampleSet.  If a name expression hasn't
+     *  been explicitly set, a default name expression will be generated from the id columns.
+     *  Name expression will only be null if no name expression and no id columns have been set.
+     */
+    @Nullable
+    StringExpression getNameExpression();
+
+    String createSampleName(@NotNull Map<String, Object> context, @Nullable Integer indexInGroup);
 
     void setDescription(String s);
 
