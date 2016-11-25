@@ -6,6 +6,7 @@ Ext4.define('LABKEY.vis.TimeChartYMeasureField', {
     border: false,
     bodyStyle: 'background-color: transparent;',
     cls: 'y-measure-form',
+    bubbleEvents: ['requiresDataRefresh'],
 
     selection: null,
     measure: null,
@@ -62,7 +63,14 @@ Ext4.define('LABKEY.vis.TimeChartYMeasureField', {
                 valueField: 'name',
                 displayField: 'label',
                 forceSelection: true,
-                editable: false
+                editable: false,
+                listeners: {
+                    scope: this,
+                    change: function(combo, newValue)
+                    {
+                        this.fireEvent('requiresDataRefresh');
+                    }
+                }
             });
         }
 
@@ -179,6 +187,8 @@ Ext4.define('LABKEY.vis.TimeChartYMeasureField', {
                         this.getDimensionAggregateCombo().setDisabled(isNone);
                         if (isNone)
                             this.getDimensionAggregateCombo().setValue(this.defaulDimensionAggregate);
+
+                        this.fireEvent('requiresDataRefresh');
                     }
                 }
             });
@@ -268,11 +278,18 @@ Ext4.define('LABKEY.vis.TimeChartYMeasureField', {
 
     getDimensionSeriesData: function(){
         var value = this.getDimensionSeriesCombo().getValue();
-        if (value && value != '[None]')
+        if (Ext4.isDefined(value))
         {
-            var record = this.getDimensionSeriesCombo().findRecordByValue(value);
-            if (record)
-                return Ext4.clone(record.data);
+            if (value != '[None]')
+            {
+                var record = this.getDimensionSeriesCombo().findRecordByValue(value);
+                if (record)
+                    return Ext4.clone(record.data);
+            }
+            else
+            {
+                return {};
+            }
         }
 
         return this.selection.dimension || {};
@@ -304,7 +321,14 @@ Ext4.define('LABKEY.vis.TimeChartYMeasureField', {
                 valueField: 'name',
                 displayField: 'name',
                 editable: false,
-                value: this.measure.aggregate || this.defaulDimensionAggregate
+                value: this.measure.aggregate || this.defaulDimensionAggregate,
+                listeners: {
+                    scope: this,
+                    change: function(combo, newValue)
+                    {
+                        this.fireEvent('requiresDataRefresh');
+                    }
+                }
             });
         }
 

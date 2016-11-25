@@ -46,7 +46,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.callParent();
 
-        this.addEvents('chartLayoutChange');
+        this.addEvents('chartLayoutChange', 'requiresDataRefresh');
     },
 
     defineGeneralOptions : function()
@@ -562,6 +562,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
                     this.setDisplayAggregateLines(groupsOptionSelected);
                     this.errorBarsCombobox.setDisabled(!groupsOptionSelected);
                     this.setErrorBars('None');
+
+                    this.fireEvent('requiresDataRefresh');
                 }
             }
         });
@@ -573,7 +575,13 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             boxLabel: 'Show Individual Lines',
             width: 160,
             disabled: true,
-            checked: true
+            checked: true,
+            listeners : {
+                scope : this,
+                change : function(cmp, checked){
+                    this.fireEvent('requiresDataRefresh');
+                }
+            }
         });
 
         this.showIndividualLinesFieldContainer = Ext4.create('Ext.form.FieldContainer', {
@@ -599,6 +607,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
                     this.errorBarsCombobox.setDisabled(!checked);
                     if (!checked)
                         this.setErrorBars('None');
+
+                    this.fireEvent('requiresDataRefresh');
                 }
             }
         });

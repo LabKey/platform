@@ -40,6 +40,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
         this.initValues = {};
         this.on('show', function(panel, selectedChartType, measures) {
             this.initValues = this.getValues();
+            this.requiresDataRefresh = false;
             this.updateVisibleLayoutOptions(selectedChartType, measures);
         }, this);
     },
@@ -186,6 +187,10 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
             // set initial values based on the config props loaded from the saved config
             if (newCardPanel.setPanelOptionValues)
                 newCardPanel.setPanelOptionValues(this.options[record.get('name')]);
+
+            newCardPanel.on('requiresDataRefresh', function(){
+                this.requiresDataRefresh = true;
+            }, this);
         }
         else
         {
@@ -246,10 +251,10 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
         this.fireButtonEvent('cancel');
     },
 
-    fireButtonEvent : function(eventName, params)
+    fireButtonEvent : function(eventName, param1, param2)
     {
         this.returnToFirstPanel();
-        this.fireEvent(eventName, this, params);
+        this.fireEvent(eventName, this, param1, param2);
     },
 
     returnToFirstPanel : function()
@@ -305,7 +310,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
 
             if (valid)
             {
-                this.fireButtonEvent('apply', values);
+                this.fireButtonEvent('apply', values, this.requiresDataRefresh);
             }
         }
     },

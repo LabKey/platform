@@ -98,12 +98,13 @@ Ext4.define('LABKEY.ext4.BaseChartWizardPanel', {
             this.getChartTypeWindow().show();
     },
 
-    getGenericChartPanel : function(chartTypePanel, initialSelection)
+    getGenericChartPanel : function(chartTypeWindow, chartTypePanel, initialSelection)
     {
         if (!this.genericChartPanel)
         {
             this.genericChartPanel = Ext4.create('LABKEY.ext4.GenericChartPanel', {
                 height: this.height,
+                chartTypeWindow: chartTypeWindow,
                 chartTypePanel: chartTypePanel,
                 initialSelection: initialSelection,
                 savedReportInfo: this.savedReportIsGenericChart ? this.savedReportInfo : null,
@@ -132,12 +133,13 @@ Ext4.define('LABKEY.ext4.BaseChartWizardPanel', {
         return this.genericChartPanel;
     },
 
-    getTimeChartPanel : function(chartTypePanel, initialSelection)
+    getTimeChartPanel : function(chartTypeWindow, chartTypePanel, initialSelection)
     {
         if (!this.timeChartPanel)
         {
             this.timeChartPanel = Ext4.create('LABKEY.vis.TimeChartPanel', {
                 height: this.height,
+                chartTypeWindow: chartTypeWindow,
                 chartTypePanel: chartTypePanel,
                 initialSelection: initialSelection,
                 savedReportInfo: this.savedReportIsTimeChart ? this.savedReportInfo : null,
@@ -175,6 +177,18 @@ Ext4.define('LABKEY.ext4.BaseChartWizardPanel', {
                     {
                         // propagate the show event to the panel so it can stash the initial values
                         this.getChartTypePanel().fireEvent('show', this.getChartTypePanel());
+
+                        // if we have an active item, mask it
+                        var activeItem = this.getLayout().getActiveItem();
+                        if (activeItem != null)
+                            activeItem.getEl().mask();
+                    },
+                    hide: function()
+                    {
+                        // if we have an active item, unmask it
+                        var activeItem = this.getLayout().getActiveItem();
+                        if (activeItem != null)
+                            activeItem.getEl().unmask();
                     }
                 }
             });
@@ -222,9 +236,9 @@ Ext4.define('LABKEY.ext4.BaseChartWizardPanel', {
     {
         var chartRenderPanel;
         if (Ext4.isObject(values) && values.type == 'time_chart')
-            chartRenderPanel = this.getTimeChartPanel(chartTypePanel, values);
+            chartRenderPanel = this.getTimeChartPanel(this.getChartTypeWindow(), chartTypePanel, values);
         else
-            chartRenderPanel = this.getGenericChartPanel(chartTypePanel, values);
+            chartRenderPanel = this.getGenericChartPanel(this.getChartTypeWindow(), chartTypePanel, values);
 
         // if we haven't yet added this render panel add it, then make it active in this card layout
         if (!this.contains(chartRenderPanel))

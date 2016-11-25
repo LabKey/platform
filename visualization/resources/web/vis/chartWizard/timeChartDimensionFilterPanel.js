@@ -127,7 +127,7 @@ Ext4.define('LABKEY.vis.DimensionFilterPanel', {
                             this.dimension.values = [];
                             for (var i = 0; i < (store.getCount() < 5 ? store.getCount() : 5); i++)
                                 this.dimension.values.push(store.getAt(i).get('value'));
-                            this.selectValues(false);
+                            this.selectValues(true);
                         }
 
                         this.fireEvent('measureMetadataRequestComplete');

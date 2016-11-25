@@ -69,12 +69,14 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.toggleButtonsForGrid(true);
 
             // issue 21418: support for parameterized queries
-            if (this.parameters) {
+            if (Ext4.isObject(this.parameters) && Object.keys(this.parameters).length > 0)
+            {
                 this.loaderFn = this.renderLineChart;
                 this.loaderName = 'renderLineChart';
                 this.getChartData();
             }
-            else {
+            else
+            {
                 this.renderLineChart();
             }
 
@@ -452,7 +454,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     {
                         this.getChartLayoutWindow().hide();
                     },
-                    apply: function(panel, values)
+                    apply: function(panel, values, requiresDataRefresh)
                     {
                         var newChartSubjectSelection = values.general.chartSubjectSelection;
                         if (this.chartLayoutOptions.general.chartSubjectSelection != newChartSubjectSelection)
@@ -460,7 +462,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
                         this.updateMeasureDimensionPanels();
                         this.ensureChartLayoutOptions();
-                        this.chartDefinitionChanged(true);
+                        this.chartDefinitionChanged(requiresDataRefresh);
                         this.getChartLayoutWindow().hide();
                     }
                 }
@@ -917,7 +919,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     measureMetadataRequestComplete: function() {
         this.measureMetadataRequestCounter--;
-        this.getChartData();
+        this.refreshChart.delay(100);
     },
 
     getChartData: function()
@@ -1105,6 +1107,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     _renderLineChart: function()
     {
+        // if the chart data hasn't loaded yet, return without rendering
+        if (!Ext4.isObject(this.chartData))
+            return;
+
         // get the updated chart information from the various options panels
         this.chartInfo = this.getChartInfoFromOptionPanels();
 
@@ -1219,9 +1225,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     addURLFilterPanel : function()
     {
         var filterDescription;
-        if (this.chartData.individual)
+        if (Ext4.isObject(this.chartData) && this.chartData.individual)
             filterDescription = this.chartData.individual.filterDescription;
-        if (this.chartData.aggregate)
+        if (Ext4.isObject(this.chartData) && this.chartData.aggregate)
             filterDescription = this.chartData.aggregate.filterDescription;
 
         // create and add the URL filter panel to the filters panel or remove it if the filter has been removed
@@ -1410,13 +1416,11 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 minHeight: 620,
                 autoScroll: true,
                 border: false,
-                padding: 10,
+                layout: {
+                    type: 'anchor',
+                    reserveScrollbar: true
+                },
                 items: [
-                    {
-                        xtype: 'displayfield',
-                        padding: '0 0 10px 0',
-                        value: 'Note: filters applied to the data grid will not be reflected in the chart(s).'
-                    },
                     {
                         // add container to place QWP into
                         xtype: 'container',
@@ -1432,19 +1436,25 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                                         queryName: this.tempGridInfo.query,
                                         sort: this.tempGridInfo.sortCols ? this.tempGridInfo.sortCols.join(", ") : null,
                                         parameters: this.chartInfo.parameters,
-                                        allowChooseQuery: false,
-                                        allowChooseView: false,
                                         allowHeaderLock: false,
                                         disableAnalytics: true,
-                                        title: '',
-                                        frame: 'none'
+                                        frame: 'none',
+                                        buttonBar   : {
+                                            includeStandardButton: false,
+                                            items: [LABKEY.QueryWebPart.standardButtons.exportRows]
+                                        },
+                                        messages: {
+                                            chartFilters: 'Note: filters applied to the data grid will not be reflected in the chart(s).'
+                                        }
                                     });
 
                                     // re-enable the View Charts button once the QWP has rendered
                                     chartQueryWebPart.on('render', function() {
                                         this.viewChartBtn.enable();
 
-                                        // redo the layout of the qwp panel to set reset the auto height
+                                        chartQueryWebPart.addMessage('Note: filters applied to the data grid will not be reflected in the chart(s).', 'chartFilters');
+
+                                        // redo the layout of the qwp panel to reset the auto height
                                         ct.doLayout();
 
                                         if (chartQueryWebPart.parameters) {

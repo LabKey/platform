@@ -104,7 +104,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         else if (config.measures[0].time == 'date' && config.measures[0].dateOptions.interval == 'Days')
         {
             xTickFormat = function(value) {
-                return Ext4.isNumber(value) && value % 1 > 0 ? null : value;
+                return Ext4.isNumber(value) && value % 1 != 0 ? null : value;
             };
         }
 
