@@ -53,6 +53,7 @@ import org.labkey.api.dataiterator.ResultSetDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StatementDataIterator;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.module.DefaultModule;
@@ -886,7 +887,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 NotificationServiceImpl.TestCase.class,
                 JspTemplate.TestCase.class,
                 SQLFragment.TestCase.class,
-                DavController.TestCase.class
+                DavController.TestCase.class,
+                DomainTemplateGroup.TestCase.class
         ));
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());
