@@ -30,6 +30,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCache2;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipelineJob;
@@ -68,7 +69,6 @@ import org.labkey.pipeline.mule.test.DummyRemoteExecutionEngine;
 import org.labkey.pipeline.xml.TaskType;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
@@ -76,11 +76,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.stream.Collectors;
 
 /**
  * <code>PipelineJobServiceImpl</code>
@@ -134,10 +136,15 @@ public class PipelineJobServiceImpl extends PipelineJobService
     private Map<TaskId, TaskFactory> _taskFactoryStore = new HashMap<>();
     private Map<SchemaType, XMLBeanTaskFactoryFactory> _taskFactoryFactories = new HashMap<>();
 
-    private final ModuleResourceCache<TaskFactory> TASK_FACTORY_CACHE = ModuleResourceCaches.create(
-            new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskFactoryCacheHandler.MODULE_TASKS_DIR), "TaskFactory cache", new TaskFactoryCacheHandler());
-    private final ModuleResourceCache<TaskPipeline> TASK_PIPELINE_CACHE = ModuleResourceCaches.create(
-        new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskPipelineCacheHandler.MODULE_PIPELINES_DIR), "TaskPipeline cache", new TaskPipelineCacheHandler());
+    private final ModuleResourceCache<TaskFactory> TASK_FACTORY_CACHE_OLD = ModuleResourceCaches.create(
+        new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskFactoryCacheHandler.MODULE_TASKS_DIR), "TaskFactory cache (Old)", new TaskFactoryCacheHandlerOld());
+    private final ModuleResourceCache<TaskPipeline> TASK_PIPELINE_CACHE_OLD = ModuleResourceCaches.create(
+        new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskPipelineCacheHandler.MODULE_PIPELINES_DIR), "TaskPipeline cache (Old)", new TaskPipelineCacheHandlerOld());
+
+    private final ModuleResourceCache2<Map<TaskId, TaskFactory>> TASK_FACTORY_CACHE = ModuleResourceCaches.create(
+        new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskFactoryCacheHandler.MODULE_TASKS_DIR), new TaskFactoryCacheHandler(), "TaskFactory cache");
+    private final ModuleResourceCache2<Map<TaskId, TaskPipeline>> TASK_PIPELINE_CACHE = ModuleResourceCaches.create(
+        new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskPipelineCacheHandler.MODULE_PIPELINES_DIR), new TaskPipelineCacheHandler(), "TaskPipeline cache");
 
     private final Set<Module> _pipelineModules = new CopyOnWriteArraySet<>();
 
@@ -219,7 +226,14 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 return pipeline;
         }
 
-        return TASK_PIPELINE_CACHE.getResource(id.toString());
+        TaskPipeline oldPipeline = TASK_PIPELINE_CACHE_OLD.getResource(id.toString());
+
+        Module module = ModuleLoader.getInstance().getModule(id.getModuleName());
+        TaskPipeline pipeline = TASK_PIPELINE_CACHE.getResourceMap(module).get(id);
+
+        assert (null == oldPipeline && null == pipeline) || (pipeline.getId().equals(oldPipeline.getId()));
+
+        return oldPipeline;
     }
 
     public void addTaskPipeline(TaskPipelineSettings settings) throws CloneNotSupportedException
@@ -244,13 +258,13 @@ public class PipelineJobServiceImpl extends PipelineJobService
         }
     }
 
-    protected TaskId[] getTaskProgression(Object... taskProgressioSpec)
+    protected TaskId[] getTaskProgression(Object... taskProgressionSpec)
     {
-        TaskId[] taskProgression = new TaskId[taskProgressioSpec.length];
-        for (int i = 0; i < taskProgressioSpec.length; i++)
+        TaskId[] taskProgression = new TaskId[taskProgressionSpec.length];
+        for (int i = 0; i < taskProgressionSpec.length; i++)
         {
             // The TaskPipelineRegistrar
-            taskProgression[i] = getTaskFactoryId(taskProgressioSpec[i]);
+            taskProgression[i] = getTaskFactoryId(taskProgressionSpec[i]);
         }
 
         return taskProgression;
@@ -284,7 +298,10 @@ public class PipelineJobServiceImpl extends PipelineJobService
             }
         }
 
-        pipelines.addAll(TASK_PIPELINE_CACHE.getResources(module));
+        Collection<TaskPipeline> cachedPipelinesOld = TASK_PIPELINE_CACHE_OLD.getResources(module);
+        Collection<TaskPipeline> cachedPipelinesNew = TASK_PIPELINE_CACHE.getResourceMap(module).values();
+        assert cachedPipelinesOld.size() == cachedPipelinesNew.size();
+        pipelines.addAll(cachedPipelinesOld);
         return pipelines;
     }
 
@@ -328,7 +345,14 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 return factory;
         }
 
-        return TASK_FACTORY_CACHE.getResource(id.toString());
+        Module module = ModuleLoader.getInstance().getModule(id.getModuleName());
+        TaskFactory factory = TASK_FACTORY_CACHE.getResourceMap(module).get(id);
+
+        TaskFactory factoryOld = TASK_FACTORY_CACHE_OLD.getResource(id.toString());
+
+        assert (null == factory && null == factoryOld) || (factory.getId().equals(factoryOld.getId()));
+
+        return factoryOld;
     }
 
     public void addTaskFactory(TaskFactorySettings settings) throws CloneNotSupportedException
@@ -384,14 +408,17 @@ public class PipelineJobServiceImpl extends PipelineJobService
         Collection<TaskFactory> factories = new ArrayList<>();
         synchronized (_taskFactoryStore)
         {
-            for (TaskFactory factory : _taskFactoryStore.values())
-            {
-                if (module.equals(factory.getDeclaringModule()))
-                    factories.add(factory);
-            }
+            factories.addAll(_taskFactoryStore.values().stream()
+                .filter(factory -> module.equals(factory.getDeclaringModule()))
+                .collect(Collectors.toList()));
         }
 
-        factories.addAll(TASK_FACTORY_CACHE.getResources(module));
+        Collection<TaskFactory> oldModuleFactories = TASK_FACTORY_CACHE_OLD.getResources(module);
+        Collection<TaskFactory> moduleFactories = TASK_FACTORY_CACHE.getResourceMap(module).values();
+
+        assert oldModuleFactories.size() == moduleFactories.size();
+
+        factories.addAll(oldModuleFactories);
 
         return factories;
     }
@@ -663,29 +690,25 @@ public class PipelineJobServiceImpl extends PipelineJobService
                         relName = rel;
                     }
 
-                    File[] matchingExecutables = dir.listFiles(new FileFilter()
+                    File[] matchingExecutables = dir.listFiles(file1 ->
                     {
-                        @Override
-                        public boolean accept(File file)
+                        String fileName = file1.getName();
+                        String parentName = file1.getParent();
+                        String relNameExpected = relName;
+                        String relPackageExpected = relPackage;
+
+                        if (FileUtil.isCaseInsensitiveFileSystem())
                         {
-                            String fileName = file.getName();
-                            String parentName = file.getParent();
-                            String relNameExpected = relName;
-                            String relPackageExpected = relPackage;
-
-                            if (FileUtil.isCaseInsensitiveFileSystem())
-                            {
-                                // Convert to a lower case to do a case-insensitive comparison on Windows, etc. See issue 21269
-                                fileName = fileName.toLowerCase();
-                                parentName = parentName.toLowerCase();
-                                relNameExpected = relNameExpected.toLowerCase();
-                                relPackageExpected = relPackageExpected.toLowerCase();
-                            }
-
-                            return fileName.startsWith(relNameExpected + ".") || fileName.equals(relNameExpected) &&
-                                    parentName.endsWith(relPackageExpected) &&
-                                    file.canExecute();
+                            // Convert to a lower case to do a case-insensitive comparison on Windows, etc. See issue 21269
+                            fileName = fileName.toLowerCase();
+                            parentName = parentName.toLowerCase();
+                            relNameExpected = relNameExpected.toLowerCase();
+                            relPackageExpected = relPackageExpected.toLowerCase();
                         }
+
+                        return fileName.startsWith(relNameExpected + ".") || fileName.equals(relNameExpected) &&
+                                parentName.endsWith(relPackageExpected) &&
+                                file1.canExecute();
                     });
 
                     if (matchingExecutables.length > 0)
@@ -958,6 +981,24 @@ public class PipelineJobServiceImpl extends PipelineJobService
             {
                 assertEquals(String.format(PIPELINE_TOOLS_ERROR, "percolator_v1.04", _tempDir), e.getMessage());
             }
+        }
+
+        @Test
+        public void testModuleCaches()
+        {
+            List<TaskPipeline> oldTaskPipelines = new LinkedList<>();
+            List<TaskPipeline> newTaskPipelines = new LinkedList<>();
+            List<TaskFactory> oldTaskFactories = new LinkedList<>();
+            List<TaskFactory> newTaskFactories = new LinkedList<>();
+            ModuleLoader.getInstance().getModules().forEach(module -> {
+                oldTaskPipelines.addAll(_impl.TASK_PIPELINE_CACHE_OLD.getResources(module));
+                newTaskPipelines.addAll(_impl.TASK_PIPELINE_CACHE.getResourceMap(module).values());
+                oldTaskFactories.addAll(_impl.TASK_FACTORY_CACHE_OLD.getResources(module));
+                newTaskFactories.addAll(_impl.TASK_FACTORY_CACHE.getResourceMap(module).values());
+            });
+
+            assertEquals(oldTaskPipelines.size(), newTaskPipelines.size());
+            assertEquals(oldTaskFactories.size(), newTaskFactories.size());
         }
 
         @After
