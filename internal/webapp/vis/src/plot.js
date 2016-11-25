@@ -1466,17 +1466,23 @@ boxPlot.render();
  * @param {Number} [config.data.value]
  *                          For LeveyJennings, it's the raw value.
  *                          For MovingRange, the calculated rM value, not the raw value.
- *                          For CUSUM, the calcuated Cusum value, not the raw value.
+ *                          For CUSUM, the calculated CUSUM value, not the raw value.
  * @param {String} [config.data.negative] CUSUM plot only. True for CUSUM-, false for CUSUM+. Default false;
  * @param {Object} [config.properties] An object that contains the properties specific to the Levey-Jennings plot
  * @param {String} [config.properties.value] The data property name for the value to be plotted on the left y-axis.
  *                          Used by LeveyJennings.
  * @param {String} [config.properties.valueRight] The data property name for the value to be plotted on the right y-axis.
  *                          Used by LeveyJennings.
+ * @param {String} [config.properties.mean] The data property name for the mean of the expected range.
+ *                          Used by LeveyJennings.
+ * @param {String} [config.properties.stdDev] The data property name for the standard deviation of the expected range.
+ *                          Used by LeveyJennings only.
  * @param {String} [config.properties.valueMR] The data property name for the moving range value to be plotted on the left y-axis.
  *                          Used by MovingRange.
  * @param {String} [config.properties.valueRightMR] The data property name for the moving range to be plotted on the right y-axis.
  *                          Used by MovingRange.
+ * @param {String} [config.properties.meanMR] The data property name for the mean of the moving range.
+ *                          Used MovingRange.
  * @param {String} [config.properties.positiveValue] The data property name for the value to be plotted on the left y-axis for CUSUM+.
  *                          Used by CUSUM only.
  * @param {String} [config.properties.positiveValueRight] The data property name for the value to be plotted on the right y-axis for CUSUM+.
@@ -1485,12 +1491,6 @@ boxPlot.render();
  *                          Used by CUSUM only.
  * @param {String} [config.properties.negativeValueRight] The data property name for the value to be plotted on the right y-axis for CUSUM-.
  *                          Used by CUSUM only.
- * @param {String} [config.properties.mean] The data property name for the mean of the expected range.
- *                          Used by LeveyJennings.
- * @param {String} [config.properties.meanMR] The data property name for the mean of the moving range.
- *                          Used MovingRange.
- * @param {String} [config.properties.stdDev] The data property name for the standard deviation of the expected range.
- *                          Used by LeveyJennings only.
  * @param {String} [config.properties.xTickLabel] The data property name for the x-axis tick label.
  * @param {Number} [config.properties.xTickTagIndex] (Optional) The index/value of the x-axis label to be tagged (i.e. class="xticktag").
  * @param {Boolean} [config.properties.showTrendLine] (Optional) Whether or not to show a line connecting the data points. Default false.

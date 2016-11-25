@@ -186,7 +186,7 @@ LABKEY.vis.Stat.getStdDev = function(values)
 
 /**
  * Returns the standard value (z-score).
- * @param value The obseravation number.
+ * @param value The observation number.
  * @param mean The mean.
  * @param stdDev The standard deviation.
  * @returns {Number}
