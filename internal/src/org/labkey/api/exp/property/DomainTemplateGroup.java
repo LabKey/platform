@@ -33,6 +33,7 @@ import org.labkey.api.module.ModuleResourceCache2;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCacheHandler2;
 import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
@@ -89,14 +90,14 @@ public class DomainTemplateGroup
         @Override
         public String createCacheKey(Module module, String resourceName)
         {
-            return ModuleResourceCache.createCacheKey(module, resourceName);
+            return ModuleResourceCaches.createCacheKey(module, resourceName);
         }
 
         @Override
         public CacheLoader<String, DomainTemplateGroup> getResourceLoader()
         {
             return (key, argument) -> {
-                ModuleResourceCache.CacheId id = ModuleResourceCache.parseCacheKey(key);
+                CacheId id = ModuleResourceCaches.parseCacheKey(key);
                 Module module = id.getModule();
                 String groupName = id.getName();
                 Path path = new Path(DIR_NAME, groupName + SUFFIX);
@@ -150,7 +151,7 @@ public class DomainTemplateGroup
 
         public String getGroupId(Module module, String groupName)
         {
-            return ModuleResourceCache.createCacheKey(module, groupName);
+            return ModuleResourceCaches.createCacheKey(module, groupName);
         }
 
         @Override
@@ -244,8 +245,8 @@ public class DomainTemplateGroup
 
     public static DomainTemplateGroup get(Module module, String templateGroupName)
     {
-        String key = ModuleResourceCache.createCacheKey(module, templateGroupName);
-        DomainTemplateGroup group = CACHE_OLD.getResource(ModuleResourceCache.createCacheKey(module, templateGroupName));
+        String key = ModuleResourceCaches.createCacheKey(module, templateGroupName);
+        DomainTemplateGroup group = CACHE_OLD.getResource(ModuleResourceCaches.createCacheKey(module, templateGroupName));
         DomainTemplateGroup group2 = CACHE.getResourceMap(module).get(key);
 
         assert (null == group && null == group2) || (null != group && null != group2 && group.getTemplates().size() == group2.getTemplates().size());
@@ -261,7 +262,7 @@ public class DomainTemplateGroup
             Collection<DomainTemplateGroup> groups = CACHE_OLD.getResources(m);
             for (DomainTemplateGroup group : groups)
             {
-                String key = ModuleResourceCache.createCacheKey(m, group._groupName);
+                String key = ModuleResourceCaches.createCacheKey(m, group._groupName);
                 assert group == CACHE_OLD.getResource(key);
                 ret.put(key, group);
             }
@@ -284,7 +285,7 @@ public class DomainTemplateGroup
             Collection<DomainTemplateGroup> groups = CACHE_OLD.getResources(m);
             for (DomainTemplateGroup group : groups)
             {
-                String key = ModuleResourceCache.createCacheKey(m, group._groupName);
+                String key = ModuleResourceCaches.createCacheKey(m, group._groupName);
                 assert group == CACHE_OLD.getResource(key);
                 for (DomainTemplate t : group._templates)
                 {
@@ -407,7 +408,7 @@ public class DomainTemplateGroup
         Map<String, DomainTemplate> templates = new LinkedHashMap<>();
 
         Module m = ModuleLoader.getInstance().getModule(_moduleName);
-        String key = ModuleResourceCache.createCacheKey(m, _groupName);
+        String key = ModuleResourceCaches.createCacheKey(m, _groupName);
         for (DomainTemplate t : _templates)
         {
             if (t.hasErrors())

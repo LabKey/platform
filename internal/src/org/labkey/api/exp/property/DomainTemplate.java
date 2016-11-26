@@ -35,7 +35,7 @@ import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
@@ -515,7 +515,7 @@ public class DomainTemplate
     public String getTemplateGroupKey()
     {
         Module m = ModuleLoader.getInstance().getModule(_moduleName);
-        return ModuleResourceCache.createCacheKey(m, _templateGroup);
+        return ModuleResourceCaches.createCacheKey(m, _templateGroup);
     }
 
     public String getTemplateKey()

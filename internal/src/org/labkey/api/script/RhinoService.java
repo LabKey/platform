@@ -28,9 +28,9 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.module.PathBasedModuleResourceCache;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
@@ -258,7 +258,7 @@ class ScriptReferenceImpl implements ScriptReference
         private final CacheLoader<String, CompiledScript> _loader = (key, argument) -> {
             RhinoEngine engine1 = (RhinoEngine)argument;
 
-            ModuleResourceCache.CacheId cid = ModuleResourceCache.parseCacheKey(key);
+            CacheId cid = ModuleResourceCaches.parseCacheKey(key);
             Path path = Path.parse(cid.getName());
             Resource r1 = cid.getModule().getModuleResource(path);
 
@@ -280,7 +280,7 @@ class ScriptReferenceImpl implements ScriptReference
         @Override
         public String createCacheKey(Module module, Path path)
         {
-            return ModuleResourceCache.createCacheKey(module, path.toString());
+            return ModuleResourceCaches.createCacheKey(module, path.toString());
         }
 
         @Override
@@ -505,7 +505,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
     {
         private final CacheLoader<String, Long> RESOURCE_LOADER = (key, argument) ->
         {
-            ModuleResourceCache.CacheId cid = ModuleResourceCache.parseCacheKey(key);
+            CacheId cid = ModuleResourceCaches.parseCacheKey(key);
             Path path = Path.parse(cid.getName());
             Resource r1 = cid.getModule().getModuleResource(path);
 
@@ -527,7 +527,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
         @Override
         public String createCacheKey(Module module, Path path)
         {
-            return ModuleResourceCache.createCacheKey(module, path.toString());
+            return ModuleResourceCaches.createCacheKey(module, path.toString());
         }
 
         @Override

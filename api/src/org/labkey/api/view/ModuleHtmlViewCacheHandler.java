@@ -18,8 +18,9 @@ package org.labkey.api.view;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlViewDefinition;
-import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
 
@@ -54,7 +55,7 @@ public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandler<Pa
     @Override
     public String createCacheKey(Module module, Path path)
     {
-        return ModuleResourceCache.createCacheKey(module, path.toString());
+        return ModuleResourceCaches.createCacheKey(module, path.toString());
     }
 
     @Override
@@ -62,7 +63,7 @@ public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandler<Pa
     {
         return (key, argument) ->
         {
-            ModuleResourceCache.CacheId cid = ModuleResourceCache.parseCacheKey(key);
+            CacheId cid = ModuleResourceCaches.parseCacheKey(key);
             Path path = Path.parse(cid.getName());
             Resource r = cid.getModule().getModuleResource(path);
 

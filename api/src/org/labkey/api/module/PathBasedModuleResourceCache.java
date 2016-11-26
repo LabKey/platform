@@ -24,6 +24,7 @@ import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatcher;
 import org.labkey.api.files.FileSystemWatchers;
+import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.resource.MergedDirectoryResource;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
@@ -67,13 +68,13 @@ public final class PathBasedModuleResourceCache<T>
         {
             // Register a listener, if this directory has never been visited before
 
-            ModuleResourceCache.CacheId cid = ModuleResourceCache.parseCacheKey(key);
+            CacheId cid = ModuleResourceCaches.parseCacheKey(key);
             Module module = cid.getModule();
             Path path = Path.parse(cid.getName());
             Path parentPath = path.getParent();
 
             // Use cache key as the canonical name for paths that have listeners
-            String canonicalName = ModuleResourceCache.createCacheKey(module, parentPath.toString());
+            String canonicalName = ModuleResourceCaches.createCacheKey(module, parentPath.toString());
 
             if (_pathsWithListeners.add(canonicalName))
             {

@@ -42,7 +42,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCache2;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.SimpleController;

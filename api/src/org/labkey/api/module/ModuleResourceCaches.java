@@ -20,6 +20,7 @@ import org.labkey.api.files.FileSystemWatcher;
 import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.resource.MergedDirectoryResource;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 
 import java.nio.file.StandardWatchEventKinds;
@@ -28,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * User: adam
@@ -112,6 +115,76 @@ public class ModuleResourceCaches
     public static ModuleResourceDirectory createModuleResourceDirectory(Path path)
     {
         return new StandardModuleResourceDirectory(path);
+    }
+
+
+
+    public static String createCacheKey(Module module, String resourceName)
+    {
+        // URL encode the parts and concatenate. See #21930.
+        return PageFlowUtil.encode(module.getName()) + "/" + PageFlowUtil.encode(resourceName);
+    }
+
+    public static CacheId parseCacheKey(String cacheKey)
+    {
+        // Now split and URL decode the parts
+        String[] parts = cacheKey.split("/");
+        return new CacheId(PageFlowUtil.decode(parts[0]), PageFlowUtil.decode(parts[1]));
+    }
+
+
+    public static class CacheId
+    {
+        private final String _moduleName;
+        private final String _name;
+
+        public CacheId(String module, String name)
+        {
+            _moduleName = module;
+            _name = name;
+        }
+
+        public CacheId(Module module, String name)
+        {
+            _moduleName = module.getName();
+            _name = name;
+        }
+
+        public Module getModule()
+        {
+            return ModuleLoader.getInstance().getModule(_moduleName);
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public String getModuleName()
+        {
+            return _moduleName;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "{" + _moduleName + "}/" + _name;
+        }
+    }
+
+
+    @Deprecated // Standard cache keys use URL encode/decode, but this doesn't  TODO: Switch usages to standard cache key
+    public static CacheId parseCacheKey(String cacheKey, Pattern pattern)
+    {
+        // Parse out the module name and the config name
+        Matcher matcher = pattern.matcher(cacheKey);
+
+        if (!matcher.matches() || matcher.groupCount() != 2)
+            throw new IllegalStateException("Unrecognized cache key format: " + cacheKey);
+
+        String moduleName = matcher.group(1);
+        String filename = matcher.group(2);
+        return new CacheId(moduleName, filename);
     }
 
 
