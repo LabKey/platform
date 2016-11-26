@@ -48,9 +48,9 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.module.PathBasedModuleResourceCache;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -618,7 +618,7 @@ public class SurveyManager
         {
             // We're retrieving/caching/invalidating a list of survey designs, not individual designs, so append "*" to the
             // requested path. This causes the listener to be registered in "path", not its parent.
-            return ModuleResourceCache.createCacheKey(module, path.append("*").toString());
+            return ModuleResourceCaches.createCacheKey(module, path.append("*").toString());
         }
 
         @Override
@@ -627,7 +627,7 @@ public class SurveyManager
             return (key, argument) -> {
                 try
                 {
-                    ModuleResourceCache.CacheId id = ModuleResourceCache.parseCacheKey(key);
+                    CacheId id = ModuleResourceCaches.parseCacheKey(key);
 
                     // Remove "/*" added by getCacheKey()
                     String name = id.getName();

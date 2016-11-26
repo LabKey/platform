@@ -21,8 +21,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler2;
+import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.FileUtil;
 
@@ -77,10 +78,9 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler2<Map<S
         return module.getName() + ":/" + name;
     }
 
-    public static ModuleResourceCache.CacheId parseOlapCacheKey(String schemaId)
+    public static CacheId parseOlapCacheKey(String schemaId)
     {
-        ModuleResourceCache.CacheId tid = ModuleResourceCache.parseCacheKey(schemaId, CONFIG_ID_PATTERN);
-        return tid;
+        return ModuleResourceCaches.parseCacheKey(schemaId, CONFIG_ID_PATTERN);
     }
 
 

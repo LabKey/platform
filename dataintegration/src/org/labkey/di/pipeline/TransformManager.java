@@ -48,7 +48,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
-import org.labkey.api.module.ModuleResourceCache.CacheId;
+import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.module.ModuleResourceCache2;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.pipeline.PipelineJob;
@@ -315,7 +315,7 @@ public class TransformManager implements DataIntegrationService.Interface
 
     CacheId parseConfigId(String configId)
     {
-        return ModuleResourceCache.parseCacheKey(configId, CONFIG_ID_PATTERN);
+        return ModuleResourceCaches.parseCacheKey(configId, CONFIG_ID_PATTERN);
     }
 
     private FilterStrategy.Factory createFilterFactory(FilterType filterTypeXML)

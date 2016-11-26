@@ -38,9 +38,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCache2;
 import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
@@ -198,7 +198,7 @@ public class ServerManager
     public static OlapSchemaDescriptor getDescriptor(@NotNull Container c, @NotNull String schemaId)
     {
         // crack the schemaId into module and name parts
-        ModuleResourceCache.CacheId id = OlapSchemaCacheHandler.parseOlapCacheKey(schemaId);
+        CacheId id = OlapSchemaCacheHandler.parseOlapCacheKey(schemaId);
 
         // look for descriptor in database by container and name
         String olapDefCacheKey = c.getId() + "/" + id.getName();

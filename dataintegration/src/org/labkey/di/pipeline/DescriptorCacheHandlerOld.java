@@ -21,8 +21,9 @@ import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.resource.Resource;
@@ -74,7 +75,7 @@ public class DescriptorCacheHandlerOld implements ModuleResourceCacheHandler<Str
         @Override
         public ScheduledPipelineJobDescriptor load(String configId, @Nullable Object argument)
         {
-            ModuleResourceCache.CacheId tid = ModuleResourceCache.parseCacheKey(configId, CONFIG_ID_PATTERN);
+            CacheId tid = ModuleResourceCaches.parseCacheKey(configId, CONFIG_ID_PATTERN);
             Module module = tid.getModule();
             String configName = tid.getName();
 
