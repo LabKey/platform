@@ -1,0 +1,6 @@
+//artifactoryPublish.skip=true
+
+subprojects {
+  apply plugin: 'java'
+  apply plugin: 'org.labkey.module'
+}

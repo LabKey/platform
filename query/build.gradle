@@ -1,0 +1,16 @@
+configurations {
+   antlr
+}
+
+dependencies {
+   antlr "org.antlr:antlr:${antlrVersion}"
+   external "org.antlr:antlr:${antlrVersion}"
+   external "eigenbase:eigenbase-properties:${eigenbasePropertiesVersion}"
+   external "eigenbase:eigenbase-resgen:${eigenbaseResgenVersion}"
+   external "pentaho:mondrian:${mondrianVersion}"
+   external "org.olap4j:olap4j:${olap4jVersion}"
+
+   jspCompile "org.olap4j:olap4j:${olap4jVersion}" 
+}
+
+apply plugin: 'org.labkey.antlr'

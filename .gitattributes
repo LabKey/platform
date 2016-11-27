@@ -145,6 +145,7 @@ bigiron/src/org/labkey/bigiron/sas/SasDialect.java -text
 bigiron/src/org/labkey/bigiron/sas/SasDialectFactory.java -text
 bigiron/src/org/labkey/bigiron/sas/SasExportScriptFactory.java -text
 bigiron/src/org/labkey/bigiron/sas/SasExportScriptModel.java -text
+/build.gradle -text
 cbcassay/CBCAssay.iml -text
 cbcassay/data/ex_20081016_131859.small.dat -text
 cbcassay/data/ex_20090115_jul08BAD.dat -text
@@ -171,6 +172,7 @@ core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationResult.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationResultList.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationService.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidatorDescriptor.java -text
+core/build.gradle -text
 core/build.xml -text
 core/module.properties -text
 core/resources/credits/executables.txt -text
@@ -1165,6 +1167,7 @@ list/src/org/labkey/list/view/customizeSingleListWebPart.jsp -text
 list/src/org/labkey/list/view/deleteListDefinition.jsp -text
 list/src/org/labkey/list/view/importLists.jsp -text
 list/src/org/labkey/list/view/listsWebPart.jsp -text
+mothership/build.gradle -text
 mothership/module.properties -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-0.00-13.30.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-14.30-15.10.sql -text
@@ -1217,6 +1220,7 @@ mothership/test/src/org/labkey/test/tests/mothership/MothershipReportTest.java -
 mothership/test/src/org/labkey/test/tests/mothership/MothershipTest.java -text
 mothership/test/src/org/labkey/test/util/mothership/MothershipHelper.java -text
 mothership/test/test_mothership.iml -text
+pipeline/build.gradle -text
 pipeline/build.xml -text
 pipeline/lib/activemq-core-4.1.1-sources.zip -text
 pipeline/lib/activemq-core-4.1.1.jar -text
@@ -1378,7 +1382,9 @@ pipeline/webapp/pipeline/images/file.gif -text
 pipeline/webapp/pipeline/images/folder.gif -text
 pipeline/webapp/pipeline/images/folder_open.gif -text
 pipeline/webapp/pipeline/importAdvancedOptions.lib.xml -text
+query/build.gradle -text
 query/build.xml -text
+query/gradle.properties -text
 query/gwtsrc/org/labkey/query/metadata/MetadataEditor.gwt.xml -text
 query/gwtsrc/org/labkey/query/metadata/client/GWTColumnInfo.java -text
 query/gwtsrc/org/labkey/query/metadata/client/GWTTableInfo.java -text
@@ -1773,6 +1779,7 @@ query/webapp/reports/wordprocessing.png -text
 query/webapp/reports/xls.gif -text
 query/webapp/scriptreporteditor.lib.xml -text
 search/Search.iml -text
+search/build.gradle -text
 search/lib/instructions.txt -text
 search/lib/lucene-6.0.1-src.zip -text
 search/lib/lucene-analyzers-common-6.0.1.jar -text
@@ -3091,6 +3098,7 @@ visualization/webapp/visualization/images/timechart.png -text
 visualization/webapp/visualization/report/box_plot.gif -text
 visualization/webapp/visualization/report/scatter_plot.gif -text
 visualization/webapp/visualization/report/timechart.gif -text
+wiki/build.gradle -text
 wiki/build.xml -text
 wiki/lib/radeox-api.jar -text
 wiki/lib/radeox.jar -text

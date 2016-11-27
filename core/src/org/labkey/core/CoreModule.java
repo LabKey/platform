@@ -41,7 +41,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.CollectionUtils;
-import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sampler;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.data.*;
@@ -216,6 +215,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * User: migra
@@ -764,7 +764,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     private static final String LIB_PATH = "/WEB-INF/lib/";
-    private static final String JAVA_CLIENT_API_JAR_PREFIX = "labkey-client-api-";
+    private static final Pattern LABKEY_JAR_PATTERN = Pattern.compile("^(?:api|schemas|internal|labkey\\-client\\-api).*\\.jar$");
 
     @Nullable
     @Override
@@ -773,20 +773,20 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (!AppProps.getInstance().isDevMode())
             return null;
 
+        // TODO incorporate reading of dependencies.txt file here OR (better) don't make this special for Core
+        // and rely on jars.txt in internal and api modules
         //noinspection unchecked
         Set<String> resources = ViewServlet.getViewServletContext().getResourcePaths(LIB_PATH);
         Set<String> filenames = new CaseInsensitiveTreeSet();
-        // We don't need to include licensing information for our own JAR files (only third-party JARs), so filter out
-        // our JARs that end up in WEB-INF/lib
-        Set<String> internalJars = new CsvSet("api.jar,schemas.jar,internal.jar");
 
         // Remove path prefix and copy to a modifiable collection
         for (String filename : resources)
         {
             String name = filename.substring(LIB_PATH.length());
 
-            // The Java client API JAR contains a version number in its file name, so we have to do a prefix match for it
-            if (DefaultModule.isRuntimeJar(name) && !internalJars.contains(name) && !name.startsWith(JAVA_CLIENT_API_JAR_PREFIX))
+            // We don't need to include licensing information for our own JAR files (only third-party JARs), so filter out
+            // our JARs that end up in WEB-INF/lib
+            if (DefaultModule.isRuntimeJar(name) && !LABKEY_JAR_PATTERN.matcher(name).matches())
                 filenames.add(name);
         }
 

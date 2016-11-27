@@ -29,6 +29,6 @@
         <!-- Copy the pipeline library JARs -->
         <property name="deploy.pipeline.lib.dir" value="${deploy.dir}/pipelineLib" />
         <mkdir dir="${deploy.pipeline.lib.dir}" />
-        <copy todir="${deploy.pipeline.lib.dir}" preservelastmodified="true" file="${lib.dir}/build/servlet-api.jar" />
+        <copy todir="${deploy.pipeline.lib.dir}" preservelastmodified="true" file="${lib.dir}/build/servlet-api-3.0.jar" />
     </target>
 </project>
