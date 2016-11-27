@@ -2366,7 +2366,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return LsidType.get(typeName);
     }
 
-    @Override
     public SimpleFilter createContainerFilter(Container container, User user, boolean includeProjectAndShared)
     {
         List<String> containerIds = new ArrayList<>();
