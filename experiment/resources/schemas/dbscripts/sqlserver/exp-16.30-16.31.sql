@@ -1,2 +1,2 @@
 
-ALTER TABLE exp.MaterialSource ADD COLUMN NameExpression NVARCHAR(200) NULL;
+ALTER TABLE exp.MaterialSource ADD NameExpression NVARCHAR(200) NULL;
