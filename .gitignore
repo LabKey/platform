@@ -1,3 +1,4 @@
+/.gradle
 /.gwt-cache
 /LabKey.iws
 api/webapp/WEB-INF/.pageflow-struts-generated

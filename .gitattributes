@@ -1,4 +1,5 @@
 * text=auto !eol
+api/build.gradle -text
 api/src/org/apache/commons/validator/routines/CustomTLDEnabler.java -text
 api/src/org/apache/jasper/runtime/JspSourceImports.java -text
 api/src/org/json/CDL.java -text
@@ -6471,6 +6472,7 @@ api/webapp/gtheme/img/lkbtn2.png -text
 api/webapp/gtheme/img/rct.png -text
 api/webapp/gtheme/img/rdr.png -text
 api/webapp/report/report.jpg -text
+internal/build.gradle -text
 internal/gwtsrc/org/labkey/api/gwt/Internal.gwt.xml -text
 internal/gwtsrc/org/labkey/api/gwt/client/AbstractDesignerMainPanel.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/AuditBehaviorType.java -text

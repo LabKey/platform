@@ -48,6 +48,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
@@ -92,6 +93,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -102,6 +104,7 @@ import java.util.stream.Collectors;
 public abstract class DefaultModule implements Module, ApplicationContextAware
 {
     public static final String CORE_MODULE_NAME = "Core";
+    private static final String DEPENDENCIES_FILE_PATH = "credits/dependencies.txt";
 
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
     private static final Set<Pair<Class, String>> INSTANTIATED_MODULES = new HashSet<>();
@@ -1358,34 +1361,56 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
+    protected Set<String> getDependenciesFromFile()
+    {
+        Set<String> fileNames = new CaseInsensitiveTreeSet();
+        Resource resource = getModuleResource(DEPENDENCIES_FILE_PATH);
+        if (resource != null)
+        {
+            try
+            {
+                fileNames.addAll(PageFlowUtil.getStreamContentsAsList(resource.getInputStream(), true));
+            }
+            catch (IOException e)
+            {
+                _log.error("Problem reading dependencies file for resource " + resource.getName(), e);
+            }
+        }
+
+        return fileNames;
+    }
+
     @Override
     public @Nullable Collection<String> getJarFilenames()
     {
         if (!AppProps.getInstance().isDevMode())
             return null;
 
-        File lib = new File(getExplodedPath(), "lib");
-        File external = new File(getExplodedPath(), "external");
+        Set<String> filenames = getDependenciesFromFile();
 
-        if (!lib.exists() && !external.exists())
-            return null;
 
-        Set<String> filenames = new CaseInsensitiveTreeSet();
-
-        Set<String> internalJars = new CaseInsensitiveHashSet(getInternalJarFilenames());
-
-        if (lib.exists())
+        if (filenames.isEmpty())
         {
-            filenames.addAll(Arrays.asList(lib.list(getJarFilenameFilter()))
-                    .stream()
-                    .filter(jarFilename -> !internalJars.contains(jarFilename))
-                    .collect(Collectors.toList()));
-        }
-        if (external.exists())
-        {
-            filenames.addAll(Arrays.asList(external.list(getJarFilenameFilter()))
-                    .stream()
-                    .collect(Collectors.toList()));
+            File lib = new File(getExplodedPath(), "lib");
+            File external = new File(getExplodedPath(), "external");
+
+            if (!lib.exists() && !external.exists())
+                return null;
+
+
+            Pattern moduleJarPattern = Pattern.compile("^" + _name.toLowerCase() + "(?:_schemas|_api|_jsp)?.*\\.jar$");
+
+            if (lib.exists())
+            {
+                filenames.addAll(Arrays.stream(lib.list(getJarFilenameFilter()))
+                        .filter(jarFilename -> !jarFilename.toLowerCase().matches(moduleJarPattern.pattern()))
+                        .collect(Collectors.toList()));
+            }
+            if (external.exists())
+            {
+                filenames.addAll(Arrays.stream(external.list(getJarFilenameFilter()))
+                        .collect(Collectors.toList()));
+            }
         }
 
         return filenames;
