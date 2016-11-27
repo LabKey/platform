@@ -422,6 +422,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             aes.outlierHoverText = generatePointHover(measures);
         }
 
+
         // color/shape aes are not dependent on chart type. If we have a box plot with all points enabled, then we
         // create a second layer for points. So we'll need this no matter what.
         if (measures.color) {
@@ -992,6 +993,150 @@ LABKEY.vis.GenericChartHelper = new function(){
         return Ext4.isDefined(studyCtx.timepointType) ? studyCtx.timepointType : null;
     };
 
+    var _getMeasureRestrictions = function (chartType, measure)
+    {
+        var measureRestrictions = {};
+        Ext4.each(getRenderTypes(), function (renderType)
+        {
+            if (renderType.name === chartType)
+            {
+                Ext4.each(renderType.fields, function (field)
+                {
+                    if (field.name === measure)
+                    {
+                        measureRestrictions.numericOnly = field.numericOnly;
+                        measureRestrictions.nonNumericOnly = field.nonNumericOnly;
+                        return false;
+                    }
+                });
+                return false;
+            }
+        });
+
+        return measureRestrictions;
+    };
+
+    /**
+     * Converts data values passed in to the appropriate type based on measure/dimension information.
+     * @param chartConfig Chart configuration object
+     * @param aes Aesthetic mapping functions for each measure/axis
+     * @param renderType The type of plot or chart (e.g. scatter_plot, bar_chart)
+     * @param data The response data from SelectRows
+     * @returns {{processed: {}, warningMessage: *}}
+     */
+    var doValueConversion = function(chartConfig, aes, renderType, data)
+    {
+        var measuresForProcessing = {}, dimensionsForProcessing = {}, measureRestrictions = {}, configMeasure;
+        for (var measureName in chartConfig.measures) {
+            if (chartConfig.measures.hasOwnProperty(measureName) && Ext4.isObject(chartConfig.measures[measureName])) {
+                configMeasure = chartConfig.measures[measureName];
+                Ext4.apply(measureRestrictions, _getMeasureRestrictions(renderType, measureName));
+
+                if (configMeasure.dimension && measureRestrictions.nonNumericOnly && isNumericType(configMeasure.type)) {
+                    dimensionsForProcessing[measureName] = {};
+                    dimensionsForProcessing[measureName].name = configMeasure.name;
+                    dimensionsForProcessing[measureName].label = configMeasure.label;
+                    configMeasure.normalizedType = 'string';
+                    configMeasure.type = 'string';
+                }
+
+                if (configMeasure.measure && (measureName !== 'x' || renderType === 'scatter_plot')
+                        && measureRestrictions.numericOnly && !isNumericType(configMeasure.type)) {
+                    measuresForProcessing[measureName] = {};
+                    measuresForProcessing[measureName].name = configMeasure.name;
+                    measuresForProcessing[measureName].label = configMeasure.label;
+                    configMeasure.normalizedType = 'float';
+                    configMeasure.type = 'float';
+                }
+            }
+        }
+
+        var response = this.processMeasureDimensionData(data, aes, dimensionsForProcessing, measuresForProcessing);
+
+        //generate error message for dropped values
+        var warningMessage;
+        for (var measure in response.droppedValues) {
+            if (response.droppedValues.hasOwnProperty(measure) && response.droppedValues[measure].numDropped) {
+                warningMessage = "The "
+                        + measure + "-axis measure '"
+                        + response.droppedValues[measure].label + "' had "
+                        + response.droppedValues[measure].numDropped +
+                        " value(s) that could not be converted to a number and are not included in the plot.";
+            }
+        }
+
+        return {processed: response.processed, warningMessage: warningMessage};
+    };
+
+    /**
+     * Does the explicit type conversion for each measure or dimension deemed suitable to convert. Currently we only
+     * attempt to convert numbers to strings for data dimensions, and strings to numbers for measures.
+     * @param rows Data from SelectRows
+     * @param aes Aesthetic mapping function for the measure/dimensions
+     * @param dimensionsForProcessing The dimensions to be converted, if any
+     * @param measuresForProcessing The measures to be converted, if any
+     * @returns {{droppedValues: {}, processed: {}}}
+     */
+    var processMeasureDimensionData = function(rows, aes, dimensionsForProcessing, measuresForProcessing) {
+        var droppedValues = {}, processed = {};
+        rows.forEach(function(row) {
+
+            //convert dimensions if applicable
+            if (!Ext4.Object.isEmpty(dimensionsForProcessing)) {
+                for (var dimension in dimensionsForProcessing) {
+                    if (dimensionsForProcessing.hasOwnProperty(dimension) && aes.hasOwnProperty(dimension)) {
+                        var value = aes[dimension](row);
+                        if (value != null && typeof value === 'number') {
+                            //only try to convert numbers to strings
+                            value = value.toString();
+                            row[dimensionsForProcessing[dimension].name].value = value;
+                        }
+                    }
+                }
+                processed.dimension = true;
+            }
+
+            //convert measures if applicable
+            if (!Ext4.Object.isEmpty(measuresForProcessing)) {
+                for (var measure in measuresForProcessing) {
+                    if (measuresForProcessing.hasOwnProperty(measure)) {
+                        if (!droppedValues[measure]) {
+                            droppedValues[measure] = {};
+                            droppedValues[measure].label = measuresForProcessing[measure].label;
+                            droppedValues[measure].numDropped = 0;
+                        }
+
+                        if (aes.hasOwnProperty(measure)) {
+                            value = aes[measure](row);
+                            if (typeof value !== 'number' && value !== null) {
+
+                                //only try to convert strings to numbers
+                                if (typeof value === 'string') {
+                                    value = value.trim();
+                                } else {
+                                    //dates, objects, booleans etc. to be assigned value: NULL
+                                    value = '';
+                                }
+
+                                var n = Number(value);
+                                // empty strings convert to 0, which we must explicitly deny
+                                if (value === '' || isNaN(n)) {
+                                    row[measuresForProcessing[measure].name].value = null;
+                                    droppedValues[measure].numDropped++;
+                                } else {
+                                    row[measuresForProcessing[measure].name].value = n;
+                                }
+                            }
+                        }
+                    }
+                }
+                processed.measure = true;
+            }
+        });
+
+        return {droppedValues: droppedValues, processed: processed};
+    };
+
     return {
         // NOTE: the @function below is needed or JSDoc will not include the documentation for loadVisDependencies. Don't
         // ask me why, I do not know.
@@ -1008,6 +1153,8 @@ LABKEY.vis.GenericChartHelper = new function(){
         generateLabels: generateLabels,
         generateScales: generateScales,
         generateAes: generateAes,
+        doValueConversion: doValueConversion,
+        processMeasureDimensionData: processMeasureDimensionData,
         generatePointHover: generatePointHover,
         generateBoxplotHover: generateBoxplotHover,
         generateDiscreteAcc: generateDiscreteAcc,

@@ -3073,7 +3073,9 @@ visualization/resources/web/vis/chartWizard/genericChartPanel.js -text
 visualization/resources/web/vis/chartWizard/saveOptionsPanel.js -text
 visualization/resources/web/vis/chartWizard/timeChartDimensionFilterPanel.js -text
 visualization/resources/web/vis/chartWizard/timeChartPanel.js -text
+visualization/resources/web/vis/genericChart/genericChartAxisPanel.js -text
 visualization/resources/web/vis/genericChart/genericChartHelper.js -text
+visualization/resources/web/vis/genericChart/genericChartPanel.js -text
 visualization/resources/web/vis/timeChart/timeChartHelper.js -text
 visualization/resources/web/vischart.lib.xml -text
 visualization/src/org/labkey/visualization/VisualizationController.java -text
