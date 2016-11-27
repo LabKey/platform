@@ -22,18 +22,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCache2;
-import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCacheHandler2;
 import org.labkey.api.module.ModuleResourceCaches;
-import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
@@ -53,10 +49,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * User: kevink
@@ -65,95 +63,12 @@ import java.util.Set;
 public class DomainTemplateGroup
 {
     private static final Logger LOG = Logger.getLogger(DomainTemplateGroup.class);
-
     private static final String DIR_NAME = "domain-templates";
     private static final String SUFFIX = ".template.xml";
-
-    private static final ModuleResourceCache<DomainTemplateGroup> CACHE_OLD = ModuleResourceCaches.create(new Path(DIR_NAME), "Domain templates (old)", new DomainTemplateGroupCacheHandlerOld());
     private static final ModuleResourceCache2<Map<String, DomainTemplateGroup>> CACHE = ModuleResourceCaches.create(new Path(DIR_NAME), new DomainTemplateGroupCacheHandler(), "Domain templates");
-
-    private static class DomainTemplateGroupCacheHandlerOld implements ModuleResourceCacheHandler<String, DomainTemplateGroup>
-    {
-        @Override
-        public boolean isResourceFile(String filename)
-        {
-            return filename.endsWith(SUFFIX) && filename.length() > SUFFIX.length();
-        }
-
-        @Override
-        public String getResourceName(Module module, String resourceName)
-        {
-            String groupName = resourceName.substring(0, resourceName.length() - SUFFIX.length());
-            return groupName;
-        }
-
-        @Override
-        public String createCacheKey(Module module, String resourceName)
-        {
-            return ModuleResourceCaches.createCacheKey(module, resourceName);
-        }
-
-        @Override
-        public CacheLoader<String, DomainTemplateGroup> getResourceLoader()
-        {
-            return (key, argument) -> {
-                CacheId id = ModuleResourceCaches.parseCacheKey(key);
-                Module module = id.getModule();
-                String groupName = id.getName();
-                Path path = new Path(DIR_NAME, groupName + SUFFIX);
-                Resource resource  = module.getModuleResolver().lookup(path);
-                if (resource == null)
-                    return null;
-
-                try (InputStream xmlStream = resource.getInputStream())
-                {
-                    if (null != xmlStream)
-                    {
-                        XmlOptions opts = XmlBeansUtil.getDefaultParseOptions();
-                        TemplatesDocument doc = TemplatesDocument.Factory.parse(xmlStream, opts);
-                        XmlBeansUtil.validateXmlDocument(doc, null);
-                        DomainTemplateGroup group = parse(module.getName(), groupName, doc);
-                        if (group.hasErrors())
-                        {
-                            LOG.warn("Error parsing domain template '" + groupName + "' in module '" + module.getName() + "'");
-                            group.getErrors().forEach(LOG::warn);
-                        }
-                        return group;
-                    }
-                }
-                catch (IOException e)
-                {
-                    ExceptionUtil.logExceptionToMothership(null, e);
-                }
-                catch (XmlValidationException e)
-                {
-                    LOG.warn("Error parsing domain template '" + resource + "'", e);
-                    return new DomainTemplateGroup(module.getName(), groupName, Collections.emptyList(), Arrays.asList(e.getMessage(), e.getDetails()));
-                }
-                catch (XmlException | IllegalArgumentException e)
-                {
-                    LOG.warn("Error parsing domain template '" + resource + "'", e);
-                    return new DomainTemplateGroup(module.getName(), groupName, Collections.emptyList(), Arrays.asList(e.getMessage()));
-                }
-
-                return null;
-            };
-        }
-    }
 
     private static class DomainTemplateGroupCacheHandler implements ModuleResourceCacheHandler2<Map<String, DomainTemplateGroup>>
     {
-        private String getGroupName(Resource resource)
-        {
-            String name = resource.getName();
-            return name.substring(0, name.length() - SUFFIX.length());
-        }
-
-        public String getGroupId(Module module, String groupName)
-        {
-            return ModuleResourceCaches.createCacheKey(module, groupName);
-        }
-
         @Override
         public Map<String, DomainTemplateGroup> load(@Nullable Resource dir, Module module)
         {
@@ -173,6 +88,17 @@ public class DomainTemplateGroup
                 });
 
             return Collections.unmodifiableMap(map);
+        }
+
+        private String getGroupName(Resource resource)
+        {
+            String name = resource.getName();
+            return name.substring(0, name.length() - SUFFIX.length());
+        }
+
+        private String getGroupId(Module module, String groupName)
+        {
+            return ModuleResourceCaches.createCacheKey(module, groupName);
         }
 
         private @Nullable DomainTemplateGroup getDomainTemplateGroup(Module module, Resource resource, String groupName)
@@ -210,24 +136,24 @@ public class DomainTemplateGroup
 
             return null;
         }
-    }
 
-    private static DomainTemplateGroup parse(String moduleName, String groupName, TemplatesDocument doc)
-    {
-        List<String> errors = new ArrayList<>();
-        List<DomainTemplate> templates = new ArrayList<>();
-        TemplatesDocument.Templates templateGroup = doc.getTemplates();
-        for (DomainTemplateType template : templateGroup.getTemplateArray())
+        private static DomainTemplateGroup parse(String moduleName, String groupName, TemplatesDocument doc)
         {
-            DomainTemplate t = DomainTemplate.parse(moduleName, groupName, template);
-            if (t != null)
+            List<String> errors = new ArrayList<>();
+            List<DomainTemplate> templates = new ArrayList<>();
+            TemplatesDocument.Templates templateGroup = doc.getTemplates();
+            for (DomainTemplateType template : templateGroup.getTemplateArray())
             {
-                templates.add(t);
-                t.getErrors().forEach(error -> errors.add(t.getTemplateName() + ": " + error));
+                DomainTemplate t = DomainTemplate.parse(moduleName, groupName, template);
+                if (t != null)
+                {
+                    templates.add(t);
+                    t.getErrors().forEach(error -> errors.add(t.getTemplateName() + ": " + error));
+                }
             }
-        }
 
-        return new DomainTemplateGroup(moduleName, groupName, Collections.unmodifiableList(templates), Collections.unmodifiableList(errors));
+            return new DomainTemplateGroup(moduleName, groupName, Collections.unmodifiableList(templates), Collections.unmodifiableList(errors));
+        }
     }
 
     public static DomainTemplateGroup get(Container c, String templateGroupName)
@@ -246,70 +172,25 @@ public class DomainTemplateGroup
     public static DomainTemplateGroup get(Module module, String templateGroupName)
     {
         String key = ModuleResourceCaches.createCacheKey(module, templateGroupName);
-        DomainTemplateGroup group = CACHE_OLD.getResource(ModuleResourceCaches.createCacheKey(module, templateGroupName));
-        DomainTemplateGroup group2 = CACHE.getResourceMap(module).get(key);
-
-        assert (null == group && null == group2) || (null != group && null != group2 && group.getTemplates().size() == group2.getTemplates().size());
-
-        return group;
+        return CACHE.getResourceMap(module).get(key);
     }
 
     public static Map<String, DomainTemplateGroup> getAllGroups(Container c)
     {
-        Map<String, DomainTemplateGroup> ret = new LinkedHashMap<>();
-        for (Module m : c.getActiveModules())
-        {
-            Collection<DomainTemplateGroup> groups = CACHE_OLD.getResources(m);
-            for (DomainTemplateGroup group : groups)
-            {
-                String key = ModuleResourceCaches.createCacheKey(m, group._groupName);
-                assert group == CACHE_OLD.getResource(key);
-                ret.put(key, group);
-            }
-        }
-
-        Map<String, DomainTemplateGroup> ret2 = new LinkedHashMap<>();
-        CACHE.getResourceMaps(c).forEach(ret2::putAll);
-
-        assert ret.size() == ret2.size();
-        assert ret.keySet().equals(ret2.keySet());
-
-        return ret;
+        return CACHE.getResourceMaps(c).stream() // Stream of Map<String, DomainTemplateGroup>
+            .map(Map::entrySet)                  // Stream of Set<Entry<String, DomainTemplateGroup>>
+            .flatMap(Collection::stream)         // Stream of Entry<String, DomainTemplateGroup>
+            .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 
     public static Map<String, DomainTemplate> getAllTemplates(Container c)
     {
-        Map<String, DomainTemplate> templates = new LinkedHashMap<>();
-        for (Module m : c.getActiveModules())
-        {
-            Collection<DomainTemplateGroup> groups = CACHE_OLD.getResources(m);
-            for (DomainTemplateGroup group : groups)
-            {
-                String key = ModuleResourceCaches.createCacheKey(m, group._groupName);
-                assert group == CACHE_OLD.getResource(key);
-                for (DomainTemplate t : group._templates)
-                {
-                    String templateKey = t.getTemplateKey();
-                    assert templateKey.startsWith(key);
-                    templates.put(templateKey, t);
-                }
-            }
-        }
-
-        Map<String, DomainTemplate> templates2 = new LinkedHashMap<>();
-        CACHE.getResourceMaps(c).stream()
+        return CACHE.getResourceMaps(c).stream() // Stream of Map<String, DomainTemplateGroup>
             .map(Map::values)                    // Stream of Collection<DomainTemplateGroup>
-            .flatMap(Collection::stream)         // Stream of DomainTemplateGroups
+            .flatMap(Collection::stream)         // Stream of DomainTemplateGroup
             .map(group -> group._templates)      // Stream of Collection<DomainTemplate>
-            .flatMap(Collection::stream)         // Stream of DomainTemplates
-            .forEach(template -> {
-                templates2.put(template.getTemplateKey(), template);
-            });
-
-        assert templates.size() == templates2.size();
-        assert templates.keySet().equals(templates2.keySet());
-
-        return templates;
+            .flatMap(Collection::stream)         // Stream of DomainTemplate
+            .collect(Collectors.toMap(DomainTemplate::getTemplateKey, Function.identity()));
     }
 
     private final String _moduleName;
@@ -396,11 +277,11 @@ public class DomainTemplateGroup
     public DomainTemplate getTemplate(@NotNull String templateName, @Nullable String kind, boolean includeErrors)
     {
         return _templates.stream()
-                .filter(t -> includeErrors || !t.hasErrors())
-                .filter(t -> kind == null || kind.equalsIgnoreCase(t.getDomainKind()))
-                .filter(t -> templateName.equals(t.getTemplateName()))
-                .findFirst()
-                .orElse(null);
+            .filter(t -> includeErrors || !t.hasErrors())
+            .filter(t -> kind == null || kind.equalsIgnoreCase(t.getDomainKind()))
+            .filter(t -> templateName.equals(t.getTemplateName()))
+            .findFirst()
+            .orElse(null);
     }
 
     public Map<String, DomainTemplate> getTemplates()
@@ -427,14 +308,8 @@ public class DomainTemplateGroup
         @Test
         public void testDomainTemplateCache()
         {
-            List<DomainTemplateGroup> oldTemplates = new LinkedList<>();
-            List<DomainTemplateGroup> newTemplates = new LinkedList<>();
-            ModuleLoader.getInstance().getModules().forEach(module -> {
-                oldTemplates.addAll(CACHE_OLD.getResources(module));
-                newTemplates.addAll(CACHE.getResourceMap(module).values());
-            });
-
-            assert oldTemplates.size() == newTemplates.size();
+            // Load all the DomainTemplateGroups to ensure no exceptions
+            ModuleLoader.getInstance().getModules().forEach(CACHE::getResourceMap);
         }
     }
 }
