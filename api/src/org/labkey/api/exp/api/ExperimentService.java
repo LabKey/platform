@@ -188,17 +188,19 @@ public class ExperimentService
         Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type);
 
         /**
-         * Create a new SampleSet with the provided properties.  If a 'Name' property exists in the list, it will be used
-         * as the 'id' property of the SampleSet.  Either a 'Name' property must exist or at least one idCol index must be provided.
+         * Create a new SampleSet with the provided properties.
+         * If a 'Name' property exists in the list, it will be used as the 'id' property of the SampleSet.
+         * Either a 'Name' property must exist or at least one idCol index must be provided.
+         * A name expression may be provided instead of idCols and will be used to generate the sample names.
          */
         @NotNull
-        ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol)
+        ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol, String nameExpression)
             throws ExperimentException, SQLException;
 
         /** (MAB) todo need a builder interface, or at least  parameter bean */
         @NotNull
         ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                     @Nullable TemplateInfo templateInfo)
+                                     String nameExpression, @Nullable TemplateInfo templateInfo)
                 throws ExperimentException, SQLException;
 
         @NotNull
