@@ -53,7 +53,7 @@ import java.util.Map;
 public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleSet
 {
     private Domain _domain;
-    private StringExpression _nameExpression;
+    private StringExpression _parsedNameExpression;
 
     public ExpSampleSetImpl(MaterialSource ms)
     {
@@ -214,10 +214,22 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     }
 
     @Override
-    @Nullable
-    public StringExpression getNameExpression()
+    public String getNameExpression()
     {
-        if (_nameExpression == null)
+        return _object.getNameExpression();
+    }
+
+    @Override
+    public boolean hasNameExpression()
+    {
+        return _object.getNameExpression() != null;
+    }
+
+    @Override
+    @Nullable
+    public StringExpression getParsedNameExpression()
+    {
+        if (_parsedNameExpression == null)
         {
             String s = null;
             if (_object.getNameExpression() != null)
@@ -246,10 +258,10 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             }
 
             if (s != null)
-                _nameExpression = StringExpressionFactory.create(s);
+                _parsedNameExpression = StringExpressionFactory.create(s);
         }
 
-        return _nameExpression;
+        return _parsedNameExpression;
     }
 
     @Override
@@ -261,7 +273,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         if (context.get("name") != null)
             return String.valueOf(context.get("name"));
 
-        StringExpression expr = getNameExpression();
+        StringExpression expr = getParsedNameExpression();
         if (expr == null)
             return null;
 
@@ -271,7 +283,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             context.put("IndexInGroup", indexInGroup);
 
         String name = expr.eval(context);
-        if (name == null)
+        if (name == null || name.length() == 0)
             throw new IllegalArgumentException("Can't create new sample name in sample set '" + getName() + "' using the name expression: " + expr.getSource());
 
         return name;

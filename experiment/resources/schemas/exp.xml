@@ -337,6 +337,7 @@
       <column columnName="IdCol2"/>
       <column columnName="IdCol3"/>
       <column columnName="ParentCol"/>
+      <column columnName="NameExpression"/>
       <column columnName="CreatedBy">
         <fk>
           <fkColumnName>UserId</fkColumnName>

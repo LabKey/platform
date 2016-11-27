@@ -355,7 +355,7 @@ public class ExpDataClassDataTestCase
         props.add(new GWTPropertyDescriptor("age", "string"));
 
         // Create a SampleSet and some samples
-        final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user, "Samples", null, props, Collections.emptyList(), 0, -1, -1, -1);
+        final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user, "Samples", null, props, Collections.emptyList(), 0, -1, -1, -1, null, null);
         final ExpMaterial s1 = ExperimentService.get().createExpMaterial(c,
                 new Lsid.LsidBuilder(ss.getMaterialLSIDPrefix() + "ToBeReplaced").setObjectId("S-1").toString(), "S-1");
         s1.setCpasType(ss.getLSID());

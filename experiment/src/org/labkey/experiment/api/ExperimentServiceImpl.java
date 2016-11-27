@@ -2366,6 +2366,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return LsidType.get(typeName);
     }
 
+    @Override
     public SimpleFilter createContainerFilter(Container container, User user, boolean includeProjectAndShared)
     {
         List<String> containerIds = new ArrayList<>();
@@ -2517,7 +2518,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 // Create a new SampleSet in the current container
                 List<GWTPropertyDescriptor> properties = new ArrayList<>();
                 properties.add(new GWTPropertyDescriptor("Name", "http://www.w3.org/2001/XMLSchema#string"));
-                return createSampleSet(c, user, "Samples", null, properties, Collections.emptyList(), 0, -1, -1, -1);
+                return createSampleSet(c, user, "Samples", null, properties, Collections.emptyList(), 0, -1, -1, -1, null, null);
             }
             else
             {
@@ -4829,15 +4830,15 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
     @NotNull
-    public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol)
+    public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol, String nameExpression)
             throws ExperimentException
     {
-        return createSampleSet(c,u,name,description,properties,indices,idCol1,idCol2,idCol3,parentCol,null);
+        return createSampleSet(c,u,name,description,properties,indices,idCol1,idCol2,idCol3,parentCol,null, null);
     }
 
     @NotNull
     public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-            @Nullable TemplateInfo templateInfo)
+                                            String nameExpression, @Nullable TemplateInfo templateInfo)
         throws ExperimentException
     {
         ExpSampleSet existing = getSampleSet(c, name);
@@ -4858,6 +4859,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             (idCol3 > -1 && idCol3 >= properties.size()) ||
             (parentCol > -1 && parentCol >= properties.size()))
             throw new ExperimentException("column index out of range");
+
+        // Name expression is only allowed when no idCol is set
+        if (nameExpression != null && idCol1 > -1)
+            throw new ExperimentException("Name expression cannot be used with id columns");
 
         Lsid lsid = getSampleSetLsid(name, c);
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
@@ -4905,13 +4910,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         domain.setPropertyIndices(propertyIndices);
 
         if (!hasNameProperty && idUri1 == null)
-            throw new ExperimentException("Please provide either a 'Name' property or an index for idCol1");
+            throw new ExperimentException("Either a 'Name' property or an index for idCol1 is required");
+
+        if (hasNameProperty && idUri1 != null)
+            throw new ExperimentException("Either a 'Name' property or idCols can be used, but not both");
 
         MaterialSource source = new MaterialSource();
         source.setLSID(lsid.toString());
         source.setName(name);
         source.setDescription(description);
         source.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", String.valueOf(c.getRowId()) + "." + PageFlowUtil.encode(name), "").toString());
+        if (nameExpression != null)
+            source.setNameExpression(nameExpression);
         source.setContainer(c);
 
         if (hasNameProperty)

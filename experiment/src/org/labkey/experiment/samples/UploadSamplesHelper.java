@@ -285,135 +285,18 @@ public class UploadSamplesHelper
 
             List<Map<String, Object>> maps = loader.load();
 
-            if (maps.size() > 0)
+            boolean createdSampleSet = ensureSampleSet(usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI);
+
+            Set<PropertyDescriptor> descriptors = getPropertyDescriptors(domain, maps);
+
+            generateUniqueNamesAndCheckForDupes(maps, descriptors);
+
+            Set<String> reusedMaterialLSIDs = Collections.emptySet();
+            if (!createdSampleSet)
             {
-                for (String uri : idColPropertyURIs)
-                {
-                    if (!maps.get(0).containsKey(uri))
-                    {
-                        throw new ExperimentException("Id Columns must match:  Missing uri " + uri + " in row 0");
-                    }
-                    int i = 0;
-                    ListIterator<Map<String, Object>> iter = maps.listIterator();
-                    while (iter.hasNext())
-                    {
-                        i++;
-                        Map<String, Object> map = iter.next();
-                        if (map.get(uri) == null)
-                        {
-                            if (uri.contains("#"))
-                            {
-                                uri = uri.substring(uri.indexOf("#") + 1);
-                            }
-                            throw new ExperimentException("All rows must contain values for all Id columns: Missing " + uri +
-                                    " in row:  " + (i + 1));
-                        }
-                    }
-                }
+                reusedMaterialLSIDs = deleteOldPropertyValues(hasCommentHeader, maps, descriptors);
             }
 
-            Set<PropertyDescriptor> descriptors = getPropertyDescriptors(domain, idColPropertyURIs, maps);
-
-
-            Set<String> reusedMaterialLSIDs = new HashSet<>();
-            if (_materialSource == null)
-            {
-                assert _form.isCreateNewSampleSet();
-                _materialSource = new MaterialSource();
-                String setName = PageFlowUtil.encode(_form.getName());
-                _materialSource.setContainer(_form.getContainer());
-                _materialSource.setDescription("Samples uploaded by " + _form.getUser().getEmail());
-                Lsid lsid = ExperimentServiceImpl.get().getSampleSetLsid(_form.getName(), _form.getContainer());
-                _materialSource.setLSID(lsid.toString());
-                _materialSource.setName(_form.getName());
-                setCols(usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI, _materialSource);
-                _materialSource.setMaterialLSIDPrefix(new Lsid("Sample", String.valueOf(_form.getContainer().getRowId()) + "." + setName, "").toString());
-                _sampleSet = new ExpSampleSetImpl(_materialSource);
-                _sampleSet.save(_form.getUser());
-                _materialSource = _sampleSet.getDataObject();
-
-                generateUniqueSampleNames(maps);
-            }
-            else
-            {
-                // 6088: update id cols for already existing material source if none have been set
-                if (_materialSource.getIdCol1() == null || (_materialSource.getParentCol() == null && parentColPropertyURI != null))
-                {
-                    assert _materialSource.getName().equals(_form.getName());
-                    assert _materialSource.getLSID().equals(ExperimentServiceImpl.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString());
-                    setCols(usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI, _materialSource);
-                    _sampleSet = new ExpSampleSetImpl(_materialSource);
-                    _sampleSet.save(_form.getUser());
-                    _materialSource = _sampleSet.getDataObject();
-                }
-                else
-                {
-                    _sampleSet = new ExpSampleSetImpl(_materialSource);
-                }
-
-                if (maps.size() > 0)
-                {
-                    Set<String> uploadedPropertyURIs = maps.get(0).keySet();
-                    if (!uploadedPropertyURIs.containsAll(idColPropertyURIs))
-                    {
-                        throw new ExperimentException("Your upload must contain the original id columns");
-                    }
-                }
-
-                generateUniqueSampleNames(maps);
-
-                UploadMaterialSetForm.InsertUpdateChoice insertUpdate = _form.getInsertUpdateChoiceEnum();
-                ListIterator<Map<String, Object>> li = maps.listIterator();
-                Lsid.LsidBuilder builder = new Lsid.LsidBuilder(_materialSource.getMaterialLSIDPrefix() + "ToBeReplaced");
-                while (li.hasNext())
-                {
-                    Map<String, Object> map = li.next();
-                    String name = (String)map.get("Name");
-                    assert name != null : "Name should have been generated";
-                    String lsid = builder.setObjectId(name).toString();
-                    ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
-
-                    if (material == null)
-                    {
-                        if (insertUpdate == InsertUpdateChoice.updateOnly)
-                            throw new ExperimentException("Can't update; material not found for '" + name + "' in folder '" + getContainer().getPath() + "'");
-                    }
-                    else
-                    {
-                        if (insertUpdate == UploadMaterialSetForm.InsertUpdateChoice.insertOnly)
-                            throw new ExperimentException("Can't insert; material already exists for '" + name + "' in folder '" + material.getContainer().getPath() + "'");
-
-                        if (insertUpdate == InsertUpdateChoice.insertIgnore)
-                        {
-                            li.remove();
-                            continue;
-                        }
-
-                        // 13483 : Better handling of SQLException
-                        if (!material.getContainer().equals(getContainer()))
-                            throw new ExperimentException("A material with LSID " + lsid + " is already loaded into the folder " + material.getContainer().getPath());
-
-                        // 8309 : preserve comment property on existing materials
-                        // 10164 : Deleting flag/comment doesn't clear flag/comment after reupload
-                        String oldComment = material.getComment();
-                        Object newCommentObj = map.get(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI());
-                        String newComment = null == newCommentObj ? null : String.valueOf(newCommentObj);
-                        if (StringUtils.isEmpty(newComment) && !hasCommentHeader && oldComment != null)
-                        {
-                            Map<String, Object> newMap = new HashMap<>(map);
-                            newMap.put(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI(), oldComment);
-                            li.set(newMap);
-                        }
-
-                        for (PropertyDescriptor descriptor : descriptors)
-                        {
-                            // Delete values that we have received new versions of
-                            OntologyManager.deleteProperty(material.getLSID(), descriptor.getPropertyURI(), material.getContainer(), descriptor.getContainer());
-                        }
-                        reusedMaterialLSIDs.add(lsid);
-                    }
-                }
-            }
             materials = insertTabDelimitedMaterial(maps, new ArrayList<>(descriptors), _materialSource, reusedMaterialLSIDs, inputOutputColumns);
             _sampleSet.onSamplesChanged(_form.getUser(), null);
 
@@ -431,10 +314,11 @@ public class UploadSamplesHelper
         return new Pair<>(_materialSource, materials);
     }
 
+
+
     // Remember the actual set of properties that we received, so we don't end up deleting unspecified values.
-    // Check for duplicate names and remove any rows that are duplicates if we are ignoring dupes.
     @NotNull
-    private Set<PropertyDescriptor> getPropertyDescriptors(Domain domain, List<String> idColPropertyURIs, List<Map<String, Object>> maps)
+    private Set<PropertyDescriptor> getPropertyDescriptors(Domain domain, List<Map<String, Object>> maps)
     {
         Set<PropertyDescriptor> descriptors = new HashSet<>();
         descriptors.add(ExperimentProperty.COMMENT.getPropertyDescriptor());
@@ -455,19 +339,141 @@ public class UploadSamplesHelper
         return descriptors;
     }
 
+    private boolean ensureSampleSet(boolean usingNameAsUniqueColumn, List<String> idColPropertyURIs, String parentColPropertyURI)
+    {
+        assert _sampleSet == null;
+        if (_materialSource == null)
+        {
+            assert _form.isCreateNewSampleSet();
+            _materialSource = new MaterialSource();
+            String setName = PageFlowUtil.encode(_form.getName());
+            _materialSource.setContainer(_form.getContainer());
+            _materialSource.setDescription("Samples uploaded by " + _form.getUser().getEmail());
+            Lsid lsid = ExperimentServiceImpl.get().getSampleSetLsid(_form.getName(), _form.getContainer());
+            _materialSource.setLSID(lsid.toString());
+            _materialSource.setName(_form.getName());
+            setCols(usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI, _materialSource);
+            _materialSource.setMaterialLSIDPrefix(new Lsid("Sample", String.valueOf(_form.getContainer().getRowId()) + "." + setName, "").toString());
+            _sampleSet = new ExpSampleSetImpl(_materialSource);
+            _sampleSet.save(_form.getUser());
+            _materialSource = _sampleSet.getDataObject();
+            return true;
+        }
+        else
+        {
+            // 6088: update id cols for already existing material source if none have been set
+            if (_materialSource.getIdCol1() == null || (_materialSource.getParentCol() == null && parentColPropertyURI != null))
+            {
+                assert _materialSource.getName().equals(_form.getName());
+                assert _materialSource.getLSID().equals(ExperimentServiceImpl.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString());
+                setCols(usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI, _materialSource);
+                _sampleSet = new ExpSampleSetImpl(_materialSource);
+                _sampleSet.save(_form.getUser());
+                _materialSource = _sampleSet.getDataObject();
+            }
+            else
+            {
+                _sampleSet = new ExpSampleSetImpl(_materialSource);
+            }
+            return false;
+        }
+    }
+
+    private Set<String> deleteOldPropertyValues(boolean hasCommentHeader, List<Map<String, Object>> maps, Set<PropertyDescriptor> descriptors) throws ExperimentException
+    {
+        Set<String> reusedMaterialLSIDs = new HashSet<>();
+        InsertUpdateChoice insertUpdate = _form.getInsertUpdateChoiceEnum();
+        ListIterator<Map<String, Object>> li = maps.listIterator();
+        Lsid.LsidBuilder builder = new Lsid.LsidBuilder(_materialSource.getMaterialLSIDPrefix() + "ToBeReplaced");
+        while (li.hasNext())
+        {
+            Map<String, Object> map = li.next();
+            String name = (String)map.get("Name");
+            assert name != null : "Name should have been generated";
+            String lsid = builder.setObjectId(name).toString();
+            ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+
+            if (material == null)
+            {
+                if (insertUpdate == InsertUpdateChoice.updateOnly)
+                    throw new ExperimentException("Can't update; material not found for '" + name + "' in folder '" + getContainer().getPath() + "'");
+            }
+            else
+            {
+                if (insertUpdate == InsertUpdateChoice.insertOnly)
+                    throw new ExperimentException("Can't insert; material already exists for '" + name + "' in folder '" + material.getContainer().getPath() + "'");
+
+                if (insertUpdate == InsertUpdateChoice.insertIgnore)
+                {
+                    li.remove();
+                    continue;
+                }
+
+                // 13483 : Better handling of SQLException
+                if (!material.getContainer().equals(getContainer()))
+                    throw new ExperimentException("A material with LSID " + lsid + " is already loaded into the folder " + material.getContainer().getPath());
+
+                // 8309 : preserve comment property on existing materials
+                // 10164 : Deleting flag/comment doesn't clear flag/comment after reupload
+                String oldComment = material.getComment();
+                Object newCommentObj = map.get(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI());
+                String newComment = null == newCommentObj ? null : String.valueOf(newCommentObj);
+                if (StringUtils.isEmpty(newComment) && !hasCommentHeader && oldComment != null)
+                {
+                    Map<String, Object> newMap = new HashMap<>(map);
+                    newMap.put(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI(), oldComment);
+                    li.set(newMap);
+                }
+
+                for (PropertyDescriptor descriptor : descriptors)
+                {
+                    // Delete values that we have received new versions of
+                    OntologyManager.deleteProperty(material.getLSID(), descriptor.getPropertyURI(), material.getContainer(), descriptor.getContainer());
+                }
+                reusedMaterialLSIDs.add(lsid);
+            }
+        }
+
+        return reusedMaterialLSIDs;
+    }
+
     /**
      * Generate a name for the sample row and check for any duplicates along the way.
+     * If generating a name fails, an ExperimentException is thrown.
      */
-    private void generateUniqueSampleNames(List<Map<String, Object>> maps) throws ExperimentException
+    private void generateUniqueNamesAndCheckForDupes(List<Map<String, Object>> maps, Set<PropertyDescriptor> descriptors) throws ExperimentException
     {
         assert _sampleSet != null;
         InsertUpdateChoice insertUpdate = _form.getInsertUpdateChoiceEnum();
         Set<String> newNames = new CaseInsensitiveHashSet();
+        int i = 0;
         ListIterator<Map<String, Object>> li = maps.listIterator();
         while (li.hasNext())
         {
+            i++;
             Map<String, Object> map = li.next();
-            String name = decideName(map);
+            String name;
+            try
+            {
+                name = decideName(map, descriptors);
+            }
+            catch (IllegalArgumentException e)
+            {
+                // Failed to generate a name due to some part of the expression not in the row
+                if (_sampleSet.hasNameExpression())
+                {
+                    throw new ExperimentException("Failed to generate name for Sample on row " + i);
+                }
+                else if (_sampleSet.hasNameAsIdCol())
+                {
+                    throw new ExperimentException("Name is required for Sample on row " + i);
+                }
+                else
+                {
+                    throw new ExperimentException("All id columns are required for Sample on row " + i);
+                }
+            }
+
             if (!newNames.add(name))
             {
                 // Issue 23384: SampleSet: import should ignore duplicate rows when ignore duplicates is selected
@@ -569,14 +575,14 @@ public class UploadSamplesHelper
     }
 
     // TODO: For multi-row inserts, add index in group (row number)
-    private String decideName(Map<String, Object> rowMap)
+    private String decideName(Map<String, Object> rowMap, Set<PropertyDescriptor> descriptors)
     {
-        assert _sampleSet.getNameExpression() != null;
+        assert _sampleSet.getParsedNameExpression() != null;
         Map<String, Object> ctx = new CaseInsensitiveHashMap<>(rowMap);
-        for (DomainProperty dp : _sampleSet.getIdCols())
+        for (PropertyDescriptor pd : descriptors)
         {
-            if (rowMap.containsKey(dp.getPropertyURI()))
-                ctx.put(dp.getName(), rowMap.get(dp.getPropertyURI()));
+            if (rowMap.containsKey(pd.getPropertyURI()))
+                ctx.put(pd.getName(), rowMap.get(pd.getPropertyURI()));
         }
         return _sampleSet.createSampleName(ctx, null);
     }

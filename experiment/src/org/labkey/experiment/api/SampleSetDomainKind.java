@@ -152,10 +152,12 @@ public class SampleSetDomainKind extends AbstractDomainKind
         int idCol3 = idCols.length > 2 ? ((Number)idCols[2]).intValue() : -1;
         int parentCol = arguments.get("parentCol") instanceof Number ? ((Number)arguments.get("parentCol")).intValue() : -1;
 
+        String nameExpression = arguments.containsKey("nameExpression") ? String.valueOf(arguments.get("nameExpression")) : null;
+
         ExpSampleSet ss;
         try
         {
-            ss = ExperimentService.get().createSampleSet(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, templateInfo);
+            ss = ExperimentService.get().createSampleSet(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo);
         }
         catch (SQLException e)
         {
