@@ -78,14 +78,25 @@ public interface ExpSampleSet extends ExpObject
     @Nullable
     DomainProperty getParentCol();
 
+    /** @return name expression if set. */
+    @Nullable
+    String getNameExpression();
+
+    /** @return true if this SampleSet has a name expression. */
+    boolean hasNameExpression();
+
     /**
-     *  Get the name expression defined on this SampleSet.  If a name expression hasn't
+     *  Get the parsed name expression defined on this SampleSet.  If a name expression hasn't
      *  been explicitly set, a default name expression will be generated from the id columns.
      *  Name expression will only be null if no name expression and no id columns have been set.
      */
     @Nullable
-    StringExpression getNameExpression();
+    StringExpression getParsedNameExpression();
 
+    /**
+     * Generate a sample name from the context map.
+     * If a name can't be generated, an IllegalArgumentException is thrown.
+     */
     String createSampleName(@NotNull Map<String, Object> context, @Nullable Integer indexInGroup);
 
     void setDescription(String s);
