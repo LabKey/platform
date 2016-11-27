@@ -844,6 +844,7 @@ experiment/src/org/labkey/experiment/api/ExpRunInputImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpRunTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpSampleSetImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpSampleSetTableImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpSampleSetTestCase.java -text
 experiment/src/org/labkey/experiment/api/ExpTableImpl.java -text
 experiment/src/org/labkey/experiment/api/Experiment.java -text
 experiment/src/org/labkey/experiment/api/ExperimentProtocolGraph.sql -text

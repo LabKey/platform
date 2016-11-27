@@ -64,6 +64,7 @@ import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassDataTestCase;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
+import org.labkey.experiment.api.ExpSampleSetTestCase;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainKind;
@@ -97,7 +98,6 @@ import java.util.Set;
 /**
  * User: phussey (Peter Hussey)
  * Date: Jul 18, 2005
- * Time: 3:25:52 PM
  */
 public class ExperimentModule extends SpringModule implements SearchService.DocumentProvider
 {
@@ -112,7 +112,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public double getVersion()
     {
-        return 16.30;
+        return 16.31;
     }
 
     protected void init()
@@ -358,10 +358,11 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<Class>(Arrays.asList(
+        return new HashSet<>(Arrays.asList(
                 OntologyManager.TestCase.class,
                 DomainPropertyImpl.TestCase.class,
                 ExpDataClassDataTestCase.class,
+                ExpSampleSetTestCase.class,
                 ExperimentServiceImpl.TestCase.class));
     }
 
