@@ -4,103 +4,101 @@ apply plugin: 'java'
 apply plugin: 'org.labkey.simpleModule'
 
 def List spring = [
-   "org.springframework:spring-aop:${springVersion}",
-   "org.springframework:spring-beans:${springVersion}",
-   "org.springframework:spring-context:${springVersion}",
-   "org.springframework:spring-core:${springVersion}",
-   "org.springframework:spring-expression:${springVersion}",
-   "org.springframework:spring-jdbc:${springVersion}",
-   "org.springframework:spring-test:${springVersion}",
-   "org.springframework:spring-tx:${springVersion}",
-   "org.springframework:spring-web:${springVersion}",
-   "org.springframework:spring-webmvc:${springVersion}"
+        "org.springframework:spring-aop:${springVersion}",
+        "org.springframework:spring-beans:${springVersion}",
+        "org.springframework:spring-context:${springVersion}",
+        "org.springframework:spring-core:${springVersion}",
+        "org.springframework:spring-expression:${springVersion}",
+        "org.springframework:spring-jdbc:${springVersion}",
+        "org.springframework:spring-test:${springVersion}",
+        "org.springframework:spring-tx:${springVersion}",
+        "org.springframework:spring-web:${springVersion}",
+        "org.springframework:spring-webmvc:${springVersion}"
 ]
 
 def List apache = [
-   "commons-beanutils:commons-beanutils:${commonsBeanutilsVersion}",
-   "commons-codec:commons-codec:${commonsCodecVersion}",
-   "org.apache.commons:commons-collections4:${commonsCollections4Version}",
-   "commons-dbcp:commons-dbcp:${commonsDbcpVersion}",
-   "commons-digester:commons-digester:${commonsDigesterVersion}",
-   "commons-discovery:commons-discovery:${commonsDiscoveryVersion}",
-   "commons-fileupload:commons-fileupload:${commonsFileuploadVersion}",
-   "commons-io:commons-io:${commonsIoVersion}",
-   "org.apache.commons:commons-lang3:${commonsLang3Version}",
-   "org.apache.commons:commons-math3:${commonsMath3Version}",
-   "commons-net:commons-net:${commonsNetVersion}",
-   "commons-pool:commons-pool:${commonsPoolVersion}",
-   "commons-validator:commons-validator:${commonsValidatorVersion}",
-   "org.apache.httpcomponents:httpclient:${httpclientVersion}",
-   "org.apache.httpcomponents:httpcore:${httpcoreVersion}"
+        "commons-beanutils:commons-beanutils:${commonsBeanutilsVersion}",
+        "commons-codec:commons-codec:${commonsCodecVersion}",
+        "org.apache.commons:commons-collections4:${commonsCollections4Version}",
+        "commons-dbcp:commons-dbcp:${commonsDbcpVersion}",
+        "commons-digester:commons-digester:${commonsDigesterVersion}",
+        "commons-discovery:commons-discovery:${commonsDiscoveryVersion}",
+        "commons-fileupload:commons-fileupload:${commonsFileuploadVersion}",
+        "commons-io:commons-io:${commonsIoVersion}",
+        "org.apache.commons:commons-lang3:${commonsLang3Version}",
+        "org.apache.commons:commons-math3:${commonsMath3Version}",
+        "commons-net:commons-net:${commonsNetVersion}",
+        "commons-pool:commons-pool:${commonsPoolVersion}",
+        "commons-validator:commons-validator:${commonsValidatorVersion}",
+        "org.apache.httpcomponents:httpclient:${httpclientVersion}",
+        "org.apache.httpcomponents:httpcore:${httpcoreVersion}"
 ]
 
 
 def List gwt = [
-   "com.allen-sauer.gwt.dnd:gwt-dnd:${gwtDndVersion}",
-   "com.google.gwt:gwt-servlet:${gwtServletVersion}",
-   "com.extjs:gxt:${gxtVersion}"
+        "com.allen-sauer.gwt.dnd:gwt-dnd:${gwtDndVersion}",
+        "com.google.gwt:gwt-servlet:${gwtServletVersion}",
+        "com.extjs:gxt:${gxtVersion}"
 ]
 
 def List jackson = [
-   "com.fasterxml.jackson.core:jackson-annotations:${jacksonAnnotationsVersion}",
-   "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}",
-   "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+        "com.fasterxml.jackson.core:jackson-annotations:${jacksonAnnotationsVersion}",
+        "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}",
+        "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
 ]
 
 def List charting = [
-   "org.jfree:jfreechart:${jfreechartVersion}"
+        "org.jfree:jfreechart:${jfreechartVersion}"
 ]
 
 def List caching = [
-   "net.sf.ehcache:ehcache-core:${ehcacheCoreVersion}"
+        "net.sf.ehcache:ehcache-core:${ehcacheCoreVersion}"
 ]
 
 def List logging = [
-   "log4j:log4j:${log4jVersion}"
+        "log4j:log4j:${log4jVersion}"
 ]
 
 def List r = [
-   "net.rforge:rengine:${rforgeVersion}",
-   "net.rforge:rserve:${rforgeVersion}"
+        "net.rforge:rengine:${rforgeVersion}",
+        "net.rforge:rserve:${rforgeVersion}"
 ]
 
 def List test = [
-   "org.jmock:jmock:${jmockVersion}",
-   "org.jmock:jmock-legacy:${jmockVersion}",
-   "junit:junit:${junitVersion}"
+        "org.jmock:jmock:${jmockVersion}",
+        "org.jmock:jmock-legacy:${jmockVersion}",
+        "junit:junit:${junitVersion}"
 ]
 
 def List others = [
-   "junit:junit:${junitVersion}", // this is required by the ModuleLoader??? at startup
-   "gov.nist.math:jama:${jamaVersion}",
-   "org.jetbrains:annotations:${annotationsVersion}",
-	"org.apache.xmlgraphics:batik:${batikVersion}",
-   "flyingsaucer:core-renderer:${flyingsaucerVersion}",
-   "com.google.guava:guava:${guavaVersion}",
-	"net.sf.jtidy:jtidy:${jtidyVersion}",
-   "jexcelapi:jxl:${jxlVersion}",
-   "com.google.code.kaptcha:kaptcha:${kaptchaVersion}",
-   "org.objenesis:objenesis:${objenesisVersion}",
-   "com.opencsv:opencsv:${opencsvVersion}",
-	"org.ardverk:patricia-trie:${patriciaTrieVersion}",
-	"com.github.broadinstitute:picard:${picardLibVersion}",
-   "org.quartz-scheduler:quartz:${quartzVersion}",
-   "rome:rome:${romeVersion}",
-   "org.xerial:sqlite-jdbc:${sqliteJdbcVersion}",
-   "net.coobird:thumbnailator:${thumnailatorVersion}",
-   "org.apache.xmlbeans:xbean:${xmlbeansVersion}",
-   "org.apache.tika:tika-app:${tikaAppVersion}",
-   "xerces:xercesImpl:${xercesImplVersion}"
+        "junit:junit:${junitVersion}", // this is required by the ModuleLoader??? at startup
+        "gov.nist.math:jama:${jamaVersion}",
+        "org.jetbrains:annotations:${annotationsVersion}",
+        "org.apache.xmlgraphics:batik:${batikVersion}",
+        "flyingsaucer:core-renderer:${flyingsaucerVersion}",
+        "com.google.guava:guava:${guavaVersion}",
+        "net.sf.jtidy:jtidy:${jtidyVersion}",
+        "jexcelapi:jxl:${jxlVersion}",
+        "com.google.code.kaptcha:kaptcha:${kaptchaVersion}",
+        "org.objenesis:objenesis:${objenesisVersion}",
+        "com.opencsv:opencsv:${opencsvVersion}",
+        "org.ardverk:patricia-trie:${patriciaTrieVersion}",
+        "org.quartz-scheduler:quartz:${quartzVersion}",
+        "rome:rome:${romeVersion}",
+        "org.xerial:sqlite-jdbc:${sqliteJdbcVersion}",
+        "net.coobird:thumbnailator:${thumnailatorVersion}",
+        "org.apache.xmlbeans:xbean:${xmlbeansVersion}",
+        "org.apache.tika:tika-app:${tikaAppVersion}",
+        "xerces:xercesImpl:${xercesImplVersion}"
 ]
 
 def List ant = [
-   "org.apache.ant:ant:${antVersion}"
+        "org.apache.ant:ant:${antVersion}"
 ]
+
 def List javax = [
-   "javax.servlet:servlet-api:${servletApiVersion}",
-   "javax.validation:validation-api:${validationApiVersion}",
-   "javax.xml:jaxrpc:${jaxrpcVersion}",
-   "com.sun.mail:javax.mail:${javaxMailVersion}"
+        "javax.validation:validation-api:${validationApiVersion}",
+        "javax.xml:jaxrpc:${jaxrpcVersion}",
 ]
 
 // this is required for compiling the API jar file, but it causes IntelliJ 15.X to be unhappy when importing the build script.
@@ -109,25 +107,33 @@ def List javax = [
 // For use in IntelliJ, either comment out the srcDir line (in which case you won't be able to build this module)
 // OR upgrade your IntelliJ version to 16.1 or later
 sourceSets {
-    main {
-      java {
-          srcDirs =["src", "${parent.projectDir}/internal/gwtsrc"]
-      }
+  main {
+    java {
+      srcDirs =["src", "${parent.projectDir}/internal/gwtsrc"]
     }
+  }
 }
 
 dependencies {
-    BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: ":schemas", depProjectConfig: "xmlSchema")
-    BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: ":remoteapi:java")
+  BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: ":schemas", depProjectConfig: "xmlSchema")
+  BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: ":remoteapi:java")
 
-    local fileTree(dir: "$tomcatDir/lib", includes: ['*.jar'], excludes: ['servlet-api.jar', 'mail.jar'])
-//    local fileTree(dir: "$tomcatDir/lib", includes: ['*.jar'], excludes: ['servlet-api.jar'])
-    external ant,apache,caching,charting,gwt,jackson,javax,logging,others,r,spring
-    compile test
-    jspCompile files(project.tasks.jar)
-    jspCompile apache, jackson, spring
+  local fileTree(dir: "$tomcatDir/lib", includes: ['*.jar'], excludes: ['servlet-api.jar', 'mail.jar'])
+  // the following two libraries are required for compilation but we don't want extra ones in the classpath, so we exclude
+  // them from external dependencies in favor of the versions in the tomcat directory (FIXME seems somewhat sketchy...)
+  compile "javax.servlet:servlet-api:${servletApiVersion}"
+  compile "com.sun.mail:javax.mail:${javaxMailVersion}"
+  // picard brings in a version of servlet-api and a very old one at that, so we excluded it
+  external("com.github.broadinstitute:picard:${picardLibVersion}") {
+      exclude group: "javax.servlet", module: "servlet-api"
+  }
+  external ant,apache,caching,charting,gwt,jackson,javax,logging,others,r,spring
+
+  compile test
+  jspCompile files(project.tasks.jar)
+  jspCompile apache, jackson, spring
 }
 
 sourceSets.webapp {
-    output.resourcesDir = "${project.staging.webappDir}"
+  output.resourcesDir = "${project.staging.webappDir}"
 }
