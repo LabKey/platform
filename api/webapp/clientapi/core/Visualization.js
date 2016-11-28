@@ -304,7 +304,7 @@ LABKEY.Query.Visualization = new function() {
             }
 
             var endpoint = config.endpoint || LABKEY.ActionURL.buildURL("visualization", "getData", config.containerPath);
-            endpoint += LABKEY.ActionURL.queryString(urlParams);
+            endpoint += '?' + LABKEY.ActionURL.queryString(urlParams);
 
             LABKEY.Ajax.request(
             {
