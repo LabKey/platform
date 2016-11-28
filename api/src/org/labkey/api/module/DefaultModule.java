@@ -1403,7 +1403,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             if (lib.exists())
             {
                 filenames.addAll(Arrays.stream(lib.list(getJarFilenameFilter()))
-                        .filter(jarFilename -> !jarFilename.toLowerCase().matches(moduleJarPattern.pattern()))
+                        .filter(jarFilename -> !jarFilename.toLowerCase().equals("schemas.jar") && !jarFilename.toLowerCase().matches(moduleJarPattern.pattern()))
                         .collect(Collectors.toList()));
             }
             if (external.exists())
