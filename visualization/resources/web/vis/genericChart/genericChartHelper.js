@@ -1051,7 +1051,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             }
         }
 
-        var response = this.processMeasureDimensionData(data, aes, dimensionsForProcessing, measuresForProcessing);
+        var response = _processMeasureDimensionData(data, aes, dimensionsForProcessing, measuresForProcessing);
 
         //generate error message for dropped values
         var warningMessage;
@@ -1077,7 +1077,7 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param measuresForProcessing The measures to be converted, if any
      * @returns {{droppedValues: {}, processed: {}}}
      */
-    var processMeasureDimensionData = function(rows, aes, dimensionsForProcessing, measuresForProcessing) {
+    var _processMeasureDimensionData = function(rows, aes, dimensionsForProcessing, measuresForProcessing) {
         var droppedValues = {}, processed = {};
         rows.forEach(function(row) {
 
@@ -1154,7 +1154,6 @@ LABKEY.vis.GenericChartHelper = new function(){
         generateScales: generateScales,
         generateAes: generateAes,
         doValueConversion: doValueConversion,
-        processMeasureDimensionData: processMeasureDimensionData,
         generatePointHover: generatePointHover,
         generateBoxplotHover: generateBoxplotHover,
         generateDiscreteAcc: generateDiscreteAcc,

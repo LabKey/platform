@@ -1234,7 +1234,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     renderGenericChart : function(chartType, chartConfig)
     {
-        var aes, scales, plot, plotConfig, customRenderType, hasNoDataMsg, newChartDiv;
+        var aes, scales, plot, plotConfig, customRenderType, hasNoDataMsg, newChartDiv, valueConversionResponse;
 
         hasNoDataMsg = LABKEY.vis.GenericChartHelper.validateResponseHasData(this.chartData, true);
         if (hasNoDataMsg != null)
@@ -1247,17 +1247,19 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, this.chartData.schemaName, this.chartData.queryName);
 
-        customRenderType = this.customRenderTypes ? this.customRenderTypes[this.renderType] : undefined;
-        if (customRenderType && customRenderType.generateAes)
-            aes = customRenderType.generateAes(this, chartConfig, aes);
-
-        if (this.doValueConversion(chartConfig, aes))
+        valueConversionResponse = LABKEY.vis.GenericChartHelper.doValueConversion(chartConfig, aes, this.renderType, this.chartData.rows);
+        if (!Ext4.Object.isEmpty(valueConversionResponse.processed))
         {
             //re-generate aes based on new converted values
             aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, this.chartData.schemaName, this.chartData.queryName);
-            if (customRenderType && customRenderType.generateAes)
-                aes = customRenderType.generateAes(this, chartConfig, aes);
+            if (valueConversionResponse.warningMessage) {
+                this.addWarningText(valueConversionResponse.warningMessage);
+            }
         }
+
+        customRenderType = this.customRenderTypes ? this.customRenderTypes[this.renderType] : undefined;
+        if (customRenderType && customRenderType.generateAes)
+            aes = customRenderType.generateAes(this, chartConfig, aes);
 
         scales = LABKEY.vis.GenericChartHelper.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, this.chartData, this.defaultNumberFormat);
         if (customRenderType && customRenderType.generateScales)
@@ -1287,125 +1289,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         this.afterRenderPlotComplete(newChartDiv);
-    },
-
-    doValueConversion : function(chartConfig, aes)
-    {
-        var droppedValues, measuresForProcessing = {}, dimensionsForProcessing = {};
-
-        if (Ext4.isObject(chartConfig.measures.x) && chartConfig.measures.x.dimension) {
-            dimensionsForProcessing.x = {};
-            dimensionsForProcessing.x.name = chartConfig.measures.x.name;
-            dimensionsForProcessing.x.label = chartConfig.measures.x.label;
-            if (LABKEY.vis.GenericChartHelper.isNumericType(chartConfig.measures.x.normalizedType)) {
-                chartConfig.measures.x.normalizedType = 'string'; //change measure type to converted value
-            }
-        }
-
-        if (Ext4.isObject(chartConfig.measures.y) && chartConfig.measures.y.dimension) {
-            dimensionsForProcessing.y = {};
-            dimensionsForProcessing.y.name = chartConfig.measures.y.name;
-            dimensionsForProcessing.y.label = chartConfig.measures.y.label;
-            if (LABKEY.vis.GenericChartHelper.isNumericType(chartConfig.measures.y.normalizedType)) {
-                chartConfig.measures.y.normalizedType = 'string';
-            }
-        }
-
-        //right now we only only do measure conversion for scatter plot x-axes
-        if (this.renderType === 'scatter_plot' && Ext4.isObject(chartConfig.measures.x) && chartConfig.measures.x.measure) {
-            measuresForProcessing.x = {};
-            measuresForProcessing.x.name = chartConfig.measures.x.name;
-            measuresForProcessing.x.label = chartConfig.measures.x.label;
-            chartConfig.measures.x.normalizedType = 'double'; //TODO: detect number type?
-            chartConfig.measures.x.type = 'double';  //TODO: detect number type?
-        }
-
-        if (Ext4.isObject(chartConfig.measures.y) && chartConfig.measures.y.measure) {
-            measuresForProcessing.y = {};
-            measuresForProcessing.y.name = chartConfig.measures.y.name;
-            measuresForProcessing.y.label = chartConfig.measures.y.label;
-            chartConfig.measures.y.normalizedType = 'double'; //TODO: detect number type?
-            chartConfig.measures.y.type = 'double'; //TODO: detect number type?
-        }
-
-        if (!Ext4.Object.isEmpty(dimensionsForProcessing)) {
-            this.processDimensionData(this.chartData.rows, aes, dimensionsForProcessing);
-        }
-
-        if (!Ext4.Object.isEmpty(measuresForProcessing)) {
-            droppedValues = this.processMeasureData(this.chartData.rows, aes, measuresForProcessing);
-
-            //generate error message for dropped values
-            for (var measure in droppedValues) {
-                if (droppedValues.hasOwnProperty(measure) && droppedValues[measure].numDropped) {
-                    this.addWarningText("The "
-                            + measure + "-axis measure '"
-                            + droppedValues[measure].label + "' had "
-                            + droppedValues[measure].numDropped +
-                            " value(s) that could not be converted to a number and are not included in the plot.");
-                }
-            }
-            return true;
-        }
-        return false;
-    },
-
-    processMeasureData : function (rows, aes, measuresForProcessing)
-    {
-        var droppedValues = {};
-
-        for (var measure in measuresForProcessing) {
-            if (measuresForProcessing.hasOwnProperty(measure)) {
-                droppedValues[measure] = {};
-                droppedValues[measure].label = measuresForProcessing[measure].label;
-                droppedValues[measure].numDropped = 0;
-                
-                for (var i = 0; i < rows.length; i++) {
-                    if (aes.hasOwnProperty(measure)) {
-                        var value = aes[measure](rows[i]);
-
-                        if (typeof value !== 'number' && value !== null) {
-
-                            //only try to convert strings to numbers
-                            if (typeof value === 'string') {
-                                value = value.trim();
-                            }
-                            else {
-                                //dates, objects, booleans etc. to be assigned value: NULL
-                                value = '';
-                            }
-
-                            var n = Number(value);
-                            // empty strings convert to 0, which we must explicitly deny
-                            if (value === '' || isNaN(n)) {
-                                rows[i][measuresForProcessing[measure].name].value = null;
-                                droppedValues[measure].numDropped++;
-                            }
-                            else {
-                                rows[i][measuresForProcessing[measure].name].value = n;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return droppedValues;
-    },
-
-    processDimensionData : function(rows, aes, dimensionsForProcessing) {
-        for (var i = 0; i < rows.length; i++) {
-            for (var dimension in dimensionsForProcessing) {
-                if (dimensionsForProcessing.hasOwnProperty(dimension) && aes.hasOwnProperty(dimension)) {
-                    var value = aes[dimension](rows[i]);
-                    if (value != null && typeof value === 'number') {
-                        //only try to convert numbers to strings
-                        value = value.toString();
-                        rows[i][dimensionsForProcessing[dimension].name].value = value;
-                    }
-                }
-            }
-        }
     },
 
     getNewChartDisplayDiv : function()
