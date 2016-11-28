@@ -941,11 +941,15 @@ var CUSUMPlot = LABKEY.vis.TrendingLinePlot({
         color: 'colorlabel',
         colorRange: ['red', 'blue', 'green', 'brown'],
         hoverTextFn: function(row, type){
-            var tip = 'X-Value: ' + row.xaxislabel + '\nColor: ' + row.colorlabel + '\nY-Value: ' + row.value + '\nGroup: ';
+            var tip = 'X-Value: ' + row.xaxislabel + '\nColor: ' + row.colorlabel + '\nY-Value: ';
             if (type == 'CUSUMmN')
-                tip += 'CUSUM-';
+            {
+                tip += row.CUSUMmN + '\nGroup: CUSUM-';
+            }
             else
-                tip += 'CUSUM+';
+            {
+                tip += row.CUSUMmP + '\nGroup: CUSUM+';
+            }
             return tip;
         }
     },

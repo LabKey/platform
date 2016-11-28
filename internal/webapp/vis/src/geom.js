@@ -261,6 +261,7 @@ LABKEY.vis.Geom.Path.prototype.render = function(renderer, grid, scales, data, l
  * @param {String} [config.color] (Optional) String used to determine the color of all paths. Defaults to black (#000000).
  * @param {Number} [config.size] (Optional) Number used to determine the size of all paths.  Defaults to 2.
  * @param {Boolean} [config.dashed] (Optional) Whether or not to use dashed lines for path. Defaults to false.
+ * @param {Number} [config.width] (Optional) Number used to determine the length of all paths.  Defaults to 6.
  */
 LABKEY.vis.Geom.ControlRange = function(config){
     this.type = "ControlRange";

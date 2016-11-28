@@ -184,28 +184,6 @@ LABKEY.vis.Stat.getStdDev = function(values)
     return Math.sqrt(avgSquareDiff);
 };
 
-/**
- * Returns the standard value (z-score).
- * @param value The observation number.
- * @param mean The mean.
- * @param stdDev The standard deviation.
- * @returns {Number}
- */
-LABKEY.vis.Stat.getStandardizedValue = function(value, mean, stdDev)
-{
-    return (value - mean) / stdDev;
-};
-
-/**
- * Return the transformed standardize normal quantity value so that it is sensitive to variability changes
- * @param standardized The standard value (z-score).
- * @returns {Number}
- */
-LABKEY.vis.Stat.getVTransformation = function(standardized)
-{
-    return (Math.sqrt(Math.abs(standardized)) - 0.822) / 0.349;
-};
-
 // CUSUM_WEIGHT_FACTOR of 0.5 and CUSUM_CONTROL_LIMIT of 5 to achieve a 3*stdDev boundary
 LABKEY.vis.Stat.CUSUM_WEIGHT_FACTOR = 0.5;
 LABKEY.vis.Stat.CUSUM_CONTROL_LIMIT = 5;
@@ -237,14 +215,12 @@ LABKEY.vis.Stat.getCUSUM = function(values, negative, transform, forcePositiveRe
     var cusums = [0];
     for (var i = 0; i < values.length; i++)
     {
-        var standardized = LABKEY.vis.Stat.getStandardizedValue(values[i], mean, stdDev);
+        var standardized = (values[i] - mean) / stdDev; //standard value (z-score)
         if (transform)
-            standardized = LABKEY.vis.Stat.getVTransformation(standardized);
+            standardized = (Math.sqrt(Math.abs(standardized)) - 0.822) / 0.349; //the transformed standardize normal quantity value so that it is sensitive to variability changes
         if (negative)
             standardized = standardized * -1;
-        var cusum = standardized - LABKEY.vis.Stat.CUSUM_WEIGHT_FACTOR + cusums[i];
-        if (cusum < 0)
-            cusum = 0;
+        var cusum = Math.max(0, standardized - LABKEY.vis.Stat.CUSUM_WEIGHT_FACTOR + cusums[i]);
         cusums.push(cusum);
     }
     cusums.shift(); // remove the initial 0 value

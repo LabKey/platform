@@ -1572,7 +1572,7 @@ boxPlot.render();
         // also, pull out the meanStdDev data for the unique x-axis values and calculate average values for the (LJ) trend line data
         var tickLabelMap = {}, index = -1, distinctColorValues = [], meanStdDevData = [],
             groupedTrendlineData = [], groupedTrendlineSeriesData = {},
-            hasYRightMetric = config.properties.valueRight != undefined || config.properties.positiveValueRight || config.properties.valueRightMR;
+            hasYRightMetric = config.properties.valueRight || config.properties.positiveValueRight || config.properties.valueRightMR;
 
         for (var i = 0; i < config.data.length; i++)
         {
