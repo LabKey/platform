@@ -1051,7 +1051,10 @@ LABKEY.vis.GenericChartHelper = new function(){
             }
         }
 
-        var response = _processMeasureDimensionData(data, aes, dimensionsForProcessing, measuresForProcessing);
+        var response = {processed: {}};
+        if (!Ext4.Object.isEmpty(measuresForProcessing) || !Ext4.Object.isEmpty(dimensionsForProcessing)) {
+            response = _processMeasureDimensionData(data, aes, dimensionsForProcessing, measuresForProcessing);
+        }
 
         //generate error message for dropped values
         var warningMessage;
