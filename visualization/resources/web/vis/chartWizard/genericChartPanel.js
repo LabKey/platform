@@ -679,21 +679,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // issue 21418: support for parameterized queries
         wp.on('render', function(){
             if (wp.parameters)
-                this.updateQueryParameters(wp.parameters);
+                Ext4.apply(this.parameters, wp.parameters);
         }, this);
 
         wp.render(renderTo);
-    },
-
-    updateQueryParameters : function(updatedParams)
-    {
-        for (var param in updatedParams)
-        {
-            var pref = this.panelDataRegionName + ".param.";
-            if (param.indexOf(pref) == 0) {
-                this.parameters[param.replace(pref, "")] = updatedParams[param];
-            }
-        }
     },
 
     // Returns a configuration based on the baseUrl plus any filters applied on the dataregion panel
@@ -1016,13 +1005,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     onFailure : function(resp)
     {
-        var error = Ext4.isString(resp) ? Ext4.decode(resp.responseText).exception : resp.exception;
-        if (error) {
-            Ext4.Msg.alert('Error', error);
-        }
-        else {
-            Ext4.Msg.alert('Error', 'An unknown error has occurred.');
-        }
+        var error = Ext4.isString(resp.responseText) ? Ext4.decode(resp.responseText).exception : resp.exception;
+        Ext4.Msg.show({
+            title: 'Error',
+            msg: error || 'An unknown error has occurred.',
+            buttons: Ext4.MessageBox.OK,
+            icon: Ext4.MessageBox.ERROR,
+            scope: this
+        });
     },
 
     loadReportFromId : function(reportId)
@@ -1317,7 +1307,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             dimensionsForProcessing.y.name = chartConfig.measures.y.name;
             dimensionsForProcessing.y.label = chartConfig.measures.y.label;
             if (LABKEY.vis.GenericChartHelper.isNumericType(chartConfig.measures.y.normalizedType)) {
-                chartConfig.measures.x.normalizedType = 'string';
+                chartConfig.measures.y.normalizedType = 'string';
             }
         }
 

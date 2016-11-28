@@ -999,8 +999,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.loaderFn();
         };
 
-        queryConfig.failure = function(info) {
-            this.clearChartPanel("Error: " + info.exception);
+        queryConfig.failure = function(info, response) {
+            var exception = response && response.exception ? response.exception : info.exception;
+            this.clearChartPanel("Error: " + exception);
             this.disableNonMeasureOptionButtons();
         };
 
@@ -1457,8 +1458,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                                         // redo the layout of the qwp panel to reset the auto height
                                         ct.doLayout();
 
-                                        if (chartQueryWebPart.parameters) {
-                                            this.updateQueryParameters(chartQueryWebPart);
+                                        if (Ext4.isObject(chartQueryWebPart.parameters)) {
+                                            Ext4.apply(this.parameters, chartQueryWebPart.parameters);
                                         }
 
                                         this.unmaskPanel();
@@ -1474,15 +1475,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
             this.chart.removeAll();
             this.chart.add(dataGridPanel);
-        }
-    },
-
-    updateQueryParameters : function(qwp) {
-        var pref = qwp.dataRegionName + '.param.';
-        for (var param in qwp.parameters) {
-            if (qwp.parameters.hasOwnProperty(param) && param.indexOf(pref) == 0) {
-                this.parameters[param.replace(pref, '')] = qwp.parameters[param];
-            }
         }
     },
 
@@ -1514,8 +1506,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             aggregateType: "Mean",
             subject: {},
             filterUrl: LABKEY.Query.Visualization.getDataFilterFromURL(),
-            filterQuery: this.getFilterQuery(),
-            parameters: {}
+            filterQuery: this.getFilterQuery()
         }
     },
 

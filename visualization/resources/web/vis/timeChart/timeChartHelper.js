@@ -973,6 +973,12 @@ LABKEY.vis.TimeChartHelper = new function() {
         };
 
         var successCallback = function(response, dataType) {
+            // check for success=false
+            if (Ext4.isBoolean(response.success) && !response.success)
+            {
+                config.failure.call(config.scope, response);
+                return;
+            }
 
             // make sure each measure/dimension has at least some data, and get a list of which visits are in the data response
             // also keep track of which measure/dimensions have negative values (for log scale)
@@ -1029,7 +1035,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                     successCallback(response, "individual");
                 },
                 failure : function(info, response, options) {
-                    config.failure.call(config.scope, info);
+                    config.failure.call(config.scope, info, Ext4.JSON.decode(response.responseText));
                 },
                 measures: config.chartInfo.measures,
                 sorts: generateDataSortArray(config.chartInfo.subject, config.chartInfo.measures[0], isDateBased, config.nounSingular),
