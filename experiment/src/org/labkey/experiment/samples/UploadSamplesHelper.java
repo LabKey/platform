@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -445,7 +444,8 @@ public class UploadSamplesHelper
     {
         assert _sampleSet != null;
         InsertUpdateChoice insertUpdate = _form.getInsertUpdateChoiceEnum();
-        Set<String> newNames = new CaseInsensitiveHashSet();
+        Map<String, Integer> newNames = new CaseInsensitiveHashMap();
+        Map<String, Map<String, Object>> firstRowForName = new CaseInsensitiveHashMap<>();
         int i = 0;
         ListIterator<Map<String, Object>> li = maps.listIterator();
         while (li.hasNext())
@@ -474,16 +474,39 @@ public class UploadSamplesHelper
                 }
             }
 
-            if (!newNames.add(name))
+            if (newNames.containsKey(name))
             {
-                // Issue 23384: SampleSet: import should ignore duplicate rows when ignore duplicates is selected
-                if (insertUpdate == InsertUpdateChoice.insertIgnore)
+                if (_form.isAddUniqueSuffixForDuplicateNames())
                 {
+                    // Update the first occurrence of the name to include the unique suffix
+                    Map<String, Object> first = firstRowForName.get(name);
+                    if (first != null)
+                    {
+                        first.put("Name", name + ".1");
+                        firstRowForName.remove(name);
+                    }
+
+                    // Add a unique suffix to the end of the name.
+                    int count = newNames.get(name) + 1;
+                    newNames.put(name, count);
+                    name += "." + count;
+                }
+                else if (insertUpdate == InsertUpdateChoice.insertIgnore)
+                {
+                    // Issue 23384: SampleSet: import should ignore duplicate rows when ignore duplicates is selected
                     li.remove();
                     continue;
                 }
                 else
-                    throw new ExperimentException("Duplicate material: " + name);
+                    throw new ExperimentException("Duplicate material '" + name + "' on row " + i);
+            }
+            else
+            {
+                newNames.put(name, 1);
+
+                // If we generating unique names, remember the first time we see each name
+                if (_form.isAddUniqueSuffixForDuplicateNames())
+                    firstRowForName.put(name, map);
             }
 
             map.put("Name", name);

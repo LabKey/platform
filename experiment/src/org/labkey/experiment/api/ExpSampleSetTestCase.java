@@ -23,11 +23,13 @@ import org.labkey.api.util.TestContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -306,4 +308,55 @@ public class ExpSampleSetTestCase
         assertEquals(expectedName2, sample2.getName());
     }
 
+    @Test
+    public void testAddUniqueSuffixForDuplicateNames() throws Exception
+    {
+        final User user = TestContext.get().getUser();
+
+        // setup
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
+        props.add(new GWTPropertyDescriptor("name", "string"));
+        props.add(new GWTPropertyDescriptor("prop", "string"));
+        props.add(new GWTPropertyDescriptor("age", "int"));
+
+        final String nameExpression = "S-${prop}-${age}";
+
+        final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+                "Samples", null, props, Collections.emptyList(),
+                -1, -1, -1, -1, nameExpression, null);
+
+        UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
+        TableInfo table = schema.getTable("Samples");
+        QueryUpdateService svc = table.getUpdateService();
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        rows.add(CaseInsensitiveHashMap.of("prop", "red", "age", 10));
+        rows.add(CaseInsensitiveHashMap.of("prop", "red", "age", 10));
+        rows.add(CaseInsensitiveHashMap.of("prop", "red", "age", 10));
+
+        // Validate duplicate names result in an error
+        BatchValidationException errors = new BatchValidationException();
+        svc.insertRows(user, c, rows, errors, null, null);
+        assertTrue(errors.hasErrors());
+        assertTrue(errors.getMessage().contains("Duplicate material 'S-red-10' on row 2"));
+
+        // Turn on unique suffix behavior
+        Map<Enum, Object> configParams = new HashMap<>();
+        configParams.put(SampleSetUpdateService.Options.AddUniqueSuffixForDuplicateNames, true);
+
+        errors = new BatchValidationException();
+        svc.insertRows(user, c, rows, errors, configParams, null);
+        assertFalse(errors.hasErrors());
+
+        String expectedName1 = "S-red-10.1";
+        String expectedName2 = "S-red-10.2";
+        String expectedName3 = "S-red-10.3";
+
+        ExpMaterial sample1 = ss.getSample(c, expectedName1);
+        assertEquals(expectedName1, sample1.getName());
+        ExpMaterial sample2 = ss.getSample(c, expectedName2);
+        assertEquals(expectedName2, sample2.getName());
+        ExpMaterial sample3 = ss.getSample(c, expectedName3);
+        assertEquals(expectedName3, sample3.getName());
+    }
 }

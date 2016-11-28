@@ -52,7 +52,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice;
@@ -60,9 +59,13 @@ import static org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateCh
 /**
  * User: kevink
  */
-class SampleSetUpdateService extends AbstractQueryUpdateService
+public class SampleSetUpdateService extends AbstractQueryUpdateService
 {
     private ExpSampleSetImpl _ss;
+
+    public enum Options {
+        AddUniqueSuffixForDuplicateNames
+    }
 
     public SampleSetUpdateService(ExpMaterialTableImpl table, ExpSampleSetImpl ss)
     {
@@ -91,7 +94,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
         return null;
     }
 
-    private List<ExpMaterial> insertOrUpdate(InsertUpdateChoice insertUpdate, User user, Container container, List<Map<String, Object>> originalRows)
+    private List<ExpMaterial> insertOrUpdate(InsertUpdateChoice insertUpdate, User user, Container container, List<Map<String, Object>> originalRows, boolean addUniqueSuffix)
             throws QueryUpdateServiceException, ValidationException
     {
         if (_ss == null)
@@ -108,6 +111,8 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
         form.setInsertUpdateChoice(insertUpdate.name());
         form.setCreateNewSampleSet(false);
         form.setCreateNewColumnsOnExistingSampleSet(false);
+        if (addUniqueSuffix)
+            form.setAddUniqueSuffixForDuplicateNames(true);
 
         translateRowIdToIdCols(rows);
 
@@ -236,7 +241,11 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
     {
         try
         {
-            List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.insertOnly, user, container, rows);
+            boolean addUniqueSuffix = false;
+            if (configParameters != null && configParameters.containsKey(Options.AddUniqueSuffixForDuplicateNames))
+                addUniqueSuffix = true;
+
+            List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.insertOnly, user, container, rows, addUniqueSuffix);
             List<Map<String, Object>> result = new ArrayList<>(materials.size());
             for (ExpMaterial material : materials)
             {
@@ -259,11 +268,10 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
     {
         DataIterator iterator = rows.getDataIterator(getDataIteratorContext(errors, InsertOption.MERGE, configParameters));
-        Collector<Map<String, Object>, ?, List<Map<String, Object>>> collector = Collectors.toList();
-        List<Map<String, Object>> maps = iterator.stream().collect(collector);
+        List<Map<String, Object>> maps = iterator.stream().collect(Collectors.toList());
         try
         {
-            return insertOrUpdate(InsertUpdateChoice.insertOrUpdate, user, container, maps).size();
+            return insertOrUpdate(InsertUpdateChoice.insertOrUpdate, user, container, maps, false).size();
         }
         catch (ValidationException vex)
         {
@@ -293,7 +301,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
     {
         try
         {
-            List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.updateOnly, user, container, rows);
+            List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.updateOnly, user, container, rows, false);
             List<Map<String, Object>> result = new ArrayList<>(materials.size());
             for (ExpMaterial material : materials)
             {

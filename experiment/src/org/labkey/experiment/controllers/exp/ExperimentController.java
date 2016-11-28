@@ -221,6 +221,7 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.api.ProtocolActionStepDetail;
 import org.labkey.experiment.api.SampleSetDomainKind;
+import org.labkey.experiment.api.SampleSetUpdateService;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.samples.UploadMaterialSetForm;
@@ -4798,7 +4799,7 @@ public class ExperimentController extends SpringActionController
 
             if ((form.dataOutputs == null || form.dataOutputs.size() == 0) &&
                 (form.materialOutputs == null || form.materialOutputs.size() == 0))
-                errors.reject(ERROR_MSG, "At least one data input or material output is required");
+                errors.reject(ERROR_MSG, "At least one data output or material output is required");
 
             if (form.materialOutputs != null && !form.materialOutputs.isEmpty() && form.targetSampleSet == null)
                 errors.reject(ERROR_MSG, "targetSampleSet lsid required");
@@ -5044,8 +5045,11 @@ public class ExperimentController extends SpringActionController
                 if (qus == null)
                     throw new IllegalStateException();
 
+                Map<Enum, Object> configParams = new HashMap<>();
+                configParams.put(SampleSetUpdateService.Options.AddUniqueSuffixForDuplicateNames, true);
+
                 BatchValidationException qusErrors = new BatchValidationException();
-                List<Map<String, Object>> insertedRows = qus.insertRows(getUser(), getContainer(), rows, qusErrors, null, null);
+                List<Map<String, Object>> insertedRows = qus.insertRows(getUser(), getContainer(), rows, qusErrors, configParams, null);
                 if (qusErrors.hasErrors())
                     throw qusErrors;
 
@@ -5427,7 +5431,7 @@ public class ExperimentController extends SpringActionController
                     throw new NotFoundException("Expected a file but found a directory: " + f.getName());
                 }
             }
-            
+
             return HttpView.redirect(getContainer().getStartURL(getUser()));
         }
 
@@ -5810,25 +5814,24 @@ public class ExperimentController extends SpringActionController
             if (options.getRowId() > 0)
             {
                 _output = service.getExpMaterial(options.getRowId());
+                if (null == _output)
+                    _output = service.getExpData(options.getRowId());
 
                 if (null == _output)
-                {
-                    _output = service.getExpData(options.getRowId());
-                }
+                    throw new NotFoundException("Unable to resolve Experiment Protocol output: " + options.getRowId());
             }
             else if (null != options.getLSID())
             {
                 _output = service.getExpMaterial(options.getLSID());
+                if (null == _output)
+                    _output = service.getExpData(options.getLSID());
 
                 if (null == _output)
-                {
-                    _output = service.getExpData(options.getLSID());
-                }
+                    throw new NotFoundException("Unable to resolve Experiment Protocol output: " + options.getLsid());
             }
-
-            if (null == _output)
+            else
             {
-                throw new NotFoundException("Unable to resolve Experiment Protocol output");
+                throw new ApiUsageException("One of rowId or lsid required");
             }
         }
 
