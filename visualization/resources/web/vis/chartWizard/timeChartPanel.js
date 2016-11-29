@@ -1328,7 +1328,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         var newChartDiv = Ext4.create('Ext.container.Container', {
             cls: 'chart-render-div',
-            style: chartStyle ? chartStyle : 'border: none;',
             autoEl: {tag: 'div'},
             mainTitle: mainTitle + (subtitle ? ': ' + subtitle : '')
         });

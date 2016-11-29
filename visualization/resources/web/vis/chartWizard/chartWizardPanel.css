@@ -256,6 +256,10 @@
     cursor: pointer;
 }
 
+.chart-render-div:not(:first-of-type) {
+    border-top: solid #b4b4b4 1px;
+}
+
 .save-form-panel {
     padding: 10px;
     background-color: #ffffff !important;

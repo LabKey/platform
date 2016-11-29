@@ -763,7 +763,6 @@ LABKEY.vis.TimeChartHelper = new function() {
                         subtitle: config.title ? participant : undefined,
                         series: seriesList,
                         individualData: dataPerParticipant[participant].data,
-                        style: config.subject.values.length > 1 ? 'border-bottom: solid black 1px;' : null,
                         applyClipRect: applyClipRect
                     });
 
@@ -801,7 +800,6 @@ LABKEY.vis.TimeChartHelper = new function() {
                     series: seriesList,
                     individualData: groupedIndividualData && groupedIndividualData[group.label] ? groupedIndividualData[group.label] : null,
                     aggregateData: groupedAggregateData && groupedAggregateData[group.label] ? groupedAggregateData[group.label].data : null,
-                    style: config.subject.groups.length > 1 ? 'border-bottom: solid black 1px;' : null,
                     applyClipRect: applyClipRect
                 });
 
@@ -826,7 +824,6 @@ LABKEY.vis.TimeChartHelper = new function() {
                     series: [seriesList[i]],
                     individualData: data.individual ? data.individual.rows : null,
                     aggregateData: data.aggregate ? data.aggregate.rows : null,
-                    style: seriesList.length > 1 ? 'border-bottom: solid black 1px;' : null,
                     applyClipRect: applyClipRect
                 });
 

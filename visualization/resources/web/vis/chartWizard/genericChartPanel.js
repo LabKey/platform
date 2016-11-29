@@ -1294,7 +1294,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     getNewChartDisplayDiv : function()
     {
         return Ext4.create('Ext.container.Container', {
-            border: 1,
             cls: 'chart-render-div',
             autoEl: {tag: 'div'}
         });

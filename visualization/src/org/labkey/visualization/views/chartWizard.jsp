@@ -119,7 +119,6 @@
 
         Ext4.create('LABKEY.ext4.BaseChartWizardPanel', {
             renderTo: renderTo,
-            height: 650,
             savedReportInfo: savedReportInfo,
             canEdit: canEdit,
             canShare: <%=canShare%>,
