@@ -50,7 +50,7 @@ public class CoreUpgradeCode implements UpgradeCode
         ModuleLoader.getInstance().handleUnkownModules();
     }
 
-    // invoked by core-14.23-14.24.sql
+    // invoked by core-14.20-14.30.sql
     //
     // PostgreSQL only. Current PostgreSQL uq_container_label_parent UNIQUE CONSTRAINT has two problems:
     // 1. It allows multiple top-level categories with the same name (Parent column is NULLABLE and PostgreSQL doesn't treat NULL as unique)

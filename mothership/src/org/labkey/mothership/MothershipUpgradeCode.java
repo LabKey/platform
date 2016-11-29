@@ -28,7 +28,7 @@ import org.labkey.api.util.UsageReportingLevel;
  */
 public class MothershipUpgradeCode implements UpgradeCode
 {
-    // invoked by mothership-14.30-14.31.sql
+    // invoked by mothership-14.30-15.10.sql
     @SuppressWarnings({"UnusedDeclaration"})
     public void reconfigureExceptionReporting(final ModuleContext context)
     {
@@ -44,5 +44,4 @@ public class MothershipUpgradeCode implements UpgradeCode
             appProps.save();
         }
     }
-
 }

@@ -98,7 +98,7 @@ public class IssuesUpgradeCode implements UpgradeCode
     private static final String DEFAULT_SITE_ISSUE_LIST_NAME = "siteIssues";
 
     /**
-     * Invoked by issues-16.13-16.14.sql
+     * Invoked by issues-16.10-16.20.sql
      *
      * Upgrade to migrate existing issues to provisioned tables and to migrate legacy issues
      * admin setting to the domain and new tables
@@ -894,7 +894,7 @@ public class IssuesUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Invoked by issues-16.21-16.22.sql
+     * Invoked by issues-16.20-16.30.sql
      *
      * Migrate createdBy, modifiedBy, and modified fields from the original issues.issues table to the
      * provisioned tables. This addresses issues 27105 and 27106 properly and allows us to eventually drop
@@ -960,13 +960,10 @@ public class IssuesUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Invoked by issues-16.22-16.23.sql
+     * Invoked by issues-16.20-16.30.sql
      *
      * Drop legacy fields from the issues.issues table, this needs to be performed in a deferred java
      * upgrade script because it must be ordered to run after previous deferred upgrade scripts:
-     *
-     * issues-16.13-16.14.sql
-     * issues-16.21-16.22.sql
      */
     @DeferredUpgrade
     public void dropLegacyFields(final ModuleContext context)
@@ -1112,15 +1109,11 @@ public class IssuesUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Invoked by issues-16.23-16.24.sql
+     * Invoked by issues-16.20-16.30.sql
      *
      * Drop properties from the issues provisioned tables that are present in the issues.issues hardtable,
      * this needs to be performed in a deferred java upgrade script because it must be ordered to run
      * after previous deferred upgrade scripts:
-     *
-     * issues-16.13-16.14.sql
-     * issues-16.21-16.22.sql
-     * issues-16.22-16.23.sql
      */
     @DeferredUpgrade
     public void dropRedundantProperties(final ModuleContext context)

@@ -332,7 +332,7 @@ public class StudyUpgradeCode implements UpgradeCode
         }
     }
 
-    // Invoked by study-16.10-16.11.sql
+    // Invoked by study-16.10-16.20.sql
     @SuppressWarnings({"UnusedDeclaration"})
     public void upgradeLocationTables(final ModuleContext context)
     {
@@ -368,7 +368,7 @@ public class StudyUpgradeCode implements UpgradeCode
         }
     }
 
-    // Invoked by study-16.20-16.21.sql
+    // Invoked by study-16.20-16.30.sql
     @SuppressWarnings({"UnusedDeclaration"})
     public void updatePKAndContainer(final ModuleContext context) throws Exception
     {
@@ -448,7 +448,7 @@ public class StudyUpgradeCode implements UpgradeCode
      * Populate the new DoseAndRoute table with existing entries from the ProductTreatmentMap provisioned table, so they can
      * be used in the update study design tool.
      *
-     * Invoked by study-16.21-16.22.sql
+     * Invoked by study-16.20-16.30.sql
      */
     @SuppressWarnings({"UnusedDeclaration"})
     public void populateDoseAndRoute(final ModuleContext context) throws Exception
@@ -485,14 +485,11 @@ public class StudyUpgradeCode implements UpgradeCode
         }
     }
 
-    /**
+    /*
      * Update dataspace primary key to be consistent with non-dataspace primary key.  Add date index to speed up queries.
-     *
-     * @param context
-     * @throws Exception
      */
 
-    // Invoked by study-16.23-16.24.sql
+    // Invoked by study-16.20-16.30.sql
     @SuppressWarnings({"UnusedDeclaration"})
     public void updateDateIndex(final ModuleContext context) throws Exception
     {
