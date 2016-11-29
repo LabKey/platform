@@ -30,6 +30,7 @@ public class StudyDatasetIndexTest extends StudyBaseTest
 {
     private static final File STUDY_WITH_DATASET_INDEX = TestFileUtils.getSampleData("studies/StudyWithDatasetIndex.folder.zip");
     private static final File STUDY_WITH_DATASET_SHARED_INDEX = TestFileUtils.getSampleData("studies/StudyWithDatasetSharedIndex.folder.zip");
+    private static final String METADATA = "Table Meta Data";
 
     protected String getProjectName()
     {
@@ -72,24 +73,24 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         assertTextPresentCaseInsensitive("dem_minus_1_indexedColumn");
         assertTextPresentCaseInsensitive("dem_minus_1_sharedColumn");
 
-        int colNameIndex = 1;
-        int colSizeIndex = 4;
+        int colNameIndex = 0;
+        int colSizeIndex = 3;
         if (WebTestHelper.getDatabaseType() == WebTestHelper.DatabaseType.PostgreSQL)
         {
-            colNameIndex = 4;
-            colSizeIndex = 7;
+            colNameIndex = 3;
+            colSizeIndex = 6;
         }
 
         // Verify size column specified in datasets_metadata
-        assertTableRowOnPage("sharedcolumn", 34, colNameIndex);
-        assertTableRowOnPage("20", 34, colSizeIndex);
+        assertTableRowInNonDataRegionTable(METADATA, "sharedcolumn", 33, colNameIndex);
+        assertTableRowInNonDataRegionTable(METADATA, "20", 33, colSizeIndex);
 
         // Verify default sizes
-        assertTableRowOnPage("multilinecolumn", 32, colNameIndex);
-        assertTableRowOnPage("4000", 32, colSizeIndex);
+        assertTableRowInNonDataRegionTable(METADATA, "multilinecolumn", 31, colNameIndex);
+        assertTableRowInNonDataRegionTable(METADATA, "4000", 31, colSizeIndex);
 
-        assertTableRowOnPage("flagcolumn", 33, colNameIndex);
-        assertTableRowOnPage("4000", 33, colSizeIndex);
+        assertTableRowInNonDataRegionTable(METADATA, "flagcolumn", 32, colNameIndex);
+        assertTableRowInNonDataRegionTable(METADATA, "4000", 32, colSizeIndex);
 
         beginAt("/query/" + getProjectName() + "/" + getFolderName()  + "/schema.view?schemaName=study");
         selectQueryInSubfolder("study","built-in queries & tables", "DEM-2");
