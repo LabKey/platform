@@ -365,6 +365,10 @@ public class XarReader extends AbstractXarImporter
         {
             materialSource.setParentColName(sampleSet.getParentField());
         }
+        if (sampleSet.isSetNameExpression())
+        {
+            materialSource.setNameExpression(sampleSet.getNameExpression());
+        }
 
         if (existingMaterialSource != null)
         {
@@ -1096,6 +1100,7 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
+           // TODO: Allow creating the Data in a DataClass
             Data data = new Data();
             data.setLSID(dataLSID);
             data.setName(trimString(xbData.getName()));

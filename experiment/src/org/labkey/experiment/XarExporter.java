@@ -480,7 +480,11 @@ public class XarExporter
         {
             xSampleSet.setParentField(sampleSet.getParentCol().getName());
         }
-        
+        if (sampleSet.hasNameExpression())
+        {
+            xSampleSet.setNameExpression(sampleSet.getNameExpression());
+        }
+
         Domain domain = sampleSet.getType();
         queueDomain(domain);
     }
