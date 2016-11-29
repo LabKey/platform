@@ -65,10 +65,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -281,7 +283,12 @@ public class SqlScriptController extends SpringActionController
             // and might not run during bootstrap.
             if (AppProps.getInstance().isDevMode())
             {
-                String[] specialScripts = CoreSchema.getInstance().getSqlDialect().isPostgreSQL() ? new String[]{"hdrl-16.11-16.12.sql", "labware.gw_labkey-16.11-16.12.sql" /* See #26135 */} : new String[]{};
+                List<String> specialScripts = new LinkedList<>();
+                specialScripts.addAll(Arrays.asList("mpower-16.10-16.11.sql", "mpower-16.11-16.12.sql")); /* Leave mpower incremental scripts in place until SCCA deploys 16.3 */
+
+                if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
+                    specialScripts.addAll(Arrays.asList("hdrl-16.11-16.12.sql", "labware.gw_labkey-16.11-16.12.sql"));  /* See #26135 */
+
                 for (String name : specialScripts)
                 {
                     if (-1 == html.indexOf(name))
