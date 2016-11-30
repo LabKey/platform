@@ -12,6 +12,7 @@
     var control_chars =
     {
         nul : "\x00",
+        bs  : "\x08", // backspace
         rs  : "\x1E", // record separator
         us  : "\x1F"  // unit separator
     };
@@ -64,10 +65,13 @@
             var row = rows[r].split(sep);
             for (var c=0 ; c<row.length ; c++)
             {
-                if ("" == row[c])
+                var s = row[c];
+                if ("" === s)
                     row[c] = null;
+                else if (control_chars.bs === s && r>2)
+                    row[c] = rows[r-3][c];
                 else
-                    row[c] = colConverters[c](row[c]);
+                    row[c] = colConverters[c](s);
             }
             rows[r-2] = row;
         }
@@ -128,7 +132,8 @@
                     sql:config.sql,
                     parameters:config.parameters,
                     sep: sep,
-                    eol: eol
+                    eol: eol,
+                    compact: 1
                 }
             };
 
