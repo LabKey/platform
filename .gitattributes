@@ -551,8 +551,8 @@ core/webapp/SecurityAdmin.css -text
 core/webapp/SecurityAdmin.js -text
 core/webapp/admin/FolderManagementPanel.js -text
 core/webapp/config.rb -text
-core/webapp/core/JSONDisplayColumn.css -text
-core/webapp/core/JSONDisplayColumn.js -text
+core/webapp/core/ExpandableTextDisplayColumn.css -text
+core/webapp/core/ExpandableTextDisplayColumn.js -text
 core/webapp/createFolder.css -text
 core/webapp/editInPlaceElement.css -text
 core/webapp/editInPlaceElement.js -text
