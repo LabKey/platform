@@ -72,8 +72,9 @@ public class SqlController extends SpringActionController
     {
         private String schema;
         private String sql;
-        private String sep = "\t";
-        private String eol = "\n";
+        private String sep = null;
+        private String eol = null;
+        private boolean compact = false;
         private Parameters parameters = new Parameters();
 
         public String getSchema()
@@ -108,7 +109,7 @@ public class SqlController extends SpringActionController
 
         public String getSep()
         {
-            return sep;
+            return null!=sep ? sep : compact ? "\u001f" : "\t";
         }
 
         public void setSep(String sep)
@@ -119,13 +120,23 @@ public class SqlController extends SpringActionController
 
         public String getEol()
         {
-            return eol;
+            return null!=eol ? eol : compact ? "\u001e" : "\t";
         }
 
         public void setEol(String eol)
         {
             if (null != eol)
                 this.eol = eol;
+        }
+
+        public boolean isCompact()
+        {
+            return compact;
+        }
+
+        public void setCompact(boolean compact)
+        {
+            this.compact = compact;
         }
     }
 
@@ -181,7 +192,10 @@ public class SqlController extends SpringActionController
             try (Results rs = QueryService.get().selectResults(schema, form.getSql(), null, form.getParameterMap(), true, false))
             {
                 getViewContext().getResponse().setContentType("text/plain");
-                writeResults_text(getViewContext().getResponse().getWriter(), rs, form.getSep(),form.getEol());
+                if (form.compact)
+                    writeResults_compact(getViewContext().getResponse().getWriter(), rs, form.getSep(),form.getEol());
+                else
+                    writeResults_text(getViewContext().getResponse().getWriter(), rs, form.getSep(),form.getEol());
             }
             catch (QueryParseException x)
             {
@@ -290,6 +304,113 @@ public class SqlController extends SpringActionController
                 }
                 out.write(column == count ? eol : sep);
             }
+        }
+        out.flush();
+    }
+
+    /**
+     * try to generate a more compact representation
+     *
+     *     the value 0x1A SUB means same value as previous row
+     *     truncate trailing time from date-only values
+     *
+     *  Consider disambiguating sql NULL and empty string.  NULL is more common so using a shorter
+     *  encoding for NULL and longer for empty string makes sense (e.g. "\u0000")
+     *
+     *  TODO: binary/blob length prefixed encoding
+     *
+     * Note that while writeResults_text tries to not generate extra Strings to GC, I think the actual PrintWriter
+     * implementation is generating strings inside out.write().  So this is probably not much different from a GC
+     * perspective.
+     */
+    void writeResults_compact(PrintWriter out, Results rs, String sep, String eol) throws IOException, SQLException
+    {
+        final int count = rs.getMetaData().getColumnCount();
+        final boolean serializeDateAsNumber=false;
+
+        for (int i = 1; i <= count; i++)
+        {
+            out.write(rs.getColumn(i).getName());
+            out.write(i == count ? eol : sep);
+        }
+
+        // pull types from ResultSetMetaData, not ColumnInfo
+        JdbcType[] types = new JdbcType[count + 1];
+        for (int i = 1; i <= count; i++)
+        {
+            JdbcType jdbc = JdbcType.valueOf(rs.getMetaData().getColumnType(i));
+            types[i] = jdbc;
+            out.write(jdbc.name());
+            out.write(i == count ? eol : sep);
+        }
+
+        String DITTO = "\u0008";
+        String[] prev = new String[count+1];
+        String[] row = new String[count+1];
+
+        while (rs.next())
+        {
+            for (int column = 1; column <= count; column++)
+            {
+                switch (types[column])
+                {
+                    case TINYINT:
+                    case SMALLINT:
+                    case INTEGER:
+                    case CHAR:
+                    case VARCHAR:
+                    case DOUBLE:
+                    case REAL:
+                    default:
+                    {
+                        row[column] = rs.getString(column);
+                        break;
+                    }
+                    case TIMESTAMP:
+                    {
+                        Date date = rs.getTimestamp(column);
+                        if (null == date)
+                            row[column] = null;
+                        else if (serializeDateAsNumber)
+                            row[column] = Long.toString(date.getTime());
+                        else
+                        {
+                            String d = DateUtil.formatDateTimeISO8601(date);
+                            if (d.endsWith(" 00:00"))
+                                d = d.substring(0,d.length()-6);
+                            row[column] = d;
+                        }
+                        break;
+                    }
+                    case BOOLEAN:
+                    {
+                        boolean b = rs.getBoolean(column);
+                        row[column] = rs.wasNull() ? null : b ? "1": "0";
+                        break;
+                    }
+                    case DECIMAL:
+                    {
+                        BigDecimal dec = rs.getBigDecimal(column);
+                        row[column] = null==dec ? null : dec.toPlainString();
+                        break;
+                    }
+                }
+            }
+            for (int column = 1; column <= count; column++)
+            {
+                String s = row[column];
+                if (null != s)
+                {
+                    if (s.equals(prev[column]))
+                        out.write(DITTO);
+                    else
+                        out.write(s);
+                }
+                out.write(column == count ? eol : sep);
+            }
+            String[] t = prev;
+            prev = row;
+            row = t;
         }
         out.flush();
     }
