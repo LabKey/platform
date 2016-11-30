@@ -1760,6 +1760,7 @@ public class DataRegion extends AbstractDataRegion
 
             out.write("<table");
             out.write(" id=\"" + PageFlowUtil.filter(getDomId()) + "\"");
+            out.write(" class=\"lk-details-table\"");
 
             String name = getName();
             if (name != null)

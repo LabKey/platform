@@ -17,10 +17,13 @@ package org.labkey.api.data;
 
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.template.ClientDependency;
 
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * User: tgaluhn
@@ -65,12 +68,34 @@ public class JsonPrettyPrintDisplayColumnFactory implements DisplayColumnFactory
                 String output = PageFlowUtil.filter(mapper.writer(pp).writeValueAsString(json));
                 // Too bad there's no way to configure EOL characters for the Jackson pretty printer.
                 // It seems to use system defaults.
-                return output.replaceAll("\r\n|\r|\n","<br/>").replace("  ", "&nbsp;&nbsp;");
+                String[] outputLines = output.replace("  ", "&nbsp;&nbsp;").split("\r\n|\r|\n");
+                String outputTxt = "<div class='json-container'>" + StringUtils.join(outputLines, "<br/>") + "</div>";
+
+                if (outputLines.length > 10)
+                {
+                    outputTxt = "<div class='json-collapsed'>" + outputTxt
+                        + "<div class='json-overflow'></div>"
+                        + "<div class='json-showmore'><div class='labkey-wp-text-buttons'><a href='#more' onclick=\"return LABKEY.JSONDisplayColumn.showMore(this);\">Show More&#9660;</a></div></div>"
+                        + "<div class='json-showless'><div class='labkey-wp-text-buttons'><a href='#less' onclick=\"return LABKEY.JSONDisplayColumn.showLess(this);\">Show Less&#9650;</a></div></div>"
+                        + "</div>";
+                }
+
+                return outputTxt;
             }
             catch (IOException e)
             {
                 return "Bad JSON object";
             }
+        }
+
+        @NotNull
+        @Override
+        public Set<ClientDependency> getClientDependencies()
+        {
+            return PageFlowUtil.set(
+                ClientDependency.fromPath("core/JSONDisplayColumn.js"),
+                ClientDependency.fromPath("core/JSONDisplayColumn.css")
+            );
         }
     }
 }

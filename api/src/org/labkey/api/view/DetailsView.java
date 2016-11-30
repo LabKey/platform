@@ -15,17 +15,21 @@
  */
 package org.labkey.api.view;
 
-import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.PkFilter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableViewForm;
+import org.labkey.api.view.template.ClientDependency;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.LinkedHashSet;
+import java.util.List;
 
 public class DetailsView extends DataView
 {
@@ -67,5 +71,26 @@ public class DetailsView extends DataView
         }
         else
             getDataRegion().render(ctx, out);
+    }
+
+    @NotNull
+    @Override
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.addAll(super.getClientDependencies());
+
+        DataRegion dataRegion = getDataRegion();
+        if (dataRegion != null)
+        {
+            List<DisplayColumn> displayColumns = dataRegion.getDisplayColumns();
+            if (null != displayColumns)
+            {
+                for (DisplayColumn dc : displayColumns)
+                    resources.addAll(dc.getClientDependencies());
+            }
+        }
+
+        return resources;
     }
 }
