@@ -175,6 +175,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import static org.labkey.api.action.ApiJsonWriter.CONTENT_TYPE_JSON;
 
 
@@ -262,6 +263,12 @@ public class DavController extends SpringActionController
         if (null == userAgent)
             return false;
         return userAgent.startsWith("Microsoft-WebDAV");
+    }
+
+    boolean isChrome()
+    {
+        String userAgent = getRequest().getHeader("User-Agent");
+        return StringUtils.contains(userAgent, "Chrome/") || StringUtils.contains(userAgent, "Chromium/");
     }
 
     // clients that support following redirects when getting a resource
@@ -4660,7 +4667,22 @@ public class DavController extends SpringActionController
             contentDisposition = null;
 
         if (!StringUtils.isEmpty(contentDisposition))
+        {
             getResponse().setContentDisposition(contentDisposition);
+            try
+            {
+                // https://bugs.chromium.org/p/chromium/issues/detail?id=1503
+                if (isChrome())
+                {
+                    Path requestPath = new URLHelper(getRequest().getRequestURI()).getParsedPath();
+                    getResponse().setContentDisposition(contentDisposition + "; filename=" + requestPath.getName());
+                }
+            }
+            catch (URISyntaxException x)
+            {
+               // pass
+            }
+        }
 
         // Find content type
         String contentType = resource.getContentType();
@@ -4971,7 +4993,7 @@ public class DavController extends SpringActionController
         if (_urlResourcePathStr == null)
         {
             ActionURL url = getViewContext().getActionURL();
-            String path = StringUtils.trimToEmpty(url.getParameter("path"));
+            String path = trimToEmpty(url.getParameter("path"));
             if (path == null || path.length() == 0)
                 path = "/";
             if (path.equals(""))
