@@ -107,6 +107,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements UpdateableTableInfo
 {
@@ -336,7 +337,15 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
     private void setDefaultColumns()
     {
         Set<FieldKey> columns = new LinkedHashSet<>();
-        columns.addAll(getDomainKind().getDefaultColumnNames());
+        // match the domain kind default columns with the columns in the actual domain instance
+        Set<FieldKey> existingColumns = getColumns()
+                .stream()
+                .map(ColumnInfo::getFieldKey)
+                .collect(Collectors.toSet());
+        columns.addAll(getDomainKind().getDefaultColumnNames()
+                .stream()
+                .filter(existingColumns::contains)
+                .collect(Collectors.toSet()));
         columns.addAll(_extraDefaultColumns);
         setDefaultVisibleColumns(columns);
     }

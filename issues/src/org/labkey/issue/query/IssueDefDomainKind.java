@@ -32,6 +32,7 @@ import org.labkey.api.security.User;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -53,13 +54,13 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
     public static final String AREA_LOOKUP = "area";
     public static final String MILESTONE_LOOKUP = "milestone";
     public static final String RESOLUTION_LOOKUP = "resolution";
+    private static final Set<String> OPTIONAL_NAMES = new HashSet<>();
 
     public static final String DEFAULT_ENTRY_TYPE_SINGULAR = "Issue";
     public static final String DEFAULT_ENTRY_TYPE_PLURAL = "Issues";
 
     static
     {
-
         // required property descriptors, initialized at domain creation time
         Set<PropertyStorageSpec> requiredProperties = Sets.newLinkedHashSet(Arrays.asList(
                 new PropertyStorageSpec("Title", JdbcType.VARCHAR, 255).setNullable(false),
@@ -71,6 +72,7 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
         ));
         requiredProperties.addAll(BASE_REQUIRED_PROPERTIES);
         REQUIRED_PROPERTIES = Collections.unmodifiableSet(requiredProperties);
+        OPTIONAL_NAMES.addAll(Arrays.asList("Type", "Area", "Priority", "Milestone"));
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 new PropertyStorageSpec.ForeignKey(PRIORITY_LOOKUP, "Lists", PRIORITY_LOOKUP, "value", null, false),
@@ -82,14 +84,22 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
 
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
         RESERVED_NAMES.addAll(Arrays.asList("RowId", "Name"));
-        RESERVED_NAMES.addAll(REQUIRED_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()));
+        RESERVED_NAMES.addAll(REQUIRED_PROPERTIES
+                .stream()
+                .filter(p -> !OPTIONAL_NAMES.contains(p.getName()))
+                .map(PropertyStorageSpec::getName)
+                .collect(Collectors.toSet()));
 
         // field names that are contained in the issues table that get's joined to the provisioned table
         RESERVED_NAMES.addAll(Arrays.asList("IssueId", "AssignedTo", "Modified", "ModifiedBy",
                                             "Created", "CreatedBy", "Resolved", "ResolvedBy", "Status", "BuildFound",
                                             "Tag", "Resolution", "Duplicate", "ClosedBy", "Closed", "LastIndexed", "IssueDefId"));
 
-        MANDATORY_PROPERTIES = REQUIRED_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
+        MANDATORY_PROPERTIES = REQUIRED_PROPERTIES
+                .stream()
+                .filter(p -> !OPTIONAL_NAMES.contains(p.getName()))
+                .map(PropertyStorageSpec::getName)
+                .collect(Collectors.toSet());
     }
 
     @Override
