@@ -433,6 +433,10 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
 
     hasSelectionsChanged : function(values)
     {
+        // first check if we need to refresh the data because of a change
+        if (this.requiresDataRefresh)
+            return true;
+
         // compare the keys for the two value objects
         var initKeys = Object.keys(this.initValues),
             newKeys = Object.keys(values);
@@ -444,7 +448,10 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
         var hasChanges = false;
         Ext4.Object.each(values, function(key, value)
         {
-            if (!Ext4.Object.equals(value, this.initValues[key]))
+            var skipUndefined = key == 'yRight' && !Ext4.isDefined(value);
+            var encodedObjectMatch = skipUndefined || Ext4.encode(value) == Ext4.encode(this.initValues[key]);
+
+            if (!encodedObjectMatch)
             {
                 hasChanges = true;
                 return false; // break

@@ -10,7 +10,7 @@ Ext4.define('LABKEY.vis.TimeChartYMeasureField', {
 
     selection: null,
     measure: null,
-    defaulDimensionAggregate: 'AVG',
+    defaultDimensionAggregate: 'AVG',
 
     initComponent: function ()
     {
@@ -186,7 +186,7 @@ Ext4.define('LABKEY.vis.TimeChartYMeasureField', {
                         var isNone = newValue == '[None]';
                         this.getDimensionAggregateCombo().setDisabled(isNone);
                         if (isNone)
-                            this.getDimensionAggregateCombo().setValue(this.defaulDimensionAggregate);
+                            this.getDimensionAggregateCombo().setValue(this.defaultDimensionAggregate);
 
                         this.fireEvent('requiresDataRefresh');
                     }
@@ -214,9 +214,10 @@ Ext4.define('LABKEY.vis.TimeChartYMeasureField', {
                 },
                 sorters: {sorterFn: function(objA, objB) {
                     var a = objA.get('label'), b = objB.get('label');
-                    if (a == '[None]') return -1;
+                    if (a == b) return 0;
+                    else if (a == '[None]') return -1;
                     else if (b == '[None]') return 1;
-                    return a == b ? 0 : (a < b ? -1 : 1);
+                    return a.localeCompare(b);
                 }},
                 listeners: {
                     scope: this,
@@ -301,10 +302,9 @@ Ext4.define('LABKEY.vis.TimeChartYMeasureField', {
         {
             // get the list of aggregate options from LABKEY.Query.Visualization.Aggregate
             var aggregates = [];
-            for (var item in LABKEY.Query.Visualization.Aggregate)
-            {
-                aggregates.push([LABKEY.Query.Visualization.Aggregate[item]]);
-            }
+            Ext4.Object.each(LABKEY.Query.Visualization.Aggregate, function(key, value){
+                aggregates.push([key]);
+            }, this);
 
             this.dimensionAggregateComboBox = Ext4.create('Ext.form.field.ComboBox', {
                 fieldLabel: 'Display Duplicate Values As',
@@ -321,7 +321,7 @@ Ext4.define('LABKEY.vis.TimeChartYMeasureField', {
                 valueField: 'name',
                 displayField: 'name',
                 editable: false,
-                value: this.measure.aggregate || this.defaulDimensionAggregate,
+                value: this.measure.aggregate || this.defaultDimensionAggregate,
                 listeners: {
                     scope: this,
                     change: function(combo, newValue)

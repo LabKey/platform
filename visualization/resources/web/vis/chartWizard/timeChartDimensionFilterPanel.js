@@ -116,6 +116,7 @@ Ext4.define('LABKEY.vis.DimensionFilterPanel', {
                         idProperty:'id'
                     }
                 },
+                sorters: [{property: 'value'}],
                 listeners: {
                     scope: this,
                     load: function (store)
