@@ -1,7 +1,9 @@
 import org.labkey.gradle.util.BuildUtils
 
 dependencies {
-    external 'org.apache.activemq:activemq-core:4.1.1'
+    external('org.apache.activemq:activemq-core:4.1.1') {
+      exclude group: "javax.servlet", module: "servlet-api"
+    }
     external('org.mule.modules:mule-module-builders:1.4.4:embedded') // named changed based on pom file
             {
                 // exclude slf4j here because it is also included by the transitive dependency on the tika library
