@@ -27,7 +27,7 @@ public class ExpLineageOptions
     private boolean _children = true;
     private String _expType;
     private String _cpasType;
-    private boolean _distinct = false;
+    private boolean _forLookup = false;
 
     public int getDepth()
     {
@@ -109,13 +109,13 @@ public class ExpLineageOptions
         _cpasType = cpasType;
     }
 
-    public boolean isDistinct()
+    public boolean isForLookup()
     {
-        return _distinct;
+        return _forLookup;
     }
 
-    public void setDistinct(boolean distinct)
+    public void setForLookup(boolean b)
     {
-        _distinct = distinct;
+        _forLookup = b;
     }
 }
