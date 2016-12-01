@@ -339,7 +339,6 @@ api/src/org/labkey/api/data/LoggingResultSetWrapper.java -text
 api/src/org/labkey/api/data/LookupColumn.java -text
 api/src/org/labkey/api/data/MVDisplayColumn.java -text
 api/src/org/labkey/api/data/MVDisplayColumnFactory.java -text
-api/src/org/labkey/api/data/MapListResultSet.java -text
 api/src/org/labkey/api/data/MaterializedQueryHelper.java -text
 api/src/org/labkey/api/data/MenuButton.java -text
 api/src/org/labkey/api/data/MetadataSqlSelector.java -text
