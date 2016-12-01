@@ -318,7 +318,11 @@ LABKEY.vis.GenericChartHelper = new function(){
         else
         {
             var xMeasureType = getMeasureType(measures.x);
-            if (isNumericType(xMeasureType))
+
+            // Force discrete x-axis scale for box plots.
+            var useContinuousScale = chartType != 'bar_chart' && isNumericType(xMeasureType);
+
+            if (useContinuousScale)
             {
                 scales.x = {
                     scaleType: 'continuous',
@@ -386,22 +390,24 @@ LABKEY.vis.GenericChartHelper = new function(){
      */
     var generateAes = function(chartType, measures, schemaName, queryName) {
         var aes = {},
-            xMeasureType = getMeasureType(measures.x),
-            yMeasureType = getMeasureType(measures.y);
+            xMeasureType = getMeasureType(measures.x);
 
         if (chartType == "box_plot" && !measures.x)
             aes.x = generateMeasurelessAcc(queryName);
-        else if (isNumericType(xMeasureType))
-            aes.x = generateContinuousAcc(measures.x.name);
+        else if (isNumericType(xMeasureType) || (chartType == 'scatter_plot' && measures.x.measure))
+            aes.x = measures.x.converted ?
+                    generateContinuousAcc(measures.x.convertedName) :
+                    generateContinuousAcc(measures.x.name);
         else
-            aes.x = generateDiscreteAcc(measures.x.name, measures.x.label);
+            aes.x = measures.x.converted ?
+                    generateDiscreteAcc(measures.x.convertedName, measures.x.label) :
+                    generateDiscreteAcc(measures.x.name, measures.x.label);
 
         if (measures.y)
         {
-            if (isNumericType(yMeasureType))
-                aes.y = generateContinuousAcc(measures.y.name);
-            else
-                aes.y = generateDiscreteAcc(measures.y.name, measures.y.label);
+            aes.y = measures.y.converted ?
+                    generateContinuousAcc(measures.y.convertedName) :
+                    generateContinuousAcc(measures.y.name);
         }
 
         if (chartType === "scatter_plot")
@@ -1026,24 +1032,17 @@ LABKEY.vis.GenericChartHelper = new function(){
      */
     var doValueConversion = function(chartConfig, aes, renderType, data)
     {
-        var measuresForProcessing = {}, dimensionsForProcessing = {}, measureRestrictions = {}, configMeasure;
+        var measuresForProcessing = {}, measureRestrictions = {}, configMeasure;
         for (var measureName in chartConfig.measures) {
             if (chartConfig.measures.hasOwnProperty(measureName) && Ext4.isObject(chartConfig.measures[measureName])) {
                 configMeasure = chartConfig.measures[measureName];
                 Ext4.apply(measureRestrictions, _getMeasureRestrictions(renderType, measureName));
 
-                if (configMeasure.dimension && measureRestrictions.nonNumericOnly && isNumericType(configMeasure.type)) {
-                    dimensionsForProcessing[measureName] = {};
-                    dimensionsForProcessing[measureName].name = configMeasure.name;
-                    dimensionsForProcessing[measureName].label = configMeasure.label;
-                    configMeasure.normalizedType = 'string';
-                    configMeasure.type = 'string';
-                }
-
-                if (configMeasure.measure && (measureName !== 'x' || renderType === 'scatter_plot')
-                        && measureRestrictions.numericOnly && !isNumericType(configMeasure.type)) {
+                if (configMeasure.measure && ((measureName !== 'x' && measureRestrictions.numericOnly ) || renderType === 'scatter_plot')
+                         && !isNumericType(configMeasure.type)) {
                     measuresForProcessing[measureName] = {};
                     measuresForProcessing[measureName].name = configMeasure.name;
+                    measuresForProcessing[measureName].convertedName = configMeasure.name + "_converted";
                     measuresForProcessing[measureName].label = configMeasure.label;
                     configMeasure.normalizedType = 'float';
                     configMeasure.type = 'float';
@@ -1052,15 +1051,15 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
 
         var response = {processed: {}};
-        if (!Ext4.Object.isEmpty(measuresForProcessing) || !Ext4.Object.isEmpty(dimensionsForProcessing)) {
-            response = _processMeasureDimensionData(data, aes, dimensionsForProcessing, measuresForProcessing);
+        if (!Ext4.Object.isEmpty(measuresForProcessing)) {
+            response = _processMeasureData(data, aes, measuresForProcessing);
         }
 
         //generate error message for dropped values
-        var warningMessage;
+        var warningMessage = '';
         for (var measure in response.droppedValues) {
             if (response.droppedValues.hasOwnProperty(measure) && response.droppedValues[measure].numDropped) {
-                warningMessage = "The "
+                warningMessage += " The "
                         + measure + "-axis measure '"
                         + response.droppedValues[measure].label + "' had "
                         + response.droppedValues[measure].numDropped +
@@ -1072,33 +1071,16 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     /**
-     * Does the explicit type conversion for each measure or dimension deemed suitable to convert. Currently we only
-     * attempt to convert numbers to strings for data dimensions, and strings to numbers for measures.
+     * Does the explicit type conversion for each measure deemed suitable to convert. Currently we only
+     * attempt to convert strings to numbers for measures.
      * @param rows Data from SelectRows
      * @param aes Aesthetic mapping function for the measure/dimensions
-     * @param dimensionsForProcessing The dimensions to be converted, if any
      * @param measuresForProcessing The measures to be converted, if any
      * @returns {{droppedValues: {}, processed: {}}}
      */
-    var _processMeasureDimensionData = function(rows, aes, dimensionsForProcessing, measuresForProcessing) {
-        var droppedValues = {}, processed = {};
+    var _processMeasureData = function(rows, aes, measuresForProcessing) {
+        var droppedValues = {}, processedMeasures = {};
         rows.forEach(function(row) {
-
-            //convert dimensions if applicable
-            if (!Ext4.Object.isEmpty(dimensionsForProcessing)) {
-                for (var dimension in dimensionsForProcessing) {
-                    if (dimensionsForProcessing.hasOwnProperty(dimension) && aes.hasOwnProperty(dimension)) {
-                        var value = aes[dimension](row);
-                        if (value != null && typeof value === 'number') {
-                            //only try to convert numbers to strings
-                            value = value.toString();
-                            row[dimensionsForProcessing[dimension].name].value = value;
-                        }
-                    }
-                }
-                processed.dimension = true;
-            }
-
             //convert measures if applicable
             if (!Ext4.Object.isEmpty(measuresForProcessing)) {
                 for (var measure in measuresForProcessing) {
@@ -1110,7 +1092,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                         }
 
                         if (aes.hasOwnProperty(measure)) {
-                            value = aes[measure](row);
+                            var value = aes[measure](row);
+                            row[measuresForProcessing[measure].convertedName] = {value: null};
                             if (typeof value !== 'number' && value !== null) {
 
                                 //only try to convert strings to numbers
@@ -1124,20 +1107,26 @@ LABKEY.vis.GenericChartHelper = new function(){
                                 var n = Number(value);
                                 // empty strings convert to 0, which we must explicitly deny
                                 if (value === '' || isNaN(n)) {
-                                    row[measuresForProcessing[measure].name].value = null;
                                     droppedValues[measure].numDropped++;
                                 } else {
-                                    row[measuresForProcessing[measure].name].value = n;
+                                    row[measuresForProcessing[measure].convertedName].value = n;
                                 }
                             }
                         }
                     }
+                    if (!processedMeasures[measure]) {
+                        processedMeasures[measure] = {
+                            converted: true,
+                            convertedName: measuresForProcessing[measure].convertedName,
+                            type: 'float',
+                            normalizedType: 'float'
+                        }
+                    }
                 }
-                processed.measure = true;
             }
         });
 
-        return {droppedValues: droppedValues, processed: processed};
+        return {droppedValues: droppedValues, processed: processedMeasures};
     };
 
     return {

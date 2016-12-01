@@ -1250,6 +1250,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         valueConversionResponse = LABKEY.vis.GenericChartHelper.doValueConversion(chartConfig, aes, this.renderType, this.chartData.rows);
         if (!Ext4.Object.isEmpty(valueConversionResponse.processed))
         {
+            Ext4.Object.merge(chartConfig.measures, valueConversionResponse.processed);
             //re-generate aes based on new converted values
             aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, this.chartData.schemaName, this.chartData.queryName);
             if (valueConversionResponse.warningMessage) {
@@ -1376,8 +1377,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (chartType == 'bar_chart' || chartType == 'pie_chart')
         {
-            var dimName = chartConfig.measures.x ? chartConfig.measures.x.name : null;
-            var measureName = chartConfig.measures.y ? chartConfig.measures.y.name : null;
+            var dimName = null, measureName = null;
+            if (chartConfig.measures.x) {
+                dimName = chartConfig.measures.x.converted ? chartConfig.measures.x.convertedName : chartConfig.measures.x.name;
+            }
+            if (chartConfig.measures.y) {
+                measureName = chartConfig.measures.y.converted ? chartConfig.measures.y.convertedName : chartConfig.measures.y.name;
+            }
+
             var aggType = measureName != null ? 'SUM' : 'COUNT';
             data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');
         }
