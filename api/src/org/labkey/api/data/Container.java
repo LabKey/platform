@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -45,20 +46,25 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.webdav.WebdavService;
 import org.springframework.validation.BindException;
 
+import java.io.File;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -1148,6 +1154,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         if (this.hasPermission(user, ReadPermission.class))
         {
+            containerProps.put("startUrl", getStartURL(user));
+            containerProps.put("iconHref", getIconHref());
             containerProps.put("id", getId());
             containerProps.put("sortOrder", getSortOrder());
             if (includePermissions)
@@ -1424,6 +1432,32 @@ public class Container implements Serializable, Comparable<Container>, Securable
             if (module.getRequireSitePermission())
                 return true;
         return false;
+    }
+
+    static final Map<String,String> iconPathToHref = Collections.synchronizedMap(new HashMap<String,String>());
+
+    public String getIconHref()
+    {
+        FolderType ft = getFolderType();
+        String iconPath = ft.getFolderIconPath();
+        String url = iconPathToHref.get(iconPath);
+        if (null == url)
+        {
+            WebdavResource dir = WebdavService.get().getRootResolver().lookup(Path.parse(iconPath));
+            File iconFile = null;
+            if (null != dir)
+                iconFile = dir.getFile();
+            if (!NetworkDrive.exists(iconFile))
+            {
+                Logger.getLogger(Container.class).warn("Could not find specified icon: "+iconPath);
+                iconPath = FolderType.NONE.getFolderIconPath();
+            }
+            if (!iconPath.startsWith("/"))
+                iconPath = "/" + iconPath;
+            url = AppProps.getInstance().getContextPath() + iconPath;
+            iconPathToHref.put(iconPath, url);
+        }
+        return url;
     }
 
     @Nullable
