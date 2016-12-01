@@ -2,9 +2,9 @@ package org.labkey.pipeline.analysis;
 
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.CachedResultSets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.MapListResultSet;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.RuntimeSQLException;
@@ -83,7 +83,7 @@ public class ProtocolManagementWebPart extends GridView
     private void createResults() // Accept filter & sort ? Tough to use standard UI components the way this is wired in.
     {
         List<Map<String, Object>> rows = getProtocols().stream().map(Protocol::toMap).collect(Collectors.toList());
-        ResultSet rs = new MapListResultSet(rows, "taskId", "name", "pipeline", "archived");
+        ResultSet rs = CachedResultSets.create(rows, Arrays.asList("taskId", "name", "pipeline", "archived"));
         try
         {
             List<ColumnInfo> colInfos = DataRegion.colInfosFromMetaData(rs.getMetaData());
