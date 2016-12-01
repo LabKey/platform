@@ -1023,13 +1023,30 @@ LABKEY.vis.TimeChartHelper = new function() {
                 config.success.call(config.scope, chartData);
         };
 
+        var queryTempResultsForRows = function(response, dataType)
+        {
+            // Issue 28529: re-query for the actual data off of the temp query results, which are sorted correctly
+            LABKEY.Query.selectRows({
+                containerPath: config.containerPath,
+                schemaName: response.schemaName,
+                queryName: response.queryName,
+                requiredVersion: '9.1',
+                success: function(tempQueryData)
+                {
+                    response.rows = tempQueryData.rows;
+                    successCallback(response, dataType);
+                }
+            });
+        };
+
         if (config.chartInfo.displayIndividual)
         {
             //Get data for individual lines.
             LABKEY.Query.Visualization.getData({
+                metaDataOnly: true,
                 containerPath: config.containerPath,
                 success: function(response) {
-                    successCallback(response, "individual");
+                    queryTempResultsForRows(response, "individual");
                 },
                 failure : function(info, response, options) {
                     config.failure.call(config.scope, info, Ext4.JSON.decode(response.responseText));
@@ -1055,9 +1072,10 @@ LABKEY.vis.TimeChartHelper = new function() {
             }
 
             LABKEY.Query.Visualization.getData({
+                metaDataOnly: true,
                 containerPath: config.containerPath,
                 success: function(response) {
-                    successCallback(response, "aggregate");
+                    queryTempResultsForRows(response, "aggregate");
                 },
                 failure : function(info) {
                     config.failure.call(config.scope, info);

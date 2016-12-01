@@ -790,13 +790,15 @@ public class VisualizationSQLGenerator implements HasViewContext
 
         if (includeOrderBys && !orderBys.isEmpty())
         {
-            sql.append(getOrderByClause(orderBys, hasRowLimit));
+            sql.append(getOrderByClause(orderBys, allAliases, hasRowLimit));
         }
 
         return sql.toString();
     }
 
-    private String getOrderByClause(Map<VisualizationSourceColumn, IVisualizationSourceQuery> orderBys, boolean hasRowLimit)
+    private String getOrderByClause(Map<VisualizationSourceColumn, IVisualizationSourceQuery> orderBys,
+                                    Map<String, Set<VisualizationSourceColumn>> allAliases,
+                                    boolean hasRowLimit)
     {
         if (orderBys.isEmpty())
         {
@@ -806,7 +808,20 @@ public class VisualizationSQLGenerator implements HasViewContext
         StringBuilder sql = new StringBuilder("ORDER BY ");
         for (Map.Entry<VisualizationSourceColumn, IVisualizationSourceQuery> orderBy : orderBys.entrySet())
         {
-            sql.append(sep).append(orderBy.getValue().getSQLAlias()).append(".").append(orderBy.getKey().getSQLAlias());
+            String queryName = orderBy.getValue().getSQLAlias();
+            String aliasName = orderBy.getKey().getSQLAlias();
+
+            // Issue 28529: Time chart sort order issue when having multiple visit based measures that don't overlap on all visits
+            String visitSequenceNumSuffix = "/Visit/SequenceNumMin";
+            if (orderBy.getKey().getOriginalName().endsWith(visitSequenceNumSuffix))
+            {
+                String newVisitSequenceNum = orderBy.getKey().getOriginalName().replace(visitSequenceNumSuffix, "/sequencenum");
+                Set<VisualizationSourceColumn> alternateSequeceNumCol = allAliases.get(newVisitSequenceNum);
+                if (alternateSequeceNumCol != null && alternateSequeceNumCol.size() > 1)
+                    aliasName = alternateSequeceNumCol.iterator().next().getSQLAlias();
+            }
+
+            sql.append(sep).append(queryName).append(".").append(aliasName);
             sep = ", ";
         }
         if (findSchema(orderBys.keySet()).getDbSchema().getSqlDialect().isSqlServer() && !hasRowLimit)
