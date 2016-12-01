@@ -345,7 +345,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         columns.addAll(getDomainKind().getDefaultColumnNames()
                 .stream()
                 .filter(existingColumns::contains)
-                .collect(Collectors.toSet()));
+                .collect(Collectors.toList()));
         columns.addAll(_extraDefaultColumns);
         setDefaultVisibleColumns(columns);
     }
