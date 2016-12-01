@@ -138,10 +138,10 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
             if (!_logToDatabase.get())
             {
-                /**
-                 * This is necessary because audit log service needs to be registered in the constructor
-                 * of the audit module, but the schema may not be created or updated at that point.  Events
-                 * that occur before startup is complete are therefore queued up and recorded after startup.
+                /*
+                  This is necessary because audit log service needs to be registered in the constructor
+                  of the audit module, but the schema may not be created or updated at that point.  Events
+                  that occur before startup is complete are therefore queued up and recorded after startup.
                  */
                 synchronized (STARTUP_LOCK)
                 {
