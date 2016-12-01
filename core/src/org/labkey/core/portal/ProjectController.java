@@ -36,6 +36,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileUrls;
 import org.labkey.api.module.DefaultFolderType;
@@ -57,6 +58,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -100,6 +102,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 
 public class ProjectController extends SpringActionController
@@ -1311,6 +1314,7 @@ public class ProjectController extends SpringActionController
         private boolean _includeEffectivePermissions = true;
         private int _depth = Integer.MAX_VALUE;
         private String[] _moduleProperties;
+        private ContainerFilter.Type _containerFilter = null;
 
         public Container[] getContainer()
         {
@@ -1371,10 +1375,26 @@ public class ProjectController extends SpringActionController
         {
             _includeEffectivePermissions = includeEffectivePermissions;
         }
+
+        public ContainerFilter.Type getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(ContainerFilter.Type containerFilter)
+        {
+            _containerFilter = containerFilter;
+        }
     }
 
     /**
      * Returns all containers visible to the current user
+     *
+     * This API should perhaps be broken up to reflect it's different uses
+     *
+     * ONE) single container (with or without TREE of children)
+     * TWO) list of containers (with or without TREE of children)
+     * THREE) list of containers as specified by container filter (not children)
      */
     @RequiresNoPermission
     public class GetContainersAction extends ApiAction<GetContainersForm>
@@ -1418,6 +1438,41 @@ public class ProjectController extends SpringActionController
                 }
             }
 
+            if (null != form.getContainerFilter())
+            {
+                _requestedDepth = 0;
+                form.setIncludeSubfolders(false);
+                form.setMultipleContainers(true);
+                ContainerFilter cf = form.getContainerFilter().create(getUser());
+                Collection<GUID> ids = cf.getIds(getContainer());
+                List<Container> list;
+                if (null == ids)
+                {
+                    list = ContainerManager.getAllChildren(ContainerManager.getRoot(),getUser());
+                }
+                else
+                {
+                    list = ids.stream()
+                            .map(ContainerManager::getForId)
+                            .filter(ct -> null != ct)
+                            .collect(Collectors.toList());
+                }
+                list.sort((c1, c2) -> {
+                    Path p1 = c1.getParsedPath(), p2 = c2.getParsedPath();
+                    int c = Integer.compare(p1.size(),p2.size());
+                    if (c != 0)
+                        return c;
+                    c = p1.getParent().compareTo(p2.getParent());
+                    if (c != 0)
+                        return c;
+                    c = Integer.compare(c1.getSortOrder(), c2.getSortOrder());
+                    if (c != 0)
+                        return c;
+                    return c1.getTitle().compareTo(c2.getTitle());
+                });
+                form.setContainer(list.toArray(new Container[list.size()]));
+            }
+
             Map<String, Object> resultMap;
             if (form.isMultipleContainers() || (form.getContainer() != null && form.getContainer().length > 1))
             {
@@ -1453,10 +1508,11 @@ public class ProjectController extends SpringActionController
 
         Map<String, Object> getContainerJSON(Container container, User user, List<ModuleProperty> propertiesToSerialize)
         {
-            Map<String, Object> resultMap = container.toJSON(user);
+            Map<String, Object> resultMap = container.toJSON(user, _includeEffectivePermissions);
             addModuleProperties(container, propertiesToSerialize, resultMap);
 
-            resultMap.put("children", getVisibleChildren(container, user, propertiesToSerialize, 0));
+            if (_requestedDepth > 0)
+                resultMap.put("children", getVisibleChildren(container, user, propertiesToSerialize, 0));
             return resultMap;
         }
 
