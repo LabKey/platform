@@ -435,43 +435,39 @@ public class ExpDataClassDataTestCase
         Assert.assertTrue(lineage.getMaterials().contains(s1));
         Assert.assertTrue(lineage.getMaterials().contains(s2));
 
-        // TODO: Issue 26107: Unfortunately, SqlServer doesn't like having the lineage CTE directly embedded within the LineageTableInfo getFromSql()
-        // if (ExperimentService.get().getSchema().getSqlDialect().isPostgreSQL())
+        // Get lineage using query
+        String sql =
+                "SELECT\n" +
+                        "  dc.Name,\n" +
+                        "  dc.Inputs.Data.\"All\".Name AS InputsDataAllNames,\n" +
+                        "  dc.Inputs.Data." + firstDataClassName + ".Name AS InputsDataFirstDataClassNames,\n" +
+                        "  dc.Inputs.Materials.Samples.Name AS InputsMaterialSampleNames,\n" +
+                        "  dc.Outputs.Data." + secondDataClassName + ".Name AS OutputsDataSecondDataClassNames\n" +
+                        "FROM exp.data." + firstDataClassName + " AS dc\n" +
+                        "ORDER BY dc.RowId\n";
+
+        try (Results rs = QueryService.get().selectResults(schema, sql, null, null, true, false))
         {
-            // Get lineage using query
-            String sql =
-                    "SELECT\n" +
-                            "  dc.Name,\n" +
-                            "  dc.Inputs.Data.\"All\".Name AS InputsDataAllNames,\n" +
-                            "  dc.Inputs.Data." + firstDataClassName + ".Name AS InputsDataFirstDataClassNames,\n" +
-                            "  dc.Inputs.Materials.Samples.Name AS InputsMaterialSampleNames,\n" +
-                            "  dc.Outputs.Data." + secondDataClassName + ".Name AS OutputsDataSecondDataClassNames\n" +
-                            "FROM exp.data." + firstDataClassName + " AS dc\n" +
-                            "ORDER BY dc.RowId\n";
+            Assert.assertTrue(rs.next());
+            Map<FieldKey, Object> bobMap = rs.getFieldKeyRowMap();
+            Assert.assertEquals("bob", bobMap.get(FieldKey.fromParts("Name")));
+            assertMultiValue(bobMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-1");
 
-            try (Results rs = QueryService.get().selectResults(schema, sql, null, null, true, false))
-            {
-                Assert.assertTrue(rs.next());
-                Map<FieldKey, Object> bobMap = rs.getFieldKeyRowMap();
-                Assert.assertEquals("bob", bobMap.get(FieldKey.fromParts("Name")));
-                assertMultiValue(bobMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-1");
+            Assert.assertTrue(rs.next());
+            Map<FieldKey, Object> sallyMap = rs.getFieldKeyRowMap();
+            Assert.assertEquals("sally", sallyMap.get(FieldKey.fromParts("Name")));
+            assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsDataAllNames")), "jimbo", "bob");
+            assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsDataFirstDataClassNames")), "bob");
+            assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-2", "S-1");
 
-                Assert.assertTrue(rs.next());
-                Map<FieldKey, Object> sallyMap = rs.getFieldKeyRowMap();
-                Assert.assertEquals("sally", sallyMap.get(FieldKey.fromParts("Name")));
-                assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsDataAllNames")), "jimbo", "bob");
-                assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsDataFirstDataClassNames")), "bob");
-                assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-2", "S-1");
+            Assert.assertTrue(rs.next());
+            Map<FieldKey, Object> mikeMap = rs.getFieldKeyRowMap();
+            Assert.assertEquals("mike", mikeMap.get(FieldKey.fromParts("Name")));
+            assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsDataAllNames")), "sally", "jimbo", "bob");
+            assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsDataFirstDataClassNames")), "bob", "sally");
+            assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-2", "S-1");
 
-                Assert.assertTrue(rs.next());
-                Map<FieldKey, Object> mikeMap = rs.getFieldKeyRowMap();
-                Assert.assertEquals("mike", mikeMap.get(FieldKey.fromParts("Name")));
-                assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsDataAllNames")), "sally", "jimbo", "bob");
-                assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsDataFirstDataClassNames")), "bob", "sally");
-                assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-2", "S-1");
-
-                Assert.assertFalse(rs.next());
-            }
+            Assert.assertFalse(rs.next());
         }
     }
 

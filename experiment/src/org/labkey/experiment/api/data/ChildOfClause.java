@@ -33,7 +33,7 @@ public class ChildOfClause extends LineageClause
     protected ExpLineageOptions createOptions()
     {
         ExpLineageOptions options = new ExpLineageOptions();
-        options.setDistinct(true);
+        options.setForLookup(true);
         options.setParents(false);
         options.setChildren(true);
         return options;
@@ -41,7 +41,7 @@ public class ChildOfClause extends LineageClause
 
     protected String getLsidColumn()
     {
-        return "child_lsid";
+        return "lsid";
     }
 
     protected String filterTextType()

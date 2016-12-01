@@ -93,19 +93,14 @@ $PARENTS$ AS
 (
 	SELECT
 		0 AS depth,
-		container AS parent_container,
-		exptype AS parent_exptype,
-		cpastype AS parent_cpastype,
-		name AS parent_name,
-		lsid AS parent_lsid,
-		rowid AS parent_rowid,
-		CAST('SELF' AS $VARCHAR$(50)) AS role,
-		container AS child_container,
-		exptype AS child_exptype,
-		cpastype AS child_cpastype,
-		name AS child_name,
-		lsid AS child_lsid,
-		rowid AS child_rowid,
+		lsid AS self_lsid,
+		rowid AS self_rowid,
+		container AS container,
+		exptype AS exptype,
+		cpastype AS cpastype,
+		name AS name,
+		lsid AS lsid,
+		rowid AS rowid,
 		CAST('/' || pathpart || '/' AS VARCHAR(8000)) AS path
 	FROM $SEED$
 
@@ -113,21 +108,16 @@ $PARENTS$ AS
 
 	SELECT
 		_Graph.depth - 1 AS depth,
-		_Edges.parent_container,
-		_Edges.parent_exptype,
-		_Edges.parent_cpastype,
-		_Edges.parent_name,
-		_Edges.parent_lsid,
-		_Edges.parent_rowid,
-		CAST(_Edges.role AS $VARCHAR$(50)) AS role,
-		_Edges.child_container,
-		_Edges.child_exptype,
-		_Edges.child_cpastype,
-		_Edges.child_name,
-		_Edges.child_lsid,
-		_Edges.child_rowid,
+		_Graph.self_lsid,
+		_Graph.self_rowid,
+		_Edges.parent_container as container,
+		_Edges.parent_exptype as exptype,
+		_Edges.parent_cpastype as cpastype,
+		_Edges.parent_name as name,
+		_Edges.parent_lsid as lsid,
+		_Edges.parent_rowid as rowid,
 		CAST(_Graph.path || _Edges.parent_pathpart || '/' AS VARCHAR(8000)) AS path
-	FROM $EDGES$ _Edges INNER JOIN $SELF$ _Graph ON _Edges.child_lsid = _Graph.parent_lsid
+	FROM $EDGES$ _Edges INNER JOIN $SELF$ _Graph ON _Edges.child_lsid = _Graph.lsid
 	WHERE _Graph.path NOT LIKE ('%/' || _Edges.parent_pathpart || '/%')
 ),
 
@@ -136,19 +126,14 @@ $CHILDREN$ AS
 (
 	SELECT
 		0 AS depth,
-		container AS parent_container,
-		exptype AS parent_exptype,
-		cpastype AS parent_cpastype,
-		name AS parent_name,
-		lsid AS parent_lsid,
-		rowid AS parent_rowid,
-		CAST('SELF' AS $VARCHAR$(50)) AS role,
-		container AS child_container,
-		exptype AS child_exptype,
-		cpastype AS child_cpastype,
-		name AS child_name,
-		lsid AS child_lsid,
-		rowid AS child_rowid,
+		lsid AS self_lsid,
+		rowid AS self_rowid,
+		container AS container,
+		exptype AS exptype,
+		cpastype AS cpastype,
+		name AS name,
+		lsid AS lsid,
+		rowid AS rowid,
     CAST('/' || pathpart || '/' AS VARCHAR(8000)) AS path
 	FROM $SEED$
 
@@ -156,21 +141,16 @@ $CHILDREN$ AS
 
 	SELECT
 		_Graph.depth + 1 AS depth,
-		_Edges.parent_container,
-		_Edges.parent_exptype,
-		_Edges.parent_cpastype,
-		_Edges.parent_name,
-		_Edges.parent_lsid,
-		_Edges.parent_rowid,
-		CAST(_Edges.role AS $VARCHAR$(50)) AS role,
-		_Edges.child_container,
-		_Edges.child_exptype,
-		_Edges.child_cpastype,
-		_Edges.child_name,
-		_Edges.child_lsid,
-		_Edges.child_rowid,
+		_Graph.self_lsid,
+		_Graph.self_rowid,
+		_Edges.child_container as container,
+		_Edges.child_exptype as exptype,
+		_Edges.child_cpastype as cpastype,
+		_Edges.child_name as name,
+		_Edges.child_lsid as lsid,
+		_Edges.child_rowid as rowid,
 		CAST(_Graph.path || _Edges.child_pathpart || '/' AS VARCHAR(8000)) AS path
-	FROM $EDGES$ _Edges INNER JOIN $SELF$ _Graph ON _Edges.parent_lsid = _Graph.child_lsid
+	FROM $EDGES$ _Edges INNER JOIN $SELF$ _Graph ON _Edges.parent_lsid = _Graph.lsid
 	WHERE _Graph.path NOT LIKE ('%/' || _Edges.child_pathpart || '/%')
 )
 

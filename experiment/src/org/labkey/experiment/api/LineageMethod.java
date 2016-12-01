@@ -69,7 +69,7 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
                 return createLineageJunctionTable(arguments);
             }
         };
-        String junctionLookup = _parents ? "parent_lsid" : "child_lsid";
+        String junctionLookup = "lsid";
         col.setFk(new MultiValuedForeignKey(fk, junctionLookup));
         return col;
     }

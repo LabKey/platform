@@ -1726,6 +1726,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
 
     static final String exp_graph_sql;
+    static final String exp_graph_sql_for_lookup;
 
     static
     {
@@ -1736,6 +1737,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 exp_graph_sql = StringUtils.replace(StringUtils.replace(sql, "$RECURSIVE$", "RECURSIVE"), "$VARCHAR$", "VARCHAR");
             else
                 exp_graph_sql = StringUtils.replace(StringUtils.replace(StringUtils.replace(sql, "$RECURSIVE$", ""), "$VARCHAR$", "NVARCHAR"), "||", "+");
+
+            sql = IOUtils.toString(ExperimentServiceImpl.class.getResourceAsStream("ExperimentRunGraphForLookup.sql"), "UTF-8");
+            if (DbSchema.get("exp", DbSchemaType.Module).getSqlDialect().isPostgreSQL())
+                exp_graph_sql_for_lookup = StringUtils.replace(StringUtils.replace(sql, "$RECURSIVE$", "RECURSIVE"), "$VARCHAR$", "VARCHAR");
+            else
+                exp_graph_sql_for_lookup = StringUtils.replace(StringUtils.replace(StringUtils.replace(sql, "$RECURSIVE$", ""), "$VARCHAR$", "NVARCHAR"), "||", "+");
         }
         catch (IOException x)
         {
@@ -1927,9 +1934,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
     /* return <ParentsQuery,ChildrenQuery> */
-    private Pair<String,String> getRunGraphCommonTableExpressions(SQLFragment ret, SqlDialect d, SQLFragment lsidsFrag)
+    private Pair<String,String> getRunGraphCommonTableExpressions(SQLFragment ret, SqlDialect d, SQLFragment lsidsFrag, boolean forLookup)
     {
-        String sourceSQL = exp_graph_sql;
+        String sourceSQL = forLookup ? exp_graph_sql_for_lookup : exp_graph_sql;
 
         Map<String,String> map = new HashMap<>();
 
@@ -2045,46 +2052,64 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
     {
         SQLFragment sqlf = new SQLFragment();
-        Pair<String,String> tokens = getRunGraphCommonTableExpressions(sqlf, getExpSchema().getSqlDialect(), lsidsFrag);
+        Pair<String,String> tokens = getRunGraphCommonTableExpressions(sqlf, getExpSchema().getSqlDialect(), lsidsFrag, options.isForLookup());
         boolean up = options.isParents();
         boolean down = options.isChildren();
-        boolean includeSelf = false;
 
         if (up || down)
         {
             if (up)
             {
-                sqlf.append("\nSELECT");
-                if (options.isDistinct() && getSchema().getSqlDialect().isPostgreSQL())
-                    sqlf.append(" DISTINCT ON (self_lsid, parent_lsid)");
-                sqlf.append(" * FROM " + tokens.first);
+                SQLFragment parents = new SQLFragment();
+                if (options.isForLookup())
+                {
+                    parents.append("\nSELECT MIN(depth) AS depth, self_lsid, MIN(self_rowid) AS self_rowid, " +
+                            "MIN(container) AS container, MIN(exptype) AS exptype, MIN(cpastype) AS cpastype, MIN(name) AS name, lsid, MIN(rowid) AS rowid " +
+                            "\nFROM " + tokens.first);
+                }
+                else
+                {
+                    parents.append("\nSELECT * FROM " + tokens.first);
+                }
                 String and = "\nWHERE ";
 
-                if (!includeSelf)
+                if (options.isForLookup())
                 {
-                    sqlf.append(and).append("parent_lsid <> self_lsid");
+                    parents.append(and).append("lsid <> self_lsid");
                     and = "\nAND ";
                 }
 
                 if (options.getExpType() != null && !"NULL".equalsIgnoreCase(options.getExpType()))
                 {
-                    sqlf.append(and).append("parent_exptype = ?\n");
-                    sqlf.add(options.getExpType());
+                    if (options.isForLookup())
+                        parents.append(and).append("exptype = ?\n");
+                    else
+                        parents.append(and).append("parent_exptype = ?\n");
+                    parents.add(options.getExpType());
                     and = "\nAND ";
                 }
 
                 if (options.getCpasType() != null && !"NULL".equalsIgnoreCase(options.getCpasType()))
                 {
-                    sqlf.append(and).append("parent_cpastype = ?\n");
-                    sqlf.add(options.getCpasType());
+                    if (options.isForLookup())
+                        parents.append(and).append("cpastype = ?\n");
+                    else
+                        parents.append(and).append("parent_cpastype = ?\n");
+                    parents.add(options.getCpasType());
                     and = "\nAND ";
                 }
 
                 if (options.getDepth() > 0)
                 {
-                    sqlf.append(and).append("depth >= ").append(0 - options.getDepth());
+                    parents.append(and).append("depth >= ").append(0 - options.getDepth());
                     and = "\nAND ";
                 }
+
+                if (options.isForLookup())
+                {
+                    parents.append("\nGROUP BY self_lsid, lsid");
+                }
+                sqlf.append(parents);
             }
 
             if (up && down)
@@ -2094,37 +2119,57 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             if (down)
             {
-                sqlf.append("\nSELECT");
-                if (options.isDistinct() && getSchema().getSqlDialect().isPostgreSQL())
-                    sqlf.append(" DISTINCT ON (self_lsid, child_lsid)");
-                sqlf.append(" * FROM " + tokens.second);
+                SQLFragment children = new SQLFragment();
+
+                if (options.isForLookup())
+                {
+                    children.append("\nSELECT MIN(depth) AS depth, self_lsid, MIN(self_rowid) AS self_rowid, " +
+                            "MIN(container) AS container, MIN(exptype) AS exptype, MIN(cpastype) AS cpastype, MIN(name) as name, lsid, MIN(rowid) AS rowid " +
+                            "\nFROM " + tokens.second);
+                }
+                else
+                {
+                    children.append("\nSELECT * FROM " + tokens.second);
+                }
+
                 String and = "\nWHERE ";
 
-                if (!includeSelf)
+                if (options.isForLookup())
                 {
-                    sqlf.append(and).append("child_lsid <> self_lsid");
+                    children.append(and).append("lsid <> self_lsid");
                     and = "\nAND ";
                 }
 
                 if (options.getExpType() != null && !"NULL".equalsIgnoreCase(options.getExpType()))
                 {
-                    sqlf.append(and).append("child_exptype = ?\n");
-                    sqlf.add(options.getExpType());
+                    if (options.isForLookup())
+                        children.append(and).append("exptype = ?\n");
+                    else
+                        children.append(and).append("child_exptype = ?\n");
+                    children.add(options.getExpType());
                     and = "\nAND ";
                 }
 
                 if (options.getCpasType() != null && !"NULL".equalsIgnoreCase(options.getCpasType()))
                 {
-                    sqlf.append(and).append("child_cpastype = ?\n");
-                    sqlf.add(options.getCpasType());
+                    if (options.isForLookup())
+                        children.append(and).append("cpastype = ?\n");
+                    else
+                        children.append(and).append("child_cpastype = ?\n");
+                    children.add(options.getCpasType());
                     and = "\nAND ";
                 }
 
                 if (options.getDepth() > 0)
                 {
-                    sqlf.append(and).append("depth <= ").append(options.getDepth());
+                    children.append(and).append("depth <= ").append(options.getDepth());
                     and = "\nAND ";
                 }
+                if (options.isForLookup())
+                {
+                    children.append("\nGROUP BY self_lsid, lsid");
+                }
+                sqlf.append(children);
             }
         }
         else

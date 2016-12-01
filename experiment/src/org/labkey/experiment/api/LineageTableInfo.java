@@ -72,54 +72,28 @@ public class LineageTableInfo extends VirtualTable
         ColumnInfo depthCol = new ColumnInfo(FieldKey.fromParts("depth"), this, JdbcType.INTEGER);
         addColumn(depthCol);
 
-        ColumnInfo parentContainer = new ColumnInfo(FieldKey.fromParts("parent_container"), this, JdbcType.VARCHAR);
+        ColumnInfo parentContainer = new ColumnInfo(FieldKey.fromParts("container"), this, JdbcType.VARCHAR);
         parentContainer.setSqlTypeName("entityid");
         ContainerForeignKey.initColumn(parentContainer, schema);
         addColumn(parentContainer);
 
-        ColumnInfo parentExpType = new ColumnInfo(FieldKey.fromParts("parent_exptype"), this, JdbcType.VARCHAR);
+        ColumnInfo parentExpType = new ColumnInfo(FieldKey.fromParts("exptype"), this, JdbcType.VARCHAR);
         addColumn(parentExpType);
 
-        ColumnInfo parentCpasType = new ColumnInfo(FieldKey.fromParts("parent_cpastype"), this, JdbcType.VARCHAR);
+        ColumnInfo parentCpasType = new ColumnInfo(FieldKey.fromParts("cpastype"), this, JdbcType.VARCHAR);
         addColumn(parentCpasType);
 
-        ColumnInfo parentName = new ColumnInfo(FieldKey.fromParts("parent_name"), this, JdbcType.VARCHAR);
+        ColumnInfo parentName = new ColumnInfo(FieldKey.fromParts("name"), this, JdbcType.VARCHAR);
         addColumn(parentName);
 
-        ColumnInfo parentLsid = new ColumnInfo(FieldKey.fromParts("parent_lsid"), this, JdbcType.VARCHAR);
+        ColumnInfo parentLsid = new ColumnInfo(FieldKey.fromParts("lsid"), this, JdbcType.VARCHAR);
         parentLsid.setSqlTypeName("lsidtype");
         parentLsid.setFk(createLsidLookup(_expType, _cpasType));
         addColumn(parentLsid);
 
-        ColumnInfo parentRowId = new ColumnInfo(FieldKey.fromParts("parent_rowId"), this, JdbcType.INTEGER);
+        ColumnInfo parentRowId = new ColumnInfo(FieldKey.fromParts("rowId"), this, JdbcType.INTEGER);
         //parentRowId.setFk(new QueryForeignKey("exp", schema.getContainer(), schema.getContainer(), schema.getUser(), "Materials", "rowId", "Name"));
         addColumn(parentRowId);
-
-        ColumnInfo role = new ColumnInfo(FieldKey.fromParts("role"), this, JdbcType.VARCHAR);
-        addColumn(role);
-
-        ColumnInfo childContainer = new ColumnInfo(FieldKey.fromParts("child_container"), this, JdbcType.VARCHAR);
-        childContainer.setSqlTypeName("entityid");
-        ContainerForeignKey.initColumn(childContainer, schema);
-        addColumn(childContainer);
-
-        ColumnInfo childExpType = new ColumnInfo(FieldKey.fromParts("child_exptype"), this, JdbcType.VARCHAR);
-        addColumn(childExpType);
-
-        ColumnInfo childCpasType = new ColumnInfo(FieldKey.fromParts("child_cpastype"), this, JdbcType.VARCHAR);
-        addColumn(childCpasType);
-
-        ColumnInfo childName = new ColumnInfo(FieldKey.fromParts("child_name"), this, JdbcType.VARCHAR);
-        addColumn(childName);
-
-        ColumnInfo childLsid = new ColumnInfo(FieldKey.fromParts("child_lsid"), this, JdbcType.VARCHAR);
-        childLsid.setSqlTypeName("lsidtype");
-        childLsid.setFk(createLsidLookup(_expType, _cpasType));
-        addColumn(childLsid);
-
-        ColumnInfo childRowId = new ColumnInfo(FieldKey.fromParts("child_rowId"), this, JdbcType.INTEGER);
-        addColumn(childRowId);
-
     }
 
     private ForeignKey createLsidLookup(String expType, String cpasType)
@@ -203,7 +177,7 @@ public class LineageTableInfo extends VirtualTable
     public SQLFragment getFromSQL()
     {
         ExpLineageOptions options = new ExpLineageOptions();
-        options.setDistinct(true);
+        options.setForLookup(true);
         options.setParents(_parents);
         options.setChildren(!_parents);
         options.setCpasType(_cpasType);

@@ -852,6 +852,7 @@ experiment/src/org/labkey/experiment/api/Experiment.java -text
 experiment/src/org/labkey/experiment/api/ExperimentProtocolGraph.sql -text
 experiment/src/org/labkey/experiment/api/ExperimentRun.java -text
 experiment/src/org/labkey/experiment/api/ExperimentRunGraph.sql -text
+experiment/src/org/labkey/experiment/api/ExperimentRunGraphForLookup.sql -text
 experiment/src/org/labkey/experiment/api/ExperimentServiceImpl.java -text
 experiment/src/org/labkey/experiment/api/IdentifiableEntity.java -text
 experiment/src/org/labkey/experiment/api/InputForeignKey.java -text

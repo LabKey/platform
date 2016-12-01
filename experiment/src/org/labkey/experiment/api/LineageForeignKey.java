@@ -116,7 +116,7 @@ class LineageForeignKey extends LookupForeignKey
                     return super.getURL(parent, true);
                 }
 
-            }, _parents ? "parent_lsid" : "child_lsid"));
+            }, "lsid"));
 
             return addColumn(col);
         }
