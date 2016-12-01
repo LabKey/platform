@@ -452,7 +452,7 @@ table.labkey-button-bar
     color: #126495;
     text-transform: uppercase;
     letter-spacing: .5px;
-	line-height: 2.3em;
+	line-height: 2.3;
     *line-height: 1.9em;
     *height: 1%; /* hack for IE 7, so it sets its 'hasLayout' DOM property.  This
                     is required for IE to recognize its position attribute, which in
@@ -566,7 +566,7 @@ td .labkey-menu-button:hover,
     text-transform: uppercase;
     cursor: default;
 
-    line-height: 2.3em;
+    line-height: 2.3;
     *line-height: 1.9em;
     *height: 1%; /* hack for IE 7, so it sets its 'hasLayout' DOM property.  This
                     is required for IE to recognize its position attribute, which in
@@ -1616,7 +1616,7 @@ td.labkey-main-title-area
     vertical-align: bottom;
     color: #676767;
     text-decoration: none;
-    line-height: 125%;
+    line-height: 1.25;
 }
 
 .labkey-main-title-area .labkey-main-title:hover {
@@ -1888,7 +1888,7 @@ td.labkey-nav-tree-text
 {
     padding: 4px 0;
     vertical-align: top;
-	line-height: 1.2em;
+	line-height: 1.2;
 }
 
 td.labkey-nav-tree-text a {
@@ -1951,7 +1951,7 @@ td.labkey-crumb-trail {
     font-size: 26px;
     font-weight: normal;
     color: #000000;
-    line-height: 125%;
+    line-height: 1.25;
 }
 
 /* This is the table that contains each web part in the portal view */
@@ -2755,7 +2755,7 @@ ul.labkey-tab-strip a
     border-left : 1px solid #b4b4b4;
     border-bottom : none;
     float: left;
-    line-height : 14px;
+    line-height : 1;
     text-decoration : none;
 
     border-radius: 5px 5px 0 0;
@@ -2790,7 +2790,7 @@ li.labkey-tab-inactive a
 	border-right : 1px solid #b4b4b4;
 	border-bottom : 1px solid #fff;
     font-size:1px;
-    line-height:1px;
+    line-height:1;
 }
 
 .labkey-tab-strip-content
@@ -2994,7 +2994,7 @@ input[type="checkbox"], input[type="radio"] {
 .labkey-app-bar div.labkey-folder-title { /* this should map to the link and top border color in theme */
 	float: left;
     font-size: 14pt;
-    line-height: 22px;
+    line-height: 1.2;
     white-space: nowrap;
 }
 
@@ -3015,7 +3015,7 @@ input[type="checkbox"], input[type="radio"] {
     display: inline-block;
 
     padding:  8px 8px 8px 20px;
-    line-height : 14px;
+    line-height : 1;
     text-decoration : none;
     background-color: #efefef;
 
@@ -3475,7 +3475,7 @@ div.headermenu a.labkey-menu-text-link img {
 }
 
 #headerSearchInput-inputEl {
-    line-height: 16px;
+    line-height: 1.3;
     border-color: #B5B8C8;
     font-size: 8pt;
 }
@@ -3819,9 +3819,10 @@ a div.x4-menu-item-icon.fa-users
     margin-bottom: -1px
 }
 
+/*Used in Data Region Export panel*/
 .labkey-ribbon .nav-tabs>li>a {
     margin-right: 2px;
-    line-height: 1.428571429;
+    line-height: 1.4;
     border: 1px solid transparent;
     border-radius: 4px 4px 0 0
 }
