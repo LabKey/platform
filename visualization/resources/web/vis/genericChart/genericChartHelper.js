@@ -319,7 +319,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         {
             var xMeasureType = getMeasureType(measures.x);
 
-            // Force discrete x-axis scale for box plots.
+            // Force discrete x-axis scale for bar plots.
             var useContinuousScale = chartType != 'bar_chart' && isNumericType(xMeasureType);
 
             if (useContinuousScale)
@@ -395,19 +395,20 @@ LABKEY.vis.GenericChartHelper = new function(){
         if (chartType == "box_plot" && !measures.x)
             aes.x = generateMeasurelessAcc(queryName);
         else if (isNumericType(xMeasureType) || (chartType == 'scatter_plot' && measures.x.measure))
-            aes.x = measures.x.converted ?
-                    generateContinuousAcc(measures.x.convertedName) :
-                    generateContinuousAcc(measures.x.name);
+        {
+            var xMeasureName = measures.x.converted ? measures.x.convertedName : measures.x.name;
+            aes.x = generateContinuousAcc(xMeasureName);
+        }
         else
-            aes.x = measures.x.converted ?
-                    generateDiscreteAcc(measures.x.convertedName, measures.x.label) :
-                    generateDiscreteAcc(measures.x.name, measures.x.label);
+        {
+            var xMeasureName = measures.x.converted ? measures.x.convertedName : measures.x.name;
+            aes.x = generateDiscreteAcc(xMeasureName, measures.x.label);
+        }
 
         if (measures.y)
         {
-            aes.y = measures.y.converted ?
-                    generateContinuousAcc(measures.y.convertedName) :
-                    generateContinuousAcc(measures.y.name);
+            var yMeasureName = measures.y.converted ? measures.y.convertedName : measures.y.name;
+            aes.y = generateContinuousAcc(yMeasureName);
         }
 
         if (chartType === "scatter_plot")
@@ -1113,13 +1114,14 @@ LABKEY.vis.GenericChartHelper = new function(){
                                 }
                             }
                         }
-                    }
-                    if (!processedMeasures[measure]) {
-                        processedMeasures[measure] = {
-                            converted: true,
-                            convertedName: measuresForProcessing[measure].convertedName,
-                            type: 'float',
-                            normalizedType: 'float'
+
+                        if (!processedMeasures[measure]) {
+                            processedMeasures[measure] = {
+                                converted: true,
+                                convertedName: measuresForProcessing[measure].convertedName,
+                                type: 'float',
+                                normalizedType: 'float'
+                            }
                         }
                     }
                 }
