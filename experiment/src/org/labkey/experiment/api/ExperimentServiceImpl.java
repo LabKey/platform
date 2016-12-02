@@ -4077,7 +4077,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public void insertProtocolPredecessor(User user, int actionRowId, int predecessorRowId) throws SQLException {
+    public void insertProtocolPredecessor(User user, int actionRowId, int predecessorRowId) throws SQLException
+    {
         Map<String, Object> mValsPredecessor = new HashMap<>();
         mValsPredecessor.put("ActionId", actionRowId);
         mValsPredecessor.put("PredecessorId", predecessorRowId);
@@ -5197,6 +5198,128 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, null).getArrayList(Data.class));
     }
 
+    public ExpProtocol insertProtocol(@NotNull ExpProtocol wrappedProtocol, @Nullable List<ExpProtocol> steps, @Nullable Map<String, List<String>> predecessors, User user) throws ExperimentException
+    {
+        if (wrappedProtocol == null)
+        {
+            throw new ExperimentException("Cannot insert a \"null\" protocol");
+        }
+
+        try (DbScope.Transaction tx = getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
+        {
+            if (ExperimentService.get().getExpProtocol(wrappedProtocol.getLSID()) != null)
+            {
+                throw new ExperimentException("A protocol with that name already exists");
+            }
+
+            Map<String, Protocol> insertedProtocols = new HashMap<>();
+
+            Protocol baseProtocol = insertProtocol(wrappedProtocol, user);
+            insertedProtocols.put(baseProtocol.getLSID(), baseProtocol);
+
+            List<Protocol> stepProtocols = new ArrayList<>();
+            if (steps != null)
+            {
+                for (ExpProtocol wrappedStepProtocol : steps)
+                {
+                    if (wrappedStepProtocol == null)
+                    {
+                        throw new ExperimentException("Cannot insert a \"null\" protocol step");
+                    }
+
+                    Protocol stepProtocol = insertProtocol(wrappedStepProtocol, user);
+                    insertedProtocols.put(stepProtocol.getLSID(), stepProtocol);
+                    stepProtocols.add(stepProtocol);
+                }
+            }
+
+            // all protocols are now inserted, now link them together
+            int actionSequence = 1;
+            Map<Integer, String> actionSequenceLSID = new HashMap<>();
+
+            ProtocolAction previousAction = insertProtocolAction(baseProtocol, baseProtocol, null, actionSequence, user);
+            actionSequenceLSID.put(actionSequence, baseProtocol.getLSID());
+            actionSequence = 10;
+
+            for (Protocol stepProtocol : stepProtocols)
+            {
+                if (predecessors != null && predecessors.containsKey(stepProtocol.getLSID()))
+                {
+                    // TODO: Not yet supported
+                    throw new UnsupportedOperationException("Support for predecessor map is not yet implemented");
+                }
+                else
+                {
+                    previousAction = insertProtocolAction(baseProtocol, stepProtocol, previousAction, actionSequence, user);
+                    actionSequenceLSID.put(actionSequence, stepProtocol.getLSID());
+                    actionSequence += 10;
+                }
+            }
+
+            tx.commit();
+
+            return getExpProtocol(baseProtocol.getRowId());
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    /**
+     * Helper to insert a Protocol during the Protocol insertion process. Use {@link ExperimentServiceImpl#insertProtocol(ExpProtocol, List, Map, User)}
+     */
+    private Protocol insertProtocol(ExpProtocol protocol, User user) throws ExperimentException
+    {
+        Protocol baseProtocol = ((ExpProtocolImpl)protocol).getDataObject();
+
+        if (protocol.getApplicationType() == null)
+        {
+            throw new ExperimentException("Protocol \"" + protocol.getLSID() + "\" needs to declare it's applicationType before being inserted");
+        }
+
+        if (baseProtocol.getOutputDataType() == null)
+            baseProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
+        if (baseProtocol.getOutputMaterialType() == null)
+            baseProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
+
+        Map<String, ProtocolParameter> baseParams = new HashMap<>(protocol.getProtocolParameters());
+
+        if (!baseParams.containsKey(XarConstants.APPLICATION_LSID_TEMPLATE_URI))
+        {
+            throw new ExperimentException(XarConstants.APPLICATION_LSID_TEMPLATE_URI + " needs to be declared before inserting protocol");
+        }
+
+        if (!baseParams.containsKey(XarConstants.APPLICATION_NAME_TEMPLATE_URI))
+        {
+            ProtocolParameter baseNameTemplate = new ProtocolParameter();
+            baseNameTemplate.setName(XarConstants.APPLICATION_NAME_TEMPLATE_NAME);
+            baseNameTemplate.setOntologyEntryURI(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
+            baseNameTemplate.setValue(SimpleTypeNames.STRING, baseProtocol.getName()); // TODO: Consider for base adding " Protocol"
+            baseParams.put(XarConstants.APPLICATION_NAME_TEMPLATE_URI, baseNameTemplate);
+            baseProtocol.storeProtocolParameters(baseParams.values());
+        }
+
+        return saveProtocol(user, baseProtocol);
+    }
+
+    /**
+     * Helper to insert ProtocolActions during the Protocol insertion process. Use {@link ExperimentServiceImpl#insertProtocol(ExpProtocol, List, Map, User)}
+     */
+    private ProtocolAction insertProtocolAction(Protocol parent, Protocol child, @Nullable ProtocolAction previousAction, int actionSequence, User user) throws SQLException
+    {
+        ProtocolAction action = new ProtocolAction();
+        action.setParentProtocolId(parent.getRowId());
+        action.setChildProtocolId(child.getRowId());
+        action.setSequence(actionSequence);
+        action = Table.insert(user, getTinfoProtocolAction(), action);
+
+        insertProtocolPredecessor(user, action.getRowId(), previousAction == null ? action.getRowId() : previousAction.getRowId());
+
+        return action;
+    }
+
+    // TODO: Switch this to use insertProtocol(ExpProtocol, List, Map, User)
     public ExpProtocol insertSimpleProtocol(ExpProtocol wrappedProtocol, User user) throws ExperimentException
     {
         try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
