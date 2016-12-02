@@ -4412,16 +4412,26 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         private Container _container;
         private XarContext _context;
 
-        private List<List<?>> _runParams = new ArrayList<>();
-        private List<List<?>> _protAppParams = new ArrayList<>();
-        private List<ProtocolAppRecord> _protAppRecords = new ArrayList<>();
-        private List<List<?>> _materialInputParams = new ArrayList<>();
-        private List<List<?>> _dataInputParams = new ArrayList<>();
+        private List<List<?>> _runParams;
+        private List<List<?>> _protAppParams;
+        private List<ProtocolAppRecord> _protAppRecords;
+        private List<List<?>> _materialInputParams;
+        private List<List<?>> _dataInputParams;
 
         public DeriveSamplesBulkHelper(Container container, XarContext context)
         {
             _container = container;
             _context = context;
+            resetState();
+        }
+
+        private void resetState()
+        {
+            _runParams = new ArrayList<>();
+            _protAppParams = new ArrayList<>();
+            _protAppRecords = new ArrayList<>();
+            _materialInputParams = new ArrayList<>();
+            _dataInputParams = new ArrayList<>();
         }
 
         public void addRunParams(ExperimentRun run, int userId)
@@ -4463,10 +4473,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             saveExpDataOutputs(_protAppRecords);
 
             // clear the stored records
-            _runParams.clear();
-            _protAppParams.clear();
-            _materialInputParams.clear();
-            _protAppRecords.clear();
+            resetState();
 
             uncacheEdges();
         }
