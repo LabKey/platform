@@ -229,12 +229,12 @@ abstract public class DomainKind implements Handler<String>
     }
 
     /**
-     * Check if property size fits existing data
-     * @param kind domain to execute in
+     * Check if existing string data fits in property scale
+     * @param domain to execute within
      * @param prop property to check
-     * @return
+     * @return true if the DomainProperty is a string and a value exists that is greater than the DomainProperty's max length
      */
-    public boolean exceedsMaxLength(Domain kind, DomainProperty prop)
+    public boolean exceedsMaxLength(Domain domain, DomainProperty prop)
     {
         //Most domains don't need to do anything here
         return false;

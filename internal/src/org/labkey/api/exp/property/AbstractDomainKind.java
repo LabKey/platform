@@ -243,32 +243,31 @@ public abstract class AbstractDomainKind extends DomainKind
     }
 
     /**
-     * Check if existing data fits in property scale
+     * Check if existing string data fits in property scale
      * @param domain to execute within
      * @param prop property to check
-     * @return
+     * @return true if the DomainProperty is a string and a value exists that is greater than the DomainProperty's max length
      */
     @Override
     public boolean exceedsMaxLength(Domain domain, DomainProperty prop)
     {
-        String schema = getStorageSchemaName();
-        if (schema != null && domain.getStorageTableName() != null)
-        {
-            SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
-            SQLFragment sql = new SQLFragment(String.format("SELECT coalesce(MAX(%s(%s)),0) FROM %s.%s",
-                    dialect.getVarcharLengthFunction(),
-                    //Lowercase names for postgres (MSSQL is case insensitive in this case)
-                    dialect.makeLegalIdentifier(prop.getName().toLowerCase()),
-                    dialect.makeLegalIdentifier(schema.toLowerCase()),
-                    dialect.makeLegalIdentifier(domain.getStorageTableName().toLowerCase())
-            ));
-
-            int maxSize = new SqlSelector(ExperimentService.get().getSchema(), sql).getObject(Integer.class);
-            return prop.getScale() < maxSize;
-        }
-        else
-        {
+        if (prop.getPropertyDescriptor().isStringType())
             return false;
-        }
+
+        String schema = getStorageSchemaName();
+        if (schema == null || domain.getStorageTableName() == null)
+            return false;
+
+        SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
+        SQLFragment sql = new SQLFragment(String.format("SELECT coalesce(MAX(%s(%s)),0) FROM %s.%s",
+                dialect.getVarcharLengthFunction(),
+                //Lowercase names for postgres (MSSQL is case insensitive in this case)
+                dialect.makeLegalIdentifier(prop.getName().toLowerCase()),
+                dialect.makeLegalIdentifier(schema.toLowerCase()),
+                dialect.makeLegalIdentifier(domain.getStorageTableName().toLowerCase())
+        ));
+
+        int maxSize = new SqlSelector(ExperimentService.get().getSchema(), sql).getObject(Integer.class);
+        return prop.getScale() < maxSize;
     }
 }
