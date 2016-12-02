@@ -361,6 +361,21 @@ public class ExperimentService
         /** Kicks off an asynchronous move - a PipelineJob is submitted to the queue to perform the move */
         void moveRuns(ViewBackgroundInfo targetInfo, Container sourceContainer, List<ExpRun> runs) throws IOException;
 
+        /**
+         * Insert a protocol with optional steps and predecessor configurations.
+         * @param baseProtocol the base/top-level protocol to create. Expected to have an ApplicationType and a
+         *                     ProtocolParameter value for XarConstants.APPLICATION_LSID_TEMPLATE_URI.
+         * @param steps the protocol steps. Expected to have an ApplicationType and a ProtocolParameter value
+         *              for XarConstants.APPLICATION_LSID_TEMPLATE_URI.
+         * @param predecessors Map of Protocol LSIDs to a List of Protocol LSIDs where each entry represents a
+         *                     node in the Experiment Protocol graph. If this is not provided the baseProtocol and
+         *                     subsequent steps will be organized sequentially.
+         * @param user user with insert permissions
+         * @return the saved ExpProtocol
+         * @throws ExperimentException
+         */
+        ExpProtocol insertProtocol(@NotNull ExpProtocol baseProtocol, @Nullable List<ExpProtocol> steps, @Nullable Map<String, List<String>> predecessors, User user) throws ExperimentException;
+
         public ExpProtocol insertSimpleProtocol(ExpProtocol baseProtocol, User user) throws ExperimentException;
 
         /**
@@ -380,7 +395,7 @@ public class ExperimentService
          * Adds an extra protocol application to a run created by saveSimpleExperimentRun() to track more complex
          * workflows.
          * @param expRun run to which the extra should be added
-         * @param name name of the prococol application
+         * @param name name of the protocol application
          * @return a fully populated but not yet saved ExpProtocolApplication. It will have no inputs and outputs.
          */
         public ExpProtocolApplication createSimpleRunExtraProtocolApplication(ExpRun expRun, String name);
