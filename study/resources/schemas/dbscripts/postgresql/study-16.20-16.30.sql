@@ -37,12 +37,11 @@ CREATE TABLE study.DoseAndRoute
   CONSTRAINT DoseAndRoute_Dose_Route_ProductId UNIQUE (Dose, Route, ProductId)
 );
 
-SELECT core.executeJavaUpgradeCode('populateDoseAndRoute');
-
 /* study-16.22-16.23.sql */
 
 ALTER TABLE study.DoseAndRoute DROP CONSTRAINT DoseAndRoute_Dose_Route_ProductId;
 ALTER TABLE study.DoseAndRoute ADD CONSTRAINT DoseAndRoute_Container_Dose_Route_ProductId UNIQUE (Container, Dose, Route, ProductId);
+SELECT core.executeJavaUpgradeCode('populateDoseAndRoute');
 
 /* study-16.23-16.24.sql */
 

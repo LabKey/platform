@@ -1208,8 +1208,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             if (!_container.isRoot())
             {
                 tabs.add(new TabInfo("Search", "fullTextSearch", url));
-                if (!_container.isContainerTab())
-                    tabs.add(new TabInfo("Notifications", "messages", url));
+                tabs.add(new TabInfo("Notifications", "messages", url));
 
                 tabs.add(new TabInfo("Export", "export", url));
                 tabs.add(new TabInfo("Import", "import", url));

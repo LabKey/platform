@@ -908,6 +908,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     @Override
     public boolean canRead(UserPrincipal user)
     {
+        if (getContainer().hasPermission(user, AdminPermission.class))
+            return true;
         return getPermissions(user).contains(ReadPermission.class);
     }
 

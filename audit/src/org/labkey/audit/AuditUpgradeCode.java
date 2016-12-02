@@ -84,13 +84,7 @@ public class AuditUpgradeCode implements UpgradeCode
                             String indexName = indexPrefix + "_" + index.name;
                             _log.info("Dropping index: " + indexName + " for audit table: " + tableName);
 
-                            SQLFragment sql = new SQLFragment("DROP INDEX ");
-                            if (dialect.isSqlServer())
-                                sql.append(indexName).append(" ON ").append(tableName);
-                            else if (dialect.isPostgreSQL())
-                                sql.append("audit.").append(indexName);
-
-                            new SqlExecutor(AuditSchema.getInstance().getSchema()).execute(sql);
+                            AuditSchema.getInstance().getSchema().dropIndexIfExists(queryName, indexName);
                         }
 
                         for (String colName : info.fields)

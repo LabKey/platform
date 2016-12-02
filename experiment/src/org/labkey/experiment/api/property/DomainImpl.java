@@ -442,8 +442,8 @@ public class DomainImpl implements Domain
                                 checkRequiredStatus.add(impl);
                             }
 
-                            // check if size constraints have decreased
-                            if (isSmallerSize(impl._pdOld.getScale(), impl._pd.getScale()))
+                            // check if string size constraints have decreased
+                            if (impl._pdOld.isStringType() && isSmallerSize(impl._pdOld.getScale(), impl._pd.getScale()))
                                 checkAndThrowSizeConstraints(kind, this, impl);
                         }
 
