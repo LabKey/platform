@@ -692,13 +692,20 @@ public class ExperimentController extends SpringActionController
 
             if (_source.canImportMoreSamples())
             {
-                ActionURL urlUploadSamples = new ActionURL(ShowUploadMaterialsAction.class, getContainer());
-                urlUploadSamples.addParameter("name", _source.getName());
-                urlUploadSamples.addParameter("importMoreSamples", "true");
-                urlUploadSamples.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                ActionButton uploadButton = new ActionButton(urlUploadSamples, "Import More Samples", DataRegion.MODE_ALL, ActionButton.Action.LINK);
-                uploadButton.setDisplayPermission(UpdatePermission.class);
-                detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(uploadButton);
+                TableInfo table = queryView.getTable();
+                if (table != null)
+                {
+                    ActionURL importURL = table.getImportDataURL(getContainer());
+                    if (importURL != null)
+                    {
+                        importURL = importURL.clone();
+                        importURL.replaceParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                        ActionButton uploadButton = new ActionButton(importURL, "Import More Samples", DataRegion.MODE_ALL, ActionButton.Action.LINK);
+                        uploadButton.setDisplayPermission(UpdatePermission.class);
+                        detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(uploadButton);
+
+                    }
+                }
             }
 
             return new VBox(detailsView, queryView);
