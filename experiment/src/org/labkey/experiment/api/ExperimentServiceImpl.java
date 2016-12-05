@@ -5212,10 +5212,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 throw new ExperimentException("A protocol with that name already exists");
             }
 
-            Map<String, Protocol> insertedProtocols = new HashMap<>();
-
             Protocol baseProtocol = insertProtocol(wrappedProtocol, user);
-            insertedProtocols.put(baseProtocol.getLSID(), baseProtocol);
 
             List<Protocol> stepProtocols = new ArrayList<>();
             if (steps != null)
@@ -5227,32 +5224,56 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         throw new ExperimentException("Cannot insert a \"null\" protocol step");
                     }
 
-                    Protocol stepProtocol = insertProtocol(wrappedStepProtocol, user);
-                    insertedProtocols.put(stepProtocol.getLSID(), stepProtocol);
-                    stepProtocols.add(stepProtocol);
+                    stepProtocols.add(insertProtocol(wrappedStepProtocol, user));
                 }
             }
 
             // all protocols are now inserted, now link them together
             int actionSequence = 1;
-            Map<Integer, String> actionSequenceLSID = new HashMap<>();
+            Map<String, ProtocolAction> stepActions = new HashMap<>();
 
-            ProtocolAction previousAction = insertProtocolAction(baseProtocol, baseProtocol, null, actionSequence, user);
-            actionSequenceLSID.put(actionSequence, baseProtocol.getLSID());
+            // insert base ProtocolAction prior to inserting steps
+            ProtocolAction previousAction = insertProtocolAction(baseProtocol, baseProtocol, actionSequence, user);
+            insertProtocolPredecessor(user, previousAction.getRowId(), previousAction.getRowId());
+            stepActions.put(baseProtocol.getLSID(), previousAction);
             actionSequence = 10;
 
+            // insert ProtocolAction for each step prior to mapping actionSequence
             for (Protocol stepProtocol : stepProtocols)
             {
-                if (predecessors != null && predecessors.containsKey(stepProtocol.getLSID()))
+                ProtocolAction stepAction = insertProtocolAction(baseProtocol, stepProtocol, actionSequence, user);
+                stepActions.put(stepProtocol.getLSID(), stepAction);
+                actionSequence += 10;
+            }
+
+            // map actionSequences
+            for (Protocol stepProtocol : stepProtocols)
+            {
+                String LSID = stepProtocol.getLSID();
+                ProtocolAction stepAction = stepActions.get(LSID);
+
+                if (predecessors != null)
                 {
-                    // TODO: Not yet supported
-                    throw new UnsupportedOperationException("Support for predecessor map is not yet implemented");
+                    List<String> stepPredecessors = predecessors.get(LSID);
+
+                    if (stepPredecessors == null)
+                        throw new ExperimentException("Invalid predecessor map provided. Unable to find entry for \"" + LSID + "\". Each step protocol must have an entry.");
+
+                    for (String predecessorLSID : stepPredecessors)
+                    {
+                        ProtocolAction predecessorAction = stepActions.get(predecessorLSID);
+
+                        if (predecessorAction == null)
+                            throw new ExperimentException("Invalid predecessor map provided. Unable to find \"" + predecessorLSID + "\" in set of steps.");
+
+                        insertProtocolPredecessor(user, stepAction.getRowId(), predecessorAction.getRowId());
+                        previousAction = stepAction;
+                    }
                 }
                 else
                 {
-                    previousAction = insertProtocolAction(baseProtocol, stepProtocol, previousAction, actionSequence, user);
-                    actionSequenceLSID.put(actionSequence, stepProtocol.getLSID());
-                    actionSequence += 10;
+                    insertProtocolPredecessor(user, stepAction.getRowId(), previousAction.getRowId());
+                    previousAction = stepAction;
                 }
             }
 
@@ -5306,16 +5327,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     /**
      * Helper to insert ProtocolActions during the Protocol insertion process. Use {@link ExperimentServiceImpl#insertProtocol(ExpProtocol, List, Map, User)}
      */
-    private ProtocolAction insertProtocolAction(Protocol parent, Protocol child, @Nullable ProtocolAction previousAction, int actionSequence, User user) throws SQLException
+    private ProtocolAction insertProtocolAction(Protocol parent, Protocol child, int actionSequence, User user) throws SQLException
     {
         ProtocolAction action = new ProtocolAction();
         action.setParentProtocolId(parent.getRowId());
         action.setChildProtocolId(child.getRowId());
         action.setSequence(actionSequence);
         action = Table.insert(user, getTinfoProtocolAction(), action);
-
-        insertProtocolPredecessor(user, action.getRowId(), previousAction == null ? action.getRowId() : previousAction.getRowId());
-
         return action;
     }
 
