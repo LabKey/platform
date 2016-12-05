@@ -19,6 +19,7 @@ package org.labkey.api.security;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.util.URLHelper;
@@ -74,7 +75,7 @@ public interface AuthenticationProvider
     interface LoginFormAuthenticationProvider extends PrimaryAuthenticationProvider
     {
         // id and password will not be blank (not null, not empty, not whitespace only)
-        AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
+        @NotNull AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
     }
 
     interface SSOAuthenticationProvider extends PrimaryAuthenticationProvider
@@ -89,7 +90,7 @@ public interface AuthenticationProvider
 
     interface RequestAuthenticationProvider extends PrimaryAuthenticationProvider
     {
-        AuthenticationResponse authenticate(@NotNull HttpServletRequest request);
+        @NotNull AuthenticationResponse authenticate(@NotNull HttpServletRequest request);
     }
 
     interface ResetPasswordProvider extends AuthenticationProvider
@@ -121,44 +122,65 @@ public interface AuthenticationProvider
          * Bypass authentication from this provider. Might be configured via labkey.xml parameter to
          * temporarily not require secondary authentication if this has been misconfigured or a 3rd
          * party service provider is unavailable.
-         *
          */
         boolean bypass();
     }
 
     class AuthenticationResponse
     {
+        private final PrimaryAuthenticationProvider _provider;
         private final @Nullable ValidEmail _email;
+        private final @Nullable AuthenticationValidator _validator;
         private final @Nullable FailureReason _failureReason;
         private final @Nullable ActionURL _redirectURL;
 
-        private AuthenticationResponse(@NotNull ValidEmail email)
+        private AuthenticationResponse(@NotNull PrimaryAuthenticationProvider provider, @NotNull ValidEmail email, @Nullable AuthenticationValidator validator)
         {
+            _provider = provider;
             _email = email;
+            _validator = validator;
             _failureReason = null;
             _redirectURL = null;
         }
 
-        private AuthenticationResponse(@NotNull FailureReason failureReason, @Nullable ActionURL redirectURL)
+        private AuthenticationResponse(@NotNull PrimaryAuthenticationProvider provider, @NotNull FailureReason failureReason, @Nullable ActionURL redirectURL)
         {
+            _provider = provider;
             _email = null;
+            _validator = null;
             _failureReason = failureReason;
             _redirectURL = redirectURL;
         }
 
-        public static AuthenticationResponse createSuccessResponse(ValidEmail email)
+        /**
+         * Creates a standard authentication provider response
+         * @param email Valid email address of the authenticated user
+         * @return A new successful authentication response containing the email address of the authenticated user
+         */
+        public static AuthenticationResponse createSuccessResponse(PrimaryAuthenticationProvider provider, ValidEmail email)
         {
-            return new AuthenticationResponse(email);
+            return createSuccessResponse(provider, email, null);
         }
 
-        public static AuthenticationResponse createFailureResponse(FailureReason failureReason)
+        /**
+         * Creates an authentication provider response that includes a validator to be called on every request
+         * @param email Valid email address of the authenticated user
+         * @param validator An authentication validator
+         * @return A new successful authentication response containing the email address of the authenticated user and a validator
+         */
+        public static AuthenticationResponse createSuccessResponse(@NotNull PrimaryAuthenticationProvider provider, ValidEmail email, @Nullable AuthenticationValidator validator)
         {
-            return new AuthenticationResponse(failureReason, null);
+            return new AuthenticationResponse(provider, email, validator);
         }
 
-        public static AuthenticationResponse createFailureResponse(FailureReason failureReason, @Nullable ActionURL redirectURL)
+        public static AuthenticationResponse createFailureResponse(@NotNull PrimaryAuthenticationProvider provider, FailureReason failureReason)
         {
-            return new AuthenticationResponse(failureReason, redirectURL);
+            return new AuthenticationResponse(provider, failureReason, null);
+        }
+
+        public static AuthenticationResponse createFailureResponse(@NotNull PrimaryAuthenticationProvider provider, FailureReason failureReason, @Nullable ActionURL redirectURL)
+        {
+            return new AuthenticationResponse(provider, failureReason, redirectURL);
         }
 
         public boolean isAuthenticated()
@@ -180,6 +202,16 @@ public interface AuthenticationProvider
             return _email;
         }
 
+        public @Nullable AuthenticationValidator getValidator()
+        {
+            return _validator;
+        }
+
+        public PrimaryAuthenticationProvider getProvider()
+        {
+            return _provider;
+        }
+
         public @Nullable ActionURL getRedirectURL()
         {
             return _redirectURL;
@@ -187,7 +219,7 @@ public interface AuthenticationProvider
     }
 
     // FailureReasons are only reported to administrators (in the audit log and/or server log), NOT to users (and potential
-    // hackers).  We try to be as specific as possible.
+    // hackers). We try to be as specific as possible.
     enum FailureReason
     {
         userDoesNotExist(ReportType.onFailure, "user does not exist"),

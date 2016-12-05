@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.attachments.Attachment;
@@ -68,6 +69,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -102,7 +104,7 @@ public class AuthenticationManager
 
             if (response.isAuthenticated())
             {
-                PrimaryAuthenticationResult result = finalizePrimaryAuthentication(request, provider, response.getValidEmail());
+                PrimaryAuthenticationResult result = finalizePrimaryAuthentication(request, response);
                 return result.getUser();
             }
         }
@@ -229,24 +231,24 @@ public class AuthenticationManager
             if (null == provider)
                 throw new NotFoundException("Authentication provider is not valid");
 
-            ValidEmail email = validateAuthentication(form, errors);
+            AuthenticationResponse response = validateAuthentication(form, provider, errors);
 
             // Show validation error(s), if any
-            if (errors.hasErrors())
+            if (errors.hasErrors() || !response.isAuthenticated())
             {
                 getPageConfig().setTemplate(PageConfig.Template.Dialog);
+
+                if (!errors.hasErrors())
+                    errors.addError(new LabkeyError("Bad credentials"));
+
                 return new SimpleErrorView(errors, false);
             }
 
             HttpServletRequest request = getViewContext().getRequest();
+            PrimaryAuthenticationResult primaryResult = AuthenticationManager.finalizePrimaryAuthentication(request, response);
 
-            if (null != email)
-            {
-                PrimaryAuthenticationResult result = AuthenticationManager.finalizePrimaryAuthentication(request, provider, email);
-
-                if (null != result.getUser())
-                    AuthenticationManager.setPrimaryAuthenticationUser(request, result.getUser());
-            }
+            if (null != primaryResult.getUser())
+                AuthenticationManager.setPrimaryAuthenticationResult(request, primaryResult);
 
             AuthenticationResult result = AuthenticationManager.handleAuthentication(request, getContainer());
 
@@ -260,7 +262,7 @@ public class AuthenticationManager
         }
 
         public abstract @NotNull String getProviderName();
-        public abstract @Nullable ValidEmail validateAuthentication(FORM form, BindException errors) throws Exception;
+        public abstract @NotNull AuthenticationResponse validateAuthentication(FORM form, SSOAuthenticationProvider provider, BindException errors) throws Exception;
 
         @Override
         public final NavTree appendNavTrail(NavTree root)
@@ -420,13 +422,15 @@ public class AuthenticationManager
     public static class PrimaryAuthenticationResult
     {
         private final User _user;
+        private final AuthenticationResponse _response;
         private final AuthenticationStatus _status;
         private final URLHelper _redirectURL;
 
         // Success case
-        private PrimaryAuthenticationResult(@NotNull User user)
+        private PrimaryAuthenticationResult(@NotNull User user, AuthenticationResponse response)
         {
             _user = user;
+            _response = response;
             _status = AuthenticationStatus.Success;
             _redirectURL = null;
         }
@@ -435,14 +439,16 @@ public class AuthenticationManager
         private PrimaryAuthenticationResult(@NotNull AuthenticationStatus status)
         {
             _user = null;
+            _response = null;
             _status = status;
             _redirectURL = null;
         }
 
-        // Failure case with password expire and redirect
+        // Failure case with redirect (e.g., reset password page)
         private PrimaryAuthenticationResult(@NotNull URLHelper redirectURL, AuthenticationStatus status)
         {
             _user = null;
+            _response = null;
             _status = status;
             _redirectURL = redirectURL;
         }
@@ -451,6 +457,11 @@ public class AuthenticationManager
         public User getUser()
         {
             return _user;
+        }
+
+        public AuthenticationResponse getResponse()
+        {
+            return _response;
         }
 
         @NotNull
@@ -529,7 +540,7 @@ public class AuthenticationManager
 
                 if (authResponse.isAuthenticated())
                 {
-                    return finalizePrimaryAuthentication(request, authProvider, authResponse.getValidEmail());
+                    return finalizePrimaryAuthentication(request, authResponse);
                 }
                 else
                 {
@@ -631,8 +642,9 @@ public class AuthenticationManager
     }
 
     @NotNull
-    public static PrimaryAuthenticationResult finalizePrimaryAuthentication(HttpServletRequest request, PrimaryAuthenticationProvider authProvider, ValidEmail email)
+    public static PrimaryAuthenticationResult finalizePrimaryAuthentication(HttpServletRequest request, AuthenticationResponse response)
     {
+        ValidEmail email = response.getValidEmail();
         User user;
 
         try
@@ -653,7 +665,7 @@ public class AuthenticationManager
                 else
                 {
                     // No: log that we're not permitted to create accounts automatically
-                    addAuditEvent(User.guest, request, "User " + email + " successfully authenticated via " + authProvider.getName() + ". Login failed because account creation is disabled.");
+                    addAuditEvent(User.guest, request, "User " + email + " successfully authenticated via " + response.getProvider().getName() + ". Login failed because account creation is disabled.");
                     return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationNotAllowed);
                 }
             }
@@ -674,10 +686,10 @@ public class AuthenticationManager
             return new PrimaryAuthenticationResult(AuthenticationStatus.InactiveUser);
         }
 
-        _userProviders.put(user.getUserId(), authProvider);
-        addAuditEvent(user, request, email + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + authProvider.getName() + " authentication.");
+        _userProviders.put(user.getUserId(), response.getProvider());  // TODO: This should go into session (handle in caller)!
+        addAuditEvent(user, request, email + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + response.getProvider().getName() + " authentication.");
 
-        return new PrimaryAuthenticationResult(user);
+        return new PrimaryAuthenticationResult(user, response);
     }
 
 
@@ -753,7 +765,7 @@ public class AuthenticationManager
         // always return a failure result (i.e., null user) if secondary authentication is enabled. #22944
         if (primaryResult.getStatus() == AuthenticationStatus.Success)
         {
-            AuthenticationManager.setPrimaryAuthenticationUser(request, primaryResult.getUser());
+            AuthenticationManager.setPrimaryAuthenticationResult(request, primaryResult);
             return handleAuthentication(request, ContainerManager.getRoot()).getUser();
         }
 
@@ -879,16 +891,16 @@ public class AuthenticationManager
     }
 
 
-    public static void setPrimaryAuthenticationUser(HttpServletRequest request, User user)
+    public static void setPrimaryAuthenticationResult(HttpServletRequest request, PrimaryAuthenticationResult result)
     {
         HttpSession session = request.getSession(true);
-        session.setAttribute(getSessionKey(AuthenticationProvider.class), user);
+        session.setAttribute(getSessionKey(PrimaryAuthenticationProvider.class), result);
     }
 
 
-    public static @Nullable User getPrimaryAuthenticationUser(HttpSession session)
+    public static @Nullable PrimaryAuthenticationResult getPrimaryAuthenticationResult(HttpSession session)
     {
-        return (User)session.getAttribute(getSessionKey(AuthenticationProvider.class));
+        return (PrimaryAuthenticationResult)session.getAttribute(getSessionKey(PrimaryAuthenticationProvider.class));
     }
 
 
@@ -942,12 +954,12 @@ public class AuthenticationManager
     public static AuthenticationResult handleAuthentication(HttpServletRequest request, Container c)
     {
         HttpSession session = request.getSession(true);
+        PrimaryAuthenticationResult primaryAuthResult = AuthenticationManager.getPrimaryAuthenticationResult(session);
+        User primaryAuthUser;
 
-        User primaryAuthUser = AuthenticationManager.getPrimaryAuthenticationUser(session);
-
-        if (null == primaryAuthUser)
+        if (null == primaryAuthResult || null == (primaryAuthUser = primaryAuthResult.getUser()))
         {
-            // failed login because of expired login will have a return url set to the update password page so use that.
+            // failed login because of expired password will have a return url set to the update password page so use that.
             LoginReturnProperties properties = getLoginReturnProperties(request);
             if (null != properties && null != properties.getReturnUrl())
             {
@@ -958,6 +970,8 @@ public class AuthenticationManager
                 return new AuthenticationResult(PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(c, null));
             }
         }
+
+        List<AuthenticationValidator> validators = new LinkedList<>();
 
         for (SecondaryAuthenticationProvider provider : getActiveSecondaryProviders())
         {
@@ -980,10 +994,23 @@ public class AuthenticationManager
             {
                 throw new IllegalStateException("Wrong user");
             }
+            else
+            {
+                // validators.add();  TODO: provide mechanism for secondary auth providers to convey a validator
+            }
         }
 
+        // Prep the new session and set the user attribute
+        session = SecurityManager.setAuthenticatedUser(request, primaryAuthUser);
+
+        // Set the authentication validators into the new session
+        AuthenticationValidator primaryValidator = primaryAuthResult.getResponse().getValidator();
+        if (null != primaryValidator)
+            validators.add(primaryValidator);
+        SecurityManager.setValidators(session, validators);
+
+        // Get the redirect URL
         LoginReturnProperties properties = getLoginReturnProperties(request);
-        SecurityManager.setAuthenticatedUser(request, primaryAuthUser);
         URLHelper url = getAfterLoginURL(c, properties, primaryAuthUser);
 
         return new AuthenticationResult(primaryAuthUser, url);
@@ -1031,6 +1058,7 @@ public class AuthenticationManager
     }
 
 
+    // test() method should return true if the authentication is still valid
     public interface AuthenticationValidator extends Predicate<HttpServletRequest>
     {
     }

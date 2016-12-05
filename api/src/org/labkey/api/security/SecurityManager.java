@@ -44,6 +44,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.impersonation.DisallowGlobalRolesContext;
@@ -111,7 +112,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Predicate;
 
 /**
  * Note should consider implementing a Tomcat REALM, but we've tried to avoid
@@ -411,7 +411,7 @@ public class SecurityManager
                     sessionUser.setImpersonationContext(DisallowGlobalRolesContext.get());
                 }
 
-                List<Predicate<HttpServletRequest>> validators = (List<Predicate<HttpServletRequest>>) session.getAttribute(AUTHENTICATION_VALIDATORS_KEY);
+                List<AuthenticationValidator> validators = getValidators(session);
 
                 // If we have validators, enumerate them to validate the session user's current login (e.g., smart card is still present)
                 if (null != validators)
@@ -419,7 +419,7 @@ public class SecurityManager
                     boolean valid = true;
 
                     // Enumerate all validators on every request (no short circuit) in case the validators have internal state or side effects
-                    for (Predicate<HttpServletRequest> validator : validators)
+                    for (AuthenticationValidator validator : validators)
                     {
                         valid &= validator.test(request);
                     }
@@ -502,7 +502,7 @@ public class SecurityManager
     }
 
 
-    public static void setAuthenticatedUser(HttpServletRequest request, User user)
+    public static HttpSession setAuthenticatedUser(HttpServletRequest request, User user)
     {
         SessionHelper.clearSession(request, PageFlowUtil.set(WikiTermsOfUseProvider.TERMS_APPROVED_KEY));      // Clear out preliminary auth state (guest / previous user session was cleared on login page)
         if (!user.isGuest() && request instanceof AuthenticatedRequest)
@@ -511,6 +511,8 @@ public class SecurityManager
         HttpSession newSession = request.getSession(true);
         newSession.setAttribute(USER_ID_KEY, user.getUserId());
         newSession.setAttribute("LABKEY.username", user.getName());
+
+        return newSession;
     }
 
 
@@ -569,6 +571,21 @@ public class SecurityManager
         // Remove factory from session
         HttpSession session = request.getSession(true);
         session.removeAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY);
+    }
+
+
+    public static void setValidators(HttpSession session, List<AuthenticationValidator> validators)
+    {
+        if (validators.isEmpty())
+            session.removeAttribute(AUTHENTICATION_VALIDATORS_KEY);
+        else
+            session.setAttribute(AUTHENTICATION_VALIDATORS_KEY, validators);
+    }
+
+
+    public static @Nullable List<AuthenticationValidator> getValidators(HttpSession session)
+    {
+        return (List<AuthenticationValidator>)session.getAttribute(AUTHENTICATION_VALIDATORS_KEY);
     }
 
 
