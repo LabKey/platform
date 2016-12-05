@@ -211,6 +211,7 @@ public class StringExpressionFactory
         /** @return null if the value cannot be resolved given the map */
         @Nullable abstract String getValue(Map map);
 
+        @NotNull
         final String valueOf(Object o)
         {
             return o == null ? "" : String.valueOf(o);
@@ -279,7 +280,15 @@ public class StringExpressionFactory
 
         public String getValue(Map map)
         {
-            String s = valueOf(map.get(_value));
+            Object o = map.get(_value);
+            if (o == null)
+            {
+                // If we don't have the value at all, return null instead of the empty string to communicate that we
+                // don't have the info required to evaluate this expression.
+                return null;
+            }
+
+            String s = valueOf(o);
             return _substitutionFormat.format(s);
         }
 
