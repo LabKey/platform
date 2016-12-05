@@ -29,7 +29,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCache2;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.pipeline.ParamParser;
@@ -76,7 +75,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -135,11 +133,6 @@ public class PipelineJobServiceImpl extends PipelineJobService
     private Map<TaskId, TaskPipeline> _taskPipelineStore = new HashMap<>();
     private Map<TaskId, TaskFactory> _taskFactoryStore = new HashMap<>();
     private Map<SchemaType, XMLBeanTaskFactoryFactory> _taskFactoryFactories = new HashMap<>();
-
-    private final ModuleResourceCache<TaskFactory> TASK_FACTORY_CACHE_OLD = ModuleResourceCaches.create(
-        new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskFactoryCacheHandler.MODULE_TASKS_DIR), "TaskFactory cache (Old)", new TaskFactoryCacheHandlerOld());
-    private final ModuleResourceCache<TaskPipeline> TASK_PIPELINE_CACHE_OLD = ModuleResourceCaches.create(
-        new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskPipelineCacheHandler.MODULE_PIPELINES_DIR), "TaskPipeline cache (Old)", new TaskPipelineCacheHandlerOld());
 
     private final ModuleResourceCache2<Map<TaskId, TaskFactory>> TASK_FACTORY_CACHE = ModuleResourceCaches.create(
         new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskFactoryCacheHandler.MODULE_TASKS_DIR), new TaskFactoryCacheHandler(), "TaskFactory cache");
@@ -226,14 +219,8 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 return pipeline;
         }
 
-        TaskPipeline oldPipeline = TASK_PIPELINE_CACHE_OLD.getResource(id.toString());
-
         Module module = ModuleLoader.getInstance().getModule(id.getModuleName());
-        TaskPipeline pipeline = TASK_PIPELINE_CACHE.getResourceMap(module).get(id);
-
-        assert (null == oldPipeline && null == pipeline) || (pipeline.getId().equals(oldPipeline.getId()));
-
-        return oldPipeline;
+        return TASK_PIPELINE_CACHE.getResourceMap(module).get(id);
     }
 
     public void addTaskPipeline(TaskPipelineSettings settings) throws CloneNotSupportedException
@@ -298,10 +285,8 @@ public class PipelineJobServiceImpl extends PipelineJobService
             }
         }
 
-        Collection<TaskPipeline> cachedPipelinesOld = TASK_PIPELINE_CACHE_OLD.getResources(module);
-        Collection<TaskPipeline> cachedPipelinesNew = TASK_PIPELINE_CACHE.getResourceMap(module).values();
-        assert cachedPipelinesOld.size() == cachedPipelinesNew.size();
-        pipelines.addAll(cachedPipelinesOld);
+        pipelines.addAll(TASK_PIPELINE_CACHE.getResourceMap(module).values());
+
         return pipelines;
     }
 
@@ -346,13 +331,8 @@ public class PipelineJobServiceImpl extends PipelineJobService
         }
 
         Module module = ModuleLoader.getInstance().getModule(id.getModuleName());
-        TaskFactory factory = TASK_FACTORY_CACHE.getResourceMap(module).get(id);
 
-        TaskFactory factoryOld = TASK_FACTORY_CACHE_OLD.getResource(id.toString());
-
-        assert (null == factory && null == factoryOld) || (factory.getId().equals(factoryOld.getId()));
-
-        return factoryOld;
+        return TASK_FACTORY_CACHE.getResourceMap(module).get(id);
     }
 
     public void addTaskFactory(TaskFactorySettings settings) throws CloneNotSupportedException
@@ -413,12 +393,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 .collect(Collectors.toList()));
         }
 
-        Collection<TaskFactory> oldModuleFactories = TASK_FACTORY_CACHE_OLD.getResources(module);
-        Collection<TaskFactory> moduleFactories = TASK_FACTORY_CACHE.getResourceMap(module).values();
-
-        assert oldModuleFactories.size() == moduleFactories.size();
-
-        factories.addAll(oldModuleFactories);
+        factories.addAll(TASK_FACTORY_CACHE.getResourceMap(module).values());
 
         return factories;
     }
@@ -986,19 +961,10 @@ public class PipelineJobServiceImpl extends PipelineJobService
         @Test
         public void testModuleCaches()
         {
-            List<TaskPipeline> oldTaskPipelines = new LinkedList<>();
-            List<TaskPipeline> newTaskPipelines = new LinkedList<>();
-            List<TaskFactory> oldTaskFactories = new LinkedList<>();
-            List<TaskFactory> newTaskFactories = new LinkedList<>();
             ModuleLoader.getInstance().getModules().forEach(module -> {
-                oldTaskPipelines.addAll(_impl.TASK_PIPELINE_CACHE_OLD.getResources(module));
-                newTaskPipelines.addAll(_impl.TASK_PIPELINE_CACHE.getResourceMap(module).values());
-                oldTaskFactories.addAll(_impl.TASK_FACTORY_CACHE_OLD.getResources(module));
-                newTaskFactories.addAll(_impl.TASK_FACTORY_CACHE.getResourceMap(module).values());
+                _impl.TASK_PIPELINE_CACHE.getResourceMap(module).values();
+                _impl.TASK_FACTORY_CACHE.getResourceMap(module).values();
             });
-
-            assertEquals(oldTaskPipelines.size(), newTaskPipelines.size());
-            assertEquals(oldTaskFactories.size(), newTaskFactories.size());
         }
 
         @After
