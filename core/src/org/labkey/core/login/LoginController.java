@@ -304,8 +304,7 @@ public class LoginController extends SpringActionController
             switch (result.getStatus())
             {
                 case Success:
-                    User user = result.getUser();
-                    AuthenticationManager.setPrimaryAuthenticationUser(request, user);
+                    AuthenticationManager.setPrimaryAuthenticationResult(request, result);
                     return true;   // Only success case... everything else returns false
                 case InactiveUser:
                     laf = LookAndFeelProperties.getInstance(viewContext.getContainer());
@@ -331,14 +330,14 @@ public class LoginController extends SpringActionController
                     laf = LookAndFeelProperties.getInstance(viewContext.getContainer());
                     errors.addError(new FormattedError("The server could not create your account. Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> for assistance."));
                     break;
-                case  UserCreationNotAllowed:
+                case UserCreationNotAllowed:
                     laf = LookAndFeelProperties.getInstance(viewContext.getContainer());
                     errors.addError(new FormattedError("Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> to have your account created."));
                     break;
-                case  PasswordExpired:
+                case PasswordExpired:
                      AuthenticationManager.setLoginReturnProperties(request, new LoginReturnProperties(result.getRedirectURL(), form.getUrlhash(), form.getSkipProfile()));
                     break;
-                case  Complexity:
+                case Complexity:
                     AuthenticationManager.setLoginReturnProperties(request, new LoginReturnProperties(result.getRedirectURL(), form.getUrlhash(), form.getSkipProfile()));
                     break;
                 default:
@@ -887,7 +886,7 @@ public class LoginController extends SpringActionController
                 if (result.getStatus() == AuthenticationManager.AuthenticationStatus.Success)
                 {
                     // This user has passed primary authentication
-                    AuthenticationManager.setPrimaryAuthenticationUser(request, user);
+                    AuthenticationManager.setPrimaryAuthenticationResult(request, result);
                 }
             }
 
@@ -1729,7 +1728,7 @@ public class LoginController extends SpringActionController
                 if (result.getStatus() == AuthenticationManager.AuthenticationStatus.Success)
                 {
                     // This user has passed primary authentication
-                    AuthenticationManager.setPrimaryAuthenticationUser(request, user);
+                    AuthenticationManager.setPrimaryAuthenticationResult(request, result);
                     _skipProfile = form.getSkipProfile();
                 }
             }

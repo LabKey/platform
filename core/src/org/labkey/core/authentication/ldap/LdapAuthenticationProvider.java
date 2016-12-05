@@ -63,13 +63,13 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
     }
 
     // id and password will not be blank (not null, not empty, not whitespace only)
-    public AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
+    public @NotNull AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
     {
         // Consider: allow user ids other than email
         ValidEmail email = new ValidEmail(id);
 
         if (!SecurityManager.isLdapEmail(email))
-            return AuthenticationResponse.createFailureResponse(FailureReason.notApplicable);
+            return AuthenticationResponse.createFailureResponse(this, FailureReason.notApplicable);
 
         //
         // Attempt to authenticate by iterating through all the LDAP servers.
@@ -86,9 +86,9 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
             try
             {
                 if (LdapAuthenticationManager.authenticate(server, email, password, saslAuthentication))
-                    return AuthenticationResponse.createSuccessResponse(email);
+                    return AuthenticationResponse.createSuccessResponse(this, email);
                 else
-                    return AuthenticationResponse.createFailureResponse(FailureReason.badCredentials);
+                    return AuthenticationResponse.createFailureResponse(this, FailureReason.badCredentials);
             }
             catch (NamingException e)
             {
@@ -97,6 +97,6 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
             }
         }
 
-        return AuthenticationResponse.createFailureResponse(FailureReason.configurationError);
+        return AuthenticationResponse.createFailureResponse(this, FailureReason.configurationError);
     }
 }

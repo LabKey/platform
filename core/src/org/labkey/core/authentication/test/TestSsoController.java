@@ -21,6 +21,9 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.AuthenticationManager.BaseSsoValidateAction;
+import org.labkey.api.security.AuthenticationProvider;
+import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
+import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.view.JspView;
@@ -85,11 +88,11 @@ public class TestSsoController extends SpringActionController
             return TestSsoProvider.NAME;
         }
 
-        @Nullable
+        @NotNull
         @Override
-        public ValidEmail validateAuthentication(TestSsoForm form, BindException errors) throws Exception
+        public AuthenticationResponse validateAuthentication(TestSsoForm form, SSOAuthenticationProvider provider, BindException errors) throws Exception
         {
-            return new ValidEmail(form.getEmail());
+            return AuthenticationResponse.createSuccessResponse(provider, new ValidEmail(form.getEmail()));
         }
     }
 }

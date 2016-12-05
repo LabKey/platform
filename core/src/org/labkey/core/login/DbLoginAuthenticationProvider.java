@@ -15,8 +15,10 @@
  */
 package org.labkey.core.login;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.PasswordExpiration;
@@ -31,10 +33,12 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Date;
 import java.util.EmptyStackException;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * User: adam
@@ -62,16 +66,17 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
     @Override
     // id and password will not be blank (not null, not empty, not whitespace only)
-    public AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
+    public @NotNull AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
     {
         ValidEmail email = new ValidEmail(id);
         String hash = SecurityManager.getPasswordHash(email);
         User user = UserManager.getUser(email);
 
-        if (null == hash || null == user) return AuthenticationResponse.createFailureResponse(FailureReason.userDoesNotExist);
+        if (null == hash || null == user)
+            return AuthenticationResponse.createFailureResponse(this, FailureReason.userDoesNotExist);
 
         if (!SecurityManager.matchPassword(password,hash))
-            return AuthenticationResponse.createFailureResponse(FailureReason.badPassword);
+            return AuthenticationResponse.createFailureResponse(this, FailureReason.badPassword);
 
         // Password is correct for this user; now check password rules and expiration.
 
@@ -93,7 +98,24 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             }
         }
 
-        return AuthenticationResponse.createSuccessResponse(email);
+        return AuthenticationResponse.createSuccessResponse(this, email);
+    }
+
+    // A simple test validator that expires every authentication after 100 requests
+    private static class TestValidator implements AuthenticationValidator
+    {
+        private final AtomicInteger _count = new AtomicInteger();
+
+        @Override
+        public boolean test(HttpServletRequest httpServletRequest)
+        {
+            int c = _count.incrementAndGet();
+
+            if (c % 10 == 0)
+                Logger.getLogger(DbLoginAuthenticationProvider.class).info(c + " requests");
+
+            return c % 100 != 0;
+        }
     }
 
     // If this appears to be a browser request then return an AuthenticationResponse that will result in redirect to the change password page.
@@ -127,7 +149,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             // Basic auth is checked in AuthFilter, so there won't be a ViewContext in that case. #11653
         }
 
-        return AuthenticationResponse.createFailureResponse(failureReason, redirectURL);
+        return AuthenticationResponse.createFailureResponse(this, failureReason, redirectURL);
     }
 
     public ActionURL getConfigurationLink()

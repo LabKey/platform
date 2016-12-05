@@ -93,7 +93,7 @@ public class TestSecondaryController extends SpringActionController
         {
             if (form.isValid())
             {
-                User user = AuthenticationManager.getPrimaryAuthenticationUser(getViewContext().getSession());
+                User user = AuthenticationManager.getPrimaryAuthenticationResult(getViewContext().getSession()).getUser();
 
                 if (null != user)
                     AuthenticationManager.setSecondaryAuthenticationUser(getViewContext().getSession(), TestSecondaryProvider.class, user);

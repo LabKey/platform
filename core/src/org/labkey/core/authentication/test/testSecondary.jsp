@@ -20,8 +20,8 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     String message1 = "Secondary Authentication";
-    String user = AuthenticationManager.getPrimaryAuthenticationUser(getViewContext().getSession()).getEmail();
-    String message2 = "Is " + user + " really you?"; //testing for this string in automated test 'SecondaryAuthenticationTest'
+    String email = AuthenticationManager.getPrimaryAuthenticationResult(getViewContext().getSession()).getUser().getEmail();
+    String message2 = "Is " + h(email) + " really you?"; //testing for this string in automated test 'SecondaryAuthenticationTest'
 %>
 <p><%=h(message1)%></p>
 <p><%=h(message2)%></p>
