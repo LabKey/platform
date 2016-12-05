@@ -49,20 +49,4 @@ public class CoreUpgradeCode implements UpgradeCode
     {
         ModuleLoader.getInstance().handleUnkownModules();
     }
-
-    // invoked by core-14.20-14.30.sql
-    //
-    // PostgreSQL only. Current PostgreSQL uq_container_label_parent UNIQUE CONSTRAINT has two problems:
-    // 1. It allows multiple top-level categories with the same name (Parent column is NULLABLE and PostgreSQL doesn't treat NULL as unique)
-    // 2. It treats Label as case-sensitive (although the UI prevents entry of multiples that differ by case only)
-    // We run this to uniquify the labels so we can add a more constraining constraint. See #21698.
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void uniquifyViewCategoryLabels(final ModuleContext context) throws SQLException
-    {
-        if (context.isNewInstall())
-            return;
-
-        TableInfo ti = ViewCategoryManager.getInstance().getTableInfoCategories();
-        UpgradeUtils.uniquifyValues(ti.getColumn("Label"), ti.getColumn("Parent"), new Sort("RowId"), false, false);
-    }
 }
