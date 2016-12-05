@@ -1311,9 +1311,7 @@ pipeline/src/org/labkey/pipeline/api/ScriptTaskFactory.java -text
 pipeline/src/org/labkey/pipeline/api/ScriptTaskImpl.java -text
 pipeline/src/org/labkey/pipeline/api/SimpleTaskFactory.java -text
 pipeline/src/org/labkey/pipeline/api/TaskFactoryCacheHandler.java -text
-pipeline/src/org/labkey/pipeline/api/TaskFactoryCacheHandlerOld.java -text
 pipeline/src/org/labkey/pipeline/api/TaskPipelineCacheHandler.java -text
-pipeline/src/org/labkey/pipeline/api/TaskPipelineCacheHandlerOld.java -text
 pipeline/src/org/labkey/pipeline/api/TaskPipelineImpl.java -text
 pipeline/src/org/labkey/pipeline/api/WorkDirectoryLocal.java -text
 pipeline/src/org/labkey/pipeline/api/WorkDirectoryRemote.java -text
