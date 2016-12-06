@@ -1000,6 +1000,10 @@ public class AuthenticationManager
             }
         }
 
+        // Get the redirect URL from the current session
+        LoginReturnProperties properties = getLoginReturnProperties(request);
+        URLHelper url = getAfterLoginURL(c, properties, primaryAuthUser);
+
         // Prep the new session and set the user attribute
         session = SecurityManager.setAuthenticatedUser(request, primaryAuthUser);
 
@@ -1008,10 +1012,6 @@ public class AuthenticationManager
         if (null != primaryValidator)
             validators.add(primaryValidator);
         SecurityManager.setValidators(session, validators);
-
-        // Get the redirect URL
-        LoginReturnProperties properties = getLoginReturnProperties(request);
-        URLHelper url = getAfterLoginURL(c, properties, primaryAuthUser);
 
         return new AuthenticationResult(primaryAuthUser, url);
     }
