@@ -38,6 +38,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     protected static final String THEME_NAME_PROP = "themeName";
     protected static final String FOLDER_DISPLAY_MODE = "folderDisplayMode";
     protected static final String HELP_MENU_ENABLED_PROP = "helpMenuEnabled";
+    protected static final String DISCUSSION_ENABLED_PROP = "dicussionEnabled";
     protected static final String NAVIGATION_BAR_WIDTH = "navigationBarWidth";
     protected static final String LOGO_HREF_PROP = "logoHref";
     protected static final String THEME_FONT_PROP = "themeFont";
@@ -119,6 +120,11 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     public boolean isHelpMenuEnabled()
     {
         return lookupBooleanValue(HELP_MENU_ENABLED_PROP, true);
+    }
+
+    public boolean isDiscussionEnabled()
+    {
+        return lookupBooleanValue(DISCUSSION_ENABLED_PROP, true);
     }
 
     public String getNavigationBarWidth()

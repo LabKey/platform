@@ -60,6 +60,11 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
     public void setHelpMenuEnabled(boolean enabled)
     {
         storeBooleanValue(HELP_MENU_ENABLED_PROP, enabled);
+
+    }
+    public void setDiscussionEnabled(boolean enabled)
+    {
+        storeBooleanValue(DISCUSSION_ENABLED_PROP, enabled);
     }
 
     public void setSupportEmail(@Nullable String email)
