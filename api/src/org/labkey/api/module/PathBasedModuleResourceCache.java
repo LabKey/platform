@@ -54,11 +54,11 @@ public final class PathBasedModuleResourceCache<T>
     private static final Logger LOG = Logger.getLogger(PathBasedModuleResourceCache.class);
 
     private final BlockingStringKeyCache<T> _cache;
-    private final ModuleResourceCacheHandler<Path, T> _handler;
+    private final ModuleResourceCacheHandlerOld<Path, T> _handler;
     private final Set<String> _pathsWithListeners = new ConcurrentHashSet<>();
     private final FileSystemWatcher _watcher = FileSystemWatchers.get();
 
-    PathBasedModuleResourceCache(String description, ModuleResourceCacheHandler<Path, T> handler)
+    PathBasedModuleResourceCache(String description, ModuleResourceCacheHandlerOld<Path, T> handler)
     {
         final CacheLoader<String, T> loader = handler.getResourceLoader();
 

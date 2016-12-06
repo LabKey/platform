@@ -19,7 +19,7 @@ import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleResourceCacheHandler2;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.ExceptionUtil;
@@ -38,7 +38,7 @@ import java.util.Map;
  * Date: 5/10/2014
  * Time: 1:18 PM
  */
-public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler2<Map<String, TablesDocument>>
+public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<String, TablesDocument>>
 {
     @Override
     public Map<String, TablesDocument> load(@Nullable Resource dir, Module module)

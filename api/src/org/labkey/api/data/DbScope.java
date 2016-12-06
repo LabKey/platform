@@ -29,7 +29,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache2;
+import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceResolver;
 import org.labkey.api.query.QueryService;
@@ -114,7 +114,7 @@ public class DbScope
     private static final Map<Thread, Thread> _sharedConnections = new WeakHashMap<>();
     private static final Map<String, Throwable> _dataSourceFailures = new HashMap<>();
     // Cache for schema metadata XML files, shared across the whole server
-    private static final ModuleResourceCache2<Map<String, TablesDocument>> SCHEMA_XML_CACHE =
+    private static final ModuleResourceCache<Map<String, TablesDocument>> SCHEMA_XML_CACHE =
         ModuleResourceCaches.create(new Path(QueryService.MODULE_SCHEMAS_DIRECTORY), new SchemaXmlCacheHandler(), "Parsed schema XML metadata");
 
     private static DbScope _labkeyScope = null;

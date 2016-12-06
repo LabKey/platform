@@ -27,8 +27,8 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache2;
-import org.labkey.api.module.ModuleResourceCacheHandler2;
+import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
@@ -65,9 +65,9 @@ public class DomainTemplateGroup
     private static final Logger LOG = Logger.getLogger(DomainTemplateGroup.class);
     private static final String DIR_NAME = "domain-templates";
     private static final String SUFFIX = ".template.xml";
-    private static final ModuleResourceCache2<Map<String, DomainTemplateGroup>> CACHE = ModuleResourceCaches.create(new Path(DIR_NAME), new DomainTemplateGroupCacheHandler(), "Domain templates");
+    private static final ModuleResourceCache<Map<String, DomainTemplateGroup>> CACHE = ModuleResourceCaches.create(new Path(DIR_NAME), new DomainTemplateGroupCacheHandler(), "Domain templates");
 
-    private static class DomainTemplateGroupCacheHandler implements ModuleResourceCacheHandler2<Map<String, DomainTemplateGroup>>
+    private static class DomainTemplateGroupCacheHandler implements ModuleResourceCacheHandler<Map<String, DomainTemplateGroup>>
     {
         @Override
         public Map<String, DomainTemplateGroup> load(@Nullable Resource dir, Module module)

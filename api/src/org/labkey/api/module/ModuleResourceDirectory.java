@@ -28,5 +28,5 @@ public interface ModuleResourceDirectory
 {
     Path getPath();
     Collection<Module> getModules();
-    <T> void registerCache(ModuleResourceCache<T> cache);
+    <T> void registerCache(ModuleResourceCacheOld<T> cache);
 }

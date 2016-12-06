@@ -753,9 +753,9 @@ api/src/org/labkey/api/module/ModuleHtmlViewDefinition.java -text
 api/src/org/labkey/api/module/ModuleLoader.java -text
 api/src/org/labkey/api/module/ModuleProperty.java -text
 api/src/org/labkey/api/module/ModuleResourceCache.java -text
-api/src/org/labkey/api/module/ModuleResourceCache2.java -text
 api/src/org/labkey/api/module/ModuleResourceCacheHandler.java -text
-api/src/org/labkey/api/module/ModuleResourceCacheHandler2.java -text
+api/src/org/labkey/api/module/ModuleResourceCacheHandlerOld.java -text
+api/src/org/labkey/api/module/ModuleResourceCacheOld.java -text
 api/src/org/labkey/api/module/ModuleResourceCaches.java -text
 api/src/org/labkey/api/module/ModuleResourceDirectory.java -text
 api/src/org/labkey/api/module/ModuleResourceLoadException.java -text

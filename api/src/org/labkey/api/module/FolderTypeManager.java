@@ -48,7 +48,7 @@ public class FolderTypeManager
     /** PropertyManager category name for folder type enabled state properties */
     private static final String FOLDER_TYPE_ENABLED_STATE = "FolderTypeEnabledState";
 
-    private final ModuleResourceCache2<Collection<SimpleFolderType>> CACHE = ModuleResourceCaches.create(new Path(SIMPLE_TYPE_DIR_NAME), new SimpleFolderTypeCacheHandler(), "File-based folder types");
+    private final ModuleResourceCache<Collection<SimpleFolderType>> CACHE = ModuleResourceCaches.create(new Path(SIMPLE_TYPE_DIR_NAME), new SimpleFolderTypeCacheHandler(), "File-based folder types");
     private final Map<String, FolderType> _javaFolderTypes = new ConcurrentHashMap<>();  // Map of folder types that are registered via java code
     private final Object FOLDER_TYPE_LOCK = new Object();
 
@@ -240,7 +240,7 @@ public class FolderTypeManager
         return CACHE.getResourceMap(module);
     }
 
-    private static class SimpleFolderTypeCacheHandler implements ModuleResourceCacheHandler2<Collection<SimpleFolderType>>
+    private static class SimpleFolderTypeCacheHandler implements ModuleResourceCacheHandler<Collection<SimpleFolderType>>
     {
         @Override
         public Collection<SimpleFolderType> load(@Nullable Resource dir, Module module)

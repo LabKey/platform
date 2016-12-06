@@ -49,9 +49,13 @@ public class ModuleResourceCaches
      * @param <T> Object type that this cache handles
      * @return A ModuleResourceCache
      */
-    public static <T> ModuleResourceCache<T> create(Path path, String description, ModuleResourceCacheHandler<String, T> handler)
+    public static <T> ModuleResourceCacheOld<T> create(Path path, String description, ModuleResourceCacheHandlerOld<String, T> handler)
     {
-        return create(createModuleResourceDirectory(path), description, handler);
+        ModuleResourceDirectory directory = createModuleResourceDirectory(path);
+        ModuleResourceCacheOld<T> cache = new ModuleResourceCacheOld<>(directory, description, handler);
+        directory.registerCache(cache);
+
+        return cache;
     }
 
     /**
@@ -63,31 +67,12 @@ public class ModuleResourceCaches
      * @param <T> Object type of the resource map that this cache manages
      * @return A ModuleResourceCache
      */
-    public static <T> ModuleResourceCache2<T> create(Path path, ModuleResourceCacheHandler2<T> handler, String description)
+    public static <T> ModuleResourceCache<T> create(Path path, ModuleResourceCacheHandler<T> handler, String description)
     {
-        return new ModuleResourceCache2<>(path, handler, description);
+        return new ModuleResourceCache<>(path, handler, description);
     }
 
-    /**
-     * Create a new ModuleResourceCache. This method is needed only in cases where multiple caches, handling different
-     * object types, need to operate on the same resource directory. This method lets caches share a ModuleResourceDirectory,
-     * which shares the underlying FileSystemDirectoryListener.
-     *
-     * @param directory A ModuleResourceDirectory that's been initialized to a particular path
-     * @param description Short description of the cache
-     * @param handler ModuleResourceCacheHandler that customizes this cache's behavior
-     * @param <T> Object type that this cache handles
-     * @return A ModuleResourceCache
-     */
-    public static <T> ModuleResourceCache<T> create(ModuleResourceDirectory directory, String description, ModuleResourceCacheHandler<String, T> handler)
-    {
-        ModuleResourceCache<T> cache = new ModuleResourceCache<>(directory, description, handler);
-        directory.registerCache(cache);
-
-        return cache;
-    }
-
-    public static <T> PathBasedModuleResourceCache<T> create(String description, ModuleResourceCacheHandler<Path, T> handler)
+    public static <T> PathBasedModuleResourceCache<T> create(String description, ModuleResourceCacheHandlerOld<Path, T> handler)
     {
         return new PathBasedModuleResourceCache<>(description, handler);
     }
@@ -218,7 +203,7 @@ public class ModuleResourceCaches
         }
 
         @Override
-        public <T> void registerCache(ModuleResourceCache<T> cache)
+        public <T> void registerCache(ModuleResourceCacheOld<T> cache)
         {
             for (Module module : getModules())
             {

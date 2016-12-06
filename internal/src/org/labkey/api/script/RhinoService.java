@@ -28,7 +28,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCacheHandlerOld;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.module.PathBasedModuleResourceCache;
@@ -253,7 +253,7 @@ class RhinoFactory extends RhinoScriptEngineFactory implements ScriptService
 
 class ScriptReferenceImpl implements ScriptReference
 {
-    private static final ModuleResourceCacheHandler<Path, CompiledScript> CACHE_HANDLER = new ModuleResourceCacheHandler<Path, CompiledScript>()
+    private static final ModuleResourceCacheHandlerOld<Path, CompiledScript> CACHE_HANDLER = new ModuleResourceCacheHandlerOld<Path, CompiledScript>()
     {
         private final CacheLoader<String, CompiledScript> _loader = (key, argument) -> {
             RhinoEngine engine1 = (RhinoEngine)argument;
@@ -501,7 +501,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
      * the resources themselves, however, it can't currently be used for this staleness check because it doesn't invalidate
      * on modify plus the exists() and lastModified() methods of FileResource access the file system directly.
      */
-    private static final PathBasedModuleResourceCache<Long> TOP_LEVEL_SCRIPT_CACHE = ModuleResourceCaches.create("Top-level Rhino script cache", new ModuleResourceCacheHandler<Path, Long>()
+    private static final PathBasedModuleResourceCache<Long> TOP_LEVEL_SCRIPT_CACHE = ModuleResourceCaches.create("Top-level Rhino script cache", new ModuleResourceCacheHandlerOld<Path, Long>()
     {
         private final CacheLoader<String, Long> RESOURCE_LOADER = (key, argument) ->
         {

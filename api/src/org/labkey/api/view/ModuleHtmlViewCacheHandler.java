@@ -18,7 +18,7 @@ package org.labkey.api.view;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlViewDefinition;
-import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCacheHandlerOld;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.resource.Resource;
@@ -32,7 +32,7 @@ import static org.labkey.api.module.ModuleHtmlViewDefinition.VIEW_METADATA_EXTEN
  * Date: 1/21/14
  * Time: 9:47 PM
  */
-public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandler<Path, ModuleHtmlViewDefinition>
+public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandlerOld<Path, ModuleHtmlViewDefinition>
 {
     @Override
     public boolean isResourceFile(String filename)

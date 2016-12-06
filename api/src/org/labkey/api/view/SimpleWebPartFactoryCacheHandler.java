@@ -18,7 +18,7 @@ package org.labkey.api.view;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleResourceCacheHandler2;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.SimpleWebPartFactory;
 import org.labkey.api.resource.Resource;
 
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  * Date: 12/29/13
  * Time: 12:38 PM
  */
-public class SimpleWebPartFactoryCacheHandler implements ModuleResourceCacheHandler2<Collection<SimpleWebPartFactory>>
+public class SimpleWebPartFactoryCacheHandler implements ModuleResourceCacheHandler<Collection<SimpleWebPartFactory>>
 {
     @Override
     public Collection<SimpleWebPartFactory> load(@Nullable Resource dir, Module module)
