@@ -1131,6 +1131,31 @@ LABKEY.vis.GenericChartHelper = new function(){
         return {droppedValues: droppedValues, processed: processedMeasures};
     };
 
+    /**
+     * removes all traces of String -> Numeric Conversion from the given chart config
+     * @param chartConfig
+     * @returns {updated ChartConfig}
+     */
+    var removeNumericConversionConfig = function(chartConfig) {
+        if (chartConfig && chartConfig.measures) {
+            for (var measureName in chartConfig.measures) {
+                if (chartConfig.measures.hasOwnProperty(measureName)) {
+                    var measure = chartConfig.measures[measureName];
+                    if (measure && measure.converted && measure.convertedName) {
+                        measure.converted = null;
+                        measure.convertedName = null;
+                        if (LABKEY.vis.GenericChartHelper.isNumericType(measure.type)) {
+                            measure.type = 'string';
+                            measure.normalizedType = 'string';
+                        }
+                    }
+                }
+            }
+        }
+
+        return chartConfig;
+    };
+
     return {
         // NOTE: the @function below is needed or JSDoc will not include the documentation for loadVisDependencies. Don't
         // ask me why, I do not know.
@@ -1148,6 +1173,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         generateScales: generateScales,
         generateAes: generateAes,
         doValueConversion: doValueConversion,
+        removeNumericConversionConfig: removeNumericConversionConfig,
         generatePointHover: generatePointHover,
         generateBoxplotHover: generateBoxplotHover,
         generateDiscreteAcc: generateDiscreteAcc,

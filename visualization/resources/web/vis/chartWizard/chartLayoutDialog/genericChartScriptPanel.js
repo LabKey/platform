@@ -63,14 +63,24 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "        var xAxisType = chartConfig.measures.x ? (chartConfig.measures.x.normalizedType || chartConfig.measures.x.type) : null;\n" +
             "        var chartType = LABKEY.vis.GenericChartHelper.getChartType(chartConfig.renderType, xAxisType);\n" +
             "        var aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, responseData.schemaName, responseData.queryName);\n" +
+            "        var valueConversionResponse = LABKEY.vis.GenericChartHelper.doValueConversion(chartConfig, aes, chartType, responseData.rows); \n" +
+            "        if (!Ext4.Object.isEmpty(valueConversionResponse.processed)) {\n"+
+            "               Ext4.Object.merge(chartConfig.measures, valueConversionResponse.processed);\n"+
+            "               aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, responseData.schemaName, responseData.queryName);\n"+
+            "        }\n"+
             "        var scales = LABKEY.vis.GenericChartHelper.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, responseData);\n" +
             "        var geom = LABKEY.vis.GenericChartHelper.generateGeom(chartType, chartConfig.geomOptions);\n" +
             "        var labels = LABKEY.vis.GenericChartHelper.generateLabels(chartConfig.labels);\n" +
             "\n" +
             "        var data = responseData.rows;\n" +
             "        if (chartType == 'bar_chart' || chartType == 'pie_chart') {\n" +
-            "            var dimName = chartConfig.measures.x ? chartConfig.measures.x.name : null;\n" +
-            "            var measureName = chartConfig.measures.y ? chartConfig.measures.y.name : null;\n" +
+            "            var dimName = null, measureName = null;\n"+
+            "            if (chartConfig.measures.x) {\n" +
+            "               dimName = chartConfig.measures.x.converted ? chartConfig.measures.x.convertedName : chartConfig.measures.x.name;\n" +
+            "            }\n"+
+            "            if (chartConfig.measures.y) {\n" +
+            "               measureName = chartConfig.measures.y.converted ? chartConfig.measures.y.convertedName : chartConfig.measures.y.name;\n" +
+            "            }\n"+
             "            var aggType = measureName != null ? 'SUM' : 'COUNT';\n" +
             "            data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');\n" +
             "        }\n" +

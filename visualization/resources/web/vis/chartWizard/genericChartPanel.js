@@ -944,21 +944,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         };
 
         var chartConfig = reportConfig.jsonData.chartConfig;
-        if (chartConfig && chartConfig.measures) {
-            for (var measureName in chartConfig.measures) {
-                if (chartConfig.measures.hasOwnProperty(measureName)) {
-                    var measure = chartConfig.measures[measureName];
-                    if (measure && measure.converted && measure.convertedName) {
-                        measure.converted = null;
-                        measure.convertedName = null;
-                        if (LABKEY.vis.GenericChartHelper.isNumericType(measure.type)) {
-                            measure.type = 'string';
-                            measure.normalizedType = 'string';
-                        }
-                    }
-                }
-            }
-        }
+        LABKEY.vis.GenericChartHelper.removeNumericConversionConfig(chartConfig);
 
         return reportConfig;
     },
@@ -1745,7 +1731,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     exportChartToScript : function()
     {
-        var chartConfig = this.getChartConfig();
+        var chartConfig = LABKEY.vis.GenericChartHelper.removeNumericConversionConfig(this.getChartConfig());
         var queryConfig = this.getQueryConfig(true);
 
         // Only push the required columns.
