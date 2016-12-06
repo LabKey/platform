@@ -1344,6 +1344,7 @@ public class AdminController extends SpringActionController
         private String _themeFont;
         private String _folderDisplayMode;
         private boolean _enableHelpMenu;
+        private boolean _enableDiscussion;
         private String _logoHref;
         private String _companyName;
         private String _systemEmailAddress;
@@ -1454,6 +1455,17 @@ public class AdminController extends SpringActionController
         public void setEnableHelpMenu(boolean enableHelpMenu)
         {
             _enableHelpMenu = enableHelpMenu;
+        }
+
+        public boolean isEnableDiscussion()
+        {
+            return _enableDiscussion;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setEnableDiscussion(boolean enableDiscussion)
+        {
+            _enableDiscussion = enableDiscussion;
         }
 
         public String getLogoHref()

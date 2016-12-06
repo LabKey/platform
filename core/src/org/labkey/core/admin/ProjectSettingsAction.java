@@ -214,6 +214,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         FolderDisplayMode folderDisplayMode = FolderDisplayMode.fromString(form.getFolderDisplayMode());
         props.setFolderDisplayMode(folderDisplayMode);
         props.setHelpMenuEnabled(form.isEnableHelpMenu());
+        props.setDiscussionEnabled(form.isEnableDiscussion());
 
         DateParsingMode dateParsingMode = DateParsingMode.fromString(form.getDateParsingMode());
         props.setDateParsingMode(dateParsingMode);

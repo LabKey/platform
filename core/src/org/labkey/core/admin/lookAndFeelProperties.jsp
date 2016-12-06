@@ -140,6 +140,15 @@
     <td class="labkey-form-label">Show LabKey Help menu item</td>
     <td><input type="checkbox" name="enableHelpMenu" size="50"<%=checked(laf.isHelpMenuEnabled())%>></td>
 </tr>
+<%
+    String enableDiscussionHelp = "Some items within LabKey Server, like reports and wiki pages, support discussions " +
+            "that are scoped directly to that report or wiki page. Administrators can disable this feature.";
+%>
+<tr>
+    <td class="labkey-form-label">Enable Object-Level Discussions
+        <%=PageFlowUtil.helpPopup("Enable Discussion", enableDiscussionHelp, true)%></td>
+    <td><input type="checkbox" name="enableDiscussion" size="50"<%=checked(laf.isDiscussionEnabled())%>></td>
+</tr>
 
 <tr>
     <td class="labkey-form-label">Logo link (specifies page that header logo links to)</td>
