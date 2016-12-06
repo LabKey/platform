@@ -129,19 +129,19 @@ public class PlateManager implements PlateService.Service
     }
 
     @Override
-    public Plate createPlate(PlateTemplate template, double[][] wellValues)
+    public Plate createPlate(PlateTemplate template, double[][] wellValues, @Nullable boolean[][] excluded)
     {
-        return createPlate(template, wellValues, PlateService.NO_RUNID, 1);
+        return createPlate(template, wellValues, excluded, PlateService.NO_RUNID, 1);
     }
 
     @Override
-    public Plate createPlate(PlateTemplate template, double[][] wellValues, int runId, int plateNumber)
+    public Plate createPlate(PlateTemplate template, double[][] wellValues, @Nullable boolean[][] excluded, int runId, int plateNumber)
     {
         if (template == null)
             return null;
         if (!(template instanceof PlateTemplateImpl))
             throw new IllegalArgumentException("Only plate templates retrieved from the plate service can be used to create plate instances.");
-        return new PlateImpl((PlateTemplateImpl) template, wellValues, runId, plateNumber);
+        return new PlateImpl((PlateTemplateImpl) template, wellValues, excluded, runId, plateNumber);
     }
 
     @Override

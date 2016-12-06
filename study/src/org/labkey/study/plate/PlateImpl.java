@@ -15,6 +15,7 @@
  */
 package org.labkey.study.plate;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.study.*;
 
 import java.util.*;
@@ -40,7 +41,7 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
         _plateNumber = 1;
     }
 
-    public PlateImpl(PlateTemplateImpl template, double[][] wellValues, int runId, int plateNumber)
+    public PlateImpl(PlateTemplateImpl template, double[][] wellValues, @Nullable boolean[][] excluded, int runId, int plateNumber)
     {
         super(template.getContainer(), template.getName(), template.getType(), template.getRows(), template.getColumns());
         _wells = new WellImpl[template.getRows()][template.getColumns()];
@@ -49,7 +50,7 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
         for (int row = 0; row < template.getRows(); row++)
         {
             for (int col = 0; col < template.getColumns(); col++)
-                _wells[row][col] = new WellImpl(this, row, col, wellValues[row][col]);
+                _wells[row][col] = new WellImpl(this, row, col, wellValues[row][col], excluded != null && excluded[row][col]);
         }
         for (Map.Entry<String, Object> entry : template.getProperties().entrySet())
             setProperty(entry.getKey(), entry.getValue());

@@ -29,6 +29,7 @@ public class WellImpl extends PositionImpl implements Well
     private double _value;
     private Double _dilution;
     protected PlateImpl _plate;
+    private boolean _excluded;
 
     public WellImpl()
     {
@@ -36,11 +37,12 @@ public class WellImpl extends PositionImpl implements Well
         super(null, -1, -1);
     }
 
-    public WellImpl(PlateImpl plate, int row, int col, double value)
+    public WellImpl(PlateImpl plate, int row, int col, double value, boolean excluded)
     {
         super(plate.getContainer(), row, col);
         _plate = plate;
         _value = value;
+        _excluded = excluded;
         setPlateId(plate.getRowId());
     }
 
@@ -87,5 +89,16 @@ public class WellImpl extends PositionImpl implements Well
     public PlateImpl getPlate()
     {
         return _plate;
+    }
+
+    @Override
+    public boolean isExcluded()
+    {
+        return _excluded;
+    }
+
+    public void setExcluded(boolean excluded)
+    {
+        _excluded = excluded;
     }
 }
