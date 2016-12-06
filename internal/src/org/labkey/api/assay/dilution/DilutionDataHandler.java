@@ -288,20 +288,24 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     protected List<Plate> createPlates(File dataFile, PlateTemplate template) throws ExperimentException
     {
-        return Collections.singletonList(PlateService.get().createPlate(template, getCellValues(dataFile, template), -1, 1));
+        return Collections.singletonList(PlateService.get().createPlate(template, getCellValues(dataFile, template), null, -1, 1));
     }
 
     protected List<Plate> createPlates(ExpRun run, PlateTemplate template) throws ExperimentException
     {
         double[][] cellValues = new double[template.getRows()][template.getColumns()];
+        boolean[][] excluded = new boolean[template.getRows()][template.getColumns()];
         List<WellDataRow> wellDataRows = DilutionManager.getWellDataRows(run);
         if (wellDataRows.isEmpty())
             throw new ExperimentException("Well data could not be found for run " + run.getName() + ". Run details are not available.");
 
         for (WellDataRow wellDataRow : wellDataRows)
+        {
             cellValues[wellDataRow.getRow()][wellDataRow.getColumn()] = wellDataRow.getValue();
+            excluded[wellDataRow.getRow()][wellDataRow.getColumn()] = wellDataRow.isExcluded();
+        }
 
-        Plate plate = PlateService.get().createPlate(template, cellValues, run.getRowId(), 1);
+        Plate plate = PlateService.get().createPlate(template, cellValues, excluded, run.getRowId(), 1);
         return Collections.singletonList(plate);
     }
 

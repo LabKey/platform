@@ -25,9 +25,12 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.ValueMarker;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.chart.renderer.xy.YIntervalRenderer;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.data.xy.YIntervalSeries;
+import org.jfree.data.xy.YIntervalSeriesCollection;
 import org.labkey.api.assay.dilution.DilutionAssayRun;
 import org.labkey.api.assay.dilution.DilutionMaterialKey;
 import org.labkey.api.assay.dilution.DilutionSummary;
@@ -299,9 +302,14 @@ public class NabGraph
     {
         XYSeriesCollection curvesDataset = new XYSeriesCollection();
         XYSeriesCollection pointDataset = new XYSeriesCollection();
+        YIntervalSeriesCollection cvDataset = new YIntervalSeriesCollection();          // render coefficient of variation
         JFreeChart chart = ChartFactory.createXYLineChart(config.getChartTitle(), null, config.getyAxisLabel(), curvesDataset, PlotOrientation.VERTICAL, true, true, false);
         XYPlot plot = chart.getXYPlot();
+
         plot.setDataset(1, pointDataset);
+        plot.setDataset(2, cvDataset);
+
+        // configure renderers
         plot.getRenderer(0).setStroke(new BasicStroke(1.5f));
         if (config.isLockAxes())
             plot.getRangeAxis().setRange(-20, 120);
@@ -312,6 +320,18 @@ public class NabGraph
                 1.0f, new float[]{4.0f, 4.0f}, 0.0f));
         plot.getRenderer(0).setSeriesVisibleInLegend(false);
         pointRenderer.setShapesFilled(true);
+
+        YIntervalRenderer cvRenderer = new YIntervalRenderer(){
+            @Override
+            public Shape getItemShape(int row, int column)
+            {
+                // override with an empty shape since we don't want to render points
+                // in the CV lines
+                return new Rectangle();
+            }
+        };
+        cvRenderer.setBaseSeriesVisible(false);
+        plot.setRenderer(2, cvRenderer);
 
         // Issue 14405: NAb graphs cannot display if same ptid/visit used for more than one sample
         // XYSeriesCollection doesn't allow multiple series to have the same key
@@ -339,13 +359,20 @@ public class NabGraph
             String sampleId = summaryEntry.getKey();
             DilutionSummary summary = summaryEntry.getValue();
             XYSeries pointSeries = new XYSeries(sampleId + ", point" + count);
+            YIntervalSeries cvSeries = new YIntervalSeries(sampleId);
             pointSeries.setDescription(sampleId);
             for (WellData well : summary.getWellData())
             {
                 double percentage = 100 * summary.getPercent(well);
                 double dilution = summary.getDilution(well);
                 pointSeries.add(dilution, percentage);
+
+                double plusMinus = summary.getPlusMinus(well) * 100;
+                if (plusMinus > 0)
+                    cvSeries.add(dilution, percentage, percentage - plusMinus, percentage + plusMinus);
             }
+            if (cvSeries.getItemCount() > 0)
+                cvDataset.addSeries(cvSeries);
 
             // issue 15448: since x-axis will be plotted on log scale, skip any series with dilution/concentration of <= zero (doesn't make sense for this assay)
             if (pointSeries.getMinX() <= 0)
@@ -364,6 +391,7 @@ public class NabGraph
                     curvedSeries.add(point.getX(), point.getY());
                 curvesDataset.addSeries(curvedSeries);
                 plot.getRenderer(1).setSeriesPaint(curvesDataset.getSeriesCount() - 1, currentColor);
+                plot.getRenderer(2).setSeriesPaint(cvDataset.getSeriesCount() - 1, currentColor);
             }
             catch (FitFailedException e)
             {

@@ -17,6 +17,7 @@
 package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -63,20 +64,22 @@ public class PlateService
         /**
          * Creates a new plate instance based on the specified plate template and well data.
          * @param template The template that this instance is based upon.
-         * @param wellValues A two-dimentional arary of the machine data.
+         * @param wellValues A two-dimensional array of the machine data.
+         * @param excludedWells A two-dimensional array of wells that are excluded (can be null)
          * @param runId Id of the run, if already exists, otherwise -1
          * @param plateNumber Plate number (1-based)
          * @return A plate instance object.
          */
-        Plate createPlate(PlateTemplate template, double[][] wellValues, int runId, int plateNumber);
+        Plate createPlate(PlateTemplate template, double[][] wellValues, @Nullable boolean[][] excludedWells, int runId, int plateNumber);
 
         /**
          * Creates a new plate instance based on the specified plate template and well data.
          * @param template The template that this instance is based upon.
-         * @param wellValues A two-dimentional arary of the machine data.
+         * @param wellValues A two-dimensional array of the machine data.
+         * @param excludedWells A two-dimensional array of wells that are excluded (can be null)
          * @return A plate instance object.
          */
-        Plate createPlate(PlateTemplate template, double[][] wellValues);
+        Plate createPlate(PlateTemplate template, double[][] wellValues, @Nullable boolean[][] excludedWells);
 
         /**
          * Adds a new well group to the plate

@@ -24,4 +24,6 @@ package org.labkey.api.study;
 public interface Well extends WellData, Position
 {
     double getValue();
+
+    boolean isExcluded();
 }

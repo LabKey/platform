@@ -37,6 +37,7 @@ public class WellDataRow
     private Integer _plateNumber;
     private String _plateVirusName;
     private String _container;
+    private boolean _excluded;
 
     public WellDataRow()
     {
@@ -201,5 +202,15 @@ public class WellDataRow
     public void setPlateVirusName(String plateVirusName)
     {
         _plateVirusName = plateVirusName;
+    }
+
+    public boolean isExcluded()
+    {
+        return _excluded;
+    }
+
+    public void setExcluded(boolean excluded)
+    {
+        _excluded = excluded;
     }
 }
