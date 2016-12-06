@@ -181,35 +181,43 @@
             "specifying a prefix, numeric part, and suffix. For more information see the " +
             "<a href=\"" + Formats.getDecimalFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
             "The following table has an abbreviated guide to pattern symbols:<br/>" +
-            "<table class=\"labkey-data-region labkey-show-borders\"><colgroup><col><col><col><col></colgroup>" +
-            "<tr class=\"labkey-frame\"><th align=left>Symbol<th align=left>Location<th align=left>Localized?<th align=left>Meaning</tr>" +
-            "<tr valign=top><td><code>0</code><td>Number<td>Yes<td>Digit</tr>" +
+            "<table class=\"labkey-data-region labkey-show-borders\">" +
+            "<colgroup><col><col><col><col></colgroup>" +
+            "<tr class=\"labkey-frame\"><th align=left>Symbol<th align=left>Location<th align=left>Localized?<th align=left style=\"width:200px;\">Meaning</tr>" +
+            "<tr valign=top class=\"labkey-row\"><td><code>0</code><td>Number<td>Yes<td>Digit</tr>" +
             "<tr valign=top class=\"labkey-alternate-row\"><td><code>#</code><td>Number<td>Yes<td>Digit, zero shows as absent</tr>" +
-            "<tr valign=top><td><code>.</code><td>Number<td>Yes<td>Decimal separator or monetary decimal separator</tr>" +
+            "<tr valign=top class=\"labkey-row\"><td><code>.</code><td>Number<td>Yes<td>Decimal separator or monetary decimal separator</tr>" +
             "<tr valign=top class=\"labkey-alternate-row\"><td><code>-</code><td>Number<td>Yes<td>Minus sign</tr>" +
-            "<tr valign=top><td><code>,</code><td>Number<td>Yes<td>Grouping separator</tr></table>";
-    String javaFormatDocs = "<br><br>The format string must be compatible with the format that the java class " +
+            "<tr valign=top class=\"labkey-row\"><td><code>,</code><td>Number<td>Yes<td>Grouping separator</tr>" +
+            "</table>";
+
+    String simpleDateFormatDocs = "<br><br>The format string must be compatible with the format that the java class " +
             "<code>SimpleDateFormat</code> understands. For more information see the " +
             "<a href=\"" + DateUtil.getSimpleDateFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
             "The following table has a partial guide to pattern symbols:<br/>" +
-            "<table class=\"labkey-data-region labkey-show-borders\"><colgroup><col><col><col></colgroup>" +
+            "<table class=\"labkey-data-region labkey-show-borders\">" +
+            "<colgroup><col><col style=\"width: 100%;\"><col></colgroup>" +
             "<tr class=\"labkey-frame\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>" +
-            "<tr><td><code>G</code><td>Era designator<td><code>AD</code></tr>" +
+            "<tr class=\"labkey-row\"><td><code>G</code><td>Era designator<td><code>AD</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>y</code><td>Year<td><code>1996</code>; <code>96</code></tr>" +
-            "<tr><td><code>M</code><td>Month in year<td><code>July</code>; <code>Jul</code>; <code>07</code></tr>" +
+            "<tr class=\"labkey-row\"><td><code>M</code><td>Month in year<td><code>July</code>; <code>Jul</code>; <code>07</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>w</code><td>Week in year<td><code>27</code></td></tr>" +
-            "<tr><td><code>W</code><td>Week in month<td><code>2</code></td></tr>" +
+            "<tr class=\"labkey-row\"><td><code>W</code><td>Week in month<td><code>2</code></td></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>D</code><td>Day in year<td><code>189</code></td></tr>" +
-            "<tr><td><code>d</code><td>Day in month<td><code>10</code></tr>" +
+            "<tr class=\"labkey-row\"><td><code>d</code><td>Day in month<td><code>10</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>F</code><td>Day of week in month<td><code>2</code></tr>" +
-            "<tr><td><code>E</code><td>Day in week<td><code>Tuesday</code>; <code>Tue</code></tr>" +
+            "<tr class=\"labkey-row\"><td><code>E</code><td>Day in week<td><code>Tuesday</code>; <code>Tue</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>a</code><td>Am/pm marker<td><code>PM</code></tr>" +
-            "<tr><td><code>H</code><td>Hour in day (0-23)<td><code>0</code></tr>" +
+            "<tr class=\"labkey-row\"><td><code>H</code><td>Hour in day (0-23)<td><code>0</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>k</code><td>Hour in day (1-24)<td><code>24</code></tr>" +
-            "<tr><td><code>K</code><td>Hour in am/pm (0-11)<td><code>0</code></tr>" +
-            "<tr class=\"labkey-alternate-row\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr></table>";
-    String dateFormatHelp = "This format is applied when displaying columns that are defined with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey columns use date-time data types (see below)." + javaFormatDocs;
-    String dateTimeFormatHelp = "This format is applied when displaying columns that are defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey columns use this format." + javaFormatDocs;
+            "<tr class=\"labkey-row\"><td><code>K</code><td>Hour in am/pm (0-11)<td><code>0</code></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr>" +
+            "<tr class=\"labkey-row\"><td><code>m</code><td>Minute in hour<td><code>30</code></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>s</code><td>Second in minute<td><code>55</code></tr>" +
+            "<tr class=\"labkey-row\"><td><code>S</code><td>Millisecond<td><code>978</code></tr>" +
+            "</table>";
+    String dateFormatHelp = "This format is applied when displaying columns that are defined with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey columns use date-time data types (see below)." + simpleDateFormatDocs;
+    String dateTimeFormatHelp = "This format is applied when displaying columns that are defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey columns use this format." + simpleDateFormatDocs;
 %>
 <tr>
     <td colspan=2>Customize date and number formats (<%=text(bean.helpLink)%>)</td>
@@ -235,15 +243,15 @@
     }
 %>
 <tr>
-    <td class="labkey-form-label">Default display format for dates<%=PageFlowUtil.helpPopup("Date format", dateFormatHelp, true)%></td>
+    <td class="labkey-form-label">Default display format for dates<%=PageFlowUtil.helpPopup("Date format", dateFormatHelp, true, 300)%></td>
     <td><input type="text" name="defaultDateFormat" size="50" value="<%= h(laf.getDefaultDateFormat()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Default display format for date-times<%=PageFlowUtil.helpPopup("Date-time format", dateTimeFormatHelp, true)%></td>
+    <td class="labkey-form-label">Default display format for date-times<%=PageFlowUtil.helpPopup("Date-time format", dateTimeFormatHelp, true, 300)%></td>
     <td><input type="text" name="defaultDateTimeFormat" size="50" value="<%= h(laf.getDefaultDateTimeFormat()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Default display format for numbers<%=PageFlowUtil.helpPopup("Number format", decimalFormatHelp, true)%></td>
+    <td class="labkey-form-label">Default display format for numbers<%=PageFlowUtil.helpPopup("Number format", decimalFormatHelp, true, 350)%></td>
     <td><input type="text" name="defaultNumberFormat" size="50" value="<%= h(laf.getDefaultNumberFormat()) %>"></td>
 </tr>
 <tr>
