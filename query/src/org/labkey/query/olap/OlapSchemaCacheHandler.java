@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCacheHandler2;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.resource.Resource;
@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 
-public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler2<Map<String, OlapSchemaDescriptor>>
+public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<Map<String, OlapSchemaDescriptor>>
 {
     public static final String DIR_NAME = "olap";
 

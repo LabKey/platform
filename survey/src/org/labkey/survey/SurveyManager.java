@@ -48,7 +48,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCacheHandlerOld;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.module.PathBasedModuleResourceCache;
@@ -598,7 +598,7 @@ public class SurveyManager
         return designMap;
     }
 
-    private static class SurveyDesignResourceCacheHandler implements ModuleResourceCacheHandler<Path, Collection<SurveyDesign>>
+    private static class SurveyDesignResourceCacheHandler implements ModuleResourceCacheHandlerOld<Path, Collection<SurveyDesign>>
     {
         @Override
         public boolean isResourceFile(String filename)

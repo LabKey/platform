@@ -29,7 +29,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache2;
+import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipelineJob;
@@ -134,9 +134,9 @@ public class PipelineJobServiceImpl extends PipelineJobService
     private Map<TaskId, TaskFactory> _taskFactoryStore = new HashMap<>();
     private Map<SchemaType, XMLBeanTaskFactoryFactory> _taskFactoryFactories = new HashMap<>();
 
-    private final ModuleResourceCache2<Map<TaskId, TaskFactory>> TASK_FACTORY_CACHE = ModuleResourceCaches.create(
+    private final ModuleResourceCache<Map<TaskId, TaskFactory>> TASK_FACTORY_CACHE = ModuleResourceCaches.create(
         new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskFactoryCacheHandler.MODULE_TASKS_DIR), new TaskFactoryCacheHandler(), "TaskFactory cache");
-    private final ModuleResourceCache2<Map<TaskId, TaskPipeline>> TASK_PIPELINE_CACHE = ModuleResourceCaches.create(
+    private final ModuleResourceCache<Map<TaskId, TaskPipeline>> TASK_PIPELINE_CACHE = ModuleResourceCaches.create(
         new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskPipelineCacheHandler.MODULE_PIPELINES_DIR), new TaskPipelineCacheHandler(), "TaskPipeline cache");
 
     private final Set<Module> _pipelineModules = new CopyOnWriteArraySet<>();

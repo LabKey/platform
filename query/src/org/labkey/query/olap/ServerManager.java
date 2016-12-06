@@ -38,7 +38,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.module.ModuleResourceCache2;
+import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.query.DefaultSchema;
@@ -111,7 +111,7 @@ public class ServerManager
     private static final Map<String, ServerReferenceCount> SERVERS = new HashMap<>();
     private static final Object SERVERS_LOCK = new Object();
 
-    private static final ModuleResourceCache2<Map<String, OlapSchemaDescriptor>> MODULE_DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), new OlapSchemaCacheHandler(), "Olap cube definitions (module)");
+    private static final ModuleResourceCache<Map<String, OlapSchemaDescriptor>> MODULE_DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), new OlapSchemaCacheHandler(), "Olap cube definitions (module)");
     private static final BlockingStringKeyCache<OlapSchemaDescriptor> DB_DESCRIPTOR_CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.HOUR, "Olap cube definitions (db)", new OlapCacheLoader());
 
     private static final BlockingStringKeyCache<Cube> CUBES = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, 2 * CacheManager.DAY, "cube cache", null);

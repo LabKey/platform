@@ -21,7 +21,7 @@ import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCacheHandlerOld;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
  * Date: 9/13/13
  * Time: 4:26 PM
  */
-public class DescriptorCacheHandlerOld implements ModuleResourceCacheHandler<String, ScheduledPipelineJobDescriptor>
+public class DescriptorCacheHandlerOld implements ModuleResourceCacheHandlerOld<String, ScheduledPipelineJobDescriptor>
 {
     private static final TransformManager _transformManager = TransformManager.get();
 

@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleResourceCacheHandler2;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.resource.Resource;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  * Date: 9/13/13
  * Time: 4:26 PM
  */
-public class DescriptorCacheHandler implements ModuleResourceCacheHandler2<Map<String, ScheduledPipelineJobDescriptor>>
+public class DescriptorCacheHandler implements ModuleResourceCacheHandler<Map<String, ScheduledPipelineJobDescriptor>>
 {
     private static final TransformManager _transformManager = TransformManager.get();
 

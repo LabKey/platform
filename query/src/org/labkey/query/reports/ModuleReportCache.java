@@ -22,8 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveArrayListValuedMap;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleResourceCache2;
-import org.labkey.api.module.ModuleResourceCacheHandler2;
+import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryJavaScriptReportDescriptor;
@@ -56,7 +56,7 @@ public class ModuleReportCache
     private static final FilenameFilter moduleReportFilter = (dir, name) -> ModuleRReportDescriptor.accept(name) || StringUtils.endsWithIgnoreCase(name, ModuleJavaScriptReportDescriptor.FILE_EXTENSION);
     private static final FilenameFilter moduleReportFilterWithQuery = (dir, name) -> moduleReportFilter.accept(dir, name) || StringUtils.endsWithIgnoreCase(name, ModuleQueryReportDescriptor.FILE_EXTENSION);
 
-    private static final ModuleResourceCache2<ReportCollections> MODULE_REPORT_DESCRIPTOR_CACHE = ModuleResourceCaches.create(REPORT_PATH, new ModuleReportHandler(), "Module report cache");
+    private static final ModuleResourceCache<ReportCollections> MODULE_REPORT_DESCRIPTOR_CACHE = ModuleResourceCaches.create(REPORT_PATH, new ModuleReportHandler(), "Module report cache");
 
     @Nullable
     static ReportDescriptor getModuleReportDescriptor(Module module, String path)
@@ -125,7 +125,7 @@ public class ModuleReportCache
     }
 
 
-    private static class ModuleReportHandler implements ModuleResourceCacheHandler2<ReportCollections>
+    private static class ModuleReportHandler implements ModuleResourceCacheHandler<ReportCollections>
     {
         @Override
         public ReportCollections load(@Nullable Resource dir, Module module)

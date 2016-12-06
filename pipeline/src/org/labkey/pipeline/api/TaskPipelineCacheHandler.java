@@ -19,7 +19,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleResourceCacheHandler2;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
@@ -37,7 +37,7 @@ import java.util.Map;
  * Loads TaskPipeline from file-based modules from a /pipelines/pipeline/&lt;name&gt;.pipeline.xml file.
  * Similar to the ETL DescriptorCache's ScheduledPipelineJobDescriptor, the TaskPipeline may register some locally defined TaskFactories as well.
  */
-/* package */ class TaskPipelineCacheHandler implements ModuleResourceCacheHandler2<Map<TaskId, TaskPipeline>>
+/* package */ class TaskPipelineCacheHandler implements ModuleResourceCacheHandler<Map<TaskId, TaskPipeline>>
 {
     private static final Logger LOG = Logger.getLogger(TaskPipelineCacheHandler.class);
     private static final String PIPELINE_CONFIG_EXTENSION = ".pipeline.xml";

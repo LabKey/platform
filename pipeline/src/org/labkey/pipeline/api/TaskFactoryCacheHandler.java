@@ -20,7 +20,7 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleResourceCacheHandler2;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.resource.Resource;
@@ -39,7 +39,7 @@ import java.util.Map;
  * User: kevink
  * Date: 1/6/14
  */
-/* package */ class TaskFactoryCacheHandler implements ModuleResourceCacheHandler2<Map<TaskId, TaskFactory>>
+/* package */ class TaskFactoryCacheHandler implements ModuleResourceCacheHandler<Map<TaskId, TaskFactory>>
 {
     private static final Logger LOG = Logger.getLogger(TaskFactoryCacheHandler.class);
     private static final String TASK_CONFIG_EXTENSION = ".task.xml";

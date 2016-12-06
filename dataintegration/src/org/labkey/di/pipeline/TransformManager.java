@@ -47,9 +47,9 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCacheOld;
 import org.labkey.api.module.ModuleResourceCaches.CacheId;
-import org.labkey.api.module.ModuleResourceCache2;
+import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -145,8 +145,8 @@ public class TransformManager implements DataIntegrationService.Interface
     private static final TransformManager INSTANCE = new TransformManager();
     private static final Logger LOG = Logger.getLogger(TransformManager.class);
     private static final String JOB_GROUP_NAME = "org.labkey.di.pipeline.ETLManager";
-    private static final ModuleResourceCache<ScheduledPipelineJobDescriptor> DESCRIPTOR_CACHE_OLD = ModuleResourceCaches.create(new Path(DescriptorCacheHandler.DIR_NAME), "ETL job descriptors", new DescriptorCacheHandlerOld());
-    private static final ModuleResourceCache2<Map<String, ScheduledPipelineJobDescriptor>> DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(DescriptorCacheHandler.DIR_NAME), new DescriptorCacheHandler(), "ETL job descriptors");
+    private static final ModuleResourceCacheOld<ScheduledPipelineJobDescriptor> DESCRIPTOR_CACHE_OLD = ModuleResourceCaches.create(new Path(DescriptorCacheHandler.DIR_NAME), "ETL job descriptors", new DescriptorCacheHandlerOld());
+    private static final ModuleResourceCache<Map<String, ScheduledPipelineJobDescriptor>> DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(DescriptorCacheHandler.DIR_NAME), new DescriptorCacheHandler(), "ETL job descriptors");
     private static final String JOB_PENDING_MSG = "Not queuing job because ETL is already pending";
 
     private Map<String, StepProvider> _providers = new CaseInsensitiveHashMap<>();
