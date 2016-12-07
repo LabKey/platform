@@ -63,6 +63,7 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
@@ -134,6 +135,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.MapLoader;
+import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresLogin;
@@ -4804,15 +4806,23 @@ public class ExperimentController extends SpringActionController
                 (form.materialInputs == null || form.materialInputs.size() == 0))
                 errors.reject(ERROR_MSG, "At least one data input or material input is required");
 
-            if ((form.dataOutputs == null || form.dataOutputs.size() == 0) &&
-                (form.materialOutputs == null || form.materialOutputs.size() == 0))
+            if (form.materialOutputCount > 0 && form.materialOutputs != null && !form.materialOutputs.isEmpty())
+                errors.reject(ERROR_MSG, "Either 'materialOutputCount' or 'materialOutputs' property can be specified, but not both.");
+
+            if (form.dataOutputCount > 0 && form.dataOutputs != null && !form.dataOutputs.isEmpty())
+                errors.reject(ERROR_MSG, "Either 'dataOutputCount' or 'dataOutputs' property can be specified, but not both.");
+
+            boolean hasMaterialOutputs = form.materialOutputCount > 0 || form.materialOutputs != null && !form.materialOutputs.isEmpty();
+            boolean hasDataOutputs = form.dataOutputCount > 0 || form.dataOutputs != null && !form.dataOutputs.isEmpty();
+
+            if (!hasMaterialOutputs && !hasDataOutputs)
                 errors.reject(ERROR_MSG, "At least one data output or material output is required");
 
-            if (form.materialOutputs != null && !form.materialOutputs.isEmpty() && form.targetSampleSet == null)
-                errors.reject(ERROR_MSG, "targetSampleSet lsid required");
+            if (hasMaterialOutputs && form.targetSampleSet == null)
+                errors.reject(ERROR_MSG, "targetSampleSet lsid required for material outputs");
 
-            if (form.dataOutputs != null && !form.dataOutputs.isEmpty() && form.targetDataClass == null)
-                errors.reject(ERROR_MSG, "targetDataClass lsid required");
+            if (hasDataOutputs && form.targetDataClass == null)
+                errors.reject(ERROR_MSG, "targetDataClass lsid required for data outputs");
         }
 
         @Override
@@ -4930,7 +4940,7 @@ public class ExperimentController extends SpringActionController
                 // output materials
                 Map<ExpMaterial, String> outputMaterials = new HashMap<>();
                 int materialOutputCount = Math.max(form.materialOutputCount, form.materialOutputs != null ? form.materialOutputs.size() : 0);
-                if (materialOutputCount > 0)
+                if (materialOutputCount > 0 && outSampleSet != null)
                 {
                     DerivedOutputs<ExpMaterial> derived = new DerivedOutputs<ExpMaterial>(form.materialDefault, form.materialOutputs, materialOutputCount, "Material")
                     {
@@ -4955,9 +4965,9 @@ public class ExperimentController extends SpringActionController
 
 
                 // create output data
-                Map<ExpData, String> outputDatas = new HashMap<>();
+                Map<ExpData, String> outputData = new HashMap<>();
                 int dataOutputCount = Math.max(form.dataOutputCount, form.dataOutputs != null ? form.dataOutputs.size() : 0);
-                if (dataOutputCount > 0)
+                if (dataOutputCount > 0 && outDataClass != null)
                 {
                     DerivedOutputs<ExpData> derived = new DerivedOutputs<ExpData>(form.dataDefault, form.dataOutputs, dataOutputCount, "Data")
                     {
@@ -4978,28 +4988,40 @@ public class ExperimentController extends SpringActionController
                         }
                     };
 
-                    outputDatas = derived.createOutputs();
+                    outputData = derived.createOutputs();
                 }
 
+                if (outputMaterials.isEmpty() && outputData.isEmpty())
+                    throw new IllegalStateException("Expected to create " + materialOutputCount + " materials and " + dataOutputCount + " datas");
 
                 // finally, create the derived run
-                ExperimentService.get().derive(materialInputs, dataInputs, outputMaterials, outputDatas, new ViewBackgroundInfo(getContainer(), getUser(), null), _log);
+                ExpRun run = ExperimentService.get().derive(materialInputs, dataInputs, outputMaterials, outputData, new ViewBackgroundInfo(getContainer(), getUser(), null), _log);
                 tx.commit();
-            }
 
-            return null;
+                StringBuilder successMessage = new StringBuilder("Created ");
+                if (outputMaterials.size() > 0)
+                    successMessage.append(outputMaterials.size()).append(" materials");
+                if (outputData.size() > 0)
+                    successMessage.append(outputData.size()).append(" data");
+
+                // TODO: Jackson can't serialize the JSONObject
+                //JSONObject ret = ExperimentJSONConverter.serializeRun(run, null);
+                JSONObject ret = null;
+
+                return success(successMessage.toString(), ret);
+            }
         }
 
         // Helper class that prepares and executes the QueryUpdateService.insertRows() on the data or material table.
         private abstract class DerivedOutputs<T extends ExpProtocolOutput>
         {
-            private final Map<String, Object> _defaultValues;
-            private final List<DerivationSpec> _values;
+            private final @Nullable Map<String, Object> _defaultValues;
+            private final @Nullable List<DerivationSpec> _values;
             private final int _outputCount;
             private final String _rolePrefix;
 
 
-            public DerivedOutputs(Map<String, Object> defaultValues, List<DerivationSpec> values, int outputCount, String rolePrefix)
+            public DerivedOutputs(@Nullable Map<String, Object> defaultValues, @Nullable List<DerivationSpec> values, int outputCount, String rolePrefix)
             {
                 _defaultValues = defaultValues;
                 _values = values;
@@ -5018,7 +5040,7 @@ public class ExperimentController extends SpringActionController
                     Map<String, Object> row = new CaseInsensitiveHashMap<>();
                     if (_defaultValues != null)
                         row.putAll(_defaultValues);
-                    DerivationSpec spec = i < _values.size() ? _values.get(i) : null;
+                    DerivationSpec spec = _values != null && i < _values.size() ? _values.get(i) : null;
                     String role = null;
                     if (spec != null)
                     {
