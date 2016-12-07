@@ -18,6 +18,7 @@ package org.labkey.api.exp.api;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
@@ -25,6 +26,8 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.URIUtil;
 
@@ -33,6 +36,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Serializes and deserializes experiment objects to and from JSON.
@@ -78,7 +82,7 @@ public class ExperimentJSONConverter
 
     public static JSONObject serializeRun(ExpRun run, Domain domain) throws SQLException
     {
-        JSONObject jsonObject = serializeStandardProperties(run, domain.getProperties());
+        JSONObject jsonObject = serializeStandardProperties(run, domain == null ? null : domain.getProperties());
         jsonObject.put(COMMENT, run.getComments());
 
         JSONArray inputDataArray = new JSONArray();
@@ -192,9 +196,21 @@ public class ExperimentJSONConverter
                 jsonObject.put(PIPELINE_PATH, pipeRoot.relativePath(f));
             }
         }
-        if (data.getDataClass() != null)
+
+        ExpDataClass dc = data.getDataClass();
+        if (dc != null)
         {
-            jsonObject.put(DATA_CLASS, serializeStandardProperties(data.getDataClass(), null));
+            Set<String> standardProperyNames = new CaseInsensitiveHashSet("rowid", ID, LSID, CREATED, CREATED_BY, MODIFIED, MODIFIED_BY, "flag", COMMENT);
+
+            Map<FieldKey, ?> row = data.getQueryRow(User.getSearchUser());
+            row.forEach((fieldKey, o) -> {
+                final String fieldName = fieldKey.getName();
+                // skip values already in the jsonObject (case-insensitively)
+                if (!standardProperyNames.contains(fieldName))
+                    jsonObject.put(fieldKey.toString(), o);
+            });
+
+            jsonObject.put(DATA_CLASS, serializeStandardProperties(dc, null));
         }
         return jsonObject;
     }
