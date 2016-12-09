@@ -253,6 +253,14 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             meta.xtype = 'labkey-booleancombo';
         }
 
+        // Integer field must be able to use commas for between option
+        if (meta.jsonType == 'int'){
+            meta.xtype = 'textfield';
+            meta.editorConfig = meta.editorConfig || {};
+            meta.editorConfig.regex = /^[0-9,]+$/;
+            meta.editorConfig.regexText = 'Must be an integer or two comma separated integers if using a Between operator.';
+        }
+
         meta.editable = true; //force read only fields to give an input
 
         //create the field
