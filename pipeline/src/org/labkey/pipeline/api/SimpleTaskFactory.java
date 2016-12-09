@@ -297,6 +297,9 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
         if (xfile.isSetUseProtocolNameAsBaseName())
             taskPath.setUseProtocolNameAsOutputBaseName(xfile.getUseProtocolNameAsBaseName());
 
+        if (xfile.isSetUseFileTypeBaseName())
+            taskPath.setUseFileTypeBaseName(xfile.getUseFileTypeBaseName());
+
         return taskPath;
     }
 

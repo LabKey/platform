@@ -207,8 +207,12 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         {
             // CONSIDER: More flexable input/output file naming -- perhaps a string expression with protocol, task, job-id available.
             // CONSIDER: Or explicitly wire outputs from an upstream task as an input to this task which would make the baseName concept less important.
-            String baseName = tp.isUseProtocolNameAsBaseName() ?
-                    _support.getProtocolName() : _support.getBaseName();
+            String baseName = _support.getBaseName();
+            if (tp.isUseProtocolNameAsBaseName())
+                baseName = _support.getProtocolName();
+            else if (tp.isUseFileTypeBaseName())
+                baseName = _support.getBaseNameForFileType(tp.getType());
+
             baseNames = Collections.singletonList(baseName);
         }
 

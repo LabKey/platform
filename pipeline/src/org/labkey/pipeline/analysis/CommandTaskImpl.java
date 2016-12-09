@@ -208,8 +208,12 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                 {
                     // CONSIDER: More flexable input/output file naming -- perhaps a string expression with protocol, task, job-id available.
                     // CONSIDER: Or explicitly wire outputs from an upstream task as an input to this task which would make the baseName concept less important.
-                    String baseName = tp.isUseProtocolNameAsBaseName() ?
-                            support.getProtocolName() : support.getBaseName();
+                    String baseName = support.getBaseName();
+                    if (tp.isUseProtocolNameAsBaseName())
+                        baseName = support.getProtocolName();
+                    else if (tp.isUseFileTypeBaseName())
+                        baseName = support.getBaseNameForFileType(tp.getType());
+
                     fileName = type.getDefaultName(baseName);
                 }
 

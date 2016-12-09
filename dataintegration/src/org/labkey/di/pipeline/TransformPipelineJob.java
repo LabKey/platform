@@ -370,6 +370,12 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public String getBaseNameForFileType(FileType fileType)
+    {
+        return getBaseName();
+    }
+
     public void setBaseName(String baseName)
     {
         _baseName = baseName;
