@@ -167,6 +167,25 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
+    <td colspan=2>Set site administrators (<%=text(bean.helpLink)%>)</td>
+</tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
+<tr>
+    <td class="labkey-form-label" valign="top"><label for="administratorContactEmail">Primary site administrator</label></td>
+    <td>
+        <select name="administratorContactEmail" id="administratorContactEmail">
+            <% List<Pair<Integer, String>> members = org.labkey.api.security.SecurityManager.getGroupMemberNamesAndIds("Administrators");
+                for (Pair<Integer,String> member : members) { %>
+            <option value="<%=h(member.getValue())%>"<%=selected(Objects.equals(member.getValue(), appProps.getAdministratorContactEmail()))%>><%=h(member.getValue())%></option>
+            <% } %>
+        </select>
+    </td>
+</tr>
+<tr>
+    <td>&nbsp;</td>
+</tr>
+
+<tr>
     <td colspan=2>Set default domain for user sign in and base server url (<%=text(bean.helpLink)%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
@@ -215,17 +234,6 @@ Click the Save button at any time to accept the current settings and continue.</
             <label>Display an example report for the selected level. <strong>No data will be submitted.</strong></label></td>
         </tr>
     </table>
-    </td>
-</tr>
-<tr>
-    <td class="labkey-form-label" valign="top"><label for="administratorContactEmail">Site administrator to use for medium level reporting</label></td>
-    <td>
-        <select name="administratorContactEmail" id="administratorContactEmail">
-        <% List<Pair<Integer, String>> members = org.labkey.api.security.SecurityManager.getGroupMemberNamesAndIds("Administrators");
-        for (Pair<Integer,String> member : members) { %>
-              <option value="<%=h(member.getValue())%>"<%=selected(Objects.equals(member.getValue(), appProps.getAdministratorContactEmail()))%>><%=h(member.getValue())%></option>
-        <% } %>
-        </select>
     </td>
 </tr>
 <tr>
