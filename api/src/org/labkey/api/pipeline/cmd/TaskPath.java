@@ -34,6 +34,7 @@ public class TaskPath
     private OutputLocation _outputLocation = OutputLocation.DEFAULT;
     private String _outputDir;
     private boolean _useProtocolNameAsOutputBaseName;
+    private boolean _useFileTypeBaseName;
 
     /**
      * Default bean constructor.
@@ -278,6 +279,20 @@ public class TaskPath
     public void setUseProtocolNameAsOutputBaseName(boolean useProtocolNameAsOutputBaseName)
     {
         _useProtocolNameAsOutputBaseName = useProtocolNameAsOutputBaseName;
+    }
+
+    /**
+     * Indicates that the base name for this input or output file will get the base name based on the file type.
+     * @return true if the base name for this input or output file should be based on the file type
+     */
+    public boolean isUseFileTypeBaseName()
+    {
+        return _useFileTypeBaseName;
+    }
+
+    public void setUseFileTypeBaseName(boolean useFileTypeBaseName)
+    {
+        _useFileTypeBaseName = useFileTypeBaseName;
     }
 
     public enum OutputLocation

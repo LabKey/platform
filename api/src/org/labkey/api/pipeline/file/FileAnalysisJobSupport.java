@@ -53,6 +53,12 @@ public interface FileAnalysisJobSupport
     String getBaseName();
 
     /**
+     * @param fileType The file type to compare
+     * @return base name for the specified FileType
+     */
+    String getBaseNameForFileType(FileType fileType);
+
+    /**
      * @return the directory in which the original input file resides.
      */
     File getDataDirectory();
