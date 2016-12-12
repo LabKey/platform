@@ -40,6 +40,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -99,7 +100,7 @@ import java.util.TreeMap;
 
 public class StudyQuerySchema extends UserSchema
 {
-    public static final boolean useSubSchemas_PROTOTYPE = false;
+    public static final String EXPERIMENTAL_STUDY_SUBSCHEMAS = "StudySubSchemas";
 
     public static final String SCHEMA_NAME = "study";
     public static final String SCHEMA_DESCRIPTION = "Contains all data related to the study, including subjects, cohorts, visits, datasets, specimens, etc.";
@@ -206,7 +207,7 @@ public class StudyQuerySchema extends UserSchema
 
     protected Set<String> getSubSchemaNames()
     {
-        if (useSubSchemas_PROTOTYPE)
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
             return new LinkedHashSet<>(Arrays.asList("Datasets","Design","Specimens"));
         return Collections.emptySet();
     }
@@ -281,7 +282,7 @@ public class StudyQuerySchema extends UserSchema
     @Override
     public Set<String> getTableNames()
     {
-        if (useSubSchemas_PROTOTYPE)
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
             return Collections.emptySet();
 
         if (_tableNames == null)
