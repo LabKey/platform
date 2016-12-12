@@ -47,8 +47,17 @@ import java.util.*;
 @Action(ActionType.SelectMetaData.class)
 public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction.Form>
 {
+    boolean _withHtmlEncoding = false;
+
+    public String filter(String s)
+    {
+        return _withHtmlEncoding ? PageFlowUtil.filter(s) : s;
+    }
+
     public ApiResponse execute(Form form, BindException errors) throws Exception
     {
+        _withHtmlEncoding = form.isWithHtmlEncoding();
+
         JSONArray respArray = new JSONArray();
         Container container = getContainer();
         User user = getUser();
@@ -56,47 +65,73 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
 
         if ("root".equals(form.getNode()))
         {
-            final Map<DbScope, JSONArray> map = new LinkedHashMap<>();
+            final Map<DbScope, LinkedHashMap<SchemaKey,JSONObject>> scopeMap = new LinkedHashMap<>();
 
             // Initialize a JSONArray for each scope; later, we'll enumerate and skip the scopes that aren't actually
             // used in this folder.  This approach ensures we order the scopes naturally (i.e., labkey scope first).
             for (DbScope scope : DbScope.getDbScopes())
-                map.put(scope, new JSONArray());
+                scopeMap.put(scope, new LinkedHashMap<>());
+
+            // get all schemas
+            Set<SchemaKey> schemaKeySet = defSchema.getUserSchemaPaths(true);
+            List<SchemaKey> schemaKeyList = new ArrayList<>(schemaKeySet);
+            schemaKeyList.sort(SchemaKey::compareTo);
 
             // return list of top-level schemas grouped by datasource
-            for (String name : defSchema.getUserSchemaNames(true))
+            for (SchemaKey schemaKey: schemaKeyList)
             {
-                QuerySchema schema = DefaultSchema.get(user, container).getSchema(name);
+                QuerySchema schema = defSchema;
+                for (String s : schemaKey.getParts())
+                {
+                    if (null != schema)
+                        schema = schema.getSchema(s);
+                    if (null != schema && schema.isHidden() && !form.isShowHidden())
+                        schema = null;
+                }
                 if (null == schema || null == schema.getDbSchema())
                     continue;
 
-                if (schema.isHidden() && !form.isShowHidden())
-                    continue;
-
                 DbScope scope = schema.getDbSchema().getScope();
-                JSONArray schemas = map.get(scope);
+                LinkedHashMap<SchemaKey,JSONObject> schemas = scopeMap.get(scope);
 
-                SchemaKey schemaName = new SchemaKey(null, schema.getName());
-                JSONObject schemaProps = getSchemaProps(schemaName, schema);
+                JSONObject schemaProps = getSchemaProps(schemaKey, schema);
+                schemas.put(schemaKey, schemaProps);
 
-                schemas.put(schemaProps);
+                // add to parent
+                if (null != schemaKey.getParent())
+                {
+                    JSONObject parentProps = schemas.get(schemaKey.getParent());
+                    if (null != parentProps)
+                    {
+                        if (null == parentProps.get("children"))
+                            parentProps.put("children",new JSONArray());
+                        ((JSONArray)(parentProps.get("children"))).put(schemaProps);
+                    }
+                }
             }
 
-            for (Map.Entry<DbScope, JSONArray> entry : map.entrySet())
+            for (Map.Entry<DbScope, LinkedHashMap<SchemaKey,JSONObject>> scopeEntry : scopeMap.entrySet())
             {
-                DbScope scope = entry.getKey();
-                JSONArray schemas = entry.getValue();
+                DbScope scope = scopeEntry.getKey();
+                LinkedHashMap<SchemaKey,JSONObject> schemas = scopeEntry.getValue();
 
-                if (schemas.length() > 0)
+                if (!schemas.isEmpty())
                 {
                     String dsName = scope.getDataSourceName();
                     JSONObject ds = new JSONObject();
                     ds.put("text", "Schemas in " + scope.getDisplayName());
                     ds.put("qtip", "Schemas in data source '" + dsName + "'");
                     ds.put("expanded", true);
-                    ds.put("children", schemas);
                     ds.put("name", dsName);
                     ds.put("dataSourceName", dsName);
+
+                    JSONArray children = new JSONArray();
+                    for (Map.Entry<SchemaKey,JSONObject> schemaEntry : schemas.entrySet())
+                    {
+                        if (null == schemaEntry.getKey().getParent())
+                            children.put(schemaEntry.getValue());
+                    }
+                    ds.put("children", children);
 
                     respArray.put(ds);
                 }
@@ -171,7 +206,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     if (builtIn.length() > 0)
                     {
                         JSONObject fldr = new JSONObject();
-                        fldr.put("text", PageFlowUtil.filter("built-in queries & tables"));
+                        fldr.put("text", "built-in queries and tables");
                         fldr.put("qtip", "Queries and tables that are part of the schema by default.");
                         fldr.put("expanded", true);
                         fldr.put("children", builtIn);
@@ -203,9 +238,9 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
     protected JSONObject getSchemaProps(SchemaKey schemaName, QuerySchema schema)
     {
         JSONObject schemaProps = new JSONObject();
-        schemaProps.put("text", PageFlowUtil.filter(schema.getName()));
-        schemaProps.put("description", PageFlowUtil.filter(schema.getDescription()));
-        schemaProps.put("qtip", PageFlowUtil.filter(schema.getDescription()));
+        schemaProps.put("text", filter(schema.getName()));
+        schemaProps.put("description", filter(schema.getDescription()));
+        schemaProps.put("qtip", filter(schema.getDescription()));
         schemaProps.put("name", schema.getName());
         schemaProps.put("schemaName", schemaName);
         schemaProps.put("hidden", schema.isHidden());
@@ -221,12 +256,12 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
         String text = qname;
         if (!qname.equalsIgnoreCase(label))
             text += " (" + label + ")";
-        qprops.put("text", PageFlowUtil.filter(text));
+        qprops.put("text", filter(text));
         qprops.put("leaf", true);
         if (null != description)
         {
             qprops.put("description", description);
-            qprops.put("qtip", PageFlowUtil.filter(description));
+            qprops.put("qtip", filter(description));
         }
         qprops.put("hidden", hidden);
         list.put(qprops);
@@ -237,6 +272,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
         private String _node;
         private SchemaKey _schemaName;
         private boolean _showHidden;
+        private boolean _withHtmlEncoding = false;
 
         public String getNode()
         {
@@ -266,6 +302,17 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
         public void setShowHidden(boolean showHidden)
         {
             _showHidden = showHidden;
+        }
+
+        public boolean isWithHtmlEncoding()
+        {
+            return _withHtmlEncoding;
+        }
+
+        /* This is a crazy way to build an API, but apparently this was an Ext workaround */
+        public void setWithHtmlEncoding(boolean withHtmlEncoding)
+        {
+            _withHtmlEncoding = withHtmlEncoding;
         }
     }
 }

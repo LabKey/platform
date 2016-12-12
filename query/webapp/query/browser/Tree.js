@@ -21,7 +21,7 @@ Ext4.define('LABKEY.query.browser.Tree', {
                 extend: 'Ext.data.Model',
                 proxy: {
                     type: 'ajax',
-                    url: LABKEY.ActionURL.buildURL('query', 'getSchemaQueryTree.api', null, {showHidden : this.showHidden}),
+                    url: LABKEY.ActionURL.buildURL('query', 'getSchemaQueryTree.api', null, {showHidden : this.showHidden, withHtmlEncoding:true}),
                     listeners: {
                         exception: function(proxy, response) {
                             if (!this._unloading) {
