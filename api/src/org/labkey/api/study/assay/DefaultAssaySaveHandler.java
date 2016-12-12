@@ -540,7 +540,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
 
                 // XXX: may need to support all possible forms of the property name: label, import aliases, mv
                 // Throws IllegalArgumentException if the sample name can't be generated
-                materialName = sampleSet.createSampleName(properties, null);
+                materialName = sampleSet.createSampleName(properties);
             }
 
             if (materialName != null && materialName.length() > 0)

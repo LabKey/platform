@@ -27,6 +27,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.StopIteratingException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -38,17 +39,28 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.Writer;
 import java.net.URISyntaxException;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * User: migra
  * Date: Dec 28, 2004
- * Time: 4:29:45 PM
+ *
+ * TODO: Use a real expression or interpolation library:
+ *  - JEXL: http://commons.apache.org/proper/commons-jexl/
+ *  - Unified Expression Language: http://juel.sourceforge.net/index.html
+ *  - Spring EL: http://docs.spring.io/spring/docs/current/spring-framework-reference/html/expressions.html
+ *  - String Template: https://github.com/antlr/stringtemplate4
  */
 public class StringExpressionFactory
 {
@@ -68,6 +80,11 @@ public class StringExpressionFactory
 
     public static StringExpression create(String str, boolean urlEncodeSubstitutions)
     {
+        return create(str, urlEncodeSubstitutions, null);
+    }
+
+    public static StringExpression create(String str, boolean urlEncodeSubstitutions, @Nullable AbstractStringExpression.NullValueBehavior nullValueBehavior)
+    {
         if (StringUtils.isEmpty(str))
             return EMPTY_STRING;
 
@@ -80,7 +97,7 @@ public class StringExpressionFactory
         if (null != expr)
             return expr;
 
-        expr = new SimpleStringExpression(str, urlEncodeSubstitutions);
+        expr = new SimpleStringExpression(str, urlEncodeSubstitutions, nullValueBehavior);
         templates.put(key, expr);
         return expr;
     }
@@ -252,35 +269,95 @@ public class StringExpressionFactory
     private static class SubstitutePart extends StringPart
     {
         protected String _value;
-        final protected SubstitutionFormat _substitutionFormat;
+
+        final protected Collection<SubstitutionFormat> _formats;
 
         public SubstitutePart(String value, boolean urlEncodeSubstitutions)
         {
-            // Does the string end with a known format function? If so, save it for later and trim it off the string.
-            int colon = value.lastIndexOf(':');
-            SubstitutionFormat format = null;
+            List<SubstitutionFormat> formats = new ArrayList<>(2);
 
-            if (colon > -1)
+            while (true)
             {
-                format = SubstitutionFormat.getFormat(value.substring(colon + 1));
+                // Does the string end with a known format function? If so, save it for later and trim it off the string.
+                int colon = value.lastIndexOf(':');
+                if (colon == -1)
+                    break;
 
-                if (null != format)
-                    value = value.substring(0, colon);
+                // TODO: Use a real expression parser
+                SubstitutionFormat format;
+                String rest = value.substring(colon + 1);
+                if (rest.startsWith("default('") && rest.endsWith("')"))
+                {
+                    String param = rest.substring("default('".length(), rest.length() - "')".length());
+                    format = new SubstitutionFormat.DefaultSubstitutionFormat(param);
+                }
+                else if (rest.startsWith("date('") && rest.endsWith("')"))
+                {
+                    String param = rest.substring("date('".length(), rest.length() - "')".length());
+                    format = createDateSubstitutionFormat(param);
+                }
+                else if (rest.startsWith("prefix('") && rest.endsWith("')"))
+                {
+                    String param = rest.substring("prefix('".length(), rest.length() - "')".length());
+                    format = new SubstitutionFormat.JoinSubstitutionFormat("", param, "");
+                }
+                else if (rest.startsWith("suffix('") && rest.endsWith("')"))
+                {
+                    String param = rest.substring("suffix('".length(), rest.length() - "')".length());
+                    format = new SubstitutionFormat.JoinSubstitutionFormat("", "", param);
+                }
+                else if (rest.startsWith("join('") && rest.endsWith("')"))
+                {
+                    // TODO: Support three parameter variation
+                    String param = rest.substring("join('".length(), rest.length() - "')".length());
+                    format = new SubstitutionFormat.JoinSubstitutionFormat(param, "", "");
+                }
+                else
+                {
+                    // No-arg substitution formats
+                    format = SubstitutionFormat.getFormat(rest);
+                }
+
+                if (format == null)
+                    break;
+
+                // Add in reverse order since we are parsing from back to front
+                formats.add(0, format);
+
+                value = value.substring(0, colon);
             }
 
             _value = value;
-            _substitutionFormat = (null != format ? format : urlEncodeSubstitutions ? SubstitutionFormat.urlEncode : SubstitutionFormat.passThrough);
+            if (formats.isEmpty())
+                _formats = Collections.singleton(urlEncodeSubstitutions ? SubstitutionFormat.urlEncode : SubstitutionFormat.passThrough);
+            else
+                _formats = Collections.unmodifiableList(formats);
         }
 
         public SubstitutePart(String value, SubstitutionFormat sf)
         {
+            this(value, Collections.singleton(sf));
+        }
+
+        public SubstitutePart(String value, Collection<SubstitutionFormat> formats)
+        {
             _value = value;
-            _substitutionFormat = sf;
+            _formats = formats;
         }
 
         public String getValue(Map map)
         {
-            Object o = map.get(_value);
+            return applyFormats(map.get(_value));
+        }
+
+        protected final String applyFormats(Object o)
+        {
+            // Allow substitution format to transform the value, including nulls
+            for (SubstitutionFormat f : _formats)
+            {
+                o = f.format(o);
+            }
+
             if (o == null)
             {
                 // If we don't have the value at all, return null instead of the empty string to communicate that we
@@ -288,8 +365,7 @@ public class StringExpressionFactory
                 return null;
             }
 
-            String s = valueOf(o);
-            return _substitutionFormat.format(s);
+            return valueOf(o);
         }
 
         @Override
@@ -299,6 +375,33 @@ public class StringExpressionFactory
         }
     }
 
+    private static SubstitutionFormat createDateSubstitutionFormat(String format)
+    {
+        return new SubstitutionFormat.DateSubstitutionFormat(createDateFormatter(format));
+    }
+
+    private static DateTimeFormatter createDateFormatter(String format)
+    {
+        switch (format)
+        {
+            case "BASIC_ISO_DATE":       return DateTimeFormatter.BASIC_ISO_DATE;
+            case "ISO_DATE":             return DateTimeFormatter.ISO_DATE;
+            case "ISO_DATE_TIME":        return DateTimeFormatter.ISO_DATE_TIME;
+            case "ISO_INSTANT":          return DateTimeFormatter.ISO_INSTANT;
+            case "ISO_LOCAL_DATE":       return DateTimeFormatter.ISO_LOCAL_DATE;
+            case "ISO_LOCAL_DATE_TIME":  return DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+            case "ISO_LOCAL_TIME":       return DateTimeFormatter.ISO_LOCAL_TIME;
+            case "ISO_OFFSET_DATE":      return DateTimeFormatter.ISO_OFFSET_DATE;
+            case "ISO_OFFSET_DATE_TIME": return DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+            case "ISO_OFFSET_TIME":      return DateTimeFormatter.ISO_OFFSET_TIME;
+            case "ISO_ORDINAL_DATE":     return DateTimeFormatter.ISO_ORDINAL_DATE;
+            case "ISO_TIME":             return DateTimeFormatter.ISO_TIME;
+            case "ISO_WEEK_DATE":        return DateTimeFormatter.ISO_WEEK_DATE;
+            case "ISO_ZONED_DATE_TIME":  return DateTimeFormatter.ISO_ZONED_DATE_TIME;
+            case "RFC_1123_DATE_TIME":   return DateTimeFormatter.RFC_1123_DATE_TIME;
+            default:                     return DateTimeFormatter.ofPattern(format);
+        }
+    }
 
     private static class RenderContextPart extends SubstitutePart
     {
@@ -423,7 +526,7 @@ public class StringExpressionFactory
                 return "";
 
             String s = Substitution.valueOf(_value).getValue((RenderContext)map);
-            return _substitutionFormat.format(s);
+            return applyFormats(s);
         }
 
         @Override
@@ -434,7 +537,7 @@ public class StringExpressionFactory
     }
 
 
-    
+
 
     public static abstract class AbstractStringExpression implements StringExpression, Cloneable
     {
@@ -455,6 +558,14 @@ public class StringExpressionFactory
         AbstractStringExpression(String source)
         {
             _source = source;
+            //MemTracker.getInstance().put(this);
+        }
+
+        AbstractStringExpression(String source, NullValueBehavior nullValueBehavior)
+        {
+            _source = source;
+            if (nullValueBehavior != null)
+                _nullValueBehavior = nullValueBehavior;
             //MemTracker.getInstance().put(this);
         }
 
@@ -494,38 +605,57 @@ public class StringExpressionFactory
         {
             ArrayList<StringPart> parts = getParsedExpression();
             if (parts.size() == 1)
-                return parts.get(0).getValue(context);
-            
-            StringBuilder builder = new StringBuilder();
-            for (StringPart part : parts)
             {
-                String value = part.getValue(context);
-                if (value == null)
+                try
                 {
-                    switch(_nullValueBehavior)
-                    {
-                        // Bail out if the context is missing one of the substitutions. Better to have no URL than
-                        // a URL that's missing parameters
-                        case NullResult:
-                            return null;
-
-                        // More lenient... just substitute blank for missing/null
-                        case ReplaceNullWithBlank:
-                            value = "";
-                            break;
-
-                        // Output "null"
-                        case OutputNull:
-                            value = "null";
-                            break;
-
-                        default:
-                            throw new IllegalStateException("Unknown behavior: " + _nullValueBehavior);
-                    }
+                    return nullFilter(parts.get(0).getValue(context));
                 }
-                builder.append(value);
+                catch (StopIteratingException e)
+                {
+                    return null;
+                }
             }
-            return builder.toString();
+
+            try
+            {
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < parts.size(); i++)
+                {
+                    StringPart part = parts.get(i);
+                    String value = nullFilter(part.getValue(context));
+                    builder.append(value);
+                }
+                return builder.toString();
+            }
+            catch (StopIteratingException e)
+            {
+                return null;
+            }
+        }
+
+        protected final String nullFilter(String value) throws StopIteratingException
+        {
+            if (value != null)
+                return value;
+
+            switch (_nullValueBehavior)
+            {
+                // Bail out if the context is missing one of the substitutions. Better to have no URL than
+                // a URL that's missing parameters
+                case NullResult:
+                    throw new StopIteratingException();
+
+                // More lenient... just substitute blank for missing/null
+                case ReplaceNullWithBlank:
+                    return "";
+
+                // Output "null"
+                case OutputNull:
+                    return "null";
+
+                default:
+                    throw new IllegalStateException("Unknown behavior: " + _nullValueBehavior);
+            }
         }
 
 
@@ -638,7 +768,12 @@ public class StringExpressionFactory
 
         SimpleStringExpression(String source, boolean urlEncodeSubstitutions)
         {
-            super(source);
+            this(source, urlEncodeSubstitutions, null);
+        }
+
+        SimpleStringExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior)
+        {
+            super(source, nullValueBehavior);
             _urlEncodeSubstitutions = urlEncodeSubstitutions;
         }
         
@@ -679,15 +814,8 @@ public class StringExpressionFactory
                 if (map.containsKey(lookupKey))
                     LOG.debug("No string substitution found for FieldKey '" + _key.encode() + "', but found String '" + lookupKey + "'.");
             }
-            if (!map.containsKey(lookupKey))
-            {
-                // If we don't have the value at all, return null instead of the empty string to communicate that we
-                // don't have the info required to evaluate this expression
-                return null;
-            }
 
-            String s = valueOf(map.get(lookupKey));
-            return _substitutionFormat.format(s);
+            return applyFormats(map.get(lookupKey));
         }
 
         @Override
@@ -936,26 +1064,148 @@ public class StringExpressionFactory
         }
 
 
-        @Test public void testEncoding()
+        @Test
+        public void testEncoding()
         {
             {
                 StringExpression se = FieldKeyStringExpression.create("${html:htmlEncode}|${pass:passThrough}|${url:urlEncode}", false, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
-                Map<Object,Object> m = new HashMap<>();
-                m.put(new FieldKey(null,"html"),"<script></script>");
-                m.put(new FieldKey(null,"pass"),"<pass>10%</pass>");
-                m.put(new FieldKey(null,"url"),"<url>10%</url>");
+                Map<Object, Object> m = new HashMap<>();
+                m.put(new FieldKey(null, "html"), "<script></script>");
+                m.put(new FieldKey(null, "pass"), "<pass>10%</pass>");
+                m.put(new FieldKey(null, "url"), "<url>10%</url>");
                 String s = se.eval(m);
-                assertEquals("&lt;script&gt;&lt;/script&gt;|<pass>10%</pass>|%3Curl%3E10%25%3C/url%3E",s);
+                assertEquals("&lt;script&gt;&lt;/script&gt;|<pass>10%</pass>|%3Curl%3E10%25%3C/url%3E", s);
             }
 
             {
                 StringExpression se = StringExpressionFactory.create("${html:htmlEncode}|${pass:passThrough}|${url:urlEncode}", false);
-                Map<Object,Object> m = new HashMap<>();
-                m.put("html","<script></script>");
-                m.put("pass","<pass>10%</pass>");
-                m.put("url","<url>10%</url>");
+                Map<Object, Object> m = new HashMap<>();
+                m.put("html", "<script></script>");
+                m.put("pass", "<pass>10%</pass>");
+                m.put("url", "<url>10%</url>");
                 String s = se.eval(m);
-                assertEquals("&lt;script&gt;&lt;/script&gt;|<pass>10%</pass>|%3Curl%3E10%25%3C/url%3E",s);
+                assertEquals("&lt;script&gt;&lt;/script&gt;|<pass>10%</pass>|%3Curl%3E10%25%3C/url%3E", s);
+            }
+
+        }
+
+        @Test
+        public void testDateFormats()
+        {
+            Date d = new GregorianCalendar(2011, 11, 03).getTime();
+            Map<Object, Object> m = new HashMap<>();
+            m.put("d", d);
+
+            {
+                StringExpression se = StringExpressionFactory.create("${d:date}", false);
+                String s = se.eval(m);
+                assertEquals("20111203", s);
+            }
+
+            {
+                StringExpression se = StringExpressionFactory.create("${d:date('yy-MM-dd')}", false);
+                String s = se.eval(m);
+                assertEquals("11-12-03", s);
+            }
+
+            {
+                StringExpression se = StringExpressionFactory.create("${d:date('& yy-MM-dd'):htmlEncode}", false);
+                String s = se.eval(m);
+                assertEquals("&amp; 11-12-03", s);
+            }
+
+            {
+                StringExpression se = StringExpressionFactory.create("${d:date('ISO_ORDINAL_DATE')}", false);
+                String s = se.eval(m);
+                assertEquals("2011-337", s);
+            }
+        }
+
+        @Test
+        public void testStringFormats()
+        {
+            Map<Object, Object> m = new HashMap<>();
+            m.put("a", "A");
+            m.put("b", " B ");
+            m.put("empty", "");
+            m.put("null", null);
+            m.put("list", Arrays.asList("a", "b", "c"));
+
+            {
+                StringExpression se = StringExpressionFactory.create(
+                        "${null:default('foo')}|${empty:default('bar')}|${a:default('blee')}", false, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
+
+                String s = se.eval(m);
+                assertEquals("foo|bar|A", s);
+            }
+
+            {
+                StringExpression se = StringExpressionFactory.create(
+                        "${b}|${b:trim}|${empty:trim}|${null:trim}", false, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
+                String s = se.eval(m);
+                assertEquals(" B |B||", s);
+            }
+
+            {
+                StringExpression se = StringExpressionFactory.create(
+                        "${a:prefix('!')}|${a:suffix('?')}|${null:suffix('#')}|${empty:suffix('*')}|${empty:default('foo'):suffix('@')}", false, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
+                String s = se.eval(m);
+                assertEquals("!A|A?|||foo@", s);
+            }
+
+            {
+                StringExpression se = StringExpressionFactory.create(
+                        "${a:join('-')}|${list:join('-')}|${list:join('_'):prefix('['):suffix(']')}|${empty:join('-')}|${null:join('-')}", false, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
+                String s = se.eval(m);
+                assertEquals("A|a-b-c|[a_b_c]||", s);
+            }
+        }
+
+        @Test
+        public void testCollectionFormats()
+        {
+            Map<Object, Object> m = new HashMap<>();
+            m.put("a", "A");
+            m.put("empty", Collections.emptyList());
+            m.put("null", null);
+            m.put("list", Arrays.asList("a", "b", "c"));
+
+            // CONSIDER: We may want to allow empty string to pass through the collection methods untouched
+            try
+            {
+                StringExpression se = StringExpressionFactory.create(
+                        "${a:first}", false, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
+
+                String s = se.eval(m);
+                fail("Expected exception");
+            }
+            catch (IllegalArgumentException e)
+            {
+                // ok
+            }
+
+            {
+                StringExpression se = StringExpressionFactory.create(
+                        "${null:first}|${empty:first}|${list:first}", false, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
+
+                String s = se.eval(m);
+                assertEquals("||a", s);
+            }
+
+            {
+                StringExpression se = StringExpressionFactory.create(
+                        "${null:rest}|${empty:rest:join('-')}|${list:rest:join('-')}", false, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
+
+                String s = se.eval(m);
+                assertEquals("||b-c", s);
+            }
+
+            {
+                StringExpression se = StringExpressionFactory.create(
+                        "${null:last}|${empty:last}|${list:last}", false, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
+
+                String s = se.eval(m);
+                assertEquals("||c", s);
             }
         }
 

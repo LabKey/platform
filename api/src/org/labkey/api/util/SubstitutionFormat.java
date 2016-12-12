@@ -15,99 +15,331 @@
  */
 package org.labkey.api.util;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
+import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
-    These are the supported formatting functions that can be used with string substitution, for example, when substituting
-    values into a details URL or the javaScriptEvents property of a JavaScriptDisplayColumnFactory. The function definitions
-    are patterned off Ext.util.Format (formats used in ExtJs templates), http://docs.sencha.com/extjs/4.2.1/#!/api/Ext.util.Format
-
-    Examples:
-
-        ${Name:htmlEncode}
-        ${MyParam:urlEncode}
-
-    We should add more functions and allow parameterized functions. As we add functions, we should use the Ext names and
-    parameters if at all possible.
-
+ *  These are the supported formatting functions that can be used with string substitution, for example, when substituting
+ *  values into a details URL or the javaScriptEvents property of a JavaScriptDisplayColumnFactory. The function definitions
+ *  are patterned off Ext.util.Format (formats used in ExtJs templates), http://docs.sencha.com/extjs/4.2.1/#!/api/Ext.util.Format
+ *
+ *  Examples:
+ *  <pre>
+ *  ${Name:htmlEncode}
+ *  ${MyParam:urlEncode}
+ *
+ *  ${MyParam:default('foo')}
+ *
+ *  ${MyDate:date}
+ *  ${MyDate:date('yy-MM d')}
+ *
+ *  ${MyParam:trim}
+ *
+ *  ${MyParam:prefix('-')}
+ *  ${MyParam:suffix('-')}
+ *  ${MyParam:join('-')}
+ *
+ *  ${MyParam:first}
+ *  ${MyParam:rest}
+ *  ${MyParam:last}
+ *
+ * </pre>
+ * We should add more functions and allow parametrized functions. As we add functions, we should use the Ext names and
+ * parameters if at all possible.
+ *
  * User: adam
  * Date: 6/20/13
- * Time: 8:43 AM
-
-*/
-public enum SubstitutionFormat
+ */
+public class SubstitutionFormat
 {
-    passThrough("none")
+    static final SubstitutionFormat passThrough = new SubstitutionFormat("passThrough", "none") {
+        @Override
+        public Object format(Object value)
         {
-            @Override
-            public String format(String value)
-            {
-                return value;
-            }
-        },
-    htmlEncode("html")
-        {
-            @Override
-            public String format(String value)
-            {
-                return PageFlowUtil.filter(value);
-            }
-        },
-    jsString("jsString")
-        {
-            @Override
-            public String format(String value)
-            {
-                return PageFlowUtil.jsString(value);
-            }
-        },
-    urlEncode("path")
-        {
-            @Override
-            public String format(String value)
-            {
-                return PageFlowUtil.encodePath(value);
-            }
-        },
-    encodeURIComponent("uricomponent")  // like javascript encodeURIComponent
-        {
-            @Override
-            public String format(String value)
-            {
-                return PageFlowUtil.encodeURIComponent(value);
-            }
-        },
-    encodeURI("uri")  // like javascript encodeURI
-        {
-            @Override
-            public String format(String value)
-            {
-                return PageFlowUtil.encodeURI(value);
-            }
-        };
+            return value;
+        }
+    };
 
+    static final SubstitutionFormat htmlEncode = new SubstitutionFormat("htmlEncode", "html")
+    {
+        @Override
+        public String format(Object value)
+        {
+            if (value == null)
+                return null;
+            return PageFlowUtil.filter(value);
+        }
+    };
+
+    static final SubstitutionFormat jsString = new SubstitutionFormat("jsString", "jsString")
+    {
+        @Override
+        public String format(Object value)
+        {
+            if (value == null)
+                return null;
+            return PageFlowUtil.jsString(String.valueOf(value));
+        }
+    };
+
+    static final SubstitutionFormat urlEncode = new SubstitutionFormat("urlEncode", "path")
+    {
+        @Override
+        public String format(Object value)
+        {
+            if (value == null)
+                return null;
+            return PageFlowUtil.encodePath(String.valueOf(value));
+        }
+    };
+
+    // like javascript encodeURIComponent
+    static final SubstitutionFormat encodeURIComponent = new SubstitutionFormat("encodeURIComponent", "uricomponent")
+    {
+        @Override
+        public String format(Object value)
+        {
+            if (value == null)
+                return null;
+            return PageFlowUtil.encodeURIComponent(String.valueOf(value));
+        }
+    };
+
+    // like javascript encodeURI
+    static final SubstitutionFormat encodeURI = new SubstitutionFormat("encodeURI", "uri")
+    {
+        @Override
+        public String format(Object value)
+        {
+            if (value == null)
+                return null;
+            return PageFlowUtil.encodeURI(String.valueOf(value));
+        }
+    };
+
+    static final SubstitutionFormat first = new SubstitutionFormat("first")
+    {
+        @Override
+        public Object format(Object value)
+        {
+            if (value == null)
+                return null;
+
+            if (!(value instanceof Collection))
+                throw new IllegalArgumentException("Expected collection: " + value);
+
+            Collection<?> c = (Collection)value;
+            return c.stream().findFirst().orElse(null);
+        }
+    };
+
+    static final SubstitutionFormat rest = new SubstitutionFormat("rest")
+    {
+        @Override
+        public Object format(Object value)
+        {
+            if (value == null)
+                return null;
+
+            if (!(value instanceof Collection))
+                throw new IllegalArgumentException("Expected collection: " + value);
+
+            Collection<?> c = (Collection)value;
+            return c.stream().skip(1).collect(Collectors.toList());
+        }
+    };
+
+    static final SubstitutionFormat last = new SubstitutionFormat("last")
+    {
+        @Override
+        public Object format(Object value)
+        {
+            if (value == null)
+                return null;
+
+            if (!(value instanceof Collection))
+                throw new IllegalArgumentException("Expected collection: " + value);
+
+            Collection<?> c = (Collection)value;
+            return c.stream().reduce((a, b) -> b).orElse(null);
+        }
+    };
+
+    static final SubstitutionFormat trim = new SubstitutionFormat("trim")
+    {
+        @Override
+        public String format(Object value)
+        {
+            if (value == null)
+                return null;
+
+            if (!(value instanceof String))
+                throw new IllegalArgumentException("Expected string: " + value);
+
+            return ((String)value).trim();
+        }
+    };
+
+    public static class DefaultSubstitutionFormat extends SubstitutionFormat
+    {
+        private final String _default;
+
+        public DefaultSubstitutionFormat(@NotNull String def)
+        {
+            super("default");
+            _default = def;
+        }
+
+        @Override
+        public Object format(Object value)
+        {
+            if (value == null || "".equals(value))
+                return _default;
+
+            return value;
+        }
+    }
+
+    public static class JoinSubstitutionFormat extends SubstitutionFormat
+    {
+        private final String _sep;
+        private final String _prefix;
+        private final String _suffix;
+
+        public JoinSubstitutionFormat(@NotNull String sep)
+        {
+            super("join");
+            _sep = sep;
+            _prefix = "";
+            _suffix = "";
+        }
+
+        public JoinSubstitutionFormat(@NotNull String sep, @NotNull String prefix, @NotNull String suffix)
+        {
+            super("join");
+            _sep = sep;
+            _prefix = prefix;
+            _suffix = suffix;
+        }
+
+        @Override
+        public String format(Object value)
+        {
+            if (value == null)
+                return null;
+
+            Stream<String> ss;
+            if (value instanceof Collection)
+            {
+                Collection<?> c = (Collection)value;
+                if (c.isEmpty())
+                    return "";
+
+                ss = c.stream().map(String::valueOf);
+            }
+            else
+            {
+                String s = String.valueOf(value);
+                if (s.length() == 0)
+                    return "";
+
+                ss = Stream.of(s);
+            }
+
+            return ss.collect(Collectors.joining(_sep, _prefix, _suffix));
+        }
+    }
+
+    public static class DateSubstitutionFormat extends SubstitutionFormat
+    {
+        // NOTE: We use DateTimeFormatter since it is thread-safe unlike SimpleDateFormat
+        final DateTimeFormatter _format;
+
+        public DateSubstitutionFormat(@NotNull DateTimeFormatter format)
+        {
+            super("date");
+            _format = format;
+        }
+
+        @Override
+        public String format(Object value)
+        {
+            if (value == null)
+                return null;
+
+            TemporalAccessor temporal;
+            if (value instanceof TemporalAccessor)
+                temporal = (TemporalAccessor) value;
+            else if (value instanceof Date)
+                temporal = LocalDateTime.ofInstant(((Date)value).toInstant(), ZoneId.systemDefault());
+            else
+                throw new IllegalArgumentException("Expected date: " + value);
+
+            return _format.format(temporal);
+        }
+    }
+
+    static final SubstitutionFormat date = new DateSubstitutionFormat(DateTimeFormatter.BASIC_ISO_DATE.withZone(ZoneId.systemDefault()));
+
+
+    final String _name;
     final String _shortName;
 
     SubstitutionFormat(String name)
     {
-        _shortName = name;
+        _name = name;
+        _shortName = null;
     }
 
-    public abstract String format(String value);
+    SubstitutionFormat(String name, String shortName)
+    {
+        _name = name;
+        _shortName = shortName;
+    }
+
+    public String name()
+    {
+        return _name;
+    }
+
+    public Object format(Object value)
+    {
+        return value;
+    }
 
     private final static Map<String, SubstitutionFormat> _map = new CaseInsensitiveHashMap<>();
 
+    private static void register(SubstitutionFormat fmt)
+    {
+        _map.put(fmt.name(), fmt);
+        if (fmt._shortName != null)
+            _map.put(fmt._shortName, fmt);
+    }
+
     static
     {
-        for (SubstitutionFormat format : SubstitutionFormat.values())
-        {
-            _map.put(format.name(), format);
-            if (null != format._shortName)
-                _map.put(format._shortName, format);
-        }
+        register(SubstitutionFormat.date);
+        register(SubstitutionFormat.encodeURI);
+        register(SubstitutionFormat.encodeURIComponent);
+        register(SubstitutionFormat.first);
+        register(SubstitutionFormat.htmlEncode);
+        register(SubstitutionFormat.jsString);
+        register(SubstitutionFormat.last);
+        register(SubstitutionFormat.passThrough);
+        register(SubstitutionFormat.rest);
+        register(SubstitutionFormat.trim);
+        register(SubstitutionFormat.urlEncode);
     }
 
     // More lenient than SubstitutionFormat.valueOf(), returns null for non-match

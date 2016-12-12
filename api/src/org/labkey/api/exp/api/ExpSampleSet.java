@@ -19,12 +19,14 @@ package org.labkey.api.exp.api;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.util.StringExpression;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A collection of {@link ExpMaterial}, with a custom {@link Domain} for additional properties.
@@ -93,11 +95,23 @@ public interface ExpSampleSet extends ExpObject
     @Nullable
     StringExpression getParsedNameExpression();
 
-    /**
-     * Generate a sample name from the context map.
-     * If a name can't be generated, an IllegalArgumentException is thrown.
-     */
-    String createSampleName(@NotNull Map<String, Object> context, @Nullable Integer indexInGroup);
+    void createSampleNames(@NotNull List<Map<String, Object>> maps) throws ExperimentException;
+
+    void createSampleNames(@NotNull List<Map<String, Object>> maps,
+                           @Nullable StringExpression expr,
+                           @Nullable Set<ExpData> parentDatas,
+                           @Nullable Set<ExpMaterial> parentSamples,
+                           boolean skipDuplicates,
+                           boolean addUniqueSuffixForDuplicates)
+            throws ExperimentException;
+
+    String createSampleName(@NotNull Map<String, Object> rowMap);
+
+    String createSampleName(@NotNull Map<String, Object> rowMap,
+                            @Nullable Map<String, Object> batchContext,
+                            @Nullable StringExpression expr,
+                            @Nullable Set<ExpData> parentDatas,
+                            @Nullable Set<ExpMaterial> parentSamples);
 
     void setDescription(String s);
 
