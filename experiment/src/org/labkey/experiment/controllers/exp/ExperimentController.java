@@ -63,7 +63,6 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
@@ -135,7 +134,6 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.MapLoader;
-import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresLogin;
@@ -4855,6 +4853,12 @@ public class ExperimentController extends SpringActionController
                         continue;
                     }
 
+                    if (m.getSampleSet() == null)
+                    {
+                        errors.reject(ERROR_MSG, "Material input is not a member of a SampleSet");
+                        continue;
+                    }
+
                     // TODO: check within scope
 
                     String role = in.role;
@@ -4891,6 +4895,12 @@ public class ExperimentController extends SpringActionController
                     if (d == null)
                     {
                         errors.reject(ERROR_MSG, "Data input lsid or rowId required");
+                        continue;
+                    }
+
+                    if (d.getDataClass() == null)
+                    {
+                        errors.reject(ERROR_MSG, "Data input is not a member of a DataClass");
                         continue;
                     }
 
@@ -4949,6 +4959,16 @@ public class ExperimentController extends SpringActionController
                         {
                             SamplesSchema schema = new SamplesSchema(getUser(), getContainer());
                             return schema.getTable(outSampleSet.getName());
+                        }
+
+                        @Override
+                        public Pair<List<Map<String, Object>>, List<String>> prepareRows()
+                                throws ExperimentException
+                        {
+                            Pair<List<Map<String, Object>>, List<String>> pair = super.prepareRows();
+                            List<Map<String, Object>> rows = pair.first;
+                            outSampleSet.createSampleNames(rows, null, dataInputs.keySet(), materialInputs.keySet(), false, true);
+                            return pair;
                         }
 
                         @Override
@@ -5030,6 +5050,7 @@ public class ExperimentController extends SpringActionController
             }
 
             public Pair<List<Map<String, Object>>, List<String>> prepareRows()
+                    throws ExperimentException
             {
                 List<Map<String, Object>> rows = new ArrayList<>();
                 List<String> roles = new ArrayList<>();
@@ -5063,7 +5084,7 @@ public class ExperimentController extends SpringActionController
 
             protected abstract List<T> getExpObject(List<Map<String, Object>> insertedRows);
 
-            public Map<T, String> createOutputs() throws BatchValidationException, DuplicateKeyException, SQLException, QueryUpdateServiceException
+            public Map<T, String> createOutputs() throws ExperimentException, BatchValidationException, DuplicateKeyException, SQLException, QueryUpdateServiceException
             {
                 Pair<List<Map<String, Object>>, List<String>> pair = prepareRows();
                 List<Map<String, Object>> rows = pair.first;

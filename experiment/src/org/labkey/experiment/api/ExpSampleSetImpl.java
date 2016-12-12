@@ -28,6 +28,10 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ProtocolImplementation;
@@ -44,11 +48,20 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleSet
 {
@@ -258,36 +271,239 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             }
 
             if (s != null)
-                _parsedNameExpression = StringExpressionFactory.create(s);
+                _parsedNameExpression = StringExpressionFactory.create(s, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
         }
 
         return _parsedNameExpression;
     }
 
-    @Override
-    public String createSampleName(@NotNull Map<String, Object> context, @Nullable Integer indexInGroup)
+    /**
+     * Create the name expression context shared for the entire batch of samples.
+     */
+    private Map<String, Object> createBatchExpressionContext()
     {
-        context = new CaseInsensitiveHashMap<>(context);
+        Map<String, Object> map = new CaseInsensitiveHashMap<>();
 
+        map.put("BatchRandomId", String.valueOf(new Random().nextInt()).substring(1,5));
+        map.put("Now", new Date());
+
+        return map;
+    }
+
+    @Override
+    public void createSampleNames(@NotNull List<Map<String, Object>> maps) throws ExperimentException
+    {
+        createSampleNames(maps, null, null, null, false, false);
+    }
+
+    @Override
+    public void createSampleNames(@NotNull List<Map<String, Object>> maps,
+                                  @Nullable StringExpression expr,
+                                  @Nullable Set<ExpData> parentDatas,
+                                  @Nullable Set<ExpMaterial> parentSamples,
+                                  boolean skipDuplicates,
+                                  boolean addUniqueSuffixForDuplicates)
+            throws ExperimentException
+    {
+        if (expr == null)
+            expr = getParsedNameExpression();
+
+        Map<String, Object> batchExpressionContext = createBatchExpressionContext();
+
+        Map<String, Integer> newNames = new CaseInsensitiveHashMap<>();
+        Map<String, Map<String, Object>> firstRowForName = new CaseInsensitiveHashMap<>();
+        int i = 0;
+        ListIterator<Map<String, Object>> li = maps.listIterator();
+        while (li.hasNext())
+        {
+            i++;
+            Map<String, Object> map = li.next();
+            String name;
+            try
+            {
+                name = createSampleName(map, batchExpressionContext, expr, parentDatas, parentSamples);
+            }
+            catch (IllegalArgumentException e)
+            {
+                // Failed to generate a name due to some part of the expression not in the row
+                if (hasNameExpression())
+                    throw new ExperimentException("Failed to generate name for Sample on row " + i);
+                else if (hasNameAsIdCol())
+                    throw new ExperimentException("Name is required for Sample on row " + i);
+                else
+                    throw new ExperimentException("All id columns are required for Sample on row " + i);
+            }
+
+            if (newNames.containsKey(name))
+            {
+                if (addUniqueSuffixForDuplicates)
+                {
+                    // Update the first occurrence of the name to include the unique suffix
+                    Map<String, Object> first = firstRowForName.get(name);
+                    if (first != null)
+                    {
+                        first.put("Name", name + ".1");
+                        firstRowForName.remove(name);
+                    }
+
+                    // Add a unique suffix to the end of the name.
+                    int count = newNames.get(name) + 1;
+                    newNames.put(name, count);
+                    name += "." + count;
+                }
+                else if (skipDuplicates)
+                {
+                    // Issue 23384: SampleSet: import should ignore duplicate rows when ignore duplicates is selected
+                    li.remove();
+                    continue;
+                }
+                else
+                    throw new ExperimentException("Duplicate material '" + name + "' on row " + i);
+            }
+            else
+            {
+                newNames.put(name, 1);
+
+                // If we generating unique names, remember the first time we see each name
+                if (addUniqueSuffixForDuplicates)
+                    firstRowForName.put(name, map);
+            }
+
+            map.put("Name", name);
+        }
+    }
+
+    @Override
+    public String createSampleName(@NotNull Map<String, Object> rowMap)
+    {
+        return createSampleName(rowMap, null, null, null, null);
+    }
+
+    @Override
+    public String createSampleName(@NotNull Map<String, Object> rowMap,
+                                   @Nullable Map<String, Object> batchContext,
+                                   @Nullable StringExpression expr,
+                                   @Nullable Set<ExpData> parentDatas,
+                                   @Nullable Set<ExpMaterial> parentSamples)
+    {
         // If a name is already provided, just use it as is
-        if (context.get("name") != null)
-            return String.valueOf(context.get("name"));
+        if (rowMap.get("name") != null)
+            return String.valueOf(rowMap.get("name"));
 
-        StringExpression expr = getParsedNameExpression();
+        if (expr == null)
+            expr = getParsedNameExpression();
         if (expr == null)
             return null;
 
-        // Add extra context variables
-        // CONSIDER: Container.RowId, Container.Name ?
-        if (indexInGroup != null)
-            context.put("IndexInGroup", indexInGroup);
+        if (batchContext == null)
+            batchContext = createBatchExpressionContext();
 
-        String name = expr.eval(context);
+        // Add extra context variables
+        Map<String, Object> ctx = additionalContext(rowMap, batchContext, parentDatas, parentSamples);
+
+        String name = expr.eval(ctx);
         if (name == null || name.length() == 0)
             throw new IllegalArgumentException("Can't create new sample name in sample set '" + getName() + "' using the name expression: " + expr.getSource());
 
         return name;
     }
+
+    private Map<String, Object> additionalContext(@NotNull Map<String, Object> rowMap, @NotNull Map<String, Object> batchContext, Set<ExpData> parentDatas, Set<ExpMaterial> parentSamples)
+    {
+        StringExpression expr = getParsedNameExpression();
+        assert expr != null;
+        String exprSource = expr.getSource().toLowerCase();
+
+        Map<String, Object> ctx = new CaseInsensitiveHashMap<>();
+        ctx.putAll(batchContext);
+        ctx.put("RandomId", String.valueOf(new Random().nextInt()).substring(1,5));
+        ctx.putAll(rowMap);
+
+        // UploadSamplesHelper uses propertyURIs in the rowMap -- add short column names to the map
+        Domain d = getType();
+        if (d != null)
+        {
+            for (DomainProperty dp : d.getProperties())
+            {
+                PropertyDescriptor pd = dp.getPropertyDescriptor();
+                if (rowMap.containsKey(pd.getPropertyURI()))
+                    ctx.put(pd.getName(), rowMap.get(pd.getPropertyURI()));
+            }
+        }
+
+        // If needed, add the parent names to the replacement map
+        // TODO: Expose the set of expression variables instead of relying on the source
+        if (exprSource.contains("${inputs") || exprSource.contains("${datainputs") || exprSource.contains("${materialinputs"))
+        {
+            Set<String> allInputs = new TreeSet<>();
+            Set<String> dataInputs = new TreeSet<>();
+            Set<String> materialInputs = new TreeSet<>();
+
+            if (parentDatas != null)
+            {
+                parentDatas.stream().map(ExpObject::getName).forEachOrdered(parentName -> {
+                    allInputs.add(parentName);
+                    dataInputs.add(parentName);
+                });
+            }
+
+            if (parentSamples != null)
+            {
+                parentSamples.stream().map(ExpObject::getName).forEachOrdered(parentName -> {
+                    allInputs.add(parentName);
+                    materialInputs.add(parentName);
+                });
+            }
+
+            for (String colName : rowMap.keySet())
+            {
+                Object value = rowMap.get(colName);
+                if (value == null)
+                    continue;
+
+                if (colName.startsWith(UploadSamplesHelper.DATA_INPUT_PARENT))
+                {
+                    parentNames(value, colName).forEach(parentName -> {
+                        allInputs.add(parentName);
+                        dataInputs.add(parentName);
+                    });
+                }
+                else if (colName.startsWith(UploadSamplesHelper.MATERIAL_INPUT_PARENT))
+                {
+                    parentNames(value, colName).forEach(parentName -> {
+                        allInputs.add(parentName);
+                        materialInputs.add(parentName);
+                    });
+                }
+            }
+
+            ctx.put("Inputs", allInputs);
+            ctx.put("DataInputs", dataInputs);
+            ctx.put("MaterialInputs", materialInputs);
+        }
+
+        return ctx;
+    }
+
+    private Collection<String> parentNames(Object value, String parentColName)
+    {
+        if (value instanceof String)
+        {
+            return Arrays.stream(((String)value).split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
+        }
+        else if (value instanceof Collection)
+        {
+            Collection<?> c = (Collection)value;
+            return c.stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.toList());
+        }
+        throw new IllegalStateException("Expected string or collection for '" + parentColName + "': " + value);
+    }
+
 
     public void setDescription(String s)
     {

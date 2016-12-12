@@ -22,7 +22,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -69,6 +68,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -78,6 +78,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class UploadSamplesHelper
 {
@@ -288,7 +289,9 @@ public class UploadSamplesHelper
 
             Set<PropertyDescriptor> descriptors = getPropertyDescriptors(domain, maps);
 
-            generateUniqueNamesAndCheckForDupes(maps, descriptors);
+            _sampleSet.createSampleNames(maps, null, null, null,
+                    _form.getInsertUpdateChoiceEnum() == InsertUpdateChoice.insertIgnore,
+                    _form.isAddUniqueSuffixForDuplicateNames());
 
             Set<String> reusedMaterialLSIDs = Collections.emptySet();
             if (!createdSampleSet)
@@ -436,83 +439,6 @@ public class UploadSamplesHelper
         return reusedMaterialLSIDs;
     }
 
-    /**
-     * Generate a name for the sample row and check for any duplicates along the way.
-     * If generating a name fails, an ExperimentException is thrown.
-     */
-    private void generateUniqueNamesAndCheckForDupes(List<Map<String, Object>> maps, Set<PropertyDescriptor> descriptors) throws ExperimentException
-    {
-        assert _sampleSet != null;
-        InsertUpdateChoice insertUpdate = _form.getInsertUpdateChoiceEnum();
-        Map<String, Integer> newNames = new CaseInsensitiveHashMap();
-        Map<String, Map<String, Object>> firstRowForName = new CaseInsensitiveHashMap<>();
-        int i = 0;
-        ListIterator<Map<String, Object>> li = maps.listIterator();
-        while (li.hasNext())
-        {
-            i++;
-            Map<String, Object> map = li.next();
-            String name;
-            try
-            {
-                name = decideName(map, descriptors);
-            }
-            catch (IllegalArgumentException e)
-            {
-                // Failed to generate a name due to some part of the expression not in the row
-                if (_sampleSet.hasNameExpression())
-                {
-                    throw new ExperimentException("Failed to generate name for Sample on row " + i);
-                }
-                else if (_sampleSet.hasNameAsIdCol())
-                {
-                    throw new ExperimentException("Name is required for Sample on row " + i);
-                }
-                else
-                {
-                    throw new ExperimentException("All id columns are required for Sample on row " + i);
-                }
-            }
-
-            if (newNames.containsKey(name))
-            {
-                if (_form.isAddUniqueSuffixForDuplicateNames())
-                {
-                    // Update the first occurrence of the name to include the unique suffix
-                    Map<String, Object> first = firstRowForName.get(name);
-                    if (first != null)
-                    {
-                        first.put("Name", name + ".1");
-                        firstRowForName.remove(name);
-                    }
-
-                    // Add a unique suffix to the end of the name.
-                    int count = newNames.get(name) + 1;
-                    newNames.put(name, count);
-                    name += "." + count;
-                }
-                else if (insertUpdate == InsertUpdateChoice.insertIgnore)
-                {
-                    // Issue 23384: SampleSet: import should ignore duplicate rows when ignore duplicates is selected
-                    li.remove();
-                    continue;
-                }
-                else
-                    throw new ExperimentException("Duplicate material '" + name + "' on row " + i);
-            }
-            else
-            {
-                newNames.put(name, 1);
-
-                // If we generating unique names, remember the first time we see each name
-                if (_form.isAddUniqueSuffixForDuplicateNames())
-                    firstRowForName.put(name, map);
-            }
-
-            map.put("Name", name);
-        }
-    }
-
     private boolean isNameHeader(String name)
     {
         return name.equalsIgnoreCase(ExpMaterialTable.Column.Name.name());
@@ -595,19 +521,6 @@ public class UploadSamplesHelper
         {
             source.setParentCol(parentColPropertyURI);
         }
-    }
-
-    // TODO: For multi-row inserts, add index in group (row number)
-    private String decideName(Map<String, Object> rowMap, Set<PropertyDescriptor> descriptors)
-    {
-        assert _sampleSet.getParsedNameExpression() != null;
-        Map<String, Object> ctx = new CaseInsensitiveHashMap<>(rowMap);
-        for (PropertyDescriptor pd : descriptors)
-        {
-            if (rowMap.containsKey(pd.getPropertyURI()))
-                ctx.put(pd.getName(), rowMap.get(pd.getPropertyURI()));
-        }
-        return _sampleSet.createSampleName(ctx, null);
     }
 
     public List<ExpMaterial> insertTabDelimitedMaterial(List<Map<String, Object>> rows, List<PropertyDescriptor> descriptors, MaterialSource source, Set<String> reusedMaterialLSIDs, Set<String> inputOutputColumns)
@@ -779,10 +692,10 @@ public class UploadSamplesHelper
         Map<ExpMaterial, String> childMaterials = new HashMap<>();
         Map<ExpData, String> childData = new HashMap<>();
 
-        for (Pair<String, String> parentNameValuePair : parentNames)
+        for (Pair<String, String> pair : parentNames)
         {
-            String parentColName = parentNameValuePair.first;
-            String parentValue = parentNameValuePair.second;
+            String parentColName = pair.first;
+            String parentValue = pair.second;
 
             // TODO: Avoid looking up the SampleSet and DataClass on every iteration
             String[] parts = parentColName.split("\\.|/");
@@ -902,22 +815,51 @@ public class UploadSamplesHelper
             // DataInputs/<data class name> or MaterialInputs/<sample set name>. Either / or . works as a delimiter
 
             // collect pairs of parent column names and parent values
-            Set<Pair<String, String>> parentNames = new HashSet<>();
+            Set<Pair<String, String>> parentValues = new HashSet<>();
             for (String parentColName : parentColumns)
             {
-                String value = row.get(parentColName) == null ? null : row.get(parentColName).toString();
-                if (value == null)
+                Object value = row.get(parentColName);
+                Set<Pair<String, String>> values = parentColumnAndNamePairs(value, parentColName);
+                if (values == null)
                     continue;
 
-                parentNames.addAll(Arrays.stream(value.split(","))
-                        .map(String::trim)
-                        .filter(s -> !s.isEmpty())
-                        .map(s -> Pair.of(parentColName, s))
-                        .collect(Collectors.toSet()));
+                parentValues.addAll(values);
             }
 
-            return resolveInputsAndOutputs(user, c, parentNames, source);
+            return resolveInputsAndOutputs(user, c, parentValues, source);
         }
+    }
+
+    private Set<Pair<String, String>> parentColumnAndNamePairs(Object value, String parentColName)
+    {
+        return parentNames(value, parentColName)
+                .map(o -> Pair.of(parentColName, o))
+                .collect(Collectors.toSet());
+    }
+
+    public static Stream<String> parentNames(Object value, String parentColName)
+    {
+        if (value == null)
+            return Stream.empty();
+
+        Stream<String> values;
+        if (value instanceof String)
+        {
+            values = Arrays.stream(((String)value).split(","));
+        }
+        else if (value instanceof Collection)
+        {
+            Collection<?> coll = (Collection)value;
+            values = coll.stream().map(String::valueOf);
+        }
+        else
+        {
+            throw new IllegalStateException("Expected string or collection for '" + parentColName + "': " + value);
+        }
+
+        return values
+                .map(String::trim)
+                .filter(s -> s.isEmpty());
     }
 
     // CONSIDER: This method shouldn't update the domain to make the property into a lookup..

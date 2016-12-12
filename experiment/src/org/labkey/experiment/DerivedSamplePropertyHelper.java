@@ -148,7 +148,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
             {
                 context.put(entry.getKey().getName(), entry.getValue());
             }
-            return _sampleSet.createSampleName(context, null);
+            return _sampleSet.createSampleName(context);
         }
         else
         {

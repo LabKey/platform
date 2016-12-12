@@ -22,6 +22,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -675,7 +676,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 step6 = DataIteratorBuilder.wrap(st);
             }
 
-            DataIteratorBuilder step7 = new SearchIndexIteratorBuilder(step6);
+            DataIteratorBuilder step7 = new SearchIndexIteratorBuilder(step6); // may need to add this after the aliases are set
 
             return LoggingDataIterator.wrap(step7.getDataIterator(context));
         }
@@ -1058,14 +1059,34 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             if (!_parentCols.isEmpty())
             {
                 String lsid = (String) get(_lsidCol);
-                Set<Pair<String,String>> allParts = new HashSet<>();
+                Set<Pair<String, String>> allParts = new HashSet<>();
                 for (Integer parentCol : _parentCols.keySet())
                 {
-                    String parent = (String) get(parentCol);
-                    if (parent != null)
+                    Object o = get(parentCol);
+                    if (o != null)
                     {
+                        Collection<String> parentNames;
+                        if (o instanceof String)
+                        {
+                            parentNames = Arrays.asList(((String) o).split(","));
+                        }
+                        else if (o instanceof JSONArray)
+                        {
+                            parentNames = Arrays.stream(((JSONArray) o).toArray()).map(String::valueOf).collect(Collectors.toSet());
+                        }
+                        else if (o instanceof Collection)
+                        {
+                            Collection<?> c = ((Collection)o);
+                            parentNames = c.stream().map(String::valueOf).collect(Collectors.toSet());
+                        }
+                        else
+                        {
+                            getErrors().addRowError(new ValidationException("Expected comma separated list or a JSONArray of parent names: " + o, _parentCols.get(parentCol)));
+                            continue;
+                        }
+
                         String parentColName = _parentCols.get(parentCol);
-                        Set<Pair<String, String>> parts = Arrays.stream(parent.split(","))
+                        Set<Pair<String, String>> parts = parentNames.stream()
                                 .map(String::trim)
                                 .filter(s -> !s.isEmpty())
                                 .map(s -> Pair.of(parentColName, s))
@@ -1077,12 +1098,15 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 _parentNames.put(lsid, allParts);
             }
 
+            if (getErrors().hasErrors())
+                return hasNext;
+
             if (!hasNext)
             {
                 try
                 {
                     List<SimpleRunRecord> runRecords = new ArrayList<>();
-                    for (Map.Entry<String, Set<Pair<String,String>>> entry : _parentNames.entrySet())
+                    for (Map.Entry<String, Set<Pair<String, String>>> entry : _parentNames.entrySet())
                     {
                         String lsid = entry.getKey();
                         Set<Pair<String, String>> parentNames = entry.getValue();
