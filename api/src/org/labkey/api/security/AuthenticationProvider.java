@@ -129,11 +129,10 @@ public interface AuthenticationProvider
 
     interface DisableLoginProvider extends AuthenticationProvider
     {
-        boolean isEnabled();
+        boolean isEnabledForUser(String id);
 
         /**
-         *
-         * @param id
+         * @param id user email string
          * @return Login delay in milliseconds
          * @throws LoginDisabledException
          */
@@ -147,7 +146,7 @@ public interface AuthenticationProvider
          */
         void addUserDelay(HttpServletRequest request, String id, int addCount);
 
-        void resetUserDelay(HttpServletRequest request, String id);
+        void resetUserDelay(String id);
     }
 
     class AuthenticationResponse

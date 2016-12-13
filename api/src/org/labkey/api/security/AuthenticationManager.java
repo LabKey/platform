@@ -382,10 +382,10 @@ public class AuthenticationManager
         return AuthenticationProviderCache.getProvider(ResetPasswordProvider.class, name);
     }
 
-    public static @Nullable DisableLoginProvider getEnabledDisableLoginProvider()
+    public static @Nullable DisableLoginProvider getEnabledDisableLoginProviderForUser(String id)
     {
         for (DisableLoginProvider provider : AuthenticationProviderCache.getProviders(DisableLoginProvider.class))
-            if (provider.isEnabled())
+            if (provider.isEnabledForUser(id))
                 return provider;
 
         return null;
@@ -510,7 +510,7 @@ public class AuthenticationManager
     /** avoid spamming the audit log **/
     private static Cache<String, String> authMessages = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(10), "Authentication Messages");
 
-    private static void addAuditEvent(@NotNull User user, HttpServletRequest request, String msg)
+    public static void addAuditEvent(@NotNull User user, HttpServletRequest request, String msg)
     {
         String key = user.getUserId() + "/" + ((null==request||null==request.getLocalAddr())?"":request.getLocalAddr());
         String prevMessage = authMessages.get(key);
@@ -769,7 +769,7 @@ public class AuthenticationManager
 
     private static long getUserLoginDelay(String id) throws LoginDisabledException
     {
-        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProvider();
+        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProviderForUser(id);
         if (provider != null)
             return provider.getUserDelay(id);
         return getDefaultUserLoginDelay(id);
@@ -797,22 +797,22 @@ public class AuthenticationManager
 
             addUserLoginDelay(request, id);
         }
-        else
+        else if (result.getStatus() ==  AuthenticationStatus.Success)
         {
-            resetModuleUserLoginDelay(request, id);
+            resetModuleUserLoginDelay(id);
         }
     }
 
-    private static void resetModuleUserLoginDelay(HttpServletRequest request, String id)
+    private static void resetModuleUserLoginDelay(String id)
     {
-        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProvider();
+        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProviderForUser(id);
         if (provider != null)
-            provider.resetUserDelay(request, id);
+            provider.resetUserDelay(id);
     }
 
     private static void addUserLoginDelay(HttpServletRequest request, String id)
     {
-        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProvider();
+        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProviderForUser(id);
         if (provider != null)
             provider.addUserDelay(request, id, 1);
         else
