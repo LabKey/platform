@@ -62,9 +62,9 @@ public class DiscussionService
          * @param displayFirstDiscussionByDefault   if true and no discussion parameters are present, display the first
          *                                          discussion associated with this object.
          */
-        public DiscussionView getDisussionArea(ViewContext context, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault);
+        public DiscussionView getDiscussionArea(ViewContext context, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault);
 
-        public DiscussionView getDisussionArea(Container c, User user, URLHelper currentURL, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault);
+        public DiscussionView getDiscussionArea(Container c, User user, URLHelper currentURL, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault);
 
         public void deleteDiscussions(Container container, User user, String... identifier);
         public void deleteDiscussions(Container container, User user, Collection<String> identifiers);
