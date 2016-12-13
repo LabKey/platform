@@ -744,6 +744,11 @@ public class UserManager
 
     public static void setUserActive(User currentUser, User userToAdjust, boolean active) throws SecurityManager.UserManagementException
     {
+        setUserActive(currentUser, userToAdjust, active, "");
+    }
+
+    public static void setUserActive(User currentUser, User userToAdjust, boolean active, String extendedMessage) throws SecurityManager.UserManagementException
+    {
         if (null == userToAdjust)
             return;
 
@@ -776,7 +781,8 @@ public class UserManager
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoUsers(), map, userId);
 
             addToUserHistory(userToAdjust, "User account " + userToAdjust.getEmail() + " was " +
-                    (active ? "re-enabled" : "disabled"));
+                    (active ? "re-enabled" : "disabled") + " " + extendedMessage
+            );
         }
         catch(RuntimeSQLException e)
         {

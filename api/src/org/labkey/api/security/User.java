@@ -57,6 +57,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
     private String _firstName = null;
     private String _lastName = null;
     private Integer _createdBy;
+    private Date _created;
     private String _displayName = null;
     protected int[] _groups = null;
     private Date _lastLogin = null;
@@ -125,6 +126,16 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
     public void setCreatedBy(Integer createdBy)
     {
         _createdBy = createdBy;
+    }
+
+    public Date getCreated()
+    {
+        return _created;
+    }
+
+    public void setCreated(Date created)
+    {
+        _created = created;
     }
 
     /**
