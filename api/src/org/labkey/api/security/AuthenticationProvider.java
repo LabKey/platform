@@ -44,7 +44,8 @@ public interface AuthenticationProvider
                 SSOAuthenticationProvider.class,
                 RequestAuthenticationProvider.class,
             SecondaryAuthenticationProvider.class,
-            ResetPasswordProvider.class
+            ResetPasswordProvider.class,
+            DisableLoginProvider.class
     );
 
     @Nullable ActionURL getConfigurationLink();
@@ -124,6 +125,29 @@ public interface AuthenticationProvider
          * party service provider is unavailable.
          */
         boolean bypass();
+    }
+
+    interface DisableLoginProvider extends AuthenticationProvider
+    {
+        boolean isEnabled();
+
+        /**
+         *
+         * @param id
+         * @return Login delay in milliseconds
+         * @throws LoginDisabledException
+         */
+        long getUserDelay(String id) throws LoginDisabledException;
+
+        /**
+         *
+         * @param request
+         * @param id
+         * @param addCount
+         */
+        void addUserDelay(HttpServletRequest request, String id, int addCount);
+
+        void resetUserDelay(HttpServletRequest request, String id);
     }
 
     class AuthenticationResponse

@@ -36,6 +36,7 @@ import org.labkey.api.data.Project;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
+import org.labkey.api.security.AuthenticationProvider.DisableLoginProvider;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.RequestAuthenticationProvider;
@@ -381,6 +382,15 @@ public class AuthenticationManager
         return AuthenticationProviderCache.getProvider(ResetPasswordProvider.class, name);
     }
 
+    public static @Nullable DisableLoginProvider getEnabledDisableLoginProvider()
+    {
+        for (DisableLoginProvider provider : AuthenticationProviderCache.getProviders(DisableLoginProvider.class))
+            if (provider.isEnabled())
+                return provider;
+
+        return null;
+    }
+
     private static final String AUTHENTICATION_CATEGORY = "Authentication";
     private static final String PROVIDERS_KEY = "Authentication";
     private static final String PROP_SEPARATOR = ":";
@@ -417,7 +427,7 @@ public class AuthenticationManager
         return set;
     }
 
-    public enum AuthenticationStatus {Success, BadCredentials, InactiveUser, LoginPaused, UserCreationError, UserCreationNotAllowed, PasswordExpired, Complexity}
+    public enum AuthenticationStatus {Success, BadCredentials, InactiveUser, LoginDisabled, LoginPaused, UserCreationError, UserCreationNotAllowed, PasswordExpired, Complexity}
 
     public static class PrimaryAuthenticationResult
     {
@@ -425,6 +435,7 @@ public class AuthenticationManager
         private final AuthenticationResponse _response;
         private final AuthenticationStatus _status;
         private final URLHelper _redirectURL;
+        private final String _message;
 
         // Success case
         private PrimaryAuthenticationResult(@NotNull User user, AuthenticationResponse response)
@@ -433,15 +444,27 @@ public class AuthenticationManager
             _response = response;
             _status = AuthenticationStatus.Success;
             _redirectURL = null;
+            _message = null;
         }
 
         // Failure case
-        private PrimaryAuthenticationResult(@NotNull AuthenticationStatus status)
+        public PrimaryAuthenticationResult(@NotNull AuthenticationStatus status)
         {
             _user = null;
             _response = null;
             _status = status;
             _redirectURL = null;
+            _message = null;
+        }
+
+        // Failure case with error message
+        public PrimaryAuthenticationResult(@NotNull AuthenticationStatus status, String message)
+        {
+            _user = null;
+            _response = null;
+            _status = status;
+            _redirectURL = null;
+            _message = message;
         }
 
         // Failure case with redirect (e.g., reset password page)
@@ -451,6 +474,7 @@ public class AuthenticationManager
             _response = null;
             _status = status;
             _redirectURL = redirectURL;
+            _message = null;
         }
 
         @Nullable
@@ -476,6 +500,10 @@ public class AuthenticationManager
             return _redirectURL;
         }
 
+        public String getMessage()
+        {
+            return _message;
+        }
     }
 
 
@@ -719,12 +747,18 @@ public class AuthenticationManager
         rl = addrLimiter.get(_toKey(request==null?null:request.getRemoteAddr()));
         if (null != rl)
             delay = Math.max(delay,rl.add(0, false));
-        rl = userLimiter.get(_toKey(id));
+         rl = pwdLimiter.get(_toKey(pwd));
         if (null != rl)
             delay = Math.max(delay, rl.add(0, false));
-        rl = pwdLimiter.get(_toKey(pwd));
-        if (null != rl)
-            delay = Math.max(delay, rl.add(0, false));
+
+        try
+        {
+            delay = Math.max(delay, getUserLoginDelay(id));
+        }
+        catch (LoginDisabledException e)
+        {
+            return new PrimaryAuthenticationResult(AuthenticationStatus.LoginDisabled, e.getMessage());
+        }
 
         if (delay > 15*1000)
             return new PrimaryAuthenticationResult(AuthenticationStatus.LoginPaused);
@@ -733,6 +767,21 @@ public class AuthenticationManager
         return null;
     }
 
+    private static long getUserLoginDelay(String id) throws LoginDisabledException
+    {
+        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProvider();
+        if (provider != null)
+            return provider.getUserDelay(id);
+        return getDefaultUserLoginDelay(id);
+    }
+
+    private static long getDefaultUserLoginDelay(String id)
+    {
+        RateLimiter rl = userLimiter.get(_toKey(id));
+        if (null != rl)
+            return rl.add(0, false);
+        return 0;
+    }
 
     private static void _afterAuthenticate(HttpServletRequest request, String id, String pwd, PrimaryAuthenticationResult result)
     {
@@ -743,13 +792,38 @@ public class AuthenticationManager
             RateLimiter rl;
             rl = addrLimiter.get(_toKey(request.getRemoteAddr()),request, addrLoader);
             rl.add(1, false);
-            rl = userLimiter.get(_toKey(id),request, userLoader);
-            rl.add(1, false);
             rl = pwdLimiter.get(_toKey(pwd),request, pwdLoader);
             rl.add(1, false);
+
+            addUserLoginDelay(request, id);
+        }
+        else
+        {
+            resetModuleUserLoginDelay(request, id);
         }
     }
 
+    private static void resetModuleUserLoginDelay(HttpServletRequest request, String id)
+    {
+        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProvider();
+        if (provider != null)
+            provider.resetUserDelay(request, id);
+    }
+
+    private static void addUserLoginDelay(HttpServletRequest request, String id)
+    {
+        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProvider();
+        if (provider != null)
+            provider.addUserDelay(request, id, 1);
+        else
+            addDefaultUserLoginDelay(request, id);
+    }
+
+    private static void addDefaultUserLoginDelay(HttpServletRequest request, String id)
+    {
+        RateLimiter rl = userLimiter.get(_toKey(id),request, userLoader);
+        rl.add(1, false);
+    }
 
     // Attempts to authenticate using only LoginFormAuthenticationProviders (e.g., DbLogin, LDAP). This is for the case
     // where you have an id & password in hand and want to ignore SSO and other delegated authentication mechanisms that
