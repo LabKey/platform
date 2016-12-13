@@ -65,6 +65,8 @@ announcements/src/org/labkey/announcements/model/DiscussionServiceImpl.java -tex
 announcements/src/org/labkey/announcements/model/DiscussionWebPartFactory.java -text
 announcements/src/org/labkey/announcements/model/EmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/IndividualEmailPrefsSelector.java -text
+announcements/src/org/labkey/announcements/model/InsertMessagePermission.java -text
+announcements/src/org/labkey/announcements/model/MessageBoardContributorRole.java -text
 announcements/src/org/labkey/announcements/model/MessageConfigManager.java -text
 announcements/src/org/labkey/announcements/model/NormalMessageBoardPermissions.java -text
 announcements/src/org/labkey/announcements/model/Permissions.java -text

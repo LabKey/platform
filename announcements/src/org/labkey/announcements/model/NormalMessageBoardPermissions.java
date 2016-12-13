@@ -58,12 +58,12 @@ public class NormalMessageBoardPermissions implements Permissions
 
     public boolean allowInsert()
     {
-        return hasPermission(InsertPermission.class);
+        return hasPermission(InsertPermission.class)|| hasPermission(InsertMessagePermission.class);
     }
 
     public boolean allowResponse(AnnouncementModel ann)
     {
-        return hasPermission(InsertPermission.class);
+        return allowInsert();
     }
 
     public boolean allowUpdate(AnnouncementModel ann)

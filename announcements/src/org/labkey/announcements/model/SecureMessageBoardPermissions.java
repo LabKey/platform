@@ -64,7 +64,7 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
             return true;
 
         // If not an editor, message board must have a member list, user must be on it, and user must have insert permissions
-        return _settings.hasMemberList() && hasPermission(InsertPermission.class) && ann.getMemberListIds().contains(_user.getUserId());
+        return _settings.hasMemberList() && allowInsert() && ann.getMemberListIds().contains(_user.getUserId());
     }
 
     public boolean allowUpdate(AnnouncementModel ann)

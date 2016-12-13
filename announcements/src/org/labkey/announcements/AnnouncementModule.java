@@ -24,6 +24,8 @@ import org.labkey.announcements.model.AnnouncementDigestProvider;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.DiscussionServiceImpl;
 import org.labkey.announcements.model.DiscussionWebPartFactory;
+import org.labkey.announcements.model.InsertMessagePermission;
+import org.labkey.announcements.model.MessageBoardContributorRole;
 import org.labkey.announcements.model.SecureMessageBoardReadPermission;
 import org.labkey.announcements.model.SecureMessageBoardRespondPermission;
 import org.labkey.announcements.query.AnnouncementSchema;
@@ -159,6 +161,9 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         Role editor = RoleManager.getRole(EditorRole.class);
         editor.addPermission(SecureMessageBoardReadPermission.class);
         editor.addPermission(SecureMessageBoardRespondPermission.class);
+
+        RoleManager.registerPermission(new InsertMessagePermission(),true);
+        RoleManager.registerRole(new MessageBoardContributorRole());
 
         // initialize message digests
         DailyMessageDigest.getInstance().addProvider(new AnnouncementDigestProvider());

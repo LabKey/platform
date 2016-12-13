@@ -29,6 +29,7 @@ import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.announcements.model.DailyDigestEmailPrefsSelector;
 import org.labkey.announcements.model.DiscussionServiceImpl;
 import org.labkey.announcements.model.IndividualEmailPrefsSelector;
+import org.labkey.announcements.model.InsertMessagePermission;
 import org.labkey.announcements.model.NormalMessageBoardPermissions;
 import org.labkey.announcements.model.Permissions;
 import org.labkey.announcements.model.SecureMessageBoardPermissions;
@@ -76,6 +77,7 @@ import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -745,7 +747,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(InsertPermission.class)
+    @RequiresAnyOf({InsertMessagePermission.class, InsertPermission.class})
     public abstract class BaseInsertAction extends FormViewAction<AnnouncementForm>
     {
         private URLHelper _returnURL;
@@ -857,7 +859,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(InsertPermission.class)
+    @RequiresAnyOf({InsertMessagePermission.class, InsertPermission.class})
     public class InsertAction extends BaseInsertAction
     {
         public void validateCommand(AnnouncementForm form, Errors errors)
@@ -905,7 +907,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(InsertPermission.class)
+    @RequiresAnyOf({InsertPermission.class, InsertMessagePermission.class})
     public class RespondAction extends BaseInsertAction
     {
         private AnnouncementModel _parent;
