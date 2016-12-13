@@ -319,6 +319,14 @@ public class LoginController extends SpringActionController
                         errors.reject(ERROR_MSG, "The e-mail address and password you entered did not match any accounts on file.\nNote: Passwords are case sensitive; make sure your Caps Lock is off.");
                     }
                     break;
+                case LoginDisabled:
+                    if (null != form.getEmail() || null != form.getPassword())
+                    {
+                        new ValidEmail(form.getEmail());
+                        String errorMessage = result.getMessage() == null ? "Due to the number of recent failed login attempts, authentication has been temporarily paused.\nTry again in one minute." : result.getMessage();
+                        errors.reject(ERROR_MSG, errorMessage);
+                    }
+                    break;
                 case LoginPaused:
                     if (null != form.getEmail() || null != form.getPassword())
                     {
