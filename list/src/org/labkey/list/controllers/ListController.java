@@ -673,7 +673,7 @@ public class ListController extends SpringActionController
                 boolean multiple = _list.getDiscussionSetting() == ListDefinition.DiscussionSetting.ManyPerItem;
 
                 // Display discussion by default in single-discussion case, #4529
-                DiscussionService.DiscussionView discussion = service.getDisussionArea(getViewContext(), entityId, linkBackURL, discussionTitle, multiple, !multiple);
+                DiscussionService.DiscussionView discussion = service.getDiscussionArea(getViewContext(), entityId, linkBackURL, discussionTitle, multiple, !multiple);
                 view.addView(discussion);
 
                 getPageConfig().setFocusId(discussion.getFocusId());

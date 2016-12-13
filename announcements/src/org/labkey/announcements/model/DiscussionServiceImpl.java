@@ -28,6 +28,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
@@ -133,17 +134,20 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     }
 
 
-    public DiscussionService.DiscussionView getDisussionArea(ViewContext context, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault)
+    public DiscussionService.DiscussionView getDiscussionArea(ViewContext context, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault)
     {
         Container c = context.getContainer();
         User user = context.getUser();
         ActionURL currentURL = context.getActionURL();
 
-        return getDisussionArea(c, user, currentURL, objectId, pageURL, newDiscussionTitle, allowMultipleDiscussions, displayFirstDiscussionByDefault);
+        return getDiscussionArea(c, user, currentURL, objectId, pageURL, newDiscussionTitle, allowMultipleDiscussions, displayFirstDiscussionByDefault);
     }
 
-    public DiscussionService.DiscussionView getDisussionArea(Container c, User user, URLHelper currentURL, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault)
+    public DiscussionService.DiscussionView getDiscussionArea(Container c, User user, URLHelper currentURL, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault)
     {
+        if(!LookAndFeelProperties.getInstance(c).isDiscussionEnabled()){
+            return null;
+        }
         // get discussion parameters
         Map<String, String> params = currentURL.getScopeParameters("discussion");
         List<AnnouncementModel> discussions = getDiscussions(c, objectId);

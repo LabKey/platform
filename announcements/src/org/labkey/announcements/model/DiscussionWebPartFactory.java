@@ -102,7 +102,7 @@ public class DiscussionWebPartFactory extends BaseWebPartFactory
             throw new WebPartConfigurationException(this, "invalid 'allowMultipleDiscussions' parameter");
         }
 
-        WebPartView view = DiscussionService.get().getDisussionArea(c, user, currentURL, entityId, pageURL, newDiscussionTitle, allowMultipleDiscussions, true);
+        WebPartView view = DiscussionService.get().getDiscussionArea(c, user, currentURL, entityId, pageURL, newDiscussionTitle, allowMultipleDiscussions, true);
         view.setTitle("Discussion");
         view.setFrame(WebPartView.FrameType.PORTAL);
 

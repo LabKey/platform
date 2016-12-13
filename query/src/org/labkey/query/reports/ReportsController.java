@@ -1267,7 +1267,7 @@ public class ReportsController extends SpringActionController
                 VBox box = new VBox(ret);
                 DiscussionService.Service service = DiscussionService.get();
                 String title = "Discuss report - " + _report.getDescriptor().getReportName();
-                box.addView(service.getDisussionArea(getViewContext(), _report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
+                box.addView(service.getDiscussionArea(getViewContext(), _report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
                 ret = box;
             }
             return ret;
@@ -1294,7 +1294,7 @@ public class ReportsController extends SpringActionController
 
                 DiscussionService.Service service = DiscussionService.get();
                 String title = "Discuss report - " + report.getDescriptor().getReportName();
-                box.addView(service.getDisussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
+                box.addView(service.getDiscussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
 
                 return box;
             }
@@ -2676,7 +2676,7 @@ public class ReportsController extends SpringActionController
                     {
                         DiscussionService.Service service = DiscussionService.get();
                         String title = "Discuss report - " + _reportName;
-                        view.addView(service.getDisussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
+                        view.addView(service.getDiscussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
                     }
                     return view;
                 }
