@@ -101,7 +101,6 @@ public class AppProps
         boolean getUseContainerRelativeURL();
         boolean isSetUseContainerRelativeURL();
         boolean isAllowSessionKeys();
-        boolean isTeamCityEnvironment();
 
         // configurable http security settings
         String getCSRFCheck();

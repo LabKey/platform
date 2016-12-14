@@ -489,14 +489,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
         return lookupBooleanValue(ALLOW_SESSION_KEYS, false);
     }
 
-    @Override
-    public boolean isTeamCityEnvironment()
-    {
-        String buildConfName = System.getProperty("teamcity.build.id");
-        return StringUtils.isNotBlank(buildConfName);
-    }
-
-
     /** return "POST" or "ADMINONLY" */
     @Override
     public String getCSRFCheck()
