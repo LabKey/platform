@@ -35,6 +35,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import static org.apache.commons.lang3.StringUtils.replace;
+
 /**
  * Holds configuration information about a {@link QueryView}, to be used by a {@link ExportScriptFactory}.
  * User: adam
@@ -209,9 +211,13 @@ public abstract class ExportScriptModel
             return _view.getQueryDef().getContainerFilter();
     }
 
-    protected String doubleQuote(String val)
+    protected String doubleQuote(String s)
     {
-        return "\"" + val.replace("\"", "\\\"") + "\"";
+        if (null == s)
+            s = "";
+        s = replace(s, "\\", "\\\\");
+        s = replace(s, "\"","\\\"");
+        return "\"" + s + "\"";
     }
 
     protected String indent(int indentSpaces)
