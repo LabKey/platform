@@ -49,6 +49,9 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
     /** Name to show in the UI for the generated Experiment protocol */
     private String _protocolShortDescription;
 
+    /** Move the input files into a unique directory before starting analysis */
+    private boolean _useUniqueAnalysisDirectory = false;
+
     public TaskPipelineImpl()
     {
         this(new TaskId(TaskPipeline.class));
@@ -110,6 +113,8 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
             _protocolShortDescription = settings.getProtocolName();
 
         parseWorkflowProcessKey(settings);
+
+        _useUniqueAnalysisDirectory = settings.isUseUniqueAnalysisDirectory();
 
         return this;
     }
@@ -184,5 +189,10 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
     public String getWorkflowProcessModule()
     {
         return _workflowProcessModule;
+    }
+
+    public boolean isUseUniqueAnalysisDirectory()
+    {
+        return _useUniqueAnalysisDirectory;
     }
 }

@@ -200,7 +200,14 @@ public class AnalysisController extends SpringActionController
                 {
                     throw new IllegalArgumentException("Must specify a protocol name");
                 }
-
+                if (taskPipeline.isUseUniqueAnalysisDirectory())
+                {
+                    dirData = new File(dirData, form.getProtocolName() + "_" + FileUtil.getTimestamp());
+                    if (!dirData.mkdir())
+                    {
+                        throw new IOException("Failed to create unique analysis directory: " + FileUtil.getAbsoluteCaseSensitiveFile(dirData).getAbsolutePath());
+                    }
+                }
                 AbstractFileAnalysisProtocol protocol = getProtocol(root, dirData, factory, form.getProtocolName());
                 if (protocol == null)
                 {
@@ -272,6 +279,17 @@ public class AnalysisController extends SpringActionController
                 if (form.isActiveJobs())
                 {
                     throw new IllegalArgumentException("Active jobs already exist for this protocol.");
+                }
+
+                if (taskPipeline.isUseUniqueAnalysisDirectory())
+                {
+                    for (File inputFile : filesInputList)
+                    {
+                        if (!(inputFile.renameTo(new File(dirData, inputFile.getName())) || allowNonExistentFiles))
+                        {
+                            throw new IOException("Failed to move input file into unique directory: " + FileUtil.getAbsoluteCaseSensitiveFile(inputFile).getAbsolutePath());
+                        }
+                    }
                 }
 
                 AbstractFileAnalysisJob job =
