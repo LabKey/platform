@@ -161,6 +161,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         catch (Exception e)
         {
             _log.error("Failed to insert audit log event", e);
+            AuditLogService.handleAuditFailure(user, e);
             throw new RuntimeException(e);
         }
         return null;
