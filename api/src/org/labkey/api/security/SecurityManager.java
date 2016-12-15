@@ -1736,7 +1736,7 @@ public class SecurityManager
                 sb.append("<BR/>");
                 spacer.append("&nbsp;&nbsp;&nbsp;");
             }
-            sb.append(spacer).append("Which is assigned the ").append(role).append(" role");
+            sb.append(spacer).append("Which is assigned the ").append(PageFlowUtil.filter(role)).append(" role");
             sb.append("<BR/>");
         }
         return sb.toString();
