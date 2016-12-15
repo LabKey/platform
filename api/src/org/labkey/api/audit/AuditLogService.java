@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * User: Karl Lum
@@ -42,6 +43,7 @@ public class AuditLogService
 {
     private static final I _defaultProvider = new DefaultAuditProvider();
     private static final Map<String, AuditTypeProvider> _auditTypeProviders = new ConcurrentHashMap<>();
+    private static final List<AuditFailureHandlerProvider> auditFailureHandlerProviders = new CopyOnWriteArrayList<>();
 
     private static I _instance;
 
@@ -113,6 +115,27 @@ public class AuditLogService
         AuditTypeProvider getAuditProvider(String eventType);
 
         ActionURL getAuditUrl();
+    }
+
+    public interface AuditFailureHandlerProvider
+    {
+        void handleAuditFailure(User user, Throwable e);
+    }
+
+    public static void addAuditFailureHandlerProvider(AuditFailureHandlerProvider provider)
+    {
+        auditFailureHandlerProviders.add(provider);
+    }
+
+    public static List<AuditFailureHandlerProvider> getAuditFailureHandlerProviders()
+    {
+        return auditFailureHandlerProviders;
+    }
+
+    public static void handleAuditFailure(User user, Throwable e)
+    {
+        for (AuditFailureHandlerProvider provider : getAuditFailureHandlerProviders())
+            provider.handleAuditFailure(user, e);
     }
 
     public interface Replaceable{}
