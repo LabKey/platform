@@ -47,6 +47,7 @@ public class TaskPipelineSettings
 
     private String _workflowProcessKey;
 
+    private boolean _useUniqueAnalysisDirectory = false;
 
     public TaskPipelineSettings(TaskId id)
     {
@@ -155,5 +156,19 @@ public class TaskPipelineSettings
     public void setWorkflowProcessKey(String workflowProcessKey)
     {
         _workflowProcessKey = workflowProcessKey;
+    }
+
+    /**
+     *
+     * @return When true, move the input files into a unique directory (with timestamped name) before the analysis
+     */
+    public boolean isUseUniqueAnalysisDirectory()
+    {
+        return _useUniqueAnalysisDirectory;
+    }
+
+    public void setUseUniqueAnalysisDirectory(boolean useUniqueAnalysisDirectory)
+    {
+        _useUniqueAnalysisDirectory = useUniqueAnalysisDirectory;
     }
 }

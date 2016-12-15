@@ -60,4 +60,10 @@ public interface TaskPipeline<SettingsType extends TaskPipelineSettings>
      */
     @Nullable
     String getWorkflowProcessModule();
+
+    /**
+     *
+     * @return When true, move the input files into a unique directory (with timestamped name) before the analysis
+     */
+    boolean isUseUniqueAnalysisDirectory();
 }
