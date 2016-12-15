@@ -182,9 +182,8 @@
 
 </td>
 <td>
-
-    <table>
-        <tr><td colspan="2"><b>Active Users in the Last Hour</b></td></tr><%
+    <table name="activeUsers">
+        <tr><th colspan="2" style="text-align:left;"><strong>Active Users in the Last Hour</strong></th></tr><%
 
         for (Pair<String, Long> pair : bean.active)
         {
