@@ -96,7 +96,6 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
-import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;

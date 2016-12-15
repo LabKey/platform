@@ -6080,7 +6080,6 @@ public static class ExportSqlForm
     @RequiresPermission(ReadPermission.class)
     public class SaveNamedSetAction extends ApiAction<NamedSetForm>
     {
-
         @Override
         public Object execute(NamedSetForm namedSetForm, BindException errors) throws Exception
         {

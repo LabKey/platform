@@ -89,6 +89,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.user.UserController;
+import org.labkey.core.user.UserController.AccessDetailRow;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -1063,7 +1064,7 @@ public class SecurityController extends SpringActionController
 
         public ModelAndView getView(GroupAccessForm form, BindException errors) throws Exception
         {
-            List<UserController.AccessDetailRow> rows = new ArrayList<>();
+            List<AccessDetailRow> rows = new ArrayList<>();
             Set<Container> containersInList = new HashSet<>();
             _requestedGroup = form.getGroupFor(getContainer());
             if (_requestedGroup != null)
@@ -1092,7 +1093,7 @@ public class SecurityController extends SpringActionController
             return view;
         }
 
-        private void buildAccessDetailList(List<Container> children, List<UserController.AccessDetailRow> rows,
+        private void buildAccessDetailList(List<Container> children, List<AccessDetailRow> rows,
                                            Set<Container> containersInList, Group requestedGroup, int depth,
                                            Map<Container, List<Group>> projectGroupCache, boolean showAll)
         {
@@ -1138,7 +1139,7 @@ public class SecurityController extends SpringActionController
                     if (showAll || roles.size() > 0)
                     {
                         int index = rows.size();
-                        rows.add(new UserController.AccessDetailRow(getViewContext(), child, requestedGroup, groupAccessGroups, depth));
+                        rows.add(new AccessDetailRow(getViewContext(), child, requestedGroup, groupAccessGroups, depth));
                         containersInList.add(child);
 
                         //Ensure parents of any accessible folder are in the tree. If not add them with no access info
@@ -1146,7 +1147,7 @@ public class SecurityController extends SpringActionController
                         Container parent = child.getParent();
                         while (parent != null && !parent.isRoot() && !containersInList.contains(parent))
                         {
-                            rows.add(index, new UserController.AccessDetailRow(getViewContext(), parent, requestedGroup, Collections.emptyMap(), --newDepth));
+                            rows.add(index, new AccessDetailRow(getViewContext(), parent, requestedGroup, Collections.emptyMap(), --newDepth));
                             containersInList.add(parent);
                             parent = parent.getParent();
                         }
@@ -1814,7 +1815,7 @@ public class SecurityController extends SpringActionController
             form.setHideCaption("hide unassigned users");
             view.addView(new JspView<>("/org/labkey/core/user/toggleShowAll.jsp", form));
 
-            List<UserController.AccessDetailRow> rows = new ArrayList<>();
+            List<AccessDetailRow> rows = new ArrayList<>();
             Collection<User> activeUsers = UserManager.getActiveUsers();
             buildAccessDetailList(activeUsers, rows, form.showAll());
             Collections.sort(rows); // the sort is done using the user display name
@@ -1835,7 +1836,7 @@ public class SecurityController extends SpringActionController
             return view;
         }
 
-        private void buildAccessDetailList(Collection<User> activeUsers, List<UserController.AccessDetailRow> rows, boolean showAll)
+        private void buildAccessDetailList(Collection<User> activeUsers, List<AccessDetailRow> rows, boolean showAll)
         {
             if (activeUsers.isEmpty())
                 return;
@@ -1845,14 +1846,14 @@ public class SecurityController extends SpringActionController
             List<Group> groups = SecurityManager.getGroups(project, true);
             for (User user : activeUsers)
             {
-                user = UserManager.getUser(user.getUserId()); // the cache from UserManager.getActiveUsers might not have the udpated groups list
+                user = UserManager.getUser(user.getUserId()); // the cache from UserManager.getActiveUsers might not have the updated groups list
                 Map<String, List<Group>> userAccessGroups = new TreeMap<>();
                 SecurityPolicy policy = SecurityPolicyManager.getPolicy(getContainer());
                 Set<Role> effectiveRoles = policy.getEffectiveRoles(user);
                 effectiveRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
                 for (Role role : effectiveRoles)
                 {
-                    userAccessGroups.put(role.getName(), new ArrayList<Group>());
+                    userAccessGroups.put(role.getName(), new ArrayList<>());
                 }
 
                 if (effectiveRoles.size() > 0)
@@ -1872,7 +1873,7 @@ public class SecurityController extends SpringActionController
                 }
 
                 if (showAll || userAccessGroups.size() > 0)
-                    rows.add(new UserController.AccessDetailRow(getViewContext(), getContainer(), user, userAccessGroups, 0));
+                    rows.add(new AccessDetailRow(getViewContext(), getContainer(), user, userAccessGroups, 0));
             }
         }
 

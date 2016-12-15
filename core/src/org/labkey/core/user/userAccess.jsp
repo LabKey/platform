@@ -33,6 +33,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.core.user.UserController.AccessDetailRow" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -54,7 +55,7 @@
     Container c = getContainer();
     JspView<UserController.AccessDetail> me = (JspView<UserController.AccessDetail>) HttpView.currentView();
     UserController.AccessDetail bean = me.getModelBean();
-    List<UserController.AccessDetailRow> rows = bean.getRows();
+    List<AccessDetailRow> rows = bean.getRows();
 
     DataRegion accessRegion = new DataRegion();
     accessRegion.setName("access");
@@ -79,23 +80,23 @@ However, If this account is re-enabled, it would have the following permissions.
 <table id=<%=q(accessRegion.getDomId())%> lk-region-name=<%=q(accessRegion.getName())%> class="labkey-data-region labkey-show-borders">
     <colgroup><col><col><col></colgroup>
     <tr id="dataregion_column_header_row_access">
+        <th>&nbsp;</th>
 <%
-    out.print("<th>&nbsp;</th>");
     if (!bean.showUserCol())
     {
-        out.print("<th>Container</th>");
+        out.print(text("        <th>Container</th>"));
     }
     else
     {
-        out.print("<th>User</th>");
+        out.print(text("        <th>User</th>"));
     }
-    out.print("<th>Current Access</th>");
 %>
+        <th>Current Access</th>
     </tr>
     <tr id="dataregion_column_header_row_spacer_access" class="dataregion_column_header_row_spacer" style="display:none;"></tr>
 <%
     int rowNumber = 0;
-    for (UserController.AccessDetailRow row : rows)
+    for (AccessDetailRow row : rows)
     {
         boolean inherited = row.isInheritedAcl() && !row.getContainer().isProject();
         boolean isUser = null != UserManager.getUser(row.getUser().getUserId());
@@ -110,22 +111,22 @@ However, If this account is re-enabled, it would have the following permissions.
 %>
             <td><%= textLink("permissions", containerPermissionsLink) %></td>
             <td style="padding-left:<%= cellPadding + (10 * row.getDepth()) %>px;">
-                <a href="<%= folderAccessLink.getLocalURIString() %>"><%= h(row.getContainer().getName()) %></a>
+                <a href="<%=h(folderAccessLink)%>"><%= h(row.getContainer().getName()) %></a>
             </td>
 <%
         }
         else
         {
-            %><td><%= textLink("details", urlProvider(UserUrls.class).getUserDetailsURL(c, row.getUser().getUserId(), getActionURL())) %></td><%
-            out.print("<td style='padding-left:" + cellPadding + "px;'>");
+            %><td><%= textLink("details", urlProvider(UserUrls.class).getUserDetailsURL(c, row.getUser().getUserId(), getActionURL())) %></td>
+            <td style='padding-left:"<%=cellPadding%>px;'><%
             if (isUser)
             {
                 ActionURL userAccessLink = urlProvider(UserUrls.class).getUserAccessURL(row.getContainer(), row.getUser().getUserId());
-                %><a href="<%= userAccessLink.getLocalURIString() %>"><%= userColDisplay %></a><%
+                %><a href="<%=h(userAccessLink)%>"><%=h(userColDisplay)%></a><%
             }
             else
             {
-                %><%= userColDisplay %><%
+                %><%=h(userColDisplay)%><%
             }
             out.print("</td>");
         }
@@ -142,7 +143,7 @@ However, If this account is re-enabled, it would have the following permissions.
                         <td class="labkey-nav-tree-text" align="left" style="border:0 none;">
                             <a  style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#">
                                 <img src="<%=getWebappURL("_images/plus.gif")%>" alt="" />
-                                <span><%= row.getAccess() %><%= inherited ? "*" : "" %></span>
+                                <span><%=h(row.getAccess() + (inherited ? "*" : ""))%></span>
                             </a>
                         </td>
                     </tr>
@@ -153,7 +154,7 @@ However, If this account is re-enabled, it would have the following permissions.
 <%
                                 for (String roleName : roleNames)
                                 {
-                                    out.print("<tr><td>" + roleName + (inherited ? "*" : "") + "</td>");
+                                    out.print("<tr><td>" + h(roleName + (inherited ? "*" : "")) + "</td>");
                                     out.print("<td>");
                                     boolean first = true;
                                     for (Group group : accessGroups.get(roleName))
@@ -162,17 +163,17 @@ However, If this account is re-enabled, it would have the following permissions.
                                         String displayName = (group.isProjectGroup() ? groupContainer.getName() + "/" : "Site: ") + group.getName();
 
                                         Set<List<UserPrincipal>> membershipPaths = SecurityManager.getMembershipPathways(row.getUser(), group);
-                                        String hoverExpanation = SecurityManager.getMembershipPathwayHTMLDisplay(membershipPaths, userColDisplay, roleName);
+                                        String hoverExplanation = SecurityManager.getMembershipPathwayHTMLDisplay(membershipPaths, userColDisplay, roleName);
 
                                         if (group.isAdministrators() || group.isProjectGroup())
                                         {
                                             String groupName = group.isProjectGroup() ? groupContainer.getPath() + "/" + group.getName() : group.getName();
                                             ActionURL groupURL = urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
-                                            %><%= !first ? ", " : "" %><a href="<%=h(groupURL)%>" data-qtip="<%=hoverExpanation%>"><%=h(displayName)%></a><%
+                                            %><%= !first ? ", " : "" %><a href="<%=h(groupURL)%>" data-qtip="<%=hoverExplanation%>"><%=h(displayName)%></a><%
                                         }
                                         else
                                         {
-                                            %><%= !first ? ", " : "" %><span data-qtip="<%=hoverExpanation%>"><%=h(displayName)%></span><%
+                                            %><%= !first ? ", " : "" %><span data-qtip="<%=hoverExplanation%>"><%=h(displayName)%></span><%
                                         }
                                         first = false;
                                     }
