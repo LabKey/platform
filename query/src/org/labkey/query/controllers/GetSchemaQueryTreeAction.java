@@ -180,7 +180,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     if (builtIn.length() > 0)
                     {
                         JSONObject fldr = new JSONObject();
-                        fldr.put("text", PageFlowUtil.filter("built-in queries & tables"));
+                        fldr.put("text", filter("built-in queries & tables"));
                         fldr.put("qtip", "Queries and tables that are part of the schema by default.");
                         fldr.put("expanded", true);
                         fldr.put("children", builtIn);
