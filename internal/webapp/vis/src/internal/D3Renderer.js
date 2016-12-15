@@ -13,7 +13,7 @@ LABKEY.vis.internal.Axis = function() {
     // different colored tick & gridlines, etc.
     var scale, orientation, tickFormat = function(v) {return v}, tickHover, tickCls, ticks, tickMouseOver, tickMouseOut,
         tickRectCls, tickRectHeightOffset = 12, tickRectWidthOffset = 8, tickClick, axisSel, tickSel, textSel, gridLineSel,
-        borderSel, grid, scalesList = [], gridLinesVisible = 'both', tickDigits, tickLabelMax,
+        borderSel, grid, scalesList = [], gridLinesVisible = 'both', tickDigits, tickValues, tickLabelMax,
         tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', borderColor = '#000000',
         tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1,
         fontFamily = 'Roboto, arial, helvetica, sans-serif', fontSize = 11, adjustedStarts, adjustedEnds, xLogGutterBorder = 0, yLogGutterBorder = 0,
@@ -25,7 +25,9 @@ LABKEY.vis.internal.Axis = function() {
         var data, textAnchor, textXFn, textYFn, gridLineFn, tickFn, border, gridLineData, hasOverlap, bBoxA, bBoxB, i,
                 tickEls, gridLineEls, textAnchors, textEls, logGutterBackground;
 
-        if (scale.ticks) {
+        if (tickValues) {
+            data = tickValues;
+        } else if (scale.ticks) {
             data = scale.ticks(ticks);
         } else {
             data = scale.domain();
@@ -491,6 +493,7 @@ LABKEY.vis.internal.Axis = function() {
     axis.ticks = function(t) {ticks = t; return axis;};
     axis.tickFormat = function(f) {tickFormat = f; return axis;};
     axis.tickDigits = function(h) {tickDigits = h; return axis;};
+    axis.tickValues = function(h) {tickValues = h; return axis;};
     axis.tickLabelMax = function(h) {tickLabelMax = h; return axis;};
     axis.tickHover = function(h) {tickHover = h; return axis;};
     axis.tickCls = function(c) {tickCls = c; return axis;};
@@ -808,6 +811,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var updateIndividualAxisConfig = function(indAxis, name) {
         if (indAxis && plot.scales[name])
         {
+            if (plot.scales[name].tickValues) {
+                indAxis.tickValues(plot.scales[name].tickValues);
+            }
+            
             if (plot.scales[name].tickFormat) {
                 indAxis.tickFormat(plot.scales[name].tickFormat);
             }

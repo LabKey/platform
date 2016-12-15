@@ -58,6 +58,7 @@
  *          used for any axis scales. For continuous color scales it is an array[min, max] hex values.</li>
  *          <li><strong>sortFn:</strong> If scaleType is "discrete", the sortFn can be used to order the values of the domain</li>
  *          <li><strong>tickFormat:</strong> Add axis label formatting.</li>
+ *          <li><strong>tickValues:</strong> Define the axis tick values. Array of values.</li>
  *          <li><strong>tickDigits:</strong> Convert axis tick to exponential form if equal or greater than number of digits</li>
  *          <li><strong>tickLabelMax:</strong> Maximum number of tick labels to show for a categorical axis.</li>
  *          <li><strong>tickHoverText:</strong>: Adds hover text for axis labels.</li>
@@ -354,6 +355,7 @@ boxPlot.render();
                 newScale.scaleType = origScale.scaleType ? origScale.scaleType : 'continuous';
                 newScale.sortFn = origScale.sortFn ? origScale.sortFn : null;
                 newScale.trans = origScale.trans ? origScale.trans : 'linear';
+                newScale.tickValues = origScale.tickValues ? origScale.tickValues : null;
                 newScale.tickFormat = origScale.tickFormat ? origScale.tickFormat : null;
                 newScale.tickDigits = origScale.tickDigits ? origScale.tickDigits : null;
                 newScale.tickLabelMax = origScale.tickLabelMax ? origScale.tickLabelMax : null;
