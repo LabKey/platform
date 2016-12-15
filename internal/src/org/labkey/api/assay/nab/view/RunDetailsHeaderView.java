@@ -17,6 +17,7 @@ package org.labkey.api.assay.nab.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionAssayRun;
 import org.labkey.api.assay.nab.NabGraph;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -24,8 +25,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.nab.NabUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.actions.AssayHeaderView;
@@ -47,18 +50,18 @@ import java.util.Map;
  */
 public class RunDetailsHeaderView extends AssayHeaderView
 {
-    private int _runId;
+    private ExpRun _run;
     private Container _container;
     private final boolean _showGraphLayoutOptions;
     private List<DilutionAssayRun.SampleResult> _samples;
     private Map<String, PropertyDescriptor> _propertyDescriptorMap = new CaseInsensitiveHashMap<>();
     private User _user;
 
-    public RunDetailsHeaderView(Container container, ExpProtocol protocol, AssayProvider provider, int runId, List<DilutionAssayRun.SampleResult> samples, User user)
+    public RunDetailsHeaderView(Container container, ExpProtocol protocol, AssayProvider provider, ExpRun run, List<DilutionAssayRun.SampleResult> samples, User user)
     {
         super(protocol, provider, true, true, null);
         _container = container;
-        _runId = runId;
+        _run = run;
         _samples = samples;
         _showGraphLayoutOptions = (samples.size() > 10);
         _user = user;
@@ -82,7 +85,7 @@ public class RunDetailsHeaderView extends AssayHeaderView
         List<NavTree> links = new ArrayList<>();
 
         links.add(new NavTree("View Runs", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), _protocol, _containerFilter), AssayProtocolSchema.getLastFilterScope(_protocol))));
-        links.add(new NavTree("View Results", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getViewContext().getContainer(), _protocol, _containerFilter, _runId), AssayProtocolSchema.getLastFilterScope(_protocol))));
+        links.add(new NavTree("View Results", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getViewContext().getContainer(), _protocol, _containerFilter, _run.getRowId()), AssayProtocolSchema.getLastFilterScope(_protocol))));
 
         if (getViewContext().getContainer().hasPermission(_user, InsertPermission.class))
         {
@@ -93,11 +96,15 @@ public class RunDetailsHeaderView extends AssayHeaderView
                 ActionURL rerunURL = getProvider().getImportURL(_container, getProtocol());
                 if (rerunURL != null)
                 {
-                    rerunURL.addParameter("reRunId", _runId);
+                    rerunURL.addParameter("reRunId", _run.getRowId());
                     links.add(new NavTree("Delete and Re-import", rerunURL));
                 }
             }
         }
+
+        // quality control actions menu
+        if (_provider instanceof DilutionAssayProvider && (((DilutionAssayProvider)_provider).getAssayQCRunURL(_container, _run) != null))
+            links.add(getQCMenu());
 
         NavTree graphOptionsMenu = new NavTree("Change Graph Options");
         graphOptionsMenu.addChild(getCurveFitMenu());
@@ -111,7 +118,7 @@ public class RunDetailsHeaderView extends AssayHeaderView
         graphOptionsMenu.addChild(getDataIdentifiersMenu());
         links.add(graphOptionsMenu);
 
-        ActionURL downloadURL = PageFlowUtil.urlProvider(NabUrls.class).urlDownloadDatafile(_container).addParameter("rowId", _runId);
+        ActionURL downloadURL = PageFlowUtil.urlProvider(NabUrls.class).urlDownloadDatafile(_container).addParameter("rowId", _run.getRowId());
         links.add(new NavTree("Download Datafile", downloadURL));
         links.add(new NavTree("Print", getViewContext().cloneActionURL().addParameter("_print", "true")));
         return links;
@@ -253,6 +260,22 @@ public class RunDetailsHeaderView extends AssayHeaderView
             }
         }
         return menu;
+    }
+
+    private NavTree getQCMenu()
+    {
+        NavTree qcMenu = new NavTree("View QC");
+
+        // must be an administrator to access the QC workflow
+        if (_container.hasPermission(_user, AdminPermission.class))
+        {
+            NavTree excludedDataMenu = new NavTree("Review/QC Data", ((DilutionAssayProvider)_provider).getAssayQCRunURL(_container, _run));
+            qcMenu.addChild(excludedDataMenu);
+        }
+        NavTree excludedDataMenu = new NavTree("View Excluded Data", getViewContext().getActionURL());
+        qcMenu.addChild(excludedDataMenu);
+
+        return qcMenu;
     }
 
     private boolean containsSampleProperties(String[] names)

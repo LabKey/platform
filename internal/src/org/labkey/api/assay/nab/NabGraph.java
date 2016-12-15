@@ -367,7 +367,7 @@ public class NabGraph
                 double dilution = summary.getDilution(well);
                 pointSeries.add(dilution, percentage);
 
-                double plusMinus = summary.getPlusMinus(well) * 100;
+                double plusMinus = Math.abs(summary.getPlusMinus(well) * 100);
                 if (plusMinus > 0)
                     cvSeries.add(dilution, percentage, percentage - plusMinus, percentage + plusMinus);
             }
@@ -391,7 +391,8 @@ public class NabGraph
                     curvedSeries.add(point.getX(), point.getY());
                 curvesDataset.addSeries(curvedSeries);
                 plot.getRenderer(1).setSeriesPaint(curvesDataset.getSeriesCount() - 1, currentColor);
-                plot.getRenderer(2).setSeriesPaint(cvDataset.getSeriesCount() - 1, currentColor);
+                if (cvSeries.getItemCount() > 0)
+                    plot.getRenderer(2).setSeriesPaint(cvDataset.getSeriesCount() - 1, currentColor);
             }
             catch (FitFailedException e)
             {

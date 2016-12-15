@@ -15,6 +15,8 @@
  */
 package org.labkey.api.assay.dilution;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.view.ActionURL;
@@ -41,4 +43,10 @@ public interface DilutionAssayProvider<FormType extends DilutionRunUploadForm> e
 
     DilutionDataHandler getDataHandler();
     ActionURL getUploadWizardCompleteURL(FormType form, ExpRun run);
+
+    @Nullable
+    default ActionURL getAssayQCRunURL(Container container, ExpRun run)
+    {
+        return null;
+    }
 }
