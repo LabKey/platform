@@ -3985,6 +3985,16 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public Protocol saveProtocol(User user, Protocol protocol)
     {
+        return saveProtocol(user, protocol, true);
+    }
+
+    // saveProperties is exposed due to how the transactions are handled for setting properties on protocols.
+    // If a protocol has already had protocol.setProperty() called on it then the properties will have already
+    // been saved to the database. The result is that it can cause the save to fail if this API attempts to save
+    // the properties again. The only current recourse is for the caller to enforce their own transaction boundaries
+    // using ExperimentService.get().ensureTransaction().
+    public Protocol saveProtocol(User user, Protocol protocol, boolean saveProperties)
+    {
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
             Protocol result;
@@ -4010,7 +4020,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 loadParameter(user, param, getTinfoProtocolParameter(), FieldKey.fromParts("ProtocolId"), protocol.getRowId());
             }
 
-            savePropertyCollection(protocol.retrieveObjectProperties(), protocol.getLSID(), protocol.getContainer(), !newProtocol);
+            if (saveProperties)
+                savePropertyCollection(protocol.retrieveObjectProperties(), protocol.getLSID(), protocol.getContainer(), !newProtocol);
             AssayService.get().clearProtocolCache();
 
             getExpSchema().getScope().addCommitTask(() -> {
@@ -5321,7 +5332,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             baseProtocol.storeProtocolParameters(baseParams.values());
         }
 
-        return saveProtocol(user, baseProtocol);
+        return saveProtocol(user, baseProtocol, false /* saveProperties */);
     }
 
     /**
