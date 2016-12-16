@@ -112,7 +112,13 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
         return false;
     }
 
-    public String genDiffHtml(Map<String,String> oldProps)
+    public boolean hasDiffHtml(Map<String,String> oldProps)
+    {
+        String hasDiff = genDiffHtml(oldProps);
+        return hasDiff != null;
+    }
+
+    private String genDiffHtml(Map<String,String> oldProps)
     {
         //since this is a fixed membership map, we just need to run
         //one of the map's keys and compare values, noting what has changed
