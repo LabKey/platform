@@ -895,7 +895,8 @@ public class StringExpressionFactory
         {
             super(source);
             _urlEncodeSubstitutions = urlEncodeSubstitutions;
-            _nullValueBehavior = nullValueBehavior;
+            if (nullValueBehavior != null)
+                _nullValueBehavior = nullValueBehavior;
         }
 
         public static FieldKeyStringExpression create(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior)
