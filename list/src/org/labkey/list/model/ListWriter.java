@@ -389,7 +389,7 @@ public class ListWriter
 
                     // Write URL, if exists, from property descriptor
                     if (null != propertyDescriptor.getURL())
-                        columnXml.setUrl(propertyDescriptor.getURL().getSource());
+                        columnXml.setUrl(propertyDescriptor.getURL().toXML());
                 }
             }
         }

@@ -35,6 +35,7 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
@@ -570,14 +571,14 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                 {
                     try
                     {
-                        StringExpressionFactory.createURL(gwtColumnInfo.getURL());
+                        StringExpression expr = StringExpressionFactory.createURL(gwtColumnInfo.getURL());
+                        xmlColumn.setUrl(expr.toXML());
                     }
                     catch (Exception e)
                     {
                         throw new MetadataUnavailableException(e.getMessage());
                     }
                 }
-                xmlColumn.setUrl(gwtColumnInfo.getURL());
             }
             else if (xmlColumn.isSetUrl())
             {

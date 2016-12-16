@@ -222,7 +222,7 @@ public class TableXmlUtils
                     if (merge && bCopyTargetNode)
                         mt.setVersionColumnName(xmlTable.getVersionColumnName());
 
-                    bCopyTargetNode = compareStringProperty(tt.getTableUrl(), xmlTable.getTableUrl(), "TableUrl", rlOut, bCaseSensitive);
+                    bCopyTargetNode = compareStringProperty(tt.getTableUrl().getStringValue(), xmlTable.getTableUrl().getStringValue(), "TableUrl", rlOut, bCaseSensitive);
                     if (merge && bCopyTargetNode)
                         mt.setTableUrl(xmlTable.getTableUrl());
 
@@ -336,7 +336,7 @@ public class TableXmlUtils
                         if (merge && bCopyTargetNode)
                             mc.setOptionlistQuery(xmlCol.getOptionlistQuery());
 
-                        bCopyTargetNode = compareStringProperty(columnType.getUrl(), xmlCol.getUrl(), "Url", rlTmp, bCaseSensitive);
+                        bCopyTargetNode = compareStringProperty(columnType.getUrl().getStringValue(), xmlCol.getUrl().getStringValue(), "Url", rlTmp, bCaseSensitive);
                         if (merge && bCopyTargetNode)
                             mc.setUrl(xmlCol.getUrl());
 
