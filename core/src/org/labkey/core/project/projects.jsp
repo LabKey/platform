@@ -66,7 +66,6 @@
         }
     }
 %>
-<h1>HERE</h1>
 <div id="<%=text(renderTarget)%>"></div>
 <script type="text/javascript">
 
