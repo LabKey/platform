@@ -866,7 +866,17 @@ public class StringExpressionFactory
                     LOG.debug("No string substitution found for FieldKey '" + _key.encode() + "', but found String '" + lookupKey + "'.");
             }
 
-            return applyFormats(map.get(lookupKey));
+            String result = applyFormats(map.get(lookupKey));
+
+            // URL expressions are slightly different from vanilla string expressions in that
+            // when the value is null after applying formats AND the column exists in the row map,
+            // return empty string instead of null (which by default would cause the URL to not render at all).
+            // If the value is null after applying formats and the column IS NOT present in the row map,
+            // then null will be returned (and the URL will not be rendered by default).
+            if (result == null && map.containsKey(lookupKey))
+                return "";
+
+            return result;
         }
 
         @Override
