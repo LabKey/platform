@@ -39,7 +39,7 @@ import java.util.stream.Stream;
  *  ${Name:htmlEncode}
  *  ${MyParam:urlEncode}
  *
- *  ${MyParam:default('foo')}
+ *  ${MyParam:defaultValue('foo')}
  *
  *  ${MyDate:date}
  *  ${MyDate:date('yy-MM d')}
@@ -197,7 +197,7 @@ public class SubstitutionFormat
 
         public DefaultSubstitutionFormat(@NotNull String def)
         {
-            super("default");
+            super("defaultValue");
             _default = def;
         }
 

@@ -314,8 +314,9 @@ public class DomainUtil
         // Display properties
         if (columnXml.isSetDescription())
             gwtProp.setDescription(columnXml.getDescription());
+        // TODO: Include null value behavior
         if (columnXml.isSetUrl())
-            gwtProp.setURL(columnXml.getUrl());
+            gwtProp.setURL(columnXml.getUrl().getStringValue());
         if (columnXml.isSetShownInInsertView())
             gwtProp.setShownInInsertView(columnXml.getShownInInsertView());
         if (columnXml.isSetShownInUpdateView())

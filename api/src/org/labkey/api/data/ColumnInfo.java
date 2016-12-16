@@ -926,7 +926,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             if (-1 != inputRows)
                 xmlCol.setInputRows(inputRows);
             if (null != url)
-                xmlCol.setUrl(url.toString());
+                xmlCol.setUrl(url.toXML());
 
             if (isReadOnly)
                 xmlCol.setIsReadOnly(isReadOnly);
@@ -1035,13 +1035,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if (xmlCol.isSetInputType())
             inputType = xmlCol.getInputType();
         if (xmlCol.isSetUrl())
-        {
-            String url = xmlCol.getUrl();
-            if (StringUtils.isEmpty(url))
-                setURL(AbstractTableInfo.LINK_DISABLER);
-            else
-                setURL(StringExpressionFactory.createURLSilent(url));
-        }
+            setURL(StringExpressionFactory.fromXML(xmlCol.getUrl(), false));
         if (xmlCol.isSetUrlTarget())
             setURLTargetWindow(xmlCol.getUrlTarget());
         if (xmlCol.isSetIsAutoInc())

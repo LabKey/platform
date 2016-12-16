@@ -131,7 +131,7 @@ public class TableInfoWriter
         }
 
         if (null != column.getURL())
-            columnXml.setUrl(column.getURL().getSource());
+            columnXml.setUrl(column.getURL().toXML());
 
         if (!column.getImportAliasSet().isEmpty())
         {

@@ -20,22 +20,24 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
-import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.data.xml.StringExpressionType;
 import org.springframework.web.servlet.mvc.Controller;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Collection;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import static org.labkey.api.data.AbstractTableInfo.LINK_DISABLER;
 
 /**
  * Representation of a dynamic URL expression that can substitute in parameter values, typically filled in via
@@ -78,7 +80,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
     @NotNull
     public static DetailsURL fromString(@NotNull String str)
     {
-        DetailsURL ret = new DetailsURL(str, null);
+        DetailsURL ret = new DetailsURL(str, null, null);
         ret.parse();    // validate
         return ret;
     }
@@ -90,18 +92,18 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
      *
      * @param str The URL template string.
      * @param cc The ContainerContext.
-     * @param errors If not null, any URL parse errors are added to the collection and null is returned.
-     * @return DetailsURL or null.
+     * @param nullBehavior Indicate how null values within the expression are handled.
+     * @param errors If not null, any URL parse errors are added to the collection and null is returned.  @return DetailsURL or null.
      * @throws IllegalArgumentException if errors is null and URL string is invalid.
      * @see StringExpressionFactory#createURL(String)
      */
     @Nullable
-    public static DetailsURL fromString(@NotNull String str, @Nullable ContainerContext cc, @Nullable Collection<QueryException> errors)
+    public static DetailsURL fromString(@NotNull String str, @Nullable ContainerContext cc, @Nullable NullValueBehavior nullBehavior, @Nullable Collection<QueryException> errors)
         throws IllegalArgumentException
     {
         try
         {
-            return fromString(str, cc);
+            return fromString(str, cc, nullBehavior);
         }
         catch (IllegalArgumentException iae)
         {
@@ -126,24 +128,67 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
      */
     @NotNull
     public static DetailsURL fromString(@NotNull String str, @Nullable ContainerContext cc)
+            throws IllegalArgumentException
+    {
+        return fromString(str, cc, null);
+    }
+
+    /**
+     * Create DetailsURL from the string with a {@link ContainerContext}.
+     * Usually, ContainerContext will be supplied to the DetailsURL from the
+     * {@link org.labkey.api.data.TableInfo} that the DetailsURL is attached to.
+     *
+     * @param str The URL template string.
+     * @param cc The ContainerContext.
+     * @return DetailsURL
+     * @throws IllegalArgumentException if URL string is invalid.
+     * @see StringExpressionFactory#createURL(String)
+     */
+    @NotNull
+    public static DetailsURL fromString(@NotNull String str, @Nullable ContainerContext cc, @Nullable NullValueBehavior nullBehavior)
         throws IllegalArgumentException
     {
-        DetailsURL ret = new DetailsURL(str, cc);
+        DetailsURL ret = new DetailsURL(str, cc, nullBehavior);
         ret.parse();    // validate
         return ret;
+    }
+
+    /**
+     * Create DetailsURL from an StringExpressionType from the tableInto.xsd.
+     *
+     * @param xurl The URL template string.
+     * @param errors If not null, any URL parse errors are added to the collection and null is returned.  @return DetailsURL or null.
+     * @throws IllegalArgumentException if errors is null and URL string is invalid.
+     * @see StringExpressionFactory#createURL(String)
+     */
+    public static DetailsURL fromXML(@NotNull StringExpressionType xurl, @Nullable Collection<QueryException> errors)
+        throws IllegalArgumentException
+    {
+        String url = xurl.getStringValue();
+        if (StringUtils.isBlank(url))
+            return LINK_DISABLER;
+
+        NullValueBehavior nullBehavior = NullValueBehavior.fromXML(xurl.getReplaceMissing());
+        return DetailsURL.fromString(url, null, nullBehavior, errors);
     }
 
 
     protected DetailsURL(String str)
     {
-        _urlSource = str;
+        this(str, null, null);
     }
 
+    protected DetailsURL(String str, @Nullable ContainerContext cc)
+    {
+        this(str, cc, null);
+    }
 
-    protected DetailsURL(@NotNull String str, @Nullable ContainerContext cc)
+    protected DetailsURL(@NotNull String str, @Nullable ContainerContext cc, @Nullable NullValueBehavior nullBehavior)
     {
         _urlSource = str;
         _containerContext = cc;
+        if (nullBehavior != null)
+            _nullValueBehavior = nullBehavior;
     }
 
 
@@ -158,22 +203,32 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
      */
     public DetailsURL(ActionURL url, Map<String, ?> columnParams)
     {
+        this(url, columnParams, null);
+    }
+
+    public DetailsURL(ActionURL url, @Nullable Map<String, ?> columnParams, @Nullable NullValueBehavior nullBehavior)
+    {
         url = url.clone();
-        for (Map.Entry<String, ?> e : columnParams.entrySet())
+        if (columnParams != null)
         {
-            Object v = e.getValue();
-            String strValue;
-            if (v instanceof String)
-                strValue = (String)v;
-            else if (v instanceof FieldKey)
-                strValue = ((FieldKey)v).encode();
-            else if (v instanceof ColumnInfo)
-                strValue = ((ColumnInfo)v).getFieldKey().encode();
-            else
-                throw new IllegalArgumentException("Column param not supported: " + String.valueOf(v));
-            url.addParameter(e.getKey(), "${" + strValue + "}");
+            for (Map.Entry<String, ?> e : columnParams.entrySet())
+            {
+                Object v = e.getValue();
+                String strValue;
+                if (v instanceof String)
+                    strValue = (String) v;
+                else if (v instanceof FieldKey)
+                    strValue = ((FieldKey) v).encode();
+                else if (v instanceof ColumnInfo)
+                    strValue = ((ColumnInfo) v).getFieldKey().encode();
+                else
+                    throw new IllegalArgumentException("Column param not supported: " + String.valueOf(v));
+                url.addParameter(e.getKey(), "${" + strValue + "}");
+            }
         }
         _url = url;
+        if (nullBehavior != null)
+            _nullValueBehavior = nullBehavior;
     }
 
     public DetailsURL(ActionURL baseURL, String param, FieldKey subst)
@@ -314,14 +369,14 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
 
     public DetailsURL copy(ContainerContext cc)
     {
-        assert this != AbstractTableInfo.LINK_DISABLER : "Shouldn't copy a disabled link";
+        assert this != LINK_DISABLER : "Shouldn't copy a disabled link";
         return copy(cc, false);
     }
 
 
     public DetailsURL copy(ContainerContext cc, boolean overwrite)
     {
-        assert this != AbstractTableInfo.LINK_DISABLER : "Shouldn't copy a disabled link";
+        assert this != LINK_DISABLER : "Shouldn't copy a disabled link";
         DetailsURL ret = (DetailsURL)copy();
         ret.setContainerContext(cc, overwrite);
         return ret;
@@ -331,7 +386,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
     @Override
     public DetailsURL clone()
     {
-        assert this != AbstractTableInfo.LINK_DISABLER : "Shouldn't clone a disabled link";
+        assert this != LINK_DISABLER : "Shouldn't clone a disabled link";
         DetailsURL clone = (DetailsURL)super.clone();
         if (null != clone._url)
             clone._url = clone._url.clone();
@@ -344,7 +399,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
 
     public void setViewContext(ViewContext context)
     {
-        assert this != AbstractTableInfo.LINK_DISABLER : "Shouldn't set ViewContext on disabled link";
+        assert this != LINK_DISABLER : "Shouldn't set ViewContext on disabled link";
         _context = context;
     }
 
@@ -384,7 +439,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
 
     public void setContainerContext(ContainerContext cc, boolean overwrite)
     {
-        assert this != AbstractTableInfo.LINK_DISABLER : "Shouldn't set ContainerFilter on disabled link";
+        assert this != LINK_DISABLER : "Shouldn't set ContainerFilter on disabled link";
         if (null == _containerContext || overwrite)
             _containerContext = cc;
     }

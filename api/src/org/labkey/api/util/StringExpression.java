@@ -17,10 +17,11 @@ package org.labkey.api.util;
 
 import org.labkey.api.data.Parameter;
 import org.labkey.api.query.FieldKey;
+import org.labkey.data.xml.StringExpressionType;
 
-import java.util.Map;
-import java.io.Writer;
 import java.io.IOException;
+import java.io.Writer;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -43,4 +44,6 @@ public interface StringExpression extends Cloneable, Parameter.JdbcParameterValu
 
     /** @return whether the fieldKeys are sufficient to render this expression */
     boolean canRender(Set<FieldKey> fieldKeys);
+
+    StringExpressionType toXML();
 }

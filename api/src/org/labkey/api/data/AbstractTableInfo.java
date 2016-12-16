@@ -903,49 +903,23 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
             setTitle(xmlTable.getTableTitle());
 
         if (xmlTable.isSetGridUrl())
-        {
-            if (StringUtils.isBlank(xmlTable.getGridUrl()))
-                _gridURL = LINK_DISABLER;
-            else
-                _gridURL = DetailsURL.fromString(xmlTable.getGridUrl(), null, errors);
-        }
+            _gridURL = DetailsURL.fromXML(xmlTable.getGridUrl(), errors);
 
         if (xmlTable.isSetImportUrl())
-        {
-            if (StringUtils.isBlank(xmlTable.getImportUrl()))
-                _importURL = LINK_DISABLER;
-            else
-                _importURL = DetailsURL.fromString(xmlTable.getImportUrl(), null, errors);
-        }
+            _importURL = DetailsURL.fromXML(xmlTable.getImportUrl(), errors);
+
         if (xmlTable.isSetInsertUrl())
-        {
-            if (StringUtils.isBlank(xmlTable.getInsertUrl()))
-                _insertURL = LINK_DISABLER;
-            else
-                _insertURL = DetailsURL.fromString(xmlTable.getInsertUrl(), null, errors);
-        }
+            _insertURL = DetailsURL.fromXML(xmlTable.getInsertUrl(), errors);
+
         if (xmlTable.isSetUpdateUrl())
-        {
-            if (StringUtils.isBlank(xmlTable.getUpdateUrl()))
-                _updateURL = LINK_DISABLER;
-            else
-                _updateURL = DetailsURL.fromString(xmlTable.getUpdateUrl(), null, errors);
-        }
+            _updateURL = DetailsURL.fromXML(xmlTable.getUpdateUrl(), errors);
+
         if (xmlTable.isSetDeleteUrl())
-        {
-            if (StringUtils.isBlank(xmlTable.getDeleteUrl()))
-                _deleteURL = LINK_DISABLER;
-            else
-                _deleteURL = DetailsURL.fromString(xmlTable.getDeleteUrl(), null, errors);
-        }
+            _deleteURL = DetailsURL.fromXML(xmlTable.getDeleteUrl(), errors);
 
         if (xmlTable.isSetTableUrl())
-        {
-            if (StringUtils.isBlank(xmlTable.getTableUrl()))
-                _detailsURL = LINK_DISABLER;
-            else
-                _detailsURL = DetailsURL.fromString(xmlTable.getTableUrl(), null, errors);
-        }
+            _detailsURL = DetailsURL.fromXML(xmlTable.getTableUrl(), errors);
+
 
         if (xmlTable.isSetCacheSize())
             _cacheSize = xmlTable.getCacheSize();

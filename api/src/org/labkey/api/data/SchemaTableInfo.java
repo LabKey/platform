@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
@@ -564,47 +563,23 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
             setImportTemplates(xmlTable.getImportTemplates().getTemplateArray());
 
         if (xmlTable.isSetGridUrl())
-        {
-            if (StringUtils.isBlank(xmlTable.getGridUrl()))
-                _gridURL = AbstractTableInfo.LINK_DISABLER;
-            else
-                _gridURL = DetailsURL.fromString(xmlTable.getGridUrl());
-        }
+            _gridURL = DetailsURL.fromXML(xmlTable.getGridUrl(), null);
+
         if (xmlTable.isSetImportUrl())
-        {
-            if (StringUtils.isBlank(xmlTable.getImportUrl()))
-                _importURL = AbstractTableInfo.LINK_DISABLER;
-            else
-                _importURL = DetailsURL.fromString(xmlTable.getImportUrl());
-        }
+            _importURL = DetailsURL.fromXML(xmlTable.getImportUrl(), null);
+
         if (xmlTable.isSetInsertUrl())
-        {
-            if (StringUtils.isBlank(xmlTable.getInsertUrl()))
-                _insertURL = AbstractTableInfo.LINK_DISABLER;
-            else
-                _insertURL = DetailsURL.fromString(xmlTable.getInsertUrl());
-        }
-        if (xmlTable.isSetDeleteUrl())
-        {
-            if (StringUtils.isBlank(xmlTable.getDeleteUrl()))
-                _deleteURL = AbstractTableInfo.LINK_DISABLER;
-            else
-                _deleteURL = DetailsURL.fromString(xmlTable.getDeleteUrl());
-        }
+            _insertURL = DetailsURL.fromXML(xmlTable.getInsertUrl(), null);
+
         if (xmlTable.isSetUpdateUrl())
-        {
-            if (StringUtils.isBlank(xmlTable.getUpdateUrl()))
-                _updateURL = AbstractTableInfo.LINK_DISABLER;
-            else
-                _updateURL = DetailsURL.fromString(xmlTable.getUpdateUrl());
-        }
+            _updateURL = DetailsURL.fromXML(xmlTable.getUpdateUrl(), null);
+
+        if (xmlTable.isSetDeleteUrl())
+            _deleteURL = DetailsURL.fromXML(xmlTable.getDeleteUrl(), null);
+
         if (xmlTable.isSetTableUrl())
-        {
-            if (StringUtils.isBlank(xmlTable.getTableUrl()))
-                _detailsURL = AbstractTableInfo.LINK_DISABLER;
-            else
-                _detailsURL = DetailsURL.fromString(xmlTable.getTableUrl());
-        }
+            _detailsURL = DetailsURL.fromXML(xmlTable.getTableUrl(), null);
+
 
         if (xmlTable.getButtonBarOptions() != null)
             _buttonBarConfig = new ButtonBarConfig(xmlTable.getButtonBarOptions());

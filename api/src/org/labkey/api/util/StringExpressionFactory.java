@@ -34,6 +34,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
+import org.labkey.data.xml.StringExpressionType;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -51,6 +52,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.data.AbstractTableInfo.LINK_DISABLER;
 
 /**
  * User: migra
@@ -120,25 +123,30 @@ public class StringExpressionFactory
      */
     public static StringExpression createURL(String str)
     {
+        return createURL(str, null);
+    }
+
+    public static StringExpression createURL(String str, @Nullable AbstractStringExpression.NullValueBehavior nullValueBehavior)
+    {
         if (str == null)
             return null;
 
         StringExpression expr;
 
-        String key = "url:" + str;
+        String key = "url:" + (nullValueBehavior == null ? "" : nullValueBehavior.name()) + ":" + str;
         expr = templatesUrl.get(key);
         if (null != expr)
             return expr.copy();
 
         if (str.startsWith("mailto:"))
-            expr = new FieldKeyStringExpression(str);
+            expr = new FieldKeyStringExpression(str, true, nullValueBehavior);
         else if (StringUtilsLabKey.startsWithURL(str))
         {
-            expr = new URLStringExpression(str);
+            expr = new URLStringExpression(str, nullValueBehavior);
         }
         else if (null == DetailsURL.validateURL(str))
         {
-            expr = DetailsURL.fromString(str);
+            expr = DetailsURL.fromString(str, null, nullValueBehavior);
         }
         else
         {
@@ -148,7 +156,7 @@ public class StringExpressionFactory
             {
                 ActionURL url = new ActionURL(str);
                 if (StringUtils.isEmpty(url.getExtraPath()))
-                    expr = new DetailsURL(url);
+                    expr = new DetailsURL(url, null, nullValueBehavior);
             }
             catch (IllegalArgumentException x)
             {
@@ -160,20 +168,6 @@ public class StringExpressionFactory
 
         templatesUrl.put(key, expr);
         return expr.copy();
-    }
-
-    /** Silently swallow any problems with parsing, effectively ignoring the URL if there are any errors */
-    public static StringExpression createURLSilent(String str)
-    {
-        try
-        {
-            return createURL(str);
-        }
-        catch (IllegalArgumentException e)
-        {
-            // We were told to be silent
-            return null;
-        }
     }
 
 
@@ -217,6 +211,25 @@ public class StringExpressionFactory
         return expr;
     }
 
+    public static StringExpression fromXML(@NotNull StringExpressionType xurl, boolean throwErrors)
+    {
+        String url = xurl.getStringValue();
+        if (StringUtils.isBlank(url))
+            return LINK_DISABLER;
+
+        try
+        {
+            AbstractStringExpression.NullValueBehavior nullBehavior = AbstractStringExpression.NullValueBehavior.fromXML(xurl.getReplaceMissing());
+            return createURL(url, nullBehavior);
+        }
+        catch (IllegalArgumentException e)
+        {
+            if (throwErrors)
+                throw e;
+            else
+                return null;
+        }
+    }
 
     //
     // StringExpression implementations
@@ -286,9 +299,9 @@ public class StringExpressionFactory
                 // TODO: Use a real expression parser
                 SubstitutionFormat format;
                 String rest = value.substring(colon + 1);
-                if (rest.startsWith("default('") && rest.endsWith("')"))
+                if (rest.startsWith("defaultValue('") && rest.endsWith("')"))
                 {
-                    String param = rest.substring("default('".length(), rest.length() - "')".length());
+                    String param = rest.substring("defaultValue('".length(), rest.length() - "')".length());
                     format = new SubstitutionFormat.DefaultSubstitutionFormat(param);
                 }
                 else if (rest.startsWith("date('") && rest.endsWith("')"))
@@ -537,8 +550,6 @@ public class StringExpressionFactory
     }
 
 
-
-
     public static abstract class AbstractStringExpression implements StringExpression, Cloneable
     {
         // Ideally, we'd be able to distinguish between null values and missing fields... this would let us output
@@ -546,9 +557,37 @@ public class StringExpressionFactory
         // FieldParts know the field, so this is hard.
         public enum NullValueBehavior
         {
-            NullResult,                 // Any null field results in a null eval (good for URLs)
-            ReplaceNullWithBlank,       // Null or missing fields get replaced with blank
-            OutputNull                  // Insert "null" into the string
+            // Any null field results in a null eval (good for URLs)
+            NullResult(StringExpressionType.ReplaceMissing.NULL_RESULT),
+
+            // Null or missing fields get replaced with blank
+            ReplaceNullWithBlank(StringExpressionType.ReplaceMissing.BLANK_VALUE),
+
+            // Insert "null" into the string
+            OutputNull(StringExpressionType.ReplaceMissing.NULL_VALUE);
+
+            private final StringExpressionType.ReplaceMissing.Enum _xenum;
+
+            NullValueBehavior(StringExpressionType.ReplaceMissing.Enum xenum)
+            {
+                _xenum = xenum;
+            }
+
+            @Nullable
+            public static AbstractStringExpression.NullValueBehavior fromXML(StringExpressionType.ReplaceMissing.Enum xmissing)
+            {
+                if (xmissing == null)
+                    return null;
+
+                for (NullValueBehavior nullBehavior : values())
+                {
+                    if (xmissing == nullBehavior._xenum)
+                        return nullBehavior;
+                }
+
+                return null;
+            }
+
         }
 
         protected NullValueBehavior _nullValueBehavior = NullValueBehavior.NullResult;
@@ -736,6 +775,18 @@ public class StringExpressionFactory
         public JdbcType getJdbcParameterType()
         {
             return JdbcType.VARCHAR;
+        }
+
+        public StringExpressionType toXML()
+        {
+            StringExpressionType xurl = StringExpressionType.Factory.newInstance();
+            xurl.setStringValue(toString());
+
+            // If the null handling isn't the default, add the missingBehavior attribute
+            if (_nullValueBehavior != NullValueBehavior.NullResult)
+                xurl.setReplaceMissing(_nullValueBehavior._xenum);
+
+            return xurl;
         }
     }
 
@@ -964,7 +1015,12 @@ public class StringExpressionFactory
     {
         public URLStringExpression(String source)
         {
-            super("");
+            this(source, null);
+        }
+
+        public URLStringExpression(String source, @Nullable NullValueBehavior nullBehavior)
+        {
+            super("", true, nullBehavior);
             _source = source.trim();
         }
 
@@ -1133,7 +1189,7 @@ public class StringExpressionFactory
 
             {
                 StringExpression se = StringExpressionFactory.create(
-                        "${null:default('foo')}|${empty:default('bar')}|${a:default('blee')}", false, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
+                        "${null:defaultValue('foo')}|${empty:defaultValue('bar')}|${a:defaultValue('blee')}", false, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
 
                 String s = se.eval(m);
                 assertEquals("foo|bar|A", s);
@@ -1148,7 +1204,7 @@ public class StringExpressionFactory
 
             {
                 StringExpression se = StringExpressionFactory.create(
-                        "${a:prefix('!')}|${a:suffix('?')}|${null:suffix('#')}|${empty:suffix('*')}|${empty:default('foo'):suffix('@')}", false, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
+                        "${a:prefix('!')}|${a:suffix('?')}|${null:suffix('#')}|${empty:suffix('*')}|${empty:defaultValue('foo'):suffix('@')}", false, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
                 String s = se.eval(m);
                 assertEquals("!A|A?|||foo@", s);
             }
