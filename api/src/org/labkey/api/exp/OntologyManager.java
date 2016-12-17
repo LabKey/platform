@@ -31,7 +31,31 @@ import org.labkey.api.cache.Wrapper;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.RowMapFactory;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -57,12 +81,14 @@ import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.data.xml.StringExpressionType;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -2731,7 +2757,17 @@ public class OntologyManager
 
             String description = (String) m.get("description");
             String format = StringUtils.trimToNull((String)m.get("format"));
-            String url = (String) m.get("url");
+
+            StringExpression url = null;
+            if (m.get("url") instanceof String)
+            {
+                url = StringExpressionFactory.createURL((String)m.get("url"));
+            }
+            else if (m.get("url") instanceof StringExpressionType)
+            {
+                url = StringExpressionFactory.fromXML((StringExpressionType)m.get("url"), true);
+            }
+
             String importAliases = (String) m.get("importAliases");
 
             // Try to resolve folder path to a container... if this fails, just use current folder (which at least will preserve schema & query)
@@ -2828,7 +2864,7 @@ public class OntologyManager
             pd.setRangeURI(rangeURI);
             pd.setContainer(container);
             pd.setDescription(description);
-            pd.setURL(StringExpressionFactory.createURL(url));
+            pd.setURL(url);
             pd.setImportAliases(importAliases);
             pd.setRequired(required);
             pd.setHidden(hidden);
