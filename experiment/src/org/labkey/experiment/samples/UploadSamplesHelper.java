@@ -859,7 +859,7 @@ public class UploadSamplesHelper
 
         return values
                 .map(String::trim)
-                .filter(s -> s.isEmpty());
+                .filter(s -> !s.isEmpty());
     }
 
     // CONSIDER: This method shouldn't update the domain to make the property into a lookup..

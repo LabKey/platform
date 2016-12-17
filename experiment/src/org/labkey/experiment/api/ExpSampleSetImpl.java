@@ -62,6 +62,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleSet
 {
@@ -487,21 +488,25 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     private Collection<String> parentNames(Object value, String parentColName)
     {
+        Stream<String> stringStream;
         if (value instanceof String)
         {
-            return Arrays.stream(((String)value).split(","))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .collect(Collectors.toList());
+            stringStream = Arrays.stream(((String)value).split(","));
         }
         else if (value instanceof Collection)
         {
             Collection<?> c = (Collection)value;
-            return c.stream()
-                    .map(String::valueOf)
-                    .collect(Collectors.toList());
+            stringStream = c.stream().map(String::valueOf);
         }
-        throw new IllegalStateException("Expected string or collection for '" + parentColName + "': " + value);
+        else
+        {
+            throw new IllegalStateException("Expected string or collection for '" + parentColName + "': " + value);
+        }
+
+        return stringStream
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .collect(Collectors.toList());
     }
 
 
