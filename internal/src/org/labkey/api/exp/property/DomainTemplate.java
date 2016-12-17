@@ -298,6 +298,8 @@ public class DomainTemplate
             SampleSetOptionsType options = ((SampleSetTemplateType)template).getOptions();
             if (options != null)
             {
+                optionsMap.put("nameExpression", options.getNameExpression());
+
                 String[] keyCols = options.getKeyColArray();
                 Integer[] idCols = new Integer[keyCols.length];
                 for (int i = 0; i < keyCols.length; i++)
