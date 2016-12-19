@@ -7,7 +7,7 @@ public class MessageBoardContributorRole extends AbstractRole
 {
     public MessageBoardContributorRole()
     {
-        super("Message Board Contributor", "Allows user to insert messages and manage them.",
+        super("Message Board Contributor", "Allows user to insert, delete, and edit their own messages and respond to other's messages.",
                 InsertMessagePermission.class, ReadPermission.class);
     }
 }
