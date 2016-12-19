@@ -681,6 +681,8 @@ var errorPlotConfig = {
             tickHoverText: function(value) {
                 return "HOVER: " + value;
             },
+            //tickValues: [0,1,2,3,4,5,6,7,8,9,10,11,12,13],
+            tickValues: [0,4,8,12],
             tickFormat: function(value){
                 if(value > 0) {
                     return "Day " + value;
