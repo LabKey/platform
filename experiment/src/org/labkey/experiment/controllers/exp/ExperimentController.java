@@ -96,6 +96,7 @@ import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpProtocolOutput;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.form.DeleteForm;
@@ -4800,10 +4801,6 @@ public class ExperimentController extends SpringActionController
             if (errors.hasErrors())
                 return;
 
-            if ((form.dataInputs == null || form.dataInputs.size() == 0) &&
-                (form.materialInputs == null || form.materialInputs.size() == 0))
-                errors.reject(ERROR_MSG, "At least one data input or material input is required");
-
             if (form.materialOutputCount > 0 && form.materialOutputs != null && !form.materialOutputs.isEmpty())
                 errors.reject(ERROR_MSG, "Either 'materialOutputCount' or 'materialOutputs' property can be specified, but not both.");
 
@@ -5014,8 +5011,10 @@ public class ExperimentController extends SpringActionController
                 if (outputMaterials.isEmpty() && outputData.isEmpty())
                     throw new IllegalStateException("Expected to create " + materialOutputCount + " materials and " + dataOutputCount + " datas");
 
-                // finally, create the derived run
-                ExpRun run = ExperimentService.get().derive(materialInputs, dataInputs, outputMaterials, outputData, new ViewBackgroundInfo(getContainer(), getUser(), null), _log);
+                // finally, create the derived run if there are any parents
+                ExpRun run = null;
+                if (!materialInputs.isEmpty() || !dataInputs.isEmpty())
+                    run = ExperimentService.get().derive(materialInputs, dataInputs, outputMaterials, outputData, new ViewBackgroundInfo(getContainer(), getUser(), null), _log);
                 tx.commit();
 
                 StringBuilder successMessage = new StringBuilder("Created ");
@@ -5024,9 +5023,11 @@ public class ExperimentController extends SpringActionController
                 if (outputData.size() > 0)
                     successMessage.append(outputData.size()).append(" data");
 
-                // TODO: Jackson can't serialize the JSONObject
-                //JSONObject ret = ExperimentJSONConverter.serializeRun(run, null);
-                JSONObject ret = null;
+                JSONObject ret;
+                if (run != null)
+                    ret = ExperimentJSONConverter.serializeRun(run, null);
+                else
+                    ret = ExperimentJSONConverter.serializeRunOutputs(outputData.keySet(), outputMaterials.keySet());
 
                 return success(successMessage.toString(), ret);
             }

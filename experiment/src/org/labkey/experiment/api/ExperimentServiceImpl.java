@@ -4779,7 +4779,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 name.append(outputDatas.size()).append(" data ");
         }
         name.append("from ");
-        String nameSeparator = " ";
+        String nameSeparator = "";
 
         for (ExpData data : inputDatas.keySet())
         {
