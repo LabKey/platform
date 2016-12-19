@@ -44,7 +44,8 @@ def List gwt = [
 def List jackson = [
         "com.fasterxml.jackson.core:jackson-annotations:${jacksonAnnotationsVersion}",
         "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}",
-        "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+        "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}",
+        "com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}"
 ]
 
 def List charting = [
@@ -100,6 +101,11 @@ def List javax = [
         "javax.validation:validation-api:${validationApiVersion}",
         "javax.xml:jaxrpc:${jaxrpcVersion}",
 ]
+
+configurations {
+    // Exclude the bundled org.json library from com.fasterxml.jackson.datatype:jackson-datatype-json-org dependency
+    all*.exclude group: "org.apache.geronimo.bundles", module: "json"
+}
 
 // this is required for compiling the API jar file, but it causes IntelliJ 15.X to be unhappy when importing the build script.
 //       Error message: Cannot register given path of type SOURCE because it's out of content root

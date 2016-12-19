@@ -18,6 +18,7 @@ package org.labkey.api.action;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
 import org.json.JSONArray;
 import org.labkey.api.util.DateUtil;
 
@@ -25,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Array;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
@@ -73,9 +75,18 @@ public class ApiJsonWriter extends ApiResponseWriter
 
     private void initGenerator()
     {
-        jg.setCodec(new ObjectMapper());  // makes the generator annotation aware
+        jg.setCodec(createObjectMapper());  // makes the generator annotation aware
         // Don't flush the underlying Writer (thus committing the response) on all calls to write JSON content. See issue 19924
         jg.disable(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM);
+    }
+
+    protected ObjectMapper createObjectMapper()
+    {
+        ObjectMapper mapper = new ObjectMapper();
+        // Allow org.json classes to be serialized by Jackson
+        mapper.registerModule(new JsonOrgModule());
+        mapper.setDateFormat(new SimpleDateFormat(DateUtil.getJsonDateTimeFormatString()));
+        return mapper;
     }
 
     @Override

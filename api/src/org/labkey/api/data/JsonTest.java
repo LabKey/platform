@@ -18,12 +18,20 @@ package org.labkey.api.data;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.labkey.api.util.DateUtil;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 /**
@@ -78,6 +86,34 @@ public class JsonTest extends Assert
             // Jackson explicitly throws exceptions, but there's still nothing we can do about it if one happens here.
             throw new RuntimeException(e);
         }
+    }
+
+    @Test
+    public void jsonOrgViaJackson() throws IOException
+    {
+        // Test serializing org.json JSON classes via Jackson
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JsonOrgModule());
+        mapper.setDateFormat(new SimpleDateFormat(DateUtil.getJsonDateTimeFormatString()));
+
+        final Date d = new GregorianCalendar(2011, 11, 3).getTime();
+
+        JSONObject obj = new JSONObject();
+        obj.put("str", "hello");
+        obj.put("arr", new JSONArray(Arrays.asList("one", null, 3, new JSONObject(Collections.singletonMap("four", 4)))));
+        obj.put("nul", (Object)null);
+        obj.put("d", d);
+
+        // Verify serializing org.json.JSONObject via Jackson is equivalent
+        String jacksonToString = mapper.writeValueAsString(obj);
+        String jsonOrgToString = obj.toString();
+        assertEquals(jsonOrgToString, jacksonToString);
+
+        // Verify deserializing org.json.JSONObject via Jackson is equivalent
+        // NOTE: In both cases, the date value is deserialized as a string because JSON sucks
+        JSONObject jsonOrgRoundTrip =  new JSONObject(jacksonToString);
+        JSONObject jacksonRoundTrip = mapper.readValue(jacksonToString, JSONObject.class);
+        assertEquals(jsonOrgRoundTrip, jacksonRoundTrip);
     }
 
     private static class Customer

@@ -16,6 +16,7 @@
 package org.labkey.api.exp.api;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
@@ -30,6 +31,7 @@ import org.labkey.api.util.URIUtil;
 
 import java.io.File;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,22 +99,34 @@ public class ExperimentJSONConverter
         }
         jsonObject.put(MATERIAL_INPUTS, inputMaterialArray);
 
+        serializeRunOutputs(jsonObject, run.getDataOutputs(), run.getMaterialOutputs());
+
+        return jsonObject;
+    }
+
+    public static JSONObject serializeRunOutputs(Collection<ExpData> data, Collection<ExpMaterial> materials)
+    {
+        JSONObject obj = new JSONObject();
+        serializeRunOutputs(obj, data, materials);
+        return obj;
+    }
+
+    protected static void serializeRunOutputs(@NotNull JSONObject obj, Collection<ExpData> data, Collection<ExpMaterial> materials)
+    {
         JSONArray outputDataArray = new JSONArray();
-        for (ExpData data : run.getDataOutputs())
+        for (ExpData d : data)
         {
-            if (null != data.getFile())
-                outputDataArray.put(ExperimentJSONConverter.serializeData(data));
+            if (null != d.getFile() || null != d.getDataClass())
+                outputDataArray.put(ExperimentJSONConverter.serializeData(d));
         }
-        jsonObject.put(DATA_OUTPUTS, outputDataArray);
+        obj.put(DATA_OUTPUTS, outputDataArray);
 
         JSONArray outputMaterialArray = new JSONArray();
-        for (ExpMaterial material : run.getMaterialOutputs())
+        for (ExpMaterial material : materials)
         {
             outputMaterialArray.put(ExperimentJSONConverter.serializeMaterial(material));
         }
-        jsonObject.put(MATERIAL_OUTPUTS, outputMaterialArray);
-
-        return jsonObject;
+        obj.put(MATERIAL_OUTPUTS, outputMaterialArray);
     }
 
 

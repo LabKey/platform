@@ -31,6 +31,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+
+import static org.json.JSONObject.NULL;
 
 /**
  * A JSONArray is an ordered sequence of values. Its external text form is a
@@ -636,6 +639,10 @@ public class JSONArray {
      * @return this.
      */
     public JSONArray put(Object value) {
+        // kevink: translate any put(JSONObject.NULL) into a null value.  NULL is used by Jackson's JsonOrgModule for serialization of org.json
+        if (NULL.equals(value))
+            value = null;
+
         this.myArrayList.add(value);
         return this;
     }
@@ -924,5 +931,20 @@ public class JSONArray {
             valueArray[idx] = get(idx);
         }
         return valueArray;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        JSONArray jsonArray = (JSONArray) o;
+        return Objects.equals(myArrayList, jsonArray.myArrayList);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(myArrayList);
     }
 }

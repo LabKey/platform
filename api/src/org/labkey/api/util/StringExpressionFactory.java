@@ -1159,7 +1159,7 @@ public class StringExpressionFactory
         @Test
         public void testDateFormats()
         {
-            Date d = new GregorianCalendar(2011, 11, 03).getTime();
+            Date d = new GregorianCalendar(2011, 11, 3).getTime();
             Map<Object, Object> m = new HashMap<>();
             m.put("d", d);
 

@@ -87,6 +87,54 @@ import java.util.*;
  */
 public class JSONObject extends HashMap<String, Object>
 {
+    // kevink: restore the Null class removed in r10087.  It is used by Jackson's JsonOrgModule for serialization of org.json
+    /**
+     * JSONObject.NULL is equivalent to the value that JavaScript calls null,
+     * whilst Java's null is equivalent to the value that JavaScript calls
+     * undefined.
+     */
+     private static final class Null {
+
+        /**
+         * There is only intended to be a single instance of the NULL object,
+         * so the clone method returns itself.
+         * @return     NULL.
+         */
+        protected final Object clone() {
+            return this;
+        }
+
+
+        /**
+         * A Null object is equal to the null value and to itself.
+         * @param object    An object to test for nullness.
+         * @return true if the object parameter is the JSONObject.NULL object
+         *  or null.
+         */
+        public boolean equals(Object object) {
+            return object == null || object == this;
+        }
+
+
+        /**
+         * Get the "null" string value.
+         * @return The string "null".
+         */
+        public String toString() {
+            return "null";
+        }
+    }
+
+    // kevink: restore the NULL instance removed in r10087.  It is used by Jackson's JsonOrgModule for serialization of org.json
+    /**
+     * It is sometimes more convenient and less ambiguous to have a
+     * <code>NULL</code> object than to use Java's <code>null</code> value.
+     * <code>JSONObject.NULL.equals(null)</code> returns <code>true</code>.
+     * <code>JSONObject.NULL.toString()</code> returns <code>"null"</code>.
+     */
+    public static final Object NULL = new Null();
+
+
     /**
      * Construct an empty JSONObject.
      */
@@ -564,7 +612,7 @@ public class JSONObject extends HashMap<String, Object>
      * @return      true if there is no value associated with the key
      */
     public boolean isNull(String key) {
-        return !containsKey(key) || get(key) == null;
+        return !containsKey(key) || get(key) == null || JSONObject.NULL.equals(get(key));
     }
 
 
@@ -581,6 +629,27 @@ public class JSONObject extends HashMap<String, Object>
             ja.put(s);
         }
         return ja.length() == 0 ? null : ja;
+    }
+
+    // kevink: restore the keys method removed in r10087.  It is used by Jackson's JsonOrgModule for serialization of org.json
+    /**
+     * Get an enumeration of the keys of the JSONObject.
+     *
+     * @return An iterator of the keys.
+     */
+    public Iterator<String> keys()
+    {
+        return keySet().iterator();
+    }
+
+    // kevink: restore the length method removed in r10087.  It is used by Jackson's JsonOrgModule for serialization of org.json
+    /**
+     * Get the number of keys stored in the JSONObject.
+     *
+     * @return The number of keys in the JSONObject.
+     */
+    public int length() {
+        return this.size();
     }
 
     /**
@@ -937,6 +1006,11 @@ public class JSONObject extends HashMap<String, Object>
                 value = null;
             }
         }
+
+        // kevink: translate any put("key", JSONObject.NULL) into a null value.  NULL is used by Jackson's JsonOrgModule for serialization of org.json
+        if (NULL.equals(value))
+            value = null;
+
         super.put(key, value);
 
         return this;
