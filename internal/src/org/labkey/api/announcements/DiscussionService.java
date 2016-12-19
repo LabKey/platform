@@ -16,6 +16,7 @@
 
 package org.labkey.api.announcements;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Sort;
 import org.labkey.api.security.User;
@@ -61,9 +62,12 @@ public class DiscussionService
         /** show links, and forms, do it all (wrapper for other methods)
          * @param displayFirstDiscussionByDefault   if true and no discussion parameters are present, display the first
          *                                          discussion associated with this object.
+         * @return DiscussionView if EnableDiscussion flag in LookAndFeelProperties is true. If false, null.
          */
+        @Nullable
         public DiscussionView getDiscussionArea(ViewContext context, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault);
 
+        @Nullable
         public DiscussionView getDiscussionArea(Container c, User user, URLHelper currentURL, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault);
 
         public void deleteDiscussions(Container container, User user, String... identifier);
