@@ -185,10 +185,9 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
 
     protected DetailsURL(@NotNull String str, @Nullable ContainerContext cc, @Nullable NullValueBehavior nullBehavior)
     {
+        super("", true, nullBehavior);
         _urlSource = str;
         _containerContext = cc;
-        if (nullBehavior != null)
-            _nullValueBehavior = nullBehavior;
     }
 
 
@@ -208,6 +207,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
 
     public DetailsURL(ActionURL url, @Nullable Map<String, ?> columnParams, @Nullable NullValueBehavior nullBehavior)
     {
+        super("", true, nullBehavior);
         url = url.clone();
         if (columnParams != null)
         {
@@ -227,8 +227,6 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
             }
         }
         _url = url;
-        if (nullBehavior != null)
-            _nullValueBehavior = nullBehavior;
     }
 
     public DetailsURL(ActionURL baseURL, String param, FieldKey subst)

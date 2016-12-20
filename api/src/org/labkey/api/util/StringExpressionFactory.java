@@ -235,10 +235,14 @@ public class StringExpressionFactory
     // StringExpression implementations
     //
 
+    protected static final String UNDEFINED = "~~undefined~~";
 
     protected static abstract class StringPart implements Cloneable
     {
-        /** @return null if the value cannot be resolved given the map */
+        /**
+         * @return The string value or null if the part is found in the map,
+         * otherwise UNDEFINED if the value does not exist in the map.
+         */
         @Nullable abstract String getValue(Map map);
 
         @NotNull
@@ -360,7 +364,11 @@ public class StringExpressionFactory
 
         public String getValue(Map map)
         {
-            return applyFormats(map.get(_value));
+            String s = applyFormats(map.get(_value));
+            if (s == null && !map.containsKey(_value))
+                return UNDEFINED;
+
+            return s;
         }
 
         protected final String applyFormats(Object o)
@@ -590,13 +598,13 @@ public class StringExpressionFactory
 
         }
 
-        protected NullValueBehavior _nullValueBehavior = NullValueBehavior.NullResult;
+        protected final NullValueBehavior _nullValueBehavior;
         protected String _source;
         protected ArrayList<StringPart> _parsedExpression = null;
 
         AbstractStringExpression(String source)
         {
-            _source = source;
+            this(source, NullValueBehavior.NullResult);
             //MemTracker.getInstance().put(this);
         }
 
@@ -605,6 +613,8 @@ public class StringExpressionFactory
             _source = source;
             if (nullValueBehavior != null)
                 _nullValueBehavior = nullValueBehavior;
+            else
+                _nullValueBehavior = NullValueBehavior.NullResult;
             //MemTracker.getInstance().put(this);
         }
 
@@ -674,8 +684,15 @@ public class StringExpressionFactory
 
         protected final String nullFilter(String value) throws StopIteratingException
         {
-            if (value != null)
+            // Allow non-null and non-UNDEFINED values
+            if (value != null && !UNDEFINED.equals(value))
                 return value;
+
+            // For now, always bail out if the context is missing one of the substitutions.
+            // Better to have no URL than a URL that's missing parameters.  In the future, we
+            // could emit the missing FieldKey into the URL.
+            if (UNDEFINED.equals(value))
+                throw new StopIteratingException();
 
             switch (_nullValueBehavior)
             {
@@ -867,14 +884,8 @@ public class StringExpressionFactory
             }
 
             String result = applyFormats(map.get(lookupKey));
-
-            // URL expressions are slightly different from vanilla string expressions in that
-            // when the value is null after applying formats AND the column exists in the row map,
-            // return empty string instead of null (which by default would cause the URL to not render at all).
-            // If the value is null after applying formats and the column IS NOT present in the row map,
-            // then null will be returned (and the URL will not be rendered by default).
-            if (result == null && map.containsKey(lookupKey))
-                return "";
+            if (result == null && !map.containsKey(lookupKey))
+                return UNDEFINED;
 
             return result;
         }
@@ -898,15 +909,15 @@ public class StringExpressionFactory
         
         protected FieldKeyStringExpression(String source)
         {
-            this(source, true, NullValueBehavior.NullResult);
+            this(source, true, null);
         }
 
+        // NOTE: URL expressions are slightly different from vanilla string expressions
+        // in that they default to ReplaceNullWithBlank instead of NullResult.
         public FieldKeyStringExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior)
         {
-            super(source);
+            super(source, nullValueBehavior != null ? nullValueBehavior : NullValueBehavior.ReplaceNullWithBlank);
             _urlEncodeSubstitutions = urlEncodeSubstitutions;
-            if (nullValueBehavior != null)
-                _nullValueBehavior = nullValueBehavior;
         }
 
         public static FieldKeyStringExpression create(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior)
@@ -1273,6 +1284,49 @@ public class StringExpressionFactory
 
                 String s = se.eval(m);
                 assertEquals("||c", s);
+            }
+        }
+
+        @Test
+        public void testUndefined()
+        {
+            Map<Object, Object> m = new HashMap<>();
+            m.put("a", "A");
+            m.put("null", null);
+
+            {
+                StringExpression se = new FieldKeyStringExpression("${a}");
+                String s = se.eval(m);
+                assertEquals("A", s);
+            }
+
+            {
+                // SimpleStringExpression default behavior is to emit blank for null values
+                StringExpression se1 = new SimpleStringExpression("${null}", false);
+                String s1 = se1.eval(m);
+                assertEquals(null, s1);
+
+                // For backwards compatibility, FieldKeyStringExpression default behavior is to emit empty string for null values
+                FieldKeyStringExpression se2 = new FieldKeyStringExpression("${null}");
+                String s2 = se2.eval(m);
+                assertEquals("", s2);
+
+                // ... but can be overridden to emit a null result
+                FieldKeyStringExpression se3 = new FieldKeyStringExpression("${null}", true, AbstractStringExpression.NullValueBehavior.NullResult);
+                String s3 = se3.eval(m);
+                assertEquals(null, s3);
+            }
+
+            {
+                // Undefined values always result in a null result
+                StringExpression se1 = new FieldKeyStringExpression("${doesNotExist}");
+                String s1 = se1.eval(m);
+                assertEquals(null, s1);
+
+                // ... unless it has a defaultValue
+                StringExpression se2 = new FieldKeyStringExpression("${doesNotExist:defaultValue('fred')}");
+                String s2 = se2.eval(m);
+                assertEquals("fred", s2);
             }
         }
 
