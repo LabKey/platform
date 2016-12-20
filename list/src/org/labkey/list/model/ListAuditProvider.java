@@ -30,6 +30,7 @@ import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.StringExpressionFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -112,7 +113,8 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
             }
         };
 
-        DetailsURL url = DetailsURL.fromString("list/listItemDetails.view?listId=${listId}&entityId=${listItemEntityId}&rowId=${rowId}");
+        // Render a details URL only for rows that have a listItemEntityId
+        DetailsURL url = DetailsURL.fromString("list/listItemDetails.view?listId=${listId}&entityId=${listItemEntityId}&rowId=${rowId}", null, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult);
         table.setDetailsURL(url);
 
         return table;
