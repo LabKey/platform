@@ -116,17 +116,21 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         _container = container;
         _pkFieldKey = pkFieldKey;
 
-        StringBuilder sb = new StringBuilder("/core/downloadFileLink.view?propertyId=");
-        sb.append(pd.getPropertyId());
-        sb.append("&schemaName=");
-        sb.append(PageFlowUtil.encodeURIComponent(schemaKey.toString()));
-        sb.append("&queryName=");
-        sb.append(PageFlowUtil.encodeURIComponent(queryName));
-        sb.append("&pk=${");
-        sb.append(pkFieldKey.toString());
-        sb.append("}");
-        ContainerContext context = new ContainerContext.FieldKeyContext(new FieldKey(pkFieldKey.getParent(), "Folder"));
-        setURLExpression(DetailsURL.fromString(sb.toString(), context));
+        if (pd.getURL() == null)
+        {
+            // Don't stomp over an explicitly configured URL on this column
+            StringBuilder sb = new StringBuilder("/core/downloadFileLink.view?propertyId=");
+            sb.append(pd.getPropertyId());
+            sb.append("&schemaName=");
+            sb.append(PageFlowUtil.encodeURIComponent(schemaKey.toString()));
+            sb.append("&queryName=");
+            sb.append(PageFlowUtil.encodeURIComponent(queryName));
+            sb.append("&pk=${");
+            sb.append(pkFieldKey.toString());
+            sb.append("}");
+            ContainerContext context = new ContainerContext.FieldKeyContext(new FieldKey(pkFieldKey.getParent(), "Folder"));
+            setURLExpression(DetailsURL.fromString(sb.toString(), context));
+        }
     }
 
     /** Use LSID FieldKey value as ObjectURI to resolve File in CoreController.DownloadFileLinkAction. */
@@ -136,8 +140,12 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         _container = container;
         _objectURIFieldKey = objectURIFieldKey;
 
-        DetailsURL url = new DetailsURL(PageFlowUtil.urlProvider(CoreUrls.class).getDownloadFileLinkBaseURL(container, pd), "objectURI", objectURIFieldKey);
-        setURLExpression(url);
+        if (pd.getURL() == null)
+        {
+            // Don't stomp over an explicitly configured URL on this column
+            DetailsURL url = new DetailsURL(PageFlowUtil.urlProvider(CoreUrls.class).getDownloadFileLinkBaseURL(container, pd), "objectURI", objectURIFieldKey);
+            setURLExpression(url);
+        }
     }
 
     @Override
