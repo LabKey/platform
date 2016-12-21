@@ -51,6 +51,11 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             abbreviation: 'V',
             label: 'Version',
             description: 'This column contains a version number for the row.'
+        },
+        calculated: {
+            abbreviation: 'Calc',
+            label: 'Calculated',
+            description: 'This column contains a calculated expression'
         }
     },
 
@@ -316,6 +321,48 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         return rows;
     },
 
+    formatIndices: function (queryDetails) {
+        // If no indices are present, don't render anything
+        if (!queryDetails.indices || !this.hasProperties(queryDetails.indices))
+            return;
+
+        var tpl = new Ext4.XTemplate(
+            '<table class="lk-qd-coltable" style="margin-top: 1em;">',
+                '<thead>',
+                    '<tr><td colspan="3" class="lk-qd-collist-title">Indices</td></tr>',
+                    '<tr>',
+                        '<td class="lk-qd-colheader">Name</td>',
+                        '<td class="lk-qd-colheader">Type</td>',
+                        '<td class="lk-qd-colheader">Columns</td>',
+                    '</tr>',
+                '</thead>',
+                '<tbody>',
+                '<tpl foreach="indices">',
+                    '<tr>',
+                        '<td>{$:htmlEncode}</td>',
+                        '<td>{[Ext4.htmlEncode(values.type)]}</td>',
+                        '<td>{[Ext4.htmlEncode(values.columns.join(", "))]}</td>',
+                    '</tr>',
+                '</tpl>',
+                '</tbody>',
+            '</table>'
+        );
+
+        return {
+            tag: 'div',
+            cls: 'lk-qd-indices',
+            html: tpl.apply(queryDetails)
+        };
+    },
+
+    hasProperties: function (o) {
+        for (var name in o) {
+            if (o.hasOwnProperty(name))
+                return true;
+        }
+        return false;
+    },
+
     formatQueryDetails : function(queryDetails) {
 
         var children = [
@@ -328,6 +375,10 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         }
         else {
             children.push(this.formatQueryColumns(queryDetails));
+
+            var indices = this.formatIndices(queryDetails);
+            if (indices)
+                children.push(indices);
         }
 
         return Ext4.create('Ext.Component', {
