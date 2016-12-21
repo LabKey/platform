@@ -96,6 +96,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.apache.commons.lang3.StringUtils.startsWith;
+
 /**
  * User: migra
  * Date: Jul 14, 2005
@@ -1380,6 +1382,20 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return fileNames;
     }
 
+
+    private boolean isInternalJar(String jarFilename, Pattern moduleJarPattern)
+    {
+        jarFilename = jarFilename.toLowerCase();
+        if (StringUtils.equals(jarFilename,"schemas.jar"))
+            return true;
+        // HACK "flow-engine.jar" is internal "docker-java-3.0.0.jar" is not internal
+        // moduleJarPattern pattern needs some sort of fix perhaps
+        if (startsWith(jarFilename,"docker-java"))
+            return false;
+        return jarFilename.matches(moduleJarPattern.pattern());
+    }
+
+
     @Override
     public @Nullable Collection<String> getJarFilenames()
     {
@@ -1397,13 +1413,12 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             if (!lib.exists() && !external.exists())
                 return null;
 
-
             Pattern moduleJarPattern = Pattern.compile("^" + _name.toLowerCase() + "(?:_schemas|_api|_jsp)?.*\\.jar$");
 
             if (lib.exists())
             {
                 filenames.addAll(Arrays.stream(lib.list(getJarFilenameFilter()))
-                        .filter(jarFilename -> !jarFilename.toLowerCase().equals("schemas.jar") && !jarFilename.toLowerCase().matches(moduleJarPattern.pattern()))
+                        .filter(jarFilename -> !isInternalJar(jarFilename, moduleJarPattern))
                         .collect(Collectors.toList()));
             }
             if (external.exists())
