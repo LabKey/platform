@@ -190,25 +190,15 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     /** @return the URL to send the user to after they've exited with wizard by successfully uploading their final run in the batch */
     protected ActionURL getUploadWizardCompleteURL(FormType form, ExpRun run)
     {
-        ActionURL returnActionURL = null;
         if (form.getProvider().isBackgroundUpload(_protocol))
         {
-            returnActionURL = PageFlowUtil.urlProvider(AssayUrls.class).getShowUploadJobsURL(getContainer(), _protocol, null);
+            return PageFlowUtil.urlProvider(AssayUrls.class).getShowUploadJobsURL(getContainer(), _protocol, null);
         }
         else
         {
             // if a return url param was specified in the url then return the user to that
-            // for  example a param like: &returnUrl=%2Flabkey%2Fbiologics%2Fbio0715r%2Fapp.view%3F
-            if (form != null && form.getReturnUrl() != null)
-            {
-                returnActionURL= new ActionURL(form.getReturnUrl());
-            }
-            else
-            {
-                returnActionURL = getSummaryLink(_protocol);
-            }
+            return form.getReturnActionURL(getSummaryLink(_protocol));
         }
-        return returnActionURL;
     }
 
     protected InsertView createInsertView(TableInfo baseTable, String lsidCol, List<? extends DomainProperty> properties, boolean errorReshow, String uploadStepName, FormType form, BindException errors)
@@ -283,6 +273,10 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         if (form.getReRunId() != null)
         {
             view.getDataRegion().addHiddenFormField("reRunId", form.getReRunId().toString());
+        }
+        if (form.getReturnURLHelper() != null)
+        {
+            view.getDataRegion().addHiddenFormField("returnUrl", form.getReturnURLHelper().toString());
         }
 
         DisplayColumn targetStudyCol = view.getDataRegion().getDisplayColumn(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
@@ -476,7 +470,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         //Put messages on top of page instead of in insert widget
-        if(null != errors)
+        if (null != errors)
             newRunForm.setErrors(errors);
         InsertView insertView = createRunInsertView(newRunForm, errorReshow, null);
 
