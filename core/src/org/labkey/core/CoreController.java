@@ -460,7 +460,11 @@ public class CoreController extends SpringActionController
             if (file.isDirectory())
                 ZipUtil.zipToStream(getViewContext().getResponse(), file, false);
             else
-                PageFlowUtil.streamFile(getViewContext().getResponse(), file, true);
+            {
+                // If the URL has requested that the content be sent inline or not (instead of as an attachment), respect that
+                // Otherwise, default to sending as attachment
+                PageFlowUtil.streamFile(getViewContext().getResponse(), file, form.getInline() == null || !form.getInline().booleanValue());
+            }
             return null;
         }
 
@@ -478,6 +482,7 @@ public class CoreController extends SpringActionController
         private SchemaKey _schemaName;
         private String _queryName;
         private String _pk;
+        private Boolean _inline;
 
         public Integer getObjectId()
         {
@@ -537,6 +542,16 @@ public class CoreController extends SpringActionController
         public void setPk(String pk)
         {
             _pk = pk;
+        }
+
+        public Boolean getInline()
+        {
+            return _inline;
+        }
+
+        public void setInline(Boolean inline)
+        {
+            _inline = inline;
         }
     }
 
