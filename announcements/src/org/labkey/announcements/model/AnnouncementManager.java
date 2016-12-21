@@ -829,6 +829,7 @@ public class AnnouncementManager
         private String reasonForEmail = "";
         private String attachments = "";
         private String messageUrl = "";
+        private String emailPreferencesURL = "";
 
         public NotificationEmailTemplate()
         {
@@ -909,6 +910,14 @@ public class AnnouncementManager
                 }
             });
 
+            _replacements.add(new ReplacementParam<String>("emailPreferencesURL", String.class, "Link to allow users to configure their notification preferences", ContentType.HTML)
+            {
+                public String getValue(Container c)
+                {
+                    return emailPreferencesURL;
+                }
+            });
+
             _replacements.addAll(super.getValidReplacements());
         }
 
@@ -969,6 +978,7 @@ public class AnnouncementManager
             }
 
             reasonForEmail = sb.toString();
+            emailPreferencesURL = notificationBean.removeURL.getURIString();
         }
 
         private void initAttachments()
