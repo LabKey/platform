@@ -63,6 +63,7 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice;
+import org.labkey.experiment.samples.UploadMaterialSetForm.NameFormatChoice;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -234,6 +235,7 @@ public class UploadSamplesHelper
                 domain.save(_form.getUser());
             }
 
+            String nameExpression = null;
             boolean usingNameAsUniqueColumn = false;
             List<String> idColPropertyURIs = new ArrayList<>();
             if (_materialSource != null && _materialSource.getIdCol1() != null)
@@ -242,30 +244,40 @@ public class UploadSamplesHelper
             }
             else
             {
-                idColPropertyURIs = new ArrayList<>();
-                if (_form.getIdColumn1() < 0 || _form.getIdColumn1() >= columns.length)
-                    throw new ExperimentException("An id column must be be selected to uniquely identify each sample (idColumn1 was " + _form.getIdColumn1() + ")");
-
-                if (isNameHeader(columns[_form.getIdColumn1()].name))
+                if (NameFormatChoice.IdColumns.equals(_form.getNameFormatEnum()))
                 {
-                    idColPropertyURIs.add(columns[_form.getIdColumn1()].name);
-                    usingNameAsUniqueColumn = true;
+                    if (_form.getIdColumn1() < 0 || _form.getIdColumn1() >= columns.length)
+                        throw new ExperimentException("An id column must be be selected to uniquely identify each sample (idColumn1 was " + _form.getIdColumn1() + ")");
+
+                    if (isNameHeader(columns[_form.getIdColumn1()].name))
+                    {
+                        idColPropertyURIs.add(columns[_form.getIdColumn1()].name);
+                        usingNameAsUniqueColumn = true;
+                    }
+                    else
+                    {
+                        idColPropertyURIs.add(columns[_form.getIdColumn1()].name);
+                        if (_form.getIdColumn2() >= 0)
+                        {
+                            if (_form.getIdColumn2() >= columns.length)
+                                throw new ExperimentException("idColumn2 out of bounds: " + _form.getIdColumn2());
+                            idColPropertyURIs.add(columns[_form.getIdColumn2()].name);
+                        }
+                        if (_form.getIdColumn3() >= 0)
+                        {
+                            if (_form.getIdColumn3() >= columns.length)
+                                throw new ExperimentException("idColumn3 out of bounds: " + _form.getIdColumn3());
+                            idColPropertyURIs.add(columns[_form.getIdColumn3()].name);
+                        }
+                    }
                 }
                 else
                 {
-                    idColPropertyURIs.add(columns[_form.getIdColumn1()].name);
-                    if (_form.getIdColumn2() >= 0)
-                    {
-                        if (_form.getIdColumn2() >= columns.length)
-                            throw new ExperimentException("idColumn2 out of bounds: " + _form.getIdColumn2());
-                        idColPropertyURIs.add(columns[_form.getIdColumn2()].name);
-                    }
-                    if (_form.getIdColumn3() >= 0)
-                    {
-                        if (_form.getIdColumn3() >= columns.length)
-                            throw new ExperimentException("idColumn3 out of bounds: " + _form.getIdColumn3());
-                        idColPropertyURIs.add(columns[_form.getIdColumn3()].name);
-                    }
+                    assert NameFormatChoice.NameExpression.equals(_form.getNameFormatEnum());
+                    if (_form.getNameExpression() == null || _form.getNameExpression().length() == 0)
+                        throw new ExperimentException("Name expression required");
+
+                    nameExpression = _form.getNameExpression();
                 }
             }
 
@@ -285,7 +297,7 @@ public class UploadSamplesHelper
 
             List<Map<String, Object>> maps = loader.load();
 
-            boolean createdSampleSet = ensureSampleSet(usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI);
+            boolean createdSampleSet = ensureSampleSet(nameExpression, usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI);
 
             Set<PropertyDescriptor> descriptors = getPropertyDescriptors(domain, maps);
 
@@ -341,7 +353,7 @@ public class UploadSamplesHelper
         return descriptors;
     }
 
-    private boolean ensureSampleSet(boolean usingNameAsUniqueColumn, List<String> idColPropertyURIs, String parentColPropertyURI)
+    private boolean ensureSampleSet(String nameExpression, boolean usingNameAsUniqueColumn, List<String> idColPropertyURIs, String parentColPropertyURI)
     {
         assert _sampleSet == null;
         if (_materialSource == null)
@@ -354,7 +366,7 @@ public class UploadSamplesHelper
             Lsid lsid = ExperimentServiceImpl.get().getSampleSetLsid(_form.getName(), _form.getContainer());
             _materialSource.setLSID(lsid.toString());
             _materialSource.setName(_form.getName());
-            setCols(usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI, _materialSource);
+            setCols(nameExpression, usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI, _materialSource);
             _materialSource.setMaterialLSIDPrefix(new Lsid("Sample", String.valueOf(_form.getContainer().getRowId()) + "." + setName, "").toString());
             _sampleSet = new ExpSampleSetImpl(_materialSource);
             _sampleSet.save(_form.getUser());
@@ -368,7 +380,7 @@ public class UploadSamplesHelper
             {
                 assert _materialSource.getName().equals(_form.getName());
                 assert _materialSource.getLSID().equals(ExperimentServiceImpl.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString());
-                setCols(usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI, _materialSource);
+                setCols(nameExpression, usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI, _materialSource);
                 _sampleSet = new ExpSampleSetImpl(_materialSource);
                 _sampleSet.save(_form.getUser());
                 _materialSource = _sampleSet.getDataObject();
@@ -497,26 +509,39 @@ public class UploadSamplesHelper
         return usingNameAsUniqueColumn;
     }
 
-    private void setCols(boolean usingNameAsUniqueColumn, List<String> idColPropertyURIs, String parentColPropertyURI, MaterialSource source)
+    private void setCols(String nameExpression, boolean usingNameAsUniqueColumn, List<String> idColPropertyURIs, String parentColPropertyURI, MaterialSource source)
     {
-        if (usingNameAsUniqueColumn)
+        if (nameExpression != null)
         {
-            assert idColPropertyURIs.size() == 1 && idColPropertyURIs.get(0).equals(ExpMaterialTable.Column.Name.name()) : "Expected a single 'Name' id column";
+            source.setNameExpression(nameExpression);
             source.setIdCol1(ExpMaterialTable.Column.Name.name());
+            source.setIdCol2(null);
+            source.setIdCol3(null);
         }
         else
         {
-            assert idColPropertyURIs.size() <= 3 : "Found " + idColPropertyURIs.size() + " id cols but 3 is the limit";
-            source.setIdCol1(idColPropertyURIs.get(0));
-            if (idColPropertyURIs.size() > 1)
+            if (usingNameAsUniqueColumn)
             {
-                source.setIdCol2(idColPropertyURIs.get(1));
-                if (idColPropertyURIs.size() > 2)
+                assert idColPropertyURIs.size() == 1 && idColPropertyURIs.get(0).equals(ExpMaterialTable.Column.Name.name()) : "Expected a single 'Name' id column";
+                source.setIdCol1(ExpMaterialTable.Column.Name.name());
+                source.setIdCol2(null);
+                source.setIdCol3(null);
+            }
+            else
+            {
+                assert idColPropertyURIs.size() <= 3 : "Found " + idColPropertyURIs.size() + " id cols but 3 is the limit";
+                source.setIdCol1(idColPropertyURIs.get(0));
+                if (idColPropertyURIs.size() > 1)
                 {
-                    source.setIdCol3(idColPropertyURIs.get(2));
+                    source.setIdCol2(idColPropertyURIs.get(1));
+                    if (idColPropertyURIs.size() > 2)
+                    {
+                        source.setIdCol3(idColPropertyURIs.get(2));
+                    }
                 }
             }
         }
+
         if (parentColPropertyURI != null)
         {
             source.setParentCol(parentColPropertyURI);
@@ -950,7 +975,7 @@ public class UploadSamplesHelper
         // Could easily do some caching here, but probably not a significant perf issue
         ExpDataClass dataClass = ExperimentService.get().getDataClass(c, user, dataClassName);
         if (dataClass == null)
-            throw new ValidationException("SampleSet '" + dataClassName + "' not found");
+            throw new ValidationException("DataClass '" + dataClassName + "' not found");
 
         return dataClass.getData(c, dataName);
     }

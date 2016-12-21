@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm" %>
 <%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice" %>
+<%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm.NameFormatChoice" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -76,7 +77,8 @@
         if (ss == null)
             return "null";
 
-        StringBuilder sb = new StringBuilder("{");
+        StringBuilder sb = new StringBuilder("{\n");
+        sb.append("nameExpression: ").append(PageFlowUtil.jsString(ss.getNameExpression())).append(",\n");
         if (ss.hasNameAsIdCol())
         {
             sb.append("col1 : {");
@@ -177,30 +179,48 @@
         </td>
     </tr>
     <tr>
-        <td class="labkey-form-label">Id Columns<%= helpPopup("Id Columns", "Id columns must form a unique key for every row.")%></td>
+        <td class="labkey-form-label">Name Format<%= helpPopup("Name Format", "The name format specifies how Sample names are generated. You may either use a name expression or select a set of id columns that form a unique key for every row.")%></td>
         <td>
                 <% if (form.isImportMoreSamples() && sampleSet != null && sampleSet.hasIdColumns())
                 {
-                    if (sampleSet.hasNameAsIdCol())
+                    if (sampleSet.hasNameExpression())
                     {
-                        %><%=ExpMaterialTable.Column.Name%><%
+                        %>Expression: <%=h(sampleSet.getNameExpression())%><%
                     }
                     else
                     {
-                        %><%= h(getDisplayName(sampleSet.getIdCol1())) %><%
-                        if (sampleSet.getIdCol2() != null)
+                        %>Id Columns: <%
+                        if (sampleSet.hasNameAsIdCol())
                         {
-                            %>, <%= h(getDisplayName(sampleSet.getIdCol2())) %><%
+                            %><%=ExpMaterialTable.Column.Name%><%
                         }
-                        if (sampleSet.getIdCol3() != null)
+                        else
                         {
-                            %>, <%= h(getDisplayName(sampleSet.getIdCol3())) %><%
+                            %><%= h(getDisplayName(sampleSet.getIdCol1())) %><%
+                            if (sampleSet.getIdCol2() != null)
+                            {
+                                %>, <%= h(getDisplayName(sampleSet.getIdCol2())) %><%
+                            }
+                            if (sampleSet.getIdCol3() != null)
+                            {
+                                %>, <%= h(getDisplayName(sampleSet.getIdCol3())) %><%
+                            }
                         }
                     }
                 }
                 else
                 { %>
-                <table>
+            <input type="radio" id="nameFormat_nameExpression" name="nameFormat"
+                   value="<%=h(NameFormatChoice.NameExpression.toString())%>"
+                   <%=checked(NameFormatChoice.NameExpression.equals(form.getNameFormatEnum()))%> >
+            <label for="nameFormat_nameExpression">Expression:</label>
+            <input type="text" id="nameExpression" name="nameExpression" size="70" maxLength="200" value="<%=h(form.getNameExpression())%>"  placeholder="e.g, \${DataInputs:first:defaultValue('S')}-\${now:date}-\${batchRandomId}" />
+            <br/>
+            <input type="radio" id="nameFormat_idColumns" name="nameFormat"
+                   value="<%=h(NameFormatChoice.IdColumns.toString())%>"
+                   <%=checked(NameFormatChoice.IdColumns.equals(form.getNameFormatEnum()))%> >
+            <label for="nameFormat_idColumns">ID Columns:</label>
+                <table class="labkey-indented">
                     <tr>
                         <td align="right">#1:</td>
                         <td>
@@ -271,14 +291,11 @@ function enableFileUpload() {
         fileUpload.enable();
 }
 
-function runner() {
-    return true;
-}
-
 (function($) {
 
     var fields = [];
     var header = [];
+    var nameFormat = null; // either "NameExpression" or "IdColumns"
     var nameColIndex = -1;
     var sampleSet = <%=dumpSampleSet(sampleSet)%>;
     var btnText = 'Upload TSV, XLS, or XLSX File...';
@@ -305,6 +322,13 @@ function runner() {
                 break;
             }
         }
+    };
+
+    var onNameFormatChange = function (event) {
+        var newValue = event.target.value;
+        console.log("Changing nameFormat " + nameFormat + " to " + newValue);
+        nameFormat = newValue;
+        updateIdSelects();
     };
 
     var onTextAreaChange = function(event, textbox) {
@@ -383,7 +407,7 @@ function runner() {
         }
 
         // Enable/disable idCol1, idCol2, and idCol3 if "Name" column is present
-        if (select.id in {idCol1:true, idCol2:true, idCol3:true})
+        if (select.id == "idCol1" || select.id == "idCol2" || select.id == "idCol3")
             select.disabled = nameColIndex != -1;
     };
 
@@ -433,114 +457,7 @@ function runner() {
         return true;
     };
 
-    var validateBeforeSubmit = function() {
-        var name = document.getElementById("name").value;
-
-        var insertOnlyChoice = document.getElementById("insertOnlyChoice");
-        var insertIgnoreChoice = document.getElementById("insertIgnoreChoice");
-        var insertOrUpdateChoice = document.getElementById("insertOrUpdateChoice");
-        var updateOnlyChoice = document.getElementById("updateOnlyChoice");
-        <% if (form.isImportMoreSamples()) { %>
-        if (!(insertOnlyChoice.checked || insertIgnoreChoice.checked || insertOrUpdateChoice.checked || updateOnlyChoice.checked))
-        {
-            alert("Please select how to deal with duplicates by selecting one of the insert/update options.");
-            return false;
-        }
-        <% } %>
-
-        if (fields == null || fields.length < 2)
-        {
-            alert("Please paste data with at least a header and one row of data.");
-            return false;
-        }
-        var select1 = document.getElementById("idCol1");
-        var select2 = document.getElementById("idCol2");
-        var select3 = document.getElementById("idCol3");
-        var colIndex = [ -1, -1, -1 ];
-        var colNames = [ '', '', '' ];
-        if (select1)
-        {
-            if (nameColIndex != -1)
-            {
-                colIndex[0] = nameColIndex;
-                colNames[0] = header[nameColIndex];
-            }
-            else
-            {
-                var selOption1 = select1.options[select1.selectedIndex];
-                if (selOption1) {
-                    colIndex[0] = parseInt(selOption1.value);
-                    colNames[0] = selOption1.text;
-                }
-
-                var selOption2 = select2.options[select2.selectedIndex];
-                if (selOption2) {
-                    colIndex[1] = parseInt(selOption2.value);
-                    colNames[1] = selOption2.text;
-                }
-
-                var selOption3 = select3.options[select3.selectedIndex];
-                if (selOption3) {
-                    colIndex[2] = parseInt(selOption3.value);
-                    colNames[2] = selOption3.text;
-                }
-            }
-
-            if (colIndex[1] != -1 && colIndex[0] == colIndex[1])
-            {
-                alert("You cannot use the same id column twice.");
-                return false;
-            }
-            if (colIndex[2] != -1 && (colIndex[0] == colIndex[2] || colIndex[1] == colIndex[2]))
-            {
-                alert("You cannot use the same id column twice.");
-                return false;
-            }
-            // Check if they selected a column 3 but not a column 2
-            if (colIndex[2] != -1 && colIndex[1] == -1)
-            {
-                colIndex[1] = colIndex[2];
-                colIndex[2] = -1;
-            }
-        }
-        else
-        {
-            if (sampleSet != null)
-            {
-                for (var colNum = 0; colNum < 3; colNum++)
-                {
-                    var sampleSetCol = sampleSet["col" + (colNum+1)];
-                    if (!sampleSetCol)
-                        continue;
-
-                    colNames[colNum] = sampleSetCol.label;
-
-                    for (var col = 0; col < header.length; col++)
-                    {
-                        var heading = header[col];
-                        if (!heading)
-                            continue;
-                        heading = heading.toLowerCase();
-                        for (var aliasIndex = 0; aliasIndex < sampleSetCol.aliases.length; aliasIndex++)
-                        {
-                            var alias = sampleSetCol.aliases[aliasIndex];
-                            if (alias && alias.toLowerCase() == heading)
-                            {
-                                colIndex[colNum] = col;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (colIndex[colNum] == -1)
-                    {
-                        alert("You must include the Id column '" + colNames[colNum] + "' in your data.");
-                        return false;
-                    }
-                }
-            }
-        }
-
+    var checkForIdColumnsAndDupes = function (colNames, colIndex, insertIgnoreChoice) {
         var hash = {};
         for (var i = 1; i < fields.length; i++)
         {
@@ -568,15 +485,172 @@ function runner() {
             }
             hash[val] = i;
         }
+        return true;
+    };
 
-        // As the last step, make sure we don't post the select2 and select3 values
-        if (select1 && nameColIndex > -1)
+    var validateBeforeSubmit = function() {
+        var name = document.getElementById("name").value;
+
+        var insertOnlyChoice = document.getElementById("insertOnlyChoice");
+        var insertIgnoreChoice = document.getElementById("insertIgnoreChoice");
+        var insertOrUpdateChoice = document.getElementById("insertOrUpdateChoice");
+        var updateOnlyChoice = document.getElementById("updateOnlyChoice");
+        <% if (form.isImportMoreSamples()) { %>
+        if (!(insertOnlyChoice.checked || insertIgnoreChoice.checked || insertOrUpdateChoice.checked || updateOnlyChoice.checked))
         {
-            select1.selectedIndex = nameColIndex;
-            select1.disabled = false; // disabled inputs don't post values
-            if (select2) select2.selectedIndex = -1;
-            if (select3) select3.selectedIndex = -1;
+            alert("Please select how to deal with duplicates by selecting one of the insert/update options.");
+            return false;
         }
+        <% } %>
+
+        if (fields == null || fields.length < 2)
+        {
+            alert("Please paste data with at least a header and one row of data.");
+            return false;
+        }
+
+        var nameExpression = document.getElementById("nameExpression");
+        var select1 = document.getElementById("idCol1");
+        var select2 = document.getElementById("idCol2");
+        var select3 = document.getElementById("idCol3");
+
+        // If a nameFormat has not been selected, choose NameExpression if the input has a value otherwise use IdColumns
+        if (select1 && !nameFormat)
+        {
+            if (nameExpression.value == "")
+            {
+                document.getElementById("nameFormat_idColumns").checked = true;
+                nameFormat = "<%=h(NameFormatChoice.IdColumns.toString())%>";
+            }
+            else
+            {
+                document.getElementById("nameFormat_nameExpression").checked = true;
+                nameFormat = "<%=h(NameFormatChoice.NameExpression.toString())%>";
+            }
+        }
+
+        if (nameFormat == "<%=h(NameFormatChoice.IdColumns.toString())%>")
+        {
+            var colIndex = [-1, -1, -1];
+            var colNames = ['', '', ''];
+
+            // Validate the idColumn options (either a new SampleSet or the idColumns haven't been set)
+            if (select1)
+            {
+                if (nameColIndex != -1)
+                {
+                    colIndex[0] = nameColIndex;
+                    colNames[0] = header[nameColIndex];
+                }
+                else
+                {
+                    var selOption1 = select1.options[select1.selectedIndex];
+                    if (selOption1)
+                    {
+                        colIndex[0] = parseInt(selOption1.value);
+                        colNames[0] = selOption1.text;
+                    }
+
+                    var selOption2 = select2.options[select2.selectedIndex];
+                    if (selOption2)
+                    {
+                        colIndex[1] = parseInt(selOption2.value);
+                        colNames[1] = selOption2.text;
+                    }
+
+                    var selOption3 = select3.options[select3.selectedIndex];
+                    if (selOption3)
+                    {
+                        colIndex[2] = parseInt(selOption3.value);
+                        colNames[2] = selOption3.text;
+                    }
+                }
+
+                if (colIndex[1] != -1 && colIndex[0] == colIndex[1])
+                {
+                    alert("You cannot use the same id column twice.");
+                    return false;
+                }
+                if (colIndex[2] != -1 && (colIndex[0] == colIndex[2] || colIndex[1] == colIndex[2]))
+                {
+                    alert("You cannot use the same id column twice.");
+                    return false;
+                }
+                // Check if they selected a column 3 but not a column 2
+                if (colIndex[2] != -1 && colIndex[1] == -1)
+                {
+                    colIndex[1] = colIndex[2];
+                    colIndex[2] = -1;
+                }
+            }
+            else
+            {
+                // If the SampleSet already exists (and a name expression isn't being used), validate every row has a value for each of the id columns
+                if (sampleSet != null && !sampleSet.nameExpression)
+                {
+                    for (var colNum = 0; colNum < 3; colNum++)
+                    {
+                        var sampleSetCol = sampleSet["col" + (colNum + 1)];
+                        if (!sampleSetCol)
+                            continue;
+
+                        colNames[colNum] = sampleSetCol.label;
+
+                        for (var col = 0; col < header.length; col++)
+                        {
+                            var heading = header[col];
+                            if (!heading)
+                                continue;
+                            heading = heading.toLowerCase();
+                            for (var aliasIndex = 0; aliasIndex < sampleSetCol.aliases.length; aliasIndex++)
+                            {
+                                var alias = sampleSetCol.aliases[aliasIndex];
+                                if (alias && alias.toLowerCase() == heading)
+                                {
+                                    colIndex[colNum] = col;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (colIndex[colNum] == -1)
+                        {
+                            alert("You must include the Id column '" + colNames[colNum] + "' in your data.");
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            var valid = checkForIdColumnsAndDupes(colNames, colIndex, insertIgnoreChoice);
+            if (!valid)
+                return false;
+
+            // As the last step, make sure we don't post the select2 and select3 values
+            if (select1 && nameColIndex > -1)
+            {
+                select1.selectedIndex = nameColIndex;
+                select1.disabled = false; // disabled inputs don't post values
+                if (select2) select2.selectedIndex = -1;
+                if (select3) select3.selectedIndex = -1;
+            }
+
+            if (nameExpression)
+                nameExpression.disabled = true;
+        }
+        else if (nameFormat == "<%=h(NameFormatChoice.NameExpression.toString())%>")
+        {
+            if (nameExpression && nameExpression.length == 0) {
+                alert("Name expression required");
+                return false;
+            }
+
+            // Disable all id column inputs before submitting
+            if (select1) select1.disabled = true;
+            if (select2) select2.disabled = true;
+            if (select3) select3.disabled = true;
+        }
+
 
         document.getElementById("uploading").style.display = "";
         return true;
@@ -598,6 +672,31 @@ function runner() {
         var textbox = Ext.get('textbox');
         textbox.on('change', onTextAreaChange);
         updateIds(textbox.getValue());
+
+        // initialize the nameFormat radio buttons
+        var nameFormatRadios = document.getElementsByName("nameFormat");
+        for (var i = 0; i < nameFormatRadios.length; i++)
+        {
+            var nameFormatRadio = nameFormatRadios[i];
+            nameFormatRadio.addEventListener('change', onNameFormatChange);
+        }
+
+        var nameExpression = document.getElementById("nameExpression");
+        var select1 = document.getElementById("idCol1");
+        var select2 = document.getElementById("idCol2");
+        var select3 = document.getElementById("idCol3");
+
+        function checkRadio(name) {
+            var el = document.getElementById(name);
+            if (el) el.checked = true;
+        }
+
+        if (nameExpression) {
+            nameExpression.addEventListener('click', function () { checkRadio("nameFormat_nameExpression"); });
+            select1.addEventListener('click', function () { checkRadio("nameFormat_idColumns"); });
+            select2.addEventListener('click', function () { checkRadio("nameFormat_idColumns"); });
+            select3.addEventListener('click', function () { checkRadio("nameFormat_idColumns"); });
+        }
 
         var clearBtn = Ext.get('clear-form-btn');
         clearBtn.on('click', clearValues);

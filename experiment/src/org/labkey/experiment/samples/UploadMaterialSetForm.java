@@ -37,6 +37,9 @@ public class UploadMaterialSetForm extends ViewForm
     private boolean createNewColumnsOnExistingSampleSet = false;
     private String data;
     private String tsvData;
+
+    private NameFormatChoice nameFormat;
+    private String nameExpression;
     private int idColumn1 = -1;
     private int idColumn2 = -1;
     private int idColumn3 = -1;
@@ -46,6 +49,12 @@ public class UploadMaterialSetForm extends ViewForm
     private boolean addUniqueSuffixForDuplicateNames = false;
 
     private DataLoader _loader;
+
+    public enum NameFormatChoice
+    {
+        NameExpression,
+        IdColumns
+    }
 
     public enum InsertUpdateChoice
     {
@@ -181,6 +190,31 @@ public class UploadMaterialSetForm extends ViewForm
     {
         assert _loader == null;
         _loader = loader;
+    }
+
+    public String getNameFormat()
+    {
+        return nameFormat == null ? null : nameFormat.toString();
+    }
+
+    public NameFormatChoice getNameFormatEnum()
+    {
+        return nameFormat;
+    }
+
+    public void setNameFormat(String nameFormat)
+    {
+        this.nameFormat = NameFormatChoice.valueOf(nameFormat);
+    }
+
+    public String getNameExpression()
+    {
+        return nameExpression;
+    }
+
+    public void setNameExpression(String nameExpression)
+    {
+        this.nameExpression = nameExpression;
     }
 
     public void setIdColumn1(int idColumn)
