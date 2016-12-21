@@ -1,10 +1,10 @@
 import org.labkey.gradle.util.BuildUtils
 
 dependencies {
-    external('org.apache.activemq:activemq-core:4.1.1') {
+    external("org.apache.activemq:activemq-core:${activemqCoreVersion}") {
       exclude group: "javax.servlet", module: "servlet-api"
     }
-    external('org.mule.modules:mule-module-builders:1.4.4:embedded') // named changed based on pom file
+    external("org.mule.modules:mule-module-builders:${muleModuleBuildersVersion}") // named changed based on pom file
             {
                 // exclude slf4j here because it is also included by the transitive dependency on the tika library
                 exclude group: "org.slf4j", module: "slf4j-api"
@@ -13,7 +13,7 @@ dependencies {
                 // This library causes interference with slf4j logger calls (method not found errors)
                 exclude group: "org.slf4j", module: "jcl104-over-slf4j"
             }
-    external 'com.thoughtworks.xstream:xstream:1.2.2'
+    external "com.thoughtworks.xstream:xstream:${xstreamVersion}"
     BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: ":server:modules:core", depProjectConfig: 'apiCompile')
 }
 
@@ -21,19 +21,6 @@ configurations.all
         {
             resolutionStrategy {
                 // we force this version because activemq-core:4.1.1 depends on activeio-3.0.0-incubator, which is not available
-                force 'org.apache.activemq:activeio-core:3.0.1'
+                force "org.apache.activemq:activeio-core:${activeioCoreVersion}"
             }
         }
-
-/*
-// TODO Make this a better dependency declaration. This seems very hacky.
-// For now, the installer/build.xml depends on it, though.
-project.tasks.module.doLast({
-    def deployDir = "${project.serverDeploy.dir}/pipelineLib"
-    project.ant.copy(
-            todir: deployDir,
-            preserveLastModified: true,
-            file: "${project.labkey.externalLibDir}/build/servlet-api-${servletApiVersion}.jar"
-    )
-})
-*/

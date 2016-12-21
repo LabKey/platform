@@ -1234,6 +1234,7 @@ mothership/test/src/org/labkey/test/util/mothership/MothershipHelper.java -text
 mothership/test/test_mothership.iml -text
 pipeline/build.gradle -text
 pipeline/build.xml -text
+pipeline/gradle.properties -text
 pipeline/lib/activemq-core-4.1.1-sources.zip -text
 pipeline/lib/activemq-core-4.1.1.jar -text
 pipeline/lib/backport-util-concurrent-3.1-sources.zip -text
