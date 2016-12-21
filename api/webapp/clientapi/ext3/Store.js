@@ -129,19 +129,17 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         }
         if (config.sort)
         {
+            baseParams['query.sort'] = config.sort;
+
             if (config.sql)
                 qsParams['query.sort'] = config.sort;
-            else
-                baseParams['query.sort'] = config.sort;
         }
         else if (config.sortInfo) {
             var sInfo = ("DESC" == config.sortInfo.direction ? '-' : '') + config.sortInfo.field;
-            if (config.sql) {
+            baseParams['query.sort'] = sInfo;
+
+            if (config.sql)
                 qsParams['query.sort'] = sInfo;
-            }
-            else {
-                baseParams['query.sort'] = sInfo;
-            }
         }
 
         if (config.parameters)
