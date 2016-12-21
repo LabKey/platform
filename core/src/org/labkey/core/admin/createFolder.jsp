@@ -445,9 +445,10 @@
 
                     scrollToBottom();
                 },
+                // gets the folder writers associated with the specified selectedTemplateFolder
                 getFolderTemplateWriters : function() {
                     LABKEY.Ajax.request({
-                        url: LABKEY.ActionURL.buildURL("core", "getRegisteredFolderWriters"),
+                        url: LABKEY.ActionURL.buildURL("core", "getRegisteredFolderWriters", selectedTemplateFolder),
                         method: 'POST',
                         jsonData: {forTemplate: true},
                         scope: this,
@@ -455,6 +456,9 @@
                         {
                             var responseText = Ext4.decode(response.responseText);
                             folderTemplateWriters = responseText.writers;
+                            // for now force 'Study' writer into the list of Folder Objects that get copied, will noop if Source Template Folder is not a study
+                            folderTemplateWriters.push({"name" : "Study",
+                                "selectedByDefault" : true, description: 'excluding dataset data and specimens'});
                             this.renderTemplateInfo();
                         }
                     });
@@ -505,7 +509,7 @@
                                         xtype: "checkbox",
                                         name: "templateWriterTypes",
                                         hideLabel: true,
-                                        boxLabel: writer.name,
+                                        boxLabel: writer.description ? writer.name + ' (' + writer.description + ')' : writer.name,
                                         itemId: writer.name,
                                         inputValue: writer.name,
                                         checked: !hasLoaded ? writer.selectedByDefault : (selectedTemplateWriters.indexOf(writer.name) > -1),

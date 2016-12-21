@@ -379,15 +379,32 @@ Ext4.define('LABKEY.import.ApplyToMultipleFolders', {
 
     initComponent: function()
     {
-        this.dockedItems = [this.getBottomDockedPanel()];
-
+        this.dockedItems = [this.getTopDockedPanel(), this.getBottomDockedPanel()];
         this.callParent();
-
-        this.on('select', this.onRecordSelect, this);
-
+        this.on('checkchange', this.onCheckchange, this);
         // load the tree root information the first time the section is shown
         if (!this.hidden)
             this.getProjectRootNode();
+    },
+
+    getTopDockedPanel : function()
+    {
+        if (!this.topDockedPanel)
+        {
+            this.topDockedPanel = Ext4.create('Ext.panel.Panel', {
+                dock: 'top',
+                border: false,
+                cls: 'multiple-folder-footer',
+                items: [{
+                    xtype: 'checkbox',
+                    boxLabel: 'Selecting parent folders selects all children',
+                    checked: false,
+                    inputValue: 'parentSelectsAllChildren',
+                    id        : 'folderautoselect'
+                }]
+            });
+        }
+        return this.topDockedPanel;
     },
 
     getBottomDockedPanel : function()
@@ -458,17 +475,52 @@ Ext4.define('LABKEY.import.ApplyToMultipleFolders', {
         });
     },
 
-    onRecordSelect : function(tree, record)
-    {
-        this.setChecked(record);
-    },
-
     setChecked : function(record)
     {
         record.set('checked', true);
+    },
 
-        if (!record.isRoot() && !record.isLeaf())
-            record.expand();
+    onCheckchange : function(record, checked, opts)
+    {
+        function clearChildRecords(record){
+             if(!record.isLeaf()){
+                 record.cascadeBy(function(record) {
+                     record.set('checked', false);
+                })
+             }
+        }
+
+        function clearParentRecords(record){
+            var parentRecord = record.parentNode;
+            if(parentRecord){
+                parentRecord.set('checked', false);
+                clearParentRecords(parentRecord);
+            }
+        }
+
+        function selectChildRecords(record)
+        {
+            if (!record.isLeaf())
+            {
+                record.cascadeBy(function (record)
+                {
+                    record.set('checked', true);
+                })
+            }
+        }
+
+        if (Ext4.getCmp('folderautoselect').getValue(true)) {
+            // user has enabled the 'Selecting parent folders selects all children' option
+            // selecting parent folder autoselects all children folders
+            // deselecting a child folder deselects the parent folder
+            if(!checked){
+                clearChildRecords(record);
+                clearParentRecords(record);
+            }
+            else {
+                selectChildRecords(record);
+            }
+        }
     },
 
     toggleState : function(checked)

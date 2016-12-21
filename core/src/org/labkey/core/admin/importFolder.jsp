@@ -98,23 +98,19 @@
     </tr>
     <tr>
         <td class="labkey-announcement-title" align=left>
-            <span><%=h(action)%> <%=h(noun)%> From Local Zip Archive</span>
+            <span><%=h(action)%> <%=h(noun)%> From Local Source</span>
         </td>
     </tr>
     <tr>
         <td class="labkey-title-area-line"></td>
     </tr>
     <tr>
-        <td>
-            To <%=h(action.toLowerCase())%> a <%=h(noun.toLowerCase())%> from a zip archive on your local machine
-            (for example, a folder that you have exported and saved to your local hard drive), browse to a zip
-            archive file, open it, and click the "<%=h(action)%> <%=h(noun)%> From Local Zip Archive" button below.
+         <td>
+            To <%=h(action.toLowerCase())%> from a local source, please choose whether you will be <%=h(action.toLowerCase())%>ing from a zip archive on your local machine or an existing <%=h(noun.toLowerCase())%> on this server.
         </td>
     </tr>
     <tr>
-        <td style="padding-top: 5px;">
-            <input type="file" name="folderZip" size="50">
-        </td>
+        <td id="SourcePicker" style="padding-top: 5px;"/>
     </tr>
 <%
     if (canCreateSharedDatasets)
@@ -140,7 +136,7 @@
     </tr>
     <tr>
         <td>
-            <%= button(action + " " + noun + " From Local Zip Archive").submit(true) %>
+            <%= button(action + " " + noun).submit(true) %>
         </td>
     </tr>
     <tr>
@@ -167,5 +163,110 @@
         <td>&nbsp;</td>
     </tr>
 </table>
+    <input type="hidden" name="sourceTemplateFolderId"/>
 </labkey:form>
+
+<script type="text/javascript">
+    Ext4.onReady(function()  {
+        // note: client dependencies declared in FolderManagementAction.FolderManagementTabStrip
+        var hasLoaded = <%=text(form.getHasLoaded()?"true":"false")%>;
+        var templateFolders = [];
+        var sourceRadioGroup = Ext4.create('Ext.form.RadioGroup', {
+            width: 300,
+            columns: 2,
+            items: [
+                {
+                    name: 'folderSource',
+                    inputValue: 'zipFile',
+                    boxLabel: 'Local Zip Archive',
+                    checked: true
+                },
+                {
+                    name: 'folderSource',
+                    inputValue: 'templateFolder',
+                    boxLabel: 'Existing folder',
+                    checked: false
+                }
+            ],
+            listeners: {
+                scope: this,
+                change: function(rg, newValue)
+                {
+                    this.isZipFile = newValue.folderSource == 'zipFile';
+                    folderTemplatesComponent.setVisible(!this.isZipFile);
+                    zipFileComponent.setVisible(this.isZipFile);
+                }
+            }
+        });
+
+        // todo: this combobox of available template folders script is very similar to script in createFolder.jsp and should be broken out into a common js file
+        var folderTemplatesComponent = Ext4.create('Ext.form.field.ComboBox', {
+                xtype: 'combo',
+                name: 'sourceTemplateFolder',
+                hiddenName: 'sourceTemplateFolderId',
+                itemId: 'sourceFolderCombo',
+                allowBlank: false,
+                displayField: 'path',
+                valueField: 'id',
+                editable: false,
+                validateOnBlur: false,
+                hidden: true,
+                store: Ext4.create('Ext.data.ArrayStore', {
+                    fields: ['id', 'path'],
+                    data: templateFolders
+                })
+                }
+         );
+
+        var zipFileComponent = Ext4.create('Ext.Component', {
+            html: '<input type="file" name="folderZip" size="50">',
+            hidden: false
+        });
+
+        var initTemplateFolders = function(combo) {
+            return function(data) {
+                getTemplateFolders(data);
+                templateFolders = templateFolders.sort(function(a,b) {
+                    return (a[1].toUpperCase() > b[1].toUpperCase()) ? 1
+                            : (a[1].toUpperCase() < b[1].toUpperCase()) ? -1
+                            : 0
+                });
+                combo.setLoading(false);
+            }
+        };
+
+        var getTemplateFolders = function(data) {
+            // add the container itself to the templateFolder object if it is not the root and the user has admin perm to it
+            // and if it is not a workbook or container tab folder
+            if (data.path != "/" && LABKEY.Security.hasPermission(data.userPermissions, LABKEY.Security.permissions.admin)
+                    && !data.isWorkbook && !data.isContainerTab) {
+                templateFolders.push([data.id, data.path]);
+            }
+            // add the container's children to the templateFolder object
+            if (data.children.length > 0) {
+                for (var i = 0; i < data.children.length; i++)
+                    getTemplateFolders(data.children[i]);
+            }
+        };
+
+        var folderTemplatesPanel = Ext4.create('Ext.form.Panel', {
+            border : false,
+            renderTo : 'SourcePicker',
+            items : [
+                sourceRadioGroup,
+                folderTemplatesComponent,
+                zipFileComponent]
+        });
+
+        if (templateFolders.length == 0) {
+            folderTemplatesComponent.setLoading(true);
+            LABKEY.Security.getContainers({
+                containerPath: '/',
+                includeSubfolders: true,
+                success: initTemplateFolders(folderTemplatesComponent)
+            });
+        }
+
+    });
+</script>
 

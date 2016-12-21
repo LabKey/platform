@@ -1404,6 +1404,7 @@ public class PipelineController extends SpringActionController
             File xmlFile = archiveFile;
 
             if (pipelineRoot != null && archiveFile.getName().endsWith(".zip"))
+//            if (pipelineRoot != null && (archiveFile.getName().endsWith(".zip") || archiveFile.isDirectory()))
             {
                 try
                 {
@@ -1449,6 +1450,14 @@ public class PipelineController extends SpringActionController
                 {
                     errors.reject(ERROR_MSG, "This file does not appear to be a valid .zip file.");
                 }
+            }
+
+            // if this is an import from a source template folder that has been previously implicitly exported
+            // to the unzip dir (without ever creating a zip file) then just look there for the xmlFile.
+            if (pipelineRoot != null && archiveFile.isDirectory())
+            {
+                File importDir = archiveFile;
+                xmlFile = new File(importDir, xmlFileName);
             }
 
             return xmlFile;
@@ -1609,6 +1618,7 @@ public class PipelineController extends SpringActionController
 
         public ActionURL urlStartFolderImport(Container container, @NotNull File archiveFile, boolean asStudy, @Nullable ImportOptions options)
         {
+            // archiveFile may be the unzip dir or it may be the zip file itself
             ActionURL url = new ActionURL(StartFolderImportAction.class, container);
             if (asStudy)
                 url.addParameter("asStudy", true);
@@ -1618,8 +1628,8 @@ public class PipelineController extends SpringActionController
 
         private ActionURL addStartImportParameters(ActionURL url, @NotNull File file, @Nullable ImportOptions options)
         {
+            // file may be the unzip dir or it may be the zip file itself
             url.addParameter("filePath", file.getAbsolutePath());
-
             url.addParameter("validateQueries", options == null || !options.isSkipQueryValidation());
             url.addParameter("createSharedDatasets", options == null || options.isCreateSharedDatasets());
             if (options != null)

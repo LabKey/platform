@@ -146,10 +146,5 @@ public class StudyWriterFactory implements FolderWriterFactory
             return children;
         }
 
-        @Override
-        public boolean includeWithTemplate()
-        {
-            return false; // TODO remove this override in 17.1.1
-        }
     }
 }
