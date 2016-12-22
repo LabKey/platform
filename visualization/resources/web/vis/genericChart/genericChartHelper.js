@@ -21,6 +21,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 imgUrl: LABKEY.contextPath + '/visualization/images/barchart.png',
                 fields: [
                     {name: 'x', label: 'X Categories', required: true, nonNumericOnly: true},
+                    {name: 'xSub', label: 'X Subcategories', required: false, nonNumericOnly: true},
                     {name: 'y', label: 'Y Axis', numericOnly: true}
                 ],
                 layoutOptions: {line: true, opacity: true, axisBased: true}
@@ -336,6 +337,15 @@ LABKEY.vis.GenericChartHelper = new function(){
                     sortFn: LABKEY.vis.discreteSortFn,
                     tickLabelMax: 25
                 };
+
+                //bar chart x-axis subcategories support
+                if (Ext4.isDefined(measures.xSub)) {
+                    scales.xSub = {
+                        scaleType: 'discrete',
+                        sortFn: LABKEY.vis.discreteSortFn,
+                        tickLabelMax: 25
+                    };
+                }
             }
 
             scales.y = {
@@ -415,7 +425,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         {
             aes.hoverText = generatePointHover(measures);
         }
-        else if (chartType === "box_plot")
+        if (chartType === "box_plot")
         {
             if (measures.color) {
                 aes.outlierColor = generateGroupingAcc(measures.color.name);
@@ -427,6 +437,17 @@ LABKEY.vis.GenericChartHelper = new function(){
 
             aes.hoverText = generateBoxplotHover();
             aes.outlierHoverText = generatePointHover(measures);
+        }
+        else if (chartType === 'bar_chart')
+        {
+            var xSubMeasureType = measures.xSub ? getMeasureType(measures.xSub) : null;
+            if (xSubMeasureType)
+            {
+                if (isNumericType(xSubMeasureType))
+                    aes.xSub = generateContinuousAcc(measures.xSub.name);
+                else
+                    aes.xSub = generateDiscreteAcc(measures.xSub.name, measures.xSub.label);
+            }
         }
 
 
@@ -719,44 +740,88 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param {String} measureName The variable to calculate aggregate values over. Nullable.
      * @param {String} aggregate MIN/MAX/SUM/COUNT/etc. Defaults to COUNT.
      * @param {String} nullDisplayValue The display value to use for null dimension values. Defaults to 'null'.
+     * @param {String} subDimensionName The subgrouping variable to get distinct members from
      */
-    var generateAggregateData = function(data, dimensionName, measureName, aggregate, nullDisplayValue)
+    var generateAggregateData = function(data, dimensionName, measureName, aggregate, nullDisplayValue, subDimensionName)
     {
         var uniqueDimValues = {};
-        for (var i = 0; i < data.length; i++)
-        {
+        for (var i = 0; i < data.length; i++) {
+
             var dimVal = null;
             if (typeof data[i][dimensionName] == 'object')
                 dimVal = data[i][dimensionName].hasOwnProperty('displayValue') ? data[i][dimensionName].displayValue : data[i][dimensionName].value;
+
+            var subDimVal = null;
+            if (typeof data[i][subDimensionName] == 'object')
+                subDimVal = data[i][subDimensionName].hasOwnProperty('displayValue') ? data[i][subDimensionName].displayValue : data[i][subDimensionName].value;
 
             var measureVal = null;
             if (measureName != undefined && measureName != null && typeof data[i][measureName] == 'object')
                 measureVal = data[i][measureName].value;
 
-            if (uniqueDimValues[dimVal] == undefined)
-                uniqueDimValues[dimVal] = {count: 0, sum: 0};
+            if (subDimensionName !== undefined) {
+                //create new aggregates for unique dimension/subdimension pairs found
+                if (uniqueDimValues[subDimVal] == undefined)
+                    uniqueDimValues[subDimVal] = {};
 
-            uniqueDimValues[dimVal].count++;
-            if (!isNaN(measureVal))
-                uniqueDimValues[dimVal].sum += measureVal;
+                if (uniqueDimValues[subDimVal][dimVal] == undefined)
+                    uniqueDimValues[subDimVal][dimVal] = { count: 0, sum: 0 };
+
+                //update aggregate values
+                uniqueDimValues[subDimVal][dimVal].count++;
+                if (!isNaN(measureVal))
+                    uniqueDimValues[subDimVal][dimVal].sum += measureVal;
+            } else {
+                if (uniqueDimValues[dimVal] == undefined)
+                    uniqueDimValues[dimVal] = { count: 0, sum: 0 };
+
+                uniqueDimValues[dimVal].count++;
+                if (!isNaN(measureVal))
+                    uniqueDimValues[dimVal].sum += measureVal;
+            }
         }
 
-        var keys = Object.keys(uniqueDimValues), results = [];
-        for (var i = 0; i < keys.length; i++)
-        {
-            var row = {
-                label: keys[i] == null || keys[i] == 'null' ? nullDisplayValue || 'null' : keys[i]
-            };
+        var keys = Object.keys(uniqueDimValues),
+                results = [];
+        if (subDimensionName !== undefined) {
+            for (var k = 0; k < keys.length; k++) {
+                if (uniqueDimValues.hasOwnProperty(keys[k])) {
+                    var dimensionKeys = Object.keys(uniqueDimValues[keys[k]]);
 
-            // TODO add support for more aggregates
-            if (aggregate == undefined || aggregate == null || aggregate == 'COUNT')
-                row.value = uniqueDimValues[keys[i]].count;
-            else if (aggregate == 'SUM')
-                row.value = uniqueDimValues[keys[i]].sum;
-            else
-                throw 'Aggregate ' + aggregate + ' is not yet supported.';
+                    for (var j = 0; j < dimensionKeys.length; j++) {
+                        var row = {
+                            label: dimensionKeys[j] == null || dimensionKeys[j] == 'null' ? nullDisplayValue || 'null' : dimensionKeys[j],
+                            subLabel: keys[k] == null || keys[k] == 'null' ? nullDisplayValue || 'null' : keys[k]
+                        };
 
-            results.push(row);
+                        // TODO add support for more aggregates
+                        if (aggregate == undefined || aggregate == null || aggregate == 'COUNT')
+                            row.value = uniqueDimValues[keys[k]][dimensionKeys[j]].count;
+                        else if (aggregate == 'SUM')
+                            row.value = uniqueDimValues[keys[k]][dimensionKeys[j]].sum;
+                        else
+                            throw 'Aggregate ' + aggregate + ' is not yet supported.';
+
+                        results.push(row);
+                    }
+                }
+            }
+        } else {
+            for (var n = 0; n < keys.length; n++) {
+                row = {
+                    label: keys[n] == null || keys[n] == 'null' ? nullDisplayValue || 'null' : keys[n]
+                };
+
+                // TODO add support for more aggregates
+                if (aggregate == undefined || aggregate == null || aggregate == 'COUNT')
+                    row.value = uniqueDimValues[keys[n]].count;
+                else if (aggregate == 'SUM')
+                    row.value = uniqueDimValues[keys[n]].sum;
+                else
+                    throw 'Aggregate ' + aggregate + ' is not yet supported.';
+
+                results.push(row);
+            }
         }
         return results;
     };
@@ -1039,7 +1104,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 configMeasure = chartConfig.measures[measureName];
                 Ext4.apply(measureRestrictions, _getMeasureRestrictions(renderType, measureName));
 
-                if (configMeasure.measure && ((measureName !== 'x' && measureRestrictions.numericOnly ) || renderType === 'scatter_plot')
+                if (configMeasure.measure && ((measureName !== 'x' && measureName !== 'xSub' && measureRestrictions.numericOnly ) || renderType === 'scatter_plot')
                          && !isNumericType(configMeasure.type)) {
                     measuresForProcessing[measureName] = {};
                     measuresForProcessing[measureName].name = configMeasure.name;

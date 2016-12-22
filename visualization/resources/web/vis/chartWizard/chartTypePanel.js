@@ -822,7 +822,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
         if ((chartType === 'box_plot' || chartType === 'bar_chart'))
         {
             //x-axis does not support 'measure' column types for these plot types
-            if (fieldSelPanel.field.name === 'x')
+            if (fieldSelPanel.field.name === 'x' || fieldSelPanel.field.name === 'xSub')
                 return isDimension;
             else
                 return isMeasure;

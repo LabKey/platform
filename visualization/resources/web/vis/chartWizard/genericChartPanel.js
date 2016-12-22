@@ -1266,7 +1266,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         customRenderType = this.customRenderTypes ? this.customRenderTypes[this.renderType] : undefined;
         if (customRenderType && customRenderType.generateAes)
             aes = customRenderType.generateAes(this, chartConfig, aes);
-
+        //TODO: for the case of sub-categories, x-axis scale should be calculated based on subcategory values
         scales = LABKEY.vis.GenericChartHelper.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, this.chartData, this.defaultNumberFormat);
         if (customRenderType && customRenderType.generateScales)
             scales = customRenderType.generateScales(this, chartConfig, scales);
@@ -1346,6 +1346,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         var selectedMeasureNames = Object.keys(this.measures),
             hasXMeasure = selectedMeasureNames.indexOf('x') > 0 && Ext4.isDefined(aes.x),
+            hasXSubMeasure = selectedMeasureNames.indexOf('xSub') > 0 && Ext4.isDefined(aes.xSub),
             hasYMeasure = selectedMeasureNames.indexOf('y') > 0 && Ext4.isDefined(aes.y),
             requiredMeasureNames = this.getChartTypePanel().getRequiredFieldNames();
 
@@ -1355,6 +1356,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         // validate that the x axis measure exists and data is valid
         if (hasXMeasure && !this.validateAxisMeasure(chartType, chartConfig, 'x', aes, scales, this.chartData.rows))
+            return false;
+
+        // validate that the x subcategory axis measure exists and data is valid
+        if (hasXSubMeasure && !this.validateAxisMeasure(chartType, chartConfig, 'xSub', aes, scales, this.chartData.rows))
             return false;
 
         // validate that the y axis measure exists and data is valid
@@ -1382,16 +1387,19 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (chartType == 'bar_chart' || chartType == 'pie_chart')
         {
-            var dimName = null, measureName = null;
+            var dimName = null, measureName = null, subDimName = null;
             if (chartConfig.measures.x) {
                 dimName = chartConfig.measures.x.converted ? chartConfig.measures.x.convertedName : chartConfig.measures.x.name;
+            }
+            if (chartConfig.measures.xSub) {
+                subDimName = chartConfig.measures.xSub.converted ? chartConfig.measures.xSub.convertedName : chartConfig.measures.xSub.name;
             }
             if (chartConfig.measures.y) {
                 measureName = chartConfig.measures.y.converted ? chartConfig.measures.y.convertedName : chartConfig.measures.y.name;
             }
 
             var aggType = measureName != null ? 'SUM' : 'COUNT';
-            data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');
+            data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]', subDimName);
         }
 
         if (customRenderType && Ext4.isFunction(customRenderType.generatePlotConfig))
