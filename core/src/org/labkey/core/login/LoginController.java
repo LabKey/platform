@@ -290,11 +290,8 @@ public class LoginController extends SpringActionController
         return new LoginUrlsImpl();
     }
 
-    private static boolean authenticate(LoginForm form, BindException errors, ViewContext viewContext, boolean logFailures)
+    private static boolean authenticate(LoginForm form, BindException errors, HttpServletRequest request, boolean logFailures)
     {
-        HttpServletRequest request = viewContext.getRequest();
-        HttpServletResponse response = viewContext.getResponse();
-
         try
         {
             // Attempt authentication with all active form providers
@@ -307,8 +304,7 @@ public class LoginController extends SpringActionController
                     AuthenticationManager.setPrimaryAuthenticationResult(request, result);
                     return true;   // Only success case... everything else returns false
                 case InactiveUser:
-                    laf = LookAndFeelProperties.getInstance(viewContext.getContainer());
-                    errors.addError(new FormattedError("Your account has been deactivated. Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> if you need to reactivate this account."));
+                    errors.addError(new FormattedError("Your account has been deactivated. " + AppProps.getInstance().getAdministratorContactHTML() + " if you need to reactivate this account."));
                     break;
                 case BadCredentials:
                     if (null != form.getEmail() || null != form.getPassword())
@@ -335,12 +331,10 @@ public class LoginController extends SpringActionController
                     }
                     break;
                 case UserCreationError:
-                    laf = LookAndFeelProperties.getInstance(viewContext.getContainer());
-                    errors.addError(new FormattedError("The server could not create your account. Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> for assistance."));
+                    errors.addError(new FormattedError("The server could not create your account. " + AppProps.getInstance().getAdministratorContactHTML() + " for assistance."));
                     break;
                 case UserCreationNotAllowed:
-                    laf = LookAndFeelProperties.getInstance(viewContext.getContainer());
-                    errors.addError(new FormattedError("Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> to have your account created."));
+                    errors.addError(new FormattedError(AppProps.getInstance().getAdministratorContactHTML() + " to have your account created."));
                     break;
                 case PasswordExpired:
                      AuthenticationManager.setLoginReturnProperties(request, new LoginReturnProperties(result.getRedirectURL(), form.getUrlhash(), form.getSkipProfile()));
@@ -571,12 +565,13 @@ public class LoginController extends SpringActionController
 
         public boolean handlePost(LoginForm form, BindException errors) throws Exception
         {
+            HttpServletRequest request = getViewContext().getRequest();
+
             // Handle a hash (#Example) on the originally requested URL. These aren't passed to the server on GET, so getView()
             // never sees them. The standard login page uses JavaScript to post them as a hidden parameter. If we have one,
             // update any previously stashed LoginReturnProperties.
             if (null != form.getUrlhash())
             {
-                HttpServletRequest request = getViewContext().getRequest();
                 LoginReturnProperties properties = AuthenticationManager.getLoginReturnProperties(request);
 
                 if (null != properties)
@@ -603,7 +598,7 @@ public class LoginController extends SpringActionController
                 }
             }
 
-            boolean success = authenticate(form, errors, getViewContext(), true);
+            boolean success = authenticate(form, errors, request, true);
 
             if (success)
             {
@@ -662,11 +657,12 @@ public class LoginController extends SpringActionController
         @Override
         public Object execute(LoginForm form, BindException errors) throws Exception
         {
+            HttpServletRequest request = getViewContext().getRequest();
+
             // allow clients using loginApi to store a returnURL at the start of the login that can be utilized after any SSO or secondary logins have finished
             URLHelper returnURL = form.getReturnURLHelper();
             if (null != returnURL)
             {
-                HttpServletRequest request = getViewContext().getRequest();
                 LoginReturnProperties properties = AuthenticationManager.getLoginReturnProperties(request);
                 // create or update only if more than 5 minutes since any previously stashed LoginReturnProperties for this session. Prevents bogus redirects as in issue: 23782
                 if (null == properties || properties.isExpired())
@@ -674,7 +670,7 @@ public class LoginController extends SpringActionController
                     properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
                     AuthenticationManager.setLoginReturnProperties(request, properties);
                 }
-            };
+            }
 
             // TODO: check during upgrade?
             Project termsProject = getTermsOfUseProject(form);
@@ -712,7 +708,7 @@ public class LoginController extends SpringActionController
             }
 
             ApiSimpleResponse response = null;
-            boolean success = authenticate(form, errors, getViewContext(), true);
+            boolean success = authenticate(form, errors, request, true);
 
             // TODO: Handle errors? Handle setPassword? SSO? Update profile?
 
@@ -1019,8 +1015,7 @@ public class LoginController extends SpringActionController
                 catch (ConfigurationException e)
                 {
                     sbReset.append("Failed to send password reset email at this time due to a server configuration problem. <br>");
-                    sbReset.append("Please contact your administrator at <a href=mailto:\"" + LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress()
-                            + "\">" + LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress() + "</a>");
+                    sbReset.append(AppProps.getInstance().getAdministratorContactHTML());
                     UserManager.addToUserHistory(UserManager.getUser(_email), _email + " reset the password, but sending the email failed.");
                 }
                 catch (MessagingException e)
@@ -2264,9 +2259,8 @@ public class LoginController extends SpringActionController
                 }
                 catch (ConfigurationException e)
                 {
-                    sbReset.append("Failed to send password reset email at this time due to a server configuration problem. <br>");
-                    sbReset.append("Please contact your administrator at <a href=mailto:\"" + LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress()
-                            + "\">" + LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress() + "</a>");
+                    sbReset.append("Failed to send password reset email at this time due to a server configuration problem. <br>")
+                        .append(AppProps.getInstance().getAdministratorContactHTML());
                     UserManager.addToUserHistory(UserManager.getUser(_email), _email + " reset the password, but sending the email failed.");
                 }
                 catch (MessagingException e)
