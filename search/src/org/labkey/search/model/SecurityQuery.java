@@ -71,9 +71,9 @@ class SecurityQuery extends Query
 
             for (Container c : containers)
             {
-                boolean searchable = c.isSearchable() || c.equals(currentContainer);
+                boolean searchable = (c.isSearchable() || c.equals(currentContainer)) && (c.isWorkbook() || c.shouldDisplay(user));
 
-                if (searchable && c.shouldDisplay(user))
+                if (searchable)
                 {
                     _containerIds.put(c.getId(), c);
                 }
