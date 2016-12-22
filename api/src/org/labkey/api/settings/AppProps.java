@@ -97,6 +97,11 @@ public class AppProps
         String getServerGUID();
         String getBLASTServerBaseURL();
         String getWebappConfigurationFilename();
+
+        /**
+         * Email address of the primary site administrator, set on the site settings page. Useful in error messages when only a site administrator can help.
+         * @return Email address of the primary site administrator
+         */
         String getAdministratorContactEmail();
 
         /**
