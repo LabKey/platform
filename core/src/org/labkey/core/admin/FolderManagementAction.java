@@ -589,6 +589,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
         if (!StringUtils.isEmpty(form.sourceTemplateFolderId))
         {
+            // user choose to import from a template source folder
             Container sourceContainer = form.getSourceTemplateFolderContainer();
             if (null == sourceContainer)
             {
@@ -674,7 +675,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 return false;
             }
         }
-        else // import from a zip file
+        else // user chose to import from a zip file
         {
             // make sure we have a single file selected for import
             Map<String, MultipartFile> map = getFileMap();

@@ -1404,7 +1404,6 @@ public class PipelineController extends SpringActionController
             File xmlFile = archiveFile;
 
             if (pipelineRoot != null && archiveFile.getName().endsWith(".zip"))
-//            if (pipelineRoot != null && (archiveFile.getName().endsWith(".zip") || archiveFile.isDirectory()))
             {
                 try
                 {
@@ -1456,8 +1455,7 @@ public class PipelineController extends SpringActionController
             // to the unzip dir (without ever creating a zip file) then just look there for the xmlFile.
             if (pipelineRoot != null && archiveFile.isDirectory())
             {
-                File importDir = archiveFile;
-                xmlFile = new File(importDir, xmlFileName);
+                xmlFile = new File(archiveFile, xmlFileName);
             }
 
             return xmlFile;
