@@ -142,6 +142,12 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         return lookupStringValue(COMPANY_NAME_PROP, "Demo Installation");
     }
 
+    /**
+     * The "from" address to use when sending emails. Do not use for any other purpose and never suggest that LabKey users email
+     * this address for any reason. The address might not be a functioning email address; e.g., "do_not_reply@labkey.org".
+     *
+     * @return Sender email address that should be used in this project
+     */
     public String getSystemEmailAddress()
     {
         //initial login will be used as the default value. During setup user will be prompted to change.

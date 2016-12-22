@@ -35,7 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.text.DecimalFormat;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -445,7 +445,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
         // Default to the oldest site administrator's email address
         List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds("Administrators");
         // Sort to find the minimum user id
-        Collections.sort(members, (o1, o2) -> o1.getKey().compareTo(o2.getKey()));
+        members.sort(Comparator.comparing(Pair::getKey));
         Set<String> validOptions = new HashSet<>();
         for (Pair<Integer, String> entry : members)
         {
@@ -465,6 +465,13 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
         return result;
     }
 
+    @Override
+    public String getAdministratorContactHTML()
+    {
+        return "Please <a href=\"mailto:" + PageFlowUtil.filter(getAdministratorContactEmail()) + "\">contact a system administrator</a>";
+    }
+
+    // TODO: Ditch this in favor of Constants.getPreviousReleaseVersion()?
     public String getLabKeyVersionString()
     {
         DecimalFormat format = new DecimalFormat("0.00");
