@@ -1547,13 +1547,14 @@ public class QueryController extends SpringActionController
     {
         boolean insertColumnsOnly = true;
         String filenamePrefix;
+        FieldKey[] includeColumn;
 
         public TemplateForm()
         {
             _headerType = ColumnHeaderType.Caption;
         }
 
-        // "captionType" field backwards compatibiilty
+        // "captionType" field backwards compatibility
         public void setCaptionType(ColumnHeaderType headerType)
         {
             this._headerType = headerType;
@@ -1562,6 +1563,23 @@ public class QueryController extends SpringActionController
         public ColumnHeaderType getCaptionType()
         {
             return _headerType;
+        }
+
+        public List<FieldKey> getIncludeColumns()
+        {
+            if (includeColumn == null || includeColumn.length == 0)
+                return Collections.emptyList();
+            return Arrays.asList(includeColumn);
+        }
+
+        public FieldKey[] getIncludeColumn()
+        {
+            return this.includeColumn;
+        }
+
+        public void setIncludeColumn(FieldKey[] includeColumn)
+        {
+            this.includeColumn = includeColumn;
         }
 
         public String getFilenamePrefix()
@@ -1578,12 +1596,25 @@ public class QueryController extends SpringActionController
 
     /**
      * Can be used to generate an excel template for import into a table.  Supported URL params include:
-     * filenamePrefix: the prefix of the excel file that is generated, defaults to '_data'
-     * query.viewName: if provided, the resulting excel file will use the fields present in this view, with the caveat
-     * that any non-existent columns (like a lookup) or non-usereditable columns will be skipped.  Any required columns
-     * missing from this view will be appended to the end of the query.
-     * captionType: determines which column property is used in the header.  either Label or Name
+     * <dl>
+     *     <dt>filenamePrefix</dt>
+     *     <dd>the prefix of the excel file that is generated, defaults to '_data'</dd>
      *
+     *     <dt>query.viewName</dt>
+     *     <dd>if provided, the resulting excel file will use the fields present in this view.
+     *     Non-usereditable columns will be skipped.
+     *     Non-existent columns (like a lookup) unless <code>includeMissingColumns</code> is true.
+     *     Any required columns missing from this view will be appended to the end of the query.
+     *     </dd>
+     *
+     *     <dt>includeColumn</dt>
+     *     <dd>List of column names to include, even if the column doesn't exist or is non-userEditable.
+     *     For example, this can be used to add a fake column that is only supported during the import process.
+     *     </dd>
+     *
+     *     <dt>captionType</dt>
+     *     <dd>determines which column property is used in the header.  either Label or Name</dd>
+     * </dl>
      */
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.Export.class)
@@ -1597,7 +1628,7 @@ public class QueryController extends SpringActionController
         void _export(TemplateForm form, QueryView view) throws Exception
         {
             boolean respectView = form.getViewName() != null;
-            view.exportToExcelTemplate(getViewContext().getResponse(), form.getHeaderType(), form.insertColumnsOnly, respectView, form.getFilenamePrefix());
+            view.exportToExcelTemplate(getViewContext().getResponse(), form.getHeaderType(), form.insertColumnsOnly, respectView, form.getIncludeColumns(), form.getFilenamePrefix());
         }
     }
 
