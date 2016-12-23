@@ -298,6 +298,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             if (colName.equalsIgnoreCase("genid"))
             {
                 col.setHidden(true);
+                col.setUserEditable(false);
                 col.setShownInDetailsView(false);
                 col.setShownInInsertView(false);
                 col.setShownInUpdateView(false);
@@ -844,7 +845,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                             entry.getValue().stream().filter(item -> item instanceof String).forEach(item -> {
 
                                 String itemEntry = (String)item;
-                                if (itemEntry.startsWith("[") && itemEntry.endsWith("]"))
+                                if (itemEntry.startsWith("[") && itemEntry.endsWith("]")) // not necessary any more?
                                 {
                                     itemEntry = itemEntry.substring(1, itemEntry.length() - 1);
                                 }
@@ -856,6 +857,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                                 else
                                 {
                                     // parse out the comma separated names
+                                    //aliasNames.addAll(AliasInsertHelper.parseAliasString(itemEntry));
                                     if (itemEntry.contains(","))
                                     {
                                         String[] parts = itemEntry.split(",");
@@ -1492,26 +1494,42 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
     {
         public static void handleInsertUpdate(Container container, User user, String lsid, TableInfo aliasMap, Map<String, Object> row)
         {
-            List<String> aliasNames = new ArrayList();
-            List<Integer> params = new ArrayList();
+            List<String> aliasNames = Collections.emptyList();
+            List<Integer> params = new ArrayList<>();
             String aliases;
-            // QueryController action update passes here an array of Strings where each string is the rowId of an alias in the exp.Alias table
-            if (row.get("Alias") instanceof String[])
+            Object value = row.get("alias");
+            if (value instanceof String[])
             {
-                String[] aa = (String[]) row.get("Alias");
+                // QueryController action update passes here an array of Strings where each string is the rowId of an alias in the exp.Alias table
+                String[] aa = (String[]) value;
                 for (String alias : aa)
                 {
                     if (NumberUtils.isDigits(alias))
                         params.add(NumberUtils.toInt(alias));
                     else
-                        parseAliasString(aliasNames, alias);
+                        aliasNames = parseAliasString(alias);
                 }
             }
-            // LABKEY.Query.updateRows passes here a JSON String of an array of strings where each string is an alias
+            else if (value instanceof JSONArray)
+            {
+                // LABKEY.Query.updateRows passes a JSONArray of alias names
+                aliasNames = new ArrayList<>();
+                for (Object o : ((JSONArray)value).toArray())
+                    aliasNames.add(o.toString());
+            }
+            else if (value instanceof List)
+            {
+                aliasNames = (List) value;
+            }
+            else if (value instanceof String)
+            {
+                // tsv?
+                aliases = (String) value;
+                aliasNames = parseAliasString(aliases);
+            }
             else
             {
-                aliases = (String) row.get("Alias");
-                parseAliasString(aliasNames, aliases);
+                throw new IllegalArgumentException("Unsupported value for column 'Alias': " + value);
             }
             params.addAll(getAliasIds(user, aliasNames));
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
@@ -1519,32 +1537,27 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             insertAliases(container, user, aliasMap, params, lsid);
         }
 
-        private static void parseAliasString(List<String> aliasNames, String aliases)
+        public static List<String> parseAliasString(String aliases)
         {
-            if (aliases != null)
+            List<String> aliasNames = new ArrayList<>();
+            if (aliases != null && aliases.length() > 0)
             {
-                if (aliases.startsWith("[") && aliases.endsWith("]"))
-                {
-                    aliases = aliases.substring(1, aliases.length() - 1);
-                }
-                if (null != aliases)
-                {
-                    aliases = aliases.replace("\"", "");
-                }
+                aliases = aliases.trim();
                 if (aliases.contains(","))
                 {
                     for (String part : aliases.split(","))
                     {
-                        if (!StringUtils.isEmpty(part.trim()))
-                            aliasNames.add(part.trim());
+                        part = part.trim();
+                        if (!StringUtils.isEmpty(part))
+                            aliasNames.add(part);
                     }
                 }
-                else
+                else if (!StringUtils.isEmpty(aliases))
                 {
-                    if (!StringUtils.isEmpty(aliases.trim()))
-                        aliasNames.add(aliases.trim());
+                    aliasNames.add(aliases);
                 }
             }
+            return aliasNames;
         }
 
         static void insertAliases(Container container, User user, TableInfo aliasMap, List<Integer> aliasIds, String lsid)
