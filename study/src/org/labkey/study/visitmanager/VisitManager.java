@@ -20,7 +20,6 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.BaseSelector;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -29,9 +28,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExceptionFramework;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -58,7 +55,6 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitMapKey;
 import org.labkey.study.query.StudyQuerySchema;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -348,21 +344,12 @@ public abstract class VisitManager
         SQLFragment sql = getDatasetSequenceNumsSQL(getStudy());
         final Map<Integer, List<Double>> ret = new HashMap<>();
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new ForEachBlock<ResultSet>()
+        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(rs ->
         {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                Integer datasetId = rs.getInt(1);
-                Double sequenceNum = rs.getDouble(2);
-                List<Double> l = ret.get(datasetId);
-                if (null == l)
-                {
-                    l = new ArrayList<>();
-                    ret.put(datasetId, l);
-                }
-                l.add(sequenceNum);
-            }
+            Integer datasetId = rs.getInt(1);
+            Double sequenceNum = rs.getDouble(2);
+            List<Double> l = ret.computeIfAbsent(datasetId, k -> new ArrayList<>());
+            l.add(sequenceNum);
         });
 
         return ret;
@@ -488,20 +475,18 @@ public abstract class VisitManager
             if (null != potentiallyInsertedParticipants)
             {
                 final ArrayList<String> ptids = new ArrayList<>(potentiallyInsertedParticipants);
-                Runnable r = new Runnable(){ public void run(){
-                    StudyManager.indexParticipants(ss.defaultTask(), _study.getContainer(), ptids);
-                }};
+                Runnable r = () -> StudyManager.indexParticipants(ss.defaultTask(), _study.getContainer(), ptids);
                 ss.defaultTask().addRunnable(r, SearchService.PRIORITY.group);
             }
             else
             {
-                Runnable r = new Runnable() { public void run()
+                Runnable r = () ->
                 {
                     SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), cid);
                     filter.addCondition(FieldKey.fromParts("LastIndexed"), null, CompareType.ISBLANK);
                     List<String> ptids = new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), Collections.singleton("ParticipantId"), filter, null).getArrayList(String.class);
                     StudyManager.indexParticipants(ss.defaultTask(), _study.getContainer(), ptids);
-                } };
+                };
                 ss.defaultTask().addRunnable(r, SearchService.PRIORITY.group);
             }
         }
@@ -705,8 +690,12 @@ public abstract class VisitManager
         }
         catch (Exception x)
         {
+            // TODO: Temporary logging
+            LOGGER.error("Exception during participant purge; likely an \"object not found\" exception");
             if (SqlDialect.isObjectNotFoundException(x))
             {
+                // TODO: Temporary logging
+                LOGGER.error("Exception was determined to be \"object not found\". Container is " + study.getContainer());
                 StudyManager.getInstance().clearCaches(study.getContainer(), false);
                 // This is an unfortunate optimistic concurrency problem, but we don't really need to stop
                 // everything in its tracks.  However, the connection might be horked now.  Urg Postgres...
@@ -724,8 +713,9 @@ public abstract class VisitManager
     /** remove rows in participantvisits that are not in the participant table */
     protected int purgeParticipantsFromParticipantsVisitTable(Container c)
     {
-        /** Postgres at least seems to have major performance issues with the simple DELETE NOT IN version
-         * DELETE FROM study.participantvisit WHERE Container = ? AND ParticipantId NOT IN (SELECT ParticipantId FROM study.participant WHERE Container= ?)
+        /*
+            Postgres at least seems to have major performance issues with the simple DELETE NOT IN version
+            DELETE FROM study.participantvisit WHERE Container = ? AND ParticipantId NOT IN (SELECT ParticipantId FROM study.participant WHERE Container= ?)
          */
         StudySchema study = StudySchema.getInstance();
         SQLFragment sqlSelect = new SQLFragment();
@@ -779,14 +769,10 @@ public abstract class VisitManager
     {
         LOGGER.debug("DUMP -- " + sql);
         DbScope s = StudySchema.getInstance().getScope();
-        new SqlExecutor(s).executeWithResults(new SQLFragment(sql), new BaseSelector.ResultSetHandler()
+        new SqlExecutor(s).executeWithResults(new SQLFragment(sql), (rs, conn) ->
         {
-            @Override
-            public Object handle(ResultSet rs, Connection conn) throws SQLException
-            {
-                ResultSetUtil.logData(rs, LOGGER);
-                return null;
-            }
+            ResultSetUtil.logData(rs, LOGGER);
+            return null;
         });
     }
 }
