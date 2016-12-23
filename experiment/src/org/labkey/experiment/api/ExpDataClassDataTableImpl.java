@@ -845,7 +845,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                             entry.getValue().stream().filter(item -> item instanceof String).forEach(item -> {
 
                                 String itemEntry = (String)item;
-                                if (itemEntry.startsWith("[") && itemEntry.endsWith("]")) // not necessary any more?
+                                if (itemEntry.startsWith("[") && itemEntry.endsWith("]"))
                                 {
                                     itemEntry = itemEntry.substring(1, itemEntry.length() - 1);
                                 }
@@ -857,7 +857,6 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                                 else
                                 {
                                     // parse out the comma separated names
-                                    //aliasNames.addAll(AliasInsertHelper.parseAliasString(itemEntry));
                                     if (itemEntry.contains(","))
                                     {
                                         String[] parts = itemEntry.split(",");
@@ -1494,42 +1493,26 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
     {
         public static void handleInsertUpdate(Container container, User user, String lsid, TableInfo aliasMap, Map<String, Object> row)
         {
-            List<String> aliasNames = Collections.emptyList();
-            List<Integer> params = new ArrayList<>();
+            List<String> aliasNames = new ArrayList();
+            List<Integer> params = new ArrayList();
             String aliases;
-            Object value = row.get("alias");
-            if (value instanceof String[])
+            // QueryController action update passes here an array of Strings where each string is the rowId of an alias in the exp.Alias table
+            if (row.get("Alias") instanceof String[])
             {
-                // QueryController action update passes here an array of Strings where each string is the rowId of an alias in the exp.Alias table
-                String[] aa = (String[]) value;
+                String[] aa = (String[]) row.get("Alias");
                 for (String alias : aa)
                 {
                     if (NumberUtils.isDigits(alias))
                         params.add(NumberUtils.toInt(alias));
                     else
-                        aliasNames = parseAliasString(alias);
+                        parseAliasString(aliasNames, alias);
                 }
             }
-            else if (value instanceof JSONArray)
-            {
-                // LABKEY.Query.updateRows passes a JSONArray of alias names
-                aliasNames = new ArrayList<>();
-                for (Object o : ((JSONArray)value).toArray())
-                    aliasNames.add(o.toString());
-            }
-            else if (value instanceof List)
-            {
-                aliasNames = (List) value;
-            }
-            else if (value instanceof String)
-            {
-                // tsv?
-                aliases = (String) value;
-                aliasNames = parseAliasString(aliases);
-            }
+            // LABKEY.Query.updateRows passes here a JSON String of an array of strings where each string is an alias
             else
             {
-                throw new IllegalArgumentException("Unsupported value for column 'Alias': " + value);
+                aliases = (String) row.get("Alias");
+                parseAliasString(aliasNames, aliases);
             }
             params.addAll(getAliasIds(user, aliasNames));
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
@@ -1537,27 +1520,32 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             insertAliases(container, user, aliasMap, params, lsid);
         }
 
-        public static List<String> parseAliasString(String aliases)
+        private static void parseAliasString(List<String> aliasNames, String aliases)
         {
-            List<String> aliasNames = new ArrayList<>();
-            if (aliases != null && aliases.length() > 0)
+            if (aliases != null)
             {
-                aliases = aliases.trim();
+                if (aliases.startsWith("[") && aliases.endsWith("]"))
+                {
+                    aliases = aliases.substring(1, aliases.length() - 1);
+                }
+                if (null != aliases)
+                {
+                    aliases = aliases.replace("\"", "");
+                }
                 if (aliases.contains(","))
                 {
                     for (String part : aliases.split(","))
                     {
-                        part = part.trim();
-                        if (!StringUtils.isEmpty(part))
-                            aliasNames.add(part);
+                        if (!StringUtils.isEmpty(part.trim()))
+                            aliasNames.add(part.trim());
                     }
                 }
-                else if (!StringUtils.isEmpty(aliases))
+                else
                 {
-                    aliasNames.add(aliases);
+                    if (!StringUtils.isEmpty(aliases.trim()))
+                        aliasNames.add(aliases.trim());
                 }
             }
-            return aliasNames;
         }
 
         static void insertAliases(Container container, User user, TableInfo aliasMap, List<Integer> aliasIds, String lsid)
