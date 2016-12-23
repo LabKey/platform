@@ -257,6 +257,13 @@ Ext4.define('LABKEY.ext4.FormPanel', {
                     theField.xtype = 'displayfield';
                 }
 
+                if (c.jsonType == 'int')
+                    theField.decimalPrecision = 0;
+                else if (c.jsonType == 'float') {
+                    // Allow lots of precision or ExtJS will truncate potentially useful digits
+                    theField.decimalPrecision = 15;
+                }
+
                 if(!c.compositeField)
                     toAdd.push(theField);
                 else {
