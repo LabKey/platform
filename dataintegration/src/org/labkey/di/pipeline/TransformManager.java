@@ -389,20 +389,28 @@ public class TransformManager implements DataIntegrationService.Interface
         if (!c.isRoot())
         {
             Collection<ScheduledPipelineJobDescriptor> oldDescriptors = DESCRIPTOR_CACHE_OLD.getResources(c);
-            Collection<ScheduledPipelineJobDescriptor> newDescriptors = DESCRIPTOR_CACHE.getResourceMaps(c).stream().map(Map::values).flatMap(Collection::stream).collect(Collectors.toList());
+            Collection<ScheduledPipelineJobDescriptor> descriptors = DESCRIPTOR_CACHE.getResourceMaps(c).stream()
+                .map(Map::values)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+
+            assert oldDescriptors.size() == descriptors.size();
 
             return oldDescriptors;
         }
         else
         {
+            Collection<ScheduledPipelineJobDescriptor> oldDescriptors = new LinkedList<>();
             Collection<ScheduledPipelineJobDescriptor> descriptors = new LinkedList<>();
-            Collection<ScheduledPipelineJobDescriptor> newDescriptors = new LinkedList<>();
             for (Module module : ModuleLoader.getInstance().getModules())
             {
-                descriptors.addAll(DESCRIPTOR_CACHE_OLD.getResources(module).stream().filter(ScheduledPipelineJobDescriptor::isSiteScope).collect(Collectors.toList()));
-                newDescriptors.addAll(DESCRIPTOR_CACHE.getResourceMap(module).values().stream().filter(ScheduledPipelineJobDescriptor::isSiteScope).collect(Collectors.toList()));
+                oldDescriptors.addAll(DESCRIPTOR_CACHE_OLD.getResources(module).stream().filter(ScheduledPipelineJobDescriptor::isSiteScope).collect(Collectors.toList()));
+                descriptors.addAll(DESCRIPTOR_CACHE.getResourceMap(module).values().stream().filter(ScheduledPipelineJobDescriptor::isSiteScope).collect(Collectors.toList()));
             }
-            return Collections.unmodifiableCollection(descriptors);
+
+            assert oldDescriptors.size() == descriptors.size();
+
+            return Collections.unmodifiableCollection(oldDescriptors);
         }
     }
 
@@ -414,11 +422,15 @@ public class TransformManager implements DataIntegrationService.Interface
         CacheId id = parseConfigId(configId);
         Module module = id.getModule();
 
-        ScheduledPipelineJobDescriptor newDescriptor;
+        ScheduledPipelineJobDescriptor descriptor = null;
 
-//      TODO: This causes re-entrancy in the cache loader... fix that and uncomment
-//        if (null != module)
-//            newDescriptor = DESCRIPTOR_CACHE.getResourceMap(module).get(id.getName());
+        if (null != module)
+            descriptor = DESCRIPTOR_CACHE.getResourceMap(module).get(configId);
+
+        if (null == descriptor)
+            assert null == oldDescriptor;
+        else
+            assert oldDescriptor.getDescription().equals(descriptor.getDescription());
 
         return oldDescriptor;
     }
@@ -769,21 +781,26 @@ public class TransformManager implements DataIntegrationService.Interface
             int runAsUserId = config.getModifiedBy();
             User runAsUser = UserManager.getUser(runAsUserId);
 
-            ScheduledPipelineJobDescriptor descriptor = DESCRIPTOR_CACHE_OLD.getResource(config.getTransformId());
+            ScheduledPipelineJobDescriptor oldDescriptor = DESCRIPTOR_CACHE_OLD.getResource(config.getTransformId());
 
             CacheId id = parseConfigId(config.getTransformId());
             Module module = id.getModule();
-            ScheduledPipelineJobDescriptor descriptor2;
+            ScheduledPipelineJobDescriptor descriptor = null;
 
             if (null != module)
-                descriptor2 = DESCRIPTOR_CACHE.getResourceMap(module).get(id.getName());
+                descriptor = DESCRIPTOR_CACHE.getResourceMap(module).get(id.getName());
 
-            if (null == descriptor)
+            if (null == oldDescriptor)
+                assert null == descriptor;
+            else
+                assert oldDescriptor.getDescription().equals(descriptor.getDescription());
+
+            if (null == oldDescriptor)
                 return;
             Container c = ContainerManager.getForId(config.getContainerId());
             if (null == c)
                 return;
-            schedule(descriptor, c, runAsUser, config.isVerboseLogging());
+            schedule(oldDescriptor, c, runAsUser, config.isVerboseLogging());
         }, TransformConfiguration.class);
     }
 
@@ -1105,8 +1122,8 @@ public class TransformManager implements DataIntegrationService.Interface
         }
 
 
-       void sleep(int sec)
-       {
+        void sleep(int sec)
+        {
            try
            {
                Thread.sleep(sec * 1000);
@@ -1114,7 +1131,15 @@ public class TransformManager implements DataIntegrationService.Interface
            catch (InterruptedException x)
            {
            }
-       }
+        }
+
+
+        @Test
+        public void testModuleResourceCache()
+        {
+            // Load all the ETL descriptors to ensure no exceptions
+            ModuleLoader.getInstance().getModules().forEach(DESCRIPTOR_CACHE::getResourceMap);
+        }
     }
 
 

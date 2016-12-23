@@ -94,7 +94,9 @@ public class QueueJobTask extends TaskRefTaskImpl
     {
         super.setSettings(xmlSettings);
         _transformId = settings.get("transformId");
-        if (null != _transformId && null == TransformManager.get().getDescriptor(_transformId))
-            throw new XmlException(QueueJobTask.class.getName() + " can't find ETL to be queued: " + _transformId);
+
+        // Removed because this check introduces re-entrancy during cache loading. TODO: Do this validation elsewhere...
+//        if (null != _transformId && null == TransformManager.get().getDescriptor(_transformId))
+//            throw new XmlException(QueueJobTask.class.getName() + " can't find ETL to be queued: " + _transformId);
     }
 }

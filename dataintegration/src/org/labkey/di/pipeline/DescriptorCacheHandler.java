@@ -26,6 +26,7 @@ import org.labkey.api.resource.Resource;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -49,8 +50,8 @@ public class DescriptorCacheHandler implements ModuleResourceCacheHandler<Map<St
         Map<String, ScheduledPipelineJobDescriptor> map = dir.list().stream()
             .filter(resource -> resource.isFile() && _transformManager.isConfigFile(resource.getName()))
             .map(resource -> _transformManager.parseETL(resource, module))
-            .filter(descriptor -> null != descriptor)
-            .collect(Collectors.toMap(descriptor -> _transformManager.createConfigId(module, descriptor.getName()), Function.identity()));
+            .filter(Objects::nonNull)
+            .collect(Collectors.toMap(TransformDescriptor::getId, Function.identity()));
 
         return Collections.unmodifiableMap(map);
     }
