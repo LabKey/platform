@@ -1914,7 +1914,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             if (context.getErrors().hasErrors())
                 throw context.getErrors();
 
-            _log.info("imported " + getName() + " : " + DateUtil.formatDuration(Math.max(0,end-start)));
+            _log.debug("imported " + getName() + " : " + DateUtil.formatDuration(Math.max(0,end-start)));
             StudyManager.datasetModified(this, user, true);
             transaction.commit();
             if (logger != null) logger.debug("commit complete");
