@@ -250,15 +250,17 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
 
     private synchronized void recomputeStats()
     {
-        List<? extends WellData> data = getWellData(true);
-        double[] values = new double[data.size()];
-        for (int i = 0; i < data.size(); i++)
-            values[i] = data.get(i).getMean();
-
-        computeStats(values);
+        List<Double> values = new ArrayList<>();
+        for (WellData data : getWellData(true))
+        {
+            if (data instanceof Well && ((Well)data).isExcluded())
+                continue;
+            values.add(data.getMean());
+        }
+        computeStats(values.toArray(new Double[values.size()]));
     }
 
-    private synchronized void computeStats(double[] data)
+    private synchronized void computeStats(Double[] data)
     {
         // sd is sqrt of sum of (values-mean) squared divided by n - 1
         // Calculate the mean
@@ -269,6 +271,8 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
         {
             _mean = Double.NaN;
             _stdDev = Double.NaN;
+            _min = Double.NaN;
+            _max = Double.NaN;
             return;
         }
 

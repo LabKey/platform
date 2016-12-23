@@ -16,9 +16,15 @@
 package org.labkey.study.plate;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.study.*;
+import org.labkey.api.study.Plate;
+import org.labkey.api.study.PlateService;
+import org.labkey.api.study.Position;
+import org.labkey.api.study.WellGroup;
+import org.labkey.api.study.WellGroupTemplate;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: migra

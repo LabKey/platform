@@ -58,17 +58,17 @@ public class WellImpl extends PositionImpl implements Well
 
     public double getMax()
     {
-        return _value;
+        return _excluded ? Double.NaN : _value;
     }
 
     public double getMean()
     {
-        return _value;
+        return  _excluded ? Double.NaN : _value;
     }
 
     public double getMin()
     {
-        return _value;
+        return  _excluded ? Double.NaN : _value;
     }
 
     public double getStdDev()
