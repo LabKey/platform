@@ -40,5 +40,5 @@ public interface PipelineUrls extends UrlProvider
 
     ActionURL urlActions(Container container);
 
-    ActionURL urlStartFolderImport(Container container, @NotNull File archiveFile, boolean asStudy, @Nullable ImportOptions options);
+    ActionURL urlStartFolderImport(Container container, @NotNull File archiveFile, boolean asStudy, @Nullable ImportOptions options, boolean fromTemplateSourceFolder);
 }
