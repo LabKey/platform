@@ -549,6 +549,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         PipelineUrls pipelineUrlProvider;
         StudyService.Service studyService;
         String originalFileName;
+        File archiveFile;
         boolean fromTemplateSourceFolder;
 
         if (form.origin == null)
@@ -600,6 +601,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
             fromTemplateSourceFolder = StringUtils.isNotEmpty(form.sourceTemplateFolderId);
             originalFileName = sourceContainer.getName();
+            archiveFile = pipelineUnzipDir;
         }
         else
         {
@@ -643,6 +645,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
             fromTemplateSourceFolder = false;
             originalFileName = zipFile.getOriginalFilename();
+            archiveFile = pipelineUnzipFile;
         }
 
         // get the main xml file from the unzipped import archive
@@ -666,7 +669,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         // if the option is selected to show the advanced import options, redirect to there
         if (form.isAdvancedImportOptions())
         {
-            _successURL = pipelineUrlProvider.urlStartFolderImport(getContainer(), pipelineUnzipDir, isStudy, options, fromTemplateSourceFolder);
+            // archiveFile is either the souce zip file in the unzip dir, or it is the source exported folder in the unzip dir
+            _successURL = pipelineUrlProvider.urlStartFolderImport(getContainer(), archiveFile, isStudy, options, fromTemplateSourceFolder);
             return true;
         }
 
