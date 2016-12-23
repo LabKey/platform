@@ -17,6 +17,7 @@
 package org.labkey.pipeline.api.properties;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipelineJobService;
 
 import java.net.InetAddress;
@@ -51,6 +52,7 @@ public class RemoteServerPropertiesImpl implements PipelineJobService.RemoteServ
         _muleConfig = muleConfig;
     }
 
+    @NotNull
     public String getHostName()
     {
         if (StringUtils.isBlank(_hostName))

@@ -3,8 +3,10 @@ package org.labkey.bigiron;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.SqlScriptRunner;
+import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.bigiron.mssql.GroupConcatInstallationManager;
 import org.springframework.validation.BindException;
 
@@ -23,14 +25,15 @@ public class BigIronController extends SpringActionController
     }
 
     @RequiresSiteAdmin
+    @AllowedDuringUpgrade
     public class DownloadGroupConcatInstallScriptAction extends ExportAction<Object>
     {
         @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             SqlScriptRunner.SqlScript installScript = GroupConcatInstallationManager.getInstallScript();
-            response.setCharacterEncoding("utf-8");
-            PageFlowUtil.streamFileBytes(response, "groupConcatInstall.sql", installScript.getContents().getBytes("UTF-8"), true);
+            response.setCharacterEncoding(StringUtilsLabKey.DEFAULT_CHARSET.name());
+            PageFlowUtil.streamFileBytes(response, "groupConcatInstall.sql", installScript.getContents().getBytes(StringUtilsLabKey.DEFAULT_CHARSET), true);
         }
     }
 }
