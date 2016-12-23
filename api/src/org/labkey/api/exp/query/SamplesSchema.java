@@ -131,7 +131,7 @@ public class SamplesSchema extends AbstractExpSchema
             public TableInfo getLookupTableInfo()
             {
                 ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), SamplesSchema.this);
-                ret.populate(ss, false);
+                ret.populate(ss, true);
                 ret.setContainerFilter(new ContainerFilter.SimpleContainerFilter(ExpSchema.getSearchContainers(getContainer(), ss, domainProperty, getUser())));
                 ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
                 if (domainProperty != null && domainProperty.getPropertyType().getJdbcType().isText())
