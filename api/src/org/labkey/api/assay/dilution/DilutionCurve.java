@@ -53,6 +53,12 @@ public interface DilutionCurve
 
     double calculateAUC(StatsService.AUCType type) throws FitFailedException;
 
+    /**
+     * Is there enough data to render a dilution curve
+     * @return
+     */
+    boolean isValid();
+
     interface PercentCalculator
     {
         double getPercent(WellGroup group, WellData data) throws FitFailedException;

@@ -53,7 +53,7 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
 
     protected DoublePoint[] renderCurve() throws FitFailedException
     {
-        return _curveFit.renderCurve(CURVE_SEGMENT_COUNT);
+        return isValid() ? _curveFit.renderCurve(CURVE_SEGMENT_COUNT) : new DoublePoint[0];
     }
 
     public double fitCurve(double x, CurveFit.Parameters curveParameters)
@@ -70,7 +70,7 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
     public double getFitError()
     {
         try {
-            return _curveFit.getFitError();
+            return isValid() ? _curveFit.getFitError() : 0;
         }
         catch (FitFailedException e)
         {
@@ -81,7 +81,7 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
     @Override
     public double calculateAUC(StatsService.AUCType type) throws FitFailedException
     {
-        return _curveFit.calculateAUC(type);
+        return isValid() ? _curveFit.calculateAUC(type) : 0;
     }
 
     protected WellSummary[] ensureWellSummaries() throws FitFailedException
@@ -99,6 +99,9 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
 
     private double getMaxPercentage() throws FitFailedException
     {
+        if (!isValid())
+            return 0;
+
         DoublePoint[] curve = getCurve();
         double max = curve[0].getY();
         for (int i = 1; i < CURVE_SEGMENT_COUNT; i++)
@@ -112,6 +115,9 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
 
     public double getMaxDilution()
     {
+        if (!isValid())
+            return 0;
+
         Set<WellData> datas = getWellData().keySet();
         Double max = null;
         for (WellData data : datas)
@@ -126,6 +132,9 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
 
     public double getMinDilution()
     {
+        if (!isValid())
+            return 0;
+
         Set<WellData> datas = getWellData().keySet();
         Double min = null;
         for (WellData data : datas)
@@ -144,9 +153,19 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
         for (WellGroup wellgroup : _wellGroups)
         {
             for (WellData data : wellgroup.getWellData(true))
-                dataMap.put(data, wellgroup);
+            {
+                if (!Double.isNaN(data.getMean()))
+                    dataMap.put(data, wellgroup);
+            }
         }
         return dataMap;
+    }
+
+    @Override
+    public boolean isValid()
+    {
+        Map<WellData, WellGroup> data = getWellData();
+        return !data.isEmpty();
     }
 
     protected class WellSummary
@@ -217,6 +236,9 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
 
     public double getCutoffDilution(double cutoff) throws FitFailedException
     {
+        if (!isValid())
+            return 0;
+
         DoublePoint[] curve = getCurve();
 
         // convert from decimal to percent, to match our curve values:

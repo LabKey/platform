@@ -165,6 +165,15 @@ public class DilutionManager
         return new TableSelector(getSchema().getTable(WELL_DATA_TABLE_NAME), filter, null).getArrayList(WellDataRow.class);
     }
 
+    public static List<WellDataRow> getExcludedWellDataRows(ExpRun run)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(run.getContainer());
+        filter.addCondition(FieldKey.fromParts("runId"), run.getRowId());
+        filter.addCondition(FieldKey.fromParts("excluded"), true);
+
+        return new TableSelector(getSchema().getTable(WELL_DATA_TABLE_NAME), filter, null).getArrayList(WellDataRow.class);
+    }
+
     @Nullable
     public NabSpecimen getNabSpecimen(int rowId)
     {

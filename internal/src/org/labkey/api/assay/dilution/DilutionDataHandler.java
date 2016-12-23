@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.nab.NabSpecimen;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.OORDisplayColumnFactory;
@@ -115,101 +116,113 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
         public List<Map<String, Object>> getResults() throws ExperimentException
         {
-            try
+            return calculateDilutionStats(_data.getRun(), _info.getUser(), _dataFile, false, false);
+        }
+    }
+
+    /**
+     * Parses either the data file (or run data) to calculate cutoff and AUC information.
+     *
+     * @param dataFile the NAb data file, can be null if useRunForPlates is set to true
+     * @param useRunForPlates create the plates from the saved run information
+     * @param recalculateStats if true calculates dilution stats (mean, stdDev, max, min, percent neutralization) from the
+     *                         plate data versus the saved table data. If use run for plates is false (use dataFile) then
+     *                         stats are always recalculated.
+     */
+    public List<Map<String, Object>> calculateDilutionStats(ExpRun run, User user, @Nullable File dataFile, boolean useRunForPlates, boolean recalculateStats) throws ExperimentException
+    {
+        try {
+            DilutionAssayRun assayResults = getAssayResults(run, user, dataFile, null, useRunForPlates, recalculateStats);
+            List<Map<String, Object>> results = new ArrayList<>();
+
+            for (int summaryIndex = 0; summaryIndex < assayResults.getSummaries().length; summaryIndex++)
             {
-                ExpRun run = _data.getRun();
-                DilutionAssayRun assayResults = getAssayResults(run, _info.getUser(), _dataFile, null, false);
-                List<Map<String, Object>> results = new ArrayList<>();
+                DilutionSummary dilution = assayResults.getSummaries()[summaryIndex];
+                WellGroup group = dilution.getFirstWellGroup();
+                ExpMaterial sampleInput = assayResults.getMaterial(group);
 
-                for (int summaryIndex = 0; summaryIndex < assayResults.getSummaries().length; summaryIndex++)
+                Map<String, Object> props = new HashMap<>();
+                results.add(props);
+
+                // generate curve ICs and AUCs for each curve fit type
+                if (assayResults.getSavedCurveFitType() != StatsService.CurveFitType.NONE)
                 {
-                    DilutionSummary dilution = assayResults.getSummaries()[summaryIndex];
-                    WellGroup group = dilution.getFirstWellGroup();
-                    ExpMaterial sampleInput = assayResults.getMaterial(group);
-
-                    Map<String, Object> props = new HashMap<>();
-                    results.add(props);
-
-                    // generate curve ICs and AUCs for each curve fit type
-                    if (assayResults.getSavedCurveFitType() != StatsService.CurveFitType.NONE)
+                    for (StatsService.CurveFitType type : StatsService.CurveFitType.values())
                     {
-                        for (StatsService.CurveFitType type : StatsService.CurveFitType.values())
+                        for (Integer cutoff : assayResults.getCutoffs())
                         {
-                            for (Integer cutoff : assayResults.getCutoffs())
+                            double value = dilution.getCutoffDilution(cutoff / 100.0, type);
+                            saveICValue(getPropertyName(CURVE_IC_PREFIX, cutoff, type), value,
+                                    dilution, props, type);
+
+                            if (type == assayResults.getRenderedCurveFitType())
                             {
-                                double value = dilution.getCutoffDilution(cutoff / 100.0, type);
-                                saveICValue(getPropertyName(CURVE_IC_PREFIX, cutoff, type), value,
+                                saveICValue(CURVE_IC_PREFIX + cutoff, value,
                                         dilution, props, type);
-
-                                if (type == assayResults.getRenderedCurveFitType())
-                                {
-                                    saveICValue(CURVE_IC_PREFIX + cutoff, value,
-                                            dilution, props, type);
-                                }
-                            }
-                            // compute both normal and positive AUC values
-                            double auc = dilution.getAUC(type, StatsService.AUCType.NORMAL);
-                            if (!Double.isNaN(auc))
-                            {
-                                props.put(getPropertyName(AUC_PREFIX, type), auc);
-                                if (type == assayResults.getRenderedCurveFitType())
-                                    props.put(AUC_PREFIX, auc);
-                            }
-
-                            double pAuc = dilution.getAUC(type, StatsService.AUCType.POSITIVE);
-                            if (!Double.isNaN(pAuc))
-                            {
-                                props.put(getPropertyName(pAUC_PREFIX, type), pAuc);
-                                if (type == assayResults.getRenderedCurveFitType())
-                                    props.put(pAUC_PREFIX, pAuc);
                             }
                         }
-                    }
+                        // compute both normal and positive AUC values
+                        double auc = dilution.getAUC(type, StatsService.AUCType.NORMAL);
+                        if (!Double.isNaN(auc))
+                        {
+                            props.put(getPropertyName(AUC_PREFIX, type), auc);
+                            if (type == assayResults.getRenderedCurveFitType())
+                                props.put(AUC_PREFIX, auc);
+                        }
 
-                    // only need one set of interpolated ICs as they would be identical for all fit types
-                    for (Integer cutoff : assayResults.getCutoffs())
-                    {
-                        saveICValue(POINT_IC_PREFIX + cutoff, dilution.getInterpolatedCutoffDilution(cutoff / 100.0, assayResults.getRenderedCurveFitType()),
-                            dilution, props, assayResults.getRenderedCurveFitType());
+                        double pAuc = dilution.getAUC(type, StatsService.AUCType.POSITIVE);
+                        if (!Double.isNaN(pAuc))
+                        {
+                            props.put(getPropertyName(pAUC_PREFIX, type), pAuc);
+                            if (type == assayResults.getRenderedCurveFitType())
+                                props.put(pAUC_PREFIX, pAuc);
+                        }
                     }
-                    props.put(FIT_ERROR_PROPERTY, dilution.getFitError());
-                    props.put(DILUTION_INPUT_MATERIAL_DATA_PROPERTY, sampleInput.getLSID());
-                    props.put(WELLGROUP_NAME_PROPERTY, group.getName());
-                    props.put(STD_DEV_PROPERTY_NAME, dilution.getStdDev(group));
-
-                    // TODO: factor this out in the nab data handlers
-                    props.put("VirusWellGroupName", group.getProperty("VirusWellGroupName"));
                 }
-                return results;
-            }
-            catch (FitFailedException e)
-            {
-                throw new ExperimentException(e.getMessage(), e);
-            }
-        }
 
-        protected void saveICValue(String name, double icValue, DilutionSummary dilution,
-                                   Map<String, Object> results, StatsService.CurveFitType type) throws FitFailedException
+                // only need one set of interpolated ICs as they would be identical for all fit types
+                for (Integer cutoff : assayResults.getCutoffs())
+                {
+                    saveICValue(POINT_IC_PREFIX + cutoff, dilution.getInterpolatedCutoffDilution(cutoff / 100.0, assayResults.getRenderedCurveFitType()),
+                            dilution, props, assayResults.getRenderedCurveFitType());
+                }
+                props.put(FIT_ERROR_PROPERTY, dilution.getFitError());
+                props.put(DILUTION_INPUT_MATERIAL_DATA_PROPERTY, sampleInput.getLSID());
+                props.put(WELLGROUP_NAME_PROPERTY, group.getName());
+                props.put(STD_DEV_PROPERTY_NAME, dilution.getStdDev(group));
+
+                // TODO: factor this out in the nab data handlers
+                props.put("VirusWellGroupName", group.getProperty("VirusWellGroupName"));
+            }
+            return results;
+        }
+        catch (FitFailedException e)
         {
-            String outOfRange = null;
-            if (Double.NEGATIVE_INFINITY == icValue)
-            {
-                outOfRange = "<";
-                icValue = dilution.getMinDilution(type);
-            }
-            else if (Double.POSITIVE_INFINITY == icValue)
-            {
-                outOfRange = ">";
-                icValue = dilution.getMaxDilution(type);
-            }
-
-            // Issue 15590: don't attempt to store values that are NaN
-            if (Double.isNaN(icValue))
-                return;
-
-            results.put(name, icValue);
-            results.put(name + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX, outOfRange);
+            throw new ExperimentException(e.getMessage(), e);
         }
+    }
+
+    protected void saveICValue(String name, double icValue, DilutionSummary dilution,
+                               Map<String, Object> results, StatsService.CurveFitType type) throws FitFailedException
+    {
+        String outOfRange = null;
+        if (Double.NEGATIVE_INFINITY == icValue)
+        {
+            outOfRange = "<";
+            icValue = dilution.getMinDilution(type);
+        }
+        else if (Double.POSITIVE_INFINITY == icValue)
+        {
+            outOfRange = ">";
+            icValue = dilution.getMaxDilution(type);
+        }
+
+        // Issue 15590: don't attempt to store values that are NaN
+        if (Double.isNaN(icValue))
+            return;
+
+        results.put(name, icValue);
+        results.put(name + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX, outOfRange);
     }
 
     protected ExperimentException createParseError(File dataFile, String msg)
@@ -261,7 +274,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     public DilutionAssayRun getAssayResults(ExpRun run, User user, @Nullable StatsService.CurveFitType fit) throws ExperimentException
     {
-        return getAssayResults(run, user, getDataFile(run), fit, true);
+        return getAssayResults(run, user, getDataFile(run), fit, true, false);
     }
 
     public File getDataFile(ExpRun run)
@@ -291,7 +304,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return Collections.singletonList(PlateService.get().createPlate(template, getCellValues(dataFile, template), null, -1, 1));
     }
 
-    protected List<Plate> createPlates(ExpRun run, PlateTemplate template) throws ExperimentException
+    protected List<Plate> createPlates(ExpRun run, PlateTemplate template, boolean recalcStats) throws ExperimentException
     {
         double[][] cellValues = new double[template.getRows()][template.getColumns()];
         boolean[][] excluded = new boolean[template.getRows()][template.getColumns()];
@@ -305,13 +318,14 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
             excluded[wellDataRow.getRow()][wellDataRow.getColumn()] = wellDataRow.isExcluded();
         }
 
-        Plate plate = PlateService.get().createPlate(template, cellValues, excluded, run.getRowId(), 1);
+        Plate plate = PlateService.get().createPlate(template, cellValues, excluded, recalcStats ? PlateService.NO_RUNID : run.getRowId(), 1);
         return Collections.singletonList(plate);
     }
 
     protected abstract double[][] getCellValues(final File dataFile, PlateTemplate nabTemplate) throws ExperimentException;
 
-    protected DilutionAssayRun getAssayResults(ExpRun run, User user, @Nullable File dataFile, @Nullable StatsService.CurveFitType fit, boolean useRunForPlates) throws ExperimentException
+    protected DilutionAssayRun getAssayResults(ExpRun run, User user, @Nullable File dataFile, @Nullable StatsService.CurveFitType fit,
+                                               boolean useRunForPlates, boolean recalcStats) throws ExperimentException
     {
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(run.getProtocol().getLSID());
         Container container = run.getContainer();
@@ -335,7 +349,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         List<Plate> plates;
         if (useRunForPlates && isWellDataPopulated(run))
         {
-            plates = createPlates(run, nabTemplate);
+            plates = createPlates(run, nabTemplate, recalcStats);
         }
         else
         {
@@ -708,9 +722,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
             Map<String, Pair<Integer, String>> wellGroupNameToNabSpecimen = new HashMap<>();
             SimpleFilter filter = new SimpleFilter(FieldKey.fromString("RunId"), run.getRowId());
             new TableSelector(DilutionManager.getTableInfoNAbSpecimen(), filter, null).forEach((NabSpecimen nabSpecimen) ->
-            {
-                wellGroupNameToNabSpecimen.put(nabSpecimen.getWellgroupName(), new Pair<>(nabSpecimen.getRowId(), nabSpecimen.getSpecimenLsid()));
-            }, NabSpecimen.class);
+                    wellGroupNameToNabSpecimen.put(nabSpecimen.getWellgroupName(), new Pair<>(nabSpecimen.getRowId(), nabSpecimen.getSpecimenLsid())), NabSpecimen.class);
 
             populateWellData(protocol, run, user, getCutoffFormats(protocol, run), wellGroupNameToNabSpecimen);
         }
@@ -720,17 +732,48 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         }
     }
 
-    // Public for upgrade code
+    /**
+     * Public for upgrade code
+     *
+     * @throws ExperimentException
+     * @throws SQLException
+     */
     public void populateWellData(ExpProtocol protocol, ExpRun run, User user, Map<Integer, String> cutoffs,
-                                    Map<String, Pair<Integer, String>> wellgroupNameToNabSpecimen) throws ExperimentException, SQLException
+                                 Map<String, Pair<Integer, String>> wellgroupNameToNabSpecimen) throws ExperimentException, SQLException
+    {
+        _populateWellData(protocol, run, user, cutoffs, wellgroupNameToNabSpecimen, true, true, Collections.emptyList(), Collections.emptyList());
+    }
+
+    /**
+     * Recalculate dilution and well data using the updated well exclusions and return the calculated data
+     * through the passed in collections.
+     */
+    public void recalculateWellData(ExpProtocol protocol, ExpRun run, User user, List<Map<String, Object>> dilutionData, List<Map<String, Object>> wellData) throws ExperimentException, SQLException
+    {
+        Map<String, Pair<Integer, String>> wellGroupNameToNabSpecimen = new HashMap<>();
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromString("RunId"), run.getRowId());
+        new TableSelector(DilutionManager.getTableInfoNAbSpecimen(), filter, null).forEach((NabSpecimen nabSpecimen) ->
+                wellGroupNameToNabSpecimen.put(nabSpecimen.getWellgroupName(), new Pair<>(nabSpecimen.getRowId(), nabSpecimen.getSpecimenLsid())), NabSpecimen.class);
+
+        _populateWellData(protocol, run, user, getCutoffFormats(protocol, run), wellGroupNameToNabSpecimen, false, false, dilutionData, wellData);
+    }
+
+    /**
+     * @param populatePlatesFromFile true to populate plate data from the data file associated with the run, otherwise will populate
+     *                               from the well data table
+     * @param commitData true to persist dilution and well level data
+     * @param dilutionRows if commitData is false, then dilution data will be returned in this collection
+     * @param wellRows if commitData is false, then well data will be returned in this collection
+     * @throws ExperimentException
+     * @throws SQLException
+     */
+    private void _populateWellData(ExpProtocol protocol, ExpRun run, User user, Map<Integer, String> cutoffs,
+                                   Map<String, Pair<Integer, String>> wellgroupNameToNabSpecimen, boolean populatePlatesFromFile, boolean commitData,
+                                   List<Map<String, Object>> dilutionRows, List<Map<String, Object>> wellRows) throws ExperimentException, SQLException
     {
         DilutionAssayProvider provider = (DilutionAssayProvider) AssayService.get().getProvider(protocol);
         if (null == provider)
             throw new IllegalStateException("Assay provider not found.");
-
-        File dataFile = getDataFile(run);
-        if (null == dataFile)
-            throw new MissingDataFileException("Data file not found.");
 
         try (DbScope.Transaction transaction = DilutionManager.getSchema().getScope().ensureTransaction())
         {
@@ -743,9 +786,20 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                 if (value != null)
                     fit = StatsService.CurveFitType.fromLabel((String) value);
             }
-
             PlateTemplate nabTemplate = provider.getPlateTemplate(run.getContainer(), protocol);
-            List<Plate> plates = createPlates(dataFile, nabTemplate);
+            List<Plate> plates;
+
+            if (populatePlatesFromFile)
+            {
+                File dataFile = getDataFile(run);
+                if (null == dataFile)
+                    throw new MissingDataFileException("Data file not found.");
+                plates = createPlates(dataFile, nabTemplate);
+            }
+            else
+            {
+                plates = createPlates(run, nabTemplate, true);
+            }
             Map<String, Plate> virusNameToPlateMap = new HashMap<>();
             for (Plate plate : plates)
             {
@@ -798,10 +852,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
                             Integer order = wellDataOrder.get(wellGroup);
                             dilutionRow.put("dilutionOrder", null != order ? order : 0);
-
-                            int rowId = DilutionManager.insertDilutionDataRow(user, dilutionRow);
-                            for (WellData wellData : wellGroup.getWellData(false))
-                                wellDataToDilutionDataMap.put(wellData, rowId);
+                            insertDilutionData(user, dilutionRow, wellGroup, wellDataToDilutionDataMap, commitData, dilutionRows);
                         }
                     }
                 }
@@ -825,17 +876,13 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                     Map<String, Object> cellControlRow = new HashMap<>();
                     setDilutionDataFields(run, cellControl.getName(), plate.getPlateNumber(), cellControlRow);
                     setGroupStats(cellControl, cellControlRow);
-                    int cellControlRowId = DilutionManager.insertDilutionDataRow(user, cellControlRow);
-                    for (WellData wellData : cellControl.getWellData(false))
-                        wellDataToDilutionDataMap.put(wellData, cellControlRowId);
+                    insertDilutionData(user, cellControlRow, cellControl, wellDataToDilutionDataMap, commitData, dilutionRows);
 
                     WellGroup virusControl = plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.VIRUS_CONTROL_SAMPLE);
                     Map<String, Object> virusControlRow = new HashMap<>();
                     setDilutionDataFields(run, virusControl.getName(), plate.getPlateNumber(), virusControlRow);
                     setGroupStats(virusControl, virusControlRow);
-                    int virusControlRowId = DilutionManager.insertDilutionDataRow(user, virusControlRow);
-                    for (WellData wellData : virusControl.getWellData(false))
-                        wellDataToDilutionDataMap.put(wellData, virusControlRowId);
+                    insertDilutionData(user, virusControlRow, virusControl, wellDataToDilutionDataMap, commitData, dilutionRows);
                 }
                 else
                 {
@@ -848,9 +895,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
                             setDilutionDataFields(run, cellControl.getName(), plate.getPlateNumber(), cellControlRow);
                             setGroupStats(cellControl, cellControlRow);
-                            int cellControlRowId = DilutionManager.insertDilutionDataRow(user, cellControlRow);
-                            for (WellData wellData : cellControl.getWellData(false))
-                                wellDataToDilutionDataMap.put(wellData, cellControlRowId);
+                            insertDilutionData(user, cellControlRow, cellControl, wellDataToDilutionDataMap, commitData, dilutionRows);
                         }
 
                         WellGroup virusControl = assay.getVirusControlWellGroup(plate, virusEntry.getKey());
@@ -859,15 +904,13 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                             Map<String, Object> virusControlRow = new HashMap<>();
                             setDilutionDataFields(run, virusControl.getName(), plate.getPlateNumber(), virusControlRow);
                             setGroupStats(virusControl, virusControlRow);
-                            int virusControlRowId = DilutionManager.insertDilutionDataRow(user, virusControlRow);
-                            for (WellData wellData : virusControl.getWellData(false))
-                                wellDataToDilutionDataMap.put(wellData, virusControlRowId);
+                            insertDilutionData(user, virusControlRow, virusControl, wellDataToDilutionDataMap, commitData, dilutionRows);
                         }
                     }
                 }
             }
 
-
+            // insert well data rows
             int plateNum = 0;
             for (Plate plate : plates)
             {
@@ -948,12 +991,40 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
                 for (Map<String, Object> wellDataRow : wellDataRows.values())
                 {
-                    validateWellDataRow(wellDataRow);
-                    DilutionManager.insertWellDataRow(user, wellDataRow);
+                    if (commitData)
+                    {
+                        validateWellDataRow(wellDataRow);
+                        DilutionManager.insertWellDataRow(user, wellDataRow);
+                    }
+                    else
+                        wellRows.add(wellDataRow);
                 }
             }
             transaction.commit();
         }
+    }
+
+    /**
+     * Helper to insert dilution data rows and track the inserted rowId
+     *
+     * @param dilutionRow map of row data
+     * @param group sample or control well group the data is a member of
+     * @param wellDataToDilutionDataMap map to track well data to inserted dilution row id
+     * @param commitData flag to determine whether the insert is performed or if the dilution row is returned
+     * @param dilutionDataRows list to store dilution data rows if commitData is set to false
+     */
+    private void insertDilutionData(User user, Map<String, Object> dilutionRow, WellGroup group, Map<WellData, Integer> wellDataToDilutionDataMap,
+                                    boolean commitData, List<Map<String, Object>> dilutionDataRows) throws SQLException
+    {
+        if (commitData)
+        {
+            int rowId = DilutionManager.insertDilutionDataRow(user, dilutionRow);
+            for (WellData wellData : group.getWellData(false))
+                wellDataToDilutionDataMap.put(wellData, rowId);
+        }
+        else
+            dilutionDataRows.add(new CaseInsensitiveHashMap<>(dilutionRow));
+
     }
 
     private void setSpecimenFields(Map<String, Object> wellDataRow, String wellGroupName, String wellGroupLookupName,

@@ -15,6 +15,8 @@
  */
 package org.labkey.api.assay.dilution;
 
+import java.util.Map;
+
 /**
  * Created by davebradlee on 8/14/15.
  *
@@ -39,6 +41,44 @@ public class DilutionDataRow
 
     public DilutionDataRow()
     {
+    }
+
+    public static DilutionDataRow fromMap(Map<String, Object> data)
+    {
+        DilutionDataRow row = new DilutionDataRow();
+
+        if (data.containsKey("rowId"))
+            row.setRowId((Integer)data.get("rowId"));
+        if (data.containsKey("runId"))
+            row.setRunId((Integer)data.get("runId"));
+        if (data.containsKey("runDataId"))
+            row.setRunDataId((Integer)data.get("runDataId"));
+        if (data.containsKey("wellGroupName"))
+            row.setWellgroupName(String.valueOf(data.get("wellGroupName")));
+        if (data.containsKey("replicateName"))
+            row.setReplicateName(String.valueOf(data.get("replicateName")));
+        if (data.containsKey("dilutionOrder"))
+            row.setDilutionOrder((Integer)data.get("dilutionOrder"));
+        if (data.containsKey("dilution"))
+            row.setDilution((Double)data.get("dilution"));
+        if (data.containsKey("min"))
+            row.setMin((Double)data.get("min"));
+        if (data.containsKey("max"))
+            row.setMax((Double)data.get("max"));
+        if (data.containsKey("mean"))
+            row.setMean((Double)data.get("mean"));
+        if (data.containsKey("stdDev"))
+            row.setStddev((Double)data.get("stdDev"));
+        if (data.containsKey("minDilution"))
+            row.setMinDilution((Double)data.get("minDilution"));
+        if (data.containsKey("maxDilution"))
+            row.setMaxDilution((Double)data.get("maxDilution"));
+        if (data.containsKey("plateNumber"))
+            row.setPlateNumber((Integer)data.get("plateNumber"));
+        if (data.containsKey("container"))
+            row.setContainer(String.valueOf(data.get("container")));
+
+        return row;
     }
 
     public int getRowId()

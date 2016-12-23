@@ -272,7 +272,7 @@ public class RunDetailsHeaderView extends AssayHeaderView
             NavTree excludedDataMenu = new NavTree("Review/QC Data", ((DilutionAssayProvider)_provider).getAssayQCRunURL(_container, _run));
             qcMenu.addChild(excludedDataMenu);
         }
-        NavTree excludedDataMenu = new NavTree("View Excluded Data", getViewContext().getActionURL());
+        NavTree excludedDataMenu = new NavTree("View Excluded Data", ((DilutionAssayProvider)_provider).getAssayQCRunURL(_container, _run).addParameter("edit", false));
         qcMenu.addChild(excludedDataMenu);
 
         return qcMenu;
