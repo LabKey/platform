@@ -308,7 +308,6 @@ public class QuerySettings
                 if (!(StringUtils.isEmpty(key)))
                 {
                     _fieldKeys.add(FieldKey.fromString(StringUtils.trim(key)));
-
                 }
             }
         }

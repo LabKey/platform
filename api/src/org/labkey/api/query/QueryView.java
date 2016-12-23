@@ -100,6 +100,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Collectors;
 
 /**
  * View that generates the majority of standard data grids/tables in the LabKey Server UI.
@@ -2251,6 +2252,11 @@ public class QueryView extends WebPartView<Object>
     // Set up an ExcelWriter that exports no data -- used to export templates on upload pages
     protected ExcelWriter getExcelTemplateWriter(boolean respectView) throws IOException
     {
+        return getExcelTemplateWriter(respectView, Collections.emptyList());
+    }
+
+    protected ExcelWriter getExcelTemplateWriter(boolean respectView, @NotNull List<FieldKey> includeCols) throws IOException
+    {
         // The template should be based on the actual columns in the table, not the user's default view,
         // which may be hiding columns or showing values joined through lookups
 
@@ -2261,23 +2267,32 @@ public class QueryView extends WebPartView<Object>
 
         //TODO: the latter might be problematic if the value of required column is set
         //in a validation script.  however, the dev could always set it to userEditable=false or nullable=true
-        List<FieldKey> fieldKeys = new ArrayList<>();
+        List<FieldKey> fieldKeys = new ArrayList<>(20);
         TableInfo t = createTable();
 
         if (!respectView)
         {
             for (ColumnInfo columnInfo : t.getColumns())
             {
-                if (columnInfo.isUserEditable())
+                FieldKey fieldKey = columnInfo.getFieldKey();
+                if (includeCols.contains(fieldKey) || columnInfo.isUserEditable())
                 {
-                    fieldKeys.add(columnInfo.getFieldKey());
+                    fieldKeys.add(fieldKey);
                 }
             }
+
+            // Add remaining includeCols to the end
+            for (FieldKey includeCol : includeCols)
+            {
+                if (!fieldKeys.contains(includeCol))
+                    fieldKeys.add(includeCol);
+            }
+
         }
         else
         {
-            //get list of required columns so we can verify presence
-            Set<FieldKey> requiredCols = new HashSet<>();
+            // get list of required columns so we can verify presence
+            Set<FieldKey> requiredCols = new HashSet<>(includeCols);
             for (ColumnInfo c : t.getColumns())
             {
                 if (c.inferIsShownInInsertView())
@@ -2290,6 +2305,13 @@ public class QueryView extends WebPartView<Object>
                 if (key.getParent() != null)
                     continue;
 
+                if (requiredCols.contains(key))
+                {
+                    fieldKeys.add(key);
+                    requiredCols.remove(key);
+                    continue;
+                }
+
                 Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(t, Collections.singleton(key));
                 ColumnInfo col = cols.get(key);
                 if (col != null && col.isUserEditable())
@@ -2299,9 +2321,16 @@ public class QueryView extends WebPartView<Object>
                         requiredCols.remove(key);
                 }
             }
+
+            // Add any remaining required columns to the end
             fieldKeys.addAll(requiredCols);
         }
 
+        return getExcelTemplateWriter(fieldKeys);
+    }
+
+    protected ExcelWriter getExcelTemplateWriter(List<FieldKey> fieldKeys) throws IOException
+    {
         // Force the view to use our special list
         getSettings().setFieldKeys(fieldKeys);
 
@@ -2309,7 +2338,29 @@ public class QueryView extends WebPartView<Object>
         DataRegion rgn = view.getDataRegion();
         rgn.setAllowAsync(false);
         rgn.setShowPagination(false);
-        List<DisplayColumn> displayColumns = getExportColumns(rgn.getDisplayColumns());
+
+        // Add explicitly requested columns, even if they don't actually exist on the table.
+        // They may be magic columns supported on the import side, e.g. "MaterialsInputs/Foo" for SampleSets.
+        List<DisplayColumn> displayColumns = rgn.getDisplayColumns();
+        Set<FieldKey> displayColumnFieldKeys = displayColumns.stream()
+                .map(DisplayColumn::getColumnInfo)
+                .filter(Objects::nonNull)
+                .map(ColumnInfo::getFieldKey)
+                .collect(Collectors.toSet());
+
+        for (FieldKey fieldKey : fieldKeys)
+        {
+            if (!displayColumnFieldKeys.contains(fieldKey))
+            {
+                DisplayColumn dc = new SimpleDisplayColumn();
+                dc.setName(fieldKey.getName());
+                displayColumns.add(dc);
+            }
+        }
+
+
+        displayColumns = getExportColumns(displayColumns);
+
         // Need to remove special MV columns
         for (Iterator<DisplayColumn> it = displayColumns.iterator(); it.hasNext(); )
         {
@@ -2346,27 +2397,35 @@ public class QueryView extends WebPartView<Object>
 
     public void exportToExcel(HttpServletResponse response, ColumnHeaderType headerType, ExcelWriter.ExcelDocumentType docType) throws IOException
     {
-        exportToExcel(response, false, headerType, false, docType, false, null);
+        exportToExcel(response, false, headerType, false, docType, false, Collections.emptyList(), null);
     }
 
     public void exportToExcelTemplate(HttpServletResponse response, ColumnHeaderType headerType, boolean insertColumnsOnly) throws IOException
     {
-        exportToExcelTemplate(response, headerType, insertColumnsOnly, false, null);
+        exportToExcelTemplate(response, headerType, insertColumnsOnly, false, Collections.emptyList(), null);
     }
 
     // Export with no data rows -- just captions
-    public void exportToExcelTemplate(HttpServletResponse response, ColumnHeaderType headerType, boolean insertColumnsOnly, boolean respectView, @Nullable String prefix) throws IOException
+    public void exportToExcelTemplate(HttpServletResponse response, ColumnHeaderType headerType, boolean insertColumnsOnly, boolean respectView, @NotNull List<FieldKey> includeColumns, @Nullable String prefix) throws IOException
     {
-        exportToExcel(response, true, headerType, insertColumnsOnly, ExcelWriter.ExcelDocumentType.xls, respectView, prefix);
+        exportToExcel(response, true, headerType, insertColumnsOnly, ExcelWriter.ExcelDocumentType.xls, respectView, includeColumns, prefix);
     }
 
-    protected void exportToExcel(HttpServletResponse response, boolean templateOnly, ColumnHeaderType headerType, boolean insertColumnsOnly, ExcelWriter.ExcelDocumentType docType, boolean respectView, @Nullable String prefix) throws IOException
+    protected void exportToExcel(HttpServletResponse response,
+                                 boolean templateOnly,
+                                 ColumnHeaderType headerType,
+                                 boolean insertColumnsOnly,
+                                 ExcelWriter.ExcelDocumentType docType,
+                                 boolean respectView,
+                                 List<FieldKey> includeColumns,
+                                 @Nullable String prefix)
+            throws IOException
     {
         _exportView = true;
         TableInfo table = getTable();
         if (table != null)
         {
-            ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView) : getExcelWriter(docType);
+            ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns) : getExcelWriter(docType);
             if (headerType == null)
                 headerType = getExcelColumnHeaderType();
             ew.setCaptionType(headerType);
