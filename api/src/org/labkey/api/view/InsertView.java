@@ -32,7 +32,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
+/**
+ * Simple single row insert view for a {@link DataRegion}, implemented as a basic HTML form.
+ */
 public class InsertView extends DataView
 {
     private Map<String, Object> _initialValues = null;

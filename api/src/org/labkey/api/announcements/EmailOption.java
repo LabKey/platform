@@ -15,17 +15,14 @@
  */
 package org.labkey.api.announcements;
 
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.SqlDialect;
-
 import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Wrapper over a bitmask that controls the subscription type for notification messages related to announcement
+ * or message board updates.
  * User: arauch
  * Date: Sep 24, 2005
- * Time: 10:46:35 PM
  */
 public enum EmailOption
 {

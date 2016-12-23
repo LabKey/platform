@@ -16,9 +16,9 @@
 package org.labkey.api.util;
 
 /**
+ * Indicates that the underlying data may be untrustworthy.
  * User: Matthew
  * Date: Feb 6, 2009
- * Time: 1:05:11 PM
  */
 public interface Taintable
 {

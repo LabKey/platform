@@ -21,8 +21,9 @@ import org.labkey.api.view.ActionURL;
 import org.springframework.web.servlet.mvc.Controller;
 
 /**
+ * Basic button UI element. Might be a simple link, have a JavaScript handler, etc.
  * Created by Nick Arnold on 2/27/14.
- * Testing of this class can be found in TestController.ButtonAction
+ * Testing of this class can be found in the Core module's TestController.ButtonAction
  */
 public class Button
 {

@@ -34,6 +34,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
 /**
+ * Utilities to help with HTTPS connections, such as allowing self-signed certificates and other
+ * behaviors that are common on developer machines where the system is not using a "real" certificate authority.
  * User: jeckels
  * Date: Nov 22, 2006
  */
@@ -58,7 +60,7 @@ public class HttpsUtil
     }
 
 
-    // Attempts a connection to the testURL, returning null on success and a Pair with error message and (possibly null) response code on failure
+    /** Attempts a connection to the testURL, returning null on success and a Pair with error message and (possibly null) response code on failure */
     public static @Nullable Pair<String, Integer> testSslUrl(URL testURL, String advice)
     {
         try
@@ -80,8 +82,10 @@ public class HttpsUtil
         return null;
     }
 
-    // Create a socket factory that does not validate the server's certificate -
-    // all we care about is that the connection is encrypted if it's going over SSL
+    /**
+     * Create a socket factory that does not validate the server's certificate -
+     * all we care about is that the connection is encrypted if it's going over SSL
+     */
     private synchronized static SSLSocketFactory getSocketFactory()
     {
         if (_socketFactory == null)

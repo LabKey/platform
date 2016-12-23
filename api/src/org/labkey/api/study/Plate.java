@@ -19,6 +19,7 @@ package org.labkey.api.study;
 import java.util.List;
 
 /**
+ * Represents a plate for an assay run (typically 96 or 384 wells).
  * User: brittp
  * Date: Oct 20, 2006
  * Time: 10:15:44 AM

@@ -35,6 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Helpers for using Tidy to validate and clean up user-supplied HTML.
  * User: kevink
  * Date: 6/21/12
  */

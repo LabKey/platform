@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -34,15 +33,14 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * A FolderTab is a UI element at the top of the page that allows users to navigate to other key pages.
+ * They are backed by one of the {@link TAB_TYPE} values.
 * User: brittp
 * Date: Sep 15, 2011
 * Time: 4:15:32 PM
 */
 public abstract class FolderTab
 {
-//    public static final String FOLDER_TAB_PAGE_ID = "folderTab";
-//    public static final String LOCATION = "tab";
-
     private final String _name;
     private String _caption;
     private boolean _isDefaultTab = false;
@@ -51,8 +49,11 @@ public abstract class FolderTab
 
     public enum TAB_TYPE
     {
+        /** A portal page that is configured with web parts */
         Portal,
+        /** Backed by a child container */
         Container,
+        /** A simple link to some arbitrary URL */
         Link
     }
 

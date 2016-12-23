@@ -21,11 +21,10 @@ import org.springframework.web.servlet.view.RedirectView;
 import java.io.PrintWriter;
 
 /**
+ * A view that simple redirects the browser to some other URL.
+ * @see HttpPostRedirectView
  * User: matthewb
  * Date: 2011-11-09
- * Time: 1:28 PM
- *
- * @see HttpPostRedirectView
  */
 public class HttpRedirectView extends HttpView
 {

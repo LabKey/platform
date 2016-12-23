@@ -24,10 +24,11 @@ import org.labkey.api.action.BaseViewAction;
 import java.lang.reflect.Constructor;
 
 /**
+ * Serves up a static .html file that's part of a module's ./resources/views as a webpart (by virtue of having
+ * a .webpart.xml metadata file.
+ *
  * User: matthewb
  * Date: Oct 16, 2008
- * Time: 1:22:39 PM
- *
  *
  * The tricky part is choosing the constructor, we try the following in order
  *

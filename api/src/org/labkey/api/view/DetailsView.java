@@ -31,6 +31,9 @@ import java.io.Writer;
 import java.util.LinkedHashSet;
 import java.util.List;
 
+/**
+ * View that shows a column of labels for the configured set of properties on the left, with their values on the right.
+ */
 public class DetailsView extends DataView
 {
     private Object[] _pk;

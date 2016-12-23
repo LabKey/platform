@@ -19,9 +19,9 @@ import java.util.Iterator;
 import java.io.Closeable;
 
 /**
+ * A type of Iterator that should be explicitly closed because it holds resources open (like DB connections or files)
  * User: adam
  * Date: Apr 8, 2009
- * Time: 7:54:30 PM
  */
 public interface CloseableIterator<T> extends Closeable, Iterator<T>
 {

@@ -50,7 +50,7 @@ public class DownloadURL extends ActionURL
             return;
         }
 
-        if (-1 != filename.indexOf("/"))
+        if (filename.contains("/"))
             throw new IllegalArgumentException();
 
         replaceParameter("name", filename);

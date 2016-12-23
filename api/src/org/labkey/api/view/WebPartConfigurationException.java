@@ -18,11 +18,12 @@ package org.labkey.api.view;
 
 import org.labkey.api.util.SkipMothershipLogging;
 
-/*
-* User: adam
-* Date: Aug 10, 2009
-* Time: 2:18:23 PM
-*/
+/**
+ * Throw to indicate that a web part is incompletely or incorrectly configured, such as pointing a resource that
+ * no longer exists.
+ * User: adam
+ * Date: Aug 10, 2009
+ */
 
 public class WebPartConfigurationException extends Exception implements SkipMothershipLogging
 {

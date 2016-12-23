@@ -22,9 +22,9 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
+ * In-memory cache of an attachment.
  * User: brittp
  * Date: Apr 17, 2006
- * Time: 2:24:46 PM
  */
 public class ByteArrayAttachmentFile implements AttachmentFile
 {

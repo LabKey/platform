@@ -16,12 +16,10 @@
 package org.labkey.api.util;
 
 /**
+ * Basic case... the counter is a Long that accumulates Longs via addition
  * User: adam
  * Date: 6/11/13
- * Time: 11:31 AM
  */
-
-// Basic case... the counter is a Long that accumulates Longs via addition
 public class SimpleRateAccumulator extends RateAccumulator<Long, Long>
 {
     public SimpleRateAccumulator(long start)

@@ -20,10 +20,10 @@ import org.labkey.api.util.Filter;
 import java.io.IOException;
 
 /**
-* User: adam
-* Date: Aug 20, 2010
-* Time: 12:40:48 PM
-*/
+ * Combination of {@link CloseableIterator} and {@link FilteredIterator}
+ * User: adam
+ * Date: Aug 20, 2010
+ */
 public class CloseableFilteredIterator<T> extends FilteredIterator<T> implements CloseableIterator<T>
 {
     private final CloseableIterator<T> _iter;

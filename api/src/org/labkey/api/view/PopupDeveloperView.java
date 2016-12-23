@@ -31,9 +31,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * The Developer menu that appears in the header when the user is in the Developers group, but is not an admin.
  * User: dave
  * Date: Sep 10, 2009
- * Time: 3:13:32 PM
  */
 public class PopupDeveloperView extends PopupMenuView
 {

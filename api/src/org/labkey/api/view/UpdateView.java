@@ -25,6 +25,9 @@ import org.springframework.validation.BindException;
 import java.io.IOException;
 import java.io.Writer;
 
+/**
+ * Provides a view to update a single row from a {@link DataRegion} in a simple HTML form.
+ */
 public class UpdateView extends DataView
 {
     private static Logger _log = Logger.getLogger(UpdateView.class);

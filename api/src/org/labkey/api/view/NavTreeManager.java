@@ -32,9 +32,9 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
+ * Remembers expand/collapse state for {@link NavTree}s by sticking them into the HTTP session.
  * User: Mark Igra
  * Date: Jun 16, 2006
- * Time: 9:22:37 AM
  */
 public class NavTreeManager
 {
@@ -73,14 +73,7 @@ public class NavTreeManager
     }
 
 
-    static final Callable allocTreeMap = new Callable()
-    {
-        @Override
-        public Object call() throws Exception
-        {
-            return Collections.synchronizedMap(new HashMap<String,Set<String>>());
-        }
-    };
+    static final Callable allocTreeMap = () -> Collections.synchronizedMap(new HashMap<String,Set<String>>());
 
 
     // Returned set is synchronized, but all iteration requires manual synchronization on the set, see crashweb #13038

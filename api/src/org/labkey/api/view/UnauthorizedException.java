@@ -18,6 +18,9 @@ package org.labkey.api.view;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.SkipMothershipLogging;
 
+/**
+ * Signals to the HTTP client that the request is not authorized, via a 401 status code.
+ */
 public class UnauthorizedException extends RuntimeException implements SkipMothershipLogging
 {
     public enum Type { redirectToLogin, sendBasicAuth, sendUnauthorized };

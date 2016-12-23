@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * A table that contains information about subjects and timepoints.
  * User: kevink
  * Date: May 27, 2009
  */

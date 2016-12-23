@@ -17,6 +17,8 @@
 package org.labkey.api.study;
 
 /**
+ * A group of study subjects. Subjects may be part of only a single cohort, and may be manually assigned by
+ * a user, or automatically based on values in a dataset.
  * User: kevink
  * Date: May 27, 2009
  */

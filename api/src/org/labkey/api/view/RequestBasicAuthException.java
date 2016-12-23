@@ -16,9 +16,10 @@
 package org.labkey.api.view;
 
 /**
+ * Indicates to the HTTP client that the request needs authentication (status code 401),
+ * which could be provided via HTTP BasicAuth.
  * User: adam
  * Date: Oct 21, 2008
- * Time: 6:00:47 PM
  */
 public class RequestBasicAuthException extends UnauthorizedException
 {

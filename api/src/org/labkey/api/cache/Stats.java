@@ -18,10 +18,10 @@ package org.labkey.api.cache;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
-* User: adam
-* Date: Jun 22, 2010
-* Time: 12:28:48 AM
-*/
+ * Simple bean for tracking cache usage and efficacy
+ * User: adam
+ * Date: Jun 22, 2010
+ */
 public class Stats
 {
     public AtomicLong gets = new AtomicLong(0);

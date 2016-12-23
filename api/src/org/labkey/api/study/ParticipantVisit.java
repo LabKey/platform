@@ -22,10 +22,11 @@ import org.labkey.api.exp.api.ExpMaterial;
 import java.util.Date;
 
 /**
+ * Captures a single subject/timepoint combination, which could be associated with information in a study
+ * dataset or specimen.
  * User: brittp
-* Date: Oct 2, 2007
-* Time: 3:44:03 PM
-*/
+ * Date: Oct 2, 2007
+ */
 public interface ParticipantVisit
 {
     public static final String ASSAY_RUN_MATERIAL_NAMESPACE = "AssayRunMaterial";

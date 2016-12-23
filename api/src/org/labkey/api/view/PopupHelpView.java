@@ -28,11 +28,11 @@ import org.labkey.api.util.PageFlowUtil;
 
 import java.util.List;
 
-/*
-* User: adam
-* Date: Dec 7, 2011
-* Time: 5:27:39 PM
-*/
+/**
+ * The Help menu item that appears in the header and lets the user navigate to relevant documentation and other resources.
+ * User: adam
+ * Date: Dec 7, 2011
+ */
 public class PopupHelpView extends PopupMenuView
 {
     public PopupHelpView(Container c, User user, HelpTopic topic)

@@ -17,6 +17,9 @@ package org.labkey.api.study;
 
 import java.util.Date;
 
+/**
+ * Bean representing a row in the table of study {@link Dataset}s.
+ */
 public class DatasetDB
 {
     private String _container;

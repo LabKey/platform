@@ -21,12 +21,10 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
-* User: adam
-* Date: May 5, 2009
-* Time: 7:35:51 PM
+ * Iterator that transforms Map<String, Object> to bean using ObjectFactory
+ * User: adam
+ * Date: May 5, 2009
 */
-
-// Iterator that transforms Map<String, Object> to bean using ObjectFactory
 public class BeanIterator<T> implements CloseableIterator<T>
 {
     private CloseableIterator<Map<String, Object>> _mapIter;

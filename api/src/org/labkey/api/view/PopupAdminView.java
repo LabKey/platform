@@ -34,9 +34,9 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 /**
+ * The Admin menu that appears in the header of pages when users have admin permissions.
  * User: Mark Igra
  * Date: Jun 21, 2007
- * Time: 10:48:42 AM
  */
 public class PopupAdminView extends PopupMenuView
 {

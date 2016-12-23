@@ -24,15 +24,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * DbCache is a wrapper that allocates a shared transaction-aware cache per TableInfo (for non-transaction use)
+ * and a private transaction-aware cache per TableInfo per thread/connection (used for the duration of a transaction).
+ *
+ * Use CacheManager.getCache() or DatabaseCache instead.
+ *
  * User: migra
  * Date: Nov 30, 2005
- * Time: 4:41:26 PM
- *
- * DbCache is a wrapper that allocates a shared transaction-aware cache per TableInfo (for non-transaction use)
- * and a private transaction-aware cache per TableInfo per thread/connection (used for the duration of a transaction)
  */
-
-@Deprecated  // Use CacheManager.getCache() or DatabaseCache instead
+@Deprecated
 public class DbCache
 {
     private static final Map<Path, DatabaseCache<Object>> CACHES = new HashMap<>(100);

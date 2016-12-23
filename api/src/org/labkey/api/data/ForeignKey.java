@@ -44,6 +44,7 @@ public interface ForeignKey
      * columns in a UI.  The returned TableInfo will not necessarily be one that can be used for querying (e.g. passing
      * to Table.select...
      */
+    @Nullable
     TableInfo getLookupTableInfo();
 
     /**
@@ -54,7 +55,6 @@ public interface ForeignKey
 
     /**
      * Convenience for getLookupTableInfo.getSelectList(getLookupColumnName())
-     * @param ctx RenderContext
      */
     NamedObjectList getSelectList(RenderContext ctx);
 
@@ -107,7 +107,8 @@ public interface ForeignKey
     Set<FieldKey> getSuggestedColumns();
 
     /**
-     * Return true if this ForeignKey could be imported by alternate key value.
+     * Return true if this ForeignKey could be imported by alternate key value, meaning a unique display value or similar
+     * instead of requiring the target table's primary key value.
      */
     default boolean allowImportByAlternateKey() { return false; }
 }

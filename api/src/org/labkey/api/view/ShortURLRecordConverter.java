@@ -20,6 +20,8 @@ import org.apache.commons.beanutils.Converter;
 import org.labkey.api.services.ServiceRegistry;
 
 /**
+ * Converts from a String representing the EntityId for a short URL record to the {@link ShortURLRecord} bean
+ * representing the record.
  * User: vsharma
  * Date: 8/26/2014
  */

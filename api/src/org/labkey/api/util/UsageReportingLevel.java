@@ -43,6 +43,7 @@ import java.util.TimerTask;
 import java.util.TreeMap;
 
 /**
+ * The various levels of detail that can be reported back to the mothership as part of a regular ping.
  * User: jeckels
  * Date: Apr 26, 2006
  */

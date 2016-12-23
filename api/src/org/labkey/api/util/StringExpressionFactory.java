@@ -56,6 +56,7 @@ import java.util.Set;
 import static org.labkey.api.data.AbstractTableInfo.LINK_DISABLER;
 
 /**
+ * Factory for creating {@link StringExpression} instances from a string that defines the pattern.
  * User: migra
  * Date: Dec 28, 2004
  *

@@ -24,14 +24,12 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
+ * An Iterator wrapper that supports mark-reset functionality, similar to BufferedInputStream and BufferedReader. Can be
+ * used with any Iterator to provide "look ahead", the ability to read elements and then back up, allowing those elements
+ * to be re-read. Useful for inferring type information or column headers before actually processing data.
  * User: adam
  * Date: 8/1/2014
- * Time: 5:04 PM
  */
-
-// An Iterator wrapper that supports mark-reset functionality, similar to BufferedInputStream and BufferedReader. Can be
-// used with any Iterator to provide "look ahead", the ability to read elements and then back up, allowing those elements
-// to be re-read. Useful for inferring type information or column headers before actually processing data.
 public class MarkableIterator<T> implements Iterator<T>
 {
     // There are simpler ways to do this (e.g., building an IteratorChain<>(_buffer.iterator(), _iter) on every reset()

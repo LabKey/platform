@@ -1536,7 +1536,6 @@ api/src/org/labkey/api/util/MemTracker.java -text
 api/src/org/labkey/api/util/MemTrackerListener.java -text
 api/src/org/labkey/api/util/MemoryUsageLogger.java -text
 api/src/org/labkey/api/util/MinorConfigurationException.java -text
-api/src/org/labkey/api/util/MockServletResponse.java -text
 api/src/org/labkey/api/util/MothershipReport.java -text
 api/src/org/labkey/api/util/MultiPhaseCPUTimer.java -text
 api/src/org/labkey/api/util/MultisetRateAccumulator.java -text
@@ -1585,7 +1584,6 @@ api/src/org/labkey/api/util/XmlValidationException.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplate.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplateService.java -text
 api/src/org/labkey/api/util/emailTemplate/UserOriginatedEmailTemplate.java -text
-api/src/org/labkey/api/util/massSpecDataFileType.java -text
 api/src/org/labkey/api/util/mime.txt -text
 api/src/org/labkey/api/view/AbstractView.java -text
 api/src/org/labkey/api/view/AjaxCompletion.java -text

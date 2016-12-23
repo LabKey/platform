@@ -17,6 +17,7 @@
 package org.labkey.api.study;
 
 /**
+ * A study specimen location, such as a clinic or specimen repository.
  * User: kevink
  * Date: May 27, 2009
  */

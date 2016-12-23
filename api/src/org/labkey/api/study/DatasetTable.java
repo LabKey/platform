@@ -18,6 +18,7 @@ package org.labkey.api.study;
 import org.labkey.api.data.TableInfo;
 
 /**
+ * Table backed by a {@link Dataset}
  * User: brittp
  * Date: Sep 28, 2011 5:03:09 PM
  */

@@ -19,13 +19,11 @@ package org.labkey.api.iterator;
 import java.io.IOException;
 import java.util.Iterator;
 
-/*
-* User: adam
-* Date: Feb 16, 2013
-* Time: 6:52:15 AM
+/**
+ * Convenience class that turns a normal Iterator into a CloseableIterator, with a no-op close()
+ * User: adam
+ * Date: Feb 16, 2013
 */
-
-// Convenience class that turns a normal Iterator into a CloseableIterator, with a no-op close()
 public class WrappingCloseableIterator<T> implements CloseableIterator<T>
 {
     private final Iterator<T> _iter;

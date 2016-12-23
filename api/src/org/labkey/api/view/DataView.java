@@ -52,7 +52,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-
+/**
+ * A view backed by a {@link DataRegion}, which is almost always bound to a source table in the database.
+ */
 public abstract class DataView extends WebPartView<RenderContext>
 {
     private DataRegion _dataRegion = null;

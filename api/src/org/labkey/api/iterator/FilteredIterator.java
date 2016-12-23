@@ -21,9 +21,9 @@ import java.util.NoSuchElementException;
 import java.util.Iterator;
 
 /**
+ * Wrapper over some other Iterator that filters out certain objects.
  * User: adam
  * Date: Apr 10, 2009
- * Time: 9:54:36 AM
  */
 public class FilteredIterator<T> implements Iterator<T>
 {

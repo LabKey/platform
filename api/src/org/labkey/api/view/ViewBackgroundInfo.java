@@ -24,12 +24,8 @@ import org.labkey.api.writer.ContainerUser;
 import java.io.Serializable;
 
 /**
- * ViewBackgroundInfo class
- * <p/>
- * For use inside background threads with no request object.
- * <p/>
+ * For use inside background threads with no request object, to scope them to a {@link Container}, {@link User}, etc.
  * Created: Oct 4, 2005
- *
  * @author bmaclean
  */
 public class ViewBackgroundInfo implements Serializable, ContainerUser

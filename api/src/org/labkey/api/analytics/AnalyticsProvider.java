@@ -15,6 +15,9 @@
  */
 package org.labkey.api.analytics;
 
+/**
+ * A source of statistics or other summary information for a column, query, or other data source.
+ */
 public interface AnalyticsProvider
 {
     String getName();
