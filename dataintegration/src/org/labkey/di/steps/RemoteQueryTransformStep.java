@@ -159,6 +159,7 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
                 int idxID = -1;
                 int idxName = -1;
                 int idxCreated = -1;
+                int idxType = -1;
 
                 for (int i = 1; i <= iter.getColumnCount(); i++)
                 {
@@ -169,6 +170,7 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
                         case "ID":       idxID = i;       break;
                         case "Name":     idxName = i;     break;
                         case "Created":  idxCreated = i;  break;
+                        case "Type":     idxType = i;     break;
                     }
                 }
 
@@ -193,8 +195,9 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
                 // The remoteapi Date doesn't have milliseconds so the Dates won't be equal -- just compare day instead.
                 assertEquals(home.getCreated().getDay(), ((Date)iter.get(idxCreated)).getDay());
 
-                // We expect only one row
-                assertFalse(iter.next());
+                // We expect any other rows to be workbooks
+                while (iter.next())
+                    assertTrue("workbook".equals(iter.get(idxType)));
             }
         }
     }
