@@ -149,14 +149,12 @@
     </tr>
     <tr>
         <td>
-            To <%=h(action.toLowerCase())%> a <%=h(noun.toLowerCase())%> from a server-accessible archive, click
-            the "<%=h(action)%> <%=h(noun)%> Using Pipeline" button below, navigate to a zip archive or a
-            <%=h(noun.toLowerCase())%>.xml file, and click the "Import Data" button.
-        </td>
+            To <%=h(action.toLowerCase())%> from a server-accessible archive, click the button below to <%=h(action.toLowerCase())%> via Pipeline.
+         </td>
     </tr>
     <tr>
         <td>
-            <%= button(action + " " + noun + " Using Pipeline").href(urlProvider(PipelineUrls.class).urlBrowse(c, getViewContext().getActionURL())) %>
+            <%= button("Use Pipeline").href(urlProvider(PipelineUrls.class).urlBrowse(c, getViewContext().getActionURL())) %>
         </td>
     </tr>
     <tr>
@@ -169,7 +167,6 @@
 <script type="text/javascript">
     Ext4.onReady(function()  {
         // note: client dependencies declared in FolderManagementAction.FolderManagementTabStrip
-        var hasLoaded = <%=text(form.getHasLoaded()?"true":"false")%>;
         var templateFolders = [];
         var sourceRadioGroup = Ext4.create('Ext.form.RadioGroup', {
             width: 300,
@@ -178,7 +175,7 @@
                 {
                     name: 'folderSource',
                     inputValue: 'zipFile',
-                    boxLabel: 'Local Zip Archive',
+                    boxLabel: 'Local zip archive',
                     checked: true
                 },
                 {

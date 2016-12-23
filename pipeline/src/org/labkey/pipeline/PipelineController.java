@@ -1314,8 +1314,7 @@ public class PipelineController extends SpringActionController
         {
             if (form.isAsStudy())
                 _navTrail = "Import Study";
-            _navTrail += form.isFromZip() ? " from Zip Archive" : " from Pipeline";
-
+                _navTrail += form.isFromTemplateSourceFolder() ? " from Existing Folder" : form.isFromZip() ? " from Zip Archive" : " from Pipeline";
             return new JspView<>("/org/labkey/pipeline/startPipelineImport.jsp", form, errors);
         }
 
@@ -1465,6 +1464,7 @@ public class PipelineController extends SpringActionController
     public static class StartFolderImportForm
     {
         private boolean _fromZip;
+        private boolean _fromTemplateSourceFolder;
         private boolean _asStudy;
         private String _filePath;
         private boolean _validateQueries;
@@ -1563,6 +1563,16 @@ public class PipelineController extends SpringActionController
         {
             _fromZip = fromZip;
         }
+
+        public boolean isFromTemplateSourceFolder()
+        {
+            return _fromTemplateSourceFolder;
+        }
+
+        public void setFromTemplateSourceFolder(boolean fromTemplateSourceFolder)
+        {
+            _fromTemplateSourceFolder = fromTemplateSourceFolder;
+        }
     }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1614,17 +1624,17 @@ public class PipelineController extends SpringActionController
             return new ActionURL(ActionsAction.class, container);
         }
 
-        public ActionURL urlStartFolderImport(Container container, @NotNull File archiveFile, boolean asStudy, @Nullable ImportOptions options)
+        public ActionURL urlStartFolderImport(Container container, @NotNull File archiveFile, boolean asStudy, @Nullable ImportOptions options, boolean fromTemplateSourceFolder)
         {
             // archiveFile may be the unzip dir or it may be the zip file itself
             ActionURL url = new ActionURL(StartFolderImportAction.class, container);
             if (asStudy)
                 url.addParameter("asStudy", true);
 
-            return addStartImportParameters(url, archiveFile, options);
+            return addStartImportParameters(url, archiveFile, options, fromTemplateSourceFolder);
         }
 
-        private ActionURL addStartImportParameters(ActionURL url, @NotNull File file, @Nullable ImportOptions options)
+        private ActionURL addStartImportParameters(ActionURL url, @NotNull File file, @Nullable ImportOptions options, boolean fromTemplateSourceFolder)
         {
             // file may be the unzip dir or it may be the zip file itself
             url.addParameter("filePath", file.getAbsolutePath());
@@ -1634,6 +1644,7 @@ public class PipelineController extends SpringActionController
             {
                 url.addParameter("advancedImportOptions", options.isAdvancedImportOptions());
                 url.addParameter("fromZip", true);
+                url.addParameter("fromTemplateSourceFolder", fromTemplateSourceFolder);
             }
 
             return url;

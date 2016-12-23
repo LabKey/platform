@@ -480,45 +480,51 @@ Ext4.define('LABKEY.import.ApplyToMultipleFolders', {
         record.set('checked', true);
     },
 
+    clearChildRecords: function(record)
+    {
+        if(!record.isLeaf()){
+            record.cascadeBy(function(record){
+                record.set('checked', false);
+            });
+        }
+    },
+
+    clearParentRecords: function(record)
+    {
+        if(record.parentNode){
+            record.parentNode.set('checked', false);
+            this.clearParentRecords(record.parentNode);
+        }
+    },
+
+    selectChildRecords: function(record)
+    {
+        // first expand all child folders so the user can see what folders are being auto checked
+        record.cascadeBy(function(record){
+            if(!record.isLeaf())
+                record.expand();
+        });
+
+        // check all child folders
+        if (!record.isLeaf()){
+            record.cascadeBy(function(record){
+                record.set('checked', true);
+            });
+        }
+    },
+
     onCheckchange : function(record, checked, opts)
     {
-        function clearChildRecords(record){
-             if(!record.isLeaf()){
-                 record.cascadeBy(function(record) {
-                     record.set('checked', false);
-                })
-             }
-        }
-
-        function clearParentRecords(record){
-            var parentRecord = record.parentNode;
-            if(parentRecord){
-                parentRecord.set('checked', false);
-                clearParentRecords(parentRecord);
-            }
-        }
-
-        function selectChildRecords(record)
-        {
-            if (!record.isLeaf())
-            {
-                record.cascadeBy(function (record)
-                {
-                    record.set('checked', true);
-                })
-            }
-        }
-
         if (Ext4.getCmp('folderautoselect').getValue(true)) {
             // user has enabled the 'Selecting parent folders selects all children' option
             // selecting parent folder autoselects all children folders
-            // deselecting a child folder deselects the parent folder
+            // [disabled pending customer feedback] deselecting a child folder deselects the parent folder
             if(!checked){
-                clearChildRecords(record);
-                clearParentRecords(record);
+                this.clearChildRecords(record);
+             //   this.clearParentRecords(record);
             }
             else {
-                selectChildRecords(record);
+                this.selectChildRecords(record);
             }
         }
     },

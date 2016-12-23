@@ -548,6 +548,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         File pipelineUnzipFile;
         PipelineUrls pipelineUrlProvider;
         StudyService.Service studyService;
+        String originalFileName;
+        boolean fromTemplateSourceFolder;
 
         if (form.origin == null)
         {
@@ -591,94 +593,20 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         {
             // user choose to import from a template source folder
             Container sourceContainer = form.getSourceTemplateFolderContainer();
-            if (null == sourceContainer)
+            if (!exportSourceTemplateFolderToUnzipDir(sourceContainer, pipelineUnzipDir, errors))
             {
-                errors.reject(null, "Source template folder not selected");
                 return false;
-            }
-            else if (!sourceContainer.hasPermission(getUser(), AdminPermission.class))
-            {
-                errors.reject(null, "User does not have administrator permissions to the source container");
-                return false;
-            }
-            else if (!sourceContainer.hasEnableRestrictedModules(getUser()) && sourceContainer.hasRestrictedActiveModule(sourceContainer.getActiveModules()))
-            {
-                errors.reject(null, "The source folder has a restricted module for which you do not have permission.");
-                return false;
-            }
+            };
 
-            try
-            {
-                // before importing from a template folder we need to 'implicitly' export the source template folder
-                // into the unzip dir (instead of importing from a zip file)
-                FolderWriterImpl writer = new FolderWriterImpl();
-                FolderExportContext ctx = new FolderExportContext(getUser(), sourceContainer,
-                        getRegisteredFolderWritersForImplicitExport(sourceContainer), "new", false, false,
-                        false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
-                PipeRoot root = PipelineService.get().findPipelineRoot(sourceContainer);
-
-                if (root == null || !root.isValid())
-                {
-                    throw new NotFoundException("No valid pipeline root found");
-                }
-                try
-                {
-                    writer.write(sourceContainer, ctx, new FileSystemFile(pipelineUnzipDir));
-                }
-                catch (Container.ContainerException e)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                }
-
-                File pipelineSourceTemplateFolder = new File(sourceContainer.getPath(), sourceContainer.getName());
-
-                // get the main xml file from the unzipped import archive
-                archiveXml = new File(pipelineUnzipDir, "folder.xml");
-                if (!archiveXml.exists())
-                {
-                    archiveXml = new File(pipelineUnzipDir, "study.xml");
-                    isStudy = true;
-                }
-                if (!archiveXml.exists())
-                {
-                    errors.reject("folderImport", "This archive doesn't contain a folder.xml or study.xml file.");
-                    return false;
-                }
-
-                ImportOptions options = new ImportOptions(getContainer().getId(), user.getUserId());
-                options.setSkipQueryValidation(!form.isValidateQueries());
-                options.setCreateSharedDatasets(form.isCreateSharedDatasets());
-                options.setAdvancedImportOptions(form.isAdvancedImportOptions());
-
-                // if the option is selected to show the advanced import options, redirect to there
-                if (form.isAdvancedImportOptions())
-                {
-                    _successURL = pipelineUrlProvider.urlStartFolderImport(getContainer(), pipelineUnzipDir, isStudy, options);
-                    return true;
-                }
-
-                // finally, create the study or folder import pipeline job
-                _successURL = pipelineUrlProvider.urlBegin(container);
-                if (isStudy)
-                   StudyService.get().runStudyImportJob(container, user, url, archiveXml, pipelineSourceTemplateFolder.getName(), errors, pipelineRoot, options);
-                else
-                    PipelineService.get().runFolderImportJob(container, user, url, archiveXml, pipelineSourceTemplateFolder.getName(), errors, pipelineRoot, options);
-            }
-            catch (FileNotFoundException e)
-            {
-                errors.reject("folderImport", "File not found.");
-                return false;
-            }
-            catch (IOException e)
-            {
-                errors.reject("folderImport", "This file does not appear to be a valid zip archive file.");
-                return false;
-            }
+            fromTemplateSourceFolder = StringUtils.isNotEmpty(form.sourceTemplateFolderId);
+            originalFileName = sourceContainer.getName();
         }
-        else // user chose to import from a zip file
+        else
         {
-            // make sure we have a single file selected for import
+            // user chose to import from a zip file
             Map<String, MultipartFile> map = getFileMap();
+
+            // make sure we have a single file selected for import
             if (map.isEmpty() || map.size() > 1)
             {
                 errors.reject("folderImport", "You must select a valid zip archive (folder or study).");
@@ -686,8 +614,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             }
 
             // make sure the file is not empty and that it has a .zip extension
-            MultipartFile file = map.values().iterator().next();
-            if (0 == file.getSize() || StringUtils.isBlank(file.getOriginalFilename()) || !file.getOriginalFilename().toLowerCase().endsWith(".zip"))
+            MultipartFile zipFile = map.values().iterator().next();
+            if (0 == zipFile.getSize() || StringUtils.isBlank(zipFile.getOriginalFilename()) || !zipFile.getOriginalFilename().toLowerCase().endsWith(".zip"))
             {
                 errors.reject("folderImport", "You must select a valid zip archive (folder or study).");
                 return false;
@@ -696,10 +624,10 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             // copy and unzip the uploaded import archive zip file to the pipeline unzip dir
             try
             {
-                pipelineUnzipFile = new File(pipelineUnzipDir, file.getOriginalFilename());
+                pipelineUnzipFile = new File(pipelineUnzipDir, zipFile.getOriginalFilename());
                 pipelineUnzipFile.getParentFile().mkdirs();
                 pipelineUnzipFile.createNewFile();
-                FileUtil.copyData(file.getInputStream(), pipelineUnzipFile);
+                FileUtil.copyData(zipFile.getInputStream(), pipelineUnzipFile);
                 ZipUtil.unzipToDirectory(pipelineUnzipFile, pipelineUnzipDir);
             }
             catch (FileNotFoundException e)
@@ -713,41 +641,95 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 return false;
             }
 
-            // get the main xml file from the unzipped import archive
-            archiveXml = new File(pipelineUnzipDir, "folder.xml");
-            if (!archiveXml.exists())
-            {
-                archiveXml = new File(pipelineUnzipDir, "study.xml");
-                isStudy = true;
-            }
-            if (!archiveXml.exists())
-            {
-                errors.reject("folderImport", "This archive doesn't contain a folder.xml or study.xml file.");
-                return false;
-            }
-
-            ImportOptions options = new ImportOptions(getContainer().getId(), user.getUserId());
-            options.setSkipQueryValidation(!form.isValidateQueries());
-            options.setCreateSharedDatasets(form.isCreateSharedDatasets());
-            options.setAdvancedImportOptions(form.isAdvancedImportOptions());
-
-            // if the option is selected to show the advanced import options, redirect to there
-            if (form.isAdvancedImportOptions())
-            {
-                _successURL = pipelineUrlProvider.urlStartFolderImport(getContainer(), pipelineUnzipFile, isStudy, options);
-                return true;
-            }
-
-            // finally, create the study or folder import pipeline job
-            _successURL = pipelineUrlProvider.urlBegin(container);
-
-            if (isStudy)
-                StudyService.get().runStudyImportJob(container, user, url, archiveXml, file.getOriginalFilename(), errors, pipelineRoot, options);
-            else
-                PipelineService.get().runFolderImportJob(container, user, url, archiveXml, file.getOriginalFilename(), errors, pipelineRoot, options);
+            fromTemplateSourceFolder = false;
+            originalFileName = zipFile.getOriginalFilename();
         }
 
+        // get the main xml file from the unzipped import archive
+        archiveXml = new File(pipelineUnzipDir, "folder.xml");
+        if (!archiveXml.exists())
+        {
+            archiveXml = new File(pipelineUnzipDir, "study.xml");
+            isStudy = true;
+        }
+        if (!archiveXml.exists())
+        {
+            errors.reject("folderImport", "This archive doesn't contain a folder.xml or study.xml file.");
+            return false;
+        }
+
+        ImportOptions options = new ImportOptions(getContainer().getId(), user.getUserId());
+        options.setSkipQueryValidation(!form.isValidateQueries());
+        options.setCreateSharedDatasets(form.isCreateSharedDatasets());
+        options.setAdvancedImportOptions(form.isAdvancedImportOptions());
+
+        // if the option is selected to show the advanced import options, redirect to there
+        if (form.isAdvancedImportOptions())
+        {
+            _successURL = pipelineUrlProvider.urlStartFolderImport(getContainer(), pipelineUnzipDir, isStudy, options, fromTemplateSourceFolder);
+            return true;
+        }
+
+        // finally, create the study or folder import pipeline job
+        _successURL = pipelineUrlProvider.urlBegin(container);
+        if (isStudy)
+            StudyService.get().runStudyImportJob(container, user, url, archiveXml, originalFileName, errors, pipelineRoot, options);
+        else
+            PipelineService.get().runFolderImportJob(container, user, url, archiveXml, originalFileName, errors, pipelineRoot, options);
+
         return !errors.hasErrors();
+    }
+
+    private boolean exportSourceTemplateFolderToUnzipDir (Container sourceContainer, File pipelineUnzipDir, BindException errors)  throws Exception
+    {
+        if (null == sourceContainer)
+        {
+            errors.reject(null, "Source template folder not selected");
+            return false;
+        }
+        else if (!sourceContainer.hasPermission(getUser(), AdminPermission.class))
+        {
+            errors.reject(null, "User does not have administrator permissions to the source container");
+            return false;
+        }
+        else if (!sourceContainer.hasEnableRestrictedModules(getUser()) && sourceContainer.hasRestrictedActiveModule(sourceContainer.getActiveModules()))
+        {
+            errors.reject(null, "The source folder has a restricted module for which you do not have permission.");
+            return false;
+        }
+        try
+        {
+            // before importing from a template folder we need to 'implicitly' export the source template folder
+            // into the unzip dir (instead of importing from a zip file that has been unzipped into the unzip dir)
+            FolderWriterImpl writer = new FolderWriterImpl();
+            FolderExportContext ctx = new FolderExportContext(getUser(), sourceContainer,
+                    getRegisteredFolderWritersForImplicitExport(sourceContainer), "new", false, false,
+                    false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+            PipeRoot root = PipelineService.get().findPipelineRoot(sourceContainer);
+            if (root == null || !root.isValid())
+            {
+                throw new NotFoundException("No valid pipeline root found");
+            }
+            try
+            {
+                writer.write(sourceContainer, ctx, new FileSystemFile(pipelineUnzipDir));
+            }
+            catch (Container.ContainerException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+            }
+        }
+        catch (FileNotFoundException e)
+        {
+            errors.reject("folderImport", "File not found.");
+            return false;
+        }
+        catch (IOException e)
+        {
+            errors.reject("folderImport", "This file does not appear to be a valid zip archive file.");
+            return false;
+        }
+        return true;
     }
 
     private boolean handleFolderTreePost(FolderManagementForm form, BindException errors) throws Exception
@@ -779,6 +761,10 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
     private Set<String> getRegisteredFolderWritersForImplicitExport(Container sourceContainer)
     {
+
+        // this method is very similar to CoreController.GetRegisteredFolderWritersAction.execute() method, but instead of
+        // of building up a map of Writer object names to display in the UI, we are instead adding them to the list of Writers
+        // to apply during the implict export.
         Set<String> registeredFolderWriters = new HashSet<>();
         FolderSerializationRegistry registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
         if (null == registry)
@@ -795,6 +781,18 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             if (dataType != null && writer.show(sourceContainer) && !excludeForDataspace && !excludeForTemplate)
             {
                 registeredFolderWriters.add(dataType);
+
+                // for each Writer also determine if their are related children Writers, if so include them also
+                Collection<org.labkey.api.writer.Writer> childWriters = writer.getChildren(true, true);
+                if (childWriters != null && childWriters.size() > 0)
+                {
+                    for (org.labkey.api.writer.Writer child : childWriters)
+                    {
+                        dataType = child.getDataType();
+                        if (dataType != null)
+                           registeredFolderWriters.add(dataType);
+                    }
+                }
             }
         }
         return registeredFolderWriters;
@@ -836,7 +834,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         private boolean advancedImportOptions;
         private String sourceTemplateFolder;
         private String sourceTemplateFolderId;
-        private boolean hasLoaded = false;
 
         // file management settings
         private String _folderRootPath;
@@ -1209,16 +1206,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             if (null == getSourceTemplateFolderId())
                 return null;
             return ContainerManager.getForId(getSourceTemplateFolderId().replace(',', ' ').trim());
-        }
-
-        public boolean getHasLoaded()
-        {
-            return hasLoaded;
-        }
-
-        public void setHasLoaded(boolean hasLoaded)
-        {
-            this.hasLoaded = hasLoaded;
         }
 
         @Override
