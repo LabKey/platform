@@ -17,12 +17,11 @@
 package org.labkey.study;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
-import org.labkey.api.cache.Wrapper;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.study.StudyCachable;
 
@@ -65,8 +64,11 @@ public class StudyCache
 
     public static Object get(TableInfo tinfo, Container c, Object cacheKey, CacheLoader<String, Object> loader)
     {
-        BlockingCache<String, Object> cache = new BlockingCache<>(DbCache.getCacheGeneric(tinfo), loader);
-        return cache.get(getCacheName(c, cacheKey), null);
+        // Don't use a BlockingCache as thats can cause deadlocks when needing to do a
+        // load when all other DB connections are in use in threads, including one
+        // that holds the BlockingCache's lock
+        DatabaseCache<Object> cache2 = DbCache.getCacheGeneric(tinfo);
+        return cache2.get(getCacheName(c, cacheKey), null, loader);
     }
 
     public static void clearCache(TableInfo tinfo, Container c)
