@@ -236,8 +236,6 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         {
             throw new IllegalStateException("Cannot unset sample set");
         }
-        if (filter)
-            addCondition(getRealTable().getColumn("CpasType"), ss.getLSID());
         if (ss != null && !(ss instanceof ExpSampleSetImpl))
         {
             throw new IllegalArgumentException("Expected sample set to be an instance of " + ExpSampleSetImpl.class.getName() + " but was a " + ss.getClass().getName());
@@ -247,6 +245,8 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         {
             setPublicSchemaName(SamplesSchema.SCHEMA_NAME);
             setName(ss.getName());
+            if (filter)
+                addCondition(getRealTable().getColumn("CpasType"), _ss.getLSID());
 
             ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowUploadMaterialsURL(getContainer());
             url.addParameter("name", _ss.getName());
