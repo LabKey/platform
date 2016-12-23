@@ -640,7 +640,7 @@ public abstract class VisitManager
      * or the subset of all participants that might have been deleted and should be checked
      * @return the number of participants that were deleted */
 
-     public static int performParticipantPurge(@NotNull StudyImpl study, @Nullable Set<String> potentiallyDeletedParticipants)
+    public static int performParticipantPurge(@NotNull StudyImpl study, @Nullable Set<String> potentiallyDeletedParticipants)
     {
         if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.isEmpty())
         {
@@ -650,6 +650,7 @@ public abstract class VisitManager
         try
         {
             DbSchema schema = StudySchema.getInstance().getSchema();
+            LOGGER.info("performParticipantPurge(): transaction is " + (schema.getScope().isTransactionActive() ? "ACTIVE!!" : "not active, as expected"));
             TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
             TableInfo tableSpecimen = getSpecimenTable(study, null);
 
@@ -697,6 +698,10 @@ public abstract class VisitManager
                 // TODO: Temporary logging
                 LOGGER.error("Exception was determined to be \"object not found\". Container is " + study.getContainer());
                 StudyManager.getInstance().clearCaches(study.getContainer(), false);
+
+                // 2016-12-22: doesn't look like anyone calls this while in a transaction (see new check above), so the below
+                // must be old information. Assuming we're detecting object not found correctly, we should be safe to return and attempt retry.
+
                 // This is an unfortunate optimistic concurrency problem, but we don't really need to stop
                 // everything in its tracks.  However, the connection might be horked now.  Urg Postgres...
                 // CONSIDER 1: we could validate the state of the connection and continue if it's OK...
