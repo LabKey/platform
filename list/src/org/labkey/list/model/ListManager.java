@@ -49,12 +49,15 @@ import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.search.SearchService.IndexTask;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior;
 import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -261,9 +264,9 @@ public class ListManager implements SearchService.DocumentProvider
     public static final SearchService.SearchCategory listCategory = new SearchService.SearchCategory("list", "List");
 
     // Index all lists in this container
-    public void enumerateDocuments(@Nullable SearchService.IndexTask t, final @NotNull Container c, @Nullable Date since)   // TODO: Use since?
+    public void enumerateDocuments(@Nullable IndexTask t, final @NotNull Container c, @Nullable Date since)   // TODO: Use since?
     {
-        final SearchService.IndexTask task = null == t ? ServiceRegistry.get(SearchService.class).defaultTask() : t;
+        final IndexTask task = null == t ? ServiceRegistry.get(SearchService.class).defaultTask() : t;
 
         Runnable r = () -> {
             Map<String, ListDefinition> lists = ListService.get().getLists(c);
@@ -285,7 +288,7 @@ public class ListManager implements SearchService.DocumentProvider
     // Index a single list
     public void indexList(final ListDef def)
     {
-        final SearchService.IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
+        final IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
 
         Runnable r = () -> {
             ListDefinition list = ListDefinitionImpl.of(def);
@@ -296,7 +299,7 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    private void indexList(@NotNull SearchService.IndexTask task, ListDefinition list)
+    private void indexList(@NotNull IndexTask task, ListDefinition list)
     {
         Domain domain = list.getDomain();
 
@@ -316,7 +319,7 @@ public class ListManager implements SearchService.DocumentProvider
     // Index (or delete) a single list item after item save or delete
     public void indexItem(final ListDefinition list, final ListItem item)
     {
-        final SearchService.IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
+        final IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
 
         if (list.getEachItemIndex())
         {
@@ -339,7 +342,7 @@ public class ListManager implements SearchService.DocumentProvider
 
     private void _addIndexTask(final Runnable r, final SearchService.PRIORITY p)
     {
-        final SearchService.IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
+        final IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
 
         if (getListMetadataSchema().getScope().isTransactionActive())
         {
@@ -357,10 +360,10 @@ public class ListManager implements SearchService.DocumentProvider
     // bulk upload).
     private class ListIndexRunnable implements Runnable
     {
-        private final @NotNull SearchService.IndexTask _task;
+        private final @NotNull IndexTask _task;
         private final @NotNull ListDefinition _list;
 
-        private ListIndexRunnable(@NotNull SearchService.IndexTask task, final @NotNull ListDefinition list)
+        private ListIndexRunnable(@NotNull IndexTask task, final @NotNull ListDefinition list)
         {
             _task = task;
             _list = list;
@@ -418,7 +421,7 @@ public class ListManager implements SearchService.DocumentProvider
         if (!list.getEntireListIndex() && !list.getEachItemIndex())
             return;
 
-        final SearchService.IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
+        final IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
 
         Runnable r = () -> ServiceRegistry.get(SearchService.class).deleteResource(getDocumentId(list, entityId));
 
@@ -440,7 +443,7 @@ public class ListManager implements SearchService.DocumentProvider
 
 
     // Index all modified items in this list
-    private void indexModifiedItems(@NotNull final SearchService.IndexTask task, final ListDefinition list)
+    private void indexModifiedItems(@NotNull final IndexTask task, final ListDefinition list)
     {
         if (!list.getEachItemIndex())
         {
@@ -457,7 +460,7 @@ public class ListManager implements SearchService.DocumentProvider
 
 
     // Reindex items specified by filter
-    private int indexItems(@NotNull final SearchService.IndexTask task, final ListDefinition list, SimpleFilter filter)
+    private int indexItems(@NotNull final IndexTask task, final ListDefinition list, SimpleFilter filter)
     {
         TableInfo listTable = list.getTable(User.getSearchUser());
 
@@ -471,6 +474,9 @@ public class ListManager implements SearchService.DocumentProvider
         FieldKey entityIdKey = new FieldKey(null, "EntityId");
         MutableInt count = new MutableInt(0);
 
+        // TODO: Attempting to respect tableUrl for details link... but this doesn't actually work. See #28747.
+        StringExpression se = listTable.getDetailsURL(null, list.getContainer());
+
         new TableSelector(listTable, filter, null).setForDisplay(true).forEachResults(results -> {
             Map<FieldKey, Object> map = results.getFieldKeyRowMap();
             final Object pk = map.get(keyKey);
@@ -483,7 +489,17 @@ public class ListManager implements SearchService.DocumentProvider
 
             String body = bodyTemplate.eval(map);
 
-            ActionURL itemURL = list.urlDetails(pk);
+            ActionURL itemURL;
+
+            try
+            {
+                itemURL = new ActionURL(se.eval(map));
+            }
+            catch (Exception e)
+            {
+                itemURL = list.urlDetails(pk);
+            }
+
             itemURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
 
             SimpleDocumentResource r = new SimpleDocumentResource(
@@ -516,7 +532,7 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    private void indexEntireList(@NotNull SearchService.IndexTask task, final ListDefinition list)
+    private void indexEntireList(@NotNull IndexTask task, final ListDefinition list)
     {
         if (!list.getEntireListIndex())
         {
@@ -782,13 +798,33 @@ public class ListManager implements SearchService.DocumentProvider
 
     public void indexDeleted() throws SQLException
     {
-        SqlExecutor executor = new SqlExecutor(getListMetadataSchema());
+        TableInfo listTable = getListMetadataTable();
+        DbScope scope = listTable.getSchema().getScope();
 
-        for (TableInfo ti : new TableInfo[]{
-                getListMetadataTable()
-        })
+        // Clear LastIndexed column of the exp.List table, which addresses the "index the entire list as a single document" case
+        clearLastIndexed(scope, listTable.getSelectName());
+
+        String listSchemaName = ListSchema.getInstance().getSchemaName();
+
+        // Now clear LastIndexed column of every underlying list table, which addresses the "index each list item as a separate document" case. See #28748.
+        new TableSelector(getListMetadataTable()).forEach(listDef -> {
+            ListDefinition list = new ListDefinitionImpl(listDef);
+            Domain domain = list.getDomain();
+            if (null != domain)
+                clearLastIndexed(scope, listSchemaName + "." + domain.getStorageTableName());
+        }, ListDef.class);
+    }
+
+    private void clearLastIndexed(DbScope scope, String selectName)
+    {
+        try
         {
-            executor.execute("UPDATE " + ti.getSelectName() + " SET LastIndexed = NULL");
+            new SqlExecutor(scope).execute("UPDATE " + selectName + " SET LastIndexed = NULL");
+        }
+        catch (Exception e)
+        {
+            // Log the exception, but allow other tables to be cleared
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
 
