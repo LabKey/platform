@@ -48,13 +48,15 @@ import java.util.Set;
  */
 public class AssayQCFlagColumn extends ExprColumn
 {
-    private String _protocolName;
+    private String _schemaName;
+    private boolean _editable;
 
-    public AssayQCFlagColumn(TableInfo parent, String protocolName)
+    public AssayQCFlagColumn(TableInfo parent, String schemaName, boolean editable)
     {
         super(parent, "QCFlags", createSQLFragment(parent.getSqlDialect(), "FlagType"), JdbcType.VARCHAR);
         setLabel("QC Flags");
-        _protocolName = protocolName;
+        _schemaName = schemaName;
+        _editable = editable;
     }
 
     @Override
@@ -88,7 +90,7 @@ public class AssayQCFlagColumn extends ExprColumn
 
                             // add onclick handler to call the QCFlag toggle window creation function
                             // users with update perm will be able to change enabled state and edit comment, others will only be able to read flag details
-                            out.write("<a onclick=\"showQCFlagToggleWindow('" + _protocolName + "', " + runId + ");\">");
+                            out.write("<a onclick=\"showQCFlagToggleWindow('" + _schemaName + "', " + runId + "," + _editable + ");\">");
                             out.write(getCollapsedQCFlagOutput(values, enabled));
                             out.write("</a>");
                         }

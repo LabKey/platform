@@ -376,10 +376,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         runTable.getColumn(ExpRunTable.Column.ReplacesRun).setFk(assayRunFK);
         runTable.getColumn(ExpRunTable.Column.RowId).setURL(new DetailsURL(new ActionURL(AssayDetailRedirectAction.class, getContainer()), Collections.singletonMap("runId", "rowId")));
 
-        runTable.addColumn(new AssayQCFlagColumn(runTable, getProtocol().getName()));
-        ColumnInfo qcEnabled = runTable.addColumn(new ExprColumn(runTable, "QCFlagsEnabled", AssayQCFlagColumn.createSQLFragment(runTable.getSqlDialect(), "Enabled"), JdbcType.VARCHAR));
-        qcEnabled.setLabel("QC Flags Enabled State");
-        qcEnabled.setHidden(true);
+        addQCFlagColumn(runTable);
 
         ColumnInfo dataLinkColumn = runTable.getColumn(ExpRunTable.Column.Name);
         dataLinkColumn.setLabel("Assay Id");
@@ -433,6 +430,14 @@ public abstract class AssayProtocolSchema extends AssaySchema
         runTable.setDescription("Contains a row per " + getProtocol().getName() + " run.");
 
         return runTable;
+    }
+
+    protected void addQCFlagColumn(ExpRunTable runTable)
+    {
+        runTable.addColumn(new AssayQCFlagColumn(runTable, getSchemaName(), true));
+        ColumnInfo qcEnabled = runTable.addColumn(new ExprColumn(runTable, "QCFlagsEnabled", AssayQCFlagColumn.createSQLFragment(runTable.getSqlDialect(), "Enabled"), JdbcType.VARCHAR));
+        qcEnabled.setLabel("QC Flags Enabled State");
+        qcEnabled.setHidden(true);
     }
 
     private void addPropertyColumn(ExpTable table, Domain domain, String columnName)
