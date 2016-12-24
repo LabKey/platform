@@ -11,11 +11,12 @@ var $h = Ext.util.Format.htmlEncode;
 
 // helper function called to open the QC Flag toggle window (i.e. to enable/disable QC flags)
 // and reload the page on a successful save
-function showQCFlagToggleWindow(assayName, runId)
+function showQCFlagToggleWindow(schemaName, runId, editable)
 {
     var win = new LABKEY.QCFlagToggleWindow({
-        schemaName: "assay.Luminex." + assayName,
+        schemaName: schemaName,
         queryName: "QCFlags",
+        editable : editable,
         runId: runId,
         listeners: {
             scope: this,
@@ -53,7 +54,7 @@ LABKEY.QCFlagToggleWindow = Ext.extend(Ext.Window, {
             closeAction:'close',
             bodyStyle: 'background-color: white;',
             items: [],
-            userCanUpdate: LABKEY.user.canUpdate
+            userCanUpdate: config.editable && LABKEY.user.canUpdate
         });
 
         this.addEvents('saveSuccess');
