@@ -1628,7 +1628,6 @@ public class PipelineController extends SpringActionController
 
         public ActionURL urlStartFolderImport(Container container, @NotNull File archiveFile, boolean asStudy, @Nullable ImportOptions options, boolean fromTemplateSourceFolder)
         {
-            // archiveFile may be the unzip dir or it may be the zip file itself
             ActionURL url = new ActionURL(StartFolderImportAction.class, container);
             if (asStudy)
                 url.addParameter("asStudy", true);
@@ -1638,7 +1637,6 @@ public class PipelineController extends SpringActionController
 
         private ActionURL addStartImportParameters(ActionURL url, @NotNull File file, @Nullable ImportOptions options, boolean fromTemplateSourceFolder)
         {
-            // file may be the unzip dir or it may be the zip file itself
             url.addParameter("filePath", file.getAbsolutePath());
             url.addParameter("validateQueries", options == null || !options.isSkipQueryValidation());
             url.addParameter("createSharedDatasets", options == null || options.isCreateSharedDatasets());

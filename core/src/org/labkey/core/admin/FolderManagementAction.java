@@ -593,19 +593,40 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         if (!StringUtils.isEmpty(form.sourceTemplateFolderId))
         {
             // user choose to import from a template source folder
+
+            // In order to import into the current folder from the source template folder we need to first
+            // implicitly export the source template folder into the current container's unzip directory.
             Container sourceContainer = form.getSourceTemplateFolderContainer();
             if (!exportSourceTemplateFolderToUnzipDir(sourceContainer, pipelineUnzipDir, errors))
             {
                 return false;
             };
 
+            // In order to support the Advanced import options to import into multiple target folders we need to zip
+            // the source template folder so that the zip file can be passed to the pipeline processes.
+            FolderExportContext ctx = new FolderExportContext(getUser(), sourceContainer,
+                    getRegisteredFolderWritersForImplicitExport(sourceContainer), "new", false, false,
+                    false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+            FolderWriterImpl writer = new FolderWriterImpl();
+            String zipFileName = FileUtil.makeFileNameWithTimestamp(sourceContainer.getName(), "folder.zip");
+            try (ZipFile zip = new ZipFile(pipelineUnzipDir, zipFileName))
+            {
+                writer.write(sourceContainer, ctx, zip);
+            }
+            catch (Container.ContainerException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+            }
+            File implicitZipFile = new File(pipelineUnzipDir, zipFileName);
+
             fromTemplateSourceFolder = StringUtils.isNotEmpty(form.sourceTemplateFolderId);
-            originalFileName = sourceContainer.getName();
-            archiveFile = pipelineUnzipDir;
+            originalFileName = implicitZipFile.getName();
+            archiveFile = implicitZipFile;
         }
         else
         {
             // user chose to import from a zip file
+
             Map<String, MultipartFile> map = getFileMap();
 
             // make sure we have a single file selected for import
@@ -669,7 +690,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         // if the option is selected to show the advanced import options, redirect to there
         if (form.isAdvancedImportOptions())
         {
-            // archiveFile is either the souce zip file in the unzip dir, or it is the source exported folder in the unzip dir
+            // archiveFile is the zip of the source template folder located in the current container's unzip dir
             _successURL = pipelineUrlProvider.urlStartFolderImport(getContainer(), archiveFile, isStudy, options, fromTemplateSourceFolder);
             return true;
         }
@@ -703,8 +724,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         }
         try
         {
-            // before importing from a template folder we need to 'implicitly' export the source template folder
-            // into the unzip dir (instead of importing from a zip file that has been unzipped into the unzip dir)
             FolderWriterImpl writer = new FolderWriterImpl();
             FolderExportContext ctx = new FolderExportContext(getUser(), sourceContainer,
                     getRegisteredFolderWritersForImplicitExport(sourceContainer), "new", false, false,
