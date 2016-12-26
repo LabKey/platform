@@ -177,7 +177,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @Override
     public SecurableResource getParentResource()
     {
-        //overriden to return the container
+        //overridden to return the container
         //all other study entities return the study,
         //but the study's parent is the container
         return getContainer();
