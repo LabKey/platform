@@ -47,10 +47,9 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCacheOld;
-import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
@@ -145,7 +144,6 @@ public class TransformManager implements DataIntegrationService.Interface
     private static final TransformManager INSTANCE = new TransformManager();
     private static final Logger LOG = Logger.getLogger(TransformManager.class);
     private static final String JOB_GROUP_NAME = "org.labkey.di.pipeline.ETLManager";
-    private static final ModuleResourceCacheOld<ScheduledPipelineJobDescriptor> DESCRIPTOR_CACHE_OLD = ModuleResourceCaches.create(new Path(DescriptorCacheHandler.DIR_NAME), "ETL job descriptors", new DescriptorCacheHandlerOld());
     private static final ModuleResourceCache<Map<String, ScheduledPipelineJobDescriptor>> DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(DescriptorCacheHandler.DIR_NAME), new DescriptorCacheHandler(), "ETL job descriptors");
     private static final String JOB_PENDING_MSG = "Not queuing job because ETL is already pending";
 
@@ -388,51 +386,30 @@ public class TransformManager implements DataIntegrationService.Interface
     {
         if (!c.isRoot())
         {
-            Collection<ScheduledPipelineJobDescriptor> oldDescriptors = DESCRIPTOR_CACHE_OLD.getResources(c);
-            Collection<ScheduledPipelineJobDescriptor> descriptors = DESCRIPTOR_CACHE.getResourceMaps(c).stream()
+            return DESCRIPTOR_CACHE.getResourceMaps(c).stream()
                 .map(Map::values)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
-
-            assert oldDescriptors.size() == descriptors.size();
-
-            return oldDescriptors;
         }
         else
         {
-            Collection<ScheduledPipelineJobDescriptor> oldDescriptors = new LinkedList<>();
             Collection<ScheduledPipelineJobDescriptor> descriptors = new LinkedList<>();
             for (Module module : ModuleLoader.getInstance().getModules())
             {
-                oldDescriptors.addAll(DESCRIPTOR_CACHE_OLD.getResources(module).stream().filter(ScheduledPipelineJobDescriptor::isSiteScope).collect(Collectors.toList()));
                 descriptors.addAll(DESCRIPTOR_CACHE.getResourceMap(module).values().stream().filter(ScheduledPipelineJobDescriptor::isSiteScope).collect(Collectors.toList()));
             }
 
-            assert oldDescriptors.size() == descriptors.size();
-
-            return Collections.unmodifiableCollection(oldDescriptors);
+            return Collections.unmodifiableCollection(descriptors);
         }
     }
 
     @Nullable
     public ScheduledPipelineJobDescriptor getDescriptor(String configId)
     {
-        ScheduledPipelineJobDescriptor oldDescriptor = DESCRIPTOR_CACHE_OLD.getResource(configId);
-
         CacheId id = parseConfigId(configId);
         Module module = id.getModule();
 
-        ScheduledPipelineJobDescriptor descriptor = null;
-
-        if (null != module)
-            descriptor = DESCRIPTOR_CACHE.getResourceMap(module).get(configId);
-
-        if (null == descriptor)
-            assert null == oldDescriptor;
-        else
-            assert oldDescriptor.getDescription().equals(descriptor.getDescription());
-
-        return oldDescriptor;
+        return null != module ? DESCRIPTOR_CACHE.getResourceMap(module).get(configId) : null;
     }
 
     synchronized Integer runNowPipeline(ScheduledPipelineJobDescriptor descriptor, Container container, User user,
@@ -781,8 +758,6 @@ public class TransformManager implements DataIntegrationService.Interface
             int runAsUserId = config.getModifiedBy();
             User runAsUser = UserManager.getUser(runAsUserId);
 
-            ScheduledPipelineJobDescriptor oldDescriptor = DESCRIPTOR_CACHE_OLD.getResource(config.getTransformId());
-
             CacheId id = parseConfigId(config.getTransformId());
             Module module = id.getModule();
             ScheduledPipelineJobDescriptor descriptor = null;
@@ -790,17 +765,12 @@ public class TransformManager implements DataIntegrationService.Interface
             if (null != module)
                 descriptor = DESCRIPTOR_CACHE.getResourceMap(module).get(id.getName());
 
-            if (null == oldDescriptor)
-                assert null == descriptor;
-            else
-                assert oldDescriptor.getDescription().equals(descriptor.getDescription());
-
-            if (null == oldDescriptor)
+            if (null == descriptor)
                 return;
             Container c = ContainerManager.getForId(config.getContainerId());
             if (null == c)
                 return;
-            schedule(oldDescriptor, c, runAsUser, config.isVerboseLogging());
+            schedule(descriptor, c, runAsUser, config.isVerboseLogging());
         }, TransformConfiguration.class);
     }
 
@@ -816,32 +786,6 @@ public class TransformManager implements DataIntegrationService.Interface
 
         return PageFlowUtil.unstyledTextLink(text, PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(runDetailURL));
     }
-
-    public void shutdownPre()
-    {
-        try
-        {
-            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-            scheduler.standby();
-        }
-        catch (SchedulerException x)
-        {
-        }
-    }
-
-
-    public void shutdownStarted()
-    {
-        try
-        {
-            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-            scheduler.shutdown(true);
-        }
-        catch (SchedulerException x)
-        {
-        }
-    }
-
 
     public TransformRun getTransformRun(Container c, int runId)
     {
