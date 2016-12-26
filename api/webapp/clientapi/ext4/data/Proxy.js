@@ -67,7 +67,7 @@ Ext4.define('LABKEY.ext4.data.AjaxProxy', {
 
     /**
      * @Override Ext.data.proxy.Proxy (4.1.0)
-     * Overriden so we can batch insert/update/deletes into a single request using saveRows, rather than submitting 3 sequential ones
+     * Overridden so we can batch insert/update/deletes into a single request using saveRows, rather than submitting 3 sequential ones
      */
     batch: function(options, listeners) {
         var me = this,

@@ -731,7 +731,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     onLoad : function(store, records, options) {
         this.isLoading = false;
 
-        //remeber the name of the id column
+        //remember the name of the id column
         this.idName = this.reader.meta.id;
 
         if(this.nullRecord)

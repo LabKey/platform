@@ -79,7 +79,7 @@ public abstract class SpringModule extends DefaultModule
      * <ul>
      *  <li>none - no context associated with this module</li>
      *  <li>context - context XML describing beans inside module only</li>
-     *  <li>config - context may be overriden by bean XML on the config path</li>
+     *  <li>config - context may be overridden by bean XML on the config path</li>
      * </ul>
      */
     public enum ContextType { none, context, config }
@@ -127,7 +127,7 @@ public abstract class SpringModule extends DefaultModule
 
     /**
      * A module may define a pipeline configuration file in /WEB-INF/[module-name]Context.xml.
-     * Context may be overriden outside the the module after installation, by specifying a path to
+     * Context may be overridden outside the the module after installation, by specifying a path to
      * the configuration files in the <code>ServletContext</code> parameter
      * <code>INIT_PARAMETER_CONFIG_PATH</code>.
      * <p/>
@@ -140,7 +140,7 @@ public abstract class SpringModule extends DefaultModule
      * By specifying beans in the config XML of the same ID as those in the
      * module's context XML, Spring will use the external versions over those
      * in the module.  The pipeline also uses a registration model to allow
-     * elements to be overriden by TaskId.
+     * elements to be overridden by TaskId.
      *
      * @return path to the context XML file within the webapp, if present, or null if no file is present
      */
