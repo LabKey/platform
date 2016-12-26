@@ -40,25 +40,6 @@ import java.util.regex.Pattern;
 public class ModuleResourceCaches
 {
     /**
-     * Create a new ModuleResourceCache. This is the standard method to use in most situations, where each module has a
-     * single directory that contains files that represent a single object type.
-     *
-     * @param path Path representing the module resource directory
-     * @param description Short description of the cache
-     * @param handler ModuleResourceCacheHandler that customizes this cache's behavior
-     * @param <T> Object type that this cache handles
-     * @return A ModuleResourceCache
-     */
-    public static <T> ModuleResourceCacheOld<T> create(Path path, String description, ModuleResourceCacheHandlerOld<String, T> handler)
-    {
-        ModuleResourceDirectory directory = createModuleResourceDirectory(path);
-        ModuleResourceCacheOld<T> cache = new ModuleResourceCacheOld<>(directory, description, handler);
-        directory.registerCache(cache);
-
-        return cache;
-    }
-
-    /**
      * Create a new ModuleResourceCache.
      *
      * @param path Path representing the root of the resource directory
@@ -93,15 +74,23 @@ public class ModuleResourceCaches
     }
 
     /**
-     * Create a new ModuleResourceDirectory for a given path.
+     * Create a new ModuleResourceCache. This is the standard method to use in most situations, where each module has a
+     * single directory that contains files that represent a single object type.
+     *
      * @param path Path representing the module resource directory
-     * @return A ModuleResourceDirectory
+     * @param description Short description of the cache
+     * @param handler ModuleResourceCacheHandler that customizes this cache's behavior
+     * @param <T> Object type that this cache handles
+     * @return A ModuleResourceCache
      */
-    public static ModuleResourceDirectory createModuleResourceDirectory(Path path)
+    public static <T> ModuleResourceCacheOld<T> create(Path path, String description, ModuleResourceCacheHandlerOld<String, T> handler)
     {
-        return new StandardModuleResourceDirectory(path);
-    }
+        ModuleResourceDirectory directory = new StandardModuleResourceDirectory(path);
+        ModuleResourceCacheOld<T> cache = new ModuleResourceCacheOld<>(directory, description, handler);
+        directory.registerCache(cache);
 
+        return cache;
+    }
 
 
     public static String createCacheKey(Module module, String resourceName)
