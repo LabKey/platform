@@ -650,7 +650,10 @@ public abstract class VisitManager
         try
         {
             DbSchema schema = StudySchema.getInstance().getSchema();
-            LOGGER.info("performParticipantPurge(): transaction is " + (schema.getScope().isTransactionActive() ? "ACTIVE!!" : "not active, as expected"));
+
+            // Exception handling for race conditions (below) assumes this method is not called from within a transaction
+            assert !schema.getScope().isTransactionActive() : "Transaction should not be active!";
+
             TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
             TableInfo tableSpecimen = getSpecimenTable(study, null);
 
@@ -661,25 +664,25 @@ public abstract class VisitManager
                 ptids.append(studyDataPtids);
                 ptids.append(" UNION\n");
             }
-            ptids.append("SELECT DISTINCT ptid AS participantid FROM ");
+            ptids.append("SELECT DISTINCT ptid AS ParticipantId FROM ");
             ptids.append(tableSpecimen, "_specimens_");
 
             SQLFragment ptidsP = new SQLFragment();
-            ptidsP.append("SELECT participantid FROM ").append(tableParticipant.getSelectName()).append(" WHERE container=?");
+            ptidsP.append("SELECT ParticipantId FROM ").append(tableParticipant.getSelectName()).append(" WHERE Container = ?");
             ptidsP.add(study.getContainer().getId());
             // Databases limit the size of IN clauses, so check that we won't blow the cap
             if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.size() < 450)
             {
                 // We have an explicit list of potentially deleted participants, so filter to only look at them
-                ptidsP.append(" AND participantid ");
+                ptidsP.append(" AND ParticipantId ");
                 tableParticipant.getSqlDialect().appendInClauseSql(ptidsP, potentiallyDeletedParticipants);
             }
 
             SQLFragment del = new SQLFragment();
             del.append("DELETE FROM ").append(tableParticipant.getSelectName());
-            del.append("\nWHERE container=? ");
+            del.append("\nWHERE Container = ? ");
             del.add(study.getContainer().getId());
-            del.append(" AND participantid IN\n");
+            del.append("AND ParticipantId IN\n");
             del.append("(\n");
             del.append("    ").append(ptidsP).append("\n");
             del.append("    EXCEPT\n");
@@ -699,14 +702,8 @@ public abstract class VisitManager
                 LOGGER.error("Exception was determined to be \"object not found\". Container is " + study.getContainer());
                 StudyManager.getInstance().clearCaches(study.getContainer(), false);
 
-                // 2016-12-22: doesn't look like anyone calls this while in a transaction (see new check above), so the below
-                // must be old information. Assuming we're detecting object not found correctly, we should be safe to return and attempt retry.
-
-                // This is an unfortunate optimistic concurrency problem, but we don't really need to stop
-                // everything in its tracks.  However, the connection might be horked now.  Urg Postgres...
-                // CONSIDER 1: we could validate the state of the connection and continue if it's OK...
-                // CONSIDER 2: move performParticipantPurge() outside the original transaction and execute later (or asynchronously)
-                // CONSIDER 3: locking of schema changes so readers don't have tables deleted out from under them
+                // 2016-12-22: doesn't look like anyone calls this while in a transaction (see assert above), so, assuming
+                // we're detecting "object not found" correctly, we should be safe to return here or attempt retry.
             }
             throw x;
         }
