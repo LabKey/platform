@@ -42,7 +42,6 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StartupListener;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.DefaultWebPartFactory;
@@ -78,8 +77,6 @@ import org.labkey.pipeline.status.StatusController;
 import org.labkey.pipeline.validators.PipelineSetupValidator;
 import org.labkey.pipeline.xml.ExecTaskType;
 import org.labkey.pipeline.xml.ScriptTaskType;
-import org.quartz.SchedulerException;
-import org.quartz.impl.StdSchedulerFactory;
 
 import javax.servlet.ServletContext;
 import java.beans.PropertyChangeEvent;
@@ -112,17 +109,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         PipelineServiceImpl ps = new PipelineServiceImpl();
         PipelineService.setInstance(ps);
 
-        // Start up a Quartz scheduler
-        try
-        {
-            StdSchedulerFactory.getDefaultScheduler().start();
-        }
-        catch (SchedulerException e)
-        {
-            throw new UnexpectedException(e);
-        }
-
-        // Set up default PipelineJobServiceImpl, which may be overriden by Spring config.
+        // Set up default PipelineJobServiceImpl, which may be overridden by Spring config.
         PipelineJobServiceImpl pjs = PipelineJobServiceImpl.initDefaults(PipelineJobService.LocationType.WebServer);
         pjs.setAppProperties(new ApplicationPropertiesSiteSettings());
 
@@ -148,22 +135,6 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         return Collections.singleton(new PipelineModuleResourceLoader());
     }
 
-
-    @Override
-    public void destroy()
-    {
-        super.destroy();
-
-        // Shut down the Quartz scheduler
-        try
-        {
-            StdSchedulerFactory.getDefaultScheduler().shutdown();
-        }
-        catch (SchedulerException e)
-        {
-            throw new UnexpectedException(e);
-        }
-    }
 
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()

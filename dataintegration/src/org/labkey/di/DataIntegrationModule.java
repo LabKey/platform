@@ -19,6 +19,7 @@ package org.labkey.di;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerManager.ContainerListener;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.di.DataIntegrationService;
@@ -28,7 +29,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ContextListener;
-import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.JspView;
@@ -58,7 +58,7 @@ import java.util.Set;
  * User: matthewb
  * Date: 12 Jan 2013
  */
-public class DataIntegrationModule extends DefaultModule implements ContainerManager.ContainerListener, StartupListener, ShutdownListener
+public class DataIntegrationModule extends DefaultModule implements ContainerListener, StartupListener
 {
     public static final String NAME = "DataIntegration";
 
@@ -100,7 +100,6 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
 
         ContainerManager.addContainerListener(this);
         ContextListener.addStartupListener(this);
-        ContextListener.addShutdownListener(this);
 
         DataIntegrationQuerySchema.register(this);
         TransformDataType.register();
@@ -113,7 +112,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     @Override
     public Set<Class> getUnitTests()
     {
-        return new HashSet<Class>(Arrays.asList(
+        return new HashSet<>(Arrays.asList(
                 TransformManager.TestCase.class,
                 VariableMapImpl.TestCase.class,
                 TransformDescriptor.TestCase.class
@@ -174,22 +173,6 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     public void moduleStartupComplete(ServletContext servletContext)
     {
         TransformManager.get().startAllConfigurations();
-    }
-
-
-    //
-    // ShutdownListener
-    //
-
-    public void shutdownPre()
-    {
-        TransformManager.get().shutdownPre();
-    }
-
-
-    public void shutdownStarted()
-    {
-        TransformManager.get().shutdownStarted();
     }
 
 

@@ -201,6 +201,9 @@ import org.labkey.core.webdav.DavController;
 import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookQueryView;
 import org.labkey.core.workbook.WorkbookSearchView;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.impl.StdSchedulerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -264,6 +267,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     protected void init()
     {
+        // Start up the default Quartz scheduler, used in many places
+        try
+        {
+            StdSchedulerFactory.getDefaultScheduler().start();
+        }
+        catch (SchedulerException e)
+        {
+            throw new UnexpectedException(e);
+        }
+
         ServiceRegistry.get().registerService(ContainerService.class, ContainerManager.getContainerService());
         ServiceRegistry.get().registerService(FolderSerializationRegistry.class, FolderSerializationRegistryImpl.get());
         ServiceRegistry.get().registerService(ViewService.class, ViewServiceImpl.getInstance());
@@ -666,6 +679,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             @Override
             public void shutdownPre()
             {
+                try
+                {
+                    // Halt firing of Quartz triggers
+                    Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+                    scheduler.standby();
+                }
+                catch (SchedulerException x)
+                {
+                }
+
                 Logger logger = Logger.getLogger(ActionsTsvWriter.class);
 
                 if (null != logger)
@@ -697,6 +720,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             @Override
             public void shutdownStarted()
             {
+                try
+                {
+                    // Clean up Quartz resources and wait for jobs to complete
+                    Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+                    scheduler.shutdown(true);
+                }
+                catch (SchedulerException x)
+                {
+                }
             }
         });
 
