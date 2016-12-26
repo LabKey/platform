@@ -45,7 +45,7 @@ public class ModuleDependencySorter
         Set<String> moduleNames = new CaseInsensitiveHashSet();
         for (Module module : modules)
         {
-            Pair<Module, Set<String>> dependencyInfo = new Pair<Module, Set<String>>(module, new CaseInsensitiveHashSet(module.getModuleDependenciesAsSet()));
+            Pair<Module, Set<String>> dependencyInfo = new Pair<>(module, new CaseInsensitiveHashSet(module.getModuleDependenciesAsSet()));
             for (ModuleResourceLoader loader : loaders)
                 dependencyInfo.second.addAll(loader.getModuleDependencies(module, module.getExplodedPath()));
             dependencies.add(dependencyInfo);
@@ -129,7 +129,7 @@ public class ModuleDependencySorter
     }
 
 
-    private void graphModuleDependencies(List<Pair<Module, Set<String>>> dependencies, String adjective)
+    private void graphModuleDependencies(List<Pair<Module, Set<String>>> dependencies, @SuppressWarnings("SameParameterValue") String adjective)
     {
         Logger log = Logger.getLogger(ModuleDependencySorter.class);
 
