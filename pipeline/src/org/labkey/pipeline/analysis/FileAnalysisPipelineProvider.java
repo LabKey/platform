@@ -158,6 +158,21 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
                     // Delete any ExpData remains
                     for (ExpData data : children)
                         data.delete(null);
+
+                    // The analysis dir may have been multiple levels down relative the pipeline root.
+                    // Walk back up the tree to delete all the unused directories
+                    File rootPath = root.getRootPath();
+                    File parent = analysisDir.getParentFile();
+                    String[] contents = parent.list();
+                    while (!rootPath.equals(parent) && null != contents && contents.length == 0)
+                    {
+                        if (FileUtil.deleteDir(parent))
+                        {
+                            Logger.getLogger(FileAnalysisPipelineProvider.class).info(String.format("Job '%s' parent analysis directory no longer referenced by any runs and was moved to .deleted: %s", sf.getInfo(), parent));
+                            parent = parent.getParentFile();
+                            contents = parent.list();
+                        }
+                    }
                 }
                 else
                 {
