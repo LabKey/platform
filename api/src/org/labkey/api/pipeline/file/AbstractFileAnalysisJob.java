@@ -254,11 +254,12 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     public String getBaseNameForFileType(FileType fileType)
     {
-        for (File fileInput : _filesInput)
+        if (fileType != null)
         {
-            if (fileType != null && fileType.isType(fileInput))
+            for (File fileInput : _filesInput)
             {
-                return fileType.getBaseName(fileInput);
+                if (fileType.isType(fileInput))
+                    return fileType.getBaseName(fileInput);
             }
         }
 
