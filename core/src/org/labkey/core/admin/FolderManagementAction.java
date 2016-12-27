@@ -593,13 +593,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         {
             // user choose to import from a template source folder
 
-            // In order to import into the current folder from the source template folder we need to first
-            // implicitly export the source template folder into the current container's unzip directory.
             Container sourceContainer = form.getSourceTemplateFolderContainer();
-            if (!exportSourceTemplateFolderToUnzipDir(sourceContainer, pipelineUnzipDir, errors))
-            {
-                return false;
-            }
 
             // In order to support the Advanced import options to import into multiple target folders we need to zip
             // the source template folder so that the zip file can be passed to the pipeline processes.
@@ -617,6 +611,9 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
             }
             File implicitZipFile = new File(pipelineUnzipDir, zipFileName);
+
+            // To support the simple import option unzip the zip file to the pipeline unzip dir of the current container
+            ZipUtil.unzipToDirectory(implicitZipFile, pipelineUnzipDir);
 
             fromTemplateSourceFolder = StringUtils.isNotEmpty(form.sourceTemplateFolderId);
             originalFileName = implicitZipFile.getName();
@@ -702,56 +699,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             PipelineService.get().runFolderImportJob(container, user, url, archiveXml, originalFileName, errors, pipelineRoot, options);
 
         return !errors.hasErrors();
-    }
-
-    private boolean exportSourceTemplateFolderToUnzipDir (Container sourceContainer, File pipelineUnzipDir, BindException errors)  throws Exception
-    {
-        if (null == sourceContainer)
-        {
-            errors.reject(null, "Source template folder not selected");
-            return false;
-        }
-        else if (!sourceContainer.hasPermission(getUser(), AdminPermission.class))
-        {
-            errors.reject(null, "User does not have administrator permissions to the source container");
-            return false;
-        }
-        else if (!sourceContainer.hasEnableRestrictedModules(getUser()) && sourceContainer.hasRestrictedActiveModule(sourceContainer.getActiveModules()))
-        {
-            errors.reject(null, "The source folder has a restricted module for which you do not have permission.");
-            return false;
-        }
-        try
-        {
-            FolderWriterImpl writer = new FolderWriterImpl();
-            FolderExportContext ctx = new FolderExportContext(getUser(), sourceContainer,
-                    getRegisteredFolderWritersForImplicitExport(sourceContainer), "new", false, false,
-                    false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
-            PipeRoot root = PipelineService.get().findPipelineRoot(sourceContainer);
-            if (root == null || !root.isValid())
-            {
-                throw new NotFoundException("No valid pipeline root found");
-            }
-            try
-            {
-                writer.write(sourceContainer, ctx, new FileSystemFile(pipelineUnzipDir));
-            }
-            catch (Container.ContainerException e)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-            }
-        }
-        catch (FileNotFoundException e)
-        {
-            errors.reject("folderImport", "File not found.");
-            return false;
-        }
-        catch (IOException e)
-        {
-            errors.reject("folderImport", "This file does not appear to be a valid zip archive file.");
-            return false;
-        }
-        return true;
     }
 
     private boolean handleFolderTreePost(FolderManagementForm form, BindException errors) throws Exception
