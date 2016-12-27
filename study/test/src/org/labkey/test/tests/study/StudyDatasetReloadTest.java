@@ -73,7 +73,7 @@ public class StudyDatasetReloadTest extends StudyBaseTest
         goToManageStudy();
         clickButton("Reload Study");
         setFormElement(Locator.name("folderZip"), STUDY_WITH_BIT);
-        clickButton("Reload Study From Local Zip Archive");
+        clickButton("Reload Study");
         waitForPipelineJobsToComplete(3, "Study Reload", false);
 
         // Check changes
