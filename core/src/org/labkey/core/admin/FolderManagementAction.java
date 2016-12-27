@@ -547,7 +547,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         File pipelineUnzipDir;
         File pipelineUnzipFile;
         PipelineUrls pipelineUrlProvider;
-        StudyService.Service studyService;
         String originalFileName;
         File archiveFile;
         boolean fromTemplateSourceFolder;
@@ -600,7 +599,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             if (!exportSourceTemplateFolderToUnzipDir(sourceContainer, pipelineUnzipDir, errors))
             {
                 return false;
-            };
+            }
 
             // In order to support the Advanced import options to import into multiple target folders we need to zip
             // the source template folder so that the zip file can be passed to the pipeline processes.
@@ -787,7 +786,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
         // this method is very similar to CoreController.GetRegisteredFolderWritersAction.execute() method, but instead of
         // of building up a map of Writer object names to display in the UI, we are instead adding them to the list of Writers
-        // to apply during the implict export.
+        // to apply during the implicit export.
         Set<String> registeredFolderWriters = new HashSet<>();
         FolderSerializationRegistry registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
         if (null == registry)

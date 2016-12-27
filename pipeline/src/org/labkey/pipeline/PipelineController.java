@@ -1314,7 +1314,8 @@ public class PipelineController extends SpringActionController
         {
             if (form.isAsStudy())
                 _navTrail = "Import Study";
-                _navTrail += form.isFromTemplateSourceFolder() ? " from Existing Folder" : form.isFromZip() ? " from Zip Archive" : " from Pipeline";
+            _navTrail += form.isFromTemplateSourceFolder() ? " from Existing Folder" : form.isFromZip() ? " from Zip Archive" : " from Pipeline";
+
             return new JspView<>("/org/labkey/pipeline/startPipelineImport.jsp", form, errors);
         }
 
@@ -1346,8 +1347,6 @@ public class PipelineController extends SpringActionController
                     options.setDataTypes(form.getDataTypes());
                     options.setIncludeSubfolders(!form.isApplyToMultipleFolders());
 
-                    // todo: before starting the piplineJobs be sure that each job has access to its own copy of the source folder that is being iported
-                    // otherwise the first portal job to finish will delete its source unzip dir causing the remaining pipelineJobs to fail
                     success = success && createImportPipelineJob(container, user, options, containerArchiveXmlMap.get(container), form.isAsStudy(), errors);
                 }
             }
