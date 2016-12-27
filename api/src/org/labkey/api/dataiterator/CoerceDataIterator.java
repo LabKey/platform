@@ -18,6 +18,7 @@ package org.labkey.api.dataiterator;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.BatchValidationException;
@@ -56,11 +57,13 @@ public class CoerceDataIterator extends SimpleTranslator
             ColumnInfo from = di.getColumnInfo(i);
             ColumnInfo to = targetMap.get(from.getName());
 
-            if (null != to )
+            if (null != to)
             {
                 seen.add(to.getName());
-                if(to.getPropertyType() == PropertyType.ATTACHMENT)
-                    addColumn(to,i);
+                if (to.getPropertyType() == PropertyType.ATTACHMENT)
+                    addColumn(to, i);
+                else if (to.getFk() instanceof MultiValuedForeignKey)
+                    addColumn(to.getName(), i); // pass-through multi-value columns -- converting will stringify a collection
                 else
                     addConvertColumn(to.getName(), i, to.getJdbcType(), false);
             }

@@ -29,6 +29,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -466,9 +467,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             ColumnInfo col = columnMap.get(entry.getKey());
 
             Object value = entry.getValue();
-                if (col != null && value != null && !col.getJavaObjectClass().isInstance(value) &&
-                        !(value instanceof AttachmentFile) && !(value instanceof String[]))
-                {
+            if (col != null && value != null &&
+                    !col.getJavaObjectClass().isInstance(value) &&
+                    !(value instanceof AttachmentFile) &&
+                    !(value instanceof String[]) &&
+                    !(col.getFk() instanceof MultiValuedForeignKey))
+            {
                 try
                 {
                     value = ConvertUtils.convert(value.toString(), col.getJavaObjectClass());
