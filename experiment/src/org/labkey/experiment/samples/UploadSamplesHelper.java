@@ -581,7 +581,8 @@ public class UploadSamplesHelper
             ExpMaterial material = materialMap.get(name);
             if (material != null)
             {
-                ExpDataClassDataTableImpl.AliasInsertHelper.handleInsertUpdate(c, _form.getUser(), material.getLSID(), aliasMap, row);
+                Object aliases = row.get("Alias");
+                ExpDataClassDataTableImpl.AliasInsertHelper.handleInsertUpdate(c, _form.getUser(), material.getLSID(), aliasMap, aliases);
             }
         });
 

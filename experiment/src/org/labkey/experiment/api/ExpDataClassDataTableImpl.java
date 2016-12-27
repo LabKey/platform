@@ -792,7 +792,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         final Integer _lsidCol;
         final Integer _aliasCol;
         final User _user;
-        Map<String, List> _lsidAliasMap = new HashMap<>();
+        Map<String, Object> _lsidAliasMap = new HashMap<>();
 
         protected AliasDataIterator(DataIterator di, DataIteratorContext context, User user)
         {
@@ -826,9 +826,9 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 Object lsidValue = get(_lsidCol);
                 Object aliasValue = get(_aliasCol);
 
-                if (aliasValue instanceof List && lsidValue instanceof String)
+                if (aliasValue != null && lsidValue instanceof String)
                 {
-                    _lsidAliasMap.put((String) lsidValue, (List) aliasValue);
+                    _lsidAliasMap.put((String) lsidValue, aliasValue);
                 }
 
                 if (!hasNext)
@@ -837,98 +837,17 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
                     try (DbScope.Transaction transaction = svc.getTinfoDataClass().getSchema().getScope().ensureTransaction())
                     {
-                        for (Map.Entry<String, List> entry : _lsidAliasMap.entrySet())
+                        for (Map.Entry<String, Object> entry : _lsidAliasMap.entrySet())
                         {
-                            List<Integer> params = new ArrayList<>();
-                            List<String> aliasNames = new ArrayList<>();
-
-                            entry.getValue().stream().filter(item -> item instanceof String).forEach(item -> {
-
-                                String itemEntry = (String)item;
-                                if (itemEntry.startsWith("[") && itemEntry.endsWith("]"))
-                                {
-                                    itemEntry = itemEntry.substring(1, itemEntry.length() - 1);
-                                }
-
-                                // an input list of alias rowIds, validate that they exist in the alias table before
-                                // adding them to the dataAliasMap
-                                if (NumberUtils.isDigits(itemEntry))
-                                    params.add(NumberUtils.toInt(itemEntry));
-                                else
-                                {
-                                    // parse out the comma separated names
-                                    if (itemEntry.contains(","))
-                                    {
-                                        String[] parts = itemEntry.split(",");
-                                        for (String part : parts)
-                                        {
-                                            part = part.trim();
-                                            if (part.startsWith("\"") && part.endsWith("\""))
-                                                part = part.substring(1, part.length() - 1).trim();
-                                            if (part.length() > 0)
-                                                aliasNames.add(part);
-                                        }
-                                    }
-                                    else
-                                        aliasNames.add(itemEntry);
-                                }
-                            });
-                            params.addAll(AliasInsertHelper.getAliasIds(_user, aliasNames));
-                            AliasInsertHelper.insertAliases(getContainer(), _user, svc.getTinfoDataAliasMap(), params, entry.getKey());
+                            String lsid = entry.getKey();
+                            Object aliases = entry.getValue();
+                            AliasInsertHelper.handleInsertUpdate(getContainer(), _user, lsid, svc.getTinfoDataAliasMap(), aliases);
                         }
                         transaction.commit();
                     }
                 }
             }
             return hasNext;
-        }
-    }
-
-    public static class DataAliasMap
-    {
-        int _alias;
-        String _lsid;
-        Container _container;
-
-        public DataAliasMap(String lsid, int alias, Container container)
-        {
-            _lsid = lsid;
-            _alias = alias;
-            _container = container;
-        }
-
-        public DataAliasMap()
-        {
-        }
-
-        public int getAlias()
-        {
-            return _alias;
-        }
-
-        public void setAlias(int alias)
-        {
-            _alias = alias;
-        }
-
-        public String getLsid()
-        {
-            return _lsid;
-        }
-
-        public void setLsid(String lsid)
-        {
-            _lsid = lsid;
-        }
-
-        public Container getContainer()
-        {
-            return _container;
-        }
-
-        public void setContainer(Container container)
-        {
-            _container = container;
         }
     }
 
@@ -1355,7 +1274,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
             // update aliases
             if (row.containsKey("Alias"))
-                AliasInsertHelper.handleInsertUpdate(getContainer(), user, lsid, ExperimentService.get().getTinfoDataAliasMap(), row);
+                AliasInsertHelper.handleInsertUpdate(getContainer(), user, lsid, ExperimentService.get().getTinfoDataAliasMap(), row.get("Alias"));
 
             // handle attachments
             removePreviousAttachments(user, c, row, oldRow);
@@ -1491,111 +1410,123 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
     public static class AliasInsertHelper
     {
-        public static void handleInsertUpdate(Container container, User user, String lsid, TableInfo aliasMap, Map<String, Object> row)
+        public static void handleInsertUpdate(Container container, User user, String lsid, TableInfo aliasMapTable, Object value)
         {
-            List<String> aliasNames = new ArrayList();
-            List<Integer> params = new ArrayList();
-            String aliases;
-            // QueryController action update passes here an array of Strings where each string is the rowId of an alias in the exp.Alias table
-            if (row.get("Alias") instanceof String[])
+            // parse the alias value into separate names and alias rowIds
+            Set<String> aliasNames = new HashSet<>();
+            Set<Integer> aliasIds = new HashSet<>();
+            parseValue(value, aliasNames, aliasIds);
+
+            assert aliasNames.stream().noneMatch(s -> (s.startsWith("\"") || s.endsWith("\""))) : "Found an alias name that contains a quote character: " + aliasNames;
+
+            // ensure the alias exist collect the alias' rowId
+            aliasIds.addAll(ensureAliases(user, aliasNames));
+
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
+            Table.delete(aliasMapTable, filter);
+            insertMapEntries(container, user, aliasMapTable, aliasIds, lsid);
+        }
+
+        private static void parseValue(Object value, Set<String> aliasNames, Set<Integer> aliasIds)
+        {
+            if (value instanceof String[])
             {
-                String[] aa = (String[]) row.get("Alias");
-                for (String alias : aa)
+                String[] aa = (String[]) value;
+                for (String a : aa)
+                    parseValue(a, aliasNames, aliasIds); // recurse
+            }
+            else if (value instanceof JSONArray)
+            {
+                // LABKEY.Query.updateRows passes a JSONArray of individual alias names.
+                for (Object o : ((JSONArray)value).toArray())
+                    parseValue(o.toString(), aliasNames, aliasIds); // recurse
+            }
+            else if (value instanceof Collection)
+            {
+                // Generic query insert form and Excel/tsv import passes an ArrayList with a single String element containing the comma-separated list of values: "abc,def"
+                // LABKEY.Query.insertRows passes an ArrayList containing individual alias names.
+                for (Object o : (Collection)value)
+                    parseValue(o, aliasNames, aliasIds); // recurse
+            }
+            else if (value instanceof String)
+            {
+                // Parse the single string element value submitted by the generic query insert and the tsv import forms.
+                for (String s : splitAliases((String)value))
                 {
-                    if (NumberUtils.isDigits(alias))
-                        params.add(NumberUtils.toInt(alias));
+                    if (NumberUtils.isDigits(s))
+                        aliasIds.add(Integer.parseInt(s));
                     else
-                        parseAliasString(aliasNames, alias);
+                        aliasNames.add(s);
                 }
             }
-            // LABKEY.Query.updateRows passes here a JSON String of an array of strings where each string is an alias
+            else if (value instanceof Integer)
+            {
+                aliasIds.add((Integer)value);
+            }
             else
             {
-                aliases = (String) row.get("Alias");
-                parseAliasString(aliasNames, aliases);
+                throw new IllegalArgumentException("Unsupported value for column 'Alias': " + value);
             }
-            params.addAll(getAliasIds(user, aliasNames));
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
-            deleteAliases(filter, aliasMap);
-            insertAliases(container, user, aliasMap, params, lsid);
         }
 
-        private static void parseAliasString(List<String> aliasNames, String aliases)
+        public static Set<String> splitAliases(String aliases)
         {
-            if (aliases != null)
+            if (aliases == null)
+                return Collections.emptySet();
+
+            aliases = aliases.trim();
+            if (aliases.length() == 0)
+                return Collections.emptySet();
+
+            // If the user entered a string formatted as a JSONArray, parse it now.
+            if (aliases.startsWith("[") && aliases.endsWith("]"))
             {
-                if (aliases.startsWith("[") && aliases.endsWith("]"))
+                Set<String> parts = new HashSet<>();
+                JSONArray a = new JSONArray(aliases);
+                for (Object o : a.toArray())
                 {
-                    aliases = aliases.substring(1, aliases.length() - 1);
+                    if (o == null)
+                        continue;
+                    String s = StringUtils.trim(String.valueOf(o));
+                    if (s.length() == 0)
+                        continue;
+
+                    parts.add(s);
                 }
-                if (null != aliases)
-                {
-                    aliases = aliases.replace("\"", "");
-                }
-                if (aliases.contains(","))
-                {
-                    for (String part : aliases.split(","))
-                    {
-                        if (!StringUtils.isEmpty(part.trim()))
-                            aliasNames.add(part.trim());
-                    }
-                }
-                else
-                {
-                    if (!StringUtils.isEmpty(aliases.trim()))
-                        aliasNames.add(aliases.trim());
-                }
+
+                return parts;
             }
-        }
 
-        static void insertAliases(Container container, User user, TableInfo aliasMap, List<Integer> aliasIds, String lsid)
-        {
-            final ExperimentService.Interface svc = ExperimentService.get();
-
-            SimpleFilter filter = new SimpleFilter();
-            filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts("rowid"), aliasIds));
-            if (new TableSelector(svc.getTinfoAlias(), filter, null).getRowCount() == aliasIds.size())
+            if (aliases.contains(","))
             {
-                // insert the new rows into the mapping table
-                for (Integer aliasId : aliasIds)
-                {
-                    Table.insert(user, aliasMap, new DataAliasMap(lsid, aliasId, container));
-                }
+                // The user entered a comma-separated list of values
+                return Arrays.stream(aliases.split(","))
+                        .map(String::trim)
+                        .filter(StringUtils::isNotEmpty)
+                        .collect(Collectors.toSet());
             }
-        }
-
-        static void deleteAliases(SimpleFilter filter, TableInfo aliasMap)
-        {
-            Table.delete(aliasMap, filter);
-        }
-
-        // make sure that an alias entry exist for each string value passed in, else create it
-        public static List<Integer> getAliasIds (User user,  List<String> aliasNames)
-        {
-            final ExperimentService.Interface svc = ExperimentService.get();
-            List<Integer> params = new ArrayList<>();
-
-            for (String aliasName : aliasNames)
+            else
             {
-                aliasName = aliasName.trim();
-                TableSelector selector = new TableSelector(svc.getTinfoAlias(), Collections.singleton("rowid"), new SimpleFilter(FieldKey.fromParts("Name"), aliasName), null);
-                assert selector.getRowCount() <= 1;
-                if (selector.getRowCount() > 0)
-                {
-                    selector.forEach(rs -> params.add(rs.getInt("rowid")));
-                }
-                else
-                {
-                    // create a new alias
-                    DataAlias alias = new DataAlias();
-                    alias.setName(aliasName);
-                    alias = Table.insert(user, svc.getTinfoAlias(), alias);
-                    assert alias.getRowId() != 0;
-                    params.add(alias.getRowId());
-                }
+                return Collections.singleton(aliases);
             }
+        }
 
-            return params;
+        private static void insertMapEntries(Container container, User user, TableInfo aliasMapTable, Set<Integer> aliasIds, String lsid)
+        {
+            for (Integer aliasId : aliasIds)
+            {
+                Map<String, Object> row = CaseInsensitiveHashMap.of(
+                        "container", container.getEntityId(),
+                        "alias", aliasId,
+                        "lsid", lsid
+                );
+                Table.insert(user, aliasMapTable, row);
+            }
+        }
+
+        private static Collection<Integer> ensureAliases(User user, Set<String> aliasNames)
+        {
+            return ExperimentServiceImpl.get().ensureAliases(user, aliasNames);
         }
     }
 }

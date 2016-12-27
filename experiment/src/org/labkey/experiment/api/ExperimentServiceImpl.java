@@ -33,6 +33,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AttachmentParentEntity;
@@ -5483,6 +5484,38 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
         }
         return potentialParents;
+    }
+
+    /**
+     * Ensure that an alias entry exists for each string value passed in, else create it.
+     * @return The list of rowId for each alias name.
+     */
+    public Collection<Integer> ensureAliases(User user, Set<String> aliasNames)
+    {
+        final ExperimentService.Interface svc = ExperimentService.get();
+        Set<Integer> rowIds = new HashSet<>();
+
+        TableInfo aliasTable = svc.getTinfoAlias();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("name"), aliasNames, CompareType.IN);
+        TableSelector ts = new TableSelector(aliasTable, aliasTable.getColumns("name","rowId"), filter, null);
+        Map<String, Integer> existingAliases = ts.getValueMap();
+
+        // Return the rowId for the existing alias names
+        rowIds.addAll(existingAliases.values());
+
+        Set<String> missingNames = new HashSet<>(aliasNames);
+        missingNames.removeAll(existingAliases.keySet());
+
+        // Create aliases for the missing alias names
+        for (String aliasName : missingNames)
+        {
+            Map<String, Object> inserted = Table.insert(user, aliasTable, CaseInsensitiveHashMap.of("name", aliasName));
+            Integer rowId = (Integer)inserted.get("rowId");
+            rowIds.add(rowId);
+        }
+
+        return rowIds;
     }
 
     public void addExperimentListener(ExperimentListener listener)
