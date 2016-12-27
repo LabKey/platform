@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.collections4.ComparatorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -40,6 +41,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -262,7 +264,8 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         private static final int SCHEMA_INDEX = 0;
         private static final int FROM_INDEX = 1;
         private static final int TO_INDEX = 2;
-        private static final Pattern _scriptFileNamePattern = Pattern.compile("(\\w+\\.)?\\w+-[0-9]{1,2}\\.[0-9]{2,3}-[0-9]{1,2}\\.[0-9]{2,3}.(sql|jsp)");
+        private static final int SUFFIX_INDEX = 3;
+        private static final Pattern _scriptFileNamePattern = Pattern.compile("(\\w+\\.)?\\w+-[0-9]{1,2}\\.[0-9]{2,3}-[0-9]{1,2}\\.[0-9]{2,3}(-\\w+)?.(sql|jsp)");
 
         private final FileSqlScriptProvider _provider;
         private final DbSchema _schema;
@@ -271,6 +274,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         private String _schemaName = null;
         private double _fromVersion = 0;
         private double _toVersion = 0;
+        private String _suffix = null; // Optional suffix
         private boolean _validName = false;
         private String _errorMessage = null;
 
@@ -289,7 +293,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
             String[] parts = _fileName.substring(0, _fileName.length() - 4).split("-");
 
-            if (parts.length != 3)
+            if (parts.length < 3 || parts.length > 4)
             {
                 _schema = null;
                 return;
@@ -308,6 +312,9 @@ public class FileSqlScriptProvider implements SqlScriptProvider
                 _log.info(_provider.getProviderName() + ", ignoring file " + fileName + ": couldn't parse version numbers");
                 return;
             }
+
+            if (parts.length == 4)
+                _suffix = parts[SUFFIX_INDEX];
 
             if (_fromVersion < _toVersion)
                 _validName = true;
@@ -351,6 +358,12 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         public double getToVersion()
         {
             return _toVersion;
+        }
+
+        // Optional suffix
+        public @Nullable String getSuffix()
+        {
+            return _suffix;
         }
 
         public String toString()
@@ -409,6 +422,8 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             return schema + "-" + ModuleContext.formatVersion(fromVersion) + "-" + ModuleContext.formatVersion(toVersion) + ".sql"; 
         }
 
+        private static final Comparator<String> SUFFIX_COMPARATOR = ComparatorUtils.nullHighComparator(String.CASE_INSENSITIVE_ORDER);
+
         public int compareTo(@NotNull SqlScript script)
         {
             int schemaCompare = getSchema().getDisplayName().compareToIgnoreCase(script.getSchema().getDisplayName());
@@ -421,7 +436,12 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             if (0 != fromCompare)
                 return fromCompare;
 
-            return Double.compare(getToVersion(), script.getToVersion());
+            int toCompare = Double.compare(getToVersion(), script.getToVersion());
+
+            if (0 != toCompare)
+                return toCompare;
+
+            return SUFFIX_COMPARATOR.compare(getSuffix(), script.getSuffix());
         }
     }
 

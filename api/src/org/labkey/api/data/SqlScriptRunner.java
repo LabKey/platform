@@ -139,6 +139,7 @@ public class SqlScriptRunner
         DbSchema getSchema();
         double getFromVersion();
         double getToVersion();
+        @Nullable String getSuffix();
         String getContents();
         String getErrorMessage();
         String getDescription();

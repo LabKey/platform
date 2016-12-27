@@ -28,6 +28,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -36,6 +37,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -110,17 +112,24 @@ public abstract class SqlScriptManager
     // Get the recommended scripts from a given collection of scripts
     public List<SqlScript> getRecommendedScripts(Collection<SqlScript> schemaScripts, double from, double to)
     {
-        // Create a map of SqlScript objects.  For each fromVersion, store only the script with the highest toVersion
-        Map<Double, SqlScript> m = new HashMap<>();
+        // Create a map of SqlScript objects. For each fromVersion, store a pair with the highest toVersion in range and
+        // a collection of scripts with that toVersion (could be more than one script because of the optional suffix).
+        Map<Double, Pair<Double, List<SqlScript>>> m = new HashMap<>();
 
         for (SqlScript script : schemaScripts)
         {
             if (script.getFromVersion() >= from && script.getToVersion() <= to)
             {
-                SqlScript current = m.get(script.getFromVersion());
+                Pair<Double, List<SqlScript>> pair = m.get(script.getFromVersion());
 
-                if (null == current || script.getToVersion() > current.getToVersion())
-                    m.put(script.getFromVersion(), script);
+                if (null == pair || script.getToVersion() > pair.first)
+                {
+                    pair = new Pair<>(script.getToVersion(), new LinkedList<>());
+                    m.put(script.getFromVersion(), pair);
+                }
+
+                if (script.getToVersion() == pair.first)
+                    pair.second.add(script);
             }
         }
 
@@ -128,22 +137,22 @@ public abstract class SqlScriptManager
 
         while (true)
         {
-            SqlScript nextScript = getNearestFrom(m, from);
+            Pair<Double, List<SqlScript>> nextScripts = getNearestFrom(m, from);
 
-            if (null == nextScript)
+            if (null == nextScripts)
                 break;
 
-            from = nextScript.getToVersion();
-            scripts.add(nextScript);
+            from = nextScripts.first;
+            scripts.addAll(nextScripts.second);
         }
 
         return scripts;
     }
 
 
-    private static SqlScript getNearestFrom(Map<Double, SqlScript> m, double targetFrom)
+    private static Pair<Double, List<SqlScript>> getNearestFrom(Map<Double, Pair<Double, List<SqlScript>>> m, double targetFrom)
     {
-        SqlScript nearest = m.get(targetFrom);
+        Pair<Double, List<SqlScript>> nearest = m.get(targetFrom);
 
         if (null == nearest)
         {
