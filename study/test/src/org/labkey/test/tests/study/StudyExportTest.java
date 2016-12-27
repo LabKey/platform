@@ -92,7 +92,7 @@ public class StudyExportTest extends StudyManualTest
 
         log("Importing exported study (xml formats)");
         clickButton("Import Study");
-        clickButton("Import Study Using Pipeline");
+        clickButton("Use Pipeline");
         _fileBrowserHelper.selectFileBrowserItem("export/");
         // select the first exported zip archive file by row
         Locator.XPathLocator gridRow = Locator.tag("tr").withClass("x4-grid-data-row").withAttributeContaining("data-recordid", "My Study_");

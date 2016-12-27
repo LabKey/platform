@@ -113,7 +113,7 @@ public class StudyProtectedExportTest extends StudyExportTest
     private void importAlteredStudy()
     {
         clickButton("Import Study");
-        clickButton("Import Study Using Pipeline");
+        clickButton("Use Pipeline");
         _fileBrowserHelper.selectFileBrowserItem("export/");
         Locator.XPathLocator fileRow = Locator.tag("tr").withClass("x4-grid-data-row").withAttributeContaining("data-recordid", "My Study_");
         waitForElement(fileRow);
