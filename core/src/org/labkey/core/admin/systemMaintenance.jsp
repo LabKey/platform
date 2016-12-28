@@ -22,6 +22,8 @@
 <%@ page import="org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -34,8 +36,9 @@
 %>
 <%
     SystemMaintenanceProperties props = (SystemMaintenanceProperties)getModelBean();
-    List<MaintenanceTask> tasks = SystemMaintenance.getTasks();
-    String initalTime = SystemMaintenance.formatSystemMaintenanceTime(props.getSystemMaintenanceTime());
+    List<MaintenanceTask> tasks = new ArrayList<>(SystemMaintenance.getTasks());
+    tasks.sort(Comparator.comparing(MaintenanceTask::getDescription, String.CASE_INSENSITIVE_ORDER));
+    String initialTime = SystemMaintenance.formatSystemMaintenanceTime(props.getSystemMaintenanceTime());
     Set<String> disabled = props.getDisabledTasks();
 %>
 <labkey:form name="systemMaintenanceSettings" method="post">
@@ -80,9 +83,9 @@
                             if (!task.canDisable() && !task.hideFromAdminPage())
                             {
                     %><tr><td><input type="checkbox" disabled checked/><%=textLink(task.getDescription(), "javascript:submitSystemMaintenance(" + q(task.getName()) + ")")%></td></tr><%
+                            }
                         }
-                    }
-                %>
+                    %>
                 </table>
             </td>
         </tr>
@@ -116,7 +119,7 @@
             labelWidth: 280,
             name: 'maintenanceTime',
             submitFormat: 'H:i',
-            value: <%=q(initalTime)%>,
+            value: <%=q(initialTime)%>,
             increment: 15,
             anchor: '100%'
         });
