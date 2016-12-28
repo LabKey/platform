@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExceptionFramework;
@@ -636,15 +637,24 @@ public abstract class VisitManager
     }
 
 
-    /** @param potentiallyDeletedParticipants null if all participants should be examined,
-     * or the subset of all participants that might have been deleted and should be checked
-     * @return the number of participants that were deleted */
-
+    /**
+     * @param study the study to purge
+     * @param potentiallyDeletedParticipants the subset of all participants that might have been deleted and should be checked
+     *                                       or null if all participants should be examined,
+     * @return the number of participants that were deleted
+     */
     public static int performParticipantPurge(@NotNull StudyImpl study, @Nullable Set<String> potentiallyDeletedParticipants)
     {
         if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.isEmpty())
         {
             return 0;
+        }
+
+        if (!ContainerManager.exists(study.getContainer()))
+        {
+            // Checking a likely cause of the race conditions we see on TeamCity. For now, just log and continue on.
+            // TODO: return 0, by adding this to the checks above
+            LOGGER.info("Container no longer exists!");
         }
 
         try
@@ -694,8 +704,13 @@ public abstract class VisitManager
         }
         catch (Exception x)
         {
+            if (!ContainerManager.exists(study.getContainer()))
+            {
+                LOGGER.info("Hit exception and container no longer exists! " + x.getMessage());
+            }
+
             // TODO: Temporary logging
-            LOGGER.error("Exception during participant purge; likely an \"object not found\" exception");
+            LOGGER.error("Exception during participant purge; perhaps an \"object not found\" exception");
             if (SqlDialect.isObjectNotFoundException(x))
             {
                 // TODO: Temporary logging
