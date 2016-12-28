@@ -571,7 +571,7 @@
             removeButton.disable();
         });
 
-        // Set inital button state (no selection by default):
+        // Set initial button state (no selection by default):
         moveUpButton.disable();
         moveDownButton.disable();
         removeButton.disable();

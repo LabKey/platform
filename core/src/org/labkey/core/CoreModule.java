@@ -227,8 +227,6 @@ import java.util.regex.Pattern;
  */
 public class CoreModule extends SpringModule implements SearchService.DocumentProvider
 {
-    public static final String EXPERIMENTAL_JSDOC = "experimental-jsdoc";
-
     public static final Logger LOG = Logger.getLogger(CoreModule.class);
 
     // Register dialect extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
@@ -353,7 +351,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         }
 
-        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_JSDOC, "JavaScript Documentation", "Displays LabKey JavaScript APIs from the Developer Links menu.", false);
         AdminConsole.addExperimentalFeatureFlag(MenuBarView.EXPERIMENTAL_NAV, "Combined Navigation Drop-down",
                 "This feature will combine the Navigation of Projects and Folders into one drop-down.", false);
         AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
