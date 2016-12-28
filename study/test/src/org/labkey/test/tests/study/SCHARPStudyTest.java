@@ -87,7 +87,7 @@ public class SCHARPStudyTest extends BaseWebDriverTest implements PostgresOnlyTe
         log("Importing study from " + _studyZipFile + "...");
         clickButton("Import Study");
         setFormElement(Locator.name("folderZip"), _studyZipFile);
-        clickButton("Import Study From Local Zip Archive");
+        clickButton("Import Study");
         assertTextNotPresent("This file does not appear to be a valid .zip file");
 
         waitForPipelineJobsToComplete(1, "Study import", false);
