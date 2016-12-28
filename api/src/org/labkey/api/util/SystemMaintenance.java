@@ -251,6 +251,7 @@ public class SystemMaintenance
         }
 
         // TODO: Remove this once all tasks override run(Logger)
+        @Deprecated
         default void run()
         {
         }
