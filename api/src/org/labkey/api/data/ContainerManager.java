@@ -1309,14 +1309,10 @@ public class ContainerManager
 
             // Clear after the commit has propagated the state to other threads and transactions
             // Do this in a commit task in case we've joined another existing DbScope.Transaction instead of starting our own
-            t.addCommitTask(new Runnable()
+            t.addCommitTask(() ->
             {
-                @Override
-                public void run()
-                {
-                    clearCache();
-                    getChildrenMap(newParent); // reload the cache
-                }
+                clearCache();
+                getChildrenMap(newParent); // reload the cache
             }, DbScope.CommitTaskOption.POSTCOMMIT);
 
             t.commit();
@@ -1354,14 +1350,7 @@ public class ContainerManager
             fireRenameContainer(c, user, oldName);
             // Clear again after the commit has propagated the state to other threads and transactions
             // Do this in a commit task in case we've joined another existing DbScope.Transaction instead of starting our own
-            t.addCommitTask(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    clearCache();
-                }
-            }, DbScope.CommitTaskOption.POSTCOMMIT);
+            t.addCommitTask(ContainerManager::clearCache, DbScope.CommitTaskOption.POSTCOMMIT);
             t.commit();
         }
     }
@@ -1393,14 +1382,7 @@ public class ContainerManager
             }
             // Clear after the commit has propagated the state to other threads and transactions
             // Do this in a commit task in case we've joined another existing DbScope.Transaction instead of starting our own
-            t.addCommitTask(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    clearCache();
-                }
-            }, DbScope.CommitTaskOption.POSTCOMMIT);
+            t.addCommitTask(ContainerManager::clearCache, DbScope.CommitTaskOption.POSTCOMMIT);
 
             t.commit();
         }
@@ -1451,22 +1433,18 @@ public class ContainerManager
 
             // After we've committed the transaction, be sure that we remove this container from the cache
             // See https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=17015
-            t.addCommitTask(new Runnable()
+            t.addCommitTask(() ->
             {
-                @Override
-                public void run()
+                // Be sure that we've waited until any threads that might be populating the cache have finished
+                // before we guarantee that we've removed this now-deleted container
+                DATABASE_QUERY_LOCK.lock();
+                try
                 {
-                    // Be sure that we've waited until any threads that might be populating the cache have finished
-                    // before we guarantee that we've removed this now-deleted container
-                    DATABASE_QUERY_LOCK.lock();
-                    try
-                    {
-                        _removeFromCache(c);
-                    }
-                    finally
-                    {
-                        DATABASE_QUERY_LOCK.unlock();
-                    }
+                    _removeFromCache(c);
+                }
+                finally
+                {
+                    DATABASE_QUERY_LOCK.unlock();
                 }
             }, DbScope.CommitTaskOption.POSTCOMMIT);
             addAuditEvent(user, c, c.getContainerNoun(true) + " " + c.getPath() + " was deleted");
@@ -1698,13 +1676,6 @@ public class ContainerManager
             if (null != child)
                 mm.put(parent, child);
         });
-
-        // TODO: Isn't this a complete waste of time? Create an array list, sort it, then throw it away?
-        for (Container key : mm.keySet())
-        {
-            List<Container> siblings = new ArrayList<>(mm.get(key));
-            Collections.sort(siblings);
-        }
 
         return mm;
     }
