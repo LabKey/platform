@@ -134,8 +134,6 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
         if (form.isResourcesTab())
             return handleResourcesPost(c, errors);
-        else if (form.isMenuTab())
-            return handleMenuPost(c, form);
         else if (form.isFilesTab())
             return handleFilesPost(form, errors);
         else
@@ -283,12 +281,6 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         return true;
     }
 
-    private boolean handleMenuPost(Container c, AdminController.ProjectSettingsForm form)
-    {
-        ContainerManager.setMenuEnabled(c, getUser(), form.isEnableMenuBar());
-        return true;
-    }
-
     private boolean handleFilesPost(AdminController.ProjectSettingsForm form, BindException errors) throws Exception
     {
         FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
@@ -314,7 +306,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         if (form.isResourcesTab())
             return new AdminController.AdminUrlsImpl().getLookAndFeelResourcesURL(c);
         else if (form.isMenuTab())
-            return new AdminController.AdminUrlsImpl().getProjectSettingsMenuURL(c);
+            return new AdminController.AdminUrlsImpl().getProjectSettingsMenuURL(c);  // Delete... I don't think we ever get here
         else if (form.isFilesTab())
         {
             String param = form.isPipelineRootForm() ? "piperootSet" : "rootSet";

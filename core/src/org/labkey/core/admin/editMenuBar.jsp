@@ -31,14 +31,12 @@
     }
 </style>
 <div>
-    <labkey:form action="" method="POST">
-        <div class="section">
-            <span>The menu bar can be customized to provide quick access to LabKey features.</span>
-        </div>
-        <div class="section">
-            <span>The menu bar is populated by web parts. You can add and remove webparts here.</span>
-        </div>
-    </labkey:form>
+    <div class="section">
+        <span>The menu bar can be customized to provide quick access to LabKey features.</span>
+    </div>
+    <div class="section">
+        <span>The menu bar is populated by web parts. You can add and remove webparts here.</span>
+    </div>
     <div class="section">
         <%= button("Refresh Menu Bar").href(refreshURL) %>
     </div>

@@ -1349,7 +1349,6 @@ public class AdminController extends SpringActionController
         private String _companyName;
         private String _systemEmailAddress;
         private String _reportAProblemPath;
-        private boolean _enableMenuBar;
         private String _tabId;
         private String _folderRootPath;
         private String _fileRootOption;
@@ -1557,17 +1556,6 @@ public class AdminController extends SpringActionController
         public boolean hasSiteDefaultRoot()
         {
             return FileRootProp.siteDefault.name().equals(getFileRootOption());
-        }
-
-        public boolean isEnableMenuBar()
-        {
-            return _enableMenuBar;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setEnableMenuBar(boolean enableMenuBar)
-        {
-            _enableMenuBar = enableMenuBar;
         }
 
         public String getFolderRootPath()
@@ -2026,13 +2014,7 @@ public class AdminController extends SpringActionController
         {
             stackTraces =  Thread.getAllStackTraces();
             threads = new ArrayList<>(stackTraces.keySet());
-            Collections.sort(threads, new Comparator<Thread>()
-            {
-                public int compare(Thread o1, Thread o2)
-                {
-                    return o1.getName().compareToIgnoreCase(o2.getName());
-                }
-            });
+            threads.sort((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()));
 
             spids = new HashMap<>();
 
