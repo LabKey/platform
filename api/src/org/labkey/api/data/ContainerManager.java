@@ -63,8 +63,6 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
-import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ExceptionUtil;
@@ -1448,6 +1446,11 @@ public class ContainerManager
     public static boolean isSystemContainer(Container c)
     {
          return c.equals(getRoot()) || c.equals(getHomeContainer()) || c.equals(getSharedContainer());
+    }
+
+    public static boolean exists(Container c)
+    {
+        return null != getForId(c.getEntityId());
     }
 
     public static void deleteAll(Container root, User user) throws UnauthorizedException
