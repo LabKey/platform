@@ -139,7 +139,7 @@ import java.util.stream.Collectors;
  * Date: 10/30/13
  * Time: 11:12 AM
  *
- * API's for querying olap (mondrian) cubes
+ * APIs for querying olap (mondrian) cubes
  *
  *
  * TODO consider whether to re-enable server side cache

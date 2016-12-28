@@ -2671,7 +2671,7 @@ public class QueryController extends SpringActionController
             boolean metaDataOnly = form.getQuerySettings().getMaxRows() == 0;
             boolean arrayMultiValueColumns = getRequestedApiVersion() >= 16.2;
 
-            // 13.2 introduced the getData API action, a condensed response wire format, and a js wrapper to consume the wire format. Support this as an option for legacy API's.
+            // 13.2 introduced the getData API action, a condensed response wire format, and a js wrapper to consume the wire format. Support this as an option for legacy APIs.
             if (getRequestedApiVersion() >= 13.2)
             {
                 ReportingApiQueryResponse response = new ReportingApiQueryResponse(view, isEditable, true, view.getQueryDef().getName(), form.getQuerySettings().getOffset(), null,
@@ -2884,7 +2884,7 @@ public class QueryController extends SpringActionController
             boolean isEditable = null != t && isQueryEditable(view.getTable());
             boolean arrayMultiValueColumns = getRequestedApiVersion() >= 16.2;
 
-            // 13.2 introduced the getData API action, a condensed response wire format, and a js wrapper to consume the wire format. Support this as an option for legacy API's.
+            // 13.2 introduced the getData API action, a condensed response wire format, and a js wrapper to consume the wire format. Support this as an option for legacy APIs.
             if (getRequestedApiVersion() >= 13.2)
             {
                 ReportingApiQueryResponse response = new ReportingApiQueryResponse(view, isEditable, false, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null,

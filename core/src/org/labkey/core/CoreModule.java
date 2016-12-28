@@ -353,7 +353,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         }
 
-        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_JSDOC, "Javascript Documentation", "Displays LabKey javascript API's from the Developer Links menu.", false);
+        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_JSDOC, "JavaScript Documentation", "Displays LabKey JavaScript APIs from the Developer Links menu.", false);
         AdminConsole.addExperimentalFeatureFlag(MenuBarView.EXPERIMENTAL_NAV, "Combined Navigation Drop-down",
                 "This feature will combine the Navigation of Projects and Folders into one drop-down.", false);
         AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
