@@ -370,12 +370,6 @@ public class ContainerManager
 
         if (errorStrings.isEmpty())
         {
-            //only toggle the menu bar if it was not already set
-            if (folderType.isMenubarEnabled() && !LookAndFeelProperties.getInstance(c).isShowMenuBar())
-            {
-                setMenuEnabled(c, user, true);
-            }
-
             oldType.unconfigureContainer(c, user);
             PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME, true);
             props.put(FOLDER_TYPE_PROPERTY_NAME, folderType.getName());
@@ -446,19 +440,6 @@ public class ContainerManager
             }
         }
         return containersMatchingTabs;
-    }
-
-    public static boolean setMenuEnabled(Container c, User u, boolean enabled)
-    {
-        //currently we also allow setting the menu at the project level
-        if (!c.isProject())
-            return false;
-
-            WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
-
-            props.writeAuditLogEvent(c, u, props.getOldProperties());
-            props.save();
-            return true;
     }
 
     private static final Set<Container> containersWithBadFolderTypes = new ConcurrentHashSet<>();

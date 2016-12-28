@@ -188,16 +188,6 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         return lookupStringValue(CUSTOM_LOGIN_PROP, "login-login");
     }
 
-    public boolean isMenuUIEnabled()
-    {
-        return true;
-    }
-
-    public boolean isShowMenuBar()
-    {
-        return isMenuUIEnabled() || getFolderDisplayMode().isShowInMenu();    
-    }
-
     public DateParsingMode getDateParsingMode()
     {
         return DateParsingMode.fromString(lookupStringValue(DATE_PARSING_MODE, DateParsingMode.US.toString()));

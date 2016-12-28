@@ -19,7 +19,6 @@ package org.labkey.api.view.template;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
@@ -49,7 +48,7 @@ public class MenuBarView extends JspView<MenuBarView.MenuBarBean>
         Container container = ctx.getContainer();
         Container project = container.getProject();
 
-        if (null != project && LookAndFeelProperties.getInstance(project).isMenuUIEnabled())
+        if (null != project)
         {
             Collection<Portal.WebPart> allParts = Portal.getParts(project, ctx);
             MultiValuedMap<String, Portal.WebPart> locationMap = Portal.getPartsByLocation(allParts);

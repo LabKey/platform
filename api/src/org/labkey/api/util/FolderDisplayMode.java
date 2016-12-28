@@ -25,21 +25,19 @@ import org.apache.commons.lang3.StringUtils;
  */
 public enum FolderDisplayMode
 {
-    ALWAYS("Always", false),
-    ADMIN("Only for Administrators", false);
+    ALWAYS("Always"),
+    ADMIN("Only for Administrators");
 
-    private final String displayString;
-    private final boolean showInMenu;
+    private final String _displayString;
 
-    FolderDisplayMode(String displayString, boolean showInMenu)
+    FolderDisplayMode(String displayString)
     {
-        this.displayString = displayString;
-        this.showInMenu = showInMenu;
+        _displayString = displayString;
     }
 
     public String getDisplayString()
     {
-        return displayString;
+        return _displayString;
     }
 
     /**
@@ -63,10 +61,5 @@ public enum FolderDisplayMode
             /* Skip setting */
         }
         return mode;
-    }
-
-    public boolean isShowInMenu()
-    {
-        return showInMenu;
     }
 }
