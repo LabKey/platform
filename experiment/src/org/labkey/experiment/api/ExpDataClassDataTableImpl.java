@@ -1417,7 +1417,10 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             Set<Integer> aliasIds = new HashSet<>();
             parseValue(value, aliasNames, aliasIds);
 
-            assert aliasNames.stream().noneMatch(s -> (s.startsWith("\"") || s.endsWith("\""))) : "Found an alias name that contains a quote character: " + aliasNames;
+            aliasNames.forEach(s -> {
+                if ((s.startsWith("'") && s.endsWith("'")) || (s.startsWith("\"") && s.endsWith("\"")))
+                    throw new IllegalArgumentException("Alias values must not be surrounded by quote characters: " + s);
+            });
 
             // ensure the alias exist collect the alias' rowId
             aliasIds.addAll(ensureAliases(user, aliasNames));
