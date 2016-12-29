@@ -97,6 +97,45 @@ public interface ExpSampleSet extends ExpObject
 
     void createSampleNames(@NotNull List<Map<String, Object>> maps) throws ExperimentException;
 
+    /**
+     * Generate sample names for each row map in <code>maps</code> sample group.
+     * If a row map already has a non-null value for the "name" key, no sample name will be generated.
+     *
+     * The name expression will be evaluated in the context of the row map,
+     * with the following additional context values:
+     * <dl>
+     *     <dt>Inputs</dt>
+     *     <dd>Contains the names of all ExpData and ExpMaterial parents</dd>
+     *
+     *     <dt>DataInputs</dt>
+     *     <dd>Contains the names of all ExpData parents</dd>
+     *
+     *     <dt>MaterialInputs</dt>
+     *     <dd>Contains the names of all ExpMaterial parents</dd>
+     *
+     *     <dt>Now</dt>
+     *     <dd>The current timestamp</dd>
+     *
+     *     <dt>BatchRandomId</dt>
+     *     <dd>A four digit random number for the entire set of samples</dd>
+     *
+     *     <dt>RandomId</dt>
+     *     <dd>A four digit random number for each sample row</dd>
+     * </dl>
+     *
+     * Example:
+     * <pre>${DataInputs:first:default('S')}-${now:date('yyyy-MM')-${batchRandomId}}</pre>
+     *
+     * @param maps The collection of row maps to generate sample names for.  The generated name added to the row map with the "name" key.
+     * @param expr The name expression to use when generating sample names, otherwise use the SampleSet's name expression or id columns.
+     * @param parentDatas A set of parent data added to the context for each row.  If the row map contains keys starting with "DataInputs", the names will be added to the context under the "Inputs" and "DataInputs" keys.
+     * @param parentSamples A set of parent samples added to the context for each row.  If the row map contains keys starting with "MaterialInputs", the names will be added to the context under the "Inputs" and "MaterialInputs" keys.
+     * @param skipDuplicates If duplicate names are generated and <code>addUniqueSuffixForDuplicates</code> is false, the row will be removed from the <code>maps</code> collection.
+     * @param addUniqueSuffixForDuplicates When a duplicate name is generated, append an incrementing unique suffix starting with ".1"
+     * @throws ExperimentException Thrown when a name can't be generated or when a duplicate name is found and both <code>addUniqueSuffixForDuplicates</code> and <code>skipDuplicates</code> are false.
+     *
+     * @see org.labkey.api.util.SubstitutionFormat
+     */
     void createSampleNames(@NotNull List<Map<String, Object>> maps,
                            @Nullable StringExpression expr,
                            @Nullable Set<ExpData> parentDatas,
