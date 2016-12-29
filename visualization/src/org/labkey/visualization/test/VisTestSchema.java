@@ -22,7 +22,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -50,7 +50,7 @@ public class VisTestSchema extends UserSchema
 {
     public VisTestSchema(User user, Container c)
     {
-        super("vis_junit", "unit test schema", user, c, DbSchema.get("core"));
+        super("vis_junit", "unit test schema", user, c, CoreSchema.getInstance().getSchema());
     }
 
 
@@ -113,10 +113,10 @@ public class VisTestSchema extends UserSchema
                     sql.append(comma);
                     comma = ", ";
                     if (null == v)
-                        sql.append("CAST(NULL AS " + d.sqlTypeNameFromJdbcType(t) + (t.isText() ? "(100)" : "") + ")");
+                        sql.append("CAST(NULL AS ").append(d.sqlTypeNameFromJdbcType(t)).append(t.isText() ? "(100)" : "").append(")");
                     else
                         sql.append(toSqlLiteral(t, v));
-                    sql.append(" AS " + c.getSelectName());
+                    sql.append(" AS ").append(c.getSelectName());
                 }
             }
             sql.append("\n");
@@ -135,6 +135,7 @@ public class VisTestSchema extends UserSchema
         }
 
 
+        @NotNull
         @Override
         public SQLFragment getFromSQL(String alias)
         {
@@ -162,7 +163,7 @@ public class VisTestSchema extends UserSchema
     }
 
 
-    static final Object[] row(Object... values)
+    static Object[] row(Object... values)
     {
         return values;
     }
@@ -390,7 +391,7 @@ public class VisTestSchema extends UserSchema
                 {
                     VisualizationSourceColumn f = factory.create(first.getSchema(),first.getQueryName(),name,true);
                     VisualizationSourceColumn s = factory.create(second.getSchema(),second.getQueryName(),name,true);
-                    list.add(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(f,s));
+                    list.add(new Pair<>(f, s));
                 }
             }
             return list;
@@ -437,7 +438,5 @@ public class VisTestSchema extends UserSchema
         {
             return null;
         }
-
-
     }
 }
