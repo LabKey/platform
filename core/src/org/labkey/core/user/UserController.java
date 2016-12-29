@@ -2474,7 +2474,7 @@ public class UserController extends SpringActionController
                         userHasPermission = true;
                         for (Permission permission : form.getPermissions())
                         {
-                            if (!container.hasPermission(user, permission.getClass()))
+                            if (permission != null && !container.hasPermission(user, permission.getClass()))
                             {
                                 userHasPermission = false;
                                 break;
