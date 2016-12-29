@@ -16,6 +16,7 @@
 
 package org.labkey.study.importer;
 
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.writer.StudyArchiveDataTypes;
@@ -40,11 +41,11 @@ public class ParticipantCommentImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        StudyImpl study = ctx.getStudy();
-        StudyDocument.Study.Comments commentsXml = ctx.getXml().getComments();
-
-        if (commentsXml != null)
+        if (isValidForImportArchive(ctx))
         {
+            StudyImpl study = ctx.getStudy();
+            StudyDocument.Study.Comments commentsXml = ctx.getXml().getComments();
+
             ctx.getLogger().info("Loading " + getDescription());
 
             if (commentsXml.isSetParticipantCommentDatasetId())
@@ -61,5 +62,11 @@ public class ParticipantCommentImporter implements InternalStudyImporter
 
             ctx.getLogger().info("Done importing " + getDescription());
         }
+    }
+
+    @Override
+    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    {
+        return ctx.getXml() != null && ctx.getXml().getComments() != null;
     }
 }

@@ -100,10 +100,10 @@ public class PageImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            FolderDocument.Folder.Pages pagesXml = ctx.getXml().getPages();
-
-            if (null != pagesXml)
+            if (isValidForImportArchive(ctx))
             {
+                FolderDocument.Folder.Pages pagesXml = ctx.getXml().getPages();
+
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
                 ctx.getLogger().info("Loading " + getDescription());
@@ -207,11 +207,10 @@ public class PageImporterFactory extends AbstractFolderImportFactory
             return Collections.emptyList();
         }
 
-        @Nullable
         @Override
-        public Collection<String> getChildrenDataTypes()
+        public boolean isValidForImportArchive(ImportContext<FolderDocument.Folder> ctx) throws ImportException
         {
-            return null;
+            return ctx.getXml() != null && ctx.getXml().getPages() != null;
         }
     }
 }

@@ -16,11 +16,11 @@
 package org.labkey.core.admin.importer;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJob;
@@ -61,7 +61,7 @@ public class SearchSettingsImporterFactory extends AbstractFolderImportFactory
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             Container c = ctx.getContainer();
-            if (ctx.getXml().isSetSearchable())
+            if (isValidForImportArchive(ctx))
             {
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
@@ -78,11 +78,10 @@ public class SearchSettingsImporterFactory extends AbstractFolderImportFactory
             return Collections.emptyList();
         }
 
-        @Nullable
         @Override
-        public Collection<String> getChildrenDataTypes()
+        public boolean isValidForImportArchive(ImportContext<FolderDocument.Folder> ctx) throws ImportException
         {
-            return null;
+            return ctx.getXml() != null && ctx.getXml().isSetSearchable();
         }
     }
 }

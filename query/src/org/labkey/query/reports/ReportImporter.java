@@ -16,7 +16,6 @@
 package org.labkey.query.reports;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
@@ -62,10 +61,10 @@ public class ReportImporter implements FolderImporter
 
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws IOException, SQLException, ImportException
     {
-        VirtualFile reportsDir = ctx.getDir("reports");
-
-        if (null != reportsDir)
+        if (isValidForImportArchive(ctx))
         {
+            VirtualFile reportsDir = ctx.getDir("reports");
+
             if (null != job)
                 job.setStatus("IMPORT " + getDescription());
             ctx.getLogger().info("Loading " + getDescription());
@@ -136,11 +135,10 @@ public class ReportImporter implements FolderImporter
         return Collections.emptyList();
     }
 
-    @Nullable
     @Override
-    public Collection<String> getChildrenDataTypes()
+    public boolean isValidForImportArchive(ImportContext ctx) throws ImportException
     {
-        return null;
+        return ctx.getDir("reports") != null;
     }
 
     public static class Factory extends AbstractFolderImportFactory

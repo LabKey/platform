@@ -64,10 +64,10 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        ExportDirType dirType = ctx.getXml().getTreatmentData();
-
-        if (dirType != null)
+        if (isValidForImportArchive(ctx))
         {
+            ExportDirType dirType = ctx.getXml().getTreatmentData();
+
             ctx.getLogger().info("Loading " + getDescription());
 
             VirtualFile vf = root.getDir(dirType.getDir());
@@ -91,6 +91,12 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
 
             ctx.getLogger().info("Done importing " + getDescription());
         }
+    }
+
+    @Override
+    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    {
+        return ctx.getXml() != null && ctx.getXml().getTreatmentData() != null;
     }
 
     private class TreatmentVisitMapTransform implements TransformHelper

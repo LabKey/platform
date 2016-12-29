@@ -64,11 +64,10 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        StudyImpl study = ctx.getStudy();
-        StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
-
-        if (null != datasetsXml)
+        if (isValidForImportArchive(ctx))
         {
+            StudyImpl study = ctx.getStudy();
+            StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
             VirtualFile datasetDir = getDatasetDirectory(ctx, vf);
 
             List<Integer> orderedIds = null;
@@ -153,6 +152,12 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
                 reorderer.reorderDatasets(orderedIds);
             }
         }
+    }
+
+    @Override
+    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    {
+        return ctx.getXml() != null && ctx.getXml().getDatasets() != null;
     }
 
     public static VirtualFile getDatasetDirectory(StudyImportContext ctx, VirtualFile root) throws ImportException

@@ -16,7 +16,6 @@
 package org.labkey.experiment.xar;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
@@ -71,13 +70,13 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            VirtualFile xarDir = ctx.getDir(FolderXarWriterFactory.XAR_DIRECTORY);
-
-            if (xarDir == null)
+            if (!isValidForImportArchive(ctx))
             {
                 ctx.getLogger().info("xar directory not found in folder " + ctx.getContainer().getPath());
                 return;
             }
+
+            VirtualFile xarDir = ctx.getDir(FolderXarWriterFactory.XAR_DIRECTORY);
 
             if (job != null)
                 job.setStatus("IMPORT " + getDescription());
@@ -155,11 +154,10 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
             return Collections.emptyList();
         }
 
-        @Nullable
         @Override
-        public Collection<String> getChildrenDataTypes()
+        public boolean isValidForImportArchive(ImportContext<FolderDocument.Folder> ctx) throws ImportException
         {
-            return null;
+            return ctx.getDir(FolderXarWriterFactory.XAR_DIRECTORY) != null;
         }
     }
 

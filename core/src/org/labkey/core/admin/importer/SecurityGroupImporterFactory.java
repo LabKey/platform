@@ -21,6 +21,7 @@ import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.*;
@@ -73,10 +74,11 @@ public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
                 ctx.getLogger().warn("Import of groups outside of project context not supported.");
                 return;
             }
-            GroupsType groups = ctx.getXml().getGroups();
 
-            if (groups == null) // no groups to import
+            if (!isValidForImportArchive(ctx)) // no groups to import
                 return;
+
+            GroupsType groups = ctx.getXml().getGroups();
 
             // first create all the groups in the list
             for (GroupType xmlGroupType : groups.getGroupArray())
@@ -101,11 +103,10 @@ public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
             return Collections.emptyList();
         }
 
-        @Nullable
         @Override
-        public Collection<String> getChildrenDataTypes()
+        public boolean isValidForImportArchive(ImportContext<FolderDocument.Folder> ctx) throws ImportException
         {
-            return null;
+            return ctx.getXml() != null && ctx.getXml().getGroups() != null;
         }
     }
 }

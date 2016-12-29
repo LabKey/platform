@@ -67,11 +67,11 @@ public class VisitCohortAssigner implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        StudyImpl study = ctx.getStudy();
-        StudyDocument.Study.Visits visitsXml = ctx.getXml().getVisits();
-
-        if (null != visitsXml)
+        if (isValidForImportArchive(ctx))
         {
+            StudyImpl study = ctx.getStudy();
+            StudyDocument.Study.Visits visitsXml = ctx.getXml().getVisits();
+
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
             {
                 ctx.getLogger().warn("Can't import visits for an continuous date based study.");
@@ -166,6 +166,12 @@ public class VisitCohortAssigner implements InternalStudyImporter
 
             ctx.getLogger().info("Done importing " + getDescription());
         }
+    }
+
+    @Override
+    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    {
+        return ctx.getXml() != null && ctx.getXml().getVisits() != null;
     }
 
     private Map<String, Integer> getCohortIdMap(User user, Study study)

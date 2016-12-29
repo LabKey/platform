@@ -255,19 +255,20 @@ Ext4.define('LABKEY.import.SpecificImportOptions', {
         Ext4.each(this.importers, function(importer)
         {
             var dataType = importer['dataType'],
-                children = importer['children'];
+                children = importer['children'],
+                showDisabled = !importer['isValidForImportArchive'];
 
             if (!Ext4.isArray(children))
             {
-                advancedImportItems.push(this.getImportOptionInputConfig(dataType));
+                advancedImportItems.push(this.getImportOptionInputConfig(dataType, showDisabled));
             }
             else
             {
                 additionalImportItems.push(this.getImportOptionsHeaderConfig(dataType));
-                additionalImportItems.push(this.getImportOptionInputConfig(dataType, null, true));
+                additionalImportItems.push(this.getImportOptionInputConfig(dataType, showDisabled, null, true));
                 Ext4.each(children, function(child)
                 {
-                    additionalImportItems.push(this.getImportOptionInputConfig(child, dataType));
+                    additionalImportItems.push(this.getImportOptionInputConfig(child.dataType, !child.isValidForImportArchive, dataType));
                 }, this);
             }
         }, this);
@@ -303,7 +304,11 @@ Ext4.define('LABKEY.import.SpecificImportOptions', {
         // set all folder import type checkboxes to match this checked state
         Ext4.each(this.getAllVisibleInputBoxes(), function(box)
         {
-            this.getInputFromBox(box).checked = checked;
+            var cb = this.getInputFromBox(box);
+
+            // don't update checked state of the disabled checkbox inputs
+            if (!cb.disabled)
+                cb.checked = checked;
         }, this);
     },
 
@@ -327,16 +332,29 @@ Ext4.define('LABKEY.import.SpecificImportOptions', {
         };
     },
 
-    getImportOptionInputConfig : function(dataType, parent, hide)
+    getImportOptionInputConfig : function(dataType, showDisabled, parent, hide)
     {
-        var checked = hide || this.hidden ? '' : ' checked',
+        var checked = hide || this.hidden || showDisabled ? '' : ' checked',
+            disabled = !showDisabled ? '' : ' disabled',
             parentAttr = parent ? 'parentDataType="' + parent + '"' : '';
 
         return {
             xtype: 'box',
             cls: hide ? 'advanced-options-hide' : 'advanced-options-input',
             html: '<label><input type="checkbox" name="dataTypes" '
-                + 'value="' + dataType + '" ' + parentAttr + checked + '>' + dataType + '</label>'
+                + 'value="' + dataType + '" ' + parentAttr + checked + disabled + '>' + dataType + '</label>',
+            listeners: {
+                render: function(b) {
+                    if (showDisabled)
+                    {
+                        Ext4.create('Ext.tip.ToolTip', {
+                            target: b.getEl(),
+                            showDelay: 1000,
+                            html: 'This object is disabled because the import archive does not contain ' + dataType.toLowerCase() + '.'
+                        });
+                    }
+                }
+            }
         }
     },
 

@@ -69,7 +69,8 @@ Ext4.onReady(function()
         url: LABKEY.ActionURL.buildURL("core", "getRegisteredFolderImporters"),
         method: 'POST',
         jsonData: {
-            sortAlpha: true
+            sortAlpha: true,
+            archiveFilePath: <%=q(bean.getFilePath())%>
         },
         scope: this,
         success: function (response)

@@ -21,6 +21,7 @@ import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.GroupManager;
@@ -80,10 +81,10 @@ public class RoleAssignmentsImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(@Nullable PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            RoleAssignmentsType assignments = ctx.getXml().getRoleAssignments();
-
-            if (assignments == null) // nothing to import
+            if (!isValidForImportArchive(ctx)) // nothing to import
                 return;
+
+            RoleAssignmentsType assignments = ctx.getXml().getRoleAssignments();
 
             // we get assignments inherited by default if we do not explicitly set any such assignments
             if (assignments.getInherited())
@@ -157,11 +158,10 @@ public class RoleAssignmentsImporterFactory extends AbstractFolderImportFactory
             return Collections.emptyList();
         }
 
-        @Nullable
         @Override
-        public Collection<String> getChildrenDataTypes()
+        public boolean isValidForImportArchive(ImportContext<FolderDocument.Folder> ctx) throws ImportException
         {
-            return null;
+            return ctx.getXml() != null && ctx.getXml().getRoleAssignments() != null;
         }
     }
 }

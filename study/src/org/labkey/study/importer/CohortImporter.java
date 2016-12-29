@@ -60,11 +60,11 @@ public class CohortImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        StudyImpl study = ctx.getStudy();
-        StudyDocument.Study.Cohorts cohortsXml = ctx.getXml().getCohorts();
-
-        if (null != cohortsXml)
+        if (isValidForImportArchive(ctx))
         {
+            StudyImpl study = ctx.getStudy();
+            StudyDocument.Study.Cohorts cohortsXml = ctx.getXml().getCohorts();
+
             ctx.getLogger().info("Loading " + getDescription());
 
             CohortType.Enum cohortType = cohortsXml.getType();
@@ -103,6 +103,12 @@ public class CohortImporter implements InternalStudyImporter
 
             ctx.getLogger().info("Done importing " + getDescription());
         }
+    }
+
+    @Override
+    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    {
+        return ctx.getXml() != null && ctx.getXml().getCohorts() != null;
     }
 
     // Return the cohort dataset ID iff the <cohorts> element includes it and the corresponding dataset exists.

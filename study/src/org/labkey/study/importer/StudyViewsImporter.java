@@ -16,6 +16,7 @@
 package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
@@ -53,11 +54,11 @@ public class StudyViewsImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        StudyImpl study = ctx.getStudy();
-        StudyDocument.Study.StudyViews viewsXml = ctx.getXml().getStudyViews();
-
-        if (viewsXml != null)
+        if (isValidForImportArchive(ctx))
         {
+            StudyImpl study = ctx.getStudy();
+            StudyDocument.Study.StudyViews viewsXml = ctx.getXml().getStudyViews();
+
             ctx.getLogger().info("Loading " + getDescription());
 
             VirtualFile folder = root.getDir(viewsXml.getDir());
@@ -105,5 +106,11 @@ public class StudyViewsImporter implements InternalStudyImporter
 
             ctx.getLogger().info("Done importing " + getDescription());
         }
+    }
+
+    @Override
+    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    {
+        return ctx.getXml() != null && ctx.getXml().getStudyViews() != null;
     }
 }

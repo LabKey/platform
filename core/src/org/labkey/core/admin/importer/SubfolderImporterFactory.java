@@ -165,12 +165,5 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
         {
             return Collections.emptyList();
         }
-
-        @Nullable
-        @Override
-        public Collection<String> getChildrenDataTypes()
-        {
-            return null;
-        }
     }
 }

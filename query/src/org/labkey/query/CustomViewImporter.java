@@ -52,10 +52,10 @@ public class CustomViewImporter implements FolderImporter
 
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws IOException, SQLException, ImportException, XmlValidationException
     {
-        VirtualFile viewDir = ctx.getDir("views");
-
-        if (null != viewDir)
+        if (isValidForImportArchive(ctx))
         {
+            VirtualFile viewDir = ctx.getDir("views");
+
             if (null != job)
                 job.setStatus("IMPORT " + getDescription());
             ctx.getLogger().info("Loading " + getDescription());
@@ -73,11 +73,10 @@ public class CustomViewImporter implements FolderImporter
         return Collections.emptyList();
     }
 
-    @Nullable
     @Override
-    public Collection<String> getChildrenDataTypes()
+    public boolean isValidForImportArchive(ImportContext ctx) throws ImportException
     {
-        return null;
+        return ctx.getDir("views") != null;
     }
 
     public static class Factory extends AbstractFolderImportFactory

@@ -27,6 +27,7 @@ import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.User;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.study.model.DatasetDefinition;
@@ -39,11 +40,12 @@ import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * User: cnathe
@@ -83,10 +85,10 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
             if (!ctx.isDataTypeSelected(getDataType()))
                 return;
 
-            VirtualFile studyDir = ctx.getDir("study");
-
-            if (null != studyDir)
+            if (isValidForImportArchive(ctx))
             {
+                VirtualFile studyDir = ctx.getDir("study");
+
                 if (job != null)
                     job.setStatus("IMPORT " + getDescription());
                 ctx.getLogger().info("Loading " + getDescription());
@@ -149,20 +151,50 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
 
         @Nullable
         @Override
-        public Collection<String> getChildrenDataTypes()
+        public Map<String, Boolean> getChildrenDataTypes(ImportContext ctx) throws ImportException
         {
-            Set<String> dataTypes = new TreeSet<>();
+            StudyImportContext sCtx = null;
+            if (ctx instanceof StudyImportContext)
+                sCtx = (StudyImportContext)ctx;
+
+            Map<String, Boolean> dataTypes = new TreeMap<>();
             for (InternalStudyImporter studyImporter : StudySerializationRegistryImpl.get().getInternalStudyImporters())
             {
                 if (studyImporter.getDataType() != null)
-                    dataTypes.add(studyImporter.getDataType());
+                    dataTypes.put(studyImporter.getDataType(), sCtx != null && studyImporter.isValidForImportArchive(sCtx));
             }
 
             // specifically add those "importers" that aren't implementers of InternalStudyImporter
-            dataTypes.add(StudyImportDatasetTask.getType());
-            dataTypes.add(StudyImportSpecimenTask.getType());
+            dataTypes.put(StudyImportDatasetTask.getType(), sCtx != null && StudyImportDatasetTask.isValidForImportArchive(sCtx));
+            dataTypes.put(StudyImportSpecimenTask.getType(), sCtx != null && sCtx.getSpecimenArchive(sCtx.getRoot()) != null);
 
             return dataTypes;
+        }
+
+        @Override
+        public ImportContext getImporterSpecificImportContext(String archiveFilePath, User user, Container container) throws IOException
+        {
+            if (archiveFilePath != null)
+            {
+                    File archiveFile = new File(archiveFilePath);
+                    if (archiveFile.exists() && archiveFile.isFile())
+                    {
+                        VirtualFile vf = new FileSystemFile(archiveFile.getParentFile());
+                        VirtualFile studyDir = vf.getXmlBean("study.xml") != null ? vf : vf.getDir("study");
+                        XmlObject studyXml = studyDir.getXmlBean("study.xml");
+
+                        if (studyXml instanceof StudyDocument)
+                            return new StudyImportContext(user, container, (StudyDocument)studyXml, null, null, studyDir);
+                    }
+            }
+
+            return null;
+        }
+
+        @Override
+        public boolean isValidForImportArchive(ImportContext<FolderDocument.Folder> ctx) throws ImportException
+        {
+            return ctx.getDir("study") != null;
         }
     }
 }

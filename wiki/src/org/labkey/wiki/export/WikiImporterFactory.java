@@ -16,7 +16,6 @@
 package org.labkey.wiki.export;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
@@ -81,10 +80,10 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            VirtualFile wikisDir = ctx.getDir("wikis");
-            
-            if (wikisDir != null)
+            if (isValidForImportArchive(ctx))
             {
+                VirtualFile wikisDir = ctx.getDir("wikis");
+
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
                 ctx.getLogger().info("Loading " + getDescription());
@@ -236,11 +235,10 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             return Collections.emptySet();
         }
 
-        @Nullable
         @Override
-        public Collection<String> getChildrenDataTypes()
+        public boolean isValidForImportArchive(ImportContext<FolderDocument.Folder> ctx) throws ImportException
         {
-            return null;
+            return ctx.getDir("wikis") != null;
         }
     }
 }

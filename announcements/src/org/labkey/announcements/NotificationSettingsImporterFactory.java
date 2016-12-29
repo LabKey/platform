@@ -16,13 +16,12 @@
 package org.labkey.announcements;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
-import org.labkey.api.data.Container;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.files.FileContentDefaultEmailPref;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.notification.EmailService;
@@ -64,8 +63,7 @@ public class NotificationSettingsImporterFactory extends AbstractFolderImportFac
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            Container c = ctx.getContainer();
-            if (ctx.getXml().isSetNotifications())
+            if (isValidForImportArchive(ctx))
             {
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
@@ -76,7 +74,7 @@ public class NotificationSettingsImporterFactory extends AbstractFolderImportFac
                     int messagesDefault = notifications.getMessagesDefault().getId();
                     MessageConfigService.NotificationOption messagesOption = MessageConfigService.getInstance().getOption(messagesDefault);
                     if (messagesOption != null)
-                        AnnouncementManager.saveDefaultEmailOption(c, messagesDefault);
+                        AnnouncementManager.saveDefaultEmailOption(ctx.getContainer(), messagesDefault);
                     else
                         ctx.getLogger().error("Unable to find default messages email option for id " + messagesDefault);
                 }
@@ -85,7 +83,7 @@ public class NotificationSettingsImporterFactory extends AbstractFolderImportFac
                     int filesDefault = notifications.getFilesDefault().getId();
                     MessageConfigService.NotificationOption filesOption = MessageConfigService.getInstance().getOption(filesDefault);
                     if (filesOption != null)
-                        EmailService.get().setDefaultEmailPref(c, new FileContentDefaultEmailPref(), String.valueOf(filesDefault));
+                        EmailService.get().setDefaultEmailPref(ctx.getContainer(), new FileContentDefaultEmailPref(), String.valueOf(filesDefault));
                     else
                         ctx.getLogger().error("Unable to find default files email option for id " + filesDefault);
 
@@ -101,11 +99,10 @@ public class NotificationSettingsImporterFactory extends AbstractFolderImportFac
             return Collections.emptyList();
         }
 
-        @Nullable
         @Override
-        public Collection<String> getChildrenDataTypes()
+        public boolean isValidForImportArchive(ImportContext<FolderDocument.Folder> ctx) throws ImportException
         {
-            return null;
+            return ctx.getXml() != null && ctx.getXml().isSetNotifications();
         }
     }
 }

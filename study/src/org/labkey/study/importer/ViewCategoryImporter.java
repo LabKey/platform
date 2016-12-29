@@ -17,6 +17,7 @@ package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
@@ -31,6 +32,8 @@ import org.labkey.study.xml.viewCategory.CategoriesDocument;
 import org.labkey.study.xml.viewCategory.CategoryType;
 import org.labkey.study.xml.viewCategory.ViewCategoryType;
 import org.springframework.validation.BindException;
+
+import java.io.IOException;
 
 /**
  * User: klum
@@ -53,6 +56,9 @@ public class ViewCategoryImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
+        if (!isValidForImportArchive(ctx))
+            return;
+
         StudyImpl study = ctx.getStudy();
         try
         {
@@ -66,6 +72,19 @@ public class ViewCategoryImporter implements InternalStudyImporter
         catch (XmlException x)
         {
             throw new InvalidFileException(root.getRelativePath(ViewCategoryWriter.FILE_NAME), x);
+        }
+    }
+
+    @Override
+    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    {
+        try
+        {
+            return ctx.getRoot() != null && ctx.getRoot().getXmlBean(ViewCategoryWriter.FILE_NAME) != null;
+        }
+        catch (IOException e)
+        {
+            return false;
         }
     }
 

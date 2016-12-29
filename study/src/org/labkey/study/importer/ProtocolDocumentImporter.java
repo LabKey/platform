@@ -15,6 +15,7 @@
  */
 package org.labkey.study.importer;
 
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
@@ -49,11 +50,11 @@ public class ProtocolDocumentImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        StudyImpl study = ctx.getStudy();
-        ExportDirType protocolXml = ctx.getXml().getProtocolDocs();
-
-        if (null != protocolXml)
+        if (isValidForImportArchive(ctx))
         {
+            StudyImpl study = ctx.getStudy();
+            ExportDirType protocolXml = ctx.getXml().getProtocolDocs();
+
             ctx.getLogger().info("Loading " + getDescription());
 
             VirtualFile folder = root.getDir(protocolXml.getDir());
@@ -77,5 +78,11 @@ public class ProtocolDocumentImporter implements InternalStudyImporter
 
             ctx.getLogger().info("Done importing " + getDescription());
         }
+    }
+
+    @Override
+    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    {
+        return ctx.getXml() != null && ctx.getXml().getProtocolDocs() != null;
     }
 }

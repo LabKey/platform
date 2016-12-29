@@ -22,6 +22,7 @@ import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
@@ -67,10 +68,10 @@ public class MissingValueImporterFactory extends AbstractFolderImportFactory
             if (!ctx.isDataTypeSelected(getDataType()))
                 return;
 
-            MissingValueIndicatorsType mvXml = getMissingValueIndicatorsFromXml(ctx.getXml());
-
-            if (null != mvXml)
+            if (isValidForImportArchive(ctx))
             {
+                MissingValueIndicatorsType mvXml = getMissingValueIndicatorsFromXml(ctx.getXml());
+
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
                 ctx.getLogger().info("Loading " + getDescription());
@@ -103,11 +104,10 @@ public class MissingValueImporterFactory extends AbstractFolderImportFactory
             return Collections.emptyList();
         }
 
-        @Nullable
         @Override
-        public Collection<String> getChildrenDataTypes()
+        public boolean isValidForImportArchive(ImportContext ctx) throws ImportException
         {
-            return null;
+            return ctx.getXml() != null && getMissingValueIndicatorsFromXml(ctx.getXml()) != null;
         }
 
         private MissingValueIndicatorsType getMissingValueIndicatorsFromXml(XmlObject xml)

@@ -63,12 +63,11 @@ public class VisitImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        StudyImpl study = ctx.getStudy();
-        // Visit map
-        StudyDocument.Study.Visits visitsXml = ctx.getXml().getVisits();
-
-        if (null != visitsXml)
+        if (isValidForImportArchive(ctx))
         {
+            StudyImpl study = ctx.getStudy();
+            StudyDocument.Study.Visits visitsXml = ctx.getXml().getVisits();
+
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
             {
                 ctx.getLogger().warn("Can't import visits for an continuous date based study.");
@@ -90,5 +89,11 @@ public class VisitImporter implements InternalStudyImporter
 
             ctx.getLogger().info("Done importing visit map");
         }
+    }
+
+    @Override
+    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    {
+        return ctx.getXml() != null && ctx.getXml().getVisits() != null;
     }
 }

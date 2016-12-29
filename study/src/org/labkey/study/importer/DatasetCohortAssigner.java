@@ -55,11 +55,11 @@ public class DatasetCohortAssigner implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        StudyImpl study = ctx.getStudy();
-        DatasetsDocument.Datasets datasets = DatasetDefinitionImporter.getDatasetsManifest(ctx, root, false);
-
-        if (null != datasets)
+        if (isValidForImportArchive(ctx))
         {
+            StudyImpl study = ctx.getStudy();
+            DatasetsDocument.Datasets datasets = DatasetDefinitionImporter.getDatasetsManifest(ctx, root, false);
+
             ctx.getLogger().info("Loading " + getDescription());
 
             Container c = ctx.getContainer();
@@ -93,6 +93,19 @@ public class DatasetCohortAssigner implements InternalStudyImporter
             }
 
             ctx.getLogger().info("Done importing " + getDescription());
+        }
+    }
+
+    @Override
+    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    {
+        try
+        {
+            return DatasetDefinitionImporter.getDatasetsManifest(ctx, ctx.getRoot(), false) != null;
+        }
+        catch (IOException|XmlException e)
+        {
+            return false;
         }
     }
 }

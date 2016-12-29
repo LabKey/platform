@@ -16,12 +16,11 @@
 package org.labkey.core.admin.importer;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
-import org.labkey.api.data.Container;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
@@ -65,12 +64,10 @@ public class ModulePropertiesImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            Container c = ctx.getContainer();
-            FolderDocument.Folder folderXml = ctx.getXml();
-
-            ModulePropertiesType modulePropsType = folderXml.getModuleProperties();
-            if(modulePropsType != null)
+            if (isValidForImportArchive(ctx))
             {
+                ModulePropertiesType modulePropsType = ctx.getXml().getModuleProperties();
+
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
                 ctx.getLogger().info("Loading " + getDescription());
@@ -81,7 +78,7 @@ public class ModulePropertiesImporterFactory extends AbstractFolderImportFactory
                     ModuleProperty property = module.getModuleProperties().get(modulePropType.getPropertyName());
                     if(property != null)
                     {
-                        property.saveValue(null, c, modulePropType.getValue());
+                        property.saveValue(null, ctx.getContainer(), modulePropType.getValue());
                     }
                 }
 
@@ -96,11 +93,10 @@ public class ModulePropertiesImporterFactory extends AbstractFolderImportFactory
             return Collections.emptyList();
         }
 
-        @Nullable
         @Override
-        public Collection<String> getChildrenDataTypes()
+        public boolean isValidForImportArchive(ImportContext<FolderDocument.Folder> ctx) throws ImportException
         {
-            return null;
+            return ctx.getXml() != null && ctx.getXml().getModuleProperties() != null;
         }
     }
 }

@@ -82,9 +82,10 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        StudyDocument.Study.Specimens xmlSettings = ctx.getXml().getSpecimens();
-        if (xmlSettings != null)
+        if (isValidForImportArchive(ctx))
         {
+            StudyDocument.Study.Specimens xmlSettings = ctx.getXml().getSpecimens();
+
             ctx.getLogger().info("Loading " + getDescription());
 
             StudyImpl study = ctx.getStudy().createMutable();
@@ -111,6 +112,12 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
 
             ctx.getLogger().info("Done importing " + getDescription());
         }
+    }
+
+    @Override
+    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    {
+        return ctx.getXml() != null && ctx.getXml().getSpecimens() != null;
     }
 
     // Import specimen settings for versions >= 13.2.

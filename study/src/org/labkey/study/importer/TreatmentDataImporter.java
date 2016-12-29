@@ -18,10 +18,8 @@ package org.labkey.study.importer;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.study.Visit;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.writer.StudyArchiveDataTypes;
@@ -80,10 +78,10 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        ExportDirType dirType = ctx.getXml().getTreatmentData();
-
-        if (dirType != null)
+        if (isValidForImportArchive(ctx))
         {
+            ExportDirType dirType = ctx.getXml().getTreatmentData();
+
             VirtualFile vf = root.getDir(dirType.getDir());
             if (vf != null)
             {
@@ -153,6 +151,12 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
             else
                 throw new ImportException("Unable to open the folder at : " + dirType.getDir());
         }
+    }
+
+    @Override
+    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    {
+        return ctx.getXml() != null && ctx.getXml().getTreatmentData() != null;
     }
 
     private class ProductAntigenTableTransform implements TransformHelper

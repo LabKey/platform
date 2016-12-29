@@ -17,6 +17,7 @@ package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.util.XmlBeansUtil;
@@ -34,6 +35,7 @@ import org.labkey.study.xml.participantGroups.GroupType;
 import org.labkey.study.xml.participantGroups.ParticipantGroupsDocument;
 import org.springframework.validation.BindException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -61,6 +63,9 @@ public class ParticipantGroupImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
+        if (!isValidForImportArchive(ctx))
+            return;
+
         StudyImpl study = ctx.getStudy();
         try
         {
@@ -74,6 +79,19 @@ public class ParticipantGroupImporter implements InternalStudyImporter
         catch (XmlException x)
         {
             throw new InvalidFileException(root.getRelativePath(ParticipantGroupWriter.FILE_NAME), x);
+        }
+    }
+
+    @Override
+    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    {
+        try
+        {
+            return ctx.getRoot() != null && ctx.getRoot().getXmlBean(ParticipantGroupWriter.FILE_NAME) != null;
+        }
+        catch (IOException e)
+        {
+            return false;
         }
     }
 

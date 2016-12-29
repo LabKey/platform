@@ -47,13 +47,29 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
         return StudyArchiveDataTypes.DATASET_DATA;
     }
 
+    public static boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    {
+        VirtualFile datasetsDir = getDatasetsDirectory(ctx, ctx.getRoot());
+        if (datasetsDir != null && getDatasetsFileName(ctx) != null)
+        {
+            // check if we have at least one .tsv file in the datasetsDir
+            for (String fileName : datasetsDir.list())
+            {
+                if (fileName.toLowerCase().endsWith(".tsv"))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
     @Override
     protected String getDatasetsFileName() throws ImportException
     {
         StudyJobSupport support = getJob().getJobSupport(StudyJobSupport.class);
         StudyImportContext ctx = support.getImportContext();
 
-        return StudyImportDatasetTask.getDatasetsFileName(ctx);
+        return getDatasetsFileName(ctx);
     }
 
     @Override
@@ -63,7 +79,7 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
         StudyImportContext ctx = support.getImportContext();
         VirtualFile root = support.getRoot();
 
-        return StudyImportDatasetTask.getDatasetsDirectory(ctx, root);
+        return getDatasetsDirectory(ctx, root);
     }
 
     public static String getDatasetsFileName(StudyImportContext ctx) throws ImportException

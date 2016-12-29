@@ -18,11 +18,11 @@ package org.labkey.list.model;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
@@ -51,10 +51,10 @@ public class FolderListImporter implements FolderImporter
 
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws Exception
     {
-        VirtualFile listsDir = ctx.getDir("lists");
-
-        if (null != listsDir)
+        if (isValidForImportArchive(ctx))
         {
+            VirtualFile listsDir = ctx.getDir("lists");
+
             if (null != job)
                 job.setStatus("IMPORT " + getDescription());
             ctx.getLogger().info("Loading " + getDescription());
@@ -77,11 +77,10 @@ public class FolderListImporter implements FolderImporter
         return Collections.emptyList();
     }
 
-    @Nullable
     @Override
-    public Collection<String> getChildrenDataTypes()
+    public boolean isValidForImportArchive(ImportContext ctx) throws ImportException
     {
-        return null;
+        return ctx.getDir("lists") != null;
     }
 
     public static class Factory extends AbstractFolderImportFactory

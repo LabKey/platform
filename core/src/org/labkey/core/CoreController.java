@@ -19,6 +19,7 @@ package org.labkey.core;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
@@ -33,9 +34,11 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.CoreUrls;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.FolderWriter;
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.PortalBackgroundImageCache;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
@@ -113,6 +116,8 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.writer.FileSystemFile;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.core.query.CoreQuerySchema;
@@ -122,6 +127,7 @@ import org.labkey.core.workbook.MoveWorkbooksBean;
 import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookQueryView;
 import org.labkey.core.workbook.WorkbookSearchView;
+import org.labkey.folder.xml.FolderDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -1845,6 +1851,9 @@ public class CoreController extends SpringActionController
             if (null == registry)
                 throw new RuntimeException();
 
+            ImportContext folderImportCtx = getFolderImportContext(form);
+            boolean isZipArchive = isZipArchive(form); // if archive is a zip, we can't tell what objects it has at this point
+
             List<FolderImporter> registeredImporters = new ArrayList<>(registry.getRegisteredFolderImporters());
             if (form.isSortAlpha())
                 Collections.sort(registeredImporters, new ImporterAlphaComparator());
@@ -1857,9 +1866,22 @@ public class CoreController extends SpringActionController
                     Map<String, Object> importerMap = new HashMap<>();
                     importerMap.put("dataType", importer.getDataType());
                     importerMap.put("description", importer.getDescription());
+                    importerMap.put("isValidForImportArchive", isZipArchive || (folderImportCtx != null && importer.isValidForImportArchive(folderImportCtx)));
 
-                    if (importer.getChildrenDataTypes() != null)
-                        importerMap.put("children", importer.getChildrenDataTypes());
+                    ImportContext ctx = getImporterSpecificImportContext(form, importer, folderImportCtx);
+                    Map<String, Boolean> childrenDataTypes = importer.getChildrenDataTypes(ctx);
+                    if (childrenDataTypes != null)
+                    {
+                        List<Map<String, Object>> childrenProps = new ArrayList<>();
+                        for (Map.Entry<String, Boolean> entry : childrenDataTypes.entrySet())
+                        {
+                            Map<String, Object> props = new HashMap<>();
+                            props.put("dataType", entry.getKey());
+                            props.put("isValidForImportArchive", isZipArchive || entry.getValue());
+                            childrenProps.add(props);
+                        }
+                        importerMap.put("children", childrenProps);
+                    }
 
                     selectableImporters.add(importerMap);
                 }
@@ -1869,6 +1891,51 @@ public class CoreController extends SpringActionController
             response.put("importers", selectableImporters);
             return response;
         }
+    }
+
+    private ImportContext getImporterSpecificImportContext(FolderImporterForm form, FolderImporter importer, ImportContext defaultCtx) throws IOException
+    {
+        ImportContext ctx = importer.getImporterSpecificImportContext(form.getArchiveFilePath(), getUser(), getContainer());
+        return ctx != null ? ctx : defaultCtx;
+    }
+
+    private ImportContext getFolderImportContext(FolderImporterForm form) throws IOException
+    {
+        VirtualFile vf = getArchiveFileParent(form.getArchiveFilePath());
+        if (vf != null)
+        {
+            XmlObject folderXml = vf.getXmlBean("folder.xml");
+            if (folderXml instanceof FolderDocument)
+                return new FolderImportContext(getUser(), getContainer(), (FolderDocument) folderXml, null, null, vf);
+        }
+
+        return null;
+    }
+
+    private boolean isZipArchive(FolderImporterForm form) throws IOException
+    {
+        // consider this a zip archive if the file ends with .zip and isn't sitting next to a folder.xml or study.xml file
+        if (form.getArchiveFilePath() != null && form.getArchiveFilePath().toLowerCase().endsWith(".zip"))
+        {
+            VirtualFile vf = getArchiveFileParent(form.getArchiveFilePath());
+            return vf.getXmlBean("folder.xml") == null && vf.getXmlBean("study.xml") == null;
+        }
+
+        return false;
+    }
+
+    private VirtualFile getArchiveFileParent(String archiveFilePath)
+    {
+        if (archiveFilePath != null)
+        {
+            File archiveFile = new File(archiveFilePath);
+            if (archiveFile.exists() && archiveFile.isFile())
+            {
+                return new FileSystemFile(archiveFile.getParentFile());
+            }
+        }
+
+        return null;
     }
 
     private class ImporterAlphaComparator implements Comparator<FolderImporter>
@@ -1887,6 +1954,7 @@ public class CoreController extends SpringActionController
     public static class FolderImporterForm
     {
         private boolean _sortAlpha;
+        private String _archiveFilePath;
 
         public boolean isSortAlpha()
         {
@@ -1896,6 +1964,16 @@ public class CoreController extends SpringActionController
         public void setSortAlpha(boolean sortAlpha)
         {
             _sortAlpha = sortAlpha;
+        }
+
+        public String getArchiveFilePath()
+        {
+            return _archiveFilePath;
+        }
+
+        public void setArchiveFilePath(String archiveFilePath)
+        {
+            _archiveFilePath = archiveFilePath;
         }
     }
 

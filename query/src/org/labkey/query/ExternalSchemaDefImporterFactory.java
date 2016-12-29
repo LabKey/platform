@@ -76,10 +76,10 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            VirtualFile externalSchemaDir = ctx.getDir("externalSchemas");
-
-            if (null != externalSchemaDir)
+            if (isValidForImportArchive(ctx))
             {
+                VirtualFile externalSchemaDir = ctx.getDir("externalSchemas");
+
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
                 ctx.getLogger().info("Loading " + getDescription());
@@ -201,11 +201,10 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
             return Collections.emptyList();
         }
 
-        @Nullable
         @Override
-        public Collection<String> getChildrenDataTypes()
+        public boolean isValidForImportArchive(ImportContext<FolderDocument.Folder> ctx) throws ImportException
         {
-            return null;
+            return ctx.getDir("externalSchemas") != null;
         }
     }
 }
