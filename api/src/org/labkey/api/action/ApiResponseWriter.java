@@ -389,6 +389,29 @@ public abstract class ApiResponseWriter implements AutoCloseable
     }
 
     /**
+     * Allows for writing a simplified status/message to the response.
+     */
+    public void writeAndCloseError(int status, String message) throws IOException
+    {
+        if (null != getResponse())
+            getResponse().setStatus(status);
+
+        JSONObject root = new JSONObject();
+        root.put("success", false);
+        root.put("exception", message);
+        root.put("errors", new JSONArray());
+
+        try
+        {
+            writeObject(root);
+        }
+        finally
+        {
+            close();
+        }
+    }
+
+    /**
      * Converts the errors to JSON-friendly client responses. Starts at the specified index, skipping any prior
      * errors in the collection
      * @return a Pair with the message from the first error, and the JSONArray of the full error information
