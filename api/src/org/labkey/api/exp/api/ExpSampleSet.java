@@ -124,7 +124,7 @@ public interface ExpSampleSet extends ExpObject
      * </dl>
      *
      * Example:
-     * <pre>${DataInputs:first:default('S')}-${now:date('yyyy-MM')-${batchRandomId}}</pre>
+     * <pre>${DataInputs:first:defaultValue('S')}-${now:date('yyyy-MM')}-${batchRandomId}}</pre>
      *
      * @param maps The collection of row maps to generate sample names for.  The generated name added to the row map with the "name" key.
      * @param expr The name expression to use when generating sample names, otherwise use the SampleSet's name expression or id columns.
