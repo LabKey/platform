@@ -88,6 +88,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
@@ -2161,6 +2162,11 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         catch (SQLException sqlx)
         {
             throw new RuntimeSQLException(sqlx);
+        }
+        catch (UnexpectedException unex)
+        {
+            errors.addRowError(new ValidationException(unex.getMessage()));
+            return null;
         }
     }
 
