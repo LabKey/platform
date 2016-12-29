@@ -297,66 +297,66 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      * Returns a string that will appear on the default import page and as the top line
      * of the default generated Excel template
      */
-    public String getImportMessage();
+    String getImportMessage();
 
     /**
      * Returns a list of templates (label / URL) that should be used as the options for excel upload
      * Each URL should either point to a static template file or an action to generate the template.
      * If no custom templates have been provided, it will return the default URL
      */
-    public List<Pair<String, String>> getImportTemplates(ViewContext ctx);
+    List<Pair<String, String>> getImportTemplates(ViewContext ctx);
 
     /**
      * Returns a list of the raw import templates (without substituting the container).  This is intended to be
      * used by FilteredTable or other instances that need to copy the raw values from a parent table.  In general,
      * getImportTemplates() should be used instead
      */
-    public List<Pair<String, StringExpression>> getRawImportTemplates();
+    List<Pair<String, StringExpression>> getRawImportTemplates();
 
-    public boolean isPublic();
+    boolean isPublic();
 
-    public String getPublicName();
+    String getPublicName();
 
-    public String getPublicSchemaName();
+    String getPublicSchemaName();
 
     // Most datasets do not have a container column
     boolean hasContainerColumn();
 
-    public boolean needsContainerClauseAdded();
+    boolean needsContainerClauseAdded();
 
     @Nullable
-    public ContainerFilter getContainerFilter();
+    ContainerFilter getContainerFilter();
 
     /**
      * Finds and applies the first metadata xml from active modules in the schema's container and then the first user-created metadata in the container hierarchy.
      *
      * @see QueryService#findMetadataOverride(UserSchema, String, boolean, boolean, Collection, Path)
      */
-    public void overlayMetadata(String tableName, UserSchema schema, Collection<QueryException> errors);
+    void overlayMetadata(String tableName, UserSchema schema, Collection<QueryException> errors);
 
-    public void overlayMetadata(Collection<TableType> metadata, UserSchema schema, Collection<QueryException> errors);
+    void overlayMetadata(Collection<TableType> metadata, UserSchema schema, Collection<QueryException> errors);
 
     /** @return whether this table accepts XML metadata configuration to be overlaid on the default level of metadata */
-    public boolean isMetadataOverrideable();
+    boolean isMetadataOverrideable();
 
-    public ColumnInfo getLookupColumn(ColumnInfo parent, String name);
+    ColumnInfo getLookupColumn(ColumnInfo parent, String name);
 
-    public int getCacheSize();
+    int getCacheSize();
 
-    public String getDescription();
+    String getDescription();
 
     /**
      * Get Domain associated with this TableInfo if any.
      */
     @Nullable
-    public Domain getDomain();
+    Domain getDomain();
 
     /**
      * Get DomainKind associated with this TableInfo if any.
      * Domain may or may not exist even if DomainKind is available.
      */
     @Nullable
-    public DomainKind getDomainKind();
+    DomainKind getDomainKind();
 
     /**
      * Returns a QueryUpdateService implementation for this TableInfo,
@@ -366,7 +366,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     @Nullable
     QueryUpdateService getUpdateService();
 
-    public enum TriggerType
+    enum TriggerType
     {
         INSERT, UPDATE, DELETE, SELECT, TRUNCATE;
 
@@ -385,7 +385,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      */
 
     @NotNull
-    public Collection<QueryService.ParameterDecl> getNamedParameters();
+    Collection<QueryService.ParameterDecl> getNamedParameters();
 
     /**
      * Executes any trigger scripts for this table.
@@ -440,7 +440,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      * @param extraContext Optional additional bindings to set in the script's context when evaluating.
      * @throws BatchValidationException if the trigger function returns false or the errors map isn't empty.
      */
-    public void fireBatchTrigger(Container c, TriggerType type, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
+    void fireBatchTrigger(Container c, TriggerType type, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
             throws BatchValidationException;
 
     /**
@@ -478,14 +478,14 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      * @param extraContext Optional additional bindings to set in the script's context when evaluating.
      * @throws ValidationException if the trigger function returns false or the errors map isn't empty.
      */
-    public void fireRowTrigger(Container c, TriggerType type, boolean before, int rowNumber,
-                                  @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext)
+    void fireRowTrigger(Container c, TriggerType type, boolean before, int rowNumber,
+                        @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext)
             throws ValidationException;
 
     /**
      * Return true if there are trigger scripts associated with this table.
      */
-    public boolean hasTriggers(Container c);
+    boolean hasTriggers(Container c);
 
     /**
      * Return true if all trigger scripts support streaming.
@@ -498,7 +498,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      *
      * @param c The current container
      */
-    public void resetTriggers(Container c);
+    void resetTriggers(Container c);
 
     /**
      * Returns true if the underlying database table has triggers.
@@ -511,14 +511,14 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      *
      * We should probably kill DbCache, but let's fix this for now (https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=10508)
      */
-    public Path getNotificationKey();
+    Path getNotificationKey();
 
     /* for asserting that tableinfo is not changed unexpectedly */
-    public void setLocked(boolean b);
-    public boolean isLocked();
+    void setLocked(boolean b);
+    boolean isLocked();
 
-    public boolean supportsContainerFilter();
-    public boolean hasUnionTable();
+    boolean supportsContainerFilter();
+    boolean hasUnionTable();
 
     /**
      * Returns a ContainerContext for this table or null if ContainerContext is not supported.
@@ -526,17 +526,17 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      * @return The ContainerContext for this table or null.
      */
     @Nullable
-    public ContainerContext getContainerContext();
+    ContainerContext getContainerContext();
 
-    public void setAuditBehavior(AuditBehaviorType type);
-    public AuditBehaviorType getAuditBehavior();
+    void setAuditBehavior(AuditBehaviorType type);
+    AuditBehaviorType getAuditBehavior();
 
     /**
      * Returns the row primary key column to use for audit history details. Note, this must
      * be a single key as we don't support multiple column primary keys for audit details.
      */
     @Nullable
-    public FieldKey getAuditRowPk();
+    FieldKey getAuditRowPk();
 
     /**
      * @return set of all columns involved in the query
