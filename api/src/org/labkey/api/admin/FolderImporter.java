@@ -18,11 +18,15 @@ package org.labkey.api.admin;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
+import org.labkey.api.security.User;
 import org.labkey.api.writer.VirtualFile;
 
+import java.io.IOException;
 import java.util.Collection;
+import java.util.Map;
 
 
 /**
@@ -42,5 +46,28 @@ public interface FolderImporter<DocumentRoot extends XmlObject>
     @NotNull
     Collection<PipelineJobWarning> postProcess(ImportContext<DocumentRoot> ctx, VirtualFile root) throws Exception;
 
-    @Nullable Collection<String> getChildrenDataTypes();
+    /**
+     * Map of children data type names to boolean indicating if it is valid for the given import archive context.
+     * @param ctx
+     * @return Map
+     * @throws ImportException
+     */
+    default @Nullable Map<String, Boolean> getChildrenDataTypes(ImportContext ctx) throws ImportException
+    {
+        return null;
+    }
+
+    /**
+     * Validate if the folder importer is valid for the given import context. Default to true.
+     * @return boolean
+     */
+    default boolean isValidForImportArchive(ImportContext<DocumentRoot> ctx) throws ImportException
+    {
+        return true;
+    }
+
+    default ImportContext getImporterSpecificImportContext(String archiveFilePath, User user, Container container) throws IOException
+    {
+        return null;
+    }
 }
