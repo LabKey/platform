@@ -763,7 +763,7 @@ public class TransformManager implements DataIntegrationService.Interface
             ScheduledPipelineJobDescriptor descriptor = null;
 
             if (null != module)
-                descriptor = DESCRIPTOR_CACHE.getResourceMap(module).get(id.getName());
+                descriptor = DESCRIPTOR_CACHE.getResourceMap(module).get(config.getTransformId());
 
             if (null == descriptor)
                 return;
