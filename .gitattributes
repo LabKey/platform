@@ -1719,6 +1719,7 @@ query/src/org/labkey/query/view/testRemoteConnectionsFailure.jsp -text
 query/src/org/labkey/query/view/testRemoteConnectionsSuccess.jsp -text
 query/webapp/QWPDemo.js -text
 query/webapp/QWPDemoData.js -text
+query/webapp/dataview/DataViewPropertiesPanel.css -text
 query/webapp/dataview/DataViewPropertiesPanel.js -text
 query/webapp/dataview/DataViewUtil.js -text
 query/webapp/dataview/DataViewsPanel.css -text

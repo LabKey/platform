@@ -1,6 +1,7 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
         <script path="dataview/DataViewUtil.js"/>
+        <script path="dataview/DataViewPropertiesPanel.css"/>
         <script path="dataview/DataViewPropertiesPanel.js"/>
         <script path="dataview/DataViewsPanel.css"/>
         <script path="dataview/DataViewsPanel.js"/>

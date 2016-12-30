@@ -1,0 +1,12 @@
+.icon-remove div {
+    color: #555555;
+}
+.icon-remove {
+    cursor: pointer;
+}
+.icon-remove {
+    opacity: .5;
+}
+.icon-remove:hover{
+    opacity: 1;
+}

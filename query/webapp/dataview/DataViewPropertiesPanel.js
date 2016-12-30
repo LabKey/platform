@@ -326,6 +326,41 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 width      : 400
             });
 
+            var removeThumbnailButton = {
+                xtype: 'box',
+                cls: 'icon-remove',
+                html: '<div class="fa fa-trash-o"></div>',
+                listeners: {
+                    scope: this,
+                    render: function (box)
+                    {
+                        box.getEl().on('click', function ()
+                        {
+                            console.log('testing the click of trash can');
+                        }, this);
+                    }
+                }
+            };
+
+            var thumbnailFieldContainerItems = [{
+                xtype      : 'displayfield',
+                readOnly   : true,
+                labelWidth : 120,
+                width      : 350
+            }];
+
+            if(this.data.thumbnailType && this.data.thumbnailType !== "NONE")
+            {
+                thumbnailFieldContainerItems.push(removeThumbnailButton);
+            }
+
+            imagesItems.push({
+                xtype: 'fieldcontainer',
+                layout: {type: 'hbox'},
+                items: thumbnailFieldContainerItems
+            });
+
+
             if (this.data.allowCustomThumbnail)
             {
                 imagesItems.push({
@@ -368,13 +403,40 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
             // For the time being any view that supports custom thumbnails also supports custom icons. So a separate check
             // is not necessary.
-            imagesItems.push({
+            var removeIconButton = {
+                xtype: 'box',
+                cls: 'icon-remove',
+                html: '<div class="fa fa-trash-o"></div>',
+                listeners: {
+                    scope: this,
+                    render: function (box)
+                    {
+                        box.getEl().on('click', function ()
+                        {
+                            console.log('testing the click of trash can');
+                        }, this);
+                    }
+                }
+            };
+
+            var iconFieldContainerItems = [{
                 xtype      : 'displayfield',
                 fieldLabel : 'Icon',
                 value      : ((this.data.iconCls !== null) ? '<span class="' + this.data.iconCls + '"></span>' : '<div class="icon"><img src="' + this.data.icon + '"/></div>'),
                 readOnly   : true,
                 labelWidth : 120,
-                width      : 400
+                width      : 350
+            }];
+
+            if(this.data.iconType && this.data.iconType !== "NONE")
+            {
+                iconFieldContainerItems.push(removeIconButton);
+            }
+
+            imagesItems.push({
+                xtype: 'fieldcontainer',
+                layout: {type: 'hbox'},
+                items: iconFieldContainerItems
             });
 
             if (this.data.allowCustomThumbnail) {

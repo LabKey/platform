@@ -66,6 +66,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                     {name : 'visible', type: 'boolean'},
                     {name : 'readOnly', type: 'boolean'},
                     {name : 'icon'},
+                    {name : 'iconType'},
                     {name : 'modified', type: 'date'},
                     {name : 'modifiedBy'},
                     {name : 'contentModified', type: 'date'},
