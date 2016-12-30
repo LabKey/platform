@@ -18,27 +18,57 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.core.user.UserController" %>
+<%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    String caption;
+    String inactiveCaption;
+    String temporaryCaption;
     UserController.ShowUsersForm form = (UserController.ShowUsersForm) HttpView.currentModel();
-    ActionURL url = getViewContext().cloneActionURL();
+    ActionURL inactiveUrl = getViewContext().cloneActionURL();
+    ActionURL temporaryUrl = getViewContext().cloneActionURL();
 
     if (!form.isInactive())
     {
-        url.addParameter("inactive", true);
-        caption = "include inactive users";
+        inactiveUrl.addParameter("inactive", true);
+        inactiveCaption = "include inactive users";
     }
     else
     {
-        url.deleteParameter("inactive");
-        caption = "hide inactive users";
+        inactiveUrl.deleteParameter("inactive");
+        inactiveCaption = "hide inactive users";
     }
+
+    if (!form.isTemporary())
+    {
+        temporaryUrl.addParameter("temporary", true);
+        temporaryCaption = "show temporary accounts";
+    }
+    else
+    {
+        temporaryUrl.deleteParameter("temporary");
+        temporaryCaption = "show all accounts";
+    }
+
+    boolean showTemporaryLink = getContainer().isRoot() && AuthenticationManager.isAccountExpirationEnabled();
+
 %>
 <table>
     <tr>
         <td>
-            <%=textLink(caption, url)%>
+            <%=textLink(inactiveCaption, inactiveUrl)%>
         </td>
     </tr>
+
+    <% if (showTemporaryLink)
+    {
+    %>
+    <tr>
+        <td>
+            <%=textLink(temporaryCaption, temporaryUrl)%>
+        </td>
+    </tr>
+    <%
+    }
+    %>
+
 </table>

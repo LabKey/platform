@@ -38,6 +38,7 @@ import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -592,6 +593,7 @@ public class UserController extends SpringActionController
     public static class ShowUsersForm extends QueryViewAction.QueryExportForm
     {
         private boolean _inactive;
+        private boolean _temporary;
 
         public boolean isInactive()
         {
@@ -602,6 +604,17 @@ public class UserController extends SpringActionController
         public void setInactive(boolean inactive)
         {
             _inactive = inactive;
+        }
+
+        public boolean isTemporary()
+        {
+            return _temporary;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setTemporary(boolean temporary)
+        {
+            _temporary = temporary;
         }
     }
 
@@ -626,6 +639,11 @@ public class UserController extends SpringActionController
             {
                 //filter out inactive users by default
                 settings.getBaseFilter().addAllClauses(new SimpleFilter(FieldKey.fromString("Active"), true));
+            }
+
+            if (form.isTemporary())
+            {
+                settings.getBaseFilter().addCondition(FieldKey.fromString("ExpirationDate"), null, CompareType.NONBLANK);
             }
 
             final boolean isSiteAdmin = getUser().isSiteAdmin();

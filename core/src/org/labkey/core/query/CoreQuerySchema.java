@@ -237,6 +237,10 @@ public class CoreQuerySchema extends UserSchema
             if ((getUser().isSiteAdmin() || getContainer().hasPermission(getUser(), AdminPermission.class))
                     && AuthenticationManager.isAccountExpirationEnabled())
             {
+                List<FieldKey> visibleColumns = new ArrayList<>(users.getDefaultVisibleColumns());
+                visibleColumns.add(FieldKey.fromParts("ExpirationDate"));
+                users.setDefaultVisibleColumns(visibleColumns);
+
                 expirationDateCol.setHidden(false);
                 expirationDateCol.setShownInDetailsView(true);
                 expirationDateCol.setUserEditable(true);
