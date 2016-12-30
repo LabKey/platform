@@ -504,19 +504,19 @@ LABKEY.vis.TimeChartHelper = new function() {
             {
                 schemaName : hasDateCol ? firstMeasure.dateOptions.dateCol.schemaName : firstMeasure.measure.schemaName,
                 queryName : hasDateCol ? firstMeasure.dateOptions.dateCol.queryName : firstMeasure.measure.queryName,
-                name : isDateBased && hasDateCol ? firstMeasure.dateOptions.dateCol.name : getSubjectVisitColName('DisplayOrder')
+                name : isDateBased && hasDateCol ? firstMeasure.dateOptions.dateCol.name : getSubjectVisitColName(nounSingular, 'DisplayOrder')
             },
             {
                 schemaName : hasDateCol ? firstMeasure.dateOptions.dateCol.schemaName : firstMeasure.measure.schemaName,
                 queryName : hasDateCol ? firstMeasure.dateOptions.dateCol.queryName : firstMeasure.measure.queryName,
-                name : (isDateBased ? nounSingular + "Visit/Visit" : getSubjectVisitColName('SequenceNumMin'))
+                name : (isDateBased ? nounSingular + "Visit/Visit" : getSubjectVisitColName(nounSingular, 'SequenceNumMin'))
             }
         ];
     };
 
-    var getSubjectVisitColName = function(suffix)
+    var getSubjectVisitColName = function(nounSingular, suffix)
     {
-        var nounSingular = getStudySubjectInfo().nounSingular;
+        var nounSingular = nounSingular || getStudySubjectInfo().nounSingular;
         return nounSingular + 'Visit/Visit/' + suffix;
     };
 
@@ -1042,7 +1042,8 @@ LABKEY.vis.TimeChartHelper = new function() {
 
         var getSelectRowsSort = function(response, dataType)
         {
-            var sort = dataType == 'aggregate' ? 'GroupingOrder,UniqueId' : response.measureToColumn[config.chartInfo.subject.name];
+            var nounSingular = config.nounSingular || getStudySubjectInfo().nounSingular,
+                sort = dataType == 'aggregate' ? 'GroupingOrder,UniqueId' : response.measureToColumn[config.chartInfo.subject.name];
 
             if (isDateBased)
             {
@@ -1051,11 +1052,11 @@ LABKEY.vis.TimeChartHelper = new function() {
             else
             {
                 // Issue 28529: if we have a SubjectVisit/sequencenum column, use that instead of SubjectVisit/Visit/SequenceNumMin
-                var sequenceNumCol = response.measureToColumn[getStudySubjectInfo().nounSingular + 'Visit/sequencenum'];
+                var sequenceNumCol = response.measureToColumn[nounSingular + 'Visit/sequencenum'];
                 if (!Ext4.isDefined(sequenceNumCol))
-                    sequenceNumCol = response.measureToColumn[getSubjectVisitColName('SequenceNumMin')];
+                    sequenceNumCol = response.measureToColumn[getSubjectVisitColName(nounSingular, 'SequenceNumMin')];
 
-                sort += ',' + response.measureToColumn[getSubjectVisitColName('DisplayOrder')] + ',' + sequenceNumCol;
+                sort += ',' + response.measureToColumn[getSubjectVisitColName(nounSingular, 'DisplayOrder')] + ',' + sequenceNumCol;
             }
 
             return sort;
