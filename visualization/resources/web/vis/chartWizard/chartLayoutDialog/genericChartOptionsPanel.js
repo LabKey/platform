@@ -65,7 +65,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             if (this.getDefaultChartLabel() != null)
             {
                 this.userEditedLabel = this.labelBox.getValue() != '';
-                this.labelBoxResetButton.enable();
+                this.labelBoxResetButton.setDisabled(!this.userEditedLabel);
             }
         }, this, {buffer: 500});
 
@@ -77,8 +77,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             handler: function() {
                 if (this.getDefaultChartLabel() != null)
                 {
-                    this.labelBoxResetButton.disable();
                     this.userEditedLabel = false;
+                    this.labelBoxResetButton.setDisabled(!this.userEditedLabel);
                     this.setLabel(this.getDefaultChartLabel());
                 }
             },
@@ -1073,6 +1073,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         if (this.getDefaultChartLabel() != value)
         {
             this.userEditedLabel = true;
+            this.labelBoxResetButton.setDisabled(!this.userEditedLabel);
+
             if (this.getDefaultChartLabel() == null)
                 this.defaultChartLabel = value;
         }

@@ -170,7 +170,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                     border: false,
                     items: [this.getFieldSelectionsPanel()]
                 },{
-                    columnWidth: 0.5,
+                    columnWidth: 0.49,
                     cls: 'mapping-query-col',
                     border: false,
                     hidden: true,
