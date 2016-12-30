@@ -57,7 +57,6 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implements ExpDataTable
@@ -114,9 +113,13 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         setDefaultVisibleColumns(defaultCols);
 
         setTitleColumn("Name");
-        DetailsURL detailsURL = new DetailsURL(new ActionURL(ExperimentController.ShowDataAction.class, _userSchema.getContainer()), Collections.singletonMap("rowId", "RowId"));
+
+        // Only include the dataClassId parameter if the ExpData row has a DataClass
+        DetailsURL detailsURL = DetailsURL.fromString("/experiment/showData.view?rowId=${rowId}${dataClass:prefix('%26dataClassId=')}");
+
         setDetailsURL(detailsURL);
         getColumn(Column.RowId).setURL(detailsURL);
+        getColumn(Column.Name).setURL(detailsURL);
 
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
         String domainURI = svc.getDomainURI(getContainer());

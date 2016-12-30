@@ -296,7 +296,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             }
         }
 
-        addColumn(ExpMaterialTable.Column.RowId);
+        ColumnInfo rowIdCol = addColumn(ExpMaterialTable.Column.RowId);
         
         ColumnInfo appCol = addColumn(Column.SourceProtocolApplication);
         appCol.setHidden(true);
@@ -393,10 +393,12 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         ColumnInfo colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
 
-        ActionURL detailsUrl = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
-        DetailsURL url = new DetailsURL(detailsUrl, Collections.singletonMap("rowId", "RowId"));
+        // Only include the sampleSetId parameter if the ExpMaterial row has a SampleSet
+        DetailsURL url = DetailsURL.fromString("/experiment/showMaterial.view?rowId=${rowId}${sampleSet/rowId:prefix('%26sampleSetId=')}");
         nameCol.setURL(url);
+        rowIdCol.setURL(url);
         setDetailsURL(url);
+
         setTitleColumn(Column.Name.toString());
 
         setDefaultVisibleColumns(defaultCols);
