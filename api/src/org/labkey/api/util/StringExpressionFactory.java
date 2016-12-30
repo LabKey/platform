@@ -309,6 +309,12 @@ public class StringExpressionFactory
                     String param = rest.substring("defaultValue('".length(), rest.length() - "')".length());
                     format = new SubstitutionFormat.DefaultSubstitutionFormat(param);
                 }
+                else if (rest.startsWith("number('") && rest.endsWith("')"))
+                {
+                    // TODO: Without a format string parameter, use container default number format
+                    String param = rest.substring("number('".length(), rest.length() - "')".length());
+                    format = new SubstitutionFormat.NumberSubstitutionFormat(param);
+                }
                 else if (rest.startsWith("date('") && rest.endsWith("')"))
                 {
                     String param = rest.substring("date('".length(), rest.length() - "')".length());
@@ -1197,6 +1203,26 @@ public class StringExpressionFactory
                 StringExpression se = StringExpressionFactory.create("${d:date('ISO_ORDINAL_DATE')}", false);
                 String s = se.eval(m);
                 assertEquals("2011-337", s);
+            }
+        }
+
+        @Test
+        public void testNumberFormats()
+        {
+            Double d = 123456.789;
+            Map<Object, Object> m = new HashMap<>();
+            m.put("d", d);
+
+            {
+                StringExpression se = StringExpressionFactory.create("${d:number('0.0000')}", false);
+                String s = se.eval(m);
+                assertEquals("123456.7890", s);
+            }
+
+            {
+                StringExpression se = StringExpressionFactory.create("${d:number('000000000')}", false);
+                String s = se.eval(m);
+                assertEquals("000123457", s);
             }
         }
 

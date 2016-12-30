@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -43,6 +44,8 @@ import java.util.stream.Stream;
  *
  *  ${MyDate:date}
  *  ${MyDate:date('yy-MM d')}
+ *
+ *  ${MyNumber:number('')}
  *
  *  ${MyParam:trim}
  *
@@ -292,6 +295,28 @@ public class SubstitutionFormat
 
     static final SubstitutionFormat date = new DateSubstitutionFormat(DateTimeFormatter.BASIC_ISO_DATE.withZone(ZoneId.systemDefault()));
 
+    public static class NumberSubstitutionFormat extends SubstitutionFormat
+    {
+        final DecimalFormat _format;
+
+        NumberSubstitutionFormat(String formatString)
+        {
+            super("number");
+            _format = new DecimalFormat(formatString);
+        }
+
+        @Override
+        public Object format(Object value)
+        {
+            if (value == null)
+                return null;
+
+            if (!(value instanceof Number))
+                throw new IllegalArgumentException("Expected number: " + value);
+
+            return _format.format(value);
+        }
+    }
 
     final String _name;
     final String _shortName;
