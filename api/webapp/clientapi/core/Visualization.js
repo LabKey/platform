@@ -334,6 +334,8 @@ LABKEY.Query.Visualization = new function() {
          * permissions to the visualization's folder.  If false, only the creating user can see the visualization.  Defaults to true.
          * @param {Boolean} [config.thumbnailType] String indicating whether a thumbnail should be auto-generated ('AUTO'), no thumbnail
          * should be saved ('NONE'), or the existing custom thumbnail should be kept ('CUSTOM')
+         * @param {Boolean} [config.iconType] String indicating whether a icon should be auto-generated ('AUTO'), no icon
+         * should be saved ('NONE'), or the existing custom icon should be kept ('CUSTOM')
          * @param {String} [config.svg] String svg to be used to generate a thumbnail
          * @param {String} [config.schemaName] Optional, but required if config.queryName is provided.  Allows the visualization to
          * be scoped to a particular query.  If scoped, this visualization will appear in the 'views' menu for that query.
@@ -364,6 +366,7 @@ LABKEY.Query.Visualization = new function() {
                 replace: config.replace,
                 shared: config.shared,
                 thumbnailType: config.thumbnailType,
+                iconType: config.iconType,
                 svg : config.svg,
                 type : config.type,
                 schemaName: config.schemaName,
