@@ -816,7 +816,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         else
         {
             // If we're in edit mode then we can load all of the columns.
-            columns = this.getChartTypePanel().getQueryColumnNames();
+            columns = this.getChartTypePanel().getQueryColumnFieldKeys();
         }
 
         return columns;

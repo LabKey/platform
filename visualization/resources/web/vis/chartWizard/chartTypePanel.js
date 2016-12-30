@@ -414,6 +414,11 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         return this.getQueryColumnsStore().collect('name');
     },
 
+    getQueryColumnFieldKeys : function()
+    {
+        return this.getQueryColumnsStore().collect('fieldKey');
+    },
+
     getQueryColumnsGrid : function()
     {
         if (!this.queryColumnsGrid)
@@ -1319,6 +1324,7 @@ Ext4.define('LABKEY.vis.QueryColumnModel',{
             return value || record.data.name;
         }},
         {name: 'name', type: 'string'},
+        {name: 'fieldKey', type: 'string'},
         {name: 'shortCaption', type: 'string', defaultValue: undefined},
         {name: 'label', type: 'string', convert: function(value, record) {
             return value || record.data.shortCaption;

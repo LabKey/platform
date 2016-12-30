@@ -118,6 +118,11 @@ Ext4.define('LABKEY.vis.TimeChartYMeasureField', {
                         // otherwise, try a few hard-coded options
                         var dateCol = Ext4.isObject(this.selection.dateOptions) ? this.selection.dateOptions.dateCol : null,
                             index = 0;
+
+                        // backwards compatibility support for mapping ParticipantVisit/VisitDate to study subject based dateCol name
+                        if (Ext4.isObject(dateCol) && dateCol.name == 'ParticipantVisit/VisitDate')
+                            dateCol.name = visitDateStr;
+
                         if (Ext4.isObject(dateCol) && Ext4.isString(dateCol.name))
                             index = this.getStoreIndexByName(this.getMeasureDateStore(), dateCol.name, dateCol.queryName);
                         else if (store.find('name', visitDateStr) > -1)

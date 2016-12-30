@@ -497,20 +497,27 @@ LABKEY.vis.TimeChartHelper = new function() {
     var generateDataSortArray = function(subject, firstMeasure, isDateBased, nounSingular)
     {
         nounSingular = nounSingular || getStudySubjectInfo().nounSingular;
+        var hasDateCol = firstMeasure.dateOptions && firstMeasure.dateOptions.dateCol;
 
         return [
             subject,
             {
-                schemaName : firstMeasure.dateOptions ? firstMeasure.dateOptions.dateCol.schemaName : firstMeasure.measure.schemaName,
-                queryName : firstMeasure.dateOptions ? firstMeasure.dateOptions.dateCol.queryName : firstMeasure.measure.queryName,
-                name : isDateBased ? firstMeasure.dateOptions.dateCol.name : nounSingular + "Visit/Visit/DisplayOrder"
+                schemaName : hasDateCol ? firstMeasure.dateOptions.dateCol.schemaName : firstMeasure.measure.schemaName,
+                queryName : hasDateCol ? firstMeasure.dateOptions.dateCol.queryName : firstMeasure.measure.queryName,
+                name : isDateBased && hasDateCol ? firstMeasure.dateOptions.dateCol.name : getSubjectVisitColName('DisplayOrder')
             },
             {
-                schemaName : firstMeasure.dateOptions ? firstMeasure.dateOptions.dateCol.schemaName : firstMeasure.measure.schemaName,
-                queryName : firstMeasure.dateOptions ? firstMeasure.dateOptions.dateCol.queryName : firstMeasure.measure.queryName,
-                name : nounSingular + (isDateBased ? "Visit/Visit" : "Visit/Visit/SequenceNumMin")
+                schemaName : hasDateCol ? firstMeasure.dateOptions.dateCol.schemaName : firstMeasure.measure.schemaName,
+                queryName : hasDateCol ? firstMeasure.dateOptions.dateCol.queryName : firstMeasure.measure.queryName,
+                name : (isDateBased ? nounSingular + "Visit/Visit" : getSubjectVisitColName('SequenceNumMin'))
             }
         ];
+    };
+
+    var getSubjectVisitColName = function(suffix)
+    {
+        var nounSingular = getStudySubjectInfo().nounSingular;
+        return nounSingular + 'Visit/Visit/' + suffix;
     };
 
     /**
@@ -669,13 +676,23 @@ LABKEY.vis.TimeChartHelper = new function() {
                 if (errorBarType)
                 {
                     rightAccessorMin = function(row){
-                        var error = row[rightMeasures[i] + errorBarType].value;
-                        return row[rightMeasures[i]].value - error;
+                        if (row[rightMeasures[i] + errorBarType])
+                        {
+                            var error = row[rightMeasures[i] + errorBarType].value;
+                            return row[rightMeasures[i]].value - error;
+                        }
+                        else
+                            return null;
                     };
 
                     rightAccessorMax = function(row){
-                        var error = row[rightMeasures[i] + errorBarType].value;
-                        return row[rightMeasures[i]].value + error;
+                        if (row[rightMeasures[i] + errorBarType])
+                        {
+                            var error = row[rightMeasures[i] + errorBarType].value;
+                            return row[rightMeasures[i]].value + error;
+                        }
+                        else
+                            return null;
                     };
                 }
 
@@ -1023,14 +1040,36 @@ LABKEY.vis.TimeChartHelper = new function() {
                 config.success.call(config.scope, chartData);
         };
 
+        var getSelectRowsSort = function(response, dataType)
+        {
+            var sort = dataType == 'aggregate' ? 'GroupingOrder,UniqueId' : response.measureToColumn[config.chartInfo.subject.name];
+
+            if (isDateBased)
+            {
+                sort += ',' + config.chartInfo.measures[0].dateOptions.interval;
+            }
+            else
+            {
+                // Issue 28529: if we have a SubjectVisit/sequencenum column, use that instead of SubjectVisit/Visit/SequenceNumMin
+                var sequenceNumCol = response.measureToColumn[getStudySubjectInfo().nounSingular + 'Visit/sequencenum'];
+                if (!Ext4.isDefined(sequenceNumCol))
+                    sequenceNumCol = response.measureToColumn[getSubjectVisitColName('SequenceNumMin')];
+
+                sort += ',' + response.measureToColumn[getSubjectVisitColName('DisplayOrder')] + ',' + sequenceNumCol;
+            }
+
+            return sort;
+        };
+
         var queryTempResultsForRows = function(response, dataType)
         {
-            // Issue 28529: re-query for the actual data off of the temp query results, which are sorted correctly
+            // Issue 28529: re-query for the actual data off of the temp query results
             LABKEY.Query.selectRows({
                 containerPath: config.containerPath,
                 schemaName: response.schemaName,
                 queryName: response.queryName,
                 requiredVersion: '9.1',
+                sort: getSelectRowsSort(response, dataType),
                 success: function(tempQueryData)
                 {
                     response.rows = tempQueryData.rows;
