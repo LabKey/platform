@@ -178,6 +178,9 @@
       <column columnName="Description"/>
       <column columnName="LastLogin"/>
       <column columnName="DisplayName"/>
+      <column columnName="ExpirationDate">
+        <description>The expiration date for the account. If applicable compliance setting is enabled, account will be disabled after this date by nightly maintenance task.</description>
+      </column>
     </columns>
     <titleColumn>DisplayName</titleColumn>
   </table>
@@ -344,6 +347,13 @@
       <column columnName="Active">
         <description>True if this user is active, false otherwise. Inactive users are not allowed to sign in.</description>
         <isUserEditable>false</isUserEditable>
+      </column>
+      <column columnName="ExpirationDate">
+        <description>The date this user account expires.</description>
+        <columnTitle>Expiration Date</columnTitle>
+        <inputType>text</inputType>
+        <formatString>DateTime</formatString>
+        <inputLength>23</inputLength>
       </column>
     </columns>
     <tableTitle>Users</tableTitle>

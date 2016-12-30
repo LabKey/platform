@@ -1,0 +1,1 @@
+ALTER TABLE core.UsersData ADD ExpirationDate TIMESTAMP;

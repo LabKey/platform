@@ -72,6 +72,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
         _reservedNames.add("DisplayName");
         _reservedNames.add("LastLogin");
         _reservedNames.add("Active");
+        _reservedNames.add("ExpirationDate");
 
         _requiredProperties.add(new PropertyDescriptorSpec("FirstName", PropertyType.STRING, 64, false));
         _requiredProperties.add(new PropertyDescriptorSpec("LastName", PropertyType.STRING, 64, false));

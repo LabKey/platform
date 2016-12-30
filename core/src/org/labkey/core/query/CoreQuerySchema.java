@@ -29,6 +29,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MemberType;
 import org.labkey.api.security.SecurityLogger;
@@ -222,8 +223,27 @@ public class CoreQuerySchema extends UserSchema
 
         addGroupsColumn(users);
         addAvatarColumn(users);
-        
+
+        toggleExpirationDateColumn(users);
+
         return users;
+    }
+
+    private void toggleExpirationDateColumn(FilteredTable users)
+    {
+        ColumnInfo expirationDateCol = users.getColumn(FieldKey.fromParts("ExpirationDate"));
+        if (expirationDateCol != null)
+        {
+            if ((getUser().isSiteAdmin() || getContainer().hasPermission(getUser(), AdminPermission.class))
+                    && AuthenticationManager.isAccountExpirationEnabled())
+            {
+                expirationDateCol.setHidden(false);
+                expirationDateCol.setShownInDetailsView(true);
+                expirationDateCol.setUserEditable(true);
+                expirationDateCol.setShownInInsertView(true);
+                expirationDateCol.setShownInUpdateView(true);
+            }
+        }
     }
 
     public TableInfo getPrincipals()

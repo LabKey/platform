@@ -123,6 +123,9 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
         setDefaultVisibleColumns(_defaultColumns);
 
+        // expiration date will only show for admins under Site Users, if enabled
+        hideExpirationDateColumn();
+
         // The details action requires admin permission so don't offer the link if they can't see it
         if (getUser().isSiteAdmin() || getContainer().hasPermission(getUser(), AdminPermission.class))
         {
@@ -139,6 +142,19 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 userIdCol.setShownInInsertView(false);
                 userIdCol.setShownInUpdateView(false);
             }
+        }
+    }
+
+    private void hideExpirationDateColumn()
+    {
+        ColumnInfo expirationDateCol = getColumn(FieldKey.fromParts("ExpirationDate"));
+        if (expirationDateCol != null)
+        {
+            expirationDateCol.setHidden(true);
+            expirationDateCol.setShownInDetailsView(false);
+            expirationDateCol.setUserEditable(false);
+            expirationDateCol.setShownInInsertView(false);
+            expirationDateCol.setShownInUpdateView(false);
         }
     }
 

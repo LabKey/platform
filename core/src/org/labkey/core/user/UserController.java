@@ -144,10 +144,12 @@ import javax.mail.internet.MimeMessage;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -983,6 +985,13 @@ public class UserController extends SpringActionController
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "The value of the 'Display Name' field conflicts with another value in the database. Please enter a different value");
                 }
+            }
+
+            Timestamp expirationDate = (Timestamp) form.getTypedColumns().get("ExpirationDate");
+            if (expirationDate != null)
+            {
+                if ((new Date()).compareTo(new Date(expirationDate.getTime())) > 0)
+                    errors.reject(SpringActionController.ERROR_MSG, "Expiration Date cannot be in the past.");
             }
 
             // validate the original size of the avatar image
