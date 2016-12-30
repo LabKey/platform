@@ -62,6 +62,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
     protected int[] _groups = null;
     private Date _lastLogin = null;
     private boolean _active = false;
+    private Date _expirationDate = null;
     private String _phone;
     private String _mobile;
     private String _pager;
@@ -500,4 +501,14 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
     @Override
     public void afterThumbnailSave(ThumbnailService.ImageType imageType, DataViewProvider.EditInfo.ThumbnailType thumbnailType)
     {}
+
+    public Date getExpirationDate()
+    {
+        return _expirationDate;
+    }
+
+    public void setExpirationDate(Date expirationDate)
+    {
+        _expirationDate = expirationDate;
+    }
 }

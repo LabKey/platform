@@ -37,6 +37,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.DisableLoginProvider;
+import org.labkey.api.security.AuthenticationProvider.ExpireAccountProvider;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.RequestAuthenticationProvider;
@@ -389,6 +390,14 @@ public class AuthenticationManager
                 return provider;
 
         return null;
+    }
+
+    public static @Nullable boolean isAccountExpirationEnabled()
+    {
+        for (ExpireAccountProvider provider : AuthenticationProviderCache.getProviders(ExpireAccountProvider.class))
+            if (provider.isEnabled())
+                return true;
+        return false;
     }
 
     private static final String AUTHENTICATION_CATEGORY = "Authentication";

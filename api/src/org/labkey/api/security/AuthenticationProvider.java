@@ -45,7 +45,8 @@ public interface AuthenticationProvider
                 RequestAuthenticationProvider.class,
             SecondaryAuthenticationProvider.class,
             ResetPasswordProvider.class,
-            DisableLoginProvider.class
+            DisableLoginProvider.class,
+            ExpireAccountProvider.class
     );
 
     @Nullable ActionURL getConfigurationLink();
@@ -147,6 +148,11 @@ public interface AuthenticationProvider
         void addUserDelay(HttpServletRequest request, String id, int addCount);
 
         void resetUserDelay(String id);
+    }
+
+    interface ExpireAccountProvider extends AuthenticationProvider
+    {
+        boolean isEnabled();
     }
 
     class AuthenticationResponse
