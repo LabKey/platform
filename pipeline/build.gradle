@@ -4,7 +4,7 @@ dependencies {
     external("org.apache.activemq:activemq-core:${activemqCoreVersion}") {
       exclude group: "javax.servlet", module: "servlet-api"
     }
-    external("org.mule.modules:mule-module-builders:${muleModuleBuildersVersion}") // named changed based on pom file
+    external("org.mule.modules:mule-module-builders:${muleModuleBuildersVersion}") // name changed based on pom file
             {
                 // exclude slf4j here because it is also included by the transitive dependency on the tika library
                 exclude group: "org.slf4j", module: "slf4j-api"
