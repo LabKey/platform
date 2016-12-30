@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
+<%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -40,7 +41,7 @@
     Container c = getContainer();
 
     // study products are editable at the project level for Dataspace projects
-    boolean disableEdit = c.getProject() != null && c.getProject().isDataspace() && !c.isDataspace();
+    boolean isDataspaceProject = c.getProject() != null && c.getProject().isDataspace() && !c.isDataspace();
 
     String returnUrl = bean.getReturnUrl() != null ? bean.getReturnUrl() : PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c).toString();
 %>
@@ -50,7 +51,7 @@
     {
         Ext4.create('LABKEY.VaccineDesign.StudyProductsPanel', {
             renderTo : 'study-products-panel',
-            disableEdit : <%=disableEdit%>,
+            disableEdit : <%=isDataspaceProject%>,
             returnURL : <%=q(returnUrl)%>
         });
 
@@ -121,13 +122,27 @@
     });
 </script>
 
-Enter vaccine design information in the grids below.
+<%
+if (isDataspaceProject)
+{
+    ActionURL projectManageProductsURL = new ActionURL(StudyDesignController.ManageStudyProductsAction.class, getContainer().getProject());
+    projectManageProductsURL.addReturnURL(getActionURL());
+%>
+Vaccine design information is defined at the project level for Dataspace projects. The grids below are read-only.
 <div style="width: 850px;">
     <ul>
         <li>
-            Configure dropdown options for challenge types, immunogen types, genes, subtypes and routes at the project level to be shared across study designs or within this folder for
-            study specific properties: <span id='config-dropdown-menu'></span>
+            Use the manage study products page at the project level to make changes to the information listed below.
+            <%=textLink("Manage Study Products", projectManageProductsURL)%>
         </li>
+<%
+}
+else
+{
+%>
+Enter vaccine design information in the grids below.
+<div style="width: 850px;">
+    <ul>
         <li>Each immunogen, adjuvant and challenge in the study should be listed on one row of the grids below.</li>
         <li>Immunogens, adjuvants and challenges should have unique labels.</li>
         <li>If possible, the immunogen description should include specific sequences of HIV Antigens included in the immunogen.</li>
@@ -139,6 +154,14 @@ Enter vaccine design information in the grids below.
             %>
             <%=textLink("Manage Treatments", manageTreatmentsURL)%>
         </li>
+<%
+}
+%>
+        <li>
+            Configure dropdown options for challenge types, immunogen types, genes, subtypes and routes at the project level to be shared across study designs or within this folder for
+            study specific properties: <span id='config-dropdown-menu'></span>
+        </li>
     </ul>
 </div>
+
 <div id="study-products-panel"></div>

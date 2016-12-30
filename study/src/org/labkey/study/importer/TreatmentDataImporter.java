@@ -17,6 +17,7 @@ package org.labkey.study.importer;
 
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
@@ -87,6 +88,9 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
             {
                 ctx.getLogger().info("Loading treatment data tables");
 
+                Container c = ctx.getContainer();
+                boolean isDataspaceProject = c.getProject() != null && c.getProject().isDataspace() && !c.isDataspace();
+
                 DbScope scope = StudySchema.getInstance().getSchema().getScope();
                 try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
@@ -114,8 +118,9 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
 
                     // add the treatment specific tables
                     StudyQuerySchema.TablePackage productTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_TABLE_NAME);
-                    importTableData(ctx, vf, productTablePackage, _productTableMapBuilder,
-                           new PreserveExistingProjectData(ctx.getUser(), productTablePackage.getTableInfo(), "Label", "RowId", _productIdMap));
+                    PreserveExistingProjectData productTransform = !isDataspaceProject ? null //Issue 28858
+                            : new PreserveExistingProjectData(ctx.getUser(), productTablePackage.getTableInfo(), "Label", "RowId", _productIdMap);
+                    importTableData(ctx, vf, productTablePackage, _productTableMapBuilder, productTransform);
 
                     // product antigen table
                     StudyQuerySchema.TablePackage productAntigenTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);

@@ -52,7 +52,7 @@
     boolean canManageStudy = c.hasPermission(user, ManageStudyPermission.class);
 
     // treatment schedule is editable for the individual studies in a Dataspace project
-    boolean disableEdit = c.isProject() && c.isDataspace();
+    boolean isDataspaceProject = c.isProject() && c.isDataspace();
 
     String visitNoun = "Visit";
     if (study != null && study.getTimepointType() == TimepointType.DATE)
@@ -83,7 +83,7 @@
 
                     Ext4.create(panelClass, {
                         renderTo : 'treatment-schedule-panel',
-                        disableEdit : <%=disableEdit%>,
+                        disableEdit : <%=isDataspaceProject%>,
                         subjectNoun : <%=q(subjectNoun)%>,
                         visitNoun : <%=q(visitNoun)%>,
                         returnURL : <%=q(returnUrl)%>,
@@ -94,6 +94,17 @@
     });
 </script>
 
+<%
+if (isDataspaceProject)
+{
+%>
+Treatment information is defined at the individual study level for Dataspace projects. The grids below are read-only.
+<br/><br/>
+<%
+}
+else
+{
+%>
 Enter treatment information in the grids below.
 <div style="width: 1400px;">
     <ul>
@@ -151,5 +162,8 @@ Enter treatment information in the grids below.
 %>
     </ul>
 </div>
+<%
+}
+%>
+
 <div id="treatment-schedule-panel"></div>
-<br/>

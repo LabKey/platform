@@ -1181,6 +1181,7 @@ public class StudyQuerySchema extends UserSchema
         _dataspaceProjectLevelTables.add(STUDY_DESIGN_UNITS_TABLE_NAME);
         _dataspaceProjectLevelTables.add(PRODUCT_TABLE_NAME);
         _dataspaceProjectLevelTables.add(PRODUCT_ANTIGEN_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(DOSE_AND_ROUTE_TABLE_NAME);
         _dataspaceProjectLevelTables.add(PERSONNEL_TABLE_NAME);
         _dataspaceProjectLevelTables.add(VISIT_TAG_TABLE_NAME);
         _dataspaceProjectLevelTables.add(VISIT_TABLE_NAME);
@@ -1374,6 +1375,7 @@ public class StudyQuerySchema extends UserSchema
                 names.add(STUDY_DESIGN_UNITS_TABLE_NAME);
                 names.add(STUDY_DESIGN_ASSAYS_TABLE_NAME);
                 names.add(STUDY_DESIGN_LABS_TABLE_NAME);
+                names.add(DOSE_AND_ROUTE_TABLE_NAME);
 
                 if (_study != null)
                 {
