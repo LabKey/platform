@@ -336,7 +336,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                     {
                         box.getEl().on('click', function ()
                         {
-                            console.log('testing the click of trash can');
+                            this.down('#deleteCustomThumbnail').setValue(true);
                         }, this);
                     }
                 }
@@ -394,11 +394,17 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
                 // hidden form field for the custom thumbnail file name
                 imagesItems.push({
-                    xtype : 'hidden',
-                    id    : 'customThumbnailFileName',
-                    name  : 'customThumbnailFileName',
-                    value : null
-                });
+                            xtype: 'hidden',
+                            id: 'customThumbnailFileName',
+                            name: 'customThumbnailFileName',
+                            value: null
+                        },
+                        {
+                            xtype: 'hidden',
+                            id: 'deleteCustomThumbnail',
+                            name: 'deleteCustomThumbnail',
+                            value: false
+                        });
             }
 
             // For the time being any view that supports custom thumbnails also supports custom icons. So a separate check
@@ -413,7 +419,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                     {
                         box.getEl().on('click', function ()
                         {
-                            console.log('testing the click of trash can');
+                            this.down('#deleteCustomIcon').setValue(true);
                         }, this);
                     }
                 }
@@ -469,12 +475,20 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                     }
                 });
 
-                imagesItems.push({
-                    xtype : 'hidden',
-                    id    : 'customIconFileName',
-                    name  : 'customIconFileName',
-                    value : null
-                });
+                imagesItems.push(
+                        {
+                            xtype: 'hidden',
+                            id: 'customIconFileName',
+                            name: 'customIconFileName',
+                            value: null
+                        },
+                        {
+                            xtype: 'hidden',
+                            id: 'deleteCustomIcon',
+                            name: 'deleteCustomIcon',
+                            value: false
+                        }
+                );
             }
         }
 

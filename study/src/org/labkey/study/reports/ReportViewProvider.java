@@ -272,7 +272,9 @@ public class ReportViewProvider implements DataViewProvider
                 Property.customThumbnail.name(),
                 Property.customThumbnailFileName.name(),
                 Property.customIcon.name(),
-                Property.customIconFileName.name()
+                Property.customIconFileName.name(),
+                Property.deleteCustomThumbnail.name(),
+                Property.deleteCustomIcon.name()
         };
 
         private static final Actions[] _actions = {
@@ -366,7 +368,16 @@ public class ReportViewProvider implements DataViewProvider
 
                     ReportService.get().saveReport(new DefaultContainerUser(context.getContainer(), context.getUser()), descriptor.getReportKey(), report);
 
-                    if (props.containsKey(Property.customThumbnail.name()))
+                    boolean isDeleteThumbnail = props.containsKey(Property.deleteCustomThumbnail.name()) &&
+                            Boolean.parseBoolean((String)props.get(Property.deleteCustomThumbnail.name()));
+                    if (isDeleteThumbnail)
+                    {
+                        ThumbnailService svc1 = ServiceRegistry.get().getService(ThumbnailService.class);
+                        svc1.deleteThumbnail(report, ImageType.Large);
+                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), context.getContainer(), "thumbnailType", ThumbnailType.NONE.name());
+                    }
+
+                    if (!isDeleteThumbnail && props.containsKey(Property.customThumbnail.name()))
                     {
                         // custom thumbnail file provided by the user is stored in the properties map as an InputStream
                         InputStream is = (InputStream)props.get(Property.customThumbnail.name());
@@ -383,7 +394,16 @@ public class ReportViewProvider implements DataViewProvider
                         }
                     }
 
-                    if (props.containsKey(Property.customIcon.name()))
+                    boolean isDeleteIcon = props.containsKey(Property.deleteCustomIcon.name()) &&
+                            Boolean.parseBoolean((String)props.get(Property.deleteCustomIcon.name()));
+                    if (isDeleteIcon)
+                    {
+                        ThumbnailService svc1 = ServiceRegistry.get().getService(ThumbnailService.class);
+                        svc1.deleteThumbnail(report, ImageType.Small);
+                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), context.getContainer(), "iconType", ThumbnailType.NONE.name());
+                    }
+
+                    if (!isDeleteIcon && props.containsKey(Property.customIcon.name()))
                     {
                         InputStream is = (InputStream)props.get(Property.customIcon.name());
                         String filename = (String)props.get(Property.customIconFileName.name());
