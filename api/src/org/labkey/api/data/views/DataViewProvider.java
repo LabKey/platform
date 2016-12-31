@@ -92,9 +92,11 @@ public interface DataViewProvider
             
             customThumbnail,
             customThumbnailFileName,
+            deleteCustomThumbnail,
 
             customIcon,
-            customIconFileName
+            customIconFileName,
+            deleteCustomIcon
         }
 
         // a list of thumbnail types
