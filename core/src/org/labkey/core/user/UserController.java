@@ -98,6 +98,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
@@ -1044,6 +1045,11 @@ public class UserController extends SpringActionController
             _pkVal = NumberUtils.toInt(form.getPkVal().toString());
             boolean isOwnRecord = _pkVal.equals(_userId);
 
+            Date oldExpirationDate = null;
+            User targetUser = UserManager.getUser(_pkVal);
+            if (targetUser != null)
+                oldExpirationDate = targetUser.getExpirationDate();
+
             if (user.isSiteAdmin() || isOwnRecord)
             {
                 TableInfo table = form.getTable();
@@ -1051,9 +1057,50 @@ public class UserController extends SpringActionController
                     ((UsersTable)table).setMustCheckPermissions(false);
                 doInsertUpdate(form, errors, false);
 
+                if (0 == errors.getErrorCount())
+                {
+                    auditExpirationDateChange(oldExpirationDate, form);
+                }
+
                 updateAvatarThumbnail();
             }
             return 0 == errors.getErrorCount();
+        }
+
+        private void auditExpirationDateChange(Date oldExpirationDate, QueryUpdateForm form)
+        {
+            Date newExpirationDate = null;
+            Timestamp expirationDateTimestamp = (Timestamp) form.getTypedColumns().get("ExpirationDate");
+            if (expirationDateTimestamp != null)
+                newExpirationDate = new Date(expirationDateTimestamp.getTime());
+            User targetUser = UserManager.getUser(_pkVal);
+            if (targetUser == null)
+                return;
+            String currentUserEmail = getUser().getEmail();
+            String targetUserEmail = targetUser.getEmail();
+            Container c = getContainer();
+
+            StringBuilder message = new StringBuilder(currentUserEmail);
+
+            if (oldExpirationDate == null && newExpirationDate == null)
+                return;
+            else if (oldExpirationDate == null)
+            {
+                message.append(" set expiration date for ").append(targetUserEmail).append(" to ").append(DateUtil.formatDateTime(c, newExpirationDate));
+            }
+            else if (newExpirationDate == null)
+            {
+                message.append(" removed expiration date for ").append(targetUserEmail).append(" from ").append(DateUtil.formatDateTime(c, oldExpirationDate));
+            }
+            else if (oldExpirationDate.compareTo(newExpirationDate) != 0)
+            {
+                message.append(" changed expiration date for ").append(targetUserEmail).append(" from ").append(DateUtil.formatDateTime(c, oldExpirationDate)).append(" to ").append(DateUtil.formatDateTime(c, newExpirationDate));
+            }
+            else
+                return;
+
+            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(getContainer().getId(), message.toString(), targetUser);
+            AuditLogService.get().addEvent(getUser(), event);
         }
 
         private SpringAttachmentFile getAvatarFileFromFileMap()
