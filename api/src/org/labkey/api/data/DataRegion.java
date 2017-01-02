@@ -1439,15 +1439,21 @@ public class DataRegion extends AbstractDataRegion
                     {
                         for (Aggregate.Result r : result)
                         {
+                            String statLabel = r.getAggregate().getDisplayString();
+                            Aggregate.Type type = r.getAggregate().getType();
+                            String statDescr = "";
+
+                            if (type.getDescription() != null)
+                                statDescr = PageFlowUtil.helpPopup(type.getFullLabel(), type.getDescription());
+
                             out.write("<div>");
-                            out.write("<span class='aggregate-label'>" + r.getAggregate().getDisplayString() + ":</span>&nbsp;");
+                            out.write("<span class='summary-stat-label'>" + statLabel + statDescr + ":</span>&nbsp;");
 
                             // Issue 16570: Formatter is only applicable if the aggregate return type is
                             // similar to the input jdbcType.  For example, don't apply a date format
                             // to COUNT aggregates but do apply a string or double format to a MIN/MAX aggregate.
                             Format formatter = renderer.getFormat();
 
-                            Aggregate.Type type = r.getAggregate().getType();
                             JdbcType inputType = col.getJdbcType();
                             JdbcType returnType = type.returnType(inputType);
                             if (type.isLegal(inputType))

@@ -56,6 +56,12 @@ public class Aggregate
         String getFullLabel();
         String getDisplayValue();
 
+        @Nullable
+        default String getDescription()
+        {
+            return null;
+        }
+
         default String getAliasName()
         {
             return getSQLFunctionName(null);
@@ -177,6 +183,13 @@ public class Aggregate
                 },
         COUNT("Count (non-blank)")
                 {
+                    @Nullable
+                    @Override
+                    public String getDescription()
+                    {
+                        return "Count of the number of values in the set that have a non-blank value (i.e. value is not NULL).";
+                    }
+
                     @Override
                     public JdbcType returnType(JdbcType jdbcType)
                     {
