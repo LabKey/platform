@@ -22,7 +22,6 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.SortDirection;
 import org.labkey.test.TestFileUtils;
-import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.categories.DailyB;
 import org.labkey.test.util.DataRegionExportHelper;
 import org.labkey.test.util.DataRegionTable;
@@ -92,7 +91,7 @@ public class CohortTest extends BaseWebDriverTest
         waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.linkWithText("Blood"), WAIT_FOR_PAGE);
 
         DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
-        assertEquals("Incorrect number of vials.", "Count (non-blank): 25", specimenTable.getTotal("Global Unique Id")); // 5 participants x 5 visits
+        assertEquals("Incorrect number of vials.", "Count (non-blank): 25", specimenTable.getSummaryStatFooterText("Global Unique Id")); // 5 participants x 5 visits
         List<String> cohortValues = specimenTable.getColumnDataAsText("Collection Cohort");
         assertEquals(10, Collections.frequency(cohortValues, "Positive"));
         assertEquals(10, Collections.frequency(cohortValues, "Negative"));
@@ -616,7 +615,7 @@ public class CohortTest extends BaseWebDriverTest
 
     private void verifyVialCount(DataRegionTable table, int expectedCount)
     {
-        assertEquals("Incorrect number of vials", "Count (non-blank): " + expectedCount, table.getTotal("Global Unique Id"));
+        assertEquals("Incorrect number of vials", "Count (non-blank): " + expectedCount, table.getSummaryStatFooterText("Global Unique Id"));
     }
 
     private void verifyNewCohort()

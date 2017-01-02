@@ -1202,7 +1202,7 @@ th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-
     background-color: #EEEEEE;
 }
 
-.labkey-data-region .labkey-col-total span.aggregate-label
+.labkey-data-region .labkey-col-total span.summary-stat-label
 {
     font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
 }
