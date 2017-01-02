@@ -50,6 +50,13 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
     public PlateImpl(PlateTemplateImpl template, double[][] wellValues, @Nullable boolean[][] excluded, int runId, int plateNumber)
     {
         super(template.getContainer(), template.getName(), template.getType(), template.getRows(), template.getColumns());
+
+        if (wellValues.length != template.getRows() && wellValues[0].length != template.getColumns())
+            throw new IllegalArgumentException("Well values array size must match the template size");
+
+        if (excluded != null && (excluded.length != template.getRows() && excluded[0].length != template.getColumns()))
+            throw new IllegalArgumentException("Excluded values array size must match the template size");
+
         _wells = new WellImpl[template.getRows()][template.getColumns()];
         _runId = runId;
         _plateNumber = plateNumber;
