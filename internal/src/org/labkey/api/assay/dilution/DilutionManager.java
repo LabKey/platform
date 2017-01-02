@@ -26,6 +26,7 @@ import org.labkey.api.data.Filter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -43,6 +44,7 @@ import org.labkey.api.study.PlateService;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -172,6 +174,28 @@ public class DilutionManager
         filter.addCondition(FieldKey.fromParts("excluded"), true);
 
         return new TableSelector(getSchema().getTable(WELL_DATA_TABLE_NAME), filter, null).getArrayList(WellDataRow.class);
+    }
+
+    /**
+     * clear all well exclusions for this run
+     */
+    public static void clearWellExclusions(int runId)
+    {
+        SQLFragment sql = new SQLFragment("UPDATE ").append(DilutionManager.getTableInfoWellData(), "").
+                append(" SET excluded = false WHERE runid = ?");
+        sql.addAll(runId);
+        new SqlExecutor(getSchema()).execute(sql);
+    }
+
+    /**
+     * Set the excluded flag for the collection of well row ids
+     */
+    public static int setWellExclusions(Collection<Integer> wellRowIds)
+    {
+        SQLFragment update = new SQLFragment("UPDATE ").append(DilutionManager.getTableInfoWellData(), "").
+                append(" SET excluded = true WHERE rowid ");
+        getSchema().getSqlDialect().appendInClauseSql(update, wellRowIds);
+        return new SqlExecutor(getSchema()).execute(update);
     }
 
     @Nullable

@@ -301,7 +301,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     protected List<Plate> createPlates(File dataFile, PlateTemplate template) throws ExperimentException
     {
-        return Collections.singletonList(PlateService.get().createPlate(template, getCellValues(dataFile, template), null, -1, 1));
+        return Collections.singletonList(PlateService.get().createPlate(template, getCellValues(dataFile, template), null, PlateService.NO_RUNID, 1));
     }
 
     protected List<Plate> createPlates(ExpRun run, PlateTemplate template, boolean recalcStats) throws ExperimentException
