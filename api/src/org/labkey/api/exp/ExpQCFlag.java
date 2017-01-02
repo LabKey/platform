@@ -15,12 +15,14 @@
  */
 package org.labkey.api.exp;
 
+import org.labkey.api.data.Entity;
+
 /**
  * Quality control flag bean class, attached to an {@link org.labkey.api.exp.api.ExpRun}.
  * User: cnathe
  * Date: Dec 16, 2011
  */
-public class ExpQCFlag
+public class ExpQCFlag extends Entity
 {
     private int _rowId;
     private int _runId;

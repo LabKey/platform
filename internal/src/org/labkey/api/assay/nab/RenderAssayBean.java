@@ -28,6 +28,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.statistics.FitFailedException;
+import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -40,6 +41,8 @@ import org.labkey.api.nab.NabUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AbstractPlateBasedAssayProvider;
 import org.labkey.api.study.assay.AssayProtocolSchema;
@@ -56,6 +59,7 @@ import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -124,6 +128,19 @@ public class RenderAssayBean extends RenderAssayForm
                             _displayProperties.put(property.getNonBlankCaption(), formatValue(property, value));
                         }
                     }
+                }
+            }
+
+            // if any well exclusions have been made, add an entry for modified and modified by
+            Collection<ExpQCFlag> qcFlags = new TableSelector(ExperimentService.get().getTinfoAssayQCFlag(), new SimpleFilter(FieldKey.fromParts("runId"), getRunId()), null).getCollection(ExpQCFlag.class);
+            if (!qcFlags.isEmpty())
+            {
+                ExpQCFlag flag = qcFlags.iterator().next();
+                User user = UserManager.getUser(flag.getModifiedBy());
+                if (user != null)
+                {
+                    String value = String.format("%s on %s", user.getDisplayName(_context.getUser()), DateUtil.formatDate(_context.getContainer(), flag.getModified()));
+                    _displayProperties.put("Last Reviewed for QC", value);
                 }
             }
         }

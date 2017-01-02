@@ -1195,30 +1195,7 @@
 
         function _naturalSort(aso, bso)
         {
-            // http://stackoverflow.com/questions/19247495/alphanumeric-sorting-an-array-in-javascript
-            var a, b, a1, b1, i= 0, n, L,
-                rx=/(\.\d+)|(\d+(\.\d+)?)|([^\d.]+)|(\.\D+)|(\.$)/g;
-
-            if (aso === bso) return 0;
-            a = aso.toLowerCase().match(rx);
-            b = bso.toLowerCase().match(rx);
-
-            //var _empty = LABKEY.app.model.Filter.sorters.handleEmptySort(a, b);
-            //if (_empty !== undefined) {
-            //    return _empty;
-            //}
-
-            L = a.length;
-            while (i < L) {
-                if (!b[i]) return 1;
-                a1 = a[i]; b1 = b[i++];
-                if (a1 !== b1) {
-                    n = a1 - b1;
-                    if (!isNaN(n)) return n;
-                    return a1 > b1 ? 1 : -1;
-                }
-            }
-            return b[i] ? -1 : 0;
+            return LABKEY.internal.SortUtil.naturalSort(aso, bso);
         }
 
         function _selectSeries(measureStore, rowDim, colDim)
