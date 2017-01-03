@@ -1,12 +1,12 @@
-.icon-remove div {
+.thumbnail-remove div, .icon-remove div {
     color: #555555;
 }
-.icon-remove {
+.thumbnail-remove , .icon-remove {
     cursor: pointer;
 }
-.icon-remove {
+.thumbnail-remove , .icon-remove {
     opacity: .5;
 }
-.icon-remove:hover{
+.thumbnail-remove:hover, .icon-remove:hover {
     opacity: 1;
 }

@@ -216,12 +216,16 @@ public class ReportViewProvider implements DataViewProvider
 
                     URLHelper returnUrl = context.getActionURL().getReturnURL();
                     if (returnUrl != null)
+                    {
                         url.addReturnURL(returnUrl);
+                    }
 
                     info.setAccess(access, url);
                 }
                 else
+                {
                     info.setAccess(access);
+                }
 
                 info.setVisible(!descriptor.isHidden());
 
@@ -232,19 +236,25 @@ public class ReportViewProvider implements DataViewProvider
 
                 // This is the small icon
                 info.setIconUrl(ReportUtil.getIconUrl(c, r));
+                String iconCls = ReportUtil.getIconCls(r);
+                info.setDefaultIconCls(iconCls);
+
                 // TODO: This is kind of an ugly check, should break out first part of getDynamicImageUrl() into separate existence check
                 if(ReportUtil.getDynamicImageUrl(c, r, ImageType.Small) == null)
                 {
-                    info.setIconCls(ReportUtil.getIconCls(r));
+                    info.setIconCls(iconCls);
                 }
+
 
                 // This is the thumbnail
                 info.setAllowCustomThumbnail(true);
                 info.setThumbnailUrl(ReportUtil.getThumbnailUrl(c, r));
+                info.setDefaultThumbnailUrl(ReportUtil.getDefaultThumbnailUrl(c, r));
 
                 info.setTags(ReportPropsManager.get().getProperties(descriptor.getEntityId(), c));
 
                 info.setDisplayOrder(descriptor.getDisplayOrder());
+                info.setDefaultIconCls(iconCls);
 
                 views.add(info);
             }
