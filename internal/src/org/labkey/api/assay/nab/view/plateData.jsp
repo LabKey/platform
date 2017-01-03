@@ -46,7 +46,7 @@
             %>
             <tr>
                 <td class="labkey-data-region-header-container" style="text-align:center;" colspan="<%= plate.getColumns() + 1 %>">
-                    Plate <%= ++plateIndex %>
+                    Plate <%= plateIndex+1 %>
                 </td>
             </tr>
             <%
@@ -87,6 +87,7 @@
     </td>
 </tr>
 <%
+        plateIndex++;
     }
 %>
 </table>
