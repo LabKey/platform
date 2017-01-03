@@ -39,7 +39,7 @@
 %>
 <tr>
     <td valign=top>
-        <table class="labkey-data-region labkey-show-borders">
+        <table class="labkey-data-region labkey-show-borders plate-summary">
             <%
                 if (multiPlate)
                 {
@@ -74,7 +74,7 @@
                     for (int col = 0; col < plate.getColumns(); col++)
                     {
                 %>
-                <td align=right>
+                <td align=right class="<%=String.format("%s-%s-%s", plateIndex+1, row, col)%>">
                     <%=h(wellFormat != null ? String.format(wellFormat, plate.getWell(row, col).getValue()) : Luc5Assay.intString(plate.getWell(row, col).getValue()))%></td>
                 <%
                     }
@@ -90,3 +90,28 @@
     }
 %>
 </table>
+
+<script type="text/javascript">
+
+    Ext4.onReady(function(){
+
+        LABKEY.Ajax.request({
+            url : LABKEY.ActionURL.buildURL('nabassay', 'getExcludedWells.api'),
+            params : {rowId : <%=bean.getRunId()%>},
+            scope: this,
+            success: function(response){
+                var json = Ext4.decode(response.responseText);
+                if (json && json.excluded){
+
+                    Ext4.each(json.excluded, function(rec){
+
+                        // mark excluded wells
+                        var key = LABKEY.nab.QCUtil.getModelKey(rec);
+                        LABKEY.nab.QCUtil.setWellExclusion(key, true, rec.comment, this);
+                    }, this);
+                }
+            }
+        });
+    });
+
+</script>

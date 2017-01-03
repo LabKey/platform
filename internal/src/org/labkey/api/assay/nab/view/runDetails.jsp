@@ -29,6 +29,7 @@
     {
         dependencies.add("Ext4");
         dependencies.add("announcements/discuss.js");
+        dependencies.add("nabqc");
     }
 %>
 <labkey:errors/>
