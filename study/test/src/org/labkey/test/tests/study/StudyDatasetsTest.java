@@ -501,7 +501,8 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         {
             assertEquals("Unexpected number of rows, filter was not applied correctly", 3, drt.getDataRowCount()); // 3 data rows + aggregates
             assertTrue("Expected aggregate row", drt.hasSummaryStatisticRow());
-            assertTextPresentInThisOrder("Avg Cre:", "Agg Count:"); // verify joined fields in aggregates
+            assertElementPresent(Locator.tagWithClass("span", "summary-stat-label").containing("Avg Cre"));
+            assertElementPresent(Locator.tagWithClass("span", "summary-stat-label").containing("Agg Count"));
         }
 
         _customizeViewsHelper.openCustomizeViewPanel();
