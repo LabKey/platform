@@ -195,6 +195,10 @@ public class DataViewService
         if (info.getQueryName() != null)
             o.put("queryName", info.getQueryName());
 
+        if (info.getDefaultIconCls() != null)
+            o.put("defaultIconCls", info.getDefaultIconCls());
+        if (info.getDefaultThumbnailUrl() != null)
+            o.put("defaultThumbnailUrl", info.getDefaultThumbnailUrl());
         if (info.getIconUrl() != null)
             o.put("icon", info.getIconUrl().getLocalURIString());
         if (info.getIconCls() != null)

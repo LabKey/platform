@@ -414,6 +414,11 @@ public class ReportUtil
         return sb.toString();
     }
 
+    public static URLHelper getDefaultThumbnailUrl(Container c, Report r)
+    {
+        return ThumbnailUtil.getStaticThumbnailURL(r, ImageType.Large);
+    }
+
     public static interface ReportFilter
     {
         public boolean accept(Report report, Container c, User user);

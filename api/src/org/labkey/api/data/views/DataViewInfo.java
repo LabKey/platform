@@ -46,6 +46,10 @@ public interface DataViewInfo
     @Nullable
     String getDescription();            // an optional description
     @Nullable
+    String getDefaultIconCls();         // the default display icon
+    @Nullable
+    URLHelper getDefaultThumbnailUrl(); // the default display thumbnail
+    @Nullable
     URLHelper getIconUrl();             // the server relative path to the display icon
     @Nullable
     String getIconCls();                // css code for font icon
