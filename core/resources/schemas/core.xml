@@ -488,6 +488,13 @@
       <column columnName="Active">
         <description>True if this user is active, false otherwise. Inactive users are not allowed to sign in.</description>
       </column>
+      <column columnName="ExpirationDate">
+        <description>The date this user account expires.</description>
+        <columnTitle>Expiration Date</columnTitle>
+        <inputType>text</inputType>
+        <formatString>DateTime</formatString>
+        <inputLength>23</inputLength>
+      </column>
     </columns>
     <tableTitle>Active Users</tableTitle>
     <pkColumnName>UserId</pkColumnName>
