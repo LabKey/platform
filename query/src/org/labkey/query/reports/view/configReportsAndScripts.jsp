@@ -682,7 +682,7 @@
     {
         if (errors)
         {
-            var errorText = "<font color='red'>";
+            var errorText = '<span style="color:red; white-space:normal;">';
             for (var p in errors)
             {
                 if (errors.hasOwnProperty(p))
@@ -691,7 +691,7 @@
                 }
             }
 
-            errorText += "</font>";
+            errorText += "</span>";
             win.getBottomToolbar().get(0).setText(errorText);
         }
     }
