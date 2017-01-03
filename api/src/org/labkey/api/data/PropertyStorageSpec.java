@@ -15,10 +15,12 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -420,6 +422,23 @@ public class PropertyStorageSpec
             this.columnNames = columnNames;
             this.isUnique = unique;
             this.isClustered = clustered;
+        }
+
+        /**
+         * Determines if two indices are the same modulo the isClustered setting.   This is useful for updating
+         * indices when an audit domain type changes, for example.
+         * @param propertyIndex
+         * @param tableIndex
+         * @return
+         */
+        public static boolean isSameIndex(PropertyStorageSpec.Index propertyIndex, PropertyStorageSpec.Index tableIndex)
+        {
+            if (propertyIndex.isUnique != tableIndex.isUnique || propertyIndex.columnNames.length != tableIndex.columnNames.length)
+                return false;
+            Set<String> piColumns = new CaseInsensitiveHashSet(Arrays.asList(propertyIndex.columnNames));
+            Set<String> tiColumns = new CaseInsensitiveHashSet(Arrays.asList(tableIndex.columnNames));
+            piColumns.removeAll(tiColumns);
+            return piColumns.isEmpty();
         }
 
     }

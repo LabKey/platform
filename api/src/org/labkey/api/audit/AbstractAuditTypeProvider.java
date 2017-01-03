@@ -29,6 +29,8 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -47,11 +49,13 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -120,6 +124,48 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         ensureProperties(user, domain, domainKind);
     }
 
+    protected void updateIndices(Domain domain, AbstractAuditDomainKind domainKind)
+    {
+        if (domain.getStorageTableName() == null)
+            return;
+
+        Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> existingIndices = getSchema().getTable(domain.getStorageTableName()).getAllIndices();
+        Set<PropertyStorageSpec.Index> newIndices = new HashSet<>();
+        newIndices.addAll(domainKind.getPropertyIndices(domain));
+        Set<PropertyStorageSpec.Index> toRemove = new HashSet<>();
+        for (String name : existingIndices.keySet())
+        {
+            if (existingIndices.get(name).first == TableInfo.IndexType.Primary)
+                continue;
+            Pair<TableInfo.IndexType, List<ColumnInfo>> columnIndex = existingIndices.get(name);
+            String[] columnNames = new String[columnIndex.second.size()];
+            for (int i = 0; i < columnIndex.second.size(); i++)
+            {
+                columnNames[i] = columnIndex.second.get(i).getColumnName();
+            }
+            PropertyStorageSpec.Index existingIndex = new PropertyStorageSpec.Index(columnIndex.first == TableInfo.IndexType.Unique, columnNames);
+            Boolean foundIt = false;
+            for (PropertyStorageSpec.Index propertyIndex : newIndices)
+            {
+                if (PropertyStorageSpec.Index.isSameIndex(propertyIndex, existingIndex))
+                {
+                    foundIt = true;
+                    newIndices.remove(propertyIndex);
+                    break;
+                }
+            }
+
+            if (!foundIt)
+                toRemove.add(existingIndex);
+        }
+
+        if (!toRemove.isEmpty())
+            StorageProvisioner.addOrDropTableIndices(domain, toRemove, false, TableChange.IndexSizeMode.Normal);
+        if (!newIndices.isEmpty())
+            StorageProvisioner.addOrDropTableIndices(domain, newIndices, true, TableChange.IndexSizeMode.Normal);
+    }
+
+
     // NOTE: Changing the name of an existing PropertyDescriptor will lose data!
     protected void ensureProperties(User user, Domain domain, AbstractAuditDomainKind domainKind)
     {
@@ -182,6 +228,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                     domain.save(user);
                 }
 
+                updateIndices(domain, domainKind);
                 transaction.commit();
             }
             catch (ChangePropertyDescriptorException e)
