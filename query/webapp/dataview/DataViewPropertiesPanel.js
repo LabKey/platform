@@ -324,7 +324,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 fieldLabel : 'Thumbnail',
                 value      : '<div class="thumbnail"></div>',
                 readOnly   : true,
-                labelWidth : 120
+                labelWidth : 125
             });
 
             var thumbnailFieldContainerItems = [{
@@ -378,7 +378,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                     name       : 'customThumbnail',
                     fieldLabel : 'Change Thumbnail',
                     msgTarget  : 'side',
-                    labelWidth : 120,
+                    labelWidth : 125,
                     width      : 400,
                     validator  : function(value) {
                         value = value.toLowerCase();
@@ -420,8 +420,9 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
             imagesItems.push({
                 xtype   :'fieldset',
+                padding: 3,
                 border: 1,
-                style:{borderColor:'black', borderStyle:'solid'},
+                style:{borderColor:'#b4b4b4', borderStyle:'solid'},
                 items   :thumbnailItems
             });
             // For the time being any view that supports custom thumbnails also supports custom icons. So a separate check
@@ -432,7 +433,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 fieldLabel : 'Icon',
                 value      : ((this.data.iconCls !== null) ? '<span class="' + this.data.iconCls + '"></span>' : '<div class="icon"><img src="' + this.data.icon + '"/></div>'),
                 readOnly   : true,
-                labelWidth : 120,
+                labelWidth : 125,
                 width      : 350
             },
                 {
@@ -478,7 +479,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                     name       : 'customIcon',
                     fieldLabel : 'Change Icon',
                     msgTarget  : 'side',
-                    labelWidth : 120,
+                    labelWidth : 125,
                     width      : 400,
                     validator  : function(value) {
                         value = value.toLowerCase();
@@ -497,7 +498,8 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                         change : function(cmp, value) {
                             this.down('#customIconFileName').setValue(value);
                             Ext4.getCmp('icon-remove').show();
-                            this.down('#deleteCustomIcon').setValue(false);                        },
+                            this.down('#deleteCustomIcon').setValue(false);
+                        },
                         scope: this
                     }
                 });
@@ -521,8 +523,9 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
         imagesItems.push({
             xtype   :'fieldset',
+            padding: 3,
             border: 1,
-            style:{borderColor:'black', borderStyle:'solid'},
+            style:{borderColor:'#b4b4b4', borderStyle:'solid'},
             items   :iconItems
         });
 
