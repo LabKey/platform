@@ -59,6 +59,8 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
             value      : this.data.name
         }];
         var imagesItems = [];
+        var thumbnailItems = [];
+        var iconItems = [];
 
         if (this.visibleFields['author']) {
 
@@ -317,13 +319,12 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
         }, this);
                                                    
         if (this.visibleFields['customThumbnail']) {
-            imagesItems.push({
+            thumbnailItems.push({
                 xtype      : 'displayfield',
                 fieldLabel : 'Thumbnail',
                 value      : '<div class="thumbnail"></div>',
                 readOnly   : true,
-                labelWidth : 120,
-                width      : 400
+                labelWidth : 120
             });
 
             var thumbnailFieldContainerItems = [{
@@ -339,6 +340,12 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 html: '<div class="fa fa-trash-o"></div>',
                 listeners: {
                     scope: this,
+                    afterrender : function(cmp) {
+                        Ext4.tip.QuickTipManager.register({
+                            target: cmp.getId(),
+                            text: 'Delete Custom Thumbnail'
+                        });
+                    },
                     render: function (box)
                     {
                         box.getEl().on('click', function ()
@@ -356,7 +363,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 }
             }];
 
-            imagesItems.push({
+            thumbnailItems.push({
                 xtype: 'fieldcontainer',
                 layout: {type: 'hbox'},
                 items: thumbnailFieldContainerItems
@@ -365,7 +372,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
             if (this.data.allowCustomThumbnail)
             {
-                imagesItems.push({
+                thumbnailItems.push({
                     xtype      : 'filefield',
                     id         : 'customThumbnail',
                     name       : 'customThumbnail',
@@ -411,6 +418,12 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                         });
             }
 
+            imagesItems.push({
+                xtype   :'fieldset',
+                border: 1,
+                style:{borderColor:'black', borderStyle:'solid'},
+                items   :thumbnailItems
+            });
             // For the time being any view that supports custom thumbnails also supports custom icons. So a separate check
             // is not necessary.
 
@@ -430,7 +443,12 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 html: '<div class="fa fa-trash-o"></div>',
                 listeners: {
                     scope: this,
-                    render: function (box)
+                    afterrender : function(cmp) {
+                        Ext4.tip.QuickTipManager.register({
+                            target: cmp.getId(),
+                            text: 'Delete Custom Icon'
+                        });
+                    },                    render: function (box)
                     {
                         box.getEl().on('click', function ()
                         {
@@ -447,14 +465,14 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 }
             }];
 
-            imagesItems.push({
+            iconItems.push({
                 xtype: 'fieldcontainer',
                 layout: {type: 'hbox'},
                 items: iconFieldContainerItems
             });
 
             if (this.data.allowCustomThumbnail) {
-                imagesItems.push({
+                iconItems.push({
                     xtype      : 'filefield',
                     id         : 'customIcon',
                     name       : 'customIcon',
@@ -500,6 +518,13 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 );
             }
         }
+
+        imagesItems.push({
+            xtype   :'fieldset',
+            border: 1,
+            style:{borderColor:'black', borderStyle:'solid'},
+            items   :iconItems
+        });
 
         if (imagesItems.length > 0) {
             this.thumbnail = null;
