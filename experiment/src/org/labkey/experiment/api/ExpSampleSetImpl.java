@@ -55,12 +55,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -436,9 +436,9 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         // TODO: Expose the set of expression variables instead of relying on the source
         if (exprSource.contains("${inputs") || exprSource.contains("${datainputs") || exprSource.contains("${materialinputs"))
         {
-            Set<String> allInputs = new TreeSet<>();
-            Set<String> dataInputs = new TreeSet<>();
-            Set<String> materialInputs = new TreeSet<>();
+            Set<String> allInputs = new LinkedHashSet<>();
+            Set<String> dataInputs = new LinkedHashSet<>();
+            Set<String> materialInputs = new LinkedHashSet<>();
 
             if (parentDatas != null)
             {
