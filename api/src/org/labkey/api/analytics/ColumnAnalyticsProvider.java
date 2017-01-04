@@ -62,6 +62,11 @@ public abstract class ColumnAnalyticsProvider implements AnalyticsProvider, Comp
         return null;
     }
 
+    public boolean alwaysEnabled()
+    {
+        return false;
+    }
+
     @Nullable
     public String getGroupingHeader()
     {

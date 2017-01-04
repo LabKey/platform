@@ -70,7 +70,6 @@ public class QuerySettings
     private URLHelper _returnURL = null;
 
     private String _containerFilterName;
-    private List<Aggregate> _aggregates = new ArrayList<>();
     private List<AnalyticsProviderItem> _analyticsProviders = new ArrayList<>();
 
     private SimpleFilter _baseFilter;
@@ -168,27 +167,6 @@ public class QuerySettings
         }
     }
 
-    public void setAggregates(PropertyValues pvs)
-    {
-        _aggregates.addAll(Aggregate.fromURL(pvs, getDataRegionName()));
-    }
-
-    public void addAggregates(Aggregate... aggregates)
-    {
-        _aggregates.addAll(Arrays.asList(aggregates));
-    }
-
-    public void setAnalyticsProviders(PropertyValues pvs)
-    {
-        _analyticsProviders.addAll(AnalyticsProviderItem.fromURL(pvs, getDataRegionName()));
-    }
-
-    public void addAnalyticsProviders(AnalyticsProviderItem... analyticsProviders)
-    {
-        _analyticsProviders.addAll(Arrays.asList(analyticsProviders));
-    }
-
-
     protected String _getParameter(String param)
     {
         PropertyValue pv = _filterSort.getPropertyValue(param);
@@ -221,7 +199,6 @@ public class QuerySettings
         if (null == pvs)
             pvs = new MutablePropertyValues();
         setSortFilter(pvs);
-        setAggregates(pvs);
         setAnalyticsProviders(pvs);
 
         // Let URL parameter control which query we show, even if we don't show the Query drop-down menu to let the user choose
@@ -669,9 +646,6 @@ public class QuerySettings
             Sort sort = getBaseSort();
             sort.addURLSort(url, getDataRegionName());
 
-            List<Aggregate> aggregates = getAggregates();
-            aggregates.addAll(Aggregate.fromURL(url, getDataRegionName()));
-
             List<AnalyticsProviderItem> analyticsProviders = getAnalyticsProviders();
             analyticsProviders.addAll(AnalyticsProviderItem.fromURL(url, getDataRegionName()));
 
@@ -700,14 +674,15 @@ public class QuerySettings
         _containerFilterName = name;
     }
 
-    public List<Aggregate> getAggregates()
+    public void addAggregates(Aggregate... aggregates)
     {
-        return _aggregates;
+        for (Aggregate aggregate : aggregates)
+            _analyticsProviders.add(new AnalyticsProviderItem(aggregate));
     }
 
-    public void setAggregates(List<Aggregate> aggregates)
+    public void addAnalyticsProviders(AnalyticsProviderItem... analyticsProviders)
     {
-        _aggregates = aggregates;
+        _analyticsProviders.addAll(Arrays.asList(analyticsProviders));
     }
 
     public List<AnalyticsProviderItem> getAnalyticsProviders()
@@ -718,6 +693,11 @@ public class QuerySettings
     public void setAnalyticsProviders(List<AnalyticsProviderItem> analyticsProviders)
     {
         _analyticsProviders = analyticsProviders;
+    }
+
+    public void setAnalyticsProviders(PropertyValues pvs)
+    {
+        _analyticsProviders.addAll(AnalyticsProviderItem.fromURL(pvs, getDataRegionName()));
     }
 
     public List<FieldKey> getFieldKeys()

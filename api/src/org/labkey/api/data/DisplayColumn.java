@@ -785,7 +785,8 @@ public abstract class DisplayColumn extends RenderColumn
                             item.setId(baseId + ":analytics-" + analyticsProvider.getName());
                             item.setText(analyticsProvider.getLabel());
                             item.setImageCls(analyticsProvider.getIconCls(ctx, rgn.getSettings(), getColumnInfo()));
-                            item.setDisabled(getColumnInfo() != null && ctx.containsAnalyticsProvider(getColumnInfo().getFieldKey(), analyticsProvider.getName()));
+                            if (!analyticsProvider.alwaysEnabled())
+                                item.setDisabled(getColumnInfo() != null && ctx.containsAnalyticsProvider(getColumnInfo().getFieldKey(), analyticsProvider.getName()));
                             if (providerUrl != null)
                                 item.setHref(providerUrl.getLocalURIString());
                             if (onClickScript != null)

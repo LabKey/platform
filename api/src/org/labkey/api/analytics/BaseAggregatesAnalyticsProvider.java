@@ -23,17 +23,18 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.ClientDependency;
 
-import java.util.List;
 import java.util.Set;
 
 public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsProvider
 {
+    public static final String  PREFIX = "AGG_";
+
     public abstract Aggregate.Type getAggregateType();
 
     @Override
     public String getName()
     {
-        return "AGG_" + getAggregateType().toString();
+        return PREFIX + getAggregateType().getName();
     }
 
     @Override
@@ -57,17 +58,13 @@ public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsPro
     @Override
     public String getIconCls(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        List<Aggregate> colAggregates = ctx.getAggregatesByFieldKey(col.getFieldKey());
-        if (!colAggregates.isEmpty())
-        {
-            for (Aggregate colAggregate : colAggregates)
-            {
-                if (colAggregate.getType() == getAggregateType())
-                    return "fa fa-check-square-o";
-            }
-        }
+        return ctx.containsAnalyticsProvider(col.getFieldKey(), getName()) ? "fa fa-check-square-o" : null;
+    }
 
-        return null;
+    @Override
+    public boolean alwaysEnabled()
+    {
+        return true;
     }
 
     @Override
@@ -85,10 +82,10 @@ public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsPro
     @Override
     public String getScript(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        return "LABKEY.ColumnQueryAnalytics.applyAggregateFromDataRegion(" +
+        return "LABKEY.ColumnQueryAnalytics.applySummaryStatFromDataRegion(" +
                 PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "," +
                 PageFlowUtil.jsString(col.getFieldKey().toString()) + "," +
-                PageFlowUtil.jsString(getAggregateType().getName()) +
+                PageFlowUtil.jsString(getName()) +
             ");";
     }
 

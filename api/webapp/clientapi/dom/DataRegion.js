@@ -2232,12 +2232,12 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
-     * Add or remove an aggregate for a given column in the DataRegion query view.
+     * Add or remove a summary statistic for a given column in the DataRegion query view.
      * @param viewName
      * @param colFieldKey
-     * @param aggType
+     * @param summaryStatName
      */
-    LABKEY.DataRegion.prototype.toggleAggregateForCustomView = function(viewName, colFieldKey, aggType) {
+    LABKEY.DataRegion.prototype.toggleSummaryStatForCustomView = function(viewName, colFieldKey, summaryStatName) {
         this.getQueryDetails(function(queryDetails)
         {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
@@ -2245,20 +2245,17 @@ if (!LABKEY.DataRegions) {
             {
                 if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
                 {
-                    var colAggregateTypes = [];
-                    $.each(view.aggregates, function (index, existingAgg) {
-                        if (existingAgg.fieldKey == colFieldKey)
-                            colAggregateTypes.push(existingAgg.type);
+                    var colProviderNames = [];
+                    $.each(view.analyticsProviders, function(index, existingProvider) {
+                        if (existingProvider.fieldKey == colFieldKey)
+                            colProviderNames.push(existingProvider.name);
                     });
 
-                    var index = colAggregateTypes.indexOf(aggType);
+                    var index = colProviderNames.indexOf(summaryStatName);
                     if (index == -1)
-                        colAggregateTypes.push(aggType);
+                        this._addAnalyticsProviderToView(view, colFieldKey, summaryStatName, true);
                     else
-                        colAggregateTypes.splice(index, 1);
-
-                    view = _applyAggregatesToCustomView(view, colFieldKey, colAggregateTypes);
-                    this._updateSessionCustomView(view, true);
+                        this._removeAnalyticsProviderFromView(view, colFieldKey, summaryStatName, true);
                 }
             }
         }, null, this);
@@ -2307,21 +2304,7 @@ if (!LABKEY.DataRegions) {
             {
                 if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
                 {
-                    var colProviderNames = [];
-                    $.each(view.analyticsProviders, function (index, existingProvider) {
-                        if (existingProvider.fieldKey == colFieldKey)
-                            colProviderNames.push(existingProvider.name);
-                    });
-
-                    if (colProviderNames.indexOf(providerName) == -1)
-                    {
-                        view.analyticsProviders.push({
-                            fieldKey: colFieldKey,
-                            name: providerName
-                        });
-
-                        this._updateSessionCustomView(view, false);
-                    }
+                    this._addAnalyticsProviderToView(view, colFieldKey, providerName, false);
 
                     var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
                     Ext4.each(Ext4.ComponentQuery.query('menuitem[elementId=' + elementId + ']'), function(menuItem) {
@@ -2347,18 +2330,7 @@ if (!LABKEY.DataRegions) {
             {
                 if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
                 {
-                    var indexToRemove = null;
-                    $.each(view.analyticsProviders, function (index, existingProvider) {
-                        if (existingProvider.fieldKey == colFieldKey && existingProvider.name == providerName) {
-                            indexToRemove = index;
-                            return false;
-                        }
-                    });
-
-                    if (indexToRemove != null) {
-                        view.analyticsProviders.splice(indexToRemove, 1);
-                        this._updateSessionCustomView(view, false);
-                    }
+                    this._removeAnalyticsProviderFromView(view, colFieldKey, providerName, false);
 
                     var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
                     Ext4.each(Ext4.ComponentQuery.query('menuitem[elementId=' + elementId + ']'), function(menuItem) {
@@ -2415,6 +2387,43 @@ if (!LABKEY.DataRegions) {
                 }
             }
         });
+    };
+
+    LABKEY.DataRegion.prototype._addAnalyticsProviderToView = function(view, colFieldKey, providerName, isSummaryStatistic)
+    {
+        var colProviderNames = [];
+        $.each(view.analyticsProviders, function(index, existingProvider) {
+            if (existingProvider.fieldKey == colFieldKey)
+                colProviderNames.push(existingProvider.name);
+        });
+
+        if (colProviderNames.indexOf(providerName) == -1)
+        {
+            view.analyticsProviders.push({
+                fieldKey: colFieldKey,
+                name: providerName,
+                isSummaryStatistic: isSummaryStatistic
+            });
+
+            this._updateSessionCustomView(view, isSummaryStatistic);
+        }
+    };
+
+    LABKEY.DataRegion.prototype._removeAnalyticsProviderFromView = function(view, colFieldKey, providerName, isSummaryStatistic)
+    {
+        var indexToRemove = null;
+        $.each(view.analyticsProviders, function(index, existingProvider) {
+            if (existingProvider.fieldKey == colFieldKey && existingProvider.name == providerName) {
+                indexToRemove = index;
+                return false;
+            }
+        });
+
+        if (indexToRemove != null)
+        {
+            view.analyticsProviders.splice(indexToRemove, 1);
+            this._updateSessionCustomView(view, isSummaryStatistic);
+        }
     };
 
     //
@@ -2624,27 +2633,6 @@ if (!LABKEY.DataRegions) {
         }
 
         return exists;
-    };
-
-    var _applyAggregatesToCustomView = function(customView, fieldKey, newAggregates)
-    {
-        // first, keep any existing custom view aggregates that don't match this fieldKey
-        var aggregates = [];
-        $.each(customView.aggregates, function(index, existingAgg)
-        {
-            if (existingAgg.fieldKey != fieldKey)
-                aggregates.push(existingAgg);
-        });
-
-        // then add on the aggregates for the fieldKey selected
-        $.each(newAggregates, function(index, newAggType)
-        {
-            aggregates.push({fieldKey: fieldKey, type: newAggType});
-        });
-
-        customView.aggregates = aggregates;
-
-        return customView;
     };
 
     var _getAllRowSelectors = function(region) {

@@ -16,28 +16,15 @@
 
 package org.labkey.api.data;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.analytics.SummaryStatisticRegistry;
+import org.labkey.api.analytics.BaseAggregatesAnalyticsProvider;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.URLHelper;
-import org.springframework.beans.PropertyValue;
-import org.springframework.beans.PropertyValues;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -73,7 +60,7 @@ public class Aggregate
         }
 
         /**
-         * Get the generated SQL for calculating this aggregate value based on a TableInfo column.
+         * Get the generated SQL for calculating this aggregate (i.e. summary stat) value based on a TableInfo column.
          * @param dialect SQL dialect for the running server
          * @param columnName The name of the column to use in the SQL select
          * @param asName The alias to use in the SQL select
@@ -96,7 +83,7 @@ public class Aggregate
         }
 
         /**
-         * Return true if the jdbcType is a valid input type to this aggregate function.
+         * Return true if the jdbcType is a valid input type to this aggregate (i.e. summary stat) function.
          * @param jdbcType input type.
          * @return true if valid type.
          */
@@ -106,7 +93,7 @@ public class Aggregate
         }
 
         /**
-         * Get the return type of the aggregate function for the given
+         * Get the return type of the aggregate (i.e. summary stat) function for the given
          * JdbcType or null if the type is not applicable (e.g. SUM of a date column).
          */
         JdbcType returnType(JdbcType jdbcType);
@@ -341,7 +328,7 @@ public class Aggregate
         String alias = _label == null ? getAggregateName(getFieldKey().toString()) : _label;
         alias = alias.replace("\"", "\\\"");
 
-        // special case for those aggregate types that don't have a LabKey SQL function
+        // special case for those aggregate (i.e. summary stat) types that don't have a LabKey SQL function
         if (_type.getSQLFunctionName(null) == null)
             return _type.getSQLColumnFragment(null, getFieldKey().toSQLString(), alias, JdbcType.INTEGER, _distinct);
 
@@ -359,10 +346,10 @@ public class Aggregate
     {
         ColumnInfo col = columns.get(getFieldKey());
         String alias = getAliasName(col);
-        String aggregateColumnName = getAggregateName(alias);
+        String aggColName = getAggregateName(alias);
         JdbcType jdbcType = col == null ? null : col.getJdbcType();
 
-        return _type.getSQLColumnFragment(dialect, alias, aggregateColumnName, jdbcType, _distinct);
+        return _type.getSQLColumnFragment(dialect, alias, aggColName, jdbcType, _distinct);
     }
 
     private String getAliasName(ColumnInfo col)
@@ -395,6 +382,11 @@ public class Aggregate
     public String getColumnName()
     {
         return _fieldKey.toString();
+    }
+
+    public String getName()
+    {
+        return BaseAggregatesAnalyticsProvider.PREFIX + getType().getName();
     }
 
     public Type getType()
@@ -431,16 +423,16 @@ public class Aggregate
         if (col != null && !_type.isLegal(col.getJdbcType()))
             return new Result(this, null);
 
-        String aggregateColumnName = getAggregateName(getAliasName(col));
+        String aggColName = getAggregateName(getAliasName(col));
 
         Object o;
         JdbcType returnType = col == null ? null : _type.returnType(col.getJdbcType());
         Table.Getter getter = returnType == null ? null : Table.Getter.forClass(returnType.getJavaClass());
         if (getter != null)
-            o = getter.getObject(rs, aggregateColumnName);
+            o = getter.getObject(rs, aggColName);
         else
         {
-            o = rs.getObject(aggregateColumnName);
+            o = rs.getObject(aggColName);
             // TODO: Handle BigDecimal values
             if (o instanceof Number)
             {
@@ -453,107 +445,6 @@ public class Aggregate
         }
 
         return new Result(this, o);
-    }
-
-    /** Extracts aggregate URL parameters from a URL. */
-    @NotNull
-    public static List<Aggregate> fromURL(URLHelper urlHelper, String regionName)
-    {
-        return fromURL(urlHelper.getPropertyValues(), regionName);
-    }
-
-    /** Extracts aggregate URL parameters from a URL. */
-    @NotNull
-    public static List<Aggregate> fromURL(PropertyValues pvs, String regionName)
-    {
-        List<Aggregate> aggregates = new LinkedList<>();
-        String prefix = regionName + "." + CustomViewInfo.AGGREGATE_PARAM_PREFIX + ".";
-
-        for (PropertyValue val : pvs.getPropertyValues())
-        {
-            if (val.getName().startsWith(prefix))
-            {
-                FieldKey fieldKey = FieldKey.fromString(val.getName().substring(prefix.length()));
-
-                List<String> values = new ArrayList<>();
-
-                if (val.getValue() instanceof String)
-                    values.add((String) val.getValue());
-                else
-                    Collections.addAll(values, (String[]) val.getValue());
-
-                for (String s : values)
-                {
-                    Aggregate a = decodeAggregate(fieldKey, s);
-                    if (a != null)
-                        aggregates.add(a);
-                }
-            }
-        }
-
-        return aggregates;
-    }
-
-    private static Aggregate decodeAggregate(FieldKey fieldKey, String value)
-    {
-        try
-        {
-            value = PageFlowUtil.decode(value);
-
-            Map<String, String> properties = new HashMap<>();
-            //allow aggregates either in the basic form, ie. query.agg.columnName=MAX, or more complex, ie:
-            //query.agg.columnName=type%3BMAX
-            if(!value.contains("="))
-            {
-                properties.put("type", value);
-            }
-            else
-            {
-                for (Pair<String, String> entry : PageFlowUtil.fromQueryString(PageFlowUtil.decode(value)))
-                {
-                    properties.put(entry.getKey().toLowerCase(), entry.getValue());
-                }
-            }
-
-            SummaryStatisticRegistry registry = ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
-            Aggregate.Type type = registry != null ? registry.getByName(properties.get("type")) : null;
-            if (type == null)
-                throw new IllegalArgumentException("Invalid aggregate type: '" + properties.get("type") + "'.");
-
-            String label = null;
-            if (properties.containsKey("label"))
-                label = properties.get("label");
-
-            return new Aggregate(fieldKey, type, label);
-        }
-        catch (IllegalArgumentException e)
-        {
-            throw new IllegalArgumentException("Invalid aggregate type: '" + value + "'.");
-        }
-    }
-
-    public String getValueForUrl()
-    {
-        if (getLabel() == null)
-            return getType().getName();
-
-        StringBuilder ret = new StringBuilder();
-
-        ret.append(PageFlowUtil.encode("label=" + getLabel()));
-        ret.append(PageFlowUtil.encode("&type=" + getType().getName()));
-
-        return ret.toString();
-    }
-
-    /**
-     * Add the aggregate parameter on the url
-     * @param url The url to be modified.
-     * @param regionName The dataRegion used to scope the sort.
-     * @param fieldKey The fieldKey to use in the url parameter
-     */
-    public void applyToURL(URLHelper url, String regionName, FieldKey fieldKey)
-    {
-        url.addParameter(regionName + "." + CustomViewInfo.AGGREGATE_PARAM_PREFIX + "." + fieldKey.toString(), getValueForUrl());
     }
 
     public static final class TestCase extends Assert

@@ -126,12 +126,6 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public void setBaseAggregates(List<Aggregate> aggregates)
-    {
-        _ctx.setBaseAggregates(aggregates);
-    }
-
-    @Override
     public ActionURL getSortFilterURLHelper()
     {
         return _ctx.getSortFilterURLHelper();

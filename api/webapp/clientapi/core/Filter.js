@@ -453,9 +453,8 @@ LABKEY.Filter = new function()
                     if (aggregate.type && aggregate.column)
                     {
                         // Create an array of aggregate values if there is more than one aggregate for the same column.
-                        var paramName = dataRegionName + '.agg.' + aggregate.column;
+                        var paramName = dataRegionName + '.analytics.' + aggregate.column;
                         var paramValue = encodeURIComponent(value);
-                        var currentValue = params[paramName];
                         if (params[paramName] !== undefined)
                         {
                             var values = params[paramName];
@@ -469,6 +468,7 @@ LABKEY.Filter = new function()
 
                 }
             }
+            console.log(params);
             return params;
         },
 

@@ -512,8 +512,8 @@ public class QueryView extends WebPartView<Object>
         // The solution is to expand the custom view's saved sort/filter before adding the base sort/filter.
         // NOTE: This is a temporary solution.
         //
-        // We won't need to expand the saved custom view filters or aggregates.  Filters can be applied
-        // in any order and the aggregates don't make much sense in the exported xls or tsv files.
+        // We won't need to expand the saved custom view filters or analyticsProviders.  Filters can be applied
+        // in any order and the analyticsProviders don't make much sense in the exported xls or tsv files.
         //
         // The correct long term solution is to (a) create proper QueryView subclasses using UserSchema.createView()
         // and (b) use POST instead of GET for the export actions (or others) to match the QueryWebPart.js config behavior.
@@ -2076,16 +2076,6 @@ public class QueryView extends WebPartView<Object>
             ret.getRenderContext().setBaseSort(sort);
         }
 
-        // Apply aggregates from custom view and query settings
-        List<Aggregate> aggregates = new LinkedList<>();
-        if (ret.getRenderContext().getBaseAggregates() != null)
-            aggregates.addAll(ret.getRenderContext().getBaseAggregates());
-        if (getSettings().getAggregates() != null)
-            aggregates.addAll(getSettings().getAggregates());
-        if (customViewUrl != null)
-            aggregates.addAll(Aggregate.fromURL(customViewUrl, getDataRegionName()));
-        ret.getRenderContext().setBaseAggregates(aggregates);
-
         // Apply analytics providers from custom view and query settings
         List<AnalyticsProviderItem> analyticsProviders = new LinkedList<>();
         if (ret.getRenderContext().getBaseAnalyticsProviders() != null)
@@ -2966,11 +2956,6 @@ public class QueryView extends WebPartView<Object>
     public void disableContainerFilterSelection()
     {
         _allowableContainerFilterTypes = Collections.emptySet();
-    }
-
-    public List<Aggregate> getAggregates()
-    {
-        return getSettings().getAggregates();
     }
 
     public List<AnalyticsProviderItem> getAnalyticsProviders()

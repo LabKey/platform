@@ -15,9 +15,17 @@
  */
 package org.labkey.api.data;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.analytics.AnalyticsProviderRegistry;
+import org.labkey.api.analytics.BaseAggregatesAnalyticsProvider;
+import org.labkey.api.analytics.ColumnAnalyticsProvider;
+import org.labkey.api.analytics.SummaryStatisticRegistry;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.springframework.beans.PropertyValue;
@@ -25,18 +33,37 @@ import org.springframework.beans.PropertyValues;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public class AnalyticsProviderItem
 {
+    private static final Logger LOG = Logger.getLogger(AnalyticsProviderItem.class);
+
     private FieldKey _fieldKey;
     private String _name;
+    private @Nullable String _label;
+    private boolean _isSummaryStatistic;
 
-    public AnalyticsProviderItem(FieldKey fieldKey, String name)
+    public AnalyticsProviderItem(FieldKey fieldKey, String name, @Nullable String label)
     {
         _fieldKey = fieldKey;
         _name = name;
+        _label = label;
+    }
+
+    public AnalyticsProviderItem(FieldKey fieldKey, ColumnAnalyticsProvider analyticsProvider, @Nullable String label)
+    {
+        this(fieldKey, analyticsProvider.getName(), label);
+        _isSummaryStatistic = analyticsProvider instanceof BaseAggregatesAnalyticsProvider;
+    }
+
+    public AnalyticsProviderItem(Aggregate aggregate)
+    {
+        this(aggregate.getFieldKey(), aggregate.getName(), aggregate.getLabel());
+        _isSummaryStatistic = true;
     }
 
     public FieldKey getFieldKey()
@@ -59,36 +86,50 @@ public class AnalyticsProviderItem
         _name = name;
     }
 
+    public String getLabel()
+    {
+        return _label;
+    }
+
+    public void setLabel(String label)
+    {
+        _label = label;
+    }
+
+    public boolean isSummaryStatistic()
+    {
+        return _isSummaryStatistic;
+    }
+
+    public void setSummaryStatistic(boolean summaryStatistic)
+    {
+        _isSummaryStatistic = summaryStatistic;
+    }
+
     @NotNull
     public static List<AnalyticsProviderItem> fromURL(URLHelper urlHelper, String regionName)
     {
-        List<AnalyticsProviderItem> analyticsProviderItems = new LinkedList<>();
-        String prefix = regionName + "." + CustomViewInfo.ANALYTICSPROVIDER_PARAM_PREFIX + ".";
-
-        for (Pair<String, String> paramPair : urlHelper.getParameters())
-        {
-            if (paramPair.getKey().startsWith(prefix))
-            {
-                FieldKey fieldKey = FieldKey.fromString(paramPair.getKey().substring(prefix.length()));
-                String providerName = paramPair.getValue();
-                analyticsProviderItems.add(new AnalyticsProviderItem(fieldKey, providerName));
-            }
-        }
-
-        return analyticsProviderItems;
+        return fromURL(urlHelper.getPropertyValues(), regionName);
     }
 
     @NotNull
     public static List<AnalyticsProviderItem> fromURL(PropertyValues pvs, String regionName)
     {
+        String aggPrefix = regionName + "." + CustomViewInfo.AGGREGATE_PARAM_PREFIX + ".";
+        String apPrefix = regionName + "." + CustomViewInfo.ANALYTICSPROVIDER_PARAM_PREFIX + ".";
+
         List<AnalyticsProviderItem> analyticsProviderItems = new LinkedList<>();
-        String prefix = regionName + "." + CustomViewInfo.ANALYTICSPROVIDER_PARAM_PREFIX + ".";
 
         for (PropertyValue val : pvs.getPropertyValues())
         {
-            if (val.getName().startsWith(prefix))
+            boolean isAggregate = val.getName().startsWith(aggPrefix);
+            boolean isAnalyticsProvider = val.getName().startsWith(apPrefix);
+
+            if (isAggregate || isAnalyticsProvider)
             {
-                FieldKey fieldKey = FieldKey.fromString(val.getName().substring(prefix.length()));
+                FieldKey fieldKey = isAggregate
+                    ? FieldKey.fromString(val.getName().substring(aggPrefix.length()))
+                    : FieldKey.fromString(val.getName().substring(apPrefix.length()));
 
                 List<String> values = new ArrayList<>();
                 if (val.getValue() instanceof String)
@@ -96,13 +137,111 @@ public class AnalyticsProviderItem
                 else
                     Collections.addAll(values, (String[]) val.getValue());
 
-                for(String s : values)
+                for (String s : values)
                 {
-                    analyticsProviderItems.add(new AnalyticsProviderItem(fieldKey, s));
+                    Map<String, String> properties = decodeUrlProperties(s);
+                    String label = properties.containsKey("label") ? properties.get("label") : null;
+                    ColumnAnalyticsProvider analyticsProvider = getAnalyticsProviderFromType(properties.get("type"));
+
+                    if (analyticsProvider != null)
+                        analyticsProviderItems.add(new AnalyticsProviderItem(fieldKey, analyticsProvider, label));
                 }
             }
         }
 
         return analyticsProviderItems;
+    }
+
+    /**
+     * Allow analytics provider types either in the basic form, ie. filter.analytics.columnName=AGG_MAX,
+     * or more complex, ie: filter.analytics.columnName=label=xyz&type%3BAGG_MAX
+     * @param value value to decode type from
+     * @return map of properties
+     */
+    private static Map<String, String> decodeUrlProperties(String value)
+    {
+        Map<String, String> properties = new HashMap<>();
+
+        value = PageFlowUtil.decode(value);
+        if (!value.contains("="))
+        {
+            properties.put("type", value);
+        }
+        else
+        {
+            for (Pair<String, String> entry : PageFlowUtil.fromQueryString(PageFlowUtil.decode(value)))
+                properties.put(entry.getKey().toLowerCase(), entry.getValue());
+        }
+
+        return properties;
+    }
+
+    /**
+     * Try to find a ColumnAnalyticsProvider for the type/name.
+     * @param type String value to attempt to find a matching ColumnAnalyticsProvider for
+     * @return ColumnAnalyticsProvider that match the given type String
+     */
+    private static @Nullable ColumnAnalyticsProvider getAnalyticsProviderFromType(String type)
+    {
+        if (type == null)
+            return null;
+
+        SummaryStatisticRegistry ssRegistry = ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
+        AnalyticsProviderRegistry apRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
+
+        // backwards compatibility for AVG summary stat to map to MEAN
+        if ("AVG".equalsIgnoreCase(type))
+            type = "MEAN";
+        else if ((BaseAggregatesAnalyticsProvider.PREFIX + "AVG").equalsIgnoreCase(type))
+            type = BaseAggregatesAnalyticsProvider.PREFIX + "MEAN";
+
+        // backwards compatibility for aggregates to map to AGG_<aggregate name>
+        if (ssRegistry != null && ssRegistry.getByName(type) != null)
+            type = BaseAggregatesAnalyticsProvider.PREFIX + type;
+
+        ColumnAnalyticsProvider analyticsProvider = apRegistry != null ? apRegistry.getColumnAnalyticsProvider(type) : null;
+
+        if (analyticsProvider == null)
+        {
+            //throw new IllegalArgumentException("Invalid analytic provider name: '" + type + "'.");
+            LOG.warn("Invalid analytic provider name: '" + type + "'.");
+        }
+
+        return analyticsProvider;
+    }
+
+    public String getValueForUrl()
+    {
+        if (getLabel() == null)
+            return getName();
+
+        StringBuilder ret = new StringBuilder();
+        ret.append(PageFlowUtil.encode("label=" + getLabel()));
+        ret.append(PageFlowUtil.encode("&type=" + getName()));
+        return ret.toString();
+    }
+
+    /**
+     * Add the analytics provider parameter on the url
+     * @param url The url to be modified.
+     * @param regionName The dataRegion used to scope the sort.
+     * @param fieldKey The fieldKey to use in the url parameter
+     */
+    public void applyToURL(URLHelper url, String regionName, FieldKey fieldKey)
+    {
+        url.addParameter(CustomViewInfo.getAnalyticsProviderParamKey(regionName, fieldKey.toString()), getValueForUrl());
+    }
+
+    public Aggregate createAggregate()
+    {
+        if (isSummaryStatistic())
+        {
+            AnalyticsProviderRegistry apRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
+            ColumnAnalyticsProvider analyticsProvider = apRegistry != null ? apRegistry.getColumnAnalyticsProvider(getName()) : null;
+            if (analyticsProvider != null && analyticsProvider instanceof BaseAggregatesAnalyticsProvider)
+                return new Aggregate(getFieldKey(), ((BaseAggregatesAnalyticsProvider)analyticsProvider).getAggregateType(), getLabel());
+        }
+
+        return null;
     }
 }

@@ -19,7 +19,6 @@ package org.labkey.api.query;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AnalyticsProviderItem;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.FilterInfo;
@@ -32,8 +31,10 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A subset of all of the information about a custom view. Split out because in some cases the full info
@@ -44,10 +45,10 @@ import java.util.Map;
  */
 public interface CustomViewInfo
 {
-    public String FILTER_PARAM_PREFIX = "filter";
-    public String CONTAINER_FILTER_NAME = "containerFilterName";
-    public String AGGREGATE_PARAM_PREFIX = "agg";
-    public String ANALYTICSPROVIDER_PARAM_PREFIX = "analytics";
+    String FILTER_PARAM_PREFIX = "filter";
+    String CONTAINER_FILTER_NAME = "containerFilterName";
+    String AGGREGATE_PARAM_PREFIX = "agg";
+    String ANALYTICSPROVIDER_PARAM_PREFIX = "analytics";
 
     enum ColumnProperty
     {
@@ -72,12 +73,11 @@ public interface CustomViewInfo
         }
     }
 
-    public static class FilterAndSort
+    class FilterAndSort
     {
         private List<FilterInfo> filter = new ArrayList<>();
         private List<Sort.SortField> sort = new ArrayList<>();
         private List<String> containerFilterNames = Collections.emptyList();
-        private List<Aggregate> aggregates = new ArrayList<>();
         private List<AnalyticsProviderItem> analyticsProviders = new ArrayList<>();
 
         public List<FilterInfo> getFilter()
@@ -95,14 +95,25 @@ public interface CustomViewInfo
             return containerFilterNames;
         }
 
-        public List<Aggregate> getAggregates()
-        {
-            return aggregates;
-        }
-
         public List<AnalyticsProviderItem> getAnalyticsProviders()
         {
             return analyticsProviders;
+        }
+
+        public Set<FieldKey> getFieldKeys()
+        {
+            Set<FieldKey> fieldKeys = new HashSet<>();
+
+            for (FilterInfo filterInfo : getFilter())
+                fieldKeys.add(filterInfo.getField());
+
+            for (Sort.SortField sortField : getSort())
+                fieldKeys.add(sortField.getFieldKey());
+
+            for (AnalyticsProviderItem analyticsProviderItem : getAnalyticsProviders())
+                fieldKeys.add(analyticsProviderItem.getFieldKey());
+
+            return fieldKeys;
         }
 
         public static FilterAndSort fromString(String strFilter) throws URISyntaxException
@@ -132,15 +143,22 @@ public interface CustomViewInfo
                 fas.sort = sort.getSortList();
                 fas.containerFilterNames = filterSort.getParameterValues(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME);
 
-                List<Aggregate> aggregates = Aggregate.fromURL(filterSort, FILTER_PARAM_PREFIX);
-                fas.aggregates.addAll(aggregates);
-
                 List<AnalyticsProviderItem> analyticsProviders = AnalyticsProviderItem.fromURL(filterSort, FILTER_PARAM_PREFIX);
                 fas.analyticsProviders.addAll(analyticsProviders);
             }
 
             return fas;
         }
+    }
+
+    static String getAnalyticsProviderParamKey(String colName)
+    {
+        return getAnalyticsProviderParamKey(FILTER_PARAM_PREFIX, colName);
+    }
+
+    static String getAnalyticsProviderParamKey(String dataRegionName, String colName)
+    {
+        return dataRegionName + "." + ANALYTICSPROVIDER_PARAM_PREFIX + "." + colName;
     }
 
     /** Get the name of the custom view or null if this is the default view. */
@@ -221,7 +239,7 @@ public interface CustomViewInfo
     @NotNull List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> getColumnProperties();
 
     /**
-     * Get the URL encoded filter, sort, and aggregates or null.
+     * Get the URL encoded filter, sort, and analyticsProviders or null.
      * @see CustomViewInfo.FilterAndSort#fromString(String)
      */
     @Nullable String getFilterAndSort();
@@ -229,7 +247,7 @@ public interface CustomViewInfo
     /** Get the ContainerFilter name or null. */
     @Nullable String getContainerFilterName();
 
-    /** Returns true if the custom view has filters, sorts, or aggregates. */
+    /** Returns true if the custom view has filters, sorts, or analyticsProviders. */
     boolean hasFilterOrSort();
 
 }

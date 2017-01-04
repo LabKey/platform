@@ -69,8 +69,6 @@ public class RenderContext implements Map<String, Object>, Serializable
     private List<String> _recordSelectorValueColumns;
     private CustomView _view;
 
-    private List<Aggregate> _aggregates;
-    private Map<FieldKey, List<Aggregate>> _aggregatesByFieldKey;
     private List<AnalyticsProviderItem> _analyticsProviders;
     private Map<FieldKey, List<String>> _analyticsProviderNamesByFieldKey;
 
@@ -171,31 +169,19 @@ public class RenderContext implements Map<String, Object>, Serializable
 
     public List<Aggregate> getBaseAggregates()
     {
-        return _aggregates;
-    }
+        List<Aggregate> aggregates = new ArrayList<>();
 
-    public List<Aggregate> getAggregatesByFieldKey(FieldKey fieldKey)
-    {
-        if (fieldKey != null && _aggregatesByFieldKey != null && _aggregatesByFieldKey.containsKey(fieldKey))
+        if (getBaseAnalyticsProviders() != null)
         {
-            return _aggregatesByFieldKey.get(fieldKey);
+            for (AnalyticsProviderItem analyticsProvider : getBaseAnalyticsProviders())
+            {
+                Aggregate agg = analyticsProvider.createAggregate();
+                if (agg != null)
+                    aggregates.add(agg);
+            }
         }
 
-        return Collections.emptyList();
-    }
-
-    public void setBaseAggregates(List<Aggregate> aggregates)
-    {
-        _aggregates = aggregates;
-
-        _aggregatesByFieldKey = new HashMap<>();
-        for (Aggregate aggregate : aggregates)
-        {
-            if (!_aggregatesByFieldKey.containsKey(aggregate.getFieldKey()))
-                _aggregatesByFieldKey.put(aggregate.getFieldKey(), new ArrayList<>());
-
-            _aggregatesByFieldKey.get(aggregate.getFieldKey()).add(aggregate);
-        }
+        return !aggregates.isEmpty() ? aggregates : null;
     }
 
     public List<AnalyticsProviderItem> getBaseAnalyticsProviders()

@@ -673,12 +673,14 @@ public class DataRegion extends AbstractDataRegion
         boolean countAggregate = getMaxRows() > 0 && !_complete && _showPagination && _showPaginationCount;
         countAggregate = countAggregate || (getMaxRows() == Table.ALL_ROWS && getTable() != null);
 
+        List<Aggregate> baseAggregates = ctx.getBaseAggregates();
+
         if (countAggregate)
         {
             List<Aggregate> newAggregates = new LinkedList<>();
 
-            if (ctx.getBaseAggregates() != null)
-                newAggregates.addAll(ctx.getBaseAggregates());
+            if (baseAggregates != null)
+                newAggregates.addAll(baseAggregates);
 
             newAggregates.add(Aggregate.createCountStar());
             _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getSettings(), getName(), newAggregates, getQueryParameters(), isAllowAsync());
@@ -695,7 +697,7 @@ public class DataRegion extends AbstractDataRegion
         }
         else
         {
-            _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getSettings(), getName(), ctx.getBaseAggregates(), getQueryParameters(), isAllowAsync());
+            _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getSettings(), getName(), baseAggregates, getQueryParameters(), isAllowAsync());
         }
 
         // TODO: Move this into RenderContext?
