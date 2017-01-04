@@ -187,6 +187,8 @@ public class BlockingCache<K, V> implements Cache<K, V>
     @Override
     public void put(K key, final V value)
     {
+        // Perhaps a better approach would be to create a private version of get() that takes a "force" flag, but doesn't seem worth it
+        remove(key);
         get(key, null, (key1, argument) -> value);
     }
 

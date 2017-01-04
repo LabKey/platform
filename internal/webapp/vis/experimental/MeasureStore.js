@@ -797,7 +797,7 @@
                         if (null != key && typeof key === "object" && 'value' in key)
                             key = key.value;
                         return key;
-                    }).bind(null, dimName);
+                    }).bind(null, dimArray[0]);
                 }
                 else
                 {
