@@ -16,7 +16,7 @@
 
 package org.labkey.query;
 
-import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.AnalyticsProviderItem;
 import org.labkey.api.query.CustomViewInfo.ColumnProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
@@ -125,9 +125,9 @@ public class ModuleCustomViewDef
         return _customView.getFilterAndSortString();
     }
 
-    public List<Aggregate> getAggregates()
+    public List<AnalyticsProviderItem> getAnalyticsProviders()
     {
-        return _customView.getAggregates();
+        return _customView.getAnalyticsProviders();
     }
 
     public String getCustomIconUrl()

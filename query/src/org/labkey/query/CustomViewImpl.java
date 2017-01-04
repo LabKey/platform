@@ -20,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AnalyticsProviderItem;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -40,8 +39,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.data.xml.queryCustomView.AggregateType;
-import org.labkey.data.xml.queryCustomView.AggregatesType;
 import org.labkey.data.xml.queryCustomView.AnalyticsProviderType;
 import org.labkey.data.xml.queryCustomView.AnalyticsProvidersType;
 import org.labkey.data.xml.queryCustomView.ColumnsType;
@@ -373,23 +370,10 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
                 }
             }
 
-            if (!fas.getAggregates().isEmpty())
-            {
-                AggregatesType aggsXml = customViewXml.addNewAggregates();
-
-                for (Aggregate agg : fas.getAggregates())
-                {
-                    AggregateType aggXml = aggsXml.addNewAggregate();
-                    aggXml.setColumn(agg.getFieldKey().toString());
-                    aggXml.setType(agg.getType().getName());
-                    if (agg.getLabel() != null)
-                        aggXml.setLabel(agg.getLabel());
-                }
-            }
-
             if (!fas.getAnalyticsProviders().isEmpty())
             {
                 AnalyticsProvidersType analyticsXml = customViewXml.addNewAnalyticsProviders();
+
                 for (AnalyticsProviderItem analyticsItem : fas.getAnalyticsProviders())
                 {
                     AnalyticsProviderType analyticXml = analyticsXml.addNewAnalyticsProvider();

@@ -11,18 +11,18 @@
 LABKEY.ColumnQueryAnalytics = new function ()
 {
     /**
-     * Used via BaseAggregatesAnalyticsProvider to add or remove an aggregate from the selected column in the view.
+     * Used via BaseAggregatesAnalyticsProvider to add or remove a summary stat from the selected column in the view.
      * @param dataRegionName
      * @param colFieldKey
-     * @param selectedAggregate
+     * @param selectedSummaryStat
      */
-    var applyAggregateFromDataRegion = function(dataRegionName, colFieldKey, selectedAggregate)
+    var applySummaryStatFromDataRegion = function(dataRegionName, colFieldKey, selectedSummaryStat)
     {
         var region = LABKEY.DataRegions[dataRegionName];
         if (region)
         {
             var regionViewName = region.viewName || "";
-            region.toggleAggregateForCustomView(regionViewName, colFieldKey, selectedAggregate);
+            region.toggleSummaryStatForCustomView(regionViewName, colFieldKey, selectedSummaryStat);
         }
     };
 
@@ -75,7 +75,7 @@ LABKEY.ColumnQueryAnalytics = new function ()
     };
 
     return {
-        applyAggregateFromDataRegion: applyAggregateFromDataRegion,
+        applySummaryStatFromDataRegion: applySummaryStatFromDataRegion,
         removeColumnFromDataRegion: removeColumnFromDataRegion,
         goToChartWizardFromDataRegion: goToChartWizardFromDataRegion
     };

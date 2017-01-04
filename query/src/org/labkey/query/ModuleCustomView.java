@@ -17,10 +17,9 @@ package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.AnalyticsProviderItem;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.CustomView;
-import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
@@ -143,14 +142,11 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
         if (null != sortParam)
             url.addParameter(dataRegionName + ".sort", sortParam);
 
-        if (null != _customViewDef.getAggregates())
+        if (null != _customViewDef.getAnalyticsProviders())
         {
-            for(Aggregate aggregate : _customViewDef.getAggregates())
-            {
-                url.addParameter(dataRegionName + "." + CustomViewInfo.AGGREGATE_PARAM_PREFIX + "." + aggregate.getColumnName(), aggregate.getValueForUrl());
-            }
+            for (AnalyticsProviderItem analyticsProviderItem : _customViewDef.getAnalyticsProviders())
+                analyticsProviderItem.applyToURL(url, dataRegionName, analyticsProviderItem.getFieldKey());
         }
-
     }
 
     public void setFilterAndSortFromURL(ActionURL url, String dataRegionName)

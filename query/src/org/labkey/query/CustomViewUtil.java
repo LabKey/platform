@@ -20,7 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.data.Aggregate;
+import org.labkey.api.analytics.BaseAggregatesAnalyticsProvider;
 import org.labkey.api.data.AnalyticsProviderItem;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
@@ -57,10 +57,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.query.CustomViewInfo.AGGREGATE_PARAM_PREFIX;
 import static org.labkey.api.query.CustomViewInfo.CONTAINER_FILTER_NAME;
 import static org.labkey.api.query.CustomViewInfo.FILTER_PARAM_PREFIX;
-import static org.labkey.api.query.CustomViewInfo.ANALYTICSPROVIDER_PARAM_PREFIX;
 
 // Helper class to serialize a CustomView to/from json
 public class CustomViewUtil
@@ -125,6 +123,8 @@ public class CustomViewUtil
             sort.applyToURL(url, FILTER_PARAM_PREFIX, false);
         }
 
+        // aggregates have been deprecated in favor of analyticsProviders,
+        // so map any saved "aggregates" to use the analytics provider param key
         JSONArray jsonAggregates = jsonView.optJSONArray("aggregates");
         if (jsonAggregates != null && jsonAggregates.length() > 0)
         {
@@ -133,24 +133,11 @@ public class CustomViewUtil
                 String fieldKey = StringUtils.trimToNull((String)aggInfo.get("fieldKey"));
                 String type = StringUtils.trimToNull((String)aggInfo.get("type"));
 
-                String label = (String)aggInfo.get("label");
-                label = StringUtils.trimToNull(label);
-
                 if (fieldKey == null || type == null)
                     continue;
 
-                StringBuilder ret = new StringBuilder();
-                if(label != null)
-                {
-                    ret.append(PageFlowUtil.encode("label=" + label));
-                    ret.append(PageFlowUtil.encode("&type=" + type));
-                }
-                else
-                {
-                    ret.append(PageFlowUtil.encode(type));
-                }
-
-                url.addParameter(getAggregateParamKey(fieldKey), ret.toString());
+                type = BaseAggregatesAnalyticsProvider.PREFIX + PageFlowUtil.encode(type);
+                url.addParameter(CustomViewInfo.getAnalyticsProviderParamKey(fieldKey), type);
             }
         }
 
@@ -164,7 +151,7 @@ public class CustomViewUtil
                 if (fieldKey == null || name == null)
                     continue;
 
-                url.addParameter(getAnalyticsProviderParamKey(fieldKey), name);
+                url.addParameter(CustomViewInfo.getAnalyticsProviderParamKey(fieldKey), name);
             }
         }
 
@@ -173,16 +160,6 @@ public class CustomViewUtil
             url.addParameter(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME, containerFilter);
 
         view.setFilterAndSortFromURL(url, FILTER_PARAM_PREFIX);
-    }
-
-    public static String getAggregateParamKey(String colName)
-    {
-        return FILTER_PARAM_PREFIX + "." + AGGREGATE_PARAM_PREFIX + "." + colName;
-    }
-
-    public static String getAnalyticsProviderParamKey(String colName)
-    {
-        return FILTER_PARAM_PREFIX + "." + ANALYTICSPROVIDER_PARAM_PREFIX + "." + colName;
     }
 
     public static Map<String, Object> toMap(ViewContext context, UserSchema schema, String queryName, String viewName, boolean includeFieldMeta, boolean initializeMissingView, Map<FieldKey, Map<String, Object>> columnMetadata)
@@ -219,7 +196,7 @@ public class CustomViewUtil
     public static Map<String, Object> toMap(CustomView view, @NotNull User user, boolean includeFieldMeta)
     {
         assert user != null;
-        return toMap(view, user, includeFieldMeta, new HashMap<FieldKey, Map<String, Object>>());
+        return toMap(view, user, includeFieldMeta, new HashMap<>());
     }
 
     public static Map<String, Object> toMap(CustomView view, @NotNull User user, boolean includeFieldMeta, Map<FieldKey, Map<String, Object>> columnMetadata)
@@ -282,7 +259,6 @@ public class CustomViewUtil
 
         List<Map<String, Object>> filterInfos = new ArrayList<>();
         List<Map<String, Object>> sortInfos = new ArrayList<>();
-        List<Map<String, Object>> aggInfos = new ArrayList<>();
         List<Map<String, Object>> analyticsProvidersInfos = new ArrayList<>();
         try
         {
@@ -306,21 +282,13 @@ public class CustomViewUtil
                 sortInfos.add(sortInfo);
             }
 
-            for (Aggregate agg : fas.getAggregates())
-            {
-                Map<String, Object> aggInfo = new HashMap<>();
-                aggInfo.put("fieldKey", agg.getFieldKey());
-                aggInfo.put("type", agg.getType().toString());
-                aggInfo.put("label", agg.getLabel());
-                allKeys.add(FieldKey.fromString(agg.getFieldKey().toString()));
-                aggInfos.add(aggInfo);
-            }
-
             for (AnalyticsProviderItem analyticsProvider : fas.getAnalyticsProviders())
             {
                 Map<String, Object> apInfo = new HashMap<>();
                 apInfo.put("fieldKey", analyticsProvider.getFieldKey());
                 apInfo.put("name", analyticsProvider.getName());
+                apInfo.put("label", analyticsProvider.getLabel());
+                apInfo.put("isSummaryStatistic", analyticsProvider.isSummaryStatistic());
                 allKeys.add(FieldKey.fromString(analyticsProvider.getFieldKey().toString()));
                 analyticsProvidersInfos.add(apInfo);
             }
@@ -331,7 +299,6 @@ public class CustomViewUtil
 
         ret.put("filter", filterInfos);
         ret.put("sort", sortInfos);
-        ret.put("aggregates", aggInfos);
         ret.put("analyticsProviders", analyticsProvidersInfos);
         ret.put("containerFilter", view.getContainerFilterName());
 

@@ -17,7 +17,7 @@ package org.labkey.query;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.AnalyticsProviderItem;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.FilterInfo;
@@ -123,36 +123,17 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
                 continue VIEW_LOOP;
             }
 
-            for (FilterInfo filterInfo : fas.getFilter())
+            for (FieldKey fieldKey : fas.getFieldKeys())
             {
-                FieldKey filterTable = filterInfo.getField().getTable();
-                if (filterTable != null && filterTable.getName() != null && queries.contains(filterTable.getName()))
-                {
-                    ret.add(dependentViewMessage(container, view));
-                    continue VIEW_LOOP;
-                }
-            }
-
-            for (Sort.SortField sortField : fas.getSort())
-            {
-                FieldKey sortTable = sortField.getFieldKey().getTable();
-                if (sortTable != null && sortTable.getName() != null && queries.contains(sortTable.getName()))
-                {
-                    ret.add(dependentViewMessage(container, view));
-                    continue VIEW_LOOP;
-                }
-            }
-
-            for (Aggregate aggregate : fas.getAggregates())
-            {
-                FieldKey aggTable = aggregate.getFieldKey().getTable();
-                if (aggTable != null && aggTable.getName() != null && queries.contains(aggTable.getName()))
+                FieldKey tableFk = fieldKey.getTable();
+                if (tableFk != null && queries.contains(tableFk.getName()))
                 {
                     ret.add(dependentViewMessage(container, view));
                     continue VIEW_LOOP;
                 }
             }
         }
+
         return ret;
     }
 
@@ -248,18 +229,16 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
                 }
                 sort.applyToURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX, false);
 
-                // update aggregates based on fieldKey parts, and include them in the updated FilterAndSort URL
-                boolean aggregatesUpdated = false;
-                for (Aggregate aggregate : fas.getAggregates())
+                // update analyticsProviders based on fieldKey parts, and include them in the updated FilterAndSort URL
+                boolean analyticsProvidersUpdated = false;
+                for (AnalyticsProviderItem analyticsProvider : fas.getAnalyticsProviders())
                 {
-                    FieldKey origFieldKey = aggregate.getFieldKey();
+                    FieldKey origFieldKey = analyticsProvider.getFieldKey();
                     FieldKey newFieldKey = getUpdatedFieldKeyReference(origFieldKey, queryNameChangeMap);
                     if (newFieldKey != null)
-                    {
-                        aggregatesUpdated = true;
-                    }
+                        analyticsProvidersUpdated = true;
 
-                    aggregate.applyToURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX, newFieldKey != null ? newFieldKey : origFieldKey);
+                    analyticsProvider.applyToURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX, newFieldKey != null ? newFieldKey : origFieldKey);
                 }
 
                 // add the container filters to the updated FilterAndSort URL
@@ -269,7 +248,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
                         updatedFilterAndSortUrl.addParameter(CustomViewInfo.FILTER_PARAM_PREFIX + "." + CustomViewInfo.CONTAINER_FILTER_NAME, containerFilerName);
                 }
 
-                if (filtersUpdated || sortsUpdated || aggregatesUpdated)
+                if (filtersUpdated || sortsUpdated || analyticsProvidersUpdated)
                 {
                     customView.setFilterAndSortFromURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX);
                     hasUpdates = true;

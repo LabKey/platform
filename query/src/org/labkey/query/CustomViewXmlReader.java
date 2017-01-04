@@ -19,6 +19,8 @@ package org.labkey.query;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
+import org.labkey.api.analytics.AnalyticsProviderRegistry;
+import org.labkey.api.analytics.ColumnAnalyticsProvider;
 import org.labkey.api.analytics.SummaryStatisticRegistry;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AnalyticsProviderItem;
@@ -52,6 +54,7 @@ import org.labkey.data.xml.queryCustomView.SortsType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,7 +81,6 @@ public class CustomViewXmlReader
     private boolean _canOverride = false;
     private List<Pair<String,String>> _filters;
     private List<String> _sorts;
-    private List<Aggregate> _aggregates;
     private List<AnalyticsProviderItem> _analyticsProviders;
     private String _customIconUrl;
     private String _customIconCls;
@@ -135,11 +137,6 @@ public class CustomViewXmlReader
         return _filters;
     }
 
-    public List<Aggregate> getAggregates()
-    {
-        return _aggregates;
-    }
-
     public List<AnalyticsProviderItem> getAnalyticsProviders()
     {
         return _analyticsProviders;
@@ -170,7 +167,7 @@ public class CustomViewXmlReader
     {
         String sort = getSortParamValue();
 
-        if (null == getFilters() && null == sort && null == getAggregates() && null == getAnalyticsProviders())
+        if (null == getFilters() && null == sort && null == getAnalyticsProviders())
             return null;
 
         StringBuilder ret = new StringBuilder("?");
@@ -181,43 +178,26 @@ public class CustomViewXmlReader
         {
             for (Pair<String, String> filter : getFilters())
             {
-                ret.append(sep);
-                ret.append(CustomViewInfo.FILTER_PARAM_PREFIX).append(".");
-                ret.append(PageFlowUtil.encode(filter.first));
-                ret.append("=");
-                ret.append(PageFlowUtil.encode(filter.second));
+                String paramName = CustomViewInfo.FILTER_PARAM_PREFIX + "." + filter.first;
+                ret.append(sep).append(getFilterAndSortParam(paramName, filter.second));
                 sep = "&";
             }
         }
 
         if (null != sort)
         {
-            ret.append(sep);
-            ret.append(CustomViewInfo.FILTER_PARAM_PREFIX).append(".sort=");
-            ret.append(PageFlowUtil.encode(sort));
+            String paramName = CustomViewInfo.FILTER_PARAM_PREFIX + ".sort";
+            ret.append(sep).append(getFilterAndSortParam(paramName, sort));
             sep = "&";
-        }
-
-        if (null != getAggregates())
-        {
-            for (Aggregate aggregate : getAggregates())
-            {
-                ret.append(sep);
-                ret.append(CustomViewUtil.getAggregateParamKey(PageFlowUtil.encode(aggregate.getFieldKey().toString())));
-                ret.append("=");
-                ret.append(PageFlowUtil.encode(aggregate.getValueForUrl()));
-                sep = "&";
-            }
         }
 
         if (null != getAnalyticsProviders() && !getAnalyticsProviders().isEmpty())
         {
             for (AnalyticsProviderItem analyticsProvider : getAnalyticsProviders())
             {
-                ret.append(sep);
-                ret.append(CustomViewUtil.getAnalyticsProviderParamKey(PageFlowUtil.encode(analyticsProvider.getFieldKey().toString())));
-                ret.append("=");
-                ret.append(PageFlowUtil.encode(analyticsProvider.getName()));
+                String paramName = CustomViewInfo.getAnalyticsProviderParamKey(analyticsProvider.getFieldKey().toString());
+                String paramVal = analyticsProvider.getValueForUrl();
+                ret.append(sep).append(getFilterAndSortParam(paramName, paramVal));
                 sep = "&";
             }
         }
@@ -230,6 +210,11 @@ public class CustomViewXmlReader
         }
 
         return ret.toString();
+    }
+
+    private String getFilterAndSortParam(String paramName, String paramVal)
+    {
+        return PageFlowUtil.encode(paramName) + "=" + PageFlowUtil.encode(paramVal);
     }
 
     public String getSortParamValue()
@@ -300,12 +285,11 @@ public class CustomViewXmlReader
             if (viewElement.isSetCategory())
                 reader._category = viewElement.getCategory();
 
-            //load the columns, filters, sorts, aggregates, and analyticsProviders
+            //load the columns, filters, sorts, analyticsProviders
             reader._colList = loadColumns(viewElement.getColumns());
             reader._filters = loadFilters(viewElement.getFilters());
             reader._sorts = loadSorts(viewElement.getSorts());
-            reader._aggregates = loadAggregates(viewElement.getAggregates());
-            reader._analyticsProviders = loadAnalyticsProviders(viewElement.getAnalyticsProviders());
+            reader._analyticsProviders = loadAnalyticsProviders(viewElement);
             reader._containerFilter = loadContainerFilter(viewElement.getContainerFilter());
 
             return reader;
@@ -391,12 +375,25 @@ public class CustomViewXmlReader
         return ret;
     }
 
-    protected static List<Aggregate> loadAggregates(AggregatesType aggregates)
+    protected static List<AnalyticsProviderItem> loadAnalyticsProviders(CustomViewType customViewType)
     {
-        if (null == aggregates)
+        if (customViewType.getAggregates() == null && customViewType.getAnalyticsProviders() == null)
             return null;
 
-        List<Aggregate> ret = new ArrayList<>();
+        List<AnalyticsProviderItem> ret = new ArrayList<>();
+        ret.addAll(loadAggregates(customViewType.getAggregates()));
+        ret.addAll(loadAnalyticsProviders(customViewType.getAnalyticsProviders()));
+        return ret;
+    }
+
+    protected static List<AnalyticsProviderItem> loadAggregates(AggregatesType aggregates)
+    {
+        if (null == aggregates)
+            return Collections.emptyList();
+
+        SummaryStatisticRegistry registry = ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
+
+        List<AnalyticsProviderItem> ret = new ArrayList<>();
         for (AggregateType aggregate : aggregates.getAggregateArray())
         {
             String column = StringUtils.trimToNull(aggregate.getColumn());
@@ -404,20 +401,14 @@ public class CustomViewXmlReader
             if (column == null || type == null)
                 continue;
 
-            SummaryStatisticRegistry registry = ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
             Aggregate.Type aggType = registry != null ? registry.getByName(type) : null;
             if (aggType != null)
             {
-                Aggregate map = new Aggregate(FieldKey.fromString(column), aggType);
-                if (aggregate.getLabel() != null)
-                    map.setLabel(aggregate.getLabel());
-
-                ret.add(map);
+                Aggregate agg = new Aggregate(FieldKey.fromString(column), aggType, aggregate.getLabel());
+                ret.add(new AnalyticsProviderItem(agg));
             }
             else
-            {
                 LOG.warn("Invalid summary statistic type: " + type);
-            }
         }
         return ret;
     }
@@ -425,7 +416,9 @@ public class CustomViewXmlReader
     protected static List<AnalyticsProviderItem> loadAnalyticsProviders(AnalyticsProvidersType analyticsProviders)
     {
         if (null == analyticsProviders)
-            return null;
+            return Collections.emptyList();
+
+        AnalyticsProviderRegistry registry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
 
         List<AnalyticsProviderItem> ret = new ArrayList<>();
         for (AnalyticsProviderType analytic : analyticsProviders.getAnalyticsProviderArray())
@@ -435,7 +428,11 @@ public class CustomViewXmlReader
             if (column == null || type == null)
                 continue;
 
-            ret.add(new AnalyticsProviderItem(FieldKey.fromString(column), type));
+            ColumnAnalyticsProvider analyticsProvider = registry != null ? registry.getColumnAnalyticsProvider(type) : null;
+            if (analyticsProvider != null)
+                ret.add(new AnalyticsProviderItem(FieldKey.fromString(column), type, analytic.getLabel()));
+            else
+                LOG.warn("Invalid analytics provider name: " + type);
         }
 
         return ret;

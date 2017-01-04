@@ -236,7 +236,10 @@ public class ModuleCustomViewInfo implements CustomViewInfo
     @Override
     public boolean hasFilterOrSort()
     {
-        return (null != _customViewDef.getFilters() || null != _customViewDef.getSorts() || null != _customViewDef.getAggregates());
+        return (null != _customViewDef.getFilters()
+            || null != _customViewDef.getSorts()
+            || null != _customViewDef.getAnalyticsProviders()
+        );
     }
 
 }
