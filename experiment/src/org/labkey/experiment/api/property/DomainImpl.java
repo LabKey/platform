@@ -347,7 +347,7 @@ public class DomainImpl implements Domain
                 // consider: optimistic concurrency check here?
                 Table.insert(user, OntologyManager.getTinfoDomainDescriptor(), _dd);
                 _dd = OntologyManager.getDomainDescriptor(_dd.getDomainURI(), _dd.getContainer());
-                // CONSIDER put back if we want automatic provisioning for serveral DomainKinds
+                // CONSIDER put back if we want automatic provisioning for several DomainKinds
                 // StorageProvisioner.create(this);
                 addAuditEvent(user, String.format("The domain %s was created", _dd.getName()));
             }
@@ -357,7 +357,7 @@ public class DomainImpl implements Domain
                 if (!JdbcUtil.rowVersionEqual(ddCheck.get_Ts(), _dd.get_Ts()))
                     throw new Table.OptimisticConflictException("Domain has been updated by another user or process.", Table.SQLSTATE_TRANSACTION_STATE, 0);
 
-                // call OntololgyManager.updateDomainDescriptor() to invalidate proper caches
+                // call OntologyManager.updateDomainDescriptor() to invalidate proper caches
                 _dd = OntologyManager.updateDomainDescriptor(_dd);
 
                 // we expect _ddOld should be null if we only have property changes
