@@ -75,7 +75,7 @@ public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
                 return;
             }
 
-            if (!isValidForImportArchive(ctx)) // no groups to import
+            if (!isValidForImportArchive(ctx))
                 return;
 
             GroupsType groups = ctx.getXml().getGroups();

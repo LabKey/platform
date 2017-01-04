@@ -50,7 +50,7 @@ public class ProtocolDocumentImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        if (isValidForImportArchive(ctx))
+        if (isValidForImportArchive(ctx, root))
         {
             StudyImpl study = ctx.getStudy();
             ExportDirType protocolXml = ctx.getXml().getProtocolDocs();
@@ -81,7 +81,7 @@ public class ProtocolDocumentImporter implements InternalStudyImporter
     }
 
     @Override
-    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    public boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root) throws ImportException
     {
         return ctx.getXml() != null && ctx.getXml().getProtocolDocs() != null;
     }

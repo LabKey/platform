@@ -60,7 +60,7 @@ public class CohortImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        if (isValidForImportArchive(ctx))
+        if (isValidForImportArchive(ctx, root))
         {
             StudyImpl study = ctx.getStudy();
             StudyDocument.Study.Cohorts cohortsXml = ctx.getXml().getCohorts();
@@ -106,7 +106,7 @@ public class CohortImporter implements InternalStudyImporter
     }
 
     @Override
-    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    public boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root) throws ImportException
     {
         return ctx.getXml() != null && ctx.getXml().getCohorts() != null;
     }

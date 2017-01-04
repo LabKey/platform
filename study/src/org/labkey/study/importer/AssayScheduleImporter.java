@@ -60,7 +60,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        if (isValidForImportArchive(ctx))
+        if (isValidForImportArchive(ctx, root))
         {
             ExportDirType dirType = ctx.getXml().getAssaySchedule();
 
@@ -111,7 +111,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
     }
 
     @Override
-    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    public boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root) throws ImportException
     {
         return ctx.getXml() != null && ctx.getXml().getAssaySchedule() != null;
     }

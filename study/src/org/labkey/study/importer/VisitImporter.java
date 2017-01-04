@@ -63,7 +63,7 @@ public class VisitImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        if (isValidForImportArchive(ctx))
+        if (isValidForImportArchive(ctx, vf))
         {
             StudyImpl study = ctx.getStudy();
             StudyDocument.Study.Visits visitsXml = ctx.getXml().getVisits();
@@ -92,7 +92,7 @@ public class VisitImporter implements InternalStudyImporter
     }
 
     @Override
-    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    public boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root) throws ImportException
     {
         return ctx.getXml() != null && ctx.getXml().getVisits() != null;
     }

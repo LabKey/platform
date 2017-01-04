@@ -79,7 +79,7 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        if (isValidForImportArchive(ctx))
+        if (isValidForImportArchive(ctx, root))
         {
             ExportDirType dirType = ctx.getXml().getTreatmentData();
 
@@ -159,7 +159,7 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
     }
 
     @Override
-    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    public boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root) throws ImportException
     {
         return ctx.getXml() != null && ctx.getXml().getTreatmentData() != null;
     }

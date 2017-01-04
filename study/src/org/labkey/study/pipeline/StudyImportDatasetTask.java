@@ -47,9 +47,9 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
         return StudyArchiveDataTypes.DATASET_DATA;
     }
 
-    public static boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    public static boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root) throws ImportException
     {
-        VirtualFile datasetsDir = getDatasetsDirectory(ctx, ctx.getRoot());
+        VirtualFile datasetsDir = getDatasetsDirectory(ctx, root);
         if (datasetsDir != null && getDatasetsFileName(ctx) != null)
         {
             // check if we have at least one .tsv file in the datasetsDir

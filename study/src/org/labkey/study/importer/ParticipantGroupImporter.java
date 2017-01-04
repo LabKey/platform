@@ -63,7 +63,7 @@ public class ParticipantGroupImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        if (!isValidForImportArchive(ctx))
+        if (!isValidForImportArchive(ctx, root))
             return;
 
         StudyImpl study = ctx.getStudy();
@@ -83,11 +83,11 @@ public class ParticipantGroupImporter implements InternalStudyImporter
     }
 
     @Override
-    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    public boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root) throws ImportException
     {
         try
         {
-            return ctx.getRoot() != null && ctx.getRoot().getXmlBean(ParticipantGroupWriter.FILE_NAME) != null;
+            return root != null && root.getXmlBean(ParticipantGroupWriter.FILE_NAME) != null;
         }
         catch (IOException e)
         {

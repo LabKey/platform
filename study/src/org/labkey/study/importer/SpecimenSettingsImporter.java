@@ -82,7 +82,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        if (isValidForImportArchive(ctx))
+        if (isValidForImportArchive(ctx, studyDir))
         {
             StudyDocument.Study.Specimens xmlSettings = ctx.getXml().getSpecimens();
 
@@ -115,7 +115,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
     }
 
     @Override
-    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    public boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root) throws ImportException
     {
         return ctx.getXml() != null && ctx.getXml().getSpecimens() != null;
     }

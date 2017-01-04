@@ -54,7 +54,7 @@ public class StudyViewsImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        if (isValidForImportArchive(ctx))
+        if (isValidForImportArchive(ctx, root))
         {
             StudyImpl study = ctx.getStudy();
             StudyDocument.Study.StudyViews viewsXml = ctx.getXml().getStudyViews();
@@ -109,7 +109,7 @@ public class StudyViewsImporter implements InternalStudyImporter
     }
 
     @Override
-    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    public boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root) throws ImportException
     {
         return ctx.getXml() != null && ctx.getXml().getStudyViews() != null;
     }

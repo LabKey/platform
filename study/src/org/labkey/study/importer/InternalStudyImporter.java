@@ -35,7 +35,7 @@ public interface InternalStudyImporter
      * Validate if the study importer is valid for the given import context. Default to true.
      * @return boolean
      */
-    default boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    default boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root) throws ImportException
     {
         return true;
     }

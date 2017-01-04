@@ -81,7 +81,7 @@ public class RoleAssignmentsImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(@Nullable PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            if (!isValidForImportArchive(ctx)) // nothing to import
+            if (!isValidForImportArchive(ctx))
                 return;
 
             RoleAssignmentsType assignments = ctx.getXml().getRoleAssignments();

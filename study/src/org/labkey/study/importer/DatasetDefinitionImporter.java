@@ -64,7 +64,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        if (isValidForImportArchive(ctx))
+        if (isValidForImportArchive(ctx, vf))
         {
             StudyImpl study = ctx.getStudy();
             StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
@@ -155,7 +155,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
     }
 
     @Override
-    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    public boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root) throws ImportException
     {
         return ctx.getXml() != null && ctx.getXml().getDatasets() != null;
     }

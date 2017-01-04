@@ -161,11 +161,11 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
             for (InternalStudyImporter studyImporter : StudySerializationRegistryImpl.get().getInternalStudyImporters())
             {
                 if (studyImporter.getDataType() != null)
-                    dataTypes.put(studyImporter.getDataType(), sCtx != null && studyImporter.isValidForImportArchive(sCtx));
+                    dataTypes.put(studyImporter.getDataType(), sCtx != null && studyImporter.isValidForImportArchive(sCtx, sCtx.getRoot()));
             }
 
             // specifically add those "importers" that aren't implementers of InternalStudyImporter
-            dataTypes.put(StudyImportDatasetTask.getType(), sCtx != null && StudyImportDatasetTask.isValidForImportArchive(sCtx));
+            dataTypes.put(StudyImportDatasetTask.getType(), sCtx != null && StudyImportDatasetTask.isValidForImportArchive(sCtx, sCtx.getRoot()));
             dataTypes.put(StudyImportSpecimenTask.getType(), sCtx != null && sCtx.getSpecimenArchive(sCtx.getRoot()) != null);
 
             return dataTypes;

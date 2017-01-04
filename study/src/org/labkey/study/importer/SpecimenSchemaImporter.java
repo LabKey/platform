@@ -109,7 +109,7 @@ public class SpecimenSchemaImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        if (!isValidForImportArchive(ctx))
+        if (!isValidForImportArchive(ctx, root))
             return;
 
         TablesDocument tablesDoc;
@@ -195,11 +195,11 @@ public class SpecimenSchemaImporter implements InternalStudyImporter
     }
 
     @Override
-    public boolean isValidForImportArchive(StudyImportContext ctx) throws ImportException
+    public boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root) throws ImportException
     {
         try
         {
-            return ctx.getRoot() != null && ctx.getRoot().getXmlBean(SpecimenArchiveWriter.SCHEMA_FILENAME) != null;
+            return root != null && root.getXmlBean(SpecimenArchiveWriter.SCHEMA_FILENAME) != null;
         }
         catch (IOException e)
         {
