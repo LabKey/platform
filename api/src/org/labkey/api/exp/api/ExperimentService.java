@@ -94,12 +94,12 @@ public class ExperimentService
 
     public interface Interface extends ExperimentRunTypeSource
     {
-        public static final String SAMPLE_DERIVATION_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:SampleDerivationProtocol";
+        String SAMPLE_DERIVATION_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:SampleDerivationProtocol";
 
-        public static final int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
-        public static final int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
-        public static final int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
-        public static final int SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE = 20;
+        int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
+        int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
+        int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
+        int SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE = 20;
 
         @Nullable
         ExpObject findObjectFromLSID(String lsid);
@@ -293,7 +293,7 @@ public class ExperimentService
 
         ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type);
 
-        public DbSchema getSchema();
+        DbSchema getSchema();
 
         ExpProtocolApplication getExpProtocolApplication(String lsid);
         List<? extends ExpProtocolApplication> getExpProtocolApplicationsForProtocolLSID(String protocolLSID);
@@ -320,7 +320,7 @@ public class ExperimentService
         TableInfo getTinfoMaterialAliasMap();
         ExpSampleSet ensureDefaultSampleSet();
         ExpSampleSet ensureActiveSampleSet(Container container);
-        public String getDefaultSampleSetLsid();
+        String getDefaultSampleSetLsid();
 
         List<? extends ExpRun> getRunsUsingMaterials(List<ExpMaterial> materials);
         List<? extends ExpRun> getRunsUsingMaterials(int... materialIds);
@@ -342,9 +342,9 @@ public class ExperimentService
 
         void deleteExperimentRunsByRowIds(Container container, final User user, int... selectedRunIds);
 
-        public void deleteExpExperimentByRowId(Container container, User user, int experimentId);
+        void deleteExpExperimentByRowId(Container container, User user, int experimentId);
 
-        public void addExperimentListener(ExperimentListener listener);
+        void addExperimentListener(ExperimentListener listener);
 
         void clearCaches();
 
@@ -376,7 +376,7 @@ public class ExperimentService
          */
         ExpProtocol insertProtocol(@NotNull ExpProtocol baseProtocol, @Nullable List<ExpProtocol> steps, @Nullable Map<String, List<String>> predecessors, User user) throws ExperimentException;
 
-        public ExpProtocol insertSimpleProtocol(ExpProtocol baseProtocol, User user) throws ExperimentException;
+        ExpProtocol insertSimpleProtocol(ExpProtocol baseProtocol, User user) throws ExperimentException;
 
         /**
          * The run must be a instance of a protocol created with insertSimpleProtocol().
@@ -389,7 +389,7 @@ public class ExperimentService
          * @param info context information, including the user
          * @param log output log target
          */
-        public ExpRun saveSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException;
+        ExpRun saveSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException;
 
         /**
          * Adds an extra protocol application to a run created by saveSimpleExperimentRun() to track more complex
@@ -398,21 +398,21 @@ public class ExperimentService
          * @param name name of the protocol application
          * @return a fully populated but not yet saved ExpProtocolApplication. It will have no inputs and outputs.
          */
-        public ExpProtocolApplication createSimpleRunExtraProtocolApplication(ExpRun expRun, String name);
-        public ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException;
-        public ExpRun derive(Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas,
-                            Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas,
-                            ViewBackgroundInfo info, Logger log)
+        ExpProtocolApplication createSimpleRunExtraProtocolApplication(ExpRun expRun, String name);
+        ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException;
+        ExpRun derive(Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas,
+                      Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas,
+                      ViewBackgroundInfo info, Logger log)
             throws ExperimentException;
-        public void deriveSamplesBulk(List<SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException;
+        void deriveSamplesBulk(List<SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException;
 
-        public void registerExperimentMaterialListener(ExperimentMaterialListener listener);
-        public void registerExperimentDataHandler(ExperimentDataHandler handler);
-        public void registerExperimentRunTypeSource(ExperimentRunTypeSource source);
-        public void registerDataType(DataType type);
-        public void registerProtocolImplementation(ProtocolImplementation impl);
+        void registerExperimentMaterialListener(ExperimentMaterialListener listener);
+        void registerExperimentDataHandler(ExperimentDataHandler handler);
+        void registerExperimentRunTypeSource(ExperimentRunTypeSource source);
+        void registerDataType(DataType type);
+        void registerProtocolImplementation(ProtocolImplementation impl);
 
-        public ProtocolImplementation getProtocolImplementation(String name);
+        ProtocolImplementation getProtocolImplementation(String name);
 
         ExpProtocolApplication getExpProtocolApplication(int rowId);
         List<? extends ExpProtocolApplication> getExpProtocolApplicationsForRun(int runId);
@@ -430,7 +430,7 @@ public class ExperimentService
          * Loads the xar synchronously, in the context of the pipelineJob
          * @return the runs loaded from the XAR
          */
-        public List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, boolean reloadExistingRuns) throws ExperimentException;
+        List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, boolean reloadExistingRuns) throws ExperimentException;
 
         /**
          * Create an experiment run to represent the work that the task's job has done so far.
@@ -439,7 +439,7 @@ public class ExperimentService
          * @param job Pipeline job.
          * @return the run created from the job's actions.
          */
-        public ExpRun importRun(PipelineJob job, XarSource source) throws SQLException, PipelineJobException, ValidationException;
+        ExpRun importRun(PipelineJob job, XarSource source) throws SQLException, PipelineJobException, ValidationException;
 
         /**
          * Provides access to an object that should be locked before inserting protocols. Locking when doing
@@ -449,7 +449,7 @@ public class ExperimentService
          *
          * @return lock object on which to synchronize
          */
-        public Lock getProtocolImportLock();
+        Lock getProtocolImportLock();
 
         HttpView createRunExportView(Container container, String defaultFilenamePrefix);
         HttpView createFileExportView(Container container, String defaultFilenamePrefix);
