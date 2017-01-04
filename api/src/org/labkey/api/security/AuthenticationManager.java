@@ -392,7 +392,10 @@ public class AuthenticationManager
         return null;
     }
 
-    public static @Nullable boolean isAccountExpirationEnabled()
+    /**
+     * @return True if any ExpireAccountProvider is enabled, else false
+     */
+    public static boolean isAccountExpirationEnabled()
     {
         for (ExpireAccountProvider provider : AuthenticationProviderCache.getProviders(ExpireAccountProvider.class))
             if (provider.isEnabled())
