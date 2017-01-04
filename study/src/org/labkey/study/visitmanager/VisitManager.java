@@ -652,10 +652,15 @@ public abstract class VisitManager
 
         if (!ContainerManager.exists(study.getContainer()))
         {
-            // Checking a likely cause of the race conditions we see on TeamCity. For now, just log and continue on.
-            // TODO: return 0, by adding this to the checks above
-            LOGGER.info("Container no longer exists!");
+            // Checking a possible cause of the race conditions we see on TeamCity. For now, just log and continue on.
+            LOGGER.info("According to the cache, container no longer exists!");
         }
+        else if (null == ContainerManager.getForRowId(study.getContainer().getRowId()))
+        {
+            LOGGER.info("According to the database, container no longer exists! (Cache was stale!)");
+        }
+
+        List<DatasetDefinition> datasets = null;
 
         try
         {
@@ -668,7 +673,8 @@ public abstract class VisitManager
             TableInfo tableSpecimen = getSpecimenTable(study, null);
 
             SQLFragment ptids = new SQLFragment();
-            SQLFragment studyDataPtids = studyDataPtids(study.getDatasets());
+            datasets = study.getDatasets();
+            SQLFragment studyDataPtids = studyDataPtids(datasets);
             if (null != studyDataPtids)
             {
                 ptids.append(studyDataPtids);
@@ -706,7 +712,18 @@ public abstract class VisitManager
         {
             if (!ContainerManager.exists(study.getContainer()))
             {
-                LOGGER.info("Hit exception and container no longer exists! " + x.getMessage());
+                LOGGER.info("Hit exception and, according to the cache, container no longer exists! " + x.getMessage());
+            }
+            else if (null == ContainerManager.getForRowId(study.getContainer().getRowId()))
+            {
+                LOGGER.info("Hit exception and, according to the database, container no longer exists! (Cache was stale!) " + x.getMessage());
+            }
+            else if (null != datasets)
+            {
+                List<DatasetDefinition> datasetsNow = study.getDatasets();
+
+                if (datasetsNow.size() != datasets.size())
+                    LOGGER.info("Dataset count changed: " + (datasetsNow.size() - datasets.size()));
             }
 
             // TODO: Temporary logging
