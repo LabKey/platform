@@ -109,27 +109,41 @@ public class AnalyticsProviderItem
     @NotNull
     public static List<AnalyticsProviderItem> fromURL(URLHelper urlHelper, String regionName)
     {
-        return fromURL(urlHelper.getPropertyValues(), regionName);
+        List<Pair<String, Object>> paramPairs = new ArrayList<>();
+        for (Pair<String, String> stringPair : urlHelper.getParameters())
+            paramPairs.add(new Pair<>(stringPair.getKey(), stringPair.getValue()));
+
+        return fromURL(paramPairs, regionName);
     }
 
     @NotNull
     public static List<AnalyticsProviderItem> fromURL(PropertyValues pvs, String regionName)
+    {
+        List<Pair<String, Object>> paramPairs = new ArrayList<>();
+        for (PropertyValue val : pvs.getPropertyValues())
+            paramPairs.add(new Pair<>(val.getName(), val.getValue()));
+
+        return fromURL(paramPairs, regionName);
+    }
+
+    @NotNull
+    private static List<AnalyticsProviderItem> fromURL(List<Pair<String, Object>> paramPairs, String regionName)
     {
         String aggPrefix = regionName + "." + CustomViewInfo.AGGREGATE_PARAM_PREFIX + ".";
         String apPrefix = regionName + "." + CustomViewInfo.ANALYTICSPROVIDER_PARAM_PREFIX + ".";
 
         List<AnalyticsProviderItem> analyticsProviderItems = new LinkedList<>();
 
-        for (PropertyValue val : pvs.getPropertyValues())
+        for (Pair<String, Object> val : paramPairs)
         {
-            boolean isAggregate = val.getName().startsWith(aggPrefix);
-            boolean isAnalyticsProvider = val.getName().startsWith(apPrefix);
+            boolean isAggregate = val.getKey().startsWith(aggPrefix);
+            boolean isAnalyticsProvider = val.getKey().startsWith(apPrefix);
 
             if (isAggregate || isAnalyticsProvider)
             {
                 FieldKey fieldKey = isAggregate
-                    ? FieldKey.fromString(val.getName().substring(aggPrefix.length()))
-                    : FieldKey.fromString(val.getName().substring(apPrefix.length()));
+                    ? FieldKey.fromString(val.getKey().substring(aggPrefix.length()))
+                    : FieldKey.fromString(val.getKey().substring(apPrefix.length()));
 
                 List<String> values = new ArrayList<>();
                 if (val.getValue() instanceof String)
