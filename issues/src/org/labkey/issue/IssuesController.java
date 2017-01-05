@@ -676,6 +676,8 @@ public class IssuesController extends SpringActionController
 
             // bind the provisioned table to the form bean so we can get typed properties
             IssueListDef issueListDef = getIssueListDef();
+            if (issueListDef == null)
+                return false;
             form.setTable(issueListDef.createTable(getUser()));
             issue.setProperties(form.getTypedColumns());
 
