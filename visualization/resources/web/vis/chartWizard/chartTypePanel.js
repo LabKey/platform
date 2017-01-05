@@ -255,7 +255,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                     + subjectInfo.nounSingular + 'Visit\' columns and have at least one \'measure\' column.</p>';
 
             this.studyQueryComboHelp = Ext4.create('Ext.Component', {
-                padding: '2px 0 0 10px',
+                padding: '2px 0 0 5px',
                 html: '<i class="fa fa-question-circle"></i>',
                 listeners: {
                     scope: this,
