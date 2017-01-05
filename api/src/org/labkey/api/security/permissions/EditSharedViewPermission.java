@@ -16,6 +16,7 @@
 package org.labkey.api.security.permissions;
 
 /**
+ * Allows a user to make a saved custom view shared with other users, or edit a previously saved shared view.
  * User: dave
  * Date: Jun 22, 2009
  * Time: 3:10:06 PM
