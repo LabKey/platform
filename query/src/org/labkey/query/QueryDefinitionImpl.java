@@ -505,13 +505,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     }
 
     @Nullable
-    public TableInfo getTable(List<QueryException> errors, boolean includeMetadata)
+    public TableInfo getTable(@Nullable List<QueryException> errors, boolean includeMetadata)
     {
         return getTable(getSchema(), errors, includeMetadata);
     }
 
     @Nullable
-    public TableInfo getTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata)
+    public TableInfo getTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata)
     {
         if (_useCache)
         {
@@ -557,7 +557,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
      * @param query a Query object to reuse, if available. Otherwise, a new one will be created behind the scenes
      */
     @Nullable
-    public TableInfo createTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata, @Nullable Query query)
+    public TableInfo createTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, @Nullable Query query)
     {
         if (errors == null)
         {

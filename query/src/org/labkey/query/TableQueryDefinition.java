@@ -177,7 +177,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     }
 
     @Override
-    public TableInfo createTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata, @Nullable Query query)
+    public TableInfo createTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, @Nullable Query query)
     {
         try
         {
@@ -186,8 +186,12 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         catch (QueryParseException e)
         {
             log.warn("Exception from UserSchema.getTable", e);
-            errors.add(new QueryParseException("Exception from UserSchema.getTable", e, 0, 0));
-            return null;
+            if (null != errors)
+            {
+                errors.add(new QueryParseException("Exception from UserSchema.getTable", e, 0, 0));
+                return null;
+            }
+            throw e;
         }
     }
 
