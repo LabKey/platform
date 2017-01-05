@@ -387,23 +387,25 @@ LABKEY.vis.internal.Axis = function() {
                     .attr('class', (tickRectCls?tickRectCls:"tick-rect"))
                     .attr('x', function() {
                         currentIndex = currentIndex + 1;
-                        if (needAdjustment) {
-                            return adjustedStarts[currentIndex];
-                        }
-                        return this.nextSibling.getBBox().x - tickRectWidthOffset/2;
+                        var rectX = needAdjustment ? adjustedStarts[currentIndex]
+                                : this.nextSibling.getBBox().x - tickRectWidthOffset/2;
+                        return Math.max(rectX, 0);
                     })
                     .attr('y', function() {
                         currentIndex = -1;
-                        return this.nextSibling.getBBox().y - tickRectHeightOffset/2;
+                        var rectY = this.nextSibling.getBBox().y - tickRectHeightOffset/2;
+                        return Math.max(rectY, 0);
                     })
                     .attr('width', function() {
                         currentIndex = currentIndex + 1;
-                        if (needAdjustment) {
-                            return adjustedEnds[currentIndex] - adjustedStarts[currentIndex];
-                        }
-                        return this.nextSibling.getBBox().width + tickRectWidthOffset;
+                        var rectWidth = needAdjustment ? adjustedEnds[currentIndex] - adjustedStarts[currentIndex]
+                                : this.nextSibling.getBBox().width + tickRectWidthOffset;
+                        return Math.max(rectWidth, 0);
                     })
-                    .attr('height', function() { return this.nextSibling.getBBox().height + tickRectHeightOffset; })
+                    .attr('height', function() {
+                        var rectHeight = this.nextSibling.getBBox().height + tickRectHeightOffset;
+                        return Math.max(rectHeight, 0);
+                    })
                     .attr('fill-opacity', 0);
 
             addEvents(anchors.select('rect.' + (tickRectCls?tickRectCls:"tick-rect")));
