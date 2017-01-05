@@ -1120,7 +1120,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             {
                 this.measures.x = chartConfig.measures.x;
                 this.measures.y = chartConfig.measures.y;
-                if (chartConfig.mesures.xSub)
+                if (chartConfig.measures.xSub)
                     this.measures.xSub = chartConfig.measures.xSub;
                 if (chartConfig.measures.color)
                     this.measures.color = chartConfig.measures.color;
