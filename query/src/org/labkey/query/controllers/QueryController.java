@@ -3051,8 +3051,16 @@ public class QueryController extends SpringActionController
 
             if (null != _namedParameters)
             {
-                service.bindNamedParameters(sql, _namedParameters);
-                service.validateNamedParameters(sql);
+                try
+                {
+                    service.bindNamedParameters(sql, _namedParameters);
+                    service.validateNamedParameters(sql);
+                }
+                catch (ConversionException | QueryService.NamedParameterNotProvided e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                    return null;
+                }
             }
 
             return new SqlSelector(table.getSchema().getScope(), sql, QueryLogging.noValidationNeededQueryLogging());
