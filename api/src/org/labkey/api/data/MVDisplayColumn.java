@@ -80,19 +80,10 @@ public class MVDisplayColumn extends DataColumn
             }
 
             out.write(PageFlowUtil.helpPopup("Missing Value Indicator: " + mvIndicator, popupText, true, imgHtml, 0));
-
-            return;
-        }
-        // Call super, as we don't want to check twice for the mv indicator
-        String value = super.getFormattedValue(ctx);
-
-        if ("".equals(value.trim()))
-        {
-            out.write("&nbsp;");
         }
         else
         {
-            out.write(value);
+            super.renderGridCellContents(ctx, out);
         }
     }
 
