@@ -1502,12 +1502,6 @@ public class IssueManager
             return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), null, null).getArrayList(IssueListDef.class);
     }
 
-    public static IssueListDef insertIssueListDef(User user, IssueListDef def)
-    {
-        IssueListDefCache.uncache(ContainerManager.getForId(def.getContainerId()));
-        return Table.insert(user, IssuesSchema.getInstance().getTableInfoIssueListDef(), def);
-    }
-
     @Nullable
     public static IssueListDef getIssueListDef(Container container, String name)
     {

@@ -171,7 +171,7 @@ public class IssueListDef extends Entity
         {
             try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
-                def = IssueManager.insertIssueListDef(user, this);
+                def = Table.insert(user, IssuesSchema.getInstance().getTableInfoIssueListDef(), this);
                 String uri = generateDomainURI(getDomainContainer(user), user, getName(), getKind());
                 Container domainContainer = getDomainContainer(user);
 
@@ -195,6 +195,7 @@ public class IssueListDef extends Entity
                         throw new UnexpectedException(e);
                     }
                 }
+                IssueListDefCache.uncache(ContainerManager.getForId(def.getContainerId()));
                 transaction.commit();
             }
         }
