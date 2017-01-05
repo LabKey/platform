@@ -484,6 +484,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.setRenderType(values.type);
         this.measures = values.fields;
+        if (values.fields.xSub) {
+            this.measures.color = this.measures.xSub;
+        }
 
         this.getChartLayoutPanel().onMeasuresChange(this.measures, this.renderType);
         this.getChartLayoutPanel().updateVisibleLayoutOptions(this.getSelectedChartTypeData(), this.measures);
@@ -1117,6 +1120,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             {
                 this.measures.x = chartConfig.measures.x;
                 this.measures.y = chartConfig.measures.y;
+                if (chartConfig.mesures.xSub)
+                    this.measures.xSub = chartConfig.measures.xSub;
                 if (chartConfig.measures.color)
                     this.measures.color = chartConfig.measures.color;
                 if (chartConfig.measures.shape)
@@ -1266,7 +1271,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         customRenderType = this.customRenderTypes ? this.customRenderTypes[this.renderType] : undefined;
         if (customRenderType && customRenderType.generateAes)
             aes = customRenderType.generateAes(this, chartConfig, aes);
-        //TODO: for the case of sub-categories, x-axis scale should be calculated based on subcategory values
+
         scales = LABKEY.vis.GenericChartHelper.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, this.chartData, this.defaultNumberFormat);
         if (customRenderType && customRenderType.generateScales)
             scales = customRenderType.generateScales(this, chartConfig, scales);

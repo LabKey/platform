@@ -20,8 +20,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                 title: 'Bar',
                 imgUrl: LABKEY.contextPath + '/visualization/images/barchart.png',
                 fields: [
-                    {name: 'x', label: 'X Categories', required: true, nonNumericOnly: true},
-                    {name: 'xSub', label: 'X Subcategories', required: false, nonNumericOnly: true},
+                    {name: 'x', label: 'X Axis Category', required: true, nonNumericOnly: true},
+                    {name: 'xSub', label: 'X Axis Subcategory', required: false, nonNumericOnly: true},
                     {name: 'y', label: 'Y Axis', numericOnly: true}
                 ],
                 layoutOptions: {line: true, opacity: true, axisBased: true}
@@ -378,12 +378,17 @@ LABKEY.vis.GenericChartHelper = new function(){
             }
         }
 
+
         if (savedScales.x && (savedScales.x.min != null || savedScales.x.max != null)) {
-            scales.x.domain = [savedScales.x.min, savedScales.x.max]
+            scales.x.domain = [savedScales.x.min, savedScales.x.max];
+        }
+
+        if (Ext4.isDefined(measures.xSub) && savedScales.xSub && (savedScales.xSub.min != null || savedScales.xSub.max != null)) {
+            scales.xSub.domain = [savedScales.xSub.min, savedScales.xSub.max];
         }
 
         if (savedScales.y && (savedScales.y.min != null || savedScales.y.max != null)) {
-            scales.y.domain = [savedScales.y.min, savedScales.y.max]
+            scales.y.domain = [savedScales.y.min, savedScales.y.max];
         }
 
         return scales;
@@ -759,7 +764,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             if (measureName != undefined && measureName != null && typeof data[i][measureName] == 'object')
                 measureVal = data[i][measureName].value;
 
-            if (subDimensionName !== undefined) {
+            if (subDimensionName !== null) {
                 //create new aggregates for unique dimension/subdimension pairs found
                 if (uniqueDimValues[subDimVal] == undefined)
                     uniqueDimValues[subDimVal] = {};
@@ -783,7 +788,7 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         var keys = Object.keys(uniqueDimValues),
                 results = [];
-        if (subDimensionName !== undefined) {
+        if (subDimensionName !== null) {
             for (var k = 0; k < keys.length; k++) {
                 if (uniqueDimValues.hasOwnProperty(keys[k])) {
                     var dimensionKeys = Object.keys(uniqueDimValues[keys[k]]);
@@ -855,6 +860,11 @@ LABKEY.vis.GenericChartHelper = new function(){
         if (renderType == 'bar_chart')
         {
             aes = { x: 'label', y: 'value' };
+
+            if (Ext4.isDefined(chartConfig.measures.xSub)) {
+                aes.xSub = 'subLabel';
+                aes.color = 'label';
+            }
 
             if (scales.y.domain)
             {
