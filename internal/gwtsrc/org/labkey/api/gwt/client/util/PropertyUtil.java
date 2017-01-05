@@ -115,7 +115,7 @@ public class PropertyUtil
         }
         if (!action.contains("."))
             action = action + ".view";
-        return getContextPath() + "/" + pageFlow + encodedPath + action;
+        return getContextPath() + encodedPath + pageFlow + "-" + action;
     }
 
     /** @return true if the two arguments are both null, or are .equals() */
