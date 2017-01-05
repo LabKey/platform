@@ -363,16 +363,17 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 }
             }];
 
-            thumbnailItems.push({
-                xtype: 'fieldcontainer',
-                layout: {type: 'hbox'},
-                items: thumbnailFieldContainerItems
-            });
 
 
             if (this.data.allowCustomThumbnail)
             {
                 thumbnailItems.push({
+                    xtype: 'fieldcontainer',
+                    layout: {type: 'hbox'},
+                    items: thumbnailFieldContainerItems
+                });
+
+               thumbnailItems.push({
                     xtype      : 'filefield',
                     id         : 'customThumbnail',
                     name       : 'customThumbnail',
@@ -416,15 +417,14 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                             name: 'deleteCustomThumbnail',
                             value: false
                         });
+                imagesItems.push({
+                    xtype   :'fieldset',
+                    border: 1,
+                    style:{borderColor:'b4b4b4', borderStyle:'solid'},
+                    items   :thumbnailItems
+                });
             }
 
-            imagesItems.push({
-                xtype   :'fieldset',
-                padding: 3,
-                border: 1,
-                style:{borderColor:'#b4b4b4', borderStyle:'solid'},
-                items   :thumbnailItems
-            });
             // For the time being any view that supports custom thumbnails also supports custom icons. So a separate check
             // is not necessary.
 
@@ -454,10 +454,17 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                         box.getEl().on('click', function ()
                         {
                             this.down('#deleteCustomIcon').setValue(true);
-                            var removeIconButton = Ext4.DomQuery.select('.icon')[0];
-                            if (removeIconButton)
+                            var iconImageDiv = Ext4.DomQuery.select('.icon')[0];
+                            if (iconImageDiv)
                             {
-                                removeIconButton.parentNode.innerHTML = '<span class="' + this.data.defaultIconCls + '"></span>' ;
+                                if(this.data.defaultIconCls===undefined || this.data.defaultIconCls==='')
+                                {
+                                    iconImageDiv.children[0].src = this.data.defaultThumbnailUrl;
+
+                                }else
+                                {
+                                    iconImageDiv.parentNode.innerHTML = '<span class="' + this.data.defaultIconCls + '"></span>';
+                                }
                             }
                             Ext4.getCmp('customIcon').reset();
                             Ext4.getCmp('icon-remove').hide();
@@ -518,8 +525,6 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                             value: false
                         }
                 );
-            }
-        }
 
         imagesItems.push({
             xtype   :'fieldset',
@@ -528,6 +533,10 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
             style:{borderColor:'#b4b4b4', borderStyle:'solid'},
             items   :iconItems
         });
+
+            }
+        }
+
 
         if (imagesItems.length > 0) {
             this.thumbnail = null;
