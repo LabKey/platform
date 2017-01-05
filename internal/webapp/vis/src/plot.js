@@ -394,8 +394,8 @@ boxPlot.render();
             if (aes.hasOwnProperty(aesthetic)) {
                 if(!scales[aesthetic]){
                     // Not all aesthetics get a scale (like hoverText), so we have to be pretty specific.
-                    if(aesthetic === 'x' || aesthetic === 'xTop' || aesthetic === 'yLeft' || aesthetic === 'yRight'
-                            || aesthetic === 'size'){
+                    if(aesthetic === 'x' || aesthetic === 'xTop' || aesthetic === 'xSub' || aesthetic === 'yLeft'
+                            || aesthetic === 'yRight' || aesthetic === 'size'){
                         scales[aesthetic] = {scaleType: 'continuous', trans: 'linear'};
                     } else if (aesthetic == 'color' || aesthetic == 'outlierColor' || aesthetic == 'pathColor') {
                         scales['color'] = {scaleType: 'discrete'};
@@ -536,7 +536,7 @@ boxPlot.render();
     };
 
     var requiresDomain = function(name, colorScale) {
-        if (name == 'yLeft' || name == 'yRight' || name == 'x' || name == 'xTop' || name == 'size') {
+        if (name == 'yLeft' || name == 'yRight' || name == 'x' || name == 'xTop' || name == 'xSub' || name == 'size') {
             return true;
         }
         // We only need the domain of the a color scale if it's a continuous one.
@@ -609,6 +609,10 @@ boxPlot.render();
 
         if (scales.xTop) {
             setXAxisRange(scales.xTop);
+        }
+
+        if (scales.xSub) {
+            setXAxisRange(scales.xSub);
         }
     };
 
@@ -735,7 +739,7 @@ boxPlot.render();
                 userScale = userScales[scaleName];
 
                 if (scale.scaleType == 'discrete') {
-                    if (scaleName == 'x' || scaleName == 'xTop' || scaleName == 'yLeft' || scaleName == 'yRight'){
+                    if (scaleName == 'x' || scaleName == 'xTop' || scaleName == 'xSub' || scaleName == 'yLeft' || scaleName == 'yRight'){
                         // Setup scale with domain (user provided or calculated) and compute range based off grid dimensions.
                         scale.scale = d3.scale.ordinal().domain(scale.domain).rangeBands(scale.range, 1);
                     } else {

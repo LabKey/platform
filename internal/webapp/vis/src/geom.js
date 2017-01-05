@@ -39,12 +39,17 @@ LABKEY.vis.Geom.XY.prototype.initAesthetics = function(scales, layerAes, parentA
     } else if(layerAes.xTop){
         this.xAes = layerAes.xTop;
         this.xScale = scales.xTop;
-    } else if(parentAes.x){
+    }  else if(parentAes.x){
         this.xAes = parentAes.x;
         this.xScale = scales.x;
     } else if(parentAes.xTop){
         this.xAes = parentAes.xTop;
         this.xScale = scales.xTop;
+    }
+
+    if (parentAes.xSub && scales.xSub) {
+        this.xSubAes = parentAes.xSub;
+        this.xSubScale = scales.xSub;
     }
 
     if(!this.xAes){
@@ -102,6 +107,11 @@ LABKEY.vis.Geom.XY.prototype.getVal = function(scale, map, row, isY){
     } else {
         return scale(value);
     }
+};
+
+LABKEY.vis.Geom.XY.prototype.getXSub = function(row) {
+    //Takes a row, returns the scaled x subcategory value.
+    return this.getVal(this.xSubScale.scale, this.xSubAes, row, false);
 };
 
 LABKEY.vis.Geom.XY.prototype.getX = function(row){

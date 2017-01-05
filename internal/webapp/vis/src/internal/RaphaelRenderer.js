@@ -40,7 +40,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
     }
 
     var renderGrid = function() {
-        var i, x1, y1, x2, y2, tick, tickText, tickHoverText, tickCls, text, gridLine, tickFontSize;
+        var i, x, x1, y1, x2, y2, tick, tickText, tickHoverText, tickCls, text, gridLine, tickFontSize;
         if (this.bgColor) {
             this.paper.rect(0, 0, plot.grid.width, plot.grid.height).attr('fill', plot.bgColor).attr('stroke', 'none');
         }
@@ -54,26 +54,27 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
 
         var xTicks;
         var xTicksSet = this.paper.set();
+        x = plot.aes.xSub ? 'xSub' : 'x';
         if (plot.scales.x.scaleType == 'continuous') {
-            xTicks = plot.scales.x.scale.ticks(7);
+            xTicks = plot.scales[x].scale.ticks(7);
         } else {
-            xTicks = plot.scales.x.domain;
+            xTicks = plot.scales[x].domain;
         }
 
         for (i = 0; i < xTicks.length; i++) {
             //Plot x-axis ticks.
-            x1 = x2 = Math.floor(plot.scales.x.scale(xTicks[i])) +.5;
+            x1 = x2 = Math.floor(plot.scales[x].scale(xTicks[i])) +.5;
             y1 = plot.grid.bottomEdge + 8;
             y2 = plot.grid.bottomEdge;
 
             tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2));
             tick.attr('stroke-width', plot.tickWidth || 1);
-            tickText = plot.scales.x.tickFormat ? plot.scales.x.tickFormat(xTicks[i]) : xTicks[i];
+            tickText = plot.scales[x].tickFormat ? plot.scales[x].tickFormat(xTicks[i]) : xTicks[i];
             // add hover for x-axis tick mark descriptions
-            tickHoverText = plot.scales.x.tickHoverText ? plot.scales.x.tickHoverText(xTicks[i]) : null;
-            tickCls = plot.scales.x.tickCls ? plot.scales.x.tickCls(xTicks[i]) : null;
-            tickFontSize = plot.scales.x.fontSize ? plot.scales.x.fontSize : null;
-            text = this.paper.text(plot.scales.x.scale(xTicks[i])+.5, plot.grid.bottomEdge + 15, tickText);
+            tickHoverText = plot.scales[x].tickHoverText ? plot.scales[x].tickHoverText(xTicks[i]) : null;
+            tickCls = plot.scales[x].tickCls ? plot.scales[x].tickCls(xTicks[i]) : null;
+            tickFontSize = plot.scales[x].fontSize ? plot.scales[x].fontSize : null;
+            text = this.paper.text(plot.scales[x].scale(xTicks[i])+.5, plot.grid.bottomEdge + 15, tickText);
             text.attr('fill', plot.tickTextColor || '#000000');
             if (tickHoverText)
                 text.attr("title", tickHoverText);
@@ -95,7 +96,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         for (i = 0; i < xTicksSet.length-1; i++) {
             var curBBox = xTicksSet[i].getBBox(),
                     nextBBox = xTicksSet[i+1].getBBox();
-            if (curBBox.x2 >= nextBBox.x) {
+            if (curBBox.x2 >= nextBBox[x]) {
                 var rotation = plot.tickOverlapRotation ? plot.tickOverlapRotation : 15;
                 xTicksSet.attr('text-anchor', 'start').transform('t0,0r'+rotation);
                 adjustRotatedTicks(xTicksSet);
@@ -681,20 +682,43 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
     };
 
     var renderBarPlotGeom = function(data, geom) {
-        var x, y, barLeft, binWidth, barWidth, offsetWidth, barHeight;
+        var x, y, barLeft, binWidth, barWidth, offsetWidth, barHeight,
+                grouped, numXCategories, numXSubCategories, xOffsetFn, colorAcc;
 
         if (geom.xScale.scaleType == 'continuous') {
             console.error('Bar Plots not supported for continuous data yet.');
             return;
         }
 
-        binWidth = (plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length);
-        barWidth = binWidth / (geom.showCumulativeTotals ? 4 : 2);
+        if (geom.xSubScale && geom.xSubAes) {
+            grouped = true;
+        }
+
+        numXCategories = geom.xScale.scale.domain().length;
+        if (grouped) { numXSubCategories = geom.xSubScale.scale.domain().length; }
+        binWidth = (plot.grid.rightEdge - plot.grid.leftEdge) / (grouped ? numXSubCategories : numXCategories);
+        barWidth = grouped ? (binWidth / (numXCategories * 2)) : (binWidth / (geom.showCumulativeTotals ? 4 : 2));
         offsetWidth = (binWidth / (geom.showCumulativeTotals ? 3.5 : 4));
+
+        xOffsetFn = function(i) {
+            for (var j = 0; j < numXCategories; j++) {
+                if (geom.xScale.domain[j] === data[i].label) {
+                    return barWidth * j;
+                }
+            }
+        };
+
+        colorAcc = function (i) {
+            if (geom.colorAes && geom.colorScale) {
+                return geom.colorScale.scale(geom.colorAes.getValue(data[i]) + geom.layerName);
+            } else {
+                return geom.fill;
+            }
+        };
 
         for (var i = 0; i < data.length; i++)
         {
-            x = geom.xScale.scale(geom.xAes.getValue(data[i]));
+            x = grouped ? geom.xSubScale.scale(geom.xSubAes.getValue(data[i])) + xOffsetFn(i) : geom.xScale.scale(geom.xAes.getValue(data[i]));
             y = geom.yScale.scale(geom.yAes.getValue(data[i]));
 
             this.paper.setStart();
@@ -704,7 +728,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             barHeight = plot.grid.bottomEdge - y;
             var bar = this.paper.rect(barLeft, y, barWidth, barHeight)
                     .attr('title', geom.yAes.getValue(data[i]))
-                    .attr('fill', geom.fill)
+                    .attr('fill', colorAcc(i))
                     .attr('fill-opacity', geom.opacity)
                     .attr('stroke', geom.color)
                     .attr('stroke-width', geom.lineWidth);
