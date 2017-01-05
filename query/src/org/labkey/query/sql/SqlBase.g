@@ -475,7 +475,7 @@ annotation_label
 //
 // Note that the above precedence levels map to the rules below...
 // Once you have a precedence chart, writing the appropriate rules as below
-// is usually very straightfoward
+// is usually very straightforward
 
 logicalExpression
 	: expression

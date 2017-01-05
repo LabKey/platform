@@ -98,7 +98,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         add, delete
     }
 
-    static final Comparator<Item> itemCompare = (o1, o2) -> o1._pri.compareTo(o2._pri);
+    static final Comparator<Item> itemCompare = Comparator.comparing(o -> o._pri);
 
 
     public AbstractSearchService()
@@ -210,7 +210,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     
     // Consider: remove _op/OPERATION (not used), subclasses for resource vs. runnable (would clarify invariants and make
-    // hashCode() & equals() more straightfoward), formalize _id (using Runnable.toString() seems weak).
+    // hashCode() & equals() more straightforward), formalize _id (using Runnable.toString() seems weak).
     class Item
     {
         OPERATION _op;
