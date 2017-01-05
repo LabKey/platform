@@ -254,7 +254,6 @@ public class ReportViewProvider implements DataViewProvider
                 info.setTags(ReportPropsManager.get().getProperties(descriptor.getEntityId(), c));
 
                 info.setDisplayOrder(descriptor.getDisplayOrder());
-                info.setDefaultIconCls(iconCls);
 
                 views.add(info);
             }
@@ -377,13 +376,16 @@ public class ReportViewProvider implements DataViewProvider
                         throw new ValidationException(errors);
 
                     ReportService.get().saveReport(new DefaultContainerUser(context.getContainer(), context.getUser()), descriptor.getReportKey(), report);
+                    ThumbnailService svc1 = ServiceRegistry.get().getService(ThumbnailService.class);
 
                     boolean isDeleteThumbnail = props.containsKey(Property.deleteCustomThumbnail.name()) &&
                             Boolean.parseBoolean((String)props.get(Property.deleteCustomThumbnail.name()));
                     if (isDeleteThumbnail)
                     {
-                        ThumbnailService svc1 = ServiceRegistry.get().getService(ThumbnailService.class);
-                        svc1.deleteThumbnail(report, ImageType.Large);
+                        if (svc1 != null)
+                        {
+                            svc1.deleteThumbnail(report, ImageType.Large);
+                        }
                         ReportPropsManager.get().setPropertyValue(report.getEntityId(), context.getContainer(), "thumbnailType", ThumbnailType.NONE.name());
                     }
 
@@ -395,12 +397,11 @@ public class ReportViewProvider implements DataViewProvider
                         String contentType = null != filename ? new MimeMap().getContentTypeFor(filename) : null;
                         ThumbnailProvider wrapper = new ImageStreamThumbnailProvider(report, is, contentType, ImageType.Large, false);
 
-                        ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
 
-                        if (null != svc)
+                        if (null != svc1)
                         {
                             // Note: afterSave() callback handles updating the imageType, thumbnailType, and image revision properties
-                            svc.replaceThumbnail(wrapper, ImageType.Large, ThumbnailType.CUSTOM, context);
+                            svc1.replaceThumbnail(wrapper, ImageType.Large, ThumbnailType.CUSTOM, context);
                         }
                     }
 
@@ -408,8 +409,10 @@ public class ReportViewProvider implements DataViewProvider
                             Boolean.parseBoolean((String)props.get(Property.deleteCustomIcon.name()));
                     if (isDeleteIcon)
                     {
-                        ThumbnailService svc1 = ServiceRegistry.get().getService(ThumbnailService.class);
-                        svc1.deleteThumbnail(report, ImageType.Small);
+                        if (svc1 != null)
+                        {
+                            svc1.deleteThumbnail(report, ImageType.Small);
+                        }
                         ReportPropsManager.get().setPropertyValue(report.getEntityId(), context.getContainer(), "iconType", ThumbnailType.NONE.name());
                     }
 
@@ -420,12 +423,10 @@ public class ReportViewProvider implements DataViewProvider
                         String contentType = null != filename ? new MimeMap().getContentTypeFor(filename) : null;
                         ThumbnailProvider wrapper = new ImageStreamThumbnailProvider(report, is, contentType, ImageType.Small, false);
 
-                        ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
-
-                        if (null != svc)
+                        if (null != svc1)
                         {
                             // Note: afterSave() callback handles updating the "iconType" property and image revision number
-                            svc.replaceThumbnail(wrapper, ImageType.Small, ThumbnailType.CUSTOM, context);
+                            svc1.replaceThumbnail(wrapper, ImageType.Small, ThumbnailType.CUSTOM, context);
                         }
                     }
 

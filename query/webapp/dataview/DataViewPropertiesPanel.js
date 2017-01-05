@@ -327,46 +327,44 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 labelWidth : 125
             });
 
-            var thumbnailFieldContainerItems = [{
-                xtype      : 'displayfield',
-                readOnly   : true,
-                labelWidth : 120,
-                width      : 350
-            },{
-                xtype: 'box',
-                id: 'thumbnail-remove',
-                cls: 'thumbnail-remove',
-                hidden : (!(this.data.thumbnailType && this.data.thumbnailType !== "NONE")),
-                html: '<div class="fa fa-trash-o"></div>',
-                listeners: {
-                    scope: this,
-                    afterrender : function(cmp) {
-                        Ext4.tip.QuickTipManager.register({
-                            target: cmp.getId(),
-                            text: 'Delete Custom Thumbnail'
-                        });
-                    },
-                    render: function (box)
-                    {
-                        box.getEl().on('click', function ()
-                        {
-                            this.down('#deleteCustomThumbnail').setValue(true);
-                            var thumbNailImageDiv = Ext4.DomQuery.select('.thumbnail')[0];
-                            if (thumbNailImageDiv)
-                            {
-                                thumbNailImageDiv.children[0].src = this.data.defaultThumbnailUrl;
-                            }
-                            Ext4.getCmp('customThumbnail').reset();
-                            Ext4.getCmp('thumbnail-remove').hide();
-                        }, this);
-                    }
-                }
-            }];
-
-
-
             if (this.data.allowCustomThumbnail)
             {
+                var thumbnailFieldContainerItems = [{
+                    xtype      : 'box',
+                    readOnly   : true,
+                    labelWidth : 120,
+                    width      : 350
+                },{
+                    xtype: 'box',
+                    id: 'thumbnail-remove',
+                    cls: 'thumbnail-remove',
+                    hidden : !this.data.thumbnailType || this.data.thumbnailType == "NONE",
+                    html: '<div class="fa fa-trash-o"></div>',
+                    listeners: {
+                        scope: this,
+                        afterrender : function(cmp) {
+                            Ext4.tip.QuickTipManager.register({
+                                target: cmp.getId(),
+                                text: 'Delete Custom Thumbnail'
+                            });
+                        },
+                        render: function (box)
+                        {
+                            box.getEl().on('click', function ()
+                            {
+                                this.down('#deleteCustomThumbnail').setValue(true);
+                                var thumbNailImageDiv = Ext4.DomQuery.selectNode('.thumbnail');
+                                if (thumbNailImageDiv)
+                                {
+                                    thumbNailImageDiv.children[0].src = this.data.defaultThumbnailUrl;
+                                }
+                                Ext4.getCmp('customThumbnail').reset();
+                                Ext4.getCmp('thumbnail-remove').hide();
+                            }, this);
+                        }
+                    }
+                }];
+
                 thumbnailItems.push({
                     xtype: 'fieldcontainer',
                     layout: {type: 'hbox'},
@@ -428,58 +426,60 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
             // For the time being any view that supports custom thumbnails also supports custom icons. So a separate check
             // is not necessary.
 
-            var iconFieldContainerItems = [{
-                xtype      : 'displayfield',
-                fieldLabel : 'Icon',
-                value      : ((this.data.iconCls !== null) ? '<span class="' + this.data.iconCls + '"></span>' : '<div class="icon"><img src="' + this.data.icon + '"/></div>'),
-                readOnly   : true,
-                labelWidth : 125,
-                width      : 350
-            },
-                {
-                xtype: 'box',
-                id: 'icon-remove',
-                cls: 'icon-remove',
-                hidden : (!(this.data.iconType && this.data.iconType !== "NONE")),
-                html: '<div class="fa fa-trash-o"></div>',
-                listeners: {
-                    scope: this,
-                    afterrender : function(cmp) {
-                        Ext4.tip.QuickTipManager.register({
-                            target: cmp.getId(),
-                            text: 'Delete Custom Icon'
-                        });
-                    },                    render: function (box)
-                    {
-                        box.getEl().on('click', function ()
-                        {
-                            this.down('#deleteCustomIcon').setValue(true);
-                            var iconImageDiv = Ext4.DomQuery.select('.icon')[0];
-                            if (iconImageDiv)
-                            {
-                                if(this.data.defaultIconCls===undefined || this.data.defaultIconCls==='')
-                                {
-                                    iconImageDiv.children[0].src = this.data.defaultThumbnailUrl;
-
-                                }else
-                                {
-                                    iconImageDiv.parentNode.innerHTML = '<span class="' + this.data.defaultIconCls + '"></span>';
-                                }
-                            }
-                            Ext4.getCmp('customIcon').reset();
-                            Ext4.getCmp('icon-remove').hide();
-                        }, this);
-                    }
-                }
-            }];
-
-            iconItems.push({
-                xtype: 'fieldcontainer',
-                layout: {type: 'hbox'},
-                items: iconFieldContainerItems
-            });
 
             if (this.data.allowCustomThumbnail) {
+                var iconFieldContainerItems = [{
+                    xtype      : 'displayfield',
+                    fieldLabel : 'Icon',
+                    value      : ((this.data.iconCls !== null) ? '<span class="' + this.data.iconCls + '"></span>' : '<div class="icon"><img src="' + this.data.icon + '"/></div>'),
+                    readOnly   : true,
+                    labelWidth : 125,
+                    width      : 350
+                },
+                    {
+                        xtype: 'box',
+                        id: 'icon-remove',
+                        cls: 'icon-remove',
+                        hidden : !this.data.iconType || this.data.iconType == "NONE",
+                        html: '<div class="fa fa-trash-o"></div>',
+                        listeners: {
+                            scope: this,
+                            afterrender : function(cmp) {
+                                Ext4.tip.QuickTipManager.register({
+                                    target: cmp.getId(),
+                                    text: 'Delete Custom Icon'
+                                });
+                            },
+                            render: function (box)
+                            {
+                                box.getEl().on('click', function ()
+                                {
+                                    this.down('#deleteCustomIcon').setValue(true);
+                                    var iconImageDiv = Ext4.DomQuery.selectNode('.icon');
+                                    if (iconImageDiv)
+                                    {
+                                        if(this.data.defaultIconCls===undefined || this.data.defaultIconCls==='')
+                                        {
+                                            iconImageDiv.children[0].src = this.data.defaultThumbnailUrl;
+
+                                        }else
+                                        {
+                                            iconImageDiv.parentNode.innerHTML = '<span class="' + this.data.defaultIconCls + '"></span>';
+                                        }
+                                    }
+                                    Ext4.getCmp('customIcon').reset();
+                                    Ext4.getCmp('icon-remove').hide();
+                                }, this);
+                            }
+                        }
+                    }];
+
+                iconItems.push({
+                    xtype: 'fieldcontainer',
+                    layout: {type: 'hbox'},
+                    items: iconFieldContainerItems
+                });
+
                 iconItems.push({
                     xtype      : 'filefield',
                     id         : 'customIcon',
@@ -526,14 +526,13 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                         }
                 );
 
-        imagesItems.push({
-            xtype   :'fieldset',
-            padding: 3,
-            border: 1,
-            style:{borderColor:'#b4b4b4', borderStyle:'solid'},
-            items   :iconItems
-        });
-
+                imagesItems.push({
+                    xtype: 'fieldset',
+                    padding: 3,
+                    border: 1,
+                    style: {borderColor: '#b4b4b4', borderStyle: 'solid'},
+                    items: iconItems
+                });
             }
         }
 
@@ -555,6 +554,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 }, {
                     xtype: 'form',
                     title: 'Images',
+                    cls: 'dataview-props-images',
                     margin: '5 0 0 0',
                     border: false,
                     frame: false,

@@ -10,7 +10,7 @@
 .thumbnail-remove:hover, .icon-remove:hover {
     opacity: 1;
 }
-.x4-fieldset {
+dataview-props-images .x4-fieldset {
     padding-left:1px;
     padding-right:1px;
 }
