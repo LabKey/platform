@@ -29,7 +29,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             if (this.getDefaultAxisLabel() != null)
             {
                 this.userEditedLabel = this.axisLabelField.getValue() != '';
-                this.axisLabelResetButton.enable();
+                this.axisLabelResetButton.setDisabled(!this.userEditedLabel);
             }
         }, this, {buffer: 500});
 
@@ -39,8 +39,8 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             iconCls: 'fa fa-refresh',
             tooltip: 'Reset the label to the default value based on the Chart Type dialog selections.',
             handler: function() {
-                this.axisLabelResetButton.disable();
                 this.userEditedLabel = false;
+                this.axisLabelResetButton.setDisabled(!this.userEditedLabel);
                 this.resetAxisLabel();
             },
             scope: this
@@ -166,6 +166,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         if (!Ext4.isDefined(config))
         {
             this.userEditedLabel = false;
+            this.axisLabelResetButton.setDisabled(!this.userEditedLabel);
             return;
         }
 
@@ -192,6 +193,8 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         if (this.getDefaultAxisLabel() != value)
         {
             this.userEditedLabel = true;
+            this.axisLabelResetButton.setDisabled(!this.userEditedLabel);
+
             if (this.getDefaultAxisLabel() == null)
                 this.defaultAxisLabel = value;
         }
