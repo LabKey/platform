@@ -4640,9 +4640,9 @@ public class DavController extends SpringActionController
         {
             assert resource.canRead(User.guest,true);
 
-            if (resource.getName().contains(".nocache."))
+            if (!resource.getName().contains(".nocache."))
             {
-                boolean isPerfectCache = !resource.getName().contains(".cache.");
+                boolean isPerfectCache = resource.getName().contains(".cache.");
                 boolean allowCaching = AppProps.getInstance().isCachingAllowed();
 
                 if (allowCaching || isPerfectCache || alwaysCacheFile(resource.getPath()))
