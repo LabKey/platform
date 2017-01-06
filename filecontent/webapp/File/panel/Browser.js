@@ -2085,18 +2085,21 @@ Ext4.define('File.panel.Browser', {
             //
             var btn, disable;
 
-            Ext4.iterate(this.actionMap, function(providerId, action) {
-                btn = Ext4.getCmp(this.linkIdMap[providerId]);
+            // Skip if we don't have the button information back yet
+            if (this.linkIdMap) {
+                Ext4.iterate(this.actionMap, function (providerId, action) {
+                    btn = Ext4.getCmp(this.linkIdMap[providerId]);
 
-                //
-                // Check if the action button supports multiple selection
-                //
-                if (btn) {
-                    disable = selections.length == 0 || (!action.supportsMultiSelect() && selections.length > 1);
-                    btn.setDisabled(disable);
-                }
+                    //
+                    // Check if the action button supports multiple selection
+                    //
+                    if (btn) {
+                        disable = selections.length == 0 || (!action.supportsMultiSelect() && selections.length > 1);
+                        btn.setDisabled(disable);
+                    }
 
-            }, this);
+                }, this);
+            }
         }
 
         if (this.showDetails) {
