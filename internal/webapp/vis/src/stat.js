@@ -91,6 +91,32 @@ LABKEY.vis.Stat.Q3 = function(numbers){
     return d3.quantile(numbers,0.75);
 };
 
+/**
+ * Returns the sum of the array.
+ * @param numbers An array of numbers.
+ * @returns {Number}
+ */
+LABKEY.vis.Stat.SUM = function(numbers){
+    return d3.sum(numbers);
+};
+
+/**
+ * Returns the minimum of the array.
+ * @param numbers An array of numbers.
+ * @returns {Number}
+ */
+LABKEY.vis.Stat.MIN = function(numbers){
+    return d3.min(numbers);
+};
+
+/**
+ * Returns the maximum of the array.
+ * @param numbers An array of numbers.
+ * @returns {Number}
+ */
+LABKEY.vis.Stat.MAX = function(numbers){
+    return d3.max(numbers);
+};
 
 /**
  * Sorts an array of data in ascending order. Removes null/undefined values.

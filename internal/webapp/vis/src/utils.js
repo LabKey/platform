@@ -88,48 +88,150 @@ LABKEY.vis.mergeAes = function(oldAes, newAes) {
     }
 };
 
-LABKEY.vis.groupData = function(data, groupAccessor){
-    /*
-        Groups data by the groupAccessor passed in.
-        Ex: A set of rows with participantIds in them, would return an object that has one attribute
-         per participant id. Each attribute will be an array of all of the rows the participant is in.
-     */
-    var groupedData = {};
-    for(var i = 0; i < data.length; i++){
+/**
+ * Groups data by the groupAccessor, and subgroupAccessor if provided, passed in.
+ *    Ex: A set of rows with participantIds in them, would return an object that has one attribute
+ *    per participant id. Each attribute will be an array of all of the rows the participant is in.
+ * @param data Array of data (likely result of selectRows API call)
+ * @param groupAccessor Function defining how to access group data from array rows
+ * @param subgroupAccessor Function defining how to access subgroup data from array rows
+ * @returns {Object} Map of groups, and subgroups, to arrays of data for each
+ */
+LABKEY.vis.groupData = function(data, groupAccessor, subgroupAccessor)
+{
+    var groupedData = {},
+        hasSubgroupAcc = subgroupAccessor != undefined && subgroupAccessor != null;
+
+    for (var i = 0; i < data.length; i++)
+    {
         var value = groupAccessor(data[i]);
-        if(!groupedData[value]){
-            groupedData[value] = [];
+        if (!groupedData[value])
+            groupedData[value] = hasSubgroupAcc ? {} : [];
+
+        if (hasSubgroupAcc)
+        {
+            var subvalue = subgroupAccessor(data[i]);
+            if (!groupedData[value][subvalue])
+                groupedData[value][subvalue] = [];
+
+            groupedData[value][subvalue].push(data[i]);
         }
-        groupedData[value].push(data[i]);
+        else
+        {
+            groupedData[value].push(data[i]);
+        }
     }
     return groupedData;
 };
 
-LABKEY.vis.groupCountData = function(data, groupAccessor, propNameMap){
-    /*
-        Groups data by the groupAccessor passed in and returns the number of occurances for that group.
-        Most commonly used for processing data for a bar plot.
-     */
-    var groupName, groupedData, count, counts = [], total = 0;
+/**
+ * Groups data by the groupAccessor, and subgroupAccessor if provided, passed in and returns the number
+ * of occurrences for that group/subgroup. Most commonly used for processing data for a bar plot.
+ * @param data
+ * @param groupAccessor
+ * @param subgroupAccessor
+ * @param propNameMap
+ * @returns {Array}
+ */
+LABKEY.vis.groupCountData = function(data, groupAccessor, subgroupAccessor, propNameMap)
+{
+    var counts = [], total = 0,
+        nameProp = propNameMap && propNameMap.name ? propNameMap.name : 'name',
+        subnameProp = propNameMap && propNameMap.subname ? propNameMap.subname : 'subname',
+        countProp = propNameMap && propNameMap.count ? propNameMap.count : 'count',
+        totalProp = propNameMap && propNameMap.total ? propNameMap.total : 'total',
+        hasSubgroupAcc = subgroupAccessor != undefined && subgroupAccessor != null,
+        groupedData = LABKEY.vis.groupData(data, groupAccessor, subgroupAccessor);
 
-    groupedData = LABKEY.vis.groupData(data, groupAccessor);
-
-    for (groupName in groupedData)
+    for (var groupName in groupedData)
     {
         if (groupedData.hasOwnProperty(groupName))
         {
-            count = groupedData[groupName].length;
-            total += count;
+            if (hasSubgroupAcc)
+            {
+                for (var subgroupName in groupedData[groupName])
+                {
+                    if (groupedData[groupName].hasOwnProperty(subgroupName))
+                    {
+                        var row = {rawData: groupedData[groupName][subgroupName]},
+                            count = row['rawData'].length;
+                        total += count;
 
-            var row = {rawData: groupedData[groupName]};
-            row[propNameMap && propNameMap.name ? propNameMap.name : 'name'] = groupName;
-            row[propNameMap && propNameMap.count ? propNameMap.count : 'count'] = count;
-            row[propNameMap && propNameMap.total ? propNameMap.total : 'total'] = total;
-            counts.push(row);
+                        row[nameProp] = groupName;
+                        row[subnameProp] = subgroupName;
+                        row[countProp] = count;
+                        row[totalProp] = total;
+                        counts.push(row);
+                    }
+                }
+            }
+            else
+            {
+                var row = {rawData: groupedData[groupName]},
+                    count = row['rawData'].length;
+                total += count;
+
+                row[nameProp] = groupName;
+                row[countProp] = count;
+                row[totalProp] = total;
+                counts.push(row);
+            }
         }
     }
 
     return counts;
+};
+
+/**
+ * Generate an array of aggregate values for the given groups/subgroups in the data array.
+ * @param {Array} data The response data from selectRows.
+ * @param {String} dimensionName The grouping variable to get distinct members from.
+ * @param {String} subDimensionName The subgrouping variable to get distinct members from
+ * @param {String} measureName The variable to calculate aggregate values over. Nullable.
+ * @param {String} aggregate MIN/MAX/SUM/COUNT/etc. Defaults to COUNT.
+ * @param {String} nullDisplayValue The display value to use for null dimension values. Defaults to 'null'.
+ * @returns {Array} An array of results for each group/subgroup/aggregate
+ */
+LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue) {
+    var results = [],
+        groupAccessor = function(row){ return LABKEY.vis.getValue(row[dimensionName]);},
+        hasSubgroup = subDimensionName != undefined && subDimensionName != null,
+        subgroupAccessor = hasSubgroup ? function(row){ return LABKEY.vis.getValue(row[subDimensionName]); } : null,
+        hasMeasure = measureName != undefined && measureName != null,
+        measureAccessor = hasMeasure ? function(row){ return LABKEY.vis.getValue(row[measureName]); } : null,
+        groupData = LABKEY.vis.groupCountData(data, groupAccessor, subgroupAccessor);
+
+    for (var i = 0; i < groupData.length; i++)
+    {
+        var row = {label: groupData[i]['name']};
+        if (row['label'] == null || row['label'] == 'null')
+            row['label'] = nullDisplayValue || 'null';
+
+        if (hasSubgroup)
+        {
+            row['subLabel'] = groupData[i]['subname'];
+            if (row['subLabel'] == null || row['subLabel'] == 'null')
+                row['subLabel'] = nullDisplayValue || 'null';
+        }
+
+        if (aggregate == undefined || aggregate == null || aggregate == 'COUNT')
+        {
+            row['value'] = groupData[i]['count'];
+        }
+        else if (typeof LABKEY.vis.Stat[aggregate] == 'function')
+        {
+            var values = LABKEY.vis.Stat.sortNumericAscending(groupData[i].rawData, measureAccessor);
+            row.value = LABKEY.vis.Stat[aggregate](values);
+        }
+        else
+        {
+            throw 'Aggregate ' + aggregate + ' is not yet supported.';
+        }
+
+        results.push(row);
+    }
+
+    return results;
 };
 
 LABKEY.vis.getColumnAlias = function(aliasArray, measureInfo) {
@@ -189,4 +291,11 @@ LABKEY.vis.discreteSortFn = function(a,b) {
         return a < b ? -1 : 1;
 
     return 0;
+};
+
+LABKEY.vis.getValue = function(obj) {
+    if (typeof obj == 'object')
+        return obj.hasOwnProperty('displayValue') ? obj.displayValue : obj.value;
+
+    return obj;
 };
