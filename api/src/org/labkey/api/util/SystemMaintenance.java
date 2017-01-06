@@ -240,21 +240,11 @@ public class SystemMaintenance
         String getName();
 
         /**
-         * Provides a mechanism to pass the pipeline log to each maintenance task, see #28464. Tasks override this method to
-         * gain access to the pipeline log. TODO: Remove run() and stop defaulting run(Logger) once tasks have been migrated.
+         * Perform the maintenance. Logger provides access to the pipeline log, see #28464.
          *
          * @param log Logger for maintenance tasks to use
          */
-        default void run(Logger log)
-        {
-            run();
-        }
-
-        // TODO: Remove this once all tasks override run(Logger)
-        @Deprecated
-        default void run()
-        {
-        }
+        void run(Logger log);
 
         /** Can this task be disabled? */
         default boolean canDisable()
