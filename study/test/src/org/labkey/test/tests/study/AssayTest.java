@@ -335,7 +335,7 @@ public class AssayTest extends AbstractAssayTest
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
 
         //nav trail check
-        assertEquals("Nav trail was not as expected", "Assay List >  " + TEST_ASSAY + " Batches > ", getText(Locator.id("navTrailAncestors")));
+        assertNavTrail("Assay List", TEST_ASSAY + " Batches");
 
         clickButton("Import Data");
         assertTextPresent(TEST_ASSAY_SET_PROP_NAME + "3");
