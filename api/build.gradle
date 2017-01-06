@@ -90,6 +90,7 @@ List others = [
         "net.coobird:thumbnailator:${thumnailatorVersion}",
         "org.apache.xmlbeans:xbean:${xmlbeansVersion}",
         "org.apache.tika:tika-app:${tikaAppVersion}",
+        "cglib:cglib-nodep:${cglibNodepVersion}",
         "xerces:xercesImpl:${xercesImplVersion}"
 ]
 
