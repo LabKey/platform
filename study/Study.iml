@@ -26,6 +26,7 @@
       <library name="schemas">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../../../build/modules/study/explodedModule/lib/schemas.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../build/modules/study/explodedModule/lib/study_schemas-17.10-SNAPSHOT-schemas.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -33,4 +34,3 @@
     </orderEntry>
   </component>
 </module>
-

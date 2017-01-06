@@ -90,6 +90,7 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../../../build/modules/wiki/explodedModule/lib/schemas.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../build/modules/wiki/explodedModule/lib/wiki_schemas-17.10-SNAPSHOT-schemas.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -106,4 +107,3 @@
     </orderEntry>
   </component>
 </module>
-
