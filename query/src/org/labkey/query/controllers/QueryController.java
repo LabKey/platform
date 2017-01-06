@@ -1222,11 +1222,12 @@ public class QueryController extends SpringActionController
             }
 
 
-            HttpView scopeInfo = new ScopeView("Scope and Schema Information", scope, _schemaName, url);
-
             SqlDialect dialect = scope.getSqlDialect();
 
             VBox result = new VBox();
+            HttpView scopeInfo = new ScopeView("Scope and Schema Information", scope, _schemaName, url, _tableName);
+
+            result.addView(scopeInfo);
 
             try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, _schemaName, _tableName))
             {
@@ -1316,18 +1317,20 @@ public class QueryController extends SpringActionController
     {
         private final DbScope _scope;
         private final String _schemaName;
+        private final String _tableName;
         private final ActionURL _url;
 
         private ScopeView(String title, DbScope scope)
         {
-            this(title, scope, null, null);
+            this(title, scope, null, null, null);
         }
 
-        private ScopeView(String title, DbScope scope, String schemaName, ActionURL url)
+        private ScopeView(String title, DbScope scope, String schemaName, ActionURL url, String tableName)
         {
             super(title);
             _scope = scope;
             _schemaName = schemaName;
+            _tableName = tableName;
             _url = url;
         }
 
@@ -1337,11 +1340,13 @@ public class QueryController extends SpringActionController
             StringBuilder sb = new StringBuilder("<table>\n");
 
             if (null != _schemaName)
-                sb.append("<tr><td>Schema:</td><td><a href=\"").append(PageFlowUtil.filter(_url)).append("\">").append(PageFlowUtil.filter(_schemaName)).append("</a></td></tr>\n");
+                sb.append("<tr><td class=\"labkey-form-label\">Schema</td><td><a href=\"").append(PageFlowUtil.filter(_url)).append("\">").append(PageFlowUtil.filter(_schemaName)).append("</a></td></tr>\n");
+            if (null != _tableName)
+                sb.append("<tr><td class=\"labkey-form-label\">Table</td><td>").append(PageFlowUtil.filter(_tableName)).append("</td></tr>\n");
 
-            sb.append("<tr><td>Scope:</td><td>").append(_scope.getDisplayName()).append("</td></tr>\n");
-            sb.append("<tr><td>Dialect:</td><td>").append(_scope.getSqlDialect().getClass().getSimpleName()).append("</td></tr>\n");
-            sb.append("<tr><td>URL:</td><td>").append(_scope.getURL()).append("</td></tr>\n");
+            sb.append("<tr><td class=\"labkey-form-label\">Scope</td><td>").append(_scope.getDisplayName()).append("</td></tr>\n");
+            sb.append("<tr><td class=\"labkey-form-label\">Dialect</td><td>").append(_scope.getSqlDialect().getClass().getSimpleName()).append("</td></tr>\n");
+            sb.append("<tr><td class=\"labkey-form-label\">URL</td><td>").append(_scope.getURL()).append("</td></tr>\n");
             sb.append("</table>\n");
 
             out.print(sb);
@@ -1395,7 +1400,7 @@ public class QueryController extends SpringActionController
                 {
                     if (rowCount % 2 == 0)
                     {
-                        out.print("  <tr>");
+                        out.print("  <tr class=\"labkey-row\">");
                     }
                     else
                     {
