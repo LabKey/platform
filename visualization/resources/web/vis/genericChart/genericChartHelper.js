@@ -739,99 +739,6 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     /**
-     *
-     * @param {Array} data The response data from selectRows.
-     * @param {String} dimensionName The grouping variable to get distinct members from.
-     * @param {String} measureName The variable to calculate aggregate values over. Nullable.
-     * @param {String} aggregate MIN/MAX/SUM/COUNT/etc. Defaults to COUNT.
-     * @param {String} nullDisplayValue The display value to use for null dimension values. Defaults to 'null'.
-     * @param {String} subDimensionName The subgrouping variable to get distinct members from
-     */
-    var generateAggregateData = function(data, dimensionName, measureName, aggregate, nullDisplayValue, subDimensionName)
-    {
-        var uniqueDimValues = {};
-        for (var i = 0; i < data.length; i++) {
-
-            var dimVal = null;
-            if (typeof data[i][dimensionName] == 'object')
-                dimVal = data[i][dimensionName].hasOwnProperty('displayValue') ? data[i][dimensionName].displayValue : data[i][dimensionName].value;
-
-            var subDimVal = null;
-            if (typeof data[i][subDimensionName] == 'object')
-                subDimVal = data[i][subDimensionName].hasOwnProperty('displayValue') ? data[i][subDimensionName].displayValue : data[i][subDimensionName].value;
-
-            var measureVal = null;
-            if (measureName != undefined && measureName != null && typeof data[i][measureName] == 'object')
-                measureVal = data[i][measureName].value;
-
-            if (subDimensionName !== null) {
-                //create new aggregates for unique dimension/subdimension pairs found
-                if (uniqueDimValues[subDimVal] == undefined)
-                    uniqueDimValues[subDimVal] = {};
-
-                if (uniqueDimValues[subDimVal][dimVal] == undefined)
-                    uniqueDimValues[subDimVal][dimVal] = { count: 0, sum: 0 };
-
-                //update aggregate values
-                uniqueDimValues[subDimVal][dimVal].count++;
-                if (!isNaN(measureVal))
-                    uniqueDimValues[subDimVal][dimVal].sum += measureVal;
-            } else {
-                if (uniqueDimValues[dimVal] == undefined)
-                    uniqueDimValues[dimVal] = { count: 0, sum: 0 };
-
-                uniqueDimValues[dimVal].count++;
-                if (!isNaN(measureVal))
-                    uniqueDimValues[dimVal].sum += measureVal;
-            }
-        }
-
-        var keys = Object.keys(uniqueDimValues),
-                results = [];
-        if (subDimensionName !== null) {
-            for (var k = 0; k < keys.length; k++) {
-                if (uniqueDimValues.hasOwnProperty(keys[k])) {
-                    var dimensionKeys = Object.keys(uniqueDimValues[keys[k]]);
-
-                    for (var j = 0; j < dimensionKeys.length; j++) {
-                        var row = {
-                            label: dimensionKeys[j] == null || dimensionKeys[j] == 'null' ? nullDisplayValue || 'null' : dimensionKeys[j],
-                            subLabel: keys[k] == null || keys[k] == 'null' ? nullDisplayValue || 'null' : keys[k]
-                        };
-
-                        // TODO add support for more aggregates
-                        if (aggregate == undefined || aggregate == null || aggregate == 'COUNT')
-                            row.value = uniqueDimValues[keys[k]][dimensionKeys[j]].count;
-                        else if (aggregate == 'SUM')
-                            row.value = uniqueDimValues[keys[k]][dimensionKeys[j]].sum;
-                        else
-                            throw 'Aggregate ' + aggregate + ' is not yet supported.';
-
-                        results.push(row);
-                    }
-                }
-            }
-        } else {
-            for (var n = 0; n < keys.length; n++) {
-                row = {
-                    label: keys[n] == null || keys[n] == 'null' ? nullDisplayValue || 'null' : keys[n]
-                };
-
-                // TODO add support for more aggregates
-                if (aggregate == undefined || aggregate == null || aggregate == 'COUNT')
-                    row.value = uniqueDimValues[keys[n]].count;
-                else if (aggregate == 'SUM')
-                    row.value = uniqueDimValues[keys[n]].sum;
-                else
-                    throw 'Aggregate ' + aggregate + ' is not yet supported.';
-
-                results.push(row);
-            }
-        }
-        return results;
-    };
-
-    /**
      * Generate the plot config for the given chart renderType and config options.
      * @param renderTo
      * @param chartConfig
@@ -1258,7 +1165,6 @@ LABKEY.vis.GenericChartHelper = new function(){
         generateGeom: generateGeom,
         generateBoxplotGeom: generateBoxplotGeom,
         generatePointGeom: generatePointGeom,
-        generateAggregateData: generateAggregateData,
         generatePlotConfig: generatePlotConfig,
         validateResponseHasData: validateResponseHasData,
         validateAxisMeasure: validateAxisMeasure,

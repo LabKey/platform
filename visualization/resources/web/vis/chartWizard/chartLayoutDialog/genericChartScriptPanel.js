@@ -82,7 +82,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "               measureName = chartConfig.measures.y.converted ? chartConfig.measures.y.convertedName : chartConfig.measures.y.name;\n" +
             "            }\n"+
             "            var aggType = measureName != null ? 'SUM' : 'COUNT';\n" +
-            "            data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');\n" +
+            "            data = LABKEY.vis.getAggregateData(data, dimName, null, measureName, aggType, '[Blank]');\n" +
             "        }\n" +
             "\n" +
             "        var plotConfig = LABKEY.vis.GenericChartHelper.generatePlotConfig(chartId, chartConfig, labels, aes, scales, geom, data);\n" +

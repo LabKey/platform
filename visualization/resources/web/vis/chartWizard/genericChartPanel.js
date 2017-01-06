@@ -1404,7 +1404,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
 
             var aggType = measureName != null ? 'SUM' : 'COUNT';
-            data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]', subDimName);
+            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]');
         }
 
         if (customRenderType && Ext4.isFunction(customRenderType.generatePlotConfig))
