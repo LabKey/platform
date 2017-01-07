@@ -19,7 +19,7 @@ package org.labkey.api.util;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerManager.RootContainerException;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -321,9 +321,12 @@ public class MothershipReport implements Runnable
         {
             addParam("serverGUID", AppProps.getInstance().getServerGUID());
         }
-        catch (ContainerManager.RootContainerException e)
+        catch (
+                RootContainerException | // Root container doesn't exist yet
+                IllegalStateException e  // Exception we're about to report might have occurred while attempting to load the root container, #28927
+              )
         {
-            // Must be very early in the install process... better to send a report with no GUID
+            // Better to send a report with no GUID
         }
 
         ServletContext context = ModuleLoader.getServletContext();

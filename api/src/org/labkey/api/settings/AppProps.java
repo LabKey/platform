@@ -121,7 +121,6 @@ public class AppProps
         String getXFrameOptions();
     }
 
-    public static final String EXPERIMENTAL_CONTAINER_RELATIVE_URL = "containerRelativeURL";
     public static final String EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP = "javascriptMothership";
     public static final String EXPERIMENTAL_JAVASCRIPT_SERVER = "javascriptErrorServerLogging";
     public static final String EXPERIMENTAL_RSERVE_REPORTING = "rserveReports";
