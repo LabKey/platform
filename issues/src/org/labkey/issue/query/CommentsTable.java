@@ -18,6 +18,7 @@ package org.labkey.issue.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
@@ -30,8 +31,10 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserIdForeignKey;
+import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
+import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 
@@ -58,6 +61,14 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
         issueIdColumn.setLabel(names.singularName);
         ActionURL base = IssuesController.issueURL(_userSchema.getContainer(), IssuesController.DetailsAction.class);
         issueIdColumn.setURL(new DetailsURL(base, Collections.singletonMap("issueId", "IssueId")));
+        issueIdColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new IssueIdDisplayColumn(colInfo,getContainer(), getUserSchema().getUser());
+            }
+        });
         addColumn(issueIdColumn);
 
         ColumnInfo createdBy = wrapColumn(_rootTable.getColumn("CreatedBy"));
@@ -116,3 +127,36 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
         addCondition(sql, containerFieldKey);
     }
 }
+
+/**
+ * Display column to render the title of the issue
+ */
+class IssueIdDisplayColumn extends DataColumn
+{
+    private Container _container;
+    private User _user;
+
+    public IssueIdDisplayColumn(ColumnInfo col, Container container, User user)
+    {
+        super(col);
+        _container = container;
+        _user = user;
+    }
+
+    @NotNull
+    @Override
+    public String getFormattedValue(RenderContext ctx)
+    {
+        Object o = getValue(ctx);
+        if (o instanceof Integer)
+        {
+            Issue issue = IssueManager.getIssue(_container, _user, (Integer)o);
+            if (issue != null)
+            {
+                return issue.getTitle();
+            }
+        }
+        return super.getFormattedValue(ctx);
+    }
+}
+
