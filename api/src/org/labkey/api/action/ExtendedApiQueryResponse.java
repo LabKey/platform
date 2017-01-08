@@ -42,6 +42,7 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
 {
     boolean _doItWithStyle = false;
     boolean _arrayMultiValueColumns = false;
+    boolean _useTsvFormatAsDisplayValue = false;
 
     public enum ColMapEntry
     {
@@ -77,6 +78,15 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         _arrayMultiValueColumns = arrayMultiValueColumns;
     }
 
+    // When true, use the tsv formatted value as the displayValue.  Currently,
+    // the DisplayColumn.getDisplayValue() will return the display object without any formatting
+    // and DisplayColumn.getFormattedValue() is formatted html for display within the DataRegion.
+    // Prior to this setting, we didn't include the value with just basic formatting applied and without html encoding.
+    public void useTsvFormatAsDisplayValue(boolean useTsvFormatAsDisplayValue)
+    {
+        _useTsvFormatAsDisplayValue = useTsvFormatAsDisplayValue;
+    }
+
     @Override
     protected double getFormatVersion()
     {
@@ -109,7 +119,11 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
                 return null;
 
             List<String> urls = mdc.renderURLs(getRenderContext());
-            List<Object> display = mdc.getDisplayValues(getRenderContext());
+            List<?> display;
+            if (_useTsvFormatAsDisplayValue)
+                display = mdc.getTsvFormattedValues(getRenderContext()); // formats values, but does not html encode values -- .getFormattedValue() returns html
+            else
+                display = mdc.getDisplayValues(getRenderContext()); // does not format values
 
             assert values.size() == urls.size() && values.size() == display.size();
             List<Map<ColMapEntry, Object>> list = new ArrayList<>(values.size());
@@ -130,7 +144,12 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         {
             //column value
             Object value = dc.getJsonValue(_ctx);
-            Object displayValue = dc.getDisplayValue(getRenderContext());
+            Object displayValue;
+            if (_useTsvFormatAsDisplayValue)
+                displayValue = dc.getTsvFormattedValue(getRenderContext()); // formats values, but does not html encode values -- .getFormattedValue() returns html
+            else
+                displayValue = dc.getDisplayValue(getRenderContext()); // does not format
+
             String url = null;
             if (null != value)
                 url = dc.renderURL(getRenderContext());

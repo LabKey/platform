@@ -73,7 +73,7 @@ LABKEY.Query = new function()
 
     function getSuccessCallbackWrapper(callbackFn, stripHiddenCols, scope, requiredVersion)
     {
-        if (requiredVersion && (requiredVersion === 13.2 || requiredVersion === "13.2" || requiredVersion === 16.2)) {
+        if (requiredVersion && (requiredVersion === 13.2 || requiredVersion === "13.2" || requiredVersion === 16.2 || requiredVersion === 17.1)) {
             return LABKEY.Utils.getCallbackWrapper(function(data, response, options){
                 if (data && callbackFn)
                     callbackFn.call(scope || this, new LABKEY.Query.Response(data), response, options);
@@ -190,7 +190,7 @@ LABKEY.Query = new function()
                      <li>
                          <b>data:</b> If config.requiredVersion is not set, or set to "8.3", the success handler will be
                          passed a {@link LABKEY.Query.SelectRowsResults} object. If set to "9.1" the success handler will
-                         be passed a {@link LABKEY.Query.ExtendedSelectRowsResults} object. If set to "13.2" or "16.2" the success
+                         be passed a {@link LABKEY.Query.ExtendedSelectRowsResults} object. If requiredVersion is greater than 13.2 the success
                          handler will be passed a {@link LABKEY.Query.Response} object.
                      </li>
                      <li><b>responseObj:</b> The XMLHttpResponseObject instance used to make the AJAX request</li>
@@ -220,12 +220,13 @@ LABKEY.Query = new function()
          *        <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=paramsql">Parameterized SQL Queries</a>.
          * @param {Double} [config.requiredVersion] If not set, or set to "8.3", the success handler will be passed a {@link LABKEY.Query.SelectRowsResults}
          *       object. If set to "9.1" the success handler will be passed a {@link LABKEY.Query.ExtendedSelectRowsResults}
-         *       object. If set to "13.2" or "16.2" the success handler will be passed a {@link LABKEY.Query.Response} object.
+         *       object. If greater than 13.2 the success handler will be passed a {@link LABKEY.Query.Response} object.
          *       The main difference between SelectRowsResults and ExtendedSelectRowsResults is that each column in each row
          *       will be another object (not just a scalar value) with a "value" property as well as other related properties
          *       (url, mvValue, mvIndicator, etc.). In the LABKEY.Query.Response format each row will be an instance of
-         *       {@link LABKEY.Query.Row}.  In the "16.2" format, multi-value columns will be returned as an array of values,
-         *       each of which may have a value, displayValue, and url.
+         *       {@link LABKEY.Query.Row}.
+         *       In the "16.2" format, multi-value columns will be returned as an array of values, each of which may have a value, displayValue, and url.
+         *       In the "17.1" format, the "displayValue" will be a string formatted using the column and folder format settings.
          * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
          *       generating a timeout error (defaults to 30000).
          * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
@@ -415,7 +416,7 @@ LABKEY.Query = new function()
 				    <li>
                         <b>data:</b> If config.requiredVersion is not set, or set to "8.3", the success handler will be
                         passed a {@link LABKEY.Query.SelectRowsResults} object. If set to "9.1" the success handler will
-                        be passed a {@link LABKEY.Query.ExtendedSelectRowsResults} object. If set to "13.2" or "16.2" the success
+                        be passed a {@link LABKEY.Query.ExtendedSelectRowsResults} object. If greater than "13.2" the success
                         handler will be passed a {@link LABKEY.Query.Response} object.
                     </li>
                     <li><b>responseObj:</b> The XMLHttpResponseObject instance used to make the AJAX request</li>
@@ -480,12 +481,13 @@ LABKEY.Query = new function()
         *       generating a timeout error (defaults to 30000).
         * @param {Double} [config.requiredVersion] If not set, or set to "8.3", the success handler will be passed a {@link LABKEY.Query.SelectRowsResults}
         *        object. If set to "9.1" the success handler will be passed a {@link LABKEY.Query.ExtendedSelectRowsResults}
-        *        object. If set to "13.2" or "16.2" the success handler will be passed a {@link LABKEY.Query.Response} object.s
+        *        object. If greater than "13.2" the success handler will be passed a {@link LABKEY.Query.Response} object.
         *        The main difference between SelectRowsResults and ExtendedSelectRowsResults is that each column in each row
         *        will be another object (not just a scalar value) with a "value" property as well as other related properties
         *        (url, mvValue, mvIndicator, etc.). In the LABKEY.Query.Response format each row will an instance of
-        *        {@link LABKEY.Query.Row}.  In the "16.2" format, multi-value columns will be returned as an array of values,
-        *        each of which may have a value, displayValue, and url.
+        *        {@link LABKEY.Query.Row}.
+         *       In the "16.2" format, multi-value columns will be returned as an array of values, each of which may have a value, displayValue, and url.
+         *       In the "17.1" format, the "displayValue" will be a string formatted using the column and folder format settings.
         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
@@ -2168,6 +2170,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
     /**
      * Gets the requested column from the row. Includes extended values such as display value, URL, etc.
      * When requested version is >16.2, multi-value columns will return an array of objects containing "value" and other properties.
+     * In the "17.1" format, the "displayValue" will be a string formatted using the column and folder format settings.
      * @param {String} columnName The column name requested. Used to do a case-insensitive match to find the column.
      * @returns {Object} For the given columnName, returns an object in the common case or an array of objects for multi-value columns.
      * The object will always contain a property named "value" that is the column's value, but it may also contain other properties about that column's value. For
@@ -2273,7 +2276,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
      * @class The class used to wrap the response object from {@link LABKEY.Query.GetData.getRawData},
      *      {@link LABKEY.Query.selectRows}, and {@link LABKEY.Query.executeSql}.
      * @param response The raw JSON response object returned from the server when executing {@link LABKEY.Query.GetData.getRawData},
-     *      {@link LABKEY.Query.selectRows}, or {@link LABKEY.Query.executeSql} when requiredVersion is 13.2.
+     *      {@link LABKEY.Query.selectRows}, or {@link LABKEY.Query.executeSql} when requiredVersion is greater than 13.2.
      * @see LABKEY.Query.GetData.getRawData
      * @see LABKEY.Query.selectRows
      * @see LABKEY.Query.executeSql
