@@ -92,6 +92,22 @@ public class Aggregate
             return returnType(jdbcType) != null;
         }
 
+        static JdbcType returnTypeDecimal(JdbcType jdbcType)
+        {
+            switch (jdbcType)
+            {
+                case BIGINT:   return JdbcType.DECIMAL;
+                case DECIMAL:  return JdbcType.DECIMAL;
+                case DOUBLE:   return JdbcType.DECIMAL;
+                case REAL:     return JdbcType.DECIMAL;
+
+                case INTEGER:  return JdbcType.DECIMAL;
+                case SMALLINT: return JdbcType.DECIMAL;
+
+                default:       return null;
+            }
+        }
+
         /**
          * Get the return type of the aggregate (i.e. summary stat) function for the given
          * JdbcType or null if the type is not applicable (e.g. SUM of a date column).
@@ -141,7 +157,7 @@ public class Aggregate
                             sb.append(getSQLFunctionName(dialect)).append("(");
                             if (distinct)
                                 sb.append("DISTINCT ");
-                            sb.append("CAST(" + dialect.getColumnSelectName(columnName) + " AS FLOAT)");
+                            sb.append("CAST(").append(dialect.getColumnSelectName(columnName)).append(" AS FLOAT)");
                             sb.append(") AS ").append(asName);
                             return sb.toString();
                         }
@@ -154,18 +170,7 @@ public class Aggregate
                     @Override
                     public JdbcType returnType(JdbcType jdbcType)
                     {
-                        switch (jdbcType)
-                        {
-                            case BIGINT:   return JdbcType.DECIMAL;
-                            case DECIMAL:  return JdbcType.DECIMAL;
-                            case DOUBLE:   return JdbcType.DECIMAL;
-                            case REAL:     return JdbcType.DECIMAL;
-
-                            case INTEGER:  return JdbcType.DECIMAL;
-                            case SMALLINT: return JdbcType.DECIMAL;
-
-                            default:       return null;
-                        }
+                        return Type.returnTypeDecimal(jdbcType);
                     }
                 },
         COUNT("Count (non-blank)")

@@ -414,10 +414,10 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                 {
                     for (Aggregate agg : aggregates)
                     {
-                        if (!results.containsKey(agg.getColumnName()))
-                            results.put(agg.getColumnName(), new ArrayList<>());
+                        if (!results.containsKey(agg.getFieldKey().toString()))
+                            results.put(agg.getFieldKey().toString(), new ArrayList<>());
 
-                        results.get(agg.getColumnName()).add(agg.getResult(rs, sqlFactory._columnMap));
+                        results.get(agg.getFieldKey().toString()).add(agg.getResult(rs, sqlFactory._columnMap));
                     }
                 }
             }
@@ -609,7 +609,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             aggregateSql.append("SELECT ");
             int validAggregates = 0;
 
-
+            // Consider: the way these are wired in does not allow for subqueries, which would be easier in some cases.
             for (Aggregate agg : _aggregates)
             {
                 if (agg.isCountStar() || _columnMap.containsKey(agg.getFieldKey()))

@@ -1372,6 +1372,16 @@ public abstract class SqlDialect
     public abstract boolean isSqlServer();
     public abstract boolean isPostgreSQL();
     public abstract boolean isOracle();
+
+    /**
+     *
+     * @return true If the dialect is one supported for the backend LabKey database. ie, Postgres or SQL Server
+     */
+    public boolean isLabKeyDbDialect()
+    {
+        return isPostgreSQL() || isSqlServer();
+    }
+
     public abstract ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, TableInfo table);
     public abstract PkMetaDataReader getPkMetaDataReader(ResultSet rs);
 
