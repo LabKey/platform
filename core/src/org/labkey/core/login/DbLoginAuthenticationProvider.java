@@ -65,6 +65,12 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     }
 
     @Override
+    public boolean isFicamApproved()
+    {
+        return true;
+    }
+
+    @Override
     // id and password will not be blank (not null, not empty, not whitespace only)
     public @NotNull AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
     {
