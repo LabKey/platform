@@ -1,6 +1,6 @@
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
-activemq-core-4.1.1.jar|Apache ActiveMQ|4.1.1|{link:Apache|http://activemq.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Java Message Service queuing
+activemq-core-5.1.0.jar|Apache ActiveMQ|5.1.0|{link:Apache|http://activemq.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Java Message Service queuing
 commons-collections-3.2.jar|Commons Collections|3.2|{link:Apache|http://jakarta.apache.org/commons/collections/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Mule dependency
 commons-jxpath-1.2.jar|Commons JXPath|1.2|{link:Apache|http://commons.apache.org/jxpath/index.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Pipeline (Mule XPath filtering)
 commons-lang-2.6.jar|Commons Lang|2.6|{link:Apache|http://jakarta.apache.org/commons/lang/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Language helpers; older version required by Mule
