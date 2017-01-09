@@ -174,6 +174,12 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     }
 
     @Override
+    public List<String> getFormattedTexts(RenderContext ctx)
+    {
+        return values(ctx, super::getFormattedText);
+    }
+
+    @Override
     public List<Object> getJsonValue(RenderContext ctx)
     {
         return getJsonValues(ctx);

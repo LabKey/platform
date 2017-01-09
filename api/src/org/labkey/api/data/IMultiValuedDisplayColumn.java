@@ -29,6 +29,8 @@ public interface IMultiValuedDisplayColumn
 
     List<String> getTsvFormattedValues(RenderContext ctx);
 
+    List<String> getFormattedTexts(RenderContext ctx);
+
     List<Object> getJsonValues(RenderContext ctx);
 
 }

@@ -226,7 +226,7 @@ LABKEY.Query = new function()
          *       (url, mvValue, mvIndicator, etc.). In the LABKEY.Query.Response format each row will be an instance of
          *       {@link LABKEY.Query.Row}.
          *       In the "16.2" format, multi-value columns will be returned as an array of values, each of which may have a value, displayValue, and url.
-         *       In the "17.1" format, the "displayValue" will be a string formatted using the column and folder format settings.
+         *       In the "17.1" format, "formattedValue" may be included in the response as the display column's value formatted with the display column's format or folder format settings.
          * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
          *       generating a timeout error (defaults to 30000).
          * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
@@ -487,7 +487,7 @@ LABKEY.Query = new function()
         *        (url, mvValue, mvIndicator, etc.). In the LABKEY.Query.Response format each row will an instance of
         *        {@link LABKEY.Query.Row}.
          *       In the "16.2" format, multi-value columns will be returned as an array of values, each of which may have a value, displayValue, and url.
-         *       In the "17.1" format, the "displayValue" will be a string formatted using the column and folder format settings.
+         *       In the "17.1" format, "formattedValue" may be included in the response as the display column's value formatted with the display column's format or folder format settings.
         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
@@ -2170,7 +2170,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
     /**
      * Gets the requested column from the row. Includes extended values such as display value, URL, etc.
      * When requested version is >16.2, multi-value columns will return an array of objects containing "value" and other properties.
-     * In the "17.1" format, the "displayValue" will be a string formatted using the column and folder format settings.
+     * In the "17.1" format, "formattedValue" may be included in the response as the column display value formatted with the display column's format or folder format settings.
      * @param {String} columnName The column name requested. Used to do a case-insensitive match to find the column.
      * @returns {Object} For the given columnName, returns an object in the common case or an array of objects for multi-value columns.
      * The object will always contain a property named "value" that is the column's value, but it may also contain other properties about that column's value. For

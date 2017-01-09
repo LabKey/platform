@@ -16,6 +16,7 @@
 package org.labkey.api.action;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.IMultiValuedDisplayColumn;
 import org.labkey.api.data.MVDisplayColumn;
@@ -42,12 +43,13 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
 {
     boolean _doItWithStyle = false;
     boolean _arrayMultiValueColumns = false;
-    boolean _useTsvFormatAsDisplayValue = false;
+    boolean _includeFormattedValue = false;
 
     public enum ColMapEntry
     {
         value,
         displayValue,
+        formattedValue,
         mvValue,
         mvIndicator,
         mvRawValue,
@@ -78,13 +80,13 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         _arrayMultiValueColumns = arrayMultiValueColumns;
     }
 
-    // When true, use the tsv formatted value as the displayValue.  Currently,
-    // the DisplayColumn.getDisplayValue() will return the display object without any formatting
+    // When true, add the formattedValue property to the response.
+    // Currently, the DisplayColumn.getDisplayValue() will return the display object without any formatting
     // and DisplayColumn.getFormattedValue() is formatted html for display within the DataRegion.
     // Prior to this setting, we didn't include the value with just basic formatting applied and without html encoding.
-    public void useTsvFormatAsDisplayValue(boolean useTsvFormatAsDisplayValue)
+    public void includeFormattedValue(boolean includeFormattedValue)
     {
-        _useTsvFormatAsDisplayValue = useTsvFormatAsDisplayValue;
+        _includeFormattedValue = includeFormattedValue;
     }
 
     @Override
@@ -119,11 +121,11 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
                 return null;
 
             List<String> urls = mdc.renderURLs(getRenderContext());
-            List<?> display;
-            if (_useTsvFormatAsDisplayValue)
-                display = mdc.getTsvFormattedValues(getRenderContext()); // formats values, but does not html encode values -- .getFormattedValue() returns html
-            else
-                display = mdc.getDisplayValues(getRenderContext()); // does not format values
+            List<Object> display = mdc.getDisplayValues(getRenderContext());
+            List<String> formatted = null;
+            if (_includeFormattedValue)
+                formatted = mdc.getFormattedTexts(getRenderContext());
+
 
             assert values.size() == urls.size() && values.size() == display.size();
             List<Map<ColMapEntry, Object>> list = new ArrayList<>(values.size());
@@ -131,8 +133,11 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
             {
                 Object value = values.get(i);
                 Object displayValue = display.get(i);
+                String formattedValue = null;
+                if (_includeFormattedValue)
+                    formattedValue = formatted.get(i);
                 String url = urls.get(i);
-                ColMap nested = makeColMap(value, displayValue, url);
+                ColMap nested = makeColMap(value, displayValue, formattedValue, url);
 
                 // TODO: missing value indicators ?
 
@@ -144,11 +149,10 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         {
             //column value
             Object value = dc.getJsonValue(_ctx);
-            Object displayValue;
-            if (_useTsvFormatAsDisplayValue)
-                displayValue = dc.getTsvFormattedValue(getRenderContext()); // formats values, but does not html encode values -- .getFormattedValue() returns html
-            else
-                displayValue = dc.getDisplayValue(getRenderContext()); // does not format
+            Object displayValue = dc.getDisplayValue(getRenderContext());
+            String formattedValue = null;
+            if (_includeFormattedValue)
+                formattedValue = dc.getFormattedText(getRenderContext());
 
             String url = null;
             if (null != value)
@@ -156,7 +160,7 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
 
             //in the extended response format, each column will have a map of its own
             //that will contain entries for value, mvValue, mvIndicator, etc.
-            Map<ColMapEntry, Object> colMap = makeColMap(value, displayValue, url);
+            Map<ColMapEntry, Object> colMap = makeColMap(value, displayValue, formattedValue, url);
 
             //missing values
             if (dc instanceof MVDisplayColumn)
@@ -179,7 +183,7 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         }
     }
 
-    protected ColMap makeColMap(Object value, Object displayValue, String url)
+    protected ColMap makeColMap(@Nullable Object value, @Nullable Object displayValue, @Nullable String formattedValue, @Nullable String url)
     {
         ColMap colMap = new ColMap();
 
@@ -189,6 +193,9 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         displayValue = ensureJSONDate(displayValue);
         if (null != displayValue && !displayValue.equals(value))
             colMap.put(ColMapEntry.displayValue, displayValue);
+
+        if (_includeFormattedValue && formattedValue != null && !formattedValue.equals(displayValue))
+            colMap.put(ColMapEntry.formattedValue, formattedValue);
 
         if (value != null && url != null)
             colMap.put(ColMapEntry.url, url);

@@ -358,12 +358,53 @@ public abstract class DisplayColumn extends RenderColumn
     }
 
 
-    /** @return the HTML version of this column's value */
+    /**
+     * Format the display value as html for rendering within the DataRegion grid,
+     * including encoding html.
+     *
+     * @deprecated Use getFormattedHtml instead.
+     * @return the HTML version of this column's value.
+     */
+    @Deprecated
     @NotNull
     public String getFormattedValue(RenderContext ctx)
     {
         Format format = getFormat();
         return formatValue(ctx, format);
+    }
+
+    /**
+     * Format the display value as html for rendering within the DataRegion grid,
+     * including encoding html.
+     *
+     * @see #getFormattedText(RenderContext)
+     */
+    @NotNull
+    public String getFormattedHtml(RenderContext ctx)
+    {
+        return getFormattedValue(ctx);
+    }
+
+    /**
+     * Format the display value as text <i>only</i> if there is a format configured for
+     * the display column (which includes any project date and number format settings),
+     * otherwise return null.
+     *
+     * <b>No html encoding should be performed</b>
+     * @see #getFormattedHtml(RenderContext)
+     */
+    @Nullable
+    public String getFormattedText(RenderContext ctx)
+    {
+        Object value = getDisplayValue(ctx);
+        if (null == value)
+            return null;
+
+        Format format = getFormat();
+        if (null != format)
+            return format.format(value);
+
+        return null;
     }
 
 
