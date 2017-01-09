@@ -192,7 +192,8 @@ LABKEY.vis.groupCountData = function(data, groupAccessor, subgroupAccessor, prop
  * @param {String} nullDisplayValue The display value to use for null dimension values. Defaults to 'null'.
  * @returns {Array} An array of results for each group/subgroup/aggregate
  */
-LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue) {
+LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue)
+{
     var results = [],
         groupAccessor = function(row){ return LABKEY.vis.getValue(row[dimensionName]);},
         hasSubgroup = subDimensionName != undefined && subDimensionName != null,

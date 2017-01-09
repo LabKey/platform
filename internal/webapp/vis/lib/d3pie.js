@@ -1,8 +1,8 @@
 /*!
  * d3pie
  * @author Ben Keen
- * @version 0.1.6
- * @date Feb 10 2014
+ * @version 0.1.8
+ * @date May 1st, 2015
  * @repo http://github.com/benkeen/d3pie
  */
 
@@ -115,8 +115,9 @@
             },
             truncation: {
                 enabled: false,
-                length: 30
-            }
+                truncateLength: 30
+            },
+            formatter: null
         },
         effects: {
             load: {
@@ -242,6 +243,7 @@
             return true;
         }
     };
+
     //// --------- helpers.js -----------
     var helpers = {
 
@@ -352,16 +354,16 @@
         rectIntersect: function(r1, r2) {
             var returnVal = (
                 // r2.left > r1.right
-            (r2.x > (r1.x + r1.w)) ||
+                    (r2.x > (r1.x + r1.w)) ||
 
-                // r2.right < r1.left
-            ((r2.x + r2.w) < r1.x) ||
+                        // r2.right < r1.left
+                    ((r2.x + r2.w) < r1.x) ||
 
-                // r2.top < r1.bottom
-            ((r2.y + r2.h) < r1.y) ||
+                        // r2.top < r1.bottom
+                    ((r2.y + r2.h) < r1.y) ||
 
-                // r2.bottom > r1.top
-            (r2.y > (r1.y + r1.h))
+                        // r2.bottom > r1.top
+                    (r2.y > (r1.y + r1.h))
             );
 
             return !returnVal;
@@ -807,15 +809,26 @@
                     .attr("class", pie.cssPrefix + "labelGroup-" + section)
                     .style("opacity", 0);
 
+            var formatterContext = { section: section, sectionDisplayType: sectionDisplayType };
+
             // 1. Add the main label
             if (include.mainLabel) {
                 labelGroup.append("text")
                         .attr("id", function(d, i) { return pie.cssPrefix + "segmentMainLabel" + i + "-" + section; })
                         .attr("class", pie.cssPrefix + "segmentMainLabel-" + section)
-                        .text(function(d) {
+                        .text(function(d, i) {
                             var str = d.label;
-                            if (settings.truncation.enabled && d.label.length > settings.truncation.length) {
-                                str = d.label.substring(0, settings.truncation.length) + "...";
+
+                            // if a custom formatter has been defined, pass it the raw label string - it can do whatever it wants with it.
+                            // we only apply truncation if it's not defined
+                            if (settings.formatter) {
+                                formatterContext.index = i;
+                                formatterContext.part = 'mainLabel';
+                                formatterContext.value = d.value;
+                                formatterContext.label = str;
+                                str = settings.formatter(formatterContext);
+                            } else if (settings.truncation.enabled && d.label.length > settings.truncation.truncateLength) {
+                                str = d.label.substring(0, settings.truncation.truncateLength) + "...";
                             }
                             return str;
                         })
@@ -830,7 +843,17 @@
                         .attr("id", function(d, i) { return pie.cssPrefix + "segmentPercentage" + i + "-" + section; })
                         .attr("class", pie.cssPrefix + "segmentPercentage-" + section)
                         .text(function(d, i) {
-                            return segments.getPercentage(pie, i, pie.options.labels.percentage.decimalPlaces) + "%";
+                            var percentage = segments.getPercentage(pie, i, pie.options.labels.percentage.decimalPlaces);
+                            if (settings.formatter) {
+                                formatterContext.index = i;
+                                formatterContext.part = "percentage";
+                                formatterContext.value = d.value;
+                                formatterContext.label = percentage;
+                                percentage = settings.formatter(formatterContext);
+                            } else {
+                                percentage += "%";
+                            }
+                            return percentage;
                         })
                         .style("font-size", settings.percentage.fontSize + "px")
                         .style("font-family", settings.percentage.font)
@@ -842,7 +865,13 @@
                 labelGroup.append("text")
                         .attr("id", function(d, i) { return pie.cssPrefix +  "segmentValue" + i + "-" + section; })
                         .attr("class", pie.cssPrefix + "segmentValue-" + section)
-                        .text(function(d) { return d.value; })
+                        .text(function(d, i) {
+                            formatterContext.index = i;
+                            formatterContext.part = "value";
+                            formatterContext.value = d.value;
+                            formatterContext.label = d.value;
+                            return settings.formatter ? settings.formatter(formatterContext, d.value) : d.value;
+                        })
                         .style("font-size", settings.value.fontSize + "px")
                         .style("font-family", settings.value.font)
                         .style("fill", settings.value.color);
@@ -993,6 +1022,10 @@
         },
 
         positionLabelGroups: function(pie, section) {
+            if (pie.options.labels[section].format === "none") {
+                return;
+            }
+
             d3.selectAll("." + pie.cssPrefix + "labelGroup-" + section)
                     .style("opacity", 0)
                     .attr("transform", function(d, i) {
@@ -1073,7 +1106,6 @@
             var addValue      = false;
             var addPercentage = false;
 
-            // TODO refactor... somehow
             switch (val) {
                 case "label":
                     addMainLabel = true;
@@ -1124,13 +1156,17 @@
          * This attempts to resolve label positioning collisions.
          */
         resolveOuterLabelCollisions: function(pie) {
+            if (pie.options.labels.outer.format === "none") {
+                return;
+            }
+
             var size = pie.options.data.content.length;
             labels.checkConflict(pie, 0, "clockwise", size);
             labels.checkConflict(pie, size-1, "anticlockwise", size);
         },
 
         checkConflict: function(pie, currIndex, direction, size) {
-            var i,curr;
+            var i, curr;
 
             if (size <= 1) {
                 return;
@@ -1162,7 +1198,7 @@
             // loop through *ALL* label groups examined so far to check for conflicts. This is because when they're
             // very tightly fitted, a later label group may still appear high up on the page
             if (direction === "clockwise") {
-                i=0;
+                i = 0;
                 for (; i<=currIndex; i++) {
                     curr = pie.outerLabelGroupData[i];
 
@@ -1174,8 +1210,8 @@
                     }
                 }
             } else {
-                i=size-1;
-                for (; i>=currIndex; i--) {
+                i = size - 1;
+                for (; i >= currIndex; i--) {
                     curr = pie.outerLabelGroupData[i];
 
                     // if there's a conflict with this label group, shift the label to be AFTER the last known
@@ -1201,8 +1237,6 @@
                 xDiff = Math.sqrt((yDiff * yDiff) - (info.lineLength * info.lineLength));
             }
 
-            // ahhh! info.lineLength is no longer a constant.....
-
             if (lastCorrectlyPositionedLabel.hs === "right") {
                 newXPos = info.center.x + xDiff;
             } else {
@@ -1217,7 +1251,11 @@
          * @param i 0-N where N is the dataset size - 1.
          */
         getIdealOuterLabelPositions: function(pie, i) {
-            var labelGroupDims = d3.select("#" + pie.cssPrefix + "labelGroup" + i + "-outer").node().getBBox();
+            var labelGroupNode = d3.select("#" + pie.cssPrefix + "labelGroup" + i + "-outer").node();
+            if (!labelGroupNode) {
+                return;
+            }
+            var labelGroupDims = labelGroupNode.getBBox();
             var angle = segments.getSegmentAngle(i, pie.options.data.content, pie.totalSize, { midpoint: true });
 
             var originalX = pie.pieCenter.x;
@@ -1305,14 +1343,14 @@
 
             pie.svg.selectAll("g." + pie.cssPrefix + "arc")
                     .attr("transform",
-                    function(d, i) {
-                        var angle = 0;
-                        if (i > 0) {
-                            angle = segments.getSegmentAngle(i-1, pie.options.data.content, pie.totalSize);
-                        }
-                        return "rotate(" + angle + ")";
-                    }
-            );
+                            function(d, i) {
+                                var angle = 0;
+                                if (i > 0) {
+                                    angle = segments.getSegmentAngle(i-1, pie.options.data.content, pie.totalSize);
+                                }
+                                return "rotate(" + angle + ")";
+                            }
+                    );
             pie.arc = arc;
         },
 
@@ -1799,7 +1837,7 @@
             d3.select("#" + pie.cssPrefix + "tooltip" + index)
                     .style("opacity", function() { return 0; });
 
-            // move the tooltip offscreen. This ensures that when the user next mousovers the segment the hidden
+            // move the tooltip offscreen. This ensures that when the user next mouseovers the segment the hidden
             // element won't interfere
             d3.select("#" + pie.cssPrefix + "tooltip" + tt.currentTooltip)
                     .attr("transform", function(d, i) {
@@ -1878,6 +1916,10 @@
     };
 
     d3pie.prototype.recreate = function() {
+        // now run some validation on the user-defined info
+        if (!validate.initialCheck(this)) {
+            return;
+        }
         this.options.data.content = math.sortPieData(this);
         if (this.options.data.smallSegmentGrouping.enabled) {
             this.options.data.content = helpers.applySmallSegmentGrouping(this.options.data.content, this.options.data.smallSegmentGrouping);
