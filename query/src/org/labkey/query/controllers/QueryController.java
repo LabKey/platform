@@ -2675,7 +2675,7 @@ public class QueryController extends SpringActionController
             boolean isEditable = isQueryEditable(view.getTable());
             boolean metaDataOnly = form.getQuerySettings().getMaxRows() == 0;
             boolean arrayMultiValueColumns = getRequestedApiVersion() >= 16.2;
-            boolean useTsvFormatAsDisplayValue = getRequestedApiVersion() >= 17.1;
+            boolean includeFormattedValue = getRequestedApiVersion() >= 17.1;
 
             // 13.2 introduced the getData API action, a condensed response wire format, and a js wrapper to consume the wire format. Support this as an option for legacy APIs.
             if (getRequestedApiVersion() >= 13.2)
@@ -2684,7 +2684,7 @@ public class QueryController extends SpringActionController
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
                 response.includeStyle(form.isIncludeStyle());
                 response.arrayMultiValueColumns(arrayMultiValueColumns);
-                response.useTsvFormatAsDisplayValue(useTsvFormatAsDisplayValue);
+                response.includeFormattedValue(includeFormattedValue);
                 return response;
             }
             //if requested version is >= 9.1, use the extended api query response
@@ -2890,6 +2890,7 @@ public class QueryController extends SpringActionController
             TableInfo t = view.getTable();
             boolean isEditable = null != t && isQueryEditable(view.getTable());
             boolean arrayMultiValueColumns = getRequestedApiVersion() >= 16.2;
+            boolean includeFormattedValue = getRequestedApiVersion() >= 17.1;
 
             // 13.2 introduced the getData API action, a condensed response wire format, and a js wrapper to consume the wire format. Support this as an option for legacy APIs.
             if (getRequestedApiVersion() >= 13.2)
@@ -2898,6 +2899,7 @@ public class QueryController extends SpringActionController
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
                 response.includeStyle(form.isIncludeStyle());
                 response.arrayMultiValueColumns(arrayMultiValueColumns);
+                response.includeFormattedValue(includeFormattedValue);
                 return response;
             }
             if (getRequestedApiVersion() >= 9.1)
