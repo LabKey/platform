@@ -182,7 +182,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             ListManager mgr = ListManager.get();
 
-            for (Map row : result)
+            for (Map<String, Object> row : result)
             {
                 if (null != row.get(ID))
                 {
