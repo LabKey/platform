@@ -403,12 +403,27 @@ public class AuthenticationManager
         return false;
     }
 
+    /**
+     * @return true if only FICAM approved authentication providers are enabled
+     */
+    public static boolean isAcceptOnlyFicamProviders()
+    {
+        return getAuthConfigProperty(ACCEPT_ONLY_FICAM_PROVIDERS_KEY, false);
+    }
+
+    public static void setAcceptOnlyFicamProviders(User user, boolean enable)
+    {
+        setAuthConfigProperty(user, ACCEPT_ONLY_FICAM_PROVIDERS_KEY, enable);
+        AuthenticationProviderCache.clear();
+    }
+
     private static final String AUTHENTICATION_CATEGORY = "Authentication";
     private static final String PROVIDERS_KEY = "Authentication";
     private static final String PROP_SEPARATOR = ":";
     public static final String SELF_REGISTRATION_KEY = "SelfRegistration";
     public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
     public static final String SELF_SERVICE_EMAIL_CHANGES_KEY = "SelfServiceEmailChanges";
+    public static final String ACCEPT_ONLY_FICAM_PROVIDERS_KEY = "AcceptOnlyFicamProviders";
 
     private static void saveActiveProviders(Set<String> activeNames)
     {

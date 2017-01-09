@@ -73,8 +73,9 @@ public class AuthenticationProviderCache
             {
                 addToMap(_allMap, provider);
 
-                // Add all permanent & active providers to the active providers list
-                if (provider.isPermanent() || activeNames.contains(provider.getName()))
+                // Add all permanent & active providers to the active providers list unless FICAM only is enabled
+                if ((!AuthenticationManager.isAcceptOnlyFicamProviders()|| provider.isFicamApproved()) &&
+                        (provider.isPermanent() || activeNames.contains(provider.getName())))
                     addToMap(_activeMap, provider);
             }
         }

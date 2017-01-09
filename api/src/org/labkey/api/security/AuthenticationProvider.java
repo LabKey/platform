@@ -67,6 +67,11 @@ public interface AuthenticationProvider
         return false;
     }
 
+    default boolean isFicamApproved()
+    {
+        return false;
+    }
+
     interface PrimaryAuthenticationProvider extends AuthenticationProvider
     {
         default void logout(HttpServletRequest request)
