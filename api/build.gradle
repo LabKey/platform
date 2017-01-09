@@ -1,3 +1,4 @@
+import org.labkey.gradle.plugin.LabKeyExtension
 import org.labkey.gradle.util.BuildUtils
 
 apply plugin: 'java'
@@ -108,11 +109,8 @@ configurations {
     all*.exclude group: "org.apache.geronimo.bundles", module: "json"
 }
 
-// this is required for compiling the API jar file, but it causes IntelliJ 15.X to be unhappy when importing the build script.
-//       Error message: Cannot register given path of type SOURCE because it's out of content root
-// This bug is fixed in IntelliJ 16.1: https://youtrack.jetbrains.com/oauth?state=%2Fissue%2FIDEA-122577
-// For use in IntelliJ, either comment out the srcDir line (in which case you won't be able to build this module)
-// OR upgrade your IntelliJ version to 16.1 or later
+// this is required for compiling the API jar file.
+// TODO move the directory into this module
 sourceSets {
   main {
     java {
@@ -143,4 +141,9 @@ dependencies {
 
 sourceSets.webapp {
   output.resourcesDir = "${project.staging.webappDir}"
+}
+
+if (LabKeyExtension.isDevMode(project) && !Boolean.valueOf((String) project.buildFromSource))
+{
+  project.project(":server").tasks.deployApp.dependsOn project.tasks.processResources
 }
