@@ -102,7 +102,11 @@
             out.write(PageFlowUtil.filter(authProvider.getName()));
             out.write("</td>");
 
-            out.write("<td>");
+            if (AuthenticationManager.isAcceptOnlyFicamProviders() && !authProvider.isFicamApproved())
+                out.write("<td style='opacity:0.5;'>");
+            else
+                out.write("<td>");
+
             if (authProvider.isPermanent())
             {
                 out.write("&nbsp;");
@@ -111,7 +115,15 @@
             {
                 if (AuthenticationManager.isActive(authProvider))
                     out.write(PageFlowUtil.textLink("disable", urls.getDisableProviderURL(authProvider)));
-                else
+                else if (AuthenticationManager.isAcceptOnlyFicamProviders() && !authProvider.isFicamApproved())
+                {
+
+                      out.write("Not Available");
+                      out.write(PageFlowUtil.helpPopup("Not Available",
+                              authProvider.getName() + " cannot be enabled because it is not FICAM approved. Please go to the <a target=\"_blank\" href=\"https://www.labkey.org/home/Documentation/wiki-page.view?name=complianceSettings#Accounts\">Compliance Settings</a> page to disable this control.",
+                              true, 500));
+                }
+            else
                     out.write(PageFlowUtil.textLink("enable", urls.getEnableProviderURL(authProvider)));
             }
             out.write("</td>");
