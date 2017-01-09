@@ -15,7 +15,6 @@
  */
 package org.labkey.pipeline.mule;
 
-import org.apache.activemq.thread.Scheduler;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
 import org.apache.log4j.Logger;
@@ -145,11 +144,6 @@ public class MuleListenerHelper implements ServletContext
         }
 
         _muleContextListener.contextDestroyed(null);
-
-        // If we have JMS, we assume it is ActiveMQ for now.  Hopefully
-        // this will get fixed with MULE-2496
-        if (hasJms)
-            Scheduler.clockDaemon.shutdown();
     }
 
     public ServletContext getContext(String string)

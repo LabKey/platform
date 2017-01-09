@@ -16,11 +16,3 @@ dependencies {
     external "com.thoughtworks.xstream:xstream:${xstreamVersion}"
     BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: ":server:modules:core", depProjectConfig: 'apiCompile')
 }
-
-configurations.all
-        {
-            resolutionStrategy {
-                // we force this version because activemq-core:4.1.1 depends on activeio-3.0.0-incubator, which is not available
-                force "org.apache.activemq:activeio-core:${activeioCoreVersion}"
-            }
-        }

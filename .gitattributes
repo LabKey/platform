@@ -1239,8 +1239,8 @@ mothership/test/test_mothership.iml -text
 pipeline/build.gradle -text
 pipeline/build.xml -text
 pipeline/gradle.properties -text
-pipeline/lib/activemq-core-4.1.1-sources.zip -text
-pipeline/lib/activemq-core-4.1.1.jar -text
+pipeline/lib/activemq-core-5.1.0-sources.jar -text
+pipeline/lib/activemq-core-5.1.0.jar -text
 pipeline/lib/backport-util-concurrent-3.1-sources.zip -text
 pipeline/lib/backport-util-concurrent-3.1.jar -text
 pipeline/lib/commons-collections-3.2.jar -text
