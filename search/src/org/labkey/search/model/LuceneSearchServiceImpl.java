@@ -57,7 +57,6 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.Nullable;
@@ -68,7 +67,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.resource.ChildFirstClassLoader;
+import org.labkey.api.resource.FileResource;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUtils;
@@ -108,7 +111,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.URL;
 import java.nio.file.FileSystemException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -140,6 +147,41 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
     private final Analyzer _standardAnalyzer = LuceneAnalyzer.LabKeyAnalyzer.getAnalyzer();
+
+    // A Tika AutoDetectParser that lives in its own classloader to keep Tika jars isolated from the rest of LabKey.
+    // We can't cast this to anything (AutoDetectParser, Parser), so we'll use reflection to invoke its parse() method.
+    private static final Object _autoDetectParser;
+    private static final Method _parseMethod;
+    private static final Class _metadataClass;
+
+    static
+    {
+        Resource tikaDir = ModuleLoader.getInstance().getModule("search").getModuleResource("tika");
+        List<URL> urls = new ArrayList<>();
+
+        try
+        {
+            if (tikaDir.isCollection())
+            {
+                for (Resource tikaJar : tikaDir.list())
+                {
+                    if (tikaJar instanceof FileResource)
+                    {
+                        urls.add(((FileResource) tikaJar).getFile().toURI().toURL());
+                    }
+                }
+            }
+
+            ClassLoader tikaClassLoader = new ChildFirstClassLoader(urls.toArray(new URL[urls.size()]), Thread.currentThread().getContextClassLoader());
+            _autoDetectParser = tikaClassLoader.loadClass("org.apache.tika.parser.AutoDetectParser").newInstance();
+            _metadataClass = tikaClassLoader.loadClass("org.apache.tika.metadata.Metadata");
+            _parseMethod = _autoDetectParser.getClass().getMethod("parse", InputStream.class, ContentHandler.class, _metadataClass);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
 
     enum FIELD_NAME
     {
@@ -362,9 +404,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         if (StringUtils.isEmpty(term))
             return "";
         String illegal = "+-&|!(){}[]^\"~*?:\\";
-        if (StringUtils.containsNone(term,illegal))
+        if (StringUtils.containsNone(term, illegal))
             return term;
-        StringBuilder sb = new StringBuilder(term.length()*2);
+        StringBuilder sb = new StringBuilder(term.length() * 2);
         for (char ch : term.toCharArray())
         {
             if (illegal.indexOf(ch) != -1)
@@ -373,7 +415,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         return sb.toString();
     }
-    
+
 
     public void clearIndex()
     {
@@ -459,7 +501,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 logAsWarning(r, r.getName() + " fileStream is null");
                 return false;
             }
-            
+
             Map<String, ?> props = r.getProperties();
             assert null != props;
 
@@ -823,17 +865,79 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
 
         // Treat files over the size limit as empty files
-        if (isTooBig(fs,r.getContentType()))
+        if (isTooBig(fs, r.getContentType()))
         {
             logAsWarning(r, "The document is too large");
             return;
         }
 
-        Parser parser = getParser();
-        parser.parse(is, handler, metadata, new ParseContext());
+        try
+        {
+            Object md = getCompatibleMetadata(metadata);
+            _parseMethod.invoke(_autoDetectParser, is, handler, md);
+            copyProperties(md, metadata);
+        }
+        catch (IllegalAccessException | InvocationTargetException | InstantiationException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
-    
+
+    // Our AutoDetectParser comes from the Tika-isolated class loader, so we must pass to its parse() method an instance
+    // of Metadata that comes from that universe. Create an instance and marshall the properties into it via reflection.
+    private Object getCompatibleMetadata(Metadata metadata) throws IllegalAccessException, InstantiationException
+    {
+        Object md = _metadataClass.newInstance();
+
+        try
+        {
+            Method addMethod = md.getClass().getMethod("add", String.class, String.class);
+
+            for (String name : metadata.names())
+            {
+                for (String value : metadata.getValues(name))
+                {
+                    addMethod.invoke(md, name, value);
+                }
+            }
+        }
+        catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
+        }
+
+        return md;
+    }
+
+
+    // Now marshall the properties back into the Metadata object
+    private void copyProperties(Object md, Metadata metadata)
+    {
+        try
+        {
+            Method namesMethod = md.getClass().getMethod("names");
+            Method getValuesMethod = md.getClass().getMethod("getValues", String.class);
+
+            String[] names = (String[])namesMethod.invoke(md);
+
+            for (String name : names)
+            {
+                // Just replace all the values associated with each name (don't bother trying to merge)
+                metadata.remove(name);
+                String[] values = (String[])getValuesMethod.invoke(md, name);
+
+                for (String value : values)
+                    metadata.add(name, value);
+            }
+        }
+        catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
+        }
+    }
+
+
     /**
      * This method is used to indicate to the crawler (or any external process) which files
      * this indexer will not index.
