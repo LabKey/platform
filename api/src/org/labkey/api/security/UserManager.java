@@ -384,11 +384,16 @@ public class UserManager
         return null != user ? user.getEmail() : null;
     }
 
-
     @NotNull
     public static Collection<User> getActiveUsers()
     {
-        return UserCache.getActiveUsers();
+        return getActiveUsers(false);
+    }
+
+    @NotNull
+    public static Collection<User> getActiveUsers(boolean includeDeactivated)
+    {
+        return includeDeactivated ? UserCache.getActiveAndInactiveUsers() : UserCache.getActiveUsers() ;
     }
 
 
