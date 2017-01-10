@@ -2397,6 +2397,10 @@ public class UserController extends SpringActionController
         private boolean _active;
         private Permission[] _permissions;
 
+        //Flag indicating inclusion of deactivated user accounts in the result set
+        //Since _active in this context seems to mean login activity not account state
+        private boolean _includeDeactivatedAccounts;
+
         public String getGroup()
         {
             return _group;
@@ -2457,6 +2461,15 @@ public class UserController extends SpringActionController
             _active = active;
         }
 
+        public boolean includeDeactivatedAccounts()
+        {
+            return _includeDeactivatedAccounts;
+        }
+
+        public void setIncludeDeactivatedAccounts(boolean includeDisabledUsers)
+        {
+            _includeDeactivatedAccounts = includeDisabledUsers;
+        }
     }
 
     @RequiresLogin
@@ -2483,38 +2496,7 @@ public class UserController extends SpringActionController
             //if requesting users in a specific group...
             if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
             {
-                Container project = container.getProject();
-
-                //get users in given group/role name
-                Integer groupId = form.getGroupId();
-
-                if (null == groupId)
-                    groupId = SecurityManager.getGroupId(container.getProject(), form.getGroup(), false);
-
-                if (null == groupId)
-                    throw new IllegalArgumentException("The group '" + form.getGroup() + "' does not exist in the project '"
-                            + project.getPath() + "'");
-
-                Group group = SecurityManager.getGroup(groupId);
-
-                if (null == group)
-                    throw new NotFoundException("Cannot find group with id " + groupId);
-
-                response.put("groupId", group.getUserId());
-                response.put("groupName", group.getName());
-                response.put("groupCaption", SecurityManager.getDisambiguatedGroupName(group));
-
-                MemberType<User> userMemberType;
-                if (form.isActive())
-                    userMemberType = MemberType.ACTIVE_USERS;
-                else
-                    userMemberType = MemberType.ACTIVE_AND_INACTIVE_USERS;
-
-                // if the allMembers flag is set, then recurse and if group is users then return all site users
-                if (form.isAllMembers())
-                    users = SecurityManager.getAllGroupMembers(group, userMemberType, group.isUsers());
-                else
-                    users = SecurityManager.getGroupMembers(group, userMemberType);
+                users = getGroupUsers(form, container, currentUser, response);
             }
             else
             {
@@ -2522,7 +2504,7 @@ public class UserController extends SpringActionController
                 //else, return all users in the current project
                 //we've already checked above that the current user is a system admin
                 if (container.isRoot())
-                    users = UserManager.getActiveUsers();
+                    users = UserManager.getActiveUsers(form.includeDeactivatedAccounts());
                 else
                     users = SecurityManager.getProjectUsers(container, form.isAllMembers());
             }
@@ -2578,6 +2560,45 @@ public class UserController extends SpringActionController
 
             response.put("users", userResponseList);
             return response;
+        }
+
+        private Collection<User> getGroupUsers(GetUsersForm form, Container container, User currentUser, ApiSimpleResponse response)
+        {
+            Container project = container.getProject();
+
+            //get users in given group/role name
+            Integer groupId = form.getGroupId();
+
+            if (null == groupId)
+                groupId = SecurityManager.getGroupId(project, form.getGroup(), false);
+
+            if (null == groupId)
+                throw new IllegalArgumentException("The group '" + form.getGroup() + "' does not exist in the project '"
+                        + (project != null ? project.getPath() : "" )+ "'");
+
+            Group group = SecurityManager.getGroup(groupId);
+
+            if (null == group)
+                throw new NotFoundException("Cannot find group with id " + groupId);
+
+            response.put("groupId", group.getUserId());
+            response.put("groupName", group.getName());
+            response.put("groupCaption", SecurityManager.getDisambiguatedGroupName(group));
+
+            MemberType<User> userMemberType;
+            if (form.isActive())
+                userMemberType = MemberType.ACTIVE_USERS;
+            else
+                userMemberType = MemberType.ACTIVE_AND_INACTIVE_USERS;
+
+            // if the allMembers flag is set, then recurse and if group is users then return all site users
+            Collection<User> users;
+            if (form.isAllMembers())
+                users = SecurityManager.getAllGroupMembers(group, userMemberType, group.isUsers());
+            else
+                users = SecurityManager.getGroupMembers(group, userMemberType);
+
+            return users;
         }
     }
 
