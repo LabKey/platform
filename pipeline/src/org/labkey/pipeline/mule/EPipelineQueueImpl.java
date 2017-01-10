@@ -272,7 +272,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         {
             _log.debug("MuleClient does not work reliably from inside an event. Using outbound routing.");
             if (_outboundJobs.get() == null)
-                _outboundJobs.set(new ArrayList<PipelineJob>());
+                _outboundJobs.set(new ArrayList<>());
             _outboundJobs.get().add(job);
         }
     }
