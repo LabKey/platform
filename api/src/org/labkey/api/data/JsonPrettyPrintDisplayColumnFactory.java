@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
@@ -52,7 +53,7 @@ public class JsonPrettyPrintDisplayColumnFactory extends ExpandableTextDisplayCo
 
             ObjectMapper mapper = new ObjectMapper();
             DefaultPrettyPrinter pp = new DefaultPrettyPrinter();
-            pp.indentArraysWith(new DefaultPrettyPrinter.Lf2SpacesIndenter());
+            pp.indentArraysWith(new DefaultIndenter());
 
             try
             {
