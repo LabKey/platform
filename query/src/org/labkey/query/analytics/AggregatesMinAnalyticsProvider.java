@@ -37,6 +37,6 @@ public class AggregatesMinAnalyticsProvider extends BaseAggregatesAnalyticsProvi
     @Override
     public Integer getSortOrder()
     {
-        return 203;
+        return 202;
     }
 }

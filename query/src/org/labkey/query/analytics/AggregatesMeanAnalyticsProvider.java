@@ -38,6 +38,6 @@ public class AggregatesMeanAnalyticsProvider extends BaseAggregatesAnalyticsProv
     @Override
     public Integer getSortOrder()
     {
-        return 202;
+        return 204;
     }
 }

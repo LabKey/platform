@@ -37,6 +37,6 @@ public class AggregatesMaxAnalyticsProvider extends BaseAggregatesAnalyticsProvi
     @Override
     public Integer getSortOrder()
     {
-        return 204;
+        return 203;
     }
 }
