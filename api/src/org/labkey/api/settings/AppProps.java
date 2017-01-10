@@ -15,6 +15,7 @@
  */
 package org.labkey.api.settings;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
@@ -61,9 +62,16 @@ public class AppProps
         boolean isCachingAllowed();
         boolean isRecompileJspEnabled();
         void setProjectRoot(String projectRoot);
+        /** @return the root of the main source tree */
+        @Nullable
         String getProjectRoot();
+        /** @return directory under which all containers will automatically have their own subdirectory for storing files */
+        @Nullable
         File getFileSystemRoot();
+        /** @return directory under which user-specific files will be stored in a user-specific subdirectory */
+        @Nullable
         File getUserFilesRoot();
+        @NotNull
         UsageReportingLevel getUsageReportingLevel();
         String getLabKeyVersionString();
         String getContextPath();
@@ -71,6 +79,7 @@ public class AppProps
         int getServerPort();
         String getScheme();
         String getServerName();
+        /** Save the current request URL if the base server URL property is not set */
         void ensureBaseServerUrl(HttpServletRequest request);
         void setContextPath(String contextPath);
 
@@ -117,7 +126,9 @@ public class AppProps
         boolean isAllowSessionKeys();
 
         // configurable http security settings
+        /** @return "POST" or "ADMINONLY" */
         String getCSRFCheck();
+        /** @return "SAMEORIGIN" or "DENY" or "ALLOW" */
         String getXFrameOptions();
     }
 

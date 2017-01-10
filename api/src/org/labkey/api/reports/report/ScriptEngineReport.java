@@ -388,22 +388,20 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return tempRoot;
     }
 
-
+    @NotNull
     public static File getDefaultTempRoot()
     {
         File tempDir = new File(System.getProperty("java.io.tmpdir"));
-        tempDir = new File(tempDir, REPORT_DIR);
-        return tempDir;
+        return new File(tempDir, REPORT_DIR);
     }
 
     protected TSVGridWriter createGridWriter(Results r) throws SQLException
     {
         ResultSetMetaData md = r.getMetaData();
-        ColumnInfo cols[] = new ColumnInfo[md.getColumnCount()];
         List<String> outputColumnNames = outputColumnNames(r);
         List<DisplayColumn> dataColumns = new ArrayList<>();
 
-        for (int i = 0; i < cols.length; i++)
+        for (int i = 0; i < md.getColumnCount(); i++)
         {
             int sqlColumn = i + 1;
             dataColumns.add(new NADisplayColumn(outputColumnNames.get(i), new ColumnInfo(md, sqlColumn)));

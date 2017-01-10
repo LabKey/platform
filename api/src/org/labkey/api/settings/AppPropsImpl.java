@@ -16,6 +16,7 @@
 package org.labkey.api.settings;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
@@ -146,7 +147,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
         return getBaseServerProperties().getServerName();
     }
 
-    // Save the current request URL if the base server URL property is not set
     public void ensureBaseServerUrl(HttpServletRequest request)
     {
         String baseServerUrl = getBaseServerUrl();
@@ -391,12 +391,13 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
             _enlistmentId = ModuleLoader.getInstance().loadEnlistmentId(new File(_projectRoot));
     }
 
-    // Return the root of the main source tree
-    public @Nullable String getProjectRoot()
+    @Nullable
+    public String getProjectRoot()
     {
         return _projectRoot;
     }
 
+    @Nullable
     public File getFileSystemRoot()
     {
         String webRoot = lookupStringValue(WEB_ROOT, "");
@@ -407,6 +408,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
         return null;
     }
 
+    @Nullable
     public File getUserFilesRoot()
     {
         String userRoot = lookupStringValue(USER_FILE_ROOT, "");
@@ -417,6 +419,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
         return null;
     }
 
+    @NotNull
     public UsageReportingLevel getUsageReportingLevel()
     {
         try
@@ -496,14 +499,12 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
         return lookupBooleanValue(ALLOW_SESSION_KEYS, false);
     }
 
-    /** return "POST" or "ADMINONLY" */
     @Override
     public String getCSRFCheck()
     {
         return lookupStringValue(CSRF_CHECK, "ADMINONLY");
     }
 
-    /** return "SAMEORIGIN" or "DENY" or "ALLOW" */
     @Override
     public String getXFrameOptions()
     {
