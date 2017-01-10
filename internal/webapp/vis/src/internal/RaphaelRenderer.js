@@ -706,6 +706,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                     return barWidth * j;
                 }
             }
+            return 0;
         };
 
         colorAcc = function (i) {

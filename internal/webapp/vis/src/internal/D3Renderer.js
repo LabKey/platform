@@ -2870,10 +2870,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         xOffsetFn = function(d) {
             for (var i = 0; i < numXCategories; i++) {
-                if (geom.xScale.domain[i] === d.label) {
+                if (geom.xScale.domain[i] === d[geom.xAes.value]) {
                     return barWidth * i;
                 }
             }
+            return 0;
         };
 
         xAcc = function(d) {
