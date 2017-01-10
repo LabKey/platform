@@ -120,9 +120,9 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public List<Aggregate> getBaseAggregates()
+    public List<AnalyticsProviderItem> getBaseSummaryStatsProviders()
     {
-        return _ctx.getBaseAggregates();
+        return _ctx.getBaseSummaryStatsProviders();
     }
 
     @Override

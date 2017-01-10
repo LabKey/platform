@@ -246,16 +246,30 @@ public class AnalyticsProviderItem
         url.addParameter(CustomViewInfo.getAnalyticsProviderParamKey(regionName, fieldKey.toString()), getValueForUrl());
     }
 
-    public Aggregate createAggregate()
+    @NotNull
+    public List<Aggregate> createAggregates()
     {
         if (isSummaryStatistic())
         {
             AnalyticsProviderRegistry apRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
             ColumnAnalyticsProvider analyticsProvider = apRegistry != null ? apRegistry.getColumnAnalyticsProvider(getName()) : null;
             if (analyticsProvider != null && analyticsProvider instanceof BaseAggregatesAnalyticsProvider)
-                return new Aggregate(getFieldKey(), ((BaseAggregatesAnalyticsProvider)analyticsProvider).getAggregateType(), getLabel());
+            {
+                BaseAggregatesAnalyticsProvider baseAggProvider = (BaseAggregatesAnalyticsProvider) analyticsProvider;
+
+                List<Aggregate> aggs = new ArrayList<>();
+                aggs.add(new Aggregate(getFieldKey(), baseAggProvider.getAggregateType(), getLabel()));
+
+                if (baseAggProvider.getAdditionalAggregateTypes() != null)
+                {
+                    for (Aggregate.Type addType : baseAggProvider.getAdditionalAggregateTypes())
+                        aggs.add(new Aggregate(getFieldKey(), addType, getLabel()));
+                }
+
+                return aggs;
+            }
         }
 
-        return null;
+        return Collections.emptyList();
     }
 }

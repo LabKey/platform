@@ -167,21 +167,20 @@ public class RenderContext implements Map<String, Object>, Serializable
         _baseSort = sort;
     }
 
-    public List<Aggregate> getBaseAggregates()
+    public List<AnalyticsProviderItem> getBaseSummaryStatsProviders()
     {
-        List<Aggregate> aggregates = new ArrayList<>();
+        List<AnalyticsProviderItem> summaryStatsProviders = new ArrayList<>();
 
         if (getBaseAnalyticsProviders() != null)
         {
             for (AnalyticsProviderItem analyticsProvider : getBaseAnalyticsProviders())
             {
-                Aggregate agg = analyticsProvider.createAggregate();
-                if (agg != null)
-                    aggregates.add(agg);
+                if (analyticsProvider.isSummaryStatistic())
+                    summaryStatsProviders.add(analyticsProvider);
             }
         }
 
-        return !aggregates.isEmpty() ? aggregates : null;
+        return !summaryStatsProviders.isEmpty() ? summaryStatsProviders : null;
     }
 
     public List<AnalyticsProviderItem> getBaseAnalyticsProviders()

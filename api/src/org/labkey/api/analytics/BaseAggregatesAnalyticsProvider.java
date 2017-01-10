@@ -23,6 +23,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.ClientDependency;
 
+import java.util.List;
 import java.util.Set;
 
 public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsProvider
@@ -47,6 +48,11 @@ public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsPro
     public String getDescription()
     {
         return "Summary statistic " + getLabel() + " value function to apply to a given column.";
+    }
+
+    public List<Aggregate.Type> getAdditionalAggregateTypes()
+    {
+        return null;
     }
 
     @Override

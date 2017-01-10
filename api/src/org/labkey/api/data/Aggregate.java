@@ -311,11 +311,7 @@ public class Aggregate
 
     public static Aggregate createCountStar()
     {
-        Aggregate agg = new Aggregate();
-        agg._fieldKey = STAR_FIELDKEY;
-        agg._type = BaseType.COUNT;
-        agg._distinct = false;
-        return agg;
+        return new Aggregate(STAR_FIELDKEY, BaseType.COUNT);
     }
 
     public boolean isCountStar()

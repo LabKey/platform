@@ -86,6 +86,7 @@ public class DataRegion extends AbstractDataRegion
 {
     private static final Logger _log = Logger.getLogger(DataRegion.class);
     private List<DisplayColumn> _displayColumns = new ArrayList<>();
+    private List<AnalyticsProviderItem> _summaryStatsProviders = null;
     private Map<String, List<Aggregate.Result>> _aggregateResults = null;
     private AggregateRowConfig _aggregateRowConfig = new AggregateRowConfig(false, true);
     private TableInfo _table = null;
@@ -673,7 +674,8 @@ public class DataRegion extends AbstractDataRegion
         boolean countAggregate = getMaxRows() > 0 && !_complete && _showPagination && _showPaginationCount;
         countAggregate = countAggregate || (getMaxRows() == Table.ALL_ROWS && getTable() != null);
 
-        List<Aggregate> baseAggregates = ctx.getBaseAggregates();
+        _summaryStatsProviders = ctx.getBaseSummaryStatsProviders();
+        List<Aggregate> baseAggregates = getSummaryStatsAggregates();
 
         if (countAggregate)
         {
@@ -703,7 +705,22 @@ public class DataRegion extends AbstractDataRegion
         // TODO: Move this into RenderContext?
         ActionURL url = ctx.getSortFilterURLHelper();
         PageFlowUtil.saveLastFilter(ctx.getViewContext(), url, getSettings() == null ? "" : getSettings().getLastFilterScope());
+
         return _aggregateResults;
+    }
+
+    @Nullable
+    private List<Aggregate> getSummaryStatsAggregates()
+    {
+        if (_summaryStatsProviders != null && !_summaryStatsProviders.isEmpty())
+        {
+            List<Aggregate> aggregates = new ArrayList<>();
+            for (AnalyticsProviderItem summaryStatsProvider : _summaryStatsProviders)
+                aggregates.addAll(summaryStatsProvider.createAggregates());
+            return aggregates;
+        }
+
+        return null;
     }
 
     //TODO: total number of rows should be pushed down to a property of the TableResultSet
