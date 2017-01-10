@@ -156,11 +156,11 @@
                             {
                                 localURI: <%=PageFlowUtil.jsString(ScriptEngineReport.getDefaultTempRoot().toURI().toString())%>,
                                 remoteURI: ''
-                            },
+                            } <% if (AppProps.getInstance().getFileSystemRoot() != null) { %>,
                             {
                                 localURI: <%=PageFlowUtil.jsString(AppProps.getInstance().getFileSystemRoot().toURI().toString())%>,
                                 remoteURI: ''
-                            }
+                            } <% } %>
                         ]
                     };
 
