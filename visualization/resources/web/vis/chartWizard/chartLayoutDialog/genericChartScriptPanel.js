@@ -37,7 +37,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "                return {success: false, messages: ['The measure, ' + measureProps.label + ', is not available. It may have been renamed or removed.']};\n" +
             "        }\n" +
             "\n" +
-            "        var messages = [], axisMeasureNames = ['x', 'y'];\n" +
+            "        var messages = [], axisMeasureNames = ['x', 'xSub', 'y'];\n" +
             "        for (var i = 0; i < axisMeasureNames.length; i++) {\n" +
             "            if (measureNames.indexOf(axisMeasureNames[i]) > 0) {\n" +
             "                var validation = LABKEY.vis.GenericChartHelper.validateAxisMeasure(chartConfig.renderType, chartConfig, axisMeasureNames[i], aes, scales, responseData.rows);\n" +
@@ -74,15 +74,18 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "\n" +
             "        var data = responseData.rows;\n" +
             "        if (chartType == 'bar_chart' || chartType == 'pie_chart') {\n" +
-            "            var dimName = null, measureName = null;\n"+
+            "            var dimName = null, subDimName = null; measureName = null;\n"+
             "            if (chartConfig.measures.x) {\n" +
             "               dimName = chartConfig.measures.x.converted ? chartConfig.measures.x.convertedName : chartConfig.measures.x.name;\n" +
+            "            }\n"+
+            "            if (chartConfig.measures.xSub) {\n" +
+            "               subDimName = chartConfig.measures.xSub.converted ? chartConfig.measures.xSub.convertedName : chartConfig.measures.xSub.name;\n" +
             "            }\n"+
             "            if (chartConfig.measures.y) {\n" +
             "               measureName = chartConfig.measures.y.converted ? chartConfig.measures.y.convertedName : chartConfig.measures.y.name;\n" +
             "            }\n"+
             "            var aggType = measureName != null ? 'SUM' : 'COUNT';\n" +
-            "            data = LABKEY.vis.getAggregateData(data, dimName, null, measureName, aggType, '[Blank]');\n" +
+            "            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]');\n" +
             "        }\n" +
             "\n" +
             "        var plotConfig = LABKEY.vis.GenericChartHelper.generatePlotConfig(chartId, chartConfig, labels, aes, scales, geom, data);\n" +
