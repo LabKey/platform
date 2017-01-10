@@ -84,11 +84,11 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/activemq-core-4.1.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/activemq-core-5.1.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/lib/activemq-core-4.1.1-sources.zip!/" />
+          <root url="jar://$MODULE_DIR$/lib/activemq-core-5.1.0-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
