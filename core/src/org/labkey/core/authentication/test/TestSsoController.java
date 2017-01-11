@@ -16,12 +16,10 @@
 package org.labkey.core.authentication.test;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.AuthenticationManager.BaseSsoValidateAction;
-import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.RequiresNoPermission;
