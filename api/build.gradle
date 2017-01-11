@@ -143,23 +143,23 @@ dependencies {
   jspCompile apache, jackson, spring
 }
 
-//project.sourceSets.webapp {
-//    output.resourcesDir = project.staging.webappDir
-//}
+project.sourceSets.webapp {
+    output.resourcesDir = project.staging.webappDir
+}
 
 //// We need to copy resource files into the staging webapp directory so they can be copied to
 //// the jsptmp directory for use in compiling JSPs
-project.task("stageApiWebInf",
-        type: Copy,
-        {CopySpec copy ->
-            copy.from project.sourceSets.webapp.output
-            copy.into project.staging.webappDir
-//            copy.include "WEB-INF/**"
-        }
-)
-project.tasks.copyTagLibs.dependsOn(project.tasks.stageApiWebInf)
+//project.task("stageApiWebInf",
+//        type: Copy,
+//        {CopySpec copy ->
+//            copy.from project.sourceSets.webapp.output
+//            copy.into project.staging.webappDir
+////            copy.include "WEB-INF/**"
+//        }
+//)
+//project.tasks.copyTagLibs.dependsOn(project.tasks.stageApiWebInf)
 
 if (LabKeyExtension.isDevMode(project) && !Boolean.valueOf((String) project.buildFromSource))
 {
-  project.project(":server").tasks.deployApp.dependsOn project.tasks.stageApiWebInf
+  project.project(":server").tasks.deployApp.dependsOn project.tasks.processWebappResources
 }
