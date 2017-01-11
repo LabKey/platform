@@ -46,7 +46,7 @@ List jackson = [
         "com.fasterxml.jackson.core:jackson-annotations:${jacksonAnnotationsVersion}",
         "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}",
         "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}",
-        "com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}"
+//        "com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}" // included separately below so we can exclude the json jar it brings in
 ]
 
 List charting = [
@@ -132,6 +132,10 @@ dependencies {
   external("com.github.broadinstitute:picard:${picardLibVersion}") {
       exclude group: "javax.servlet", module: "servlet-api"
   }
+  external("com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}") {
+      // exclude this because it gets in the way of our own JSON object implementations from server/api
+      exclude group: "org.json", module:"json"
+  }
   external ant,apache,caching,charting,gwt,jackson,javax,logging,others,r,spring
 
   compile test
@@ -139,11 +143,23 @@ dependencies {
   jspCompile apache, jackson, spring
 }
 
-sourceSets.webapp {
-  output.resourcesDir = "${project.staging.webappDir}"
-}
+//project.sourceSets.webapp {
+//    output.resourcesDir = project.staging.webappDir
+//}
+
+//// We need to copy resource files into the staging webapp directory so they can be copied to
+//// the jsptmp directory for use in compiling JSPs
+project.task("stageApiWebInf",
+        type: Copy,
+        {CopySpec copy ->
+            copy.from project.sourceSets.webapp.output
+            copy.into project.staging.webappDir
+//            copy.include "WEB-INF/**"
+        }
+)
+project.tasks.copyTagLibs.dependsOn(project.tasks.stageApiWebInf)
 
 if (LabKeyExtension.isDevMode(project) && !Boolean.valueOf((String) project.buildFromSource))
 {
-  project.project(":server").tasks.deployApp.dependsOn project.tasks.processResources
+  project.project(":server").tasks.deployApp.dependsOn project.tasks.stageApiWebInf
 }
