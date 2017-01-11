@@ -66,9 +66,10 @@ public class Aggregate
          * @param asName The alias to use in the SQL select
          * @param jdbcType The column type
          * @param distinct Boolean indicating if this SQL should use 'DISTINCT' in the generated query
+         * @param tableInnerSql SQLFragment for the FROM clause in the case where the aggregate needs to do a "subselect"
          * @return String generated SQL
          */
-        default String getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct)
+        default String getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
         {
             if (jdbcType != null && !isLegal(jdbcType))
                 return null;
@@ -145,7 +146,7 @@ public class Aggregate
                     }
 
                     @Override
-                    public String getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct)
+                    public String getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
                     {
                         if (jdbcType != null && !isLegal(jdbcType))
                             return null;
@@ -163,7 +164,7 @@ public class Aggregate
                         }
                         else
                         {
-                            return super.getSQLColumnFragment(dialect, columnName, asName, jdbcType, distinct);
+                            return super.getSQLColumnFragment(dialect, columnName, asName, jdbcType, distinct, tableInnerSql);
                         }
                     }
 
@@ -324,14 +325,14 @@ public class Aggregate
         return _distinct;
     }
 
-    public String toLabKeySQL()
+    public String toLabKeySQL(SQLFragment tableInnerSql)
     {
         String alias = _label == null ? getAggregateName(getFieldKey().toString()) : _label;
         alias = alias.replace("\"", "\\\"");
 
         // special case for those aggregate (i.e. summary stat) types that don't have a LabKey SQL function
         if (_type.getSQLFunctionName(null) == null)
-            return _type.getSQLColumnFragment(null, getFieldKey().toSQLString(), alias, JdbcType.INTEGER, _distinct);
+            return _type.getSQLColumnFragment(null, getFieldKey().toSQLString(), alias, JdbcType.INTEGER, _distinct, tableInnerSql);
 
         StringBuilder sb = new StringBuilder();
         sb.append(_type.getSQLFunctionName(null)).append("(");
@@ -343,14 +344,14 @@ public class Aggregate
     }
 
     @Nullable
-    public String getSQL(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columns)
+    public String getSQL(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columns, SQLFragment tableInnerSql)
     {
         ColumnInfo col = columns.get(getFieldKey());
         String alias = getAliasName(col);
         String aggColName = getAggregateName(alias);
         JdbcType jdbcType = col == null ? null : col.getJdbcType();
 
-        return _type.getSQLColumnFragment(dialect, alias, aggColName, jdbcType, _distinct);
+        return _type.getSQLColumnFragment(dialect, alias, aggColName, jdbcType, _distinct, tableInnerSql);
     }
 
     private String getAliasName(ColumnInfo col)

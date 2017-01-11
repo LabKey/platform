@@ -1463,7 +1463,7 @@ public class DataRegion extends AbstractDataRegion
                             String statDescr = "";
 
                             if (type.getDescription() != null)
-                                statDescr = PageFlowUtil.helpPopup(type.getFullLabel(), type.getDescription());
+                                statDescr = PageFlowUtil.helpPopup(type.getFullLabel(), type.getDescription(), true);
 
                             out.write("<div>");
                             out.write("<span class='summary-stat-label'>" + statLabel + statDescr + ":</span>&nbsp;");

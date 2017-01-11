@@ -614,7 +614,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             {
                 if (agg.isCountStar() || _columnMap.containsKey(agg.getFieldKey()))
                 {
-                    String sql = agg.getSQL(_table.getSqlDialect(), _columnMap);
+                    String sql = agg.getSQL(_table.getSqlDialect(), _columnMap, innerSql);
                     if (sql != null)
                     {
                         if (validAggregates > 0)

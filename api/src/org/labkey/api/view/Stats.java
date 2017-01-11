@@ -32,6 +32,8 @@ import java.util.Set;
  */
 public abstract class Stats
 {
+    public static final double MAD_FACTOR = 1.4826;
+
     public abstract int getCount();
 
     public abstract Object getMin();
@@ -573,6 +575,7 @@ public abstract class Stats
 
         /**
          * <pre>MAD = median( { | x_i - median | } ) * 1.4826</pre>
+         * See Stats.MAD_FACTOR for constant value.
          */
         public double getMedianAbsoluteDeviation()
         {
@@ -603,14 +606,13 @@ public abstract class Stats
             Arrays.sort(diff);
 
             // get scaled median of the difference
-            double factor = 1.4826;
             if (count == 1)
-                return diff[0] * factor;
+                return diff[0] * MAD_FACTOR;
 
             if (count % 2 == 0)
-                return ((diff[count / 2 -1 ] + diff[count / 2]) / 2) * factor;
+                return ((diff[count / 2 -1 ] + diff[count / 2]) / 2) * MAD_FACTOR;
 
-            return diff[(count -1) / 2] * factor;
+            return diff[(count -1) / 2] * MAD_FACTOR;
         }
     }
 }

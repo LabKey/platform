@@ -39,6 +39,7 @@ public interface MathStat
 
     /**
      * <pre>MAD = median( { | x_i - median | } ) * 1.4826</pre>
+     * See Stats.MAD_FACTOR for constant value.
      */
     double getMedianAbsoluteDeviation();
 }
