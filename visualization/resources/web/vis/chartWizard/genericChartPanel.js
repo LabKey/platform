@@ -885,6 +885,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 config.scales.x.min = this.options.x.scaleRange.min;
                 config.scales.x.max = this.options.x.scaleRange.max;
             }
+
+            if (this.measures.xSub) {
+                config.labels.xSub = this.measures.xSub.label;
+            }
         }
 
         if (this.options.y)

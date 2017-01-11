@@ -295,7 +295,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             this.setScaleTypeOptionVisible(isNumeric);
         }
 
-        //some render type axis options should just alwasy be hidden
+        //some render type axis options should always be hidden
         if ((this.axisName == 'x' && (this.renderType == 'bar_chart' || this.renderType == 'box_plot')) || overrideAsHidden)
         {
             this.setRangeOptionVisible(false);
@@ -364,8 +364,13 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
 
     onMeasureChangesGenericChart : function(measures, renderType)
     {
-        var properties = measures[this.axisName],
-            type = LABKEY.vis.GenericChartHelper.getMeasureType(properties),
+        var properties;
+        if (renderType === 'bar_chart' && this.axisName === 'x' && measures['xSub']) {
+            properties = measures['xSub'];
+        } else {
+            properties = measures[this.axisName];
+        }
+        var type = LABKEY.vis.GenericChartHelper.getMeasureType(properties),
             isNumeric = LABKEY.vis.GenericChartHelper.isNumericType(type);
 
         this.adjustScaleAndRangeOptions(isNumeric);
