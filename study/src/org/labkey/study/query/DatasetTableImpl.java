@@ -426,37 +426,58 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                         addColumn(wrappedColumn);
                     }
                 }
-
-                for (FieldKey fieldKey : assayResultTable.getDefaultVisibleColumns())
-                {
-                    if (!defaultVisibleCols.contains(fieldKey) && !defaultVisibleCols.contains(FieldKey.fromParts(fieldKey.getName())))
-                    {
-                        defaultVisibleCols.add(fieldKey);
-                    }
-                }
-
-                // Remove the target study column from the dataset version of the table - it's already scoped to the
-                // relevant study so don't clutter the UI with it
-                for (FieldKey fieldKey : defaultVisibleCols)
-                {
-                    if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(fieldKey.getName()))
-                    {
-                        defaultVisibleCols.remove(fieldKey);
-                        break;
-                    }
-                }
-                ExpProtocol protocol = _dsd.getAssayProtocol();
-                AssayProvider provider = AssayService.get().getProvider(protocol);
-                if(null != provider)
-                {
-                    defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Name.toString()));
-                    defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Comments.toString()));
-                }
             }
         }
 
         addFolderColumn();
     }
+
+
+    List<FieldKey> _assayDefaultVisibleColumns = null;
+
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        if (!_dsd.isAssayData())
+            return super.getDefaultVisibleColumns();
+        else if (null != _assayDefaultVisibleColumns)
+            return _assayDefaultVisibleColumns;
+
+        // compute default visible columns for assay dataset
+        List<FieldKey> defaultVisibleCols = new ArrayList<>(super.getDefaultVisibleColumns());
+        TableInfo assayResultTable = getAssayResultTable();
+        if (null != assayResultTable)
+        {
+            for (FieldKey fieldKey : assayResultTable.getDefaultVisibleColumns())
+            {
+                if (!defaultVisibleCols.contains(fieldKey) && !defaultVisibleCols.contains(FieldKey.fromParts(fieldKey.getName())))
+                {
+                    defaultVisibleCols.add(fieldKey);
+                }
+            }
+
+            // Remove the target study column from the dataset version of the table - it's already scoped to the
+            // relevant study so don't clutter the UI with it
+            for (FieldKey fieldKey : defaultVisibleCols)
+            {
+                if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(fieldKey.getName()))
+                {
+                    defaultVisibleCols.remove(fieldKey);
+                    break;
+                }
+            }
+            ExpProtocol protocol = _dsd.getAssayProtocol();
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            if(null != provider)
+            {
+                defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Name.toString()));
+                defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Comments.toString()));
+            }
+        }
+        _assayDefaultVisibleColumns = Collections.unmodifiableList(defaultVisibleCols);
+        return _assayDefaultVisibleColumns;
+    }
+
 
     @Override
     public boolean hasContainerColumn()

@@ -24,6 +24,7 @@ import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -39,6 +40,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
@@ -54,6 +56,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.query.CustomViewUtil;
+import org.labkey.query.TableQueryDefinition;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -61,10 +64,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 /**
  * User: dave
@@ -87,9 +92,17 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         if (StringUtils.isEmpty(form.getSchemaName()))
             throw new NotFoundException("SchemaName not specified");
 
-        QuerySchema schema = DefaultSchema.get(user, container, form.getSchemaName());
-        if (null == schema)
+        QuerySchema querySchema = DefaultSchema.get(user, container, form.getSchemaName());
+        if (!(querySchema instanceof UserSchema))
             throw new NotFoundException("Could not find the schema '" + form.getSchemaName() + "' in the folder '" + container.getPath() + "'!");
+        UserSchema schema = (UserSchema)querySchema;
+
+        QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, form.getQueryName());
+        QueryDefinition queryDef = settings.getQueryDef(schema);
+        if (null == queryDef)
+            throw new NotFoundException("Could not find the query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'!");
+
+        boolean isUserDefined = !queryDef.isTableQueryDefinition();
 
         //a few basic props about the query
         //this needs to be populated before attempting to get the table info
@@ -97,27 +110,31 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         //so it can display edit source, edit design links
         resp.put("name", form.getQueryName());
         resp.put("schemaName", form.getSchemaName());
-        QueryDefinition queryDef = QueryService.get().getQueryDef(user, container, form.getSchemaName(), form.getQueryName());
-        boolean isUserDefined = (null != queryDef);
         resp.put("isUserDefined", isUserDefined);
-        boolean canEdit = (null != queryDef && queryDef.canEdit(user));
+        boolean canEdit = queryDef.canEdit(user);
         resp.put("canEdit", canEdit);
         resp.put("canEditSharedViews", container.hasPermission(user, EditSharedViewPermission.class));
         resp.put("isMetadataOverrideable", canEdit); //for now, this is the same as canEdit(), but in the future we can support this for non-editable queries
 
         if (isUserDefined)
             resp.put("moduleName", queryDef.getModuleName());
-        boolean isInherited = (null != queryDef && queryDef.canInherit() && !container.equals(queryDef.getDefinitionContainer()));
+        boolean isInherited = (queryDef.canInherit() && !container.equals(queryDef.getDefinitionContainer()));
         resp.put("isInherited", isInherited);
         if (isInherited)
             resp.put("containerPath", queryDef.getDefinitionContainer().getPath());
 
-        resp.put("isTemporary", null != queryDef && queryDef.isTemporary());
+        resp.put("isTemporary", queryDef.isTemporary());
 
         TableInfo tinfo;
         try
         {
-            tinfo = schema.getTable(form.getQueryName());
+            List<QueryException> qerrors = new ArrayList<>();
+            tinfo = queryDef.getTable(qerrors, true);
+            if (!qerrors.isEmpty())
+            {
+                resp.put("exception", qerrors.get(0).getMessage());
+                return resp;
+            }
         }
         catch(Exception e)
         {
@@ -140,30 +157,25 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 
 
         //8649: let the table provide the view data url
-        if (schema instanceof UserSchema)
+        ActionURL viewDataUrl = schema.urlFor(QueryAction.executeQuery, queryDef);
+        if (null != viewDataUrl)
+            resp.put("viewDataUrl", viewDataUrl);
+
+        ActionURL importDataUrl =  schema.urlFor(QueryAction.importData, queryDef);
+        if (null != importDataUrl)
         {
-            UserSchema uschema = (UserSchema)schema;
-            QueryDefinition qdef = QueryService.get().createQueryDefForTable(uschema, form.getQueryName());
-            ActionURL viewDataUrl = qdef == null ? null : uschema.urlFor(QueryAction.executeQuery, qdef);
-            if (null != viewDataUrl)
-                resp.put("viewDataUrl", viewDataUrl);
+            if (AbstractTableInfo.LINK_DISABLER_ACTION_URL.equals(importDataUrl))
+                resp.put("importUrlDisabled", true);
+            else
+                resp.put("importUrl", importDataUrl);
+        }
 
-            ActionURL importDataUrl = qdef == null ? null : uschema.urlFor(QueryAction.importData, qdef);
-            if (null != importDataUrl)
-            {
-                if (AbstractTableInfo.LINK_DISABLER_ACTION_URL.equals(importDataUrl))
-                    resp.put("importUrlDisabled", true);
-                else
-                    resp.put("importUrl", importDataUrl);
-            }
-
-            ActionURL insertDataUrl = qdef == null ? null : uschema.urlFor(QueryAction.insertQueryRow, qdef);
-            if (null != insertDataUrl) {
-                if (AbstractTableInfo.LINK_DISABLER_ACTION_URL.equals(insertDataUrl))
-                    resp.put("insertUrlDisabled", true);
-                else
-                    resp.put("insertUrl", insertDataUrl);
-            }
+        ActionURL insertDataUrl = schema.urlFor(QueryAction.insertQueryRow, queryDef);
+        if (null != insertDataUrl) {
+            if (AbstractTableInfo.LINK_DISABLER_ACTION_URL.equals(insertDataUrl))
+                resp.put("insertUrlDisabled", true);
+            else
+                resp.put("insertUrl", insertDataUrl);
         }
 
         Map<FieldKey, Map<String, Object>> columnMetadata;
@@ -249,38 +261,36 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             return resp;
         }
 
-        if (schema instanceof UserSchema && null == form.getFk())
+        if (null == form.getFk())
         {
             //now the columns in the user's default view for this query
-            resp.put("defaultView", getDefaultViewProps((UserSchema)schema, form.getQueryName()));
+            resp.put("defaultView", getDefaultViewProps(schema.createView(getViewContext(),settings)));
 
             List<Map<String, Object>> viewInfos = new ArrayList<>();
-            Set<String> viewNames = new HashSet<>();
-            // Get the default view.
-            viewNames.add(null);
-            if (form.getViewName() != null && form.getViewName().length > 0)
-            {
-                QueryDefinition querydef = QueryService.get().createQueryDefForTable((UserSchema)schema, form.getQueryName());
-                boolean includeAllViews = false;
-                for (String viewName : form.getViewName())
-                {
-                    if (viewName.trim().equalsIgnoreCase("*"))
-                        includeAllViews = true;
-                }
-                if (includeAllViews && querydef != null)
-                {
-                    Map<String, CustomView> views = querydef.getCustomViews(getUser(), getViewContext().getRequest(), true, false);
-                    if (views != null)
-                        viewNames.addAll(views.keySet());
-                }
-                else
-                    viewNames = new HashSet<>(Arrays.asList(form.getViewName()));
-            }
+            Map<String, CustomView> allViews = queryDef.getCustomViews(getUser(), getViewContext().getRequest(), true, false);
+            Set<String> viewNames = new CaseInsensitiveHashSet("");
+            if (form.getViewName() != null)
+                viewNames.addAll(Arrays.stream(form.getViewName()).map(String::trim).collect(Collectors.toList()));
 
-            for (String viewName : viewNames)
+            if (viewNames.contains("*"))
             {
-                viewName = StringUtils.trimToNull(viewName);
-                viewInfos.add(CustomViewUtil.toMap(getViewContext(), (UserSchema)schema, form.getQueryName(), viewName, true, form.isInitializeMissingView(), columnMetadata));
+                for (CustomView cv: allViews.values())
+                {
+                    viewInfos.add(CustomViewUtil.toMap(cv, getUser(), true, columnMetadata));
+                }
+            }
+            else
+            {
+                for (String viewName : viewNames)
+                {
+                    // NOTE viewName==null in the allViews map
+                    viewName = trimToNull(viewName);
+                    CustomView cv = allViews.get(viewName);
+                    if (null == cv && (viewName == null || form.isInitializeMissingView()))
+                        cv = queryDef.createCustomView(getUser(), viewName);
+                    if (null != cv)
+                        viewInfos.add(CustomViewUtil.toMap(cv, getUser(), true, columnMetadata));
+                }
             }
 
             // Include information about where these views might be saved and if the user has permission
@@ -318,7 +328,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
                 String domainURI = null;
                 try
                 {
-                    domainURI = ((UserSchema) schema).getDomainURI(tinfo.getName());
+                    domainURI = schema.getDomainURI(tinfo.getName());
                 }
                 catch (NotFoundException nfe) { }
 
@@ -346,12 +356,8 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         return resp;
     }
 
-    protected Map<String,Object> getDefaultViewProps(UserSchema schema, String queryName)
+    protected Map<String,Object> getDefaultViewProps(QueryView view)
     {
-        //build a query view
-        QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, queryName);
-        QueryView view = new QueryView(schema, settings, null);
-
         Map<String,Object> defViewProps = new HashMap<>();
         defViewProps.put("columns", getDefViewColProps(view));
         return defViewProps;
