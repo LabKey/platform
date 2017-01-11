@@ -192,15 +192,23 @@ LABKEY.vis.groupCountData = function(data, groupAccessor, subgroupAccessor, prop
  * @param {String} nullDisplayValue The display value to use for null dimension values. Defaults to 'null'.
  * @returns {Array} An array of results for each group/subgroup/aggregate
  */
-LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue)
+LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue, includeTotal)
 {
-    var results = [],
-        groupAccessor = function(row){ return LABKEY.vis.getValue(row[dimensionName]);},
+    var results = [], subgroupAccessor,
+        groupAccessor = typeof dimensionName === 'function' ? dimensionName : function(row){ return LABKEY.vis.getValue(row[dimensionName]);},
         hasSubgroup = subDimensionName != undefined && subDimensionName != null,
-        subgroupAccessor = hasSubgroup ? function(row){ return LABKEY.vis.getValue(row[subDimensionName]); } : null,
         hasMeasure = measureName != undefined && measureName != null,
-        measureAccessor = hasMeasure ? function(row){ return LABKEY.vis.getValue(row[measureName]); } : null,
-        groupData = LABKEY.vis.groupCountData(data, groupAccessor, subgroupAccessor);
+        measureAccessor = hasMeasure ? function(row){ return LABKEY.vis.getValue(row[measureName]); } : null;
+
+    if (hasSubgroup) {
+        if (typeof subDimensionName === 'function') {
+            subgroupAccessor = subDimensionName;
+        } else {
+            subgroupAccessor = function (row) { return LABKEY.vis.getValue(row[subDimensionName]); }
+        }
+    }
+
+    var groupData = LABKEY.vis.groupCountData(data, groupAccessor, subgroupAccessor);
 
     for (var i = 0; i < groupData.length; i++)
     {
@@ -214,7 +222,9 @@ LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, me
             if (row['subLabel'] == null || row['subLabel'] == 'null')
                 row['subLabel'] = nullDisplayValue || 'null';
         }
-
+        if (includeTotal) {
+            row['total'] = groupData[i]['total'];
+        }
         if (aggregate == undefined || aggregate == null || aggregate == 'COUNT')
         {
             row['value'] = groupData[i]['count'];

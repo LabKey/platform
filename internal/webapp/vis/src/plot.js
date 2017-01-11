@@ -1249,29 +1249,74 @@ boxPlot.render();
         if(config.renderTo == null){
             throw new Error("Unable to create bar plot, renderTo not specified");
         }
-
         if(config.data == null){
             throw new Error("Unable to create bar plot, data array not specified");
         }
-
-        if(config.xAes == null){
-            throw new Error("Unable to create bar plot, xAes function not specified");
+        if (!config.aes) {
+            config.aes = {};
+        }
+        if (config.xAes) { //backwards compatibility
+            config.aes.x = config.xAes;
+        }
+        if (!config.aes.x) {
+            throw new Error("Unable to create bar plot, x Aesthetic not specified");
+        }
+        if (config.xSubAes) {
+            config.aes.xSub = config.xSubAes;
+        }
+        if (config.yAes) {
+            config.aes.y = config.yAes;
+        }
+        if (!config.options) {
+            config.options = {};
+        }
+        if (!config.aggregateType) {
+            config.options.aggregateType = config.aes.y ? 'SUM' : 'COUNT'; //aggregate defaults
+        }
+        if (!config.aes.y) {
+            config.aes.y = 'value';
         }
 
-        var countData = LABKEY.vis.groupCountData(config.data, config.xAes);
         var showCumulativeTotals = config.options && config.options.showCumulativeTotals;
+        if (showCumulativeTotals && config.aes.xSub) {
+            throw new Error("Unable to render grouped bar chart with cumulative totals shown");
+        }
+
+        var aggregateData,
+                dimName = config.aes.x,
+                subDimName = config.aes.xSub,
+                aggType = config.options.aggregateType,
+                measureName = config.aes.y,
+                includeTotal = config.options.showCumulativeTotals;
+
+        aggregateData = LABKEY.vis.getAggregateData(config.data, dimName, subDimName, measureName, aggType, '[blank]', includeTotal);
+        config.aes.y = 'value';
+        config.aes.x = 'label';
+        if (subDimName) {
+            config.aes.xSub = 'subLabel';
+            config.aes.color = 'label';
+        }
 
         config.layers = [new LABKEY.vis.Layer({
             geom: new LABKEY.vis.Geom.BarPlot(config.options),
-            data: countData,
-            aes: { x: 'name', y: 'count' }
+            data: aggregateData,
+            aes: config.aes
         })];
 
-        if (!config.scales)
-        {
+        if (!config.scales) {
             config.scales = {};
+        }
+        if (!config.scales.x) {
             config.scales.x = { scaleType: 'discrete' };
-            config.scales.y = { domain: [0, showCumulativeTotals ? countData[countData.length-1].total : null] };
+        }
+        if (subDimName && !config.scales.xSub) {
+            config.scales.xSub = { scaleType: 'discrete' };
+        }
+        if (!config.scales.y) {
+            config.scales.y = {
+                scaleType: 'continuous',
+                domain: [0, showCumulativeTotals ? aggregateData[aggregateData.length-1].total : null]
+            };
         }
 
         if (showCumulativeTotals && !config.margins)

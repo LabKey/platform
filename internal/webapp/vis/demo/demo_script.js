@@ -773,6 +773,25 @@ var barChart2 = new LABKEY.vis.BarPlot({
     data: barPlotData
 });
 
+var barChart3 = new LABKEY.vis.BarPlot({
+    renderTo: 'bar3',
+    rendererType: 'd3',
+    width: 900,
+    height: 300,
+    labels: {
+        main: {value: 'Example Bar Plot with Grouped Bars'},
+        yLeft: {value: 'Count'}
+    },
+    aes: {
+        x: 'gender',
+        xSub: 'group'
+    },
+    scales : {
+        x : {scaleType: 'discrete'},
+        xSub : {scaleType: 'discrete'}
+    },
+    data: barPlotData
+});
 
 var pieChart = new LABKEY.vis.PieChart({
     renderTo: "pie",
@@ -1068,6 +1087,7 @@ errorPlot.render();
 statFnPlot.render();
 barChart.render();
 barChart2.render();
+barChart3.render();
 leveyJenningsPlot.render();
 CUSUMPlot.render();
 survivalCurvePlot.render();
