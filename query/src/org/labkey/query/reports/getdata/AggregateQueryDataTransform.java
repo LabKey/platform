@@ -18,6 +18,7 @@ package org.labkey.query.reports.getdata;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 
@@ -80,7 +81,7 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         {
             sb.append(separator);
             separator = ", ";
-            sb.append(aggregate.toLabKeySQL());
+            sb.append(aggregate.toLabKeySQL(new SQLFragment(getSource().getLabKeySQL())));
         }
 
         if (_pivotBuilder != null)
