@@ -645,19 +645,18 @@ public abstract class VisitManager
      */
     public static int performParticipantPurge(@NotNull StudyImpl study, @Nullable Set<String> potentiallyDeletedParticipants)
     {
+        // Short circuit if we know there are no potentially deleted participants
         if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.isEmpty())
         {
             return 0;
         }
 
-        if (!ContainerManager.exists(study.getContainer()))
+        Container c = study.getContainer();
+
+        // Short circuit if the container has been deleted
+        if (!ContainerManager.exists(c))
         {
-            // Checking a possible cause of the race conditions we see on TeamCity. For now, just log and continue on.
-            LOGGER.info("According to the cache, container no longer exists!");
-        }
-        else if (null == ContainerManager.getForRowId(study.getContainer().getRowId()))
-        {
-            LOGGER.info("According to the database, container no longer exists! (Cache was stale!)");
+            return 0;
         }
 
         List<DatasetDefinition> datasets = null;
@@ -685,7 +684,7 @@ public abstract class VisitManager
 
             SQLFragment ptidsP = new SQLFragment();
             ptidsP.append("SELECT ParticipantId FROM ").append(tableParticipant.getSelectName()).append(" WHERE Container = ?");
-            ptidsP.add(study.getContainer().getId());
+            ptidsP.add(c);
             // Databases limit the size of IN clauses, so check that we won't blow the cap
             if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.size() < 450)
             {
@@ -697,7 +696,7 @@ public abstract class VisitManager
             SQLFragment del = new SQLFragment();
             del.append("DELETE FROM ").append(tableParticipant.getSelectName());
             del.append("\nWHERE Container = ? ");
-            del.add(study.getContainer().getId());
+            del.add(c);
             del.append("AND ParticipantId IN\n");
             del.append("(\n");
             del.append("    ").append(ptidsP).append("\n");
@@ -710,34 +709,31 @@ public abstract class VisitManager
         }
         catch (Exception x)
         {
-            if (!ContainerManager.exists(study.getContainer()))
+            // Container might have been deleted while assembling or running this query. If so, just fall through and return 0.
+            if (ContainerManager.exists(c))
             {
-                LOGGER.info("Hit exception and, according to the cache, container no longer exists! " + x.getMessage());
-            }
-            else if (null == ContainerManager.getForRowId(study.getContainer().getRowId()))
-            {
-                LOGGER.info("Hit exception and, according to the database, container no longer exists! (Cache was stale!) " + x.getMessage());
-            }
-            else if (null != datasets)
-            {
-                List<DatasetDefinition> datasetsNow = study.getDatasets();
+                // Hit an exception but container still exists... maybe a dataset went away
+                if (null != datasets)
+                {
+                    List<DatasetDefinition> datasetsNow = study.getDatasets();
 
-                if (datasetsNow.size() != datasets.size())
-                    LOGGER.info("Dataset count changed: " + (datasetsNow.size() - datasets.size()));
-            }
+                    if (datasetsNow.size() != datasets.size())
+                        LOGGER.info("Dataset count changed: " + (datasetsNow.size() - datasets.size()));
+                }
 
-            // TODO: Temporary logging
-            LOGGER.error("Exception during participant purge; perhaps an \"object not found\" exception");
-            if (SqlDialect.isObjectNotFoundException(x))
-            {
                 // TODO: Temporary logging
-                LOGGER.error("Exception was determined to be \"object not found\". Container is " + study.getContainer());
-                StudyManager.getInstance().clearCaches(study.getContainer(), false);
+                LOGGER.error("Exception during participant purge; perhaps an \"object not found\" exception");
+                if (SqlDialect.isObjectNotFoundException(x))
+                {
+                    // TODO: Temporary logging
+                    LOGGER.error("Exception was determined to be \"object not found\". Container is " + c);
+                    StudyManager.getInstance().clearCaches(c, false);
 
-                // 2016-12-22: doesn't look like anyone calls this while in a transaction (see assert above), so, assuming
-                // we're detecting "object not found" correctly, we should be safe to return here or attempt retry.
+                    // 2016-12-22: doesn't look like anyone calls this while in a transaction (see assert above), so, assuming
+                    // we're detecting "object not found" correctly, we should be safe to return here or attempt retry.
+                }
+                throw x;
             }
-            throw x;
         }
 
         return 0;
