@@ -418,7 +418,7 @@ public abstract class VisitManager
                                       final Set<String> potentiallyInsertedParticipants,
                                       Set<String> potentiallyDeletedParticipants)
     {
-        String c = getStudy().getContainer().getId();
+        Container c = getStudy().getContainer();
 
         DbSchema schema = StudySchema.getInstance().getSchema();
 
@@ -432,23 +432,23 @@ public abstract class VisitManager
 
             SQLFragment datasetParticipantsSQL = new SQLFragment();
             datasetParticipantsSQL.append(
-                    "SELECT participantid FROM (").append(studyPtidsFragment).append(") _ptids\n");
+                    "SELECT ParticipantId FROM (").append(studyPtidsFragment).append(") _ptids\n");
             // Databases limit the size of IN clauses, so check that we won't blow the cap
             if (potentiallyInsertedParticipants != null && potentiallyInsertedParticipants.size() < 450)
             {
                 // We have an explicit list of potentially added participants, so filter to only look at them
-                datasetParticipantsSQL.append("WHERE participantid ");
+                datasetParticipantsSQL.append("WHERE ParticipantId ");
                 schema.getSqlDialect().appendInClauseSql(datasetParticipantsSQL, potentiallyInsertedParticipants);
             }
             datasetParticipantsSQL.append("\nEXCEPT\n");
             datasetParticipantsSQL.append(
-                    "SELECT participantid FROM study.participant p WHERE container=?");
+                    "SELECT ParticipantId FROM study.Participant p WHERE Container = ?");
             datasetParticipantsSQL.add(c);
 
             SQLFragment insert = new SQLFragment();
             insert.append(
-                    "INSERT INTO study.participant (container, participantid)\n" +
-                    "SELECT ? AS container, participantid FROM (\n");
+                    "INSERT INTO study.Participant (Container, ParticipantId)\n" +
+                    "SELECT ? AS Container, ParticipantId FROM (\n");
             insert.add(c);
             insert.append(datasetParticipantsSQL);
             insert.append(") _insert");
@@ -470,23 +470,22 @@ public abstract class VisitManager
         // tell the search service about potential new ptids
         //
         final SearchService ss = ServiceRegistry.get(SearchService.class);
-        final String cid = _study.getContainer().getId();
         if (null != ss)
         {
             if (null != potentiallyInsertedParticipants)
             {
                 final ArrayList<String> ptids = new ArrayList<>(potentiallyInsertedParticipants);
-                Runnable r = () -> StudyManager.indexParticipants(ss.defaultTask(), _study.getContainer(), ptids);
+                Runnable r = () -> StudyManager.indexParticipants(ss.defaultTask(), c, ptids);
                 ss.defaultTask().addRunnable(r, SearchService.PRIORITY.group);
             }
             else
             {
                 Runnable r = () ->
                 {
-                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), cid);
+                    SimpleFilter filter = SimpleFilter.createContainerFilter(c);
                     filter.addCondition(FieldKey.fromParts("LastIndexed"), null, CompareType.ISBLANK);
                     List<String> ptids = new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), Collections.singleton("ParticipantId"), filter, null).getArrayList(String.class);
-                    StudyManager.indexParticipants(ss.defaultTask(), _study.getContainer(), ptids);
+                    StudyManager.indexParticipants(ss.defaultTask(), c, ptids);
                 };
                 ss.defaultTask().addRunnable(r, SearchService.PRIORITY.group);
             }
@@ -578,9 +577,9 @@ public abstract class VisitManager
             if (null == sti)
                 continue;
             f.append(union);
-            f.append("SELECT DISTINCT participantid FROM ").append(sti.getFromSQL("_"));
+            f.append("SELECT DISTINCT ParticipantId FROM ").append(sti.getFromSQL("_"));
             if (d.isShared())
-                f.append(" WHERE container=?").add(d.getContainer().getId());
+                f.append(" WHERE Container = ?").add(d.getContainer());
             union = " UNION\n";
         }
         return f.isEmpty() ? null : f;
@@ -603,13 +602,14 @@ public abstract class VisitManager
                 ColumnInfo col = tInfo.getColumn("StartDate");
                 if (null != col)
                 {
+                    Container c = dataset.getContainer();
                     String subselect = schema.getSqlDialect().getDateTimeToDateCast("(SELECT MIN(" + col.getSelectName() + ") FROM " + tInfo +
                             " WHERE " + tInfo + ".ParticipantId = " + tableParticipant + ".ParticipantId" +
                             " AND " + tableParticipant + ".Container = ?)");
                     String sql = "UPDATE " + tableParticipant + " SET StartDate = " + subselect + " WHERE (" +
                             tableParticipant + ".StartDate IS NULL OR NOT " + tableParticipant + ".StartDate = " + subselect +
                             ") AND Container = ?";
-                    new SqlExecutor(schema).execute(sql, dataset.getContainer().getId(), dataset.getContainer().getId(), dataset.getContainer().getId());
+                    new SqlExecutor(schema).execute(sql, c, c, c);
                     break;
                 }
             }
@@ -740,27 +740,27 @@ public abstract class VisitManager
     }
 
 
-    /** remove rows in participantvisits that are not in the participant table */
+    /** remove rows in ParticipantVisits that are not in the Participant table */
     protected int purgeParticipantsFromParticipantsVisitTable(Container c)
     {
         /*
             Postgres at least seems to have major performance issues with the simple DELETE NOT IN version
-            DELETE FROM study.participantvisit WHERE Container = ? AND ParticipantId NOT IN (SELECT ParticipantId FROM study.participant WHERE Container= ?)
+            DELETE FROM study.ParticipantVisit WHERE Container = ? AND ParticipantId NOT IN (SELECT ParticipantId FROM study.Participant WHERE Container = ?)
          */
         StudySchema study = StudySchema.getInstance();
         SQLFragment sqlSelect = new SQLFragment();
         sqlSelect.append(
-                "SELECT DISTINCT ParticipantId FROM study.participantvisit WHERE Container=? EXCEPT SELECT DISTINCT ParticipantId FROM study.participant WHERE Container=?"
+                "SELECT DISTINCT ParticipantId FROM study.ParticipantVisit WHERE Container = ? EXCEPT SELECT DISTINCT ParticipantId FROM study.Participant WHERE Container = ?"
         );
         sqlSelect.add(c);
         sqlSelect.add(c);
 
         SQLFragment sqlDelete = new SQLFragment();
         sqlDelete.appendComment("<VisitManager.purgeParticipantsFromParticipantsVisitTable>", study.getSqlDialect());
-        sqlDelete.append("DELETE FROM study.participantvisit");
+        sqlDelete.append("DELETE FROM study.ParticipantVisit");
         if (study.getSqlDialect().isSqlServer())
             sqlDelete.append(" WITH (UPDLOCK)");
-        sqlDelete.append(" WHERE Container= ? AND ParticipantId IN (");
+        sqlDelete.append(" WHERE Container = ? AND ParticipantId IN (");
         sqlDelete.add(c);
         sqlDelete.append(sqlSelect);
         sqlDelete.append(")");
