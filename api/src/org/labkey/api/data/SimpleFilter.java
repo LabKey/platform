@@ -80,17 +80,16 @@ public class SimpleFilter implements Filter
     public static SimpleFilter createFilterFromParameter(@NotNull String queryParameter)
     {
         SimpleFilter filter = null;
-        if (queryParameter != null)
+        String[] parts = queryParameter.split("\\.");
+
+        if (parts.length > 1)
         {
-            String[] parts = queryParameter.split("\\.");
-            if (parts.length > 1)
-            {
-                String regionName = parts[0];
-                ActionURL url = new ActionURL();
-                url.setRawQuery(queryParameter);
-                filter = new SimpleFilter(url, regionName);
-            }
+            String regionName = parts[0];
+            ActionURL url = new ActionURL();
+            url.setRawQuery(queryParameter);
+            filter = new SimpleFilter(url, regionName);
         }
+
         return filter;
     }
 
@@ -98,15 +97,12 @@ public class SimpleFilter implements Filter
     public static String getColumnFromParameter(@NotNull String queryParameter)
     {
         String column = null;
+        String[] parts = queryParameter.split("\\.");
 
-        if (queryParameter != null)
+        if (parts.length > 1)
         {
-            String[] parts = queryParameter.split("\\.");
-            if (parts.length > 1)
-            {
-                String columnPart = String.copyValueOf(parts[1].toCharArray());
-                column = columnPart.split(SEPARATOR_CHAR)[0];
-            }
+            String columnPart = String.copyValueOf(parts[1].toCharArray());
+            column = columnPart.split(SEPARATOR_CHAR)[0];
         }
 
         return column;
