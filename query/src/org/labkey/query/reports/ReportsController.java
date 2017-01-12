@@ -189,6 +189,8 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 /**
  * User: Karl Lum
  * Date: Apr 19, 2007
@@ -979,7 +981,7 @@ public class ReportsController extends SpringActionController
 
                 // consider:  moving this logic into the getReportKey function for 14.2
                 // see issue 19206 for more details
-                if (StringUtils.isBlank(key))
+                if (isBlank(key))
                     key = reportName;
 
                 report = ReportUtil.getReportByName(getViewContext(), reportName, key);
@@ -1586,7 +1588,7 @@ public class ReportsController extends SpringActionController
             if (sessionKey != null)
             {
                 File file = (File) getViewContext().getRequest().getSession().getAttribute(sessionKey);
-                if (file != null && file.exists())
+                if (file != null && file.isFile())
                 {
                     Map<String, String> responseHeaders = Collections.emptyMap();
                     if (BooleanUtils.toBoolean(cacheFile))
