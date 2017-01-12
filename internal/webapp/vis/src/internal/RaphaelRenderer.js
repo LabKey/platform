@@ -681,40 +681,41 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         }
     };
 
-    var renderBarPlotGeom = function(data, geom) {
+    var renderBarPlotGeom = function(data, geom)
+    {
         var x, y, barLeft, binWidth, barWidth, offsetWidth, barHeight,
                 grouped, numXCategories, numXSubCategories, xOffsetFn, colorAcc;
 
-        if (geom.xScale.scaleType == 'continuous') {
+        if (geom.xScale.scaleType == 'continuous')
+        {
             console.error('Bar Plots not supported for continuous data yet.');
             return;
         }
 
+        numXCategories = geom.xScale.scale.domain().length;
         if (geom.xSubScale && geom.xSubAes) {
             grouped = true;
+            numXSubCategories = geom.xSubScale.scale.domain().length;
         }
 
-        numXCategories = geom.xScale.scale.domain().length;
-        if (grouped) { numXSubCategories = geom.xSubScale.scale.domain().length; }
         binWidth = (plot.grid.rightEdge - plot.grid.leftEdge) / (grouped ? numXSubCategories : numXCategories);
         barWidth = grouped ? (binWidth / (numXCategories * 2)) : (binWidth / (geom.showCumulativeTotals ? 4 : 2));
         offsetWidth = (binWidth / (geom.showCumulativeTotals ? 3.5 : 4));
 
         xOffsetFn = function(i) {
-            for (var j = 0; j < numXCategories; j++) {
-                if (geom.xScale.domain[j] === data[i].label) {
+            for (var j = 0; j < numXCategories; j++)
+            {
+                if (geom.xScale.domain[j] === data[i].label)
                     return barWidth * j;
-                }
             }
             return 0;
         };
 
         colorAcc = function (i) {
-            if (geom.colorAes && geom.colorScale) {
+            if (geom.colorAes && geom.colorScale)
                 return geom.colorScale.scale(geom.colorAes.getValue(data[i]) + geom.layerName);
-            } else {
+            else
                 return geom.fill;
-            }
         };
 
         for (var i = 0; i < data.length; i++)

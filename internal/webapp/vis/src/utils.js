@@ -190,6 +190,7 @@ LABKEY.vis.groupCountData = function(data, groupAccessor, subgroupAccessor, prop
  * @param {String} measureName The variable to calculate aggregate values over. Nullable.
  * @param {String} aggregate MIN/MAX/SUM/COUNT/etc. Defaults to COUNT.
  * @param {String} nullDisplayValue The display value to use for null dimension values. Defaults to 'null'.
+ * @param {Boolean} includeTotal Whether or not to include the cumulative totals. Defaults to false.
  * @returns {Array} An array of results for each group/subgroup/aggregate
  */
 LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, measureName, aggregate, nullDisplayValue, includeTotal)

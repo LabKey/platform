@@ -790,6 +790,9 @@ var barChart3 = new LABKEY.vis.BarPlot({
         x : {scaleType: 'discrete'},
         xSub : {scaleType: 'discrete'}
     },
+    options: {
+        color: '#c0c0c0'
+    },
     data: barPlotData
 });
 

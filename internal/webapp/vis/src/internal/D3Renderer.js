@@ -867,62 +867,37 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
-    var renderXAxis = function() {
-        if (!xAxis) {
+    var renderXAxis = function()
+    {
+        if (!xAxis)
             xAxis = LABKEY.vis.internal.Axis().orient('bottom');
-        }
 
-        if (plot.scales.xSub && plot.scales.xSub.scale) {
-            var padding = 10;
-            var xBorderExtension = 0, gridExtension = 0;
-            if (xLogGutter && isMainPlot) {
-                padding = 40;
-                gridExtension = logGutterWidth;
-            }
-
-            if (yLogGutter) {
-                if (isMainPlot) {
-                    xBorderExtension = logGutterWidth;
-
-                }
-                xAxis.addLogGutterLabel();
-            }
-
-            xAxis.yLogGutterBorder(xBorderExtension).xGridExtension(gridExtension);
-            xAxis.scale(plot.scales.xSub.scale).tickPadding(padding).ticks(7);
-            configureAxis(xAxis);
-            updateIndividualAxisConfig(xAxis, 'xSub');
-            if (isShowXAxisGutter) {
-                xAxis.yGutterXOffset(logGutterWidth).borderColor("#CCC8C8");
-            }
-            this.canvas.call(xAxis);
-        }
-
-        else if (plot.scales.x && plot.scales.x.scale)
+        if (plot.scales.x && plot.scales.x.scale)
         {
-            padding = 10;
-            xBorderExtension = 0;
-            gridExtension = 0;
-            if (xLogGutter && isMainPlot) {
+            var padding = 10, xBorderExtension = 0, gridExtension = 0, xScaleName = 'x';
+
+            if (plot.scales.xSub && plot.scales.xSub.scale)
+                xScaleName = 'xSub';
+
+            if (xLogGutter && isMainPlot)
+            {
                 padding = 40;
                 gridExtension = logGutterWidth;
             }
 
-            if (yLogGutter) {
-                if (isMainPlot) {
+            if (yLogGutter)
+            {
+                if (isMainPlot)
                     xBorderExtension = logGutterWidth;
-
-                }
                 xAxis.addLogGutterLabel();
             }
 
             xAxis.yLogGutterBorder(xBorderExtension).xGridExtension(gridExtension);
-            xAxis.scale(plot.scales.x.scale).tickPadding(padding).ticks(7);
+            xAxis.scale(plot.scales[xScaleName].scale).tickPadding(padding).ticks(7);
             configureAxis(xAxis);
-            updateIndividualAxisConfig(xAxis, 'x');
-            if (isShowXAxisGutter) {
+            updateIndividualAxisConfig(xAxis, xScaleName);
+            if (isShowXAxisGutter)
                 xAxis.yGutterXOffset(logGutterWidth).borderColor("#CCC8C8");
-            }
             this.canvas.call(xAxis);
         }
     };
@@ -2845,7 +2820,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderBarPlotGeom = function(data, geom) {
-        var layer = getLayer.call(this, geom), barWrappers, grouped, xOffsetFn, xOffsets,
+        var layer = getLayer.call(this, geom), barWrappers, grouped, xOffsetFn,
                 binWidth, barWidth, numXCategories, numXSubCategories, offsetWidth,
                 rects, hoverFn, heightFn, xAcc, colorAcc, yAcc, yZero;
 
@@ -2854,12 +2829,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return;
         }
 
+        numXCategories = geom.xScale.scale.domain().length;
         if (geom.xSubScale && geom.xSubAes) {
             grouped = true;
+            numXSubCategories = geom.xSubScale.scale.domain().length;
         }
 
-        numXCategories = geom.xScale.scale.domain().length;
-        if (grouped) { numXSubCategories = geom.xSubScale.scale.domain().length; }
         binWidth = (plot.grid.rightEdge - plot.grid.leftEdge) / (grouped ? numXSubCategories : numXCategories);
         barWidth = grouped ? (binWidth / (numXCategories * 2)) : (binWidth / (geom.showCumulativeTotals ? 4 : 2));
         offsetWidth = (binWidth / (geom.showCumulativeTotals ? 3.5 : 4));
@@ -2869,27 +2844,30 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         };
 
         xOffsetFn = function(d) {
-            for (var i = 0; i < numXCategories; i++) {
-                if (geom.xScale.domain[i] === d[geom.xAes.value]) {
+            for (var i = 0; i < numXCategories; i++)
+            {
+                if (geom.xScale.domain[i] === d[geom.xAes.value])
                     return barWidth * i;
-                }
             }
             return 0;
         };
 
         xAcc = function(d) {
-            if (grouped) {
+            if (grouped)
                 return geom.getXSub(d) + xOffsetFn(d) - offsetWidth;
-            } else {
+            else
                 return geom.getX(d) - offsetWidth;
-            }
         };
 
         yAcc = function(d){ return geom.getY(d) };
 
-        colorAcc = geom.colorAes && geom.colorScale ? function(row) {
-                    return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);
-                } : geom.fill;
+        colorAcc = geom.fill;
+        if (geom.colorAes && geom.colorScale)
+        {
+            colorAcc = function(row) {
+                return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);
+            };
+        }
 
         yZero = {};
         yZero[geom.yAes.value] = 0;
