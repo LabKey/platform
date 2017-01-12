@@ -24,6 +24,7 @@ import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -264,7 +265,8 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         if (null == form.getFk())
         {
             //now the columns in the user's default view for this query
-            resp.put("defaultView", getDefaultViewProps(schema.createView(getViewContext(),settings)));
+            QueryView qview = new QueryView(schema, settings, null);
+            resp.put("defaultView", getDefaultViewProps(qview));
 
             List<Map<String, Object>> viewInfos = new ArrayList<>();
             Map<String, CustomView> allViews = queryDef.getCustomViews(getUser(), getViewContext().getRequest(), true, false);
@@ -281,6 +283,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             }
             else
             {
+                allViews = new CaseInsensitiveHashMap<>(allViews);
                 for (String viewName : viewNames)
                 {
                     // NOTE viewName==null in the allViews map
