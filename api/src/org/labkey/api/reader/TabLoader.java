@@ -158,15 +158,7 @@ public class TabLoader extends DataLoader
         @NotNull @Override
         public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
-            TabLoader loader;
-            try
-            {
-                loader = new TabLoader(new AutoDetectReader(is), hasColumnHeaders, mvIndicatorContainer);
-            }
-            catch (TikaException e)
-            {
-                throw new IOException(e);
-            }
+            TabLoader loader = new TabLoader(Readers.getBOMDetectingReader(is), hasColumnHeaders, mvIndicatorContainer);
             loader.setDelimiters(fieldTerminator,lineTerminator);
             loader.setParseQuotes(false);
             return loader;
@@ -210,15 +202,8 @@ public class TabLoader extends DataLoader
     {
         this(() -> {
             verifyFile(inputFile);
-            try
-            {
-                // Let tika figure out the Charset encoding used in the file
-                return new AutoDetectReader(new FileInputStream(inputFile));
-            }
-            catch (TikaException e)
-            {
-                throw new IOException(e);
-            }
+            // Detect Charset encoding using BOM
+            return Readers.getBOMDetectingReader(inputFile);
         }, hasColumnHeaders, mvIndicatorContainer);
 
         setScrollable(true);
@@ -233,9 +218,7 @@ public class TabLoader extends DataLoader
     // This constructor doesn't support MV Indicators:
     public TabLoader(final CharSequence src, Boolean hasColumnHeaders) throws IOException
     {
-        this(() -> {
-            return new BufferedReader(new CharSequenceReader(src));
-        }, hasColumnHeaders, null);
+        this(() -> new BufferedReader(new CharSequenceReader(src)), hasColumnHeaders, null);
 
         if (src == null)
             throw new IllegalArgumentException("src cannot be null");

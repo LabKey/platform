@@ -15,6 +15,8 @@
  */
 package org.labkey.api.reader;
 
+import org.apache.commons.io.ByteOrderMark;
+import org.apache.commons.io.input.BOMInputStream;
 import org.apache.commons.io.input.XmlStreamReader;
 import org.labkey.api.util.StringUtilsLabKey;
 
@@ -26,9 +28,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
 
 /**
- *  Factory methods to create Readers, ensuring standard character sets and buffering by default.
+ *  Factory methods to create Readers, ensuring correct character sets and buffering by default.
  *
  *  Created by adam on 5/30/2015.
  */
@@ -41,7 +44,7 @@ public class Readers
 
     public static Reader getUnbufferedReader(File file) throws FileNotFoundException
     {
-        return new InputStreamReader(new FileInputStream(file), StringUtilsLabKey.DEFAULT_CHARSET);
+        return getUnbufferedReader(new FileInputStream(file));
     }
 
     public static BufferedReader getReader(InputStream in)
@@ -51,7 +54,7 @@ public class Readers
 
     public static BufferedReader getReader(File file) throws FileNotFoundException
     {
-        return new BufferedReader(getUnbufferedReader(file));
+        return getReader(new FileInputStream(file));
     }
 
     // Detects XML file character encoding based on BOM, XML prolog, or content type... falling back on UTF-8
@@ -64,5 +67,23 @@ public class Readers
     public static BufferedReader getXmlReader(File file) throws IOException
     {
         return new BufferedReader(new XmlStreamReader(file));
+    }
+
+    /**
+     * Detects text file character encoding based on BOM... falling back on UTF-8 if no BOM present
+     */
+    public static BufferedReader getBOMDetectingReader(InputStream in) throws IOException
+    {
+        BOMInputStream bos = new BOMInputStream(in, ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_32BE, ByteOrderMark.UTF_32LE);
+        Charset charset = bos.hasBOM() ? Charset.forName(bos.getBOM().getCharsetName()) : StringUtilsLabKey.DEFAULT_CHARSET;
+        return new BufferedReader(new InputStreamReader(bos, charset));
+    }
+
+    /**
+     * Detects text file character encoding based on BOM... falling back on UTF-8 if no BOM present
+     */
+    public static BufferedReader getBOMDetectingReader(File file) throws IOException
+    {
+        return getBOMDetectingReader(new FileInputStream(file));
     }
 }

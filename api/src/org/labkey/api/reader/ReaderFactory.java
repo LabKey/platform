@@ -25,5 +25,5 @@ import java.io.IOException;
  */
 public interface ReaderFactory
 {
-    public BufferedReader getReader() throws IOException;
+    BufferedReader getReader() throws IOException;
 }
