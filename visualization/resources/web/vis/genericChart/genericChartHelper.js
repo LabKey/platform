@@ -378,7 +378,6 @@ LABKEY.vis.GenericChartHelper = new function(){
             }
         }
 
-
         if (savedScales.x && (savedScales.x.min != null || savedScales.x.max != null)) {
             scales.x.domain = [savedScales.x.min, savedScales.x.max];
         }
@@ -768,7 +767,8 @@ LABKEY.vis.GenericChartHelper = new function(){
         {
             aes = { x: 'label', y: 'value' };
 
-            if (Ext4.isDefined(chartConfig.measures.xSub)) {
+            if (Ext4.isDefined(chartConfig.measures.xSub))
+            {
                 aes.xSub = 'subLabel';
                 aes.color = 'label';
             }
