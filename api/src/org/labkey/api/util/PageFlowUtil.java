@@ -139,6 +139,8 @@ import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
+import static org.apache.commons.lang3.StringUtils.startsWith;
+
 
 public class PageFlowUtil
 {
@@ -833,7 +835,11 @@ public class PageFlowUtil
         MediaType mediaType = getMediaTypeFor(file);
         String contentType = getContentTypeFor(fileName);
 
-        if (mediaType != null && mediaType.compareTo(MediaType.parse(contentType)) != 0)
+        if (MediaType.TEXT_PLAIN.equals(mediaType) && startsWith(contentType,"text/"))
+        {
+            // don't do anything, extension is probably fine
+        }
+        else if (mediaType != null && mediaType.compareTo(MediaType.parse(contentType)) != 0)
         {
             try
             {

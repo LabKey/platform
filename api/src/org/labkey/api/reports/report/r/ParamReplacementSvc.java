@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.apache.commons.lang3.StringUtils.startsWith;
+
 /**
  * User: Karl Lum
  * Date: May 5, 2008
@@ -294,6 +296,56 @@ public class ParamReplacementSvc
                         m.appendReplacement(sb, o.getValue());
                 }
             }
+        }
+        m.appendTail(sb);
+
+        return sb.toString();
+    }
+
+    private boolean isRelativeHref(String href)
+    {
+        return !(startsWith(href,"$") || startsWith(href,"http:") || startsWith(href,"https:") || startsWith(href,"/"));
+    }
+
+    /**
+     * Finds and processes all replacement parameters for a given script block. The
+     * returned string will have all valid replacement references converted.  Note that for this overload
+     * the files have already been created and we are replacing with a valid URL inline here.
+     *
+     * @param script - the script upon which to replace the Href parameters
+     * @param parentDirectory - the parent directory to create the output files for each param replacement.
+     */
+    public String processRelativeHrefReplacement(Report report, String script, File parentDirectory) throws Exception
+    {
+        Matcher m = Pattern.compile("(href|src)=\"([^\"]*)\"").matcher(script);
+        StringBuffer sb = new StringBuffer();
+
+        while (m.find())
+        {
+            String path = m.group(2);
+
+            if (!isRelativeHref(path))
+            {
+                m.appendReplacement(sb, "");
+                sb.append(m.group(0));
+                continue;
+            }
+
+            HrefOutput href = new HrefOutput();
+            href.setName(path);
+            href.setReport(report);
+            File file = new File(parentDirectory, href.getName());
+            ScriptOutput so = null;
+            if (file.exists())
+            {
+                href.addFile(file);
+                so = href.renderAsScriptOutput(file);
+            }
+            m.appendReplacement(sb,"");
+            if (null != so)
+                sb.append(m.group(1)).append("=\"").append(so.getValue()).append("\"");
+            else
+                sb.append(m.group(0));
         }
         m.appendTail(sb);
 
