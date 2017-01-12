@@ -22,7 +22,6 @@ import org.labkey.api.search.SearchScope;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.webdav.WebdavResource;
 
 import java.io.IOException;
 import java.util.List;
@@ -36,23 +35,6 @@ import java.util.Map;
 public class SolrSearchServiceImpl extends AbstractSearchService
 {
     private static final Logger _log = Logger.getLogger(SolrSearchServiceImpl.class);
-    
-    protected boolean index(String id, WebdavResource r, Map preprocessMap)
-    {
-        _log.info("INDEX: " + r.getExecuteHref(null));
-        return true;
-//        if ("text/html".equals(r.getContentType()))
-//        {
-//            try
-//            {
-//                IOUtils.copy(r.getInputStream(User.getSearchUser()), System.out);
-//            }
-//            catch (IOException x)
-//            {
-//                _log.error(x);
-//            }
-//        }
-    }
 
     @Override
     public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, int offset, int limit) throws IOException

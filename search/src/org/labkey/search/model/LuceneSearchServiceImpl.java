@@ -1220,13 +1220,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     }
 
-    protected boolean index(String id, WebdavResource r, Map preprocessMap)
-    {
-        Document doc = (Document)preprocessMap.get(Document.class);
-        return index(id, r, doc);
-    }
-
-
     @Override
     protected void deleteIndexedContainer(String id)
     {

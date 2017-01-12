@@ -70,7 +70,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
 
 /**
  * User: matthewb
@@ -226,8 +225,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         long _start = 0;    // used by setLastIndexed
         long _complete = 0; // really just for debugging
 
-        Map<?, ?> _preprocessMap = null;
-        
         Item(IndexTask task, OPERATION op, String id, WebdavResource r, PRIORITY pri)
         {
             if (null != r)
@@ -771,7 +768,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         group.setDaemon(true);
         group.setMaxPriority(Thread.MIN_PRIORITY + 1);
         
-        int countIndexingThreads = Math.max(1,getCountIndexingThreads());
+        int countIndexingThreads = Math.max(1, getCountIndexingThreads());
         for (int i=0 ; i<countIndexingThreads ; i++)
         {
             Thread t = new Thread(group, indexRunnable, "SearchService:index");
@@ -824,7 +821,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         while (!_shuttingDown)
         {
             Item i = null;
-            boolean success = false;
 
             try
             {
@@ -864,7 +860,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 {
                     try
                     {
-                        i.complete(success);
+                        i.complete(false);
                     }
                     catch (Throwable t)
                     {
@@ -874,32 +870,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
         }
     };
-
-
-    boolean _lock(Lock s)
-    {
-        while (null != s)
-        {
-            try
-            {
-                s.lockInterruptibly();
-                return true;
-            }
-            catch (InterruptedException x)
-            {
-                if (_shuttingDown)
-                    return false;
-            }
-        }
-        return true;
-    }
-    
-
-    void _unlock(Lock s)
-    {
-        if (null != s)
-            s.unlock();
-    }
     
     Item getItemToIndex() throws InterruptedException
     {
@@ -1118,7 +1088,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
 
     // Returns true if indexing was successful
-    protected abstract boolean index(String id, WebdavResource r, Map preprocessProps);
     protected abstract void commitIndex();
     protected abstract void deleteDocument(String id);
     protected abstract void deleteDocumentsForPrefix(String prefix);
@@ -1197,36 +1166,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     
     public void indexFull(final boolean force)
     {
-        //TODO: remove commented block
-//        final IndexTask task = createTask("Full reindex");
-//        Runnable r = new Runnable()
-//        {
-//            public void run()
-//            {
-//                DocumentProvider[] documentProviders = _documentProviders.get();
-//
-//                if (force)
-//                {
-//                    for (DocumentProvider p : documentProviders)
-//                    {
-//                        try
-//                        {
-//                            p.indexDeleted();
-//                        }
-//                        catch (SQLException x)
-//                        {
-//                            _log.error("Unexpected exception", x);
-//                        }
-//                    }
-//                }
-//
-//                for (DocumentProvider p : documentProviders)
-//                {
-//                    p.enumerateDocuments(task, null, null);
-//                }
-//            }
-//        };
-
         // crank crawler into high gear!
         DavCrawler.getInstance().startFull(WebdavService.getPath(), force);
     }
