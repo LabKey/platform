@@ -167,6 +167,7 @@ cbcassay/src/org/labkey/cbcassay/data/CBCDataDisplayColumn.java -text
 cbcassay/src/org/labkey/cbcassay/data/CBCDataProperty.java -text
 cbcassay/src/org/labkey/cbcassay/view/showDetails.jsp -text
 core/Core-API.iml -text
+core/_package.json -text
 core/api-src/org/labkey/api/admin/PortalBackgroundImageCache.java -text
 core/api-src/org/labkey/api/admin/TableXmlUtils.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationProvider.java -text
@@ -298,6 +299,9 @@ core/resources/scripts/labkey.js -text
 core/resources/scripts/labkey/adapter/bridge.js -text
 core/resources/scripts/labkey/adapter/ext4Bridge.js -text
 core/resources/scripts/labkey/init.js -text
+core/resources/styles/scss/_labkey.scss -text
+core/resources/styles/scss/bootstrap/_variables.scss -text
+core/resources/styles/style.js -text
 core/resources/views/ModulePropertyAdmin.html -text
 core/resources/views/ModulePropertyAdmin.view.xml -text
 core/resources/views/_footer.html -text
@@ -575,6 +579,7 @@ core/webapp/notification/NotificationViewAll.js -text
 core/webapp/printStyle.css -text
 core/webapp/register.js -text
 core/webapp/stylesheet.css -text
+core/webpack/style.config.js -text
 dataintegration/Dataintegration.iml -text
 dataintegration/module.properties -text
 dataintegration/resources/schemas/dataintegration.xml -text

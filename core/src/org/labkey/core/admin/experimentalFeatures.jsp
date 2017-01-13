@@ -18,26 +18,14 @@
 <%@ page import="org.labkey.api.settings.AdminConsole" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("Ext4");
-    }
-%>
-<%
-    Collection<AdminConsole.ExperimentalFeatureFlag> flags = AdminConsole.getExperimentalFeatureFlags();
-%>
-<%!
-    String textLink(AdminConsole.ExperimentalFeatureFlag flag)
-    {
-        return PageFlowUtil.textLink(flag.isEnabled() ? "Disable" : "Enable",
-                "javascript:void(0);",
-                "toggleFeature(this, " + hq(flag.getFlag()) + ");return false;",
-                "labkey-experimental-feature-" + h(flag.getFlag()));
+        dependencies.add("internal/jQuery");
     }
 %>
 <style type="text/css">
@@ -52,7 +40,7 @@
 
     .labkey-experimental-title {
         font-weight: bold;
-        text-indent: 0em;
+        text-indent: 0;
     }
 
     .labkey-experimental-description {
@@ -71,42 +59,48 @@
         font-size: smaller;
     }
 </style>
-<script>
-    function toggleFeature(el, flag)
-    {
-        // toggle the enabled state of the feature
-        var enabled = el.firstChild.textContent == "Enable";
-
-        Ext4.Ajax.request({
-            method: 'POST',
-            url: LABKEY.ActionURL.buildURL("admin", "experimentalFeature.api"),
-            params: { feature: flag, enabled: enabled },
-            success: LABKEY.Utils.getCallbackWrapper(function (json) {
-                el.firstChild.textContent = json.enabled ? "Disable" : "Enable";
-            }),
-            failure: LABKEY.Utils.getCallbackWrapper(null, null, true)
-        });
-    }
-</script>
 <p>
-    <span class='labkey-error'>WARNING</span>:
+    <span class="labkey-error">WARNING</span>:
     These experimental features may change, break, or disappear at any time.
     We make absolutely no guarantees about what may happen if you turn on these experimental
     features.  Enabling or disabling some features will require a restart of the server.
 </p>
 <%
-    for (AdminConsole.ExperimentalFeatureFlag flag : flags)
+    for (AdminConsole.ExperimentalFeatureFlag flag : AdminConsole.getExperimentalFeatureFlags())
     {
-        %>
+%>
 <div class="labkey-experimental-feature labkey-indented">
     <div class="labkey-experimental-title"><%=h(flag.getTitle())%></div>
     <div class="labkey-experimental-description"><%=h(flag.getDescription())%></div>
     <% if (flag.isRequiresRestart()) { %>
     <div class="labkey-experimental-restart">Restart required after toggling feature.</div>
     <% } %>
-    <%= textLink(flag) %>
+    <%= PageFlowUtil.textLink(
+            flag.isEnabled() ? "Disable" : "Enable",
+            "javascript:void(0);", null, null, Collections.singletonMap("data-exp-flag", h(flag.getFlag()))) %>
 </div>
-        <%
+<%
     }
 %>
+<script type="application/javascript">
+    (function($) {
+        $(function() {
+            $('a[data-exp-flag]').click(function(evt) {
+                var el = $(evt.target);
+                var flag = el.attr('data-exp-flag');
+                if (flag) {
+                    LABKEY.Ajax.request({
+                        url: LABKEY.ActionURL.buildURL('admin', 'experimentalFeature.api'),
+                        method: 'POST',
+                        params: { feature: flag, enabled: el.text() == 'Enable' },
+                        success: LABKEY.Utils.getCallbackWrapper(function(json) {
+                            el.text(json.enabled ? 'Disable' : 'Enable');
+                        }),
+                        failure: LABKEY.Utils.getCallbackWrapper(null, null, true)
+                    });
+                }
+            });
+        });
+    })(jQuery);
+</script>
 

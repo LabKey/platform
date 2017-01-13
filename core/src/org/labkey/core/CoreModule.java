@@ -106,6 +106,7 @@ import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.study.Study;
@@ -289,9 +290,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         dls.registerFactory(new FastaDataLoader.Factory());
         ServiceRegistry.get().registerService(DataLoaderService.I.class, dls);
 
-        new TemplateFactoryClassic().registerTemplates();
-        new FrameFactoryClassic().registerFrames();
-
         addController("admin", AdminController.class);
         addController("admin-sql", SqlScriptController.class);
         addController("security", SecurityController.class);
@@ -315,6 +313,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         CacheManager.addListener(RhinoService::clearCaches);
         NotificationService.register(NotificationServiceImpl.getInstance());
 
+        ServiceRegistry.get().registerService(ExperimentalFeatureService.class, new ExperimentalFeatureService.ExperimentalFeatureServiceImpl());
         ServiceRegistry.get().registerService(ThumbnailService.class, new ThumbnailServiceImpl());
         ServiceRegistry.get().registerService(ShortURLService.class, new ShortURLServiceImpl());
         ServiceRegistry.get().registerService(StatsService.class, new StatsServiceImpl());
@@ -351,6 +350,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         }
 
+        AdminConsole.addExperimentalFeatureFlag(PageFlowUtil.EXPERIMENTAL_MIGRATE_CORE_UI, "Core UI Migration",
+                "Use the templates and styling being built during the core UI migration. This may require an independent build first.", false);
         AdminConsole.addExperimentalFeatureFlag(MenuBarView.EXPERIMENTAL_NAV, "Combined Navigation Drop-down",
                 "This feature will combine the Navigation of Projects and Folders into one drop-down.", false);
         AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
@@ -370,6 +371,18 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (null != svc)
         {
             svc.registerProvider("core", new PermissionsValidator());
+        }
+
+        PageFlowUtil.configureTemplates();
+
+        ExperimentalFeatureService expFeatureSvc = ServiceRegistry.get().getService(ExperimentalFeatureService.class);
+        if (expFeatureSvc != null)
+        {
+            expFeatureSvc.addFeatureListener(PageFlowUtil.EXPERIMENTAL_MIGRATE_CORE_UI, (feature, enabled) ->
+            {
+                /* featureChange */
+                PageFlowUtil.configureTemplates();
+            });
         }
     }
 

@@ -130,6 +130,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
@@ -5936,9 +5937,9 @@ public class AdminController extends SpringActionController
 
             if (isPost())
             {
-                WriteableAppProps props = AppProps.getWriteableInstance();
-                props.setExperimentalFeatureEnabled(form.getFeature(), form.isEnabled());
-                props.save();
+                ExperimentalFeatureService svc = ServiceRegistry.get().getService(ExperimentalFeatureService.class);
+                if (svc != null)
+                    svc.setFeatureEnabled(form.getFeature(), form.isEnabled());
             }
 
             Map<String, Object> ret = new HashMap<>();
@@ -5959,8 +5960,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object form, boolean reshow, BindException errors) throws Exception
         {
-            JspView<Object> view = new JspView<>("/org/labkey/core/admin/experimentalFeatures.jsp", null);
-            return view;
+            return new JspView<>("/org/labkey/core/admin/experimentalFeatures.jsp");
         }
 
         @Override
