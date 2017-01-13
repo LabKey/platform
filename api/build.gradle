@@ -91,7 +91,7 @@ List others = [
         "org.quartz-scheduler:quartz:${quartzVersion}",
         "com.rometools:rome:${romeVersion}",
         "org.xerial:sqlite-jdbc:${sqliteJdbcVersion}",
-        "net.coobird:thumbnailator:${thumnailatorVersion}",
+        "net.coobird:thumbnailator:${thumbnailatorVersion}",
         "org.apache.xmlbeans:xbean:${xmlbeansVersion}",
         "org.apache.tika:tika-core:${tikaCoreVersion}",
         "cglib:cglib-nodep:${cglibNodepVersion}",
