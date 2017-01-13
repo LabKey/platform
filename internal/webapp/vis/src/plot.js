@@ -367,6 +367,7 @@ boxPlot.render();
                 newScale.domain = origScale.domain ? origScale.domain : null;
                 newScale.range = origScale.range ? origScale.range : null;
                 newScale.fontSize = origScale.fontSize ? origScale.fontSize : null;
+                newScale.colorType = origScale.colorType ? origScale.colorType : null;
 
                 newScale.tickClick = origScale.tickClick ? origScale.tickClick : null;
                 newScale.tickMouseOver = origScale.tickMouseOver ? origScale.tickMouseOver : null;
@@ -568,7 +569,15 @@ boxPlot.render();
         }
 
         if (scaleName == 'color' && scale.scaleType == 'discrete') {
-            return LABKEY.vis.Scale.ColorDiscrete();
+            if (scale.colorType === "DarkColorDiscrete") {
+                return LABKEY.vis.Scale.DarkColorDiscrete();
+            }
+            else if (scale.colorType === "DataspaceColor") {
+                return LABKEY.vis.Scale.DataspaceColor();
+            }
+            else {
+                return LABKEY.vis.Scale.ColorDiscrete();
+            }
         }
 
         if (scaleName == 'shape') {
