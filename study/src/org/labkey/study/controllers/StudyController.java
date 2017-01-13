@@ -4606,7 +4606,12 @@ public class StudyController extends BaseStudyController
                 StudyManager.getInstance().deleteDataset(getStudyRedirectIfNull(), getUser(), ds, false);
                 transaction.commit();
             }
+
+            StudyServiceImpl.addDatasetAuditEvent(
+                    getUser(), getContainer(), ds, "Dataset deleted: " + ds.getName(),null);
+
             StudyManager.getInstance().getVisitManager((StudyImpl)study).updateParticipantVisits(getUser(), Collections.emptySet());
+
 
             throw new RedirectException(new ActionURL(ManageTypesAction.class, getContainer()));
         }

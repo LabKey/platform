@@ -333,11 +333,7 @@ public class StudyServiceImpl implements StudyService.Service
         {
             event.setLsid(ul.getFilePath());
         }
-/*
-        AuditLogService.get().addEvent(event,
-                Collections.<String,Object>emptyMap(),
-                AuditLogService.get().getDomainURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT));
-                */
+        AuditLogService.get().addEvent(u,event);
     }
 
     public void applyDefaultQCStateFilter(DataView view)
