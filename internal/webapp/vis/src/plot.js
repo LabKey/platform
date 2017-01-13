@@ -414,7 +414,8 @@ boxPlot.render();
 
         for (i = 0; i < data.length; i++) {
             value = acc(data[i]);
-            uniques[value] = true;
+            if (value != undefined)
+                uniques[value] = true;
         }
 
         for (value in uniques) {
@@ -1322,9 +1323,13 @@ boxPlot.render();
             config.scales.xSub = { scaleType: 'discrete' };
         }
         if (!config.scales.y) {
+            var domainMax = aggregateData.length == 0 ? 1 : null;
+            if (showCumulativeTotals)
+                domainMax = aggregateData[aggregateData.length-1].total;
+
             config.scales.y = {
                 scaleType: 'continuous',
-                domain: [0, showCumulativeTotals ? aggregateData[aggregateData.length-1].total : null]
+                domain: [0, domainMax]
             };
         }
 
