@@ -114,6 +114,8 @@ public class Aggregate
          * JdbcType or null if the type is not applicable (e.g. SUM of a date column).
          */
         JdbcType returnType(JdbcType jdbcType);
+
+        default int subQueryCount() { return 0; }
     }
 
     public enum BaseType implements Type
