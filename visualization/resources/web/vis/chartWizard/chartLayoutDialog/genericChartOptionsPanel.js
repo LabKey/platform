@@ -325,7 +325,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         });
 
         this.colorPaletteFieldContainer = Ext4.create('Ext.Component',  {
-            layoutOptions: 'pie',
+            layoutOptions: ['pie'], //different layouts may be added based on chart options
             padding: '0 0 0 100px',
             html: '<div id="colorPalette" style="width: 175px; overflow-x: hidden;"></div>',
             listeners: {
@@ -340,7 +340,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             getInputValue: this.getColorPalette,
             labelWidth: this.defaultLabelWidth,
             width: 275,
-            layoutOptions: 'pie',
+            layoutOptions: ['pie'], //different layouts may be added based on chart options
             editable: false,
             value: this.defaultColorPaletteScale,
             store: [
@@ -747,6 +747,39 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
                 this.setFooter(LABKEY.vis.GenericChartHelper.getSelectedMeasureLabel(renderType, 'y', measures.y));
             else
                 this.setFooter('');
+        }
+    },
+
+    updateLayoutOptions : function(measures, renderType)
+    {
+        if (renderType.name === "bar_chart")
+        {
+            if (measures.xSub && measures.color)
+            {
+                this.colorPaletteComboBox.layoutOptions.push('line');
+                this.colorPaletteFieldContainer.layoutOptions.push('line');
+                this.fillColorPicker.layoutOptions = undefined;
+            }
+            else {
+                this.colorPaletteComboBox.layoutOptions = ['pie'];
+                this.colorPaletteFieldContainer.layoutOptions = ['pie'];
+                this.fillColorPicker.layoutOptions = 'line';
+            }
+        }
+
+        else if (renderType.name === "scatter_plot" || renderType.name === "box_plot")
+        {
+            if (measures.color)
+            {
+                this.colorPaletteComboBox.layoutOptions.push('point');
+                this.colorPaletteFieldContainer.layoutOptions.push('point');
+                this.pointColorPicker.layoutOptions = undefined;
+            }
+            else {
+                this.colorPaletteComboBox.layoutOptions = ['pie'];
+                this.colorPaletteFieldContainer.layoutOptions = ['pie'];
+                this.pointColorPicker.layoutOptions = 'point';
+            }
         }
     },
 

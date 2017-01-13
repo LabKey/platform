@@ -354,6 +354,13 @@ LABKEY.vis.GenericChartHelper = new function(){
             };
         }
 
+        if (savedScales.color && measures.color) {
+            scales.color = {
+                colorType: savedScales.color.type,
+                scaleType: isNumericType(measures.color) ? 'continuous' : 'discrete'
+            }
+        }
+
         for (var i = 0; i < fields.length; i++) {
             var type = fields[i].displayFieldJsonType ? fields[i].displayFieldJsonType : fields[i].type;
 
