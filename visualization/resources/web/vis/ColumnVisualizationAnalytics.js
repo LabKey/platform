@@ -31,9 +31,7 @@
                     var regionViewName = region.viewName || "",
                         regionColumnNames = $.map(region.columns, function(c) { return c.name; }),
                         dataColumnNames = $.map(data.columnModel, function(col) { return col.dataIndex; }),
-                        colIndex = regionColumnNames.indexOf(columnName),
-                        mainLabel = columnName,
-                        scale = 'LINEAR';
+                        colIndex = regionColumnNames.indexOf(columnName);
 
                     if (dataColumnNames.indexOf(columnName) == -1)
                     {
@@ -41,74 +39,7 @@
                         return;
                     }
 
-                    if (colIndex > -1)
-                    {
-                        mainLabel = region.columns[colIndex].caption;
-                        scale = region.columns[colIndex].defaultScale;
-                    }
-
-                    var min = null, max = null;
-                    $.each(data.rows, function(index, row)
-                    {
-                        if (row[columnName].value != null)
-                        {
-                            if (min == null || row[columnName].value < min)
-                                min = row[columnName].value;
-                            if (max == null || row[columnName].value > max)
-                                max = row[columnName].value;
-                        }
-                    });
-                    if (min != null && max != null)
-                        min = min - ((max - min) * 0.02);
-
-                    var plot = new LABKEY.vis.Plot({
-                        renderTo: plotDivId,
-                        rendererType: 'd3',
-                        width: 300,
-                        height: 200,
-                        data: data.rows,
-                        margins: {
-                            top: 35,
-                            bottom: 15,
-                            left: 50,
-                            right: 50
-                        },
-                        labels: {
-                            main: {
-                                value: mainLabel,
-                                position: 20,
-                                fontSize: 14
-                            }
-                        },
-                        layers: [
-                            new LABKEY.vis.Layer({
-                                geom: new LABKEY.vis.Geom.Boxplot({
-                                    color: '#000000',
-                                    fill: '#DDDDDD',
-                                    showOutliers: false
-                                })
-                            })
-                        ],
-                        aes: {
-                            yLeft: function(row){
-                                return row[columnName].value;
-                            },
-                            x: function(row) {
-                                return '';
-                            }
-                        },
-                        scales: {
-                            x: {
-                                scaleType: 'discrete'
-                            },
-                            yLeft: {
-                                scaleType: 'continuous',
-                                trans: scale.toLowerCase(),
-                                domain: data.rows.length > 0 ? [min, null] : [0,1],
-                                tickDigits: 6
-                            }
-                        }
-                    });
+                    var plot = getColumnBoxPlot(plotDivId, data.rows, columnName, region.columns[colIndex], true);
                     plot.render();
 
                     _handleAnalyticsProvidersForCustomView(region, plotDivId, regionViewName, colFieldKey, analyticsProviderName);
@@ -140,7 +71,6 @@
                         regionColumnNames = $.map(region.columns, function(c) { return c.name; }),
                         dataColumnNames = $.map(data.columnModel, function(col) { return col.dataIndex; }),
                         colIndex = regionColumnNames.indexOf(columnName),
-                        mainLabel = colIndex > -1 ? region.columns[colIndex].caption : columnName
                         plot = null;
 
                     if (dataColumnNames.indexOf(columnName) == -1)
@@ -149,151 +79,17 @@
                         return;
                     }
 
-                    var categoryCountMap = {};
-                    $.each(data.rows, function (index, row)
-                    {
-                        var val = row[columnName].displayValue || row[columnName].value;
-
-                        // Issue 27151: convert null to "[Blank]"
-                        if (val == null)
-                            val = '[Blank]';
-
-                        if (!categoryCountMap[val])
-                            categoryCountMap[val] = 0;
-
-                        categoryCountMap[val]++;
-                    });
-
-                    var categoryData = [],
-                        categoryShowLabel = {},
-                        hasData = false;
-
-                    for (var category in categoryCountMap)
-                    {
-                        if (categoryCountMap.hasOwnProperty(category))
-                        {
-                            categoryData.push({
-                                label: category,
-                                value: categoryCountMap[category]
-                            });
-
-                            hasData = true;
-                        }
-                    }
-
-                    // if we have a long list of categories, only show a total of 15 x-axis tick labels
-                    if (categoryData.length > 15)
-                    {
-                        var m = Math.floor(categoryData.length / 15);
-                        for (var i = 0; i < categoryData.length; i++)
-                            categoryShowLabel[categoryData[i].label] = i % m == 0;
-                    }
-
                     if ($('#' + plotDivId).length == 0)
                         return;
 
                     if (analyticsProviderName == 'VIS_BAR')
                     {
-                        plot = new LABKEY.vis.BarPlot({
-                            renderTo: plotDivId,
-                            rendererType: 'd3',
-                            width: categoryData.length > 5 ? 605 : 300,
-                            height: 200,
-                            data: hasData ? data.rows : [],
-                            margins: {
-                                top: 35,
-                                bottom: 15 + (hasData ? 20 : 0),
-                                left: 50,
-                                right: 50
-                            },
-                            labels: {
-                                main: {
-                                    value: mainLabel,
-                                    position: 20,
-                                    fontSize: 14
-                                }
-                            },
-                            scales: {
-                                x: {
-                                    scaleType: 'discrete',
-                                    sortFn: LABKEY.vis.discreteSortFn,
-                                    tickFormat: function(v) {
-                                        var val = categoryShowLabel[v] == undefined || categoryShowLabel[v] ? v : '';
-                                        return _truncateLabel(val, 7);
-                                    },
-                                    tickHoverText: function(value) {
-                                        return value;
-                                    }
-                                },
-                                yLeft: {
-                                    domain: [0,(hasData ? null : 1)]
-                                }
-                            },
-                            options: {
-                                color: '#000000',
-                                fill: '#64A1C6'
-                            },
-                            xAes: function(row) {
-                                var val = row[columnName] ? row[columnName].displayValue || row[columnName].value : '';
-
-                                // Issue 27151: convert null to "[Blank]"
-                                return val == null ? '[Blank]' : val;
-                            }
-                        });
-
+                        plot = getColumnBarPlot(plotDivId, data.rows, columnName, region.columns[colIndex], true);
                         plot.render();
                     }
                     else if (analyticsProviderName == 'VIS_PIE')
                     {
-                        var hideLabels = categoryData.length > 20;
-
-                        plot = new LABKEY.vis.PieChart({
-                            renderTo: plotDivId,
-                            rendererType: 'd3',
-                            data: hasData ? categoryData : [{label: '', value: 1}],
-                            width: 300,
-                            height: 200,
-                            header: {
-                                title: {
-                                    text: mainLabel,
-                                    fontSize: 14
-                                }
-                            },
-                            footer: {
-                                text: hasData ? undefined : 'No data to display',
-                                location: 'bottom-center',
-                                fontSize: 10
-                            },
-                            labels: {
-                                outer: {
-                                    pieDistance: hideLabels ? 0 : 10,
-                                    hideWhenLessThanPercentage: hideLabels ? 100 : undefined
-                                },
-                                inner: {
-                                    format: hasData ? 'percentage' : 'none'
-                                },
-                                lines: {
-                                    enabled: !hideLabels
-                                },
-                                truncation: {
-                                    enabled: true,
-                                    length: 10
-                                }
-                            },
-                            size: {
-                                pieInnerRadius: hasData ? '0%' : '100%',
-                                pieOuterRadius: hasData ? '76%' : '100%'
-                            },
-                            effects: {
-                                highlightSegmentOnMouseover: false,
-                                load: {
-                                    effect: 'none'
-                                }
-                            },
-                            tooltips: {
-                                enabled: true
-                            }
-                        });
+                        plot = getColumnPieChart(plotDivId, data.rows, columnName, region.columns[colIndex], true);
                     }
 
                     if (plot != null)
@@ -306,6 +102,275 @@
             {
                 console.warn('Could not find data region "' + dataRegionName + '" for LABKEY.ColumnVisualizationAnalytics.showDimensionFromDataRegion() call.');
             }
+        };
+
+        var getColumnBoxPlot = function(renderTo, dataArray, columnName, fieldMetadata, showMainLabel)
+        {
+            var mainLabel = fieldMetadata ? fieldMetadata.caption : columnName,
+                scale = fieldMetadata ? fieldMetadata.defaultScale : 'LINEAR',
+                labels = {};
+
+            if (showMainLabel)
+            {
+                labels.main = {
+                    value: mainLabel,
+                    position: 20,
+                    fontSize: 14
+                };
+            }
+
+            var min = null, max = null;
+            $.each(dataArray, function(index, row)
+            {
+                if (row[columnName].value != null)
+                {
+                    if (min == null || row[columnName].value < min)
+                        min = row[columnName].value;
+                    if (max == null || row[columnName].value > max)
+                        max = row[columnName].value;
+                }
+            });
+            if (min != null && max != null)
+                min = min - ((max - min) * 0.02);
+
+            if (dataArray.length == 0)
+            {
+                labels.x = {
+                    value: 'No data to display',
+                    fontSize: 10,
+                    color: '#555555'
+                };
+            }
+
+            return new LABKEY.vis.Plot({
+                renderTo: renderTo,
+                rendererType: 'd3',
+                width: 300,
+                height: 200,
+                data: dataArray,
+                margins: {
+                    top: 35,
+                    bottom: 15 + (dataArray.length == 0 ? 20 : 0),
+                    left: 50,
+                    right: 50
+                },
+                labels: labels,
+                layers: [
+                    new LABKEY.vis.Layer({
+                        geom: new LABKEY.vis.Geom.Boxplot({
+                            color: '#000000',
+                            fill: '#DDDDDD',
+                            showOutliers: false
+                        })
+                    })
+                ],
+                aes: {
+                    yLeft: function(row){
+                        return row[columnName].value;
+                    },
+                    x: function(row) {
+                        return '';
+                    }
+                },
+                scales: {
+                    x: {
+                        scaleType: 'discrete'
+                    },
+                    yLeft: {
+                        scaleType: 'continuous',
+                        trans: scale.toLowerCase(),
+                        domain: dataArray.length > 0 ? [min, null] : [0,1],
+                        tickDigits: 6
+                    }
+                }
+            });
+        };
+
+        var getColumnBarPlot = function(renderTo, dataArray, columnName, fieldMetadata, showMainLabel, categoryLimit)
+        {
+            var mainLabel = fieldMetadata ? fieldMetadata.caption : columnName,
+                categoryData = _getCategoryData(dataArray, columnName),
+                validDataSize = _isValidCategoryDataSize(categoryData, categoryLimit),
+                categoryShowLabel = {},
+                labels = {};
+
+            if (showMainLabel)
+            {
+                labels.main = {
+                    value: mainLabel,
+                    position: 20,
+                    fontSize: 14
+                };
+            }
+
+            // if we have a long list of categories, only show a total of 15 x-axis tick labels
+            if (categoryData.length > 15)
+            {
+                var m = Math.floor(categoryData.length / 15);
+                for (var i = 0; i < categoryData.length; i++)
+                    categoryShowLabel[categoryData[i].label] = i % m == 0;
+            }
+
+            if (!validDataSize)
+            {
+                labels.x = {
+                    value: categoryData.length == 0 ? 'No data to display' : 'Too many categories to display',
+                    fontSize: 10,
+                    color: '#555555'
+                };
+            }
+
+            return new LABKEY.vis.BarPlot({
+                renderTo: renderTo,
+                rendererType: 'd3',
+                width: validDataSize && categoryData.length > 5 ? 605 : 300,
+                height: 200,
+                data: validDataSize ? dataArray : [],
+                margins: {
+                    top: 35,
+                    bottom: 35,
+                    left: 50,
+                    right: 50
+                },
+                labels: labels,
+                scales: {
+                    x: {
+                        scaleType: 'discrete',
+                        sortFn: LABKEY.vis.discreteSortFn,
+                        tickFormat: function(v) {
+                            var val = categoryShowLabel[v] == undefined || categoryShowLabel[v] ? v : '';
+                            return _truncateLabel(val, 7);
+                        },
+                        tickHoverText: function(value) {
+                            return value;
+                        }
+                    },
+                    yLeft: {
+                        domain: [0,(validDataSize ? null : 1)]
+                    }
+                },
+                options: {
+                    color: '#000000',
+                    fill: '#64A1C6'
+                },
+                xAes: function(row) {
+                    var val = row[columnName] ? row[columnName].displayValue || row[columnName].value : '';
+
+                    // Issue 27151: convert null to "[Blank]"
+                    return val == null ? '[Blank]' : val;
+                }
+            });
+        };
+
+        var getColumnPieChart = function(renderTo, dataArray, columnName, fieldMetadata, showMainLabel, categoryLimit)
+        {
+            var mainLabel = fieldMetadata ? fieldMetadata.caption : columnName,
+                categoryData = _getCategoryData(dataArray, columnName),
+                validDataSize = _isValidCategoryDataSize(categoryData, categoryLimit),
+                hideLabels = categoryData.length > 20,
+                chartData = categoryData,
+                header = {},
+                footerTxt;
+
+            if (showMainLabel)
+            {
+                header.title = {
+                    text: mainLabel,
+                    fontSize: 14
+                };
+            }
+
+            if (!validDataSize)
+            {
+                chartData = [{label: '', value: 1}];
+                if (categoryData.length == 0)
+                    footerTxt = 'No data to display';
+                else
+                    footerTxt = 'Too many categories to display';
+            }
+
+            return new LABKEY.vis.PieChart({
+                renderTo: renderTo,
+                rendererType: 'd3',
+                data: chartData,
+                width: 300,
+                height: 200,
+                header: header,
+                footer: {
+                    text: footerTxt,
+                    location: 'bottom-center',
+                    fontSize: 10,
+                    color: '#555555'
+                },
+                labels: {
+                    outer: {
+                        pieDistance: hideLabels ? 0 : 10,
+                        hideWhenLessThanPercentage: hideLabels ? 100 : undefined
+                    },
+                    inner: {
+                        format: validDataSize ? 'percentage' : 'none'
+                    },
+                    lines: {
+                        enabled: !hideLabels
+                    },
+                    truncation: {
+                        enabled: true,
+                        length: 10
+                    }
+                },
+                size: {
+                    pieInnerRadius: validDataSize ? '0%' : '100%',
+                    pieOuterRadius: validDataSize ? '76%' : '90%'
+                },
+                effects: {
+                    highlightSegmentOnMouseover: false,
+                    load: {
+                        effect: 'none'
+                    }
+                },
+                tooltips: {
+                    enabled: true
+                }
+            });
+        };
+
+        var _getCategoryData = function(dataArray, columnName)
+        {
+            var categoryCountMap = {}, categoryData = [];
+
+            $.each(dataArray, function (index, row)
+            {
+                var val = row[columnName].displayValue || row[columnName].value;
+
+                // Issue 27151: convert null to "[Blank]"
+                if (val == null)
+                    val = '[Blank]';
+
+                if (!categoryCountMap[val])
+                    categoryCountMap[val] = 0;
+
+                categoryCountMap[val]++;
+            });
+
+            for (var category in categoryCountMap)
+            {
+                if (categoryCountMap.hasOwnProperty(category))
+                {
+                    categoryData.push({
+                        label: category,
+                        value: categoryCountMap[category]
+                    });
+                }
+            }
+
+            return categoryData;
+        };
+
+        var _isValidCategoryDataSize = function(categoryData, categoryLimit)
+        {
+            if (categoryLimit == undefined || categoryLimit == null)
+                categoryLimit = 100;
+            return categoryData.length > 0 && categoryData.length <= categoryLimit;
         };
 
         var _handleAnalyticsProvidersForCustomView = function(dataRegion, plotDivId, viewName, colFieldKey, analyticsProviderName)
@@ -337,6 +402,7 @@
                 ignoreFilter: LABKEY.ActionURL.getParameter(dataRegion.name + '.ignoreFilter'),
                 filterArray: filterArray,
                 requiredVersion: '9.1',
+                maxRows: -1, // ALL
                 success: successCallback
             });
 
@@ -390,7 +456,10 @@
 
         return {
             showMeasureFromDataRegion: showMeasureFromDataRegion,
-            showDimensionFromDataRegion: showDimensionFromDataRegion
+            showDimensionFromDataRegion: showDimensionFromDataRegion,
+            getColumnBoxPlot: getColumnBoxPlot,
+            getColumnBarPlot: getColumnBarPlot,
+            getColumnPieChart: getColumnPieChart
         };
     };
 })(jQuery);
