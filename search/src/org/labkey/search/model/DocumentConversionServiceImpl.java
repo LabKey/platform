@@ -21,10 +21,10 @@ import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.batik.transcoder.wmf.tosvg.WMFTranscoder;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.rendering.ImageType;
+import org.apache.pdfbox.rendering.PDFRenderer;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.DocumentConversionService;
-import org.labkey.api.util.CheckedInputStream;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -32,7 +32,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.List;
 
 /**
  * User: adam
@@ -89,32 +88,17 @@ public class DocumentConversionServiceImpl implements DocumentConversionService
     @Override
     public BufferedImage pdfToImage(InputStream pdfStream, int page, int bufferedImageType, int resolution)
     {
-        PDDocument document = null;
-
-        try
+        try (InputStream is = pdfStream; PDDocument document = PDDocument.load(is))
         {
-            try
+            // PDFBox extracts secure PDFs as blank images; detect and use static thumbnail instead
+            if (document.isEncrypted())
+                return null;
+
+            if (document.getNumberOfPages() > page)
             {
-                // Use a CheckedInputStream to ensure that PDFBox closes the InputStream
-                InputStream is = new CheckedInputStream(pdfStream);
-                document = PDDocument.load(is);
+                PDFRenderer pdfRenderer = new PDFRenderer(document);
 
-                // PDFBox extracts secure PDFs as blank images; detect and use static thumbnail instead
-                if (document.isEncrypted())
-                    return null;
-
-                List<PDPage> pages = document.getDocumentCatalog().getAllPages();
-
-                if (pages.size() > page)
-                {
-                    PDPage pdPage = pages.get(page);
-                    return pdPage.convertToImage(bufferedImageType, resolution);
-                }
-            }
-            finally
-            {
-                if (null != document)
-                    document.close();
+                return pdfRenderer.renderImageWithDPI(page, resolution, ImageType.RGB);
             }
         }
         catch (IOException e)

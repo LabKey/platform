@@ -9,6 +9,7 @@ cglib-nodep-2.2.3.jar|Code Generation Library|2.2.3|{link:SourceForge|http://sou
 commons-beanutils-1.7.jar|Commons Beanutils|1.7|{link:Apache|http://jakarta.apache.org/commons/beanutils/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Reading/writing beans
 commons-collections4-4.1.jar|Commons Collections|4.1|{link:Apache|https://commons.apache.org/proper/commons-collections/index.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Helpful collections
 commons-codec-1.5.jar|Commons Codec|1.5|{link:Apache|http://jakarta.apache.org/commons/codec/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Provides implementations of common encoders and decoders such as Base64, Hex, Phonetic and URLs
+commons-compress-1.13.jar|Commons Compress|1.13|{link:Apache|https://commons.apache.org/proper/commons-compress/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Compression/decompression algorithms
 commons-dbcp-1.4.jar|Commons Database Connection Pool|1.4|{link:Apache|http://commons.apache.org/proper/commons-dbcp/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Database connection pooling - Mondrian and TargetedMS dependency
 commons-digester-1.7.jar|Commons Digester|1.7|{link:Apache|http://jakarta.apache.org/commons/digester/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|XML to Java object mapping for configuration, required by other Apache projects
 commons-discovery-0.2.jar|Commons Discovery|0.2|{link:Apache|http://jakarta.apache.org/commons/discovery/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Find interface implementations, make available as factories, required by other Apache projects
@@ -41,6 +42,7 @@ jackson-jaxrs-json-provider-2.6.4.jar|Jackson RESTful Web Services Library|2.6.4
 jackson-module-jaxb-annotations-2.6.4.jar|Jackson support for alternate JAXB annotations|2.6.4|{link:Jackson|http://wiki.fasterxml.com/JacksonDownload/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|tgaluhn|docker-java dependency
 jaxrpc.jar|Java API for XML-Based RPC|1.1|{link:JAX-RPC|http://java.sun.com/webservices/jaxrpc/}|{link:Sun - JCP|http://java.sun.com/webservices/docs/2.0/LICENSE}|jeckels|Java API for XML RPC, pipeline dependency
 jcommon-1.0.17.jar|JCommon|1.0.17|{link:JCommon|http://www.jfree.org/jcommon/index.php}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|mbellew|Charting dependency
+jdom-2.0.6.jar|JDOM|2.0.6|{link:JDOM|http://www.jdom.org/}|{link:JDOM License|https://github.com/hunterhacker/jdom/blob/master/LICENSE.txt}|nicka|ROME dependency
 jfreechart-1.0.14.jar|JFreeChart|1.0.14|{link:JFreeChart|http://www.jfree.org/jfreechart/}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|mbellew|Charting
 jmock-2.6.0.jar|jMock|2.6.0|{link:jMock|http://www.jmock.org/}|{link:jMock Project License|http://www.jmock.org/license.html}|jeckels|jMock mock object testing framework
 jmock-legacy-2.6.0.jar|jMock|2.6.0|{link:jMock|http://www.jmock.org/}|{link:jMock Project License|http://www.jmock.org/license.html}|jeckels|jMock mock object testing framework
@@ -51,14 +53,19 @@ jtidy-r918.jar|Java Tidy|r918|{link:SourceForge|http://jtidy.sourceforge.net/}|{
 junit-4.12.jar|JUnit|4.12|{link:Junit|http://www.junit.org}|{link:CPL 1.0|http://www.opensource.org/licenses/cpl1.0.php}|jeckels|Unit testing
 jxl.jar|Java Excel|2.6.8|{link:Java Excel API|http://jexcelapi.sourceforge.net//}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|adam|Import/Export Excel files
 kaptcha-2.3.jar|Captcha generator|2.3|{link:kaptcha|http://code.google.com/p/kaptcha/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|User signup forms
-log4j-1.2.16.jar|Log4j|1.2.16|{link:Apache|http://logging.apache.org/log4j/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Logging
+log4j-1.2.16.jar|Log4j|1.2.16|{link:Apache|http://logging.apache.org/log4j/1.2/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Logging
 opencsv-2.3.jar|OpenCSV|2.3|{link:OpenCSV|http://opencsv.sourceforge.net/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parsing CSV Files
 objenesis-1.0.jar|Objenesis|1.0|{link:Objenesis|http://code.google.com/p/objenesis/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Library for instantiating Java objects, dependency of jMock
 patricia-trie-0.6.jar|PATRICIA Trie|0.6|{link:PATRICIA Trie|http://code.google.com/p/patricia-trie/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|PATRICIA Trie data structure implementation
+pdfbox-2.0.4.jar|Apache PDFBox®|2.0.4|{link:PDFBox|https://pdfbox.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extract text and produce thumbnails from PDFs
 picard-lib-2.2.4.jar|Picard Tools Lib|2.2.4|{link:PicardTools|https://github.com/broadinstitute/picard}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|bbimber|Manipulating Sequence Data
+poi-3.15.jar|Apache POI|3.15|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extracting text from and exporting to Microsoft document formats (Excel, Word, PowerPoint, etc.)
+poi-ooxml-3.15.jar|Apache POI OOXML|3.15|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|POI support for OOXML formats
+poi-ooxml-schemas-3.15.jar|Apache POI OOXML|3.15|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|POI support for OOXML formats
+poi-scratchpad-3.15.jar|Apache POI Scratchpad|3.15|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|POI support for older formats
 quartz-2.1.7.jar|quartz|2.1.7|{link:quartz|http://quartz-scheduler.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Scheduling
 rengine-0.6-8.jar|Rengine|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|cnathe|R client classes
-rome-1.0.jar|ROME|1.0|{link:ROME|https://github.com/rometools/rome}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|Support for RSS and Atom aggregation
+rome-1.7.1.jar|ROME|1.7.1|{link:ROME|https://github.com/rometools/rome}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|Support for RSS and Atom aggregation
 rserve-0.6-8.jar|Rserve|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|cnathe|Library to connect to an R Server
 slf4j-api-1.7.5.jar|Simple Logging Facade for Java|1.7.5|{link:SLF4J|http://www.slf4j.org/}|{link:MIT|http://www.slf4j.org/license.html}|mbellew|Dependency for Tika, Ehcache, and other libraries
 slf4j-log4j12-1.7.5.jar|Simple Logging Facade for Java|1.7.5|{link:SLF4J|http://www.slf4j.org/}|{link:MIT|http://www.slf4j.org/license.html}|mbellew|Dependency for Tika, Ehcache, and other libraries
@@ -74,7 +81,7 @@ spring-jdbc-4.0.6.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.spr
 spring-webmvc-4.0.6.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Basis of web framework
 sqlite-jdbc-3.7.2.jar|SQLite JDBC Driver|3.7.2|{link:bitbucket.org|https://bitbucket.org/xerial/sqlite-jdbc/wiki/Home}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|vsharma|SQLite JDBC Driver
 thumbnailator-0.4.8.jar|Thumbnailator|0.4.8|{link:thumbnailator|https://github.com/coobird/thumbnailator}|{link:MIT|http://www.opensource.org/licenses/mit-license.html}|kevink|Thumbnail generator
-tika-app-1.5.jar|Tika|1.5|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Document parsers for full-text search and POI for Excel import/export
+tika-core-1.14.jar|Tika|1.14|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Just detection of file content types and extraction of text (no parsers)
 validation-api-1.0.0.GA.jar|Bean Validation API (JSR 303)|1.0|{link:JCP|http://jcp.org/en/jsr/detail?id=303}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Validation of objects, requirement of GWT
 xbean.jar|XMLBeans|2.5.0|{link:Apache|http://xmlbeans.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Reading/writing XML
 xercesImpl.jar|Xerces|2.6.2|{link:Apache|http://xerces.apache.org/xerces2-j/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|dependents: flow module, batik library
