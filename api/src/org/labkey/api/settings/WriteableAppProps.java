@@ -181,11 +181,6 @@ public class WriteableAppProps extends AppPropsImpl
         app.save();
     }
 
-    public void setExperimentalFeatureEnabled(String feature, boolean enabled)
-    {
-        storeBooleanValue(EXPERIMENTAL_FEATURE_PREFIX + feature, enabled);
-    }
-
     public void setUseContainerRelativeURL(boolean b)
     {
         storeBooleanValue(USE_CONTAINER_RELATIVE_URL, b);

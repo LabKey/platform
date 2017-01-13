@@ -56,7 +56,9 @@ import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
@@ -67,6 +69,8 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.WebThemeManager;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.FrameFactoryClassic;
+import org.labkey.api.view.template.TemplateFactoryClassic;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.web.servlet.ModelAndView;
@@ -160,6 +164,32 @@ public class PageFlowUtil
      */
     private static final String DEFAULT_PARSER_NAME = "org.apache.xerces.parsers.SAXParser";
     private static final String NONPRINTING_ALTCHAR = "~";
+
+    // This is a flag that is used to distinguish code paths while migrating the core UI
+    public static final String EXPERIMENTAL_MIGRATE_CORE_UI = "migrate-core-ui";
+
+    public static boolean useExperimentalCoreUI()
+    {
+        ExperimentalFeatureService svc = ServiceRegistry.get().getService(ExperimentalFeatureService.class);
+        if (svc != null)
+            return svc.isFeatureEnabled(EXPERIMENTAL_MIGRATE_CORE_UI);
+        return false;
+    }
+
+    public static void configureTemplates()
+    {
+        if (useExperimentalCoreUI())
+        {
+            // Soon, will register different templates/frames
+            new TemplateFactoryClassic().registerTemplates();
+            new FrameFactoryClassic().registerFrames();
+        }
+        else
+        {
+            new TemplateFactoryClassic().registerTemplates();
+            new FrameFactoryClassic().registerFrames();
+        }
+    }
 
     static public String filterXML(String s)
     {
@@ -1667,50 +1697,57 @@ public class PageFlowUtil
 
         if (includeDefaultResources)
         {
-            String fontAwesomeCss = devMode ? "font-awesome.css" : "font-awesome.min.css";
-            F.format(link, PageFlowUtil.filter(new ResourceURL("/internal/font-awesome-4.4.0/css/" + fontAwesomeCss)));
-
-            F.format(link, PageFlowUtil.filter(new ResourceURL(theme.getStyleSheet(), ContainerManager.getRoot())));
-
-            ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
-
-            if (!c.isRoot())
+            if (useExperimentalCoreUI())
             {
-                /* Add the themeStylesheet */
-                if (coreUrls.getThemeStylesheetURL(c) != null)
-                    F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL(c)));
-                else
-                {
-                /* In this case a themeStylesheet was not found in a subproject to default to the root */
-                    if (coreUrls.getThemeStylesheetURL() != null)
-                        F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
-                }
-                ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
-
-                /* Add the customStylesheet */
-                if (null != containerCustomStylesheetURL)
-                    F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
-                else
-                {
-                    if (null != rootCustomStylesheetURL)
-                        F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
-                }
+                F.format(link, PageFlowUtil.filter(new ResourceURL("/core/css/main.css")));
             }
             else
             {
-                /* Add the root themeStylesheet */
-                if (coreUrls.getThemeStylesheetURL() != null)
-                    F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
+                String fontAwesomeCss = devMode ? "font-awesome.css" : "font-awesome.min.css";
+                F.format(link, PageFlowUtil.filter(new ResourceURL("/internal/font-awesome-4.4.0/css/" + fontAwesomeCss)));
 
-                /* Add the root customStylesheet */
-                if (null != rootCustomStylesheetURL)
-                    F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
+                F.format(link, PageFlowUtil.filter(new ResourceURL(theme.getStyleSheet(), ContainerManager.getRoot())));
+
+                ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
+
+                if (!c.isRoot())
+                {
+                    /* Add the themeStylesheet */
+                    if (coreUrls.getThemeStylesheetURL(c) != null)
+                        F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL(c)));
+                    else
+                    {
+                        /* In this case a themeStylesheet was not found in a subproject to default to the root */
+                        if (coreUrls.getThemeStylesheetURL() != null)
+                            F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
+                    }
+                    ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
+
+                    /* Add the customStylesheet */
+                    if (null != containerCustomStylesheetURL)
+                        F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
+                    else
+                    {
+                        if (null != rootCustomStylesheetURL)
+                            F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
+                    }
+                }
+                else
+                {
+                    /* Add the root themeStylesheet */
+                    if (coreUrls.getThemeStylesheetURL() != null)
+                        F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
+
+                    /* Add the root customStylesheet */
+                    if (null != rootCustomStylesheetURL)
+                        F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
+                }
+
+                ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
+                sb.append("    <link href=\"");
+                sb.append(filter(printStyleURL));
+                sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\">\n");
             }
-
-            ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
-            sb.append("    <link href=\"");
-            sb.append(filter(printStyleURL));
-            sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\">\n");
         }
 
         if (resources != null)
