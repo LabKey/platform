@@ -28,6 +28,7 @@ import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.ss.usermodel.RichTextString;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.util.CellAddress;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.labkey.api.util.DateUtil;
 
@@ -376,6 +377,36 @@ public class JxlCell implements Cell
 
     @Override
     public boolean isPartOfArrayFormulaGroup()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setCellType(org.apache.poi.ss.usermodel.CellType cellType)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public org.apache.poi.ss.usermodel.CellType getCellTypeEnum()
+    {
+        return org.apache.poi.ss.usermodel.CellType.forInt(getCellType());
+    }
+
+    @Override
+    public org.apache.poi.ss.usermodel.CellType getCachedFormulaResultTypeEnum()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public CellAddress getAddress()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void removeHyperlink()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

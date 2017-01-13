@@ -15,9 +15,11 @@
  */
 package org.labkey.api.reader.jxl;
 
+import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.ClientAnchor;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.DataFormat;
+import org.apache.poi.ss.usermodel.ExtendedColor;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.ss.usermodel.RichTextString;
@@ -55,6 +57,18 @@ public class JxlCreationHelper implements CreationHelper
 
     @Override
     public ClientAnchor createClientAnchor()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public Hyperlink createHyperlink(HyperlinkType hyperlinkType)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public ExtendedColor createExtendedColor()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

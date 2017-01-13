@@ -16,8 +16,11 @@
 package org.labkey.api.reader.jxl;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.CellValue;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
+
+import java.util.Map;
 
 /**
  * User: klum
@@ -80,6 +83,24 @@ public class JxlFormulaEvaluator implements FormulaEvaluator
 
     @Override
     public Cell evaluateInCell(Cell cell)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public CellType evaluateFormulaCellEnum(Cell cell)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setupReferencedWorkbooks(Map<String, FormulaEvaluator> map)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setIgnoreMissingWorkbooks(boolean b)
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

@@ -30,6 +30,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -675,6 +676,9 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
     public void adjustColumnWidths(RenderContext ctx, Sheet sheet, List visibleColumns)
     {
+        if (sheet instanceof SXSSFSheet)
+            ((SXSSFSheet)sheet).trackAllColumnsForAutoSizing();
+
         for (int column = visibleColumns.size() - 1; column >= 0; column--)
         {
             ((ExcelColumn) visibleColumns.get(column)).adjustWidth(ctx, sheet, column, 0, _totalDataRows);

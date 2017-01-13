@@ -18,6 +18,7 @@ package org.labkey.api.reader;
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.POIXMLException;
+import org.apache.poi.UnsupportedFileFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
@@ -414,7 +415,7 @@ public class ExcelLoader extends DataLoader
         {
             throw new InvalidFormatException("File is not a valid xlsx file: " + _file.getName() + (x.getMessage() == null ? "" : x.getMessage()));
         }
-        catch (InvalidOperationException x)
+        catch (InvalidOperationException | UnsupportedFileFormatException x)
         {
             throw new InvalidFormatException("File is not an xlsx file: " + _file.getPath());
         }

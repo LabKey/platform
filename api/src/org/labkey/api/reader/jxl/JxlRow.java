@@ -17,6 +17,7 @@ package org.labkey.api.reader.jxl;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 
@@ -171,6 +172,18 @@ public class JxlRow implements Row
 
     @Override
     public void setRowStyle(CellStyle cellStyle)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public Cell createCell(int i, CellType cellType)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public int getOutlineLevel()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

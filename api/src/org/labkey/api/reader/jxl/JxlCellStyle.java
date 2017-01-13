@@ -16,9 +16,13 @@
 package org.labkey.api.reader.jxl;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Color;
+import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 
 /**
  * User: klum
@@ -322,6 +326,102 @@ public class JxlCellStyle implements CellStyle
 
     @Override
     public void cloneStyleFrom(CellStyle source)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setAlignment(HorizontalAlignment horizontalAlignment)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public HorizontalAlignment getAlignmentEnum()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setVerticalAlignment(VerticalAlignment verticalAlignment)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public VerticalAlignment getVerticalAlignmentEnum()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setBorderLeft(BorderStyle borderStyle)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public BorderStyle getBorderLeftEnum()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setBorderRight(BorderStyle borderStyle)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public BorderStyle getBorderRightEnum()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setBorderTop(BorderStyle borderStyle)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public BorderStyle getBorderTopEnum()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setBorderBottom(BorderStyle borderStyle)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public BorderStyle getBorderBottomEnum()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setFillPattern(FillPatternType fillPatternType)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public FillPatternType getFillPatternEnum()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setShrinkToFit(boolean b)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public boolean getShrinkToFit()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

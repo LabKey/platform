@@ -32,7 +32,10 @@ List apache = [
         "commons-pool:commons-pool:${commonsPoolVersion}",
         "commons-validator:commons-validator:${commonsValidatorVersion}",
         "org.apache.httpcomponents:httpclient:${httpclientVersion}",
-        "org.apache.httpcomponents:httpcore:${httpcoreVersion}"
+        "org.apache.httpcomponents:httpcore:${httpcoreVersion}",
+        "org.apache.poi:poi:${poiVersion}",
+        "org.apache.poi:poi-ooxml:${poiVersion}",
+        "org.apache.pdfbox:pdfbox:${pdfboxVersion}"
 ]
 
 
@@ -86,11 +89,11 @@ List others = [
         "com.opencsv:opencsv:${opencsvVersion}",
         "org.ardverk:patricia-trie:${patriciaTrieVersion}",
         "org.quartz-scheduler:quartz:${quartzVersion}",
-        "rome:rome:${romeVersion}",
+        "com.rometools:rome:${romeVersion}",
         "org.xerial:sqlite-jdbc:${sqliteJdbcVersion}",
         "net.coobird:thumbnailator:${thumnailatorVersion}",
         "org.apache.xmlbeans:xbean:${xmlbeansVersion}",
-        "org.apache.tika:tika-app:${tikaAppVersion}",
+        "org.apache.tika:tika-core:${tikaCoreVersion}",
         "cglib:cglib-nodep:${cglibNodepVersion}",
         "xerces:xercesImpl:${xercesImplVersion}"
 ]

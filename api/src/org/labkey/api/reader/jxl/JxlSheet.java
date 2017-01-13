@@ -26,14 +26,19 @@ import org.apache.poi.ss.usermodel.DataValidationHelper;
 import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.Footer;
 import org.apache.poi.ss.usermodel.Header;
+import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.ss.usermodel.PrintSetup;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.SheetConditionalFormatting;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellAddress;
 import org.apache.poi.ss.util.CellRangeAddress;
 
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: klum
@@ -398,12 +403,6 @@ public class JxlSheet implements Sheet
     }
 
     @Override
-    public void showInPane(short toprow, short leftcol)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
     public void shiftRows(int startRow, int endRow, int n)
     {
         throw new UnsupportedOperationException("method not yet supported");
@@ -669,6 +668,114 @@ public class JxlSheet implements Sheet
 
     @Override
     public SheetConditionalFormatting getSheetConditionalFormatting()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public float getColumnWidthInPixels(int i)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public int addMergedRegionUnsafe(CellRangeAddress cellRangeAddress)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void validateMergedRegions()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void removeMergedRegions(Collection<Integer> collection)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public List<CellRangeAddress> getMergedRegions()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public boolean isPrintRowAndColumnHeadings()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setPrintRowAndColumnHeadings(boolean b)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setZoom(int i)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public Comment getCellComment(CellAddress cellAddress)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public Map<CellAddress, ? extends Comment> getCellComments()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public Drawing getDrawingPatriarch()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public List<? extends DataValidation> getDataValidations()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public int getColumnOutlineLevel(int i)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public Hyperlink getHyperlink(int i, int i1)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public Hyperlink getHyperlink(CellAddress cellAddress)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public List<? extends Hyperlink> getHyperlinkList()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public CellAddress getActiveCell()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setActiveCell(CellAddress cellAddress)
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

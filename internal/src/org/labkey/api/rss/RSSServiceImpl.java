@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.api.rss;
 
-
-import com.sun.syndication.feed.synd.SyndEntryImpl;
-import com.sun.syndication.feed.synd.SyndFeed;
-import com.sun.syndication.feed.synd.SyndFeedImpl;
-import com.sun.syndication.io.FeedException;
-import com.sun.syndication.io.SyndFeedInput;
-import com.sun.syndication.io.SyndFeedOutput;
-import com.sun.syndication.io.XmlReader;
+import com.rometools.rome.feed.synd.SyndEntry;
+import com.rometools.rome.feed.synd.SyndFeed;
+import com.rometools.rome.feed.synd.SyndFeedImpl;
+import com.rometools.rome.io.FeedException;
+import com.rometools.rome.io.SyndFeedInput;
+import com.rometools.rome.io.SyndFeedOutput;
+import com.rometools.rome.io.XmlReader;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -38,8 +38,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
@@ -68,7 +66,7 @@ public class RSSServiceImpl extends RSSService
     {
         SyndFeed feed = new SyndFeedImpl();
 
-        List entries = new ArrayList();
+        List<SyndEntry> entries = new ArrayList<>();
 
         feed.setEntries(entries);
         feed.setFeedType("rss_2.0");
@@ -106,26 +104,22 @@ public class RSSServiceImpl extends RSSService
             }
         }
 
-        Collections.sort(entries, new Comparator()
+        entries.sort((o1, o2) ->
         {
-            @Override
-            public int compare(Object o1, Object o2)
-            {
-                if (o1 == null && o2 == null)
-                    return 0;
-                else if (o1 == null)
-                    return -1;
-                else if (o2 == null)
-                    return 1;
+            if (o1 == null && o2 == null)
+                return 0;
+            else if (o1 == null)
+                return -1;
+            else if (o2 == null)
+                return 1;
 
-                Date d1 = ((SyndEntryImpl) o1).getPublishedDate();
-                Date d2 = ((SyndEntryImpl) o2).getPublishedDate();
+            Date d1 = o1.getPublishedDate();
+            Date d2 = o2.getPublishedDate();
 
-                if (d1 == null || d2 == null)
-                    return -1;
+            if (d1 == null || d2 == null)
+                return -1;
 
-                return d2.compareTo(d1);
-            }
+            return d2.compareTo(d1);
         });
 
         try

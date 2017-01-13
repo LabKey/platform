@@ -18,6 +18,7 @@ package org.labkey.api.reader.jxl;
 import jxl.WorkbookSettings;
 import jxl.read.biff.BiffException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.formula.udf.UDFFinder;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CreationHelper;
@@ -33,6 +34,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -195,12 +197,6 @@ public class JxlWorkbook implements Workbook
     }
 
     @Override
-    public void setRepeatingRowsAndColumns(int sheetIndex, int startColumn, int endColumn, int startRow, int endRow)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
     public Font createFont()
     {
         throw new UnsupportedOperationException("method not yet supported");
@@ -226,18 +222,6 @@ public class JxlWorkbook implements Workbook
 
     @Override
     public CellStyle createCellStyle()
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
-    public short getNumCellStyles()
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
-    public CellStyle getCellStyleAt(short idx)
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
@@ -404,6 +388,72 @@ public class JxlWorkbook implements Workbook
 
     @Override
     public boolean getForceFormulaRecalculation()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public Iterator<Sheet> sheetIterator()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public Font findFont(boolean b, short i, short i1, String s, boolean b1, boolean b2, short i2, byte b3)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public int getNumCellStyles()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public CellStyle getCellStyleAt(int i)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void close() throws IOException
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public List<? extends Name> getNames(String s)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public List<? extends Name> getAllNames()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void removeName(Name name)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public int linkExternalWorkbook(String s, Workbook workbook)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public SpreadsheetVersion getSpreadsheetVersion()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public Iterator<Sheet> iterator()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
