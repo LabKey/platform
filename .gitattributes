@@ -1804,11 +1804,10 @@ query/webapp/scriptreporteditor.lib.xml -text
 search/Search.iml -text
 search/build.gradle -text
 search/lib/instructions.txt -text
-search/lib/lucene-6.0.1-src.zip -text
-search/lib/lucene-analyzers-common-6.0.1.jar -text
-search/lib/lucene-backward-codecs-6.0.1.jar -text
-search/lib/lucene-core-6.0.1.jar -text
-search/lib/lucene-queryparser-6.0.1.jar -text
+search/lib/lucene-analyzers-common-6.3.0.jar -text
+search/lib/lucene-backward-codecs-6.3.0.jar -text
+search/lib/lucene-core-6.3.0.jar -text
+search/lib/lucene-queryparser-6.3.0.jar -text
 search/module.properties -text
 search/resources/credits/jars.txt -text
 search/resources/schemas/dbscripts/postgresql/obsolete/search-0.00-10.10.sql -text

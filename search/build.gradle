@@ -1,5 +1,5 @@
 dependencies {
-   external 'org.apache.lucene:lucene-analyzers-common:6.0.1'
-   external 'org.apache.lucene:lucene-core:6.0.1'
-   external 'org.apache.lucene:lucene-queryparser:6.0.1'
+   external 'org.apache.lucene:lucene-analyzers-common:6.3.0'
+   external 'org.apache.lucene:lucene-core:6.3.0'
+   external 'org.apache.lucene:lucene-queryparser:6.3.0'
 }

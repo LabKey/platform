@@ -39,7 +39,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.MultiPhaseCPUTimer;
+import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
 import org.labkey.search.model.LuceneSearchServiceImpl.FIELD_NAME;
 
 import java.io.IOException;
@@ -54,13 +54,22 @@ import java.util.List;
 class SecurityQuery extends Query
 {
     private final User _user;
+    private final Container _currentContainer;
+    private final boolean _recursive;
+
     private final HashMap<String, Container> _containerIds;
     private final HashMap<String, Boolean> _securableResourceIds = new HashMap<>();
-    private final MultiPhaseCPUTimer.InvocationTimer<SearchService.SEARCH_PHASE> _iTimer;
+    private final InvocationTimer<SearchService.SEARCH_PHASE> _iTimer;
 
-    SecurityQuery(User user, Container searchRoot, Container currentContainer, boolean recursive, MultiPhaseCPUTimer.InvocationTimer<SearchService.SEARCH_PHASE> iTimer)
+    SecurityQuery(User user, Container searchRoot, Container currentContainer, boolean recursive, InvocationTimer<SearchService.SEARCH_PHASE> iTimer)
     {
+        // These three are used for hashCode() & equals(). We have disabled query caching for now (see #26416), but this gets us close to being able to use it. We
+        // need to add some indication that permissions haven't changed since the query was cached, for example, include in the hash a counter that SecurityManager
+        // increments for every group or role assignment change.
         _user = user;
+        _currentContainer = currentContainer;
+        _recursive = recursive;
+
         _iTimer = iTimer;
 
         if (recursive)
@@ -161,6 +170,27 @@ class SecurityQuery extends Query
         return null;
     }
 
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SecurityQuery that = (SecurityQuery) o;
+
+        if (_recursive != that._recursive) return false;
+        if (!_user.equals(that._user)) return false;
+        return _currentContainer.equals(that._currentContainer);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = _user.hashCode();
+        result = 31 * result + _currentContainer.hashCode();
+        result = 31 * result + (_recursive ? 1 : 0);
+        return result;
+    }
 
     private static class _SecurableResource implements SecurableResource
     {
