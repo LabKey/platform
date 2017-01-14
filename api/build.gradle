@@ -76,7 +76,6 @@ List test = [
 ]
 
 List others = [
-        "junit:junit:${junitVersion}", // this is required by the ModuleLoader??? at startup
         "gov.nist.math:jama:${jamaVersion}",
         "org.jetbrains:annotations:${annotationsVersion}",
         "org.apache.xmlgraphics:batik:${batikVersion}",
@@ -141,7 +140,8 @@ dependencies {
   }
   external ant,apache,caching,charting,gwt,jackson,javax,logging,others,r,spring
 
-  compile test
+    // These are required for running unit tests through the server junit controller
+  external test
   jspCompile files(project.tasks.jar)
   jspCompile apache, jackson, spring
 }
@@ -150,19 +150,19 @@ project.sourceSets.webapp {
     output.resourcesDir = project.staging.webappDir
 }
 
-//// We need to copy resource files into the staging webapp directory so they can be copied to
-//// the jsptmp directory for use in compiling JSPs
+// We need to copy resource files into the staging webapp directory so they can be copied to
+// the jsptmp directory for use in compiling JSPs
 //project.task("stageApiWebInf",
 //        type: Copy,
 //        {CopySpec copy ->
 //            copy.from project.sourceSets.webapp.output
 //            copy.into project.staging.webappDir
-////            copy.include "WEB-INF/**"
 //        }
 //)
 //project.tasks.copyTagLibs.dependsOn(project.tasks.stageApiWebInf)
 
 if (LabKeyExtension.isDevMode(project) && !Boolean.valueOf((String) project.buildFromSource))
 {
+//  project.project(":server").tasks.deployApp.dependsOn project.tasks.stageApiWebInf
   project.project(":server").tasks.deployApp.dependsOn project.tasks.processWebappResources
 }
