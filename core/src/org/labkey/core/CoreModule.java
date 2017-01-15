@@ -290,6 +290,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         dls.registerFactory(new FastaDataLoader.Factory());
         ServiceRegistry.get().registerService(DataLoaderService.I.class, dls);
 
+        new TemplateFactoryClassic().registerTemplates();
+        new FrameFactoryClassic().registerFrames();
+
         addController("admin", AdminController.class);
         addController("admin-sql", SqlScriptController.class);
         addController("security", SecurityController.class);
@@ -373,17 +376,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             svc.registerProvider("core", new PermissionsValidator());
         }
 
-        PageFlowUtil.configureTemplates();
-
-        ExperimentalFeatureService expFeatureSvc = ServiceRegistry.get().getService(ExperimentalFeatureService.class);
-        if (expFeatureSvc != null)
-        {
-            expFeatureSvc.addFeatureListener(PageFlowUtil.EXPERIMENTAL_MIGRATE_CORE_UI, (feature, enabled) ->
-            {
-                /* featureChange */
-                PageFlowUtil.configureTemplates();
-            });
-        }
+//        PageFlowUtil.configureTemplates();
+//
+//        ExperimentalFeatureService expFeatureSvc = ServiceRegistry.get().getService(ExperimentalFeatureService.class);
+//        if (expFeatureSvc != null)
+//        {
+//            expFeatureSvc.addFeatureListener(PageFlowUtil.EXPERIMENTAL_MIGRATE_CORE_UI, (feature, enabled) ->
+//            {
+//                /* featureChange */
+//                PageFlowUtil.configureTemplates();
+//            });
+//        }
     }
 
     @NotNull
