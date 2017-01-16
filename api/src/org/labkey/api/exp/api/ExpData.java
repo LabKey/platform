@@ -33,9 +33,6 @@ public interface ExpData extends ExpProtocolOutput
 {
     String DEFAULT_CPAS_TYPE = "Data";
 
-    @Nullable
-    String getDescription();
-
     DataType getDataType();
     /** Strongly typed variant of getDataFileUrl() */
     URI getDataFileURI();

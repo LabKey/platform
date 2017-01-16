@@ -29,6 +29,7 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>
     {
         RowId,
         Name,
+        Description,
         LSID,
         Flag,
         Run,

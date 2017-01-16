@@ -25,6 +25,9 @@ import java.util.List;
 */
 public interface ExpProtocolOutput extends ExpObject
 {
+    @Nullable
+    String getDescription();
+
     /** Convenience and NPE-avoiding method for getSourceApplication().getProtocol() */
     ExpProtocol getSourceProtocol();
 
