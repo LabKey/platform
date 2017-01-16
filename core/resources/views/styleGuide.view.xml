@@ -1,0 +1,10 @@
+<view xmlns="http://labkey.org/data/xml/view" template="app" frame="none" title="LabKey Style Guide">
+    <permissions>
+        <permission name="none"/>
+    </permissions>
+    <dependencies>
+        <dependency path="core/css/main.css"/>
+        <dependency path="internal/jQuery"/>
+        <dependency path="core/css/core_style.js"/>
+    </dependencies>
+</view>

@@ -1,48 +1,17 @@
-@import "bootstrap/variables";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap";
-@import "~font-awesome/scss/font-awesome";
-
-$server-dir: '../../../../..';
-$api-webapp-dir: '#{$server-dir}/api/webapp';
-$internal-webapp-dir: '#{$server-dir}/internal/webapp';
-$ext3-images-dir: '#{$api-webapp-dir}/ext-3.4.1/resources/images';
-$ext4-images-dir: '#{$api-webapp-dir}/ext-4.2.1/resources/ext-theme-classic-sandbox/images';
-$internal-images-dir: '#{$internal-webapp-dir}/_images';
-$labkey-fonts-dir: '../../webapp/fonts';
-
-@font-face {
-  font-family: 'Roboto';
-  src: url('#{$labkey-fonts-dir}/Roboto/Roboto-Regular.ttf');
-}
-
-@font-face {
-  font-family: 'Roboto-Bold';
-  src: url('#{$labkey-fonts-dir}/Roboto/Roboto-Bold.ttf');
-}
-
-@font-face {
-  font-family: 'Arial-Bold';
-  src: local('Arial');
-}
-
-@font-face {
-  font-family: 'Helvetica-Bold';
-  src: local('Helvetica');
-}
+@import "labkey/fonts";
+@import "labkey/variables";
 
 html, body
 {
   height: 100%;
 }
 
-body, div, td, table, img, form, input, select, .gwt-TextBox
+body, div, td, table, img, form, input, select
 {
   font-family: $font-family-sans-serif;
-  font-size: 14px;
-  margin: 0;
-  color: #000000;
-  letter-spacing: .3px;
-  line-height: 1.25;
+  font-size: $font-size-base;
+  color: $text-color;
+  line-height: $line-height-base;
 }
 
 h1, h2, h3, h4
@@ -80,7 +49,7 @@ img
 
 .labkey-fullscreen-wizard-background
 {
-  background-color: #E7EFF4;
+  background-color: $lk-grid-color;
   height: 100%;
   width: 25%;
   vertical-align: top;
@@ -88,7 +57,7 @@ img
 
 .labkey-fullscreen-wizard-steps
 {
-  background-color: #E7EFF4;
+  background-color: $lk-grid-color;
   list-style-position: inside;
   padding: 3em 0;
   margin: 0;
@@ -125,13 +94,13 @@ li.labkey-ancillary-wizard-active-step
 
 .labkey-ancillary-wizard-background
 {
-  background-color: #E7EFF4;
+  background-color: $lk-grid-color;
   height: 100%;
 }
 
 a, a:visited, .labkey-link, .labkey-link:visited
 {
-  color: #126495;
+  color: $lk-link-color;
   cursor: pointer;
   text-decoration: none;
 }
@@ -165,7 +134,7 @@ legend
 table#header
 {
   width: 100%;
-  background-color: #f8f8f8;
+  background-color: $lk-primary-bg-color;
 }
 
 /* Quick options (admin, help, my account, signout) table */
@@ -174,8 +143,6 @@ table#header
   position: absolute;
   top: 0; right: 0;
   padding: 8px 10px;
-  /* Hack to keep IE7 from stretching the headerDiv across the whole width of the page */
-  *width: 500px;
 }
 
 
@@ -186,22 +153,20 @@ table#header
  lists*/
 .labkey-header
 {
-  color: #126495;
+  color: $lk-link-color;
   text-align: left;
   text-decoration: none;
   vertical-align: top;
   padding: 1px;
-}
 
-.labkey-header:hover
-{
-  background-color: #E7EFF4;
-  cursor: pointer;
-}
+  &:hover {
+    background-color: $lk-grid-color;
+    cursor: pointer;
+  }
 
-.labkey-header:active
-{
-  outline: none;
+  &:active {
+    outline: none;
+  }
 }
 
 th.labkey-header {
@@ -209,12 +174,12 @@ th.labkey-header {
   padding: 5px 0;
   color: #000000;
   float: left;
-}
 
-th.labkey-header a:hover {
-  color: #126495;
-  font-weight: normal;
-  text-transform: uppercase;
+  a:hover {
+    color: $lk-link-color;
+    font-weight: normal;
+    text-transform: uppercase;
+  }
 }
 
 table.labkey-expandable-nav th.labkey-header {
@@ -256,7 +221,7 @@ pre.labkey-log-file
 }
 
 .labkey-header-large:hover {
-  background-color: #E7EFF4;
+  background-color: $lk-grid-color;
   cursor: pointer;
 }
 
@@ -273,7 +238,7 @@ pre.labkey-log-file
   }
 
   a.announcement-title-link {
-    color: #126495;
+    color: $lk-link-color;
     font-size: 14px;
   }
 }
@@ -289,20 +254,14 @@ pre.labkey-log-file
 /*  Used across the site whenever there is a label with a colored background */
 .labkey-form-label, tr td.labkey-form-label
 {
-  background-color: #e0e6ea;
-  padding-right:4px;
-  padding-left:4px;
-  padding-top:1px;
-  padding-bottom:1px;
+  background-color: $lk-webpart-color;
+  padding: 1px 4px;
 }
 
 .labkey-form-label-nowrap, tr td.labkey-form-label-nowrap {
-  background-color: #e0e6ea;
+  background-color: $lk-webpart-color;
   white-space: nowrap;
-  padding-right:4px;
-  padding-left:4px;
-  padding-top:1px;
-  padding-bottom:1px;
+  padding: 1px 4px;
 }
 
 /* Used in some cases where there are tables with cells that have borders or colored backgrounds that
@@ -317,7 +276,7 @@ table.labkey-no-spacing
 .labkey-error-body
 {
   margin: 40px;
-  background-color: #e0e6ea;
+  background-color: $lk-webpart-color;
 }
 
 /* Used for the error messages across the site */
@@ -420,7 +379,7 @@ div.labkey-button-bar,
 table.labkey-button-bar
 {
   white-space: nowrap;
-  background-color: #E7EFF4;
+  background-color: $lk-grid-color;
   padding: 4px;
 }
 
@@ -442,7 +401,7 @@ table.labkey-button-bar
 .labkey-button-bar .labkey-button:visited,
 .labkey-button-bar .labkey-menu-button:visited {
   background: none;
-  border: 1px solid #E7EFF4;
+  border: 1px solid $lk-grid-color;
 
   margin: 0.1em 0.8em 0.5em 0;
   padding: 4px;
@@ -450,7 +409,7 @@ table.labkey-button-bar
   vertical-align: middle;
   white-space: nowrap;
 
-  color: #126495;
+  color: $lk-link-color;
   text-transform: uppercase;
   letter-spacing: .5px;
   line-height: 2.3;
@@ -466,7 +425,7 @@ td .labkey-menu-button:visited,
 .labkey-button-bar .labkey-button:hover,
 .labkey-button-bar .labkey-menu-button:hover {
   background-color: #FFFFFF;
-  border: 1px solid #676767 !important;
+  border: 1px solid $lk-border-title-color !important;
 
   margin: 0.1em 0.8em 0.5em 0;
   padding: 4px;
@@ -505,7 +464,7 @@ td .labkey-menu-button:hover,
 .labkey-button-bar .labkey-menu-button-active,
 .labkey-button-bar .labkey-menu-button:active {
   background-color: #FFFFFF;
-  border: 1px solid #676767 !important;
+  border: 1px solid $lk-border-title-color !important;
 
   margin: 0.1em 0.8em 0.5em 0;
   padding: 4px;
@@ -538,7 +497,7 @@ td .labkey-menu-button:hover,
 .labkey-disabled-menu-button:visited,
 .labkey-disabled-menu-button:hover {
   background: none !important;
-  background-color: #E7EFF4;
+  background-color: $lk-grid-color;
   border: 1px solid transparent !important;
 
   margin: 0.1em 0.8em 0.5em 0;
@@ -564,14 +523,14 @@ a.labkey-disabled-menu-button span
 /* this keeps the enabled button text blue */
 a.labkey-menu-button
 {
-  color: #126495;
+  color: $lk-link-color;
 }
 
 /* this keeps disabled button hover bg invisible and no hand cursor */
 .labkey-button-bar .labkey-disabled-button:hover
 {
-  border: 1px solid #E7EFF4;
-  background-color: #E7EFF4;
+  border: 1px solid $lk-grid-color;
+  background-color: $lk-grid-color;
   cursor: default;
 }
 
@@ -579,7 +538,7 @@ a.labkey-menu-button
 a.labkey-menu-button:hover
 a.labkey-menu-button:hover span
 {
-  border: 1px solid #676767;
+  border: 1px solid $lk-border-title-color;
   background-color: #FFFFFF;
   cursor: pointer;
   color: #000000;
@@ -634,7 +593,7 @@ span.labkey-button {
   padding: 3px 5px;
   margin-right: 5px;
   border: 1px solid #b4b4b4;
-  color: #126495;
+  color: $lk-link-color;
   text-transform: uppercase;
   white-space: nowrap;
 
@@ -654,7 +613,7 @@ span.labkey-button:hover
 {
   padding: 3px 5px;
   margin-right: 5px;
-  border: 1px solid #676767 !important;
+  border: 1px solid $lk-border-title-color !important;
   color: #000000;
   text-transform: uppercase;
   cursor: pointer;
@@ -778,7 +737,7 @@ regions on mouseover */
  side panel */
 .labkey-frame
 {
-  background-color: #E7EFF4;
+  background-color: $lk-grid-color;
 }
 
 /* "Pagination" is used with data views that don't display all the data on one page.  This
@@ -850,7 +809,7 @@ table.labkey-completion-text
 
 .labkey-completion-highlight, .labkey-completion td.labkey-completion-highlight
 {
-  background-color: #E7EFF4;
+  background-color: $lk-grid-color;
   border: none;
 }
 
@@ -883,7 +842,7 @@ span.labkey-help-pop-up
 /* Used for full screen pages such as for login or upgrade */
 .labkey-full-screen-background
 {
-  background-color: #f8f8f8;
+  background-color: $lk-primary-bg-color;
   padding: 30px;
   height: 100%;
   vertical-align: middle;
@@ -896,7 +855,7 @@ span.labkey-help-pop-up
   background-color: #FFFFFF;
   border-spacing: 0;
   border-collapse: collapse;
-  border: 5px solid #e0e6ea;
+  border: 5px solid $lk-webpart-color;
 }
 
 /* Login screen*/
@@ -975,7 +934,7 @@ div.facet_header
 {
   height: 34px;
   border-color: #DDDDDD;
-  background: #E7EFF4 none;
+  background: $lk-grid-color none;
   box-shadow: none;
   border-bottom: 1px solid black;
 }
@@ -1127,12 +1086,12 @@ table.labkey-show-borders
 of filter options when clicked */
 th.labkey-col-header-filter, td.labkey-col-header-filter, tr.labkey-col-header-filter th
 {
-  color: #126495;
+  color: $lk-link-color;
 }
 
 th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-col-header-filter th:hover
 {
-  background-color: #E7EFF4;
+  background-color: $lk-grid-color;
   cursor: pointer;
 }
 
@@ -1281,153 +1240,11 @@ img.labkey-grid-filter-icon
   background-position: -15px -90px;
 }
 
-.labkey-customview-westpanel ul {
-  padding: 0;
-  list-style: none;
-}
-
-.labkey-customview-filter-item .item-caption,
-.labkey-customview-sort-item .item-caption {
-  font-family: $font-family-sans-serif-bold;
-}
-
-.labkey-customview-item {
-  border-top: 1px solid transparent;
-  border-bottom: 1px solid transparent;
-}
-
-.labkey-customview-item.x-view-selected,
-.labkey-customview-item.x4-item-selected {
-  background: #eeeeee;
-  border-top: 1px solid #89A1B4;
-  border-bottom: 1px solid #89A1B4;
-}
-
-.labkey-customview-item.x-view-over,
-.labkey-customview-item.x4-view-over {
-  border-top: 1px solid #126495;
-  border-bottom: 1px solid #126495;
-}
-
-.labkey-customview-item .item-op {
-  float: left;
-  padding: 2px;
-}
-
-.labkey-customview-item .item-value {
-  padding: 2px;
-}
-
-/* grab */
-
-.labkey-customview-item .labkey-grab {
-  opacity: 0;
-  filter:alpha(opacity=0);
-  height: 100%;
-}
-
-.labkey-customview-item.x-view-over .labkey-grab,
-.labkey-customview-item.x4-view-over .labkey-grab {
-  opacity: 1;
-  filter:alpha(opacity=100);
-}
-
-/* gear and close */
-
-.labkey-customview-item .labkey-tool-gear,
-.labkey-customview-item .labkey-tool-close {
-  opacity: 0.1;
-  filter:alpha(opacity=10);
-}
-
-.labkey-customview-item.x-view-over .labkey-tool-gear,
-.labkey-customview-item.x4-view-over .labkey-tool-gear,
-.labkey-customview-item.x-view-over .labkey-tool-close,
-.labkey-customview-item.x4-view-over .labkey-tool-close {
-  opacity: 0.9;
-  filter:alpha(opacity=90);
-}
-
-.labkey-customview-item .labkey-tool-close {
-  float: right;
-}
-
-.labkey-customview-item .item-aggregate {
-  float: right;
-  opacity: 0.3;
-  filter:alpha(opacity=30);
-}
-
-.labkey-customview-item.x-view-over .item-aggregate,
-.labkey-customview-item.x4-view-over .item-aggregate {
-  opacity: 1;
-  filter:alpha(opacity=100);
-}
-
-.labkey-customview-filter-item .labkey-tool-pin,
-.labkey-customview-filter-item .labkey-tool-unpin,
-.labkey-customview-filter-item .labkey-tool-close,
-.labkey-customview-sort-item .labkey-tool-pin,
-.labkey-customview-sort-item .labkey-tool-unpin,
-.labkey-customview-sort-item .labkey-tool-close {
-  margin-top: 3px;
-}
-
-.labkey-customview-filter-item .x4-field td,
-.labkey-customview-sort-item .x4-field td,
-.labkey-fieldmeta-tree td
-{
-  padding: 0; /* see .labkey-data-region-header-container td */
-}
+@import "labkey/components/customView";
 
 .labkey-fieldmeta-tree .x4-grid-body
 {
   border-top-width: 0;
-}
-
-.labkey-customview-tab {
-  cursor: pointer;
-  font-size: 11px;
-  font-family: $font-family-sans-serif-bold;
-  padding: 6px  !important;
-  color: #555555;
-}
-
-.labkey-customview-activetab {
-  background-color: #FFFFFF;
-  border-radius: 5px 0 0 5px;
-  border-color: #CCCCCC;
-  border-style: solid;
-  border-width: 1px 0 1px 1px;
-}
-
-.labkey-customview-message {
-  background-color: #FFDF8C;
-  padding: 2px !important;
-}
-
-.labkey-customview-save .x4-form-item-label,
-.labkey-customview-save .x4-form-cb-label {
-  margin-top: 5px;
-}
-
-.labkey-customview-button-footer {
-  padding: 5px !important;
-  border-top: solid #CCCCCC 1px !important;
-}
-
-.labkey-customview-westpanel .tab-joint {
-  position: absolute;
-  top: 1px;
-  left: 78px;
-  width: 3px;
-  height: 25px;
-  background: #FFFFFF;
-  z-index: 8999;
-}
-
-.labkey-customview-centerpanel {
-  border: solid #CCCCCC 1px;
 }
 
 /** Ext.ux.dd.GridDragDropRowOrder.js */
@@ -1474,7 +1291,7 @@ img.labkey-grid-filter-icon
 {
   width: 100%;
   padding: 0;
-  background-color: #F8F8F8;
+  background-color: $lk-primary-bg-color;
   display: table;
   height: 100%;
 }
@@ -1508,7 +1325,6 @@ table.labkey-main
 {
   height: 100%;
   border-spacing: 0;
-  *border-collapse: collapse;
 }
 
 /* The top panel with the title and logo */
@@ -1556,7 +1372,7 @@ td.labkey-main-title-area
 {
   font-size:14pt;
   vertical-align: bottom;
-  color: #676767;
+  color: $lk-border-title-color;
   text-decoration: none;
   line-height: 1.25;
 }
@@ -1654,7 +1470,7 @@ td.labkey-proj
 {
   font-size:10pt;
   vertical-align: bottom;
-  color: #676767;
+  color: $lk-border-title-color;
   text-decoration: none;
 }
 
@@ -1671,13 +1487,13 @@ td.labkey-proj
 
 .labkey-search-navresults h3
 {
-  color: #676767;
+  color: $lk-border-title-color;
   margin-top:0;
 }
 
 .labkey-search-results td
 {
-  color: #676767;
+  color: $lk-border-title-color;
   margin-top:0;
 }
 
@@ -1706,7 +1522,7 @@ div.menu-wrapper {
 /* The table that contains the expandable sidenav panel */
 table.labkey-expandable-nav
 {
-  background-color: #F8F8F8;
+  background-color: $lk-primary-bg-color;
   border: 0;
   margin: 3px;
   border-spacing: 0;
@@ -1801,7 +1617,7 @@ span.labkey-nav-tree-selected
 /* this is what sidenav, Pages, and Study are using - kc 07-29-11 */
 tr.labkey-nav-tree-row
 {
-  color: #126495;
+  color: $lk-link-color;
   text-decoration: none;
   vertical-align: top;
   padding-right:4px;
@@ -1809,7 +1625,7 @@ tr.labkey-nav-tree-row
 
 tr.labkey-nav-tree-row:hover
 {
-  background-color: #E7EFF4;
+  background-color: $lk-grid-color;
   cursor: pointer;
 }
 
@@ -1874,7 +1690,7 @@ table.labkey-nav-tree-child
 
 table#navBar
 {
-  background-color:#f8f8f8;
+  background-color:$lk-primary-bg-color;
 }
 
 /* This is used for the links at the top of the project area to the containing folders  */
@@ -1901,7 +1717,7 @@ table.labkey-wp
 {
   width: 100%;
   border-spacing: 0; *border-collapse: collapse;
-  border: 5px solid #e0e6ea;
+  border: 5px solid $lk-webpart-color;
 
   border-radius: 5px;
   -moz-border-radius: 5px;
@@ -1925,7 +1741,7 @@ td.labkey-wp-body.labkey-wp-nopadding
 help pop up */
 tr.labkey-wp-header
 {
-  background-color: #e0e6ea;
+  background-color: $lk-webpart-color;
   font-weight: normal;
   border: 0;
 }
@@ -1971,7 +1787,7 @@ th.labkey-wp-title-left a:link, th.labkey-wp-title-left a:visited {
 }
 
 th.labkey-wp-title-left a:hover {
-  color: #126495;
+  color: $lk-link-color;
   text-decoration: none;
 }
 
@@ -2024,9 +1840,8 @@ span.labkey-wp-icon-button-inactive:hover {
   margin-left: 5px;
   margin-bottom: 2px;
   border: 1px solid #fff;
-  color: #126495;
+  color: $lk-link-color;
   text-transform: uppercase;
-  /*font-size: 10px;*/
   font-family: 'Roboto', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
   white-space: nowrap;
 
@@ -2037,7 +1852,7 @@ span.labkey-wp-icon-button-inactive:hover {
 
 .labkey-wp-text-buttons a:hover {
   background-color: #fff;
-  color: #126495;
+  color: $lk-link-color;
   width: 100%;
 }
 
@@ -2059,7 +1874,7 @@ a.no-arrow {
 }
 
 a.labkey-text-link, a.labkey-text-link:visited, a.labkey-text-link-noarrow {
-  color: #126495;
+  color: $lk-link-color;
   padding: .3em 14px 2px 0;
   text-transform: uppercase;
   border: none;
@@ -2141,7 +1956,7 @@ a.labkey-selected-link
 
 td.labkey-ms1-filter
 {
-  background: #E7EFF4;
+  background: $lk-grid-color;
   text-align: center;
   border-top: 1px solid #AAAAAA;
   border-bottom: 1px solid #AAAAAA;
@@ -2362,7 +2177,7 @@ div.labkey-knitr h1
 }
 
 .labkey-knitr code.r, .labkey-wiki code.cpp {
-  background-color: #F8F8F8;
+  background-color: $lk-primary-bg-color;
 }
 
 /* R reports */
@@ -2371,117 +2186,7 @@ table.labkey-r-tsvout
   border-spacing: 0; *border-collapse: collapse;
 }
 
-
-
-
-/* GWT */
-
-.gwt-ToolTip {
-  background-color: #FFDF8C;
-  font-size: 8pt;
-  padding: 2px 4px;
-  border: solid 1px #AAAAAA;
-}
-
-.gwt-CheckBox {
-  font-size: 8pt;
-}
-
-.dialogMiddleCenter {
-  padding: 5px;
-}
-
-.gwt-DialogBox {
-  border: 8px solid #89A1B4;
-  background-color: #FFFFFF;
-}
-
-.gwt-DialogBox .Caption {
-  background-color: #E7EFF4;
-  border: 1px solid #89A1B4;
-  padding: 3px;
-  font-weight: bold;
-  cursor: default;
-}
-
-.gwt-HorizontalSplitter .Bar {
-  width: 8px;
-  background-color: #89A1B4;
-}
-
-.gwt-VerticalSplitter .Bar {
-  height: 8px;
-  background-color: #89A1B4;
-}
-
-.gwt-MenuBar {
-  background-color: #E7EFF4;
-  border: 1px solid #89A1B4;
-  cursor: default;
-}
-
-.gwt-MenuBar .gwt-MenuItem {
-  padding: 1px 4px;
-  font-size: 8pt;
-  cursor: default;
-}
-
-.gwt-MenuBar .gwt-MenuItem-selected {
-  background-color: #89A1B4;
-}
-
-.gwt-ProgressBar-shell {
-  border: 2px solid #faf9f7;
-  border-right: 2px solid #848280;
-  border-bottom: 2px solid #848280;
-  background-color: #AAAAAA;
-  height: 14pt;
-  width: 300px;
-}
-
-.gwt-ProgressBar-shell .gwt-ProgressBar-bar {
-  background-color: #67A7E3;
-}
-
-.gwt-ProgressBar-shell .gwt-ProgressBar-text {
-  padding: 0;
-  margin: 0;
-  color: #FFFFFF;
-}
-
-.gwt-PushButton {
-  cursor: pointer;
-}
-
-.gwt-FontImage {
-  font-size: 18px;
-}
-
-.gwt-PushButton-up-disabled
-{
-  cursor: default;
-  filter:alpha(opacity=50);
-  -moz-opacity:0.5;
-  -khtml-opacity: 0.5;
-  opacity: 0.5;
-}
-
-.gwt-Tree .gwt-TreeItem {
-  font-size: 8pt;
-}
-
-.gwt-Tree .gwt-TreeItem-selected {
-  font-weight:bold;
-}
-
-.gwt-StackPanel .gwt-StackPanelItem {
-  background-color: #E7EFF4;
-  cursor: pointer;
-}
-
-.gwt-ButtonBar {
-  padding: 4px 0;
-}
+@import "labkey/gwt";
 
 /* Create Chart View */
 table.chart-preview td {
@@ -2556,237 +2261,13 @@ a.upload-button
   border: 1px solid #DDD;
 }
 
-
-
-/*****     TAB STRIPS     *****/
-table.labkey-tab-strip
-{
-  width: 100%;
-  border-spacing: 0;
-  *border-collapse: collapse;
-}
-
-.labkey-tab-strip {
-  border-top: 0;
-  /* This applies to both ul and table? see ul a little further down */
-}
-
-/* This tab has no bottom border so it looks like it is forward */
-td.labkey-tab-selected, .labkey-tab-selected {
-  padding: 4px 7px;
-  border: 1px solid #b4b4b4;
-  border-bottom-color: #ffffff;
-  background-color: #fff;
-  color: #000000;
-  font-weight: bold;
-  white-space: nowrap;
-}
-
-.labkey-tab-selected a {
-  padding: 4px 7px;
-  border-top: solid 1px #b4b4b4;
-  border-bottom: solid 1px #ffffff;
-  background-color: #fff;
-  color: #000000;
-  font-weight: bold;
-  white-space: nowrap;
-}
-
-/* This tab has a bottom border so it looks like it is back */
-td.labkey-tab, .labkey-tab {
-  padding: 4px 7px;
-  border: solid 1px #b4b4b4;
-  background-color: #f4f4f4;
-  color: #126495;
-  text-decoration: none;
-  vertical-align: bottom;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.labkey-tab a {
-  padding: 4px 7px;
-  background-color: #f4f4f4;
-  color: #126495;
-  font-weight: bold;
-  text-decoration: none;
-  vertical-align: bottom;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.labkey-tab a:hover {
-  padding: 4px 7px;
-  background-color: #f4f4f4;
-  color: #000000;
-  font-weight: bold;
-  text-decoration: none;
-  vertical-align: bottom;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-/* This tab has a bottom border and its text is shaded so it looks like it is back and unselectable */
-td.labkey-tab-inactive {
-  padding: 4px 7px;
-  border:solid 1px #b4b4b4;
-  text-decoration: none;
-  color: #444444;
-  background-color: #f4f4f4;
-}
-
-td.labkey-tab-content, .labkey-tab-content {
-  padding: 4px 7px;
-  border-left: solid 1px #b4b4b4;
-  border-right: solid 1px #b4b4b4;
-  border-bottom: solid 1px #b4b4b4;
-  background-color:#ffffff;
-  vertical-align:bottom;
-}
-
-.labkey-tab-selected a, .labkey-tab a
-{
-  outline: none;
-}
-
-/* This is used for breaks in between tabs */
-td.labkey-tab-space, .labkey-tab-space
-{
-  border-top: 0;
-  border-left: 0;
-  border-right: 0;
-  border-bottom: 1px solid #b4b4b4;
-}
-
-/* styles used for TabStripView tabs */
-ul.labkey-tab-strip
-{
-  border-bottom : 1px solid #b4b4b4;
-  margin : 0;
-  padding-left : 10px;
-}
-
-ul.labkey-tab-strip .tab-strip-clear
-{
-  clear: both;
-  height: 0;
-  overflow: hidden;
-  line-height: 0;
-  font-size: 0;
-}
-
-ul.labkey-tab-strip li
-{
-  display : inline;
-  list-style-type : none;
-  margin : 0;
-  padding : 0;
-}
-
-ul.labkey-tab-strip a
-{
-  border-top : 1px solid #b4b4b4;
-  border-right : 1px solid #b4b4b4;
-  border-left : 1px solid #b4b4b4;
-  border-bottom : none;
-  float: left;
-  line-height : 1;
-  text-decoration : none;
-
-  border-radius: 5px 5px 0 0;
-  margin-right: 2px;
-  padding: 6px 9px;
-
-  -moz-box-shadow: 0 -2px 2px #ddd;
-  -webkit-box-shadow: 0 -2px 2px #ddd;
-  box-shadow: 0 -2px 2px #ddd;
-}
-
-li.labkey-tab-active a
-{
-  background-color : #fff;
-  border-bottom : 1px solid #fff;
-  margin-bottom: -1px;
-  color: #000000;
-  font-family: $font-family-sans-serif-bold;
-}
-
-li.labkey-tab-inactive a
-{
-  background-color: #f4f4f4;
-  font-family: $font-family-sans-serif-bold;
-}
-
-.labkey-tab-strip-spacer
-{
-  height: 4px;
-  background-color:#fff;
-  border-left : 1px solid #b4b4b4;
-  border-right : 1px solid #b4b4b4;
-  border-bottom : 1px solid #fff;
-  font-size:1px;
-  line-height:1;
-}
-
-.labkey-tab-strip-content
-{
-  background: #ffffff;
-  border: 1px solid #b4b4b4;
-  border-top: none;
-  clear: both;
-  margin: 0;
-  padding: 15px;
-}
+@import "labkey/components/tabStrip";
 
 /* This is used as the final tab in a tab strip */
 #labkey-end-tab-space
 {
   padding-right: 5px;
   white-space: nowrap;
-}
-
-/* gwt */
-
-.gwt-TabPanelBottom {
-  border: 1px solid #b4b4b4;
-}
-
-.gwt-TabBar {
-  /* font-size: 8pt; */
-  font-weight: bold;
-}
-
-.gwt-TabBar .gwt-TabBarFirst {
-  padding-left: 3px;
-}
-
-.gwt-TabBar .gwt-TabBarRest {
-  padding-right: 3px;
-}
-
-.gwt-TabBar .gwt-TabBarItem {
-  border-top: 1px solid #b4b4b4;
-  border-left: 1px solid #b4b4b4;
-  border-right: 1px solid #b4b4b4;
-  margin-right: 6px;
-  padding: 4px 7px;
-  cursor: pointer;
-  background-color: #f4f4f4;
-}
-
-.gwt-TabBar .gwt-TabBarItem-selected {
-  padding: 4px 7px;
-  margin-right: 6px;
-  cursor: default;
-  background: transparent;
-}
-
-.gwt-TabBar .gwt-TabBarItem-selected div {
-  font-weight: bold;
-}
-
-.gwt-TabBar .gwt-TabBarItem {
-  padding: 4px 7px;
 }
 
 .drag-target-table-positioner {
@@ -2832,7 +2313,7 @@ div.note {
   font-family: $font-family-sans-serif-bold;
   text-transform: uppercase;
   text-decoration: none;
-  color: #126495;
+  color: $lk-link-color;
   font-size: 11px;
   letter-spacing: .5px;
 }
@@ -2889,9 +2370,7 @@ input[type="checkbox"], input[type="radio"] {
 
 .iScroll ::-webkit-scrollbar-track-piece
 {
-  -webkit-border-radius: 0;
-  -webkit-border-bottom-right-radius: 4px;
-  -webkit-border-bottom-left-radius: 4px;
+  -webkit-border-radius: 0 0 4px 4px;
 }
 
 .iScroll ::-webkit-scrollbar-thumb
@@ -2913,7 +2392,7 @@ input[type="checkbox"], input[type="radio"] {
 /* Used for the "App Bar" containing the main title and the application button bar */
 
 .labkey-app-bar {
-  background-color: #e0e6ea;
+  background-color: $lk-webpart-color;
 }
 
 .labkey-app-bar-replicate
@@ -2967,10 +2446,10 @@ input[type="checkbox"], input[type="radio"] {
 }
 
 .labkey-app-bar ul:hover.labkey-tab-strip { /* map bottom border and background color to Primary background color */
-  background-color: #f8f8f8;
+  background-color: $lk-primary-bg-color;
   opacity: 1.0;
   color: #000;
-  border-bottom: 1px solid #f8f8f8;
+  border-bottom: 1px solid $lk-primary-bg-color;
 }
 
 .labkey-app-bar ul li.tab-nav-no-menu {
@@ -2979,7 +2458,7 @@ input[type="checkbox"], input[type="radio"] {
 
 li.tab-nav-active {
   border:  1px solid transparent;
-  background-color: #f8f8f8;
+  background-color: $lk-primary-bg-color;
 }
 
 li.tab-nav-active a {
@@ -3069,12 +2548,12 @@ li.tab-nav-inactive:hover a {
 .edit-views-link:hover
 {
   cursor: pointer;
-  color: #126495;
+  color: $lk-link-color;
 }
 
 .labkey-main-menu
 {
-  background-color: #126495;
+  background-color: $lk-link-color;
   padding: 1px;
   position: relative;
 }
@@ -3172,7 +2651,7 @@ li.labkey-main-menu-project-link
 }
 
 span.button-icon {
-  background-color: #126495;
+  background-color: $lk-link-color;
   opacity: 0.5;
   display: inline-block;
   width: 26px;
@@ -3238,7 +2717,7 @@ span.button-icon {
 }
 
 .project-nav ul li a:hover {
-  background-color: #E0E6EA;
+  background-color: $lk-webpart-color;
 }
 
 .project-menu-buttons {
@@ -3320,7 +2799,7 @@ span.button-icon {
 
 .folder-nav ul li a:hover {
   white-space: nowrap;
-  background-color: #E0E6EA;
+  background-color: $lk-webpart-color;
 }
 
 .expand-folder span.marked {
@@ -3354,7 +2833,7 @@ div.headermenu {
   z-index: 1;
   color: gray;
   height: 16px;
-  background-color: #126495;
+  background-color: $lk-link-color;
   padding: 6px 13px 6px 6px;
   font-size: 95%;
   right: 0;
@@ -3506,14 +2985,14 @@ div.facet_header .x4-panel-header-text-container
 
 div.facet_header .x4-panel-header-text
 {
-  color: #126495;
+  color: $lk-link-color;
   text-transform: uppercase;
   font-size: 10px;
 }
 
 .study-schedule-container .x4-grid-header-ct
 {
-  background: #E7EFF4 none;
+  background: $lk-grid-color none;
 }
 
 .x4-message-box .x4-window-body,
@@ -3663,179 +3142,7 @@ a div.x4-menu-item-icon.fa-users
   background-image: none;
 }
 
-/* EXPORT TAB PANEL -- REMOVE THESE SELECTORS IF MIGRATE TO BOOTSTRAP OCCURS */
-.labkey-ribbon .tabbable {
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
-}
-
-.labkey-ribbon .tabbable:before,.tabbable:after {
-  display: table;
-  content: " "
-}
-
-.labkey-ribbon .tabbable:after {
-  clear: both
-}
-
-.labkey-ribbon .tabbable:before,.tabbable:after {
-  display: table;
-  content: " "
-}
-
-.labkey-ribbon .tabbable:after {
-  clear: both
-}
-
-.labkey-ribbon .nav {
-  padding-left: 0;
-  margin-bottom: 0;
-  list-style: none;
-}
-
-.labkey-ribbon .nav:before,.nav:after {
-  display: table;
-  content: " ";
-}
-
-.labkey-ribbon .nav:after {
-  clear: both;
-}
-
-.labkey-ribbon .nav:before,.nav:after {
-  display: table;
-  content: " ";
-}
-
-.labkey-ribbon .nav:after {
-  clear: both;
-}
-
-.labkey-ribbon .nav>li {
-  position: relative;
-  display: block;
-}
-
-.labkey-ribbon .nav>li>a {
-  position: relative;
-  display: block;
-  padding: 10px 15px;
-}
-
-.labkey-ribbon .nav>li>a:hover,.nav>li>a:focus {
-  text-decoration: none;
-  background-color: #eee;
-}
-
-.labkey-ribbon .nav-tabs {
-  border-bottom: 1px solid #ddd
-}
-
-.labkey-ribbon .nav-tabs>li {
-  float: left;
-  margin-bottom: -1px
-}
-
-/*Used in Data Region Export panel*/
-.labkey-ribbon .nav-tabs>li>a {
-  margin-right: 2px;
-  line-height: 1.4;
-  border: 1px solid transparent;
-  border-radius: 4px 4px 0 0
-}
-
-.labkey-ribbon .nav-tabs>li>a:hover {
-  border-color: #eee
-}
-
-.labkey-ribbon .nav-tabs>li.active>a,
-.labkey-ribbon .nav-tabs>li.active>a:hover,
-.labkey-ribbon .nav-tabs>li.active>a:focus {
-  color: #555;
-  cursor: default;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-bottom-color: transparent
-}
-
-.labkey-ribbon .nav-tabs.nav-justified {
-  width: 100%;
-  border-bottom: 0
-}
-
-.labkey-ribbon .nav-tabs.nav-justified>li {
-  display: table-cell;
-  float: none;
-  width: 1%
-}
-
-.labkey-ribbon .nav-tabs.nav-justified>li>a {
-  text-align: center
-}
-
-.labkey-ribbon .nav-tabs.nav-justified>li>a {
-  margin-right: 0;
-  border-bottom: 1px solid #ddd
-}
-
-.labkey-ribbon .nav-tabs.nav-justified>.active>a {
-  border-bottom-color: #fff
-}
-
-/* custom inclusion left tabs */
-
-.labkey-ribbon .tabs-left > .nav-tabs {
-  border-bottom: 0;
-}
-
-.labkey-ribbon .tab-content > .tab-pane {
-  background-color: #fff;
-  border-top: 1px solid #ddd;
-  border-right: 1px solid #ddd;
-  border-bottom: 1px solid #ddd;
-  display: none;
-}
-
-.labkey-ribbon .tab-content > .active {
-  display: block;
-}
-
-.labkey-ribbon .tabs-left > .nav-tabs > li {
-  float: none;
-}
-
-.labkey-ribbon .tabs-left > .nav-tabs > li > a {
-  min-width: 74px;
-  margin-right: 0;
-  margin-bottom: 3px;
-}
-
-.labkey-ribbon .tabs-left > .nav-tabs {
-  float: left;
-  margin: 0;
-  border-right: 1px solid #ddd;
-  background-color: #E7EFF4;
-}
-
-.labkey-ribbon .tabs-left > .nav-tabs > li > a {
-  margin-right: -1px;
-  -webkit-border-radius: 4px 0 0 4px;
-  -moz-border-radius: 4px 0 0 4px;
-  border-radius: 4px 0 0 4px;
-}
-
-.labkey-ribbon .tabs-left > .nav-tabs > li > a:hover,
-.labkey-ribbon .tabs-left > .nav-tabs > li > a:focus {
-  border-color: #eeeeee #dddddd #eeeeee #eeeeee;
-}
-
-.labkey-ribbon .tabs-left > .nav-tabs .active > a,
-.labkey-ribbon .tabs-left > .nav-tabs .active > a:hover,
-.labkey-ribbon .tabs-left > .nav-tabs .active > a:focus {
-  border-color: #ddd transparent #ddd #ddd;
-  *border-right-color: #ffffff;
-}
+@import "labkey/ribbon";
 
 .labkey-hidden
 {

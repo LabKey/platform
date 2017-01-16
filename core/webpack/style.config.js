@@ -9,12 +9,14 @@ var ExtractTextPlugin = require('extract-text-webpack-plugin');
 module.exports = {
     context: path.resolve(__dirname, '..'),
 
-    entry: './resources/styles/style.js',
+    entry: {
+        core_style: './resources/styles/style.js'
+    },
 
     output: {
         path: path.resolve(__dirname, '../resources/web/core/css'),
         publicPath: '/labkey/core/css/',
-        filename: 'out_style.js'
+        filename: '[name].js'
     },
 
     plugins: [
@@ -26,14 +28,21 @@ module.exports = {
     module: {
         loaders: [
             {
-                test: /\.css$/,
-                loader: ExtractTextPlugin.extract('style-loader', ['css-loader', 'postcss-loader', 'resolve-url-loader']),
-                exclude: /node_modules/
+                // labkey scss
+                test: /\.scss$/,
+                loader: ExtractTextPlugin.extract('style-loader', ['css-loader?sourceMap&url=false', 'postcss-loader', 'sass-loader?sourceMap']),
+                include: [
+                    path.resolve(__dirname, '../resources/styles/scss')
+                ]
             },
             {
+                // bootstrap / font-awesome scss
                 test: /\.scss$/,
                 loader: ExtractTextPlugin.extract('style-loader', ['css-loader?sourceMap', 'postcss-loader', 'resolve-url-loader', 'sass-loader?sourceMap']),
-                exclude: /node_modules/
+                include: [
+                    path.resolve(__dirname, '../node_modules/bootstrap-sass'),
+                    path.resolve(__dirname, '../node_modules/font-awesome')
+                ]
             },
             {
                 test: /\.(png|jpg|gif)$/,

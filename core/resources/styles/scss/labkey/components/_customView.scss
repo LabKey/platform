@@ -1,0 +1,144 @@
+@import "../variables";
+
+.labkey-customview-westpanel ul {
+  padding: 0;
+  list-style: none;
+}
+
+.labkey-customview-filter-item .item-caption,
+.labkey-customview-sort-item .item-caption {
+  font-family: $font-family-sans-serif-bold;
+}
+
+.labkey-customview-item {
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+}
+
+.labkey-customview-item.x-view-selected,
+.labkey-customview-item.x4-item-selected {
+  background: #eeeeee;
+  border-top: 1px solid #89A1B4;
+  border-bottom: 1px solid #89A1B4;
+}
+
+.labkey-customview-item.x-view-over,
+.labkey-customview-item.x4-view-over {
+  border-top: 1px solid $lk-link-color;
+  border-bottom: 1px solid $lk-link-color;
+}
+
+.labkey-customview-item .item-op {
+  float: left;
+  padding: 2px;
+}
+
+.labkey-customview-item .item-value {
+  padding: 2px;
+}
+
+/* grab */
+
+.labkey-customview-item .labkey-grab {
+  opacity: 0;
+  filter:alpha(opacity=0);
+  height: 100%;
+}
+
+.labkey-customview-item.x-view-over .labkey-grab,
+.labkey-customview-item.x4-view-over .labkey-grab {
+  opacity: 1;
+  filter:alpha(opacity=100);
+}
+
+/* gear and close */
+
+.labkey-customview-item .labkey-tool-gear,
+.labkey-customview-item .labkey-tool-close {
+  opacity: 0.1;
+  filter:alpha(opacity=10);
+}
+
+.labkey-customview-item.x-view-over .labkey-tool-gear,
+.labkey-customview-item.x4-view-over .labkey-tool-gear,
+.labkey-customview-item.x-view-over .labkey-tool-close,
+.labkey-customview-item.x4-view-over .labkey-tool-close {
+  opacity: 0.9;
+  filter:alpha(opacity=90);
+}
+
+.labkey-customview-item .labkey-tool-close {
+  float: right;
+}
+
+.labkey-customview-item .item-aggregate {
+  float: right;
+  opacity: 0.3;
+  filter:alpha(opacity=30);
+}
+
+.labkey-customview-item.x-view-over .item-aggregate,
+.labkey-customview-item.x4-view-over .item-aggregate {
+  opacity: 1;
+  filter:alpha(opacity=100);
+}
+
+.labkey-customview-filter-item .labkey-tool-pin,
+.labkey-customview-filter-item .labkey-tool-unpin,
+.labkey-customview-filter-item .labkey-tool-close,
+.labkey-customview-sort-item .labkey-tool-pin,
+.labkey-customview-sort-item .labkey-tool-unpin,
+.labkey-customview-sort-item .labkey-tool-close {
+  margin-top: 3px;
+}
+
+.labkey-customview-filter-item .x4-field td,
+.labkey-customview-sort-item .x4-field td,
+.labkey-fieldmeta-tree td
+{
+  padding: 0; /* see .labkey-data-region-header-container td */
+}
+
+.labkey-customview-tab {
+  cursor: pointer;
+  font-size: 11px;
+  font-family: $font-family-sans-serif-bold;
+  padding: 6px  !important;
+  color: #555555;
+}
+
+.labkey-customview-activetab {
+  background-color: #FFFFFF;
+  border-radius: 5px 0 0 5px;
+  border: 1px solid #CCCCCC;
+  border-right-width: 0;
+}
+
+.labkey-customview-message {
+  background-color: #FFDF8C;
+  padding: 2px !important;
+}
+
+.labkey-customview-save .x4-form-item-label,
+.labkey-customview-save .x4-form-cb-label {
+  margin-top: 5px;
+}
+
+.labkey-customview-button-footer {
+  padding: 5px !important;
+  border-top: solid #CCCCCC 1px !important;
+}
+
+.labkey-customview-westpanel .tab-joint {
+  position: absolute;
+  top: 1px;
+  left: 78px;
+  width: 3px;
+  height: 25px;
+  background: #FFFFFF;
+  z-index: 8999;
+}
+
+.labkey-customview-centerpanel {
+  border: solid #CCCCCC 1px;
+}

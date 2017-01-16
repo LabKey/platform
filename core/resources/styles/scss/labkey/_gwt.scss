@@ -1,0 +1,156 @@
+@import "variables";
+
+.gwt-TextBox {
+  font-family: $font-family-sans-serif;
+  font-size: $font-size-base;
+  color: $text-color;
+  line-height: $line-height-base;
+}
+
+.gwt-ToolTip {
+  background-color: #FFDF8C;
+  font-size: 8pt;
+  padding: 2px 4px;
+  border: solid 1px #AAAAAA;
+}
+
+.gwt-CheckBox {
+  font-size: 8pt;
+}
+
+.dialogMiddleCenter {
+  padding: 5px;
+}
+
+.gwt-DialogBox {
+  border: 8px solid #89A1B4;
+  background-color: #FFFFFF;
+}
+
+.gwt-DialogBox .Caption {
+  background-color: $lk-grid-color;
+  border: 1px solid #89A1B4;
+  padding: 3px;
+  font-weight: bold;
+  cursor: default;
+}
+
+.gwt-HorizontalSplitter .Bar {
+  width: 8px;
+  background-color: #89A1B4;
+}
+
+.gwt-VerticalSplitter .Bar {
+  height: 8px;
+  background-color: #89A1B4;
+}
+
+.gwt-MenuBar {
+  background-color: $lk-grid-color;
+  border: 1px solid #89A1B4;
+  cursor: default;
+}
+
+.gwt-MenuBar .gwt-MenuItem {
+  padding: 1px 4px;
+  font-size: 8pt;
+  cursor: default;
+}
+
+.gwt-MenuBar .gwt-MenuItem-selected {
+  background-color: #89A1B4;
+}
+
+.gwt-ProgressBar-shell {
+  border: 2px solid #faf9f7;
+  border-right: 2px solid #848280;
+  border-bottom: 2px solid #848280;
+  background-color: #AAAAAA;
+  height: 14pt;
+  width: 300px;
+}
+
+.gwt-ProgressBar-shell .gwt-ProgressBar-bar {
+  background-color: #67A7E3;
+}
+
+.gwt-ProgressBar-shell .gwt-ProgressBar-text {
+  padding: 0;
+  margin: 0;
+  color: #FFFFFF;
+}
+
+.gwt-PushButton {
+  cursor: pointer;
+}
+
+.gwt-FontImage {
+  font-size: 18px;
+}
+
+.gwt-PushButton-up-disabled
+{
+  cursor: default;
+  filter:alpha(opacity=50);
+  -moz-opacity:0.5;
+  -khtml-opacity: 0.5;
+  opacity: 0.5;
+}
+
+.gwt-Tree .gwt-TreeItem {
+  font-size: 8pt;
+}
+
+.gwt-Tree .gwt-TreeItem-selected {
+  font-weight:bold;
+}
+
+.gwt-StackPanel .gwt-StackPanelItem {
+  background-color: $lk-grid-color;
+  cursor: pointer;
+}
+
+.gwt-ButtonBar {
+  padding: 4px 0;
+}
+
+.gwt-TabPanelBottom {
+  border: 1px solid #b4b4b4;
+}
+
+.gwt-TabBar {
+  font-weight: bold;
+}
+
+.gwt-TabBar .gwt-TabBarFirst {
+  padding-left: 3px;
+}
+
+.gwt-TabBar .gwt-TabBarRest {
+  padding-right: 3px;
+}
+
+.gwt-TabBar .gwt-TabBarItem {
+  border-top: 1px solid #b4b4b4;
+  border-left: 1px solid #b4b4b4;
+  border-right: 1px solid #b4b4b4;
+  margin-right: 6px;
+  padding: 4px 7px;
+  cursor: pointer;
+  background-color: #f4f4f4;
+}
+
+.gwt-TabBar .gwt-TabBarItem-selected {
+  padding: 4px 7px;
+  margin-right: 6px;
+  cursor: default;
+  background: transparent;
+}
+
+.gwt-TabBar .gwt-TabBarItem-selected div {
+  font-weight: bold;
+}
+
+.gwt-TabBar .gwt-TabBarItem {
+  padding: 4px 7px;
+}

@@ -1,8 +1,36 @@
-$bootstrap-sass-asset-helper: false !default;
 //
-// Variables
+// LabKey Variables
 // --------------------------------------------------
 
+//== Paths
+//
+$api-webapp-dir: '../..';
+$internal-webapp-dir: '../..';
+$ext3-images-dir: '#{$api-webapp-dir}/ext-3.4.1/resources/images';
+$ext4-images-dir: '#{$api-webapp-dir}/ext-4.2.1/resources/ext-theme-classic-sandbox/images';
+$internal-images-dir: '#{$internal-webapp-dir}/_images';
+
+//== Colors
+//
+// # Imported "labkey-theme" colors
+// TODO: Integrate these with bootstrap
+
+$lk-base-color: #226495; // TODO: Suspicious that this was intended to be #126495
+$lk-panel-base-color: #DFE8F6;
+
+$lk-text-color: #000000;
+$lk-link-color: #126495;
+$lk-grid-color: #E7EFF4;
+$lk-primary-bg-color: #F8F8F8;
+$lk-secondary-bg-color: #FFFFFF;
+$lk-border-title-color: #676767;
+$lk-webpart-color: #E0E6EA;
+
+
+$bootstrap-sass-asset-helper: false !default;
+//
+// Bootstrap Variables
+// --------------------------------------------------
 
 //== Colors
 //
