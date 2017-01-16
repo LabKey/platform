@@ -1432,6 +1432,9 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
         private static void parseValue(Object value, Set<String> aliasNames, Set<Integer> aliasIds)
         {
+            if (value == null)
+                return;
+
             if (value instanceof String[])
             {
                 String[] aa = (String[]) value;

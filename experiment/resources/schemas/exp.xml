@@ -842,6 +842,7 @@
       <column columnName="RowId"/>
       <column columnName="LSID"/>
       <column columnName="Name"/>
+      <column columnName="Description"/>
       <column columnName="CpasType"/>
       <column columnName="SourceApplicationId"/>
       <column columnName="RunId"/>
