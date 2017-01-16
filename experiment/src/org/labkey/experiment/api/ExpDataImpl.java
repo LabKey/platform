@@ -108,13 +108,6 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         super(data);
     }
 
-    @Nullable
-    @Override
-    public String getDescription()
-    {
-        return _object.getDescription();
-    }
-
     @Override
     public void setComment(User user, String comment) throws ValidationException
     {

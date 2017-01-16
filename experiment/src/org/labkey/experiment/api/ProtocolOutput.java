@@ -36,6 +36,7 @@ public abstract class ProtocolOutput extends IdentifiableBase
     private Integer _modifiedBy;
     private String _cpasType;
     private Integer _sourceApplicationId;
+    private String _description;
 
     public int getRowId()
     {
@@ -125,6 +126,16 @@ public abstract class ProtocolOutput extends IdentifiableBase
     public void setModifiedBy(Integer modifiedBy)
     {
         _modifiedBy = modifiedBy;
+    }
+
+    public String getDescription()
+    {
+        return _description;
+    }
+
+    public void setDescription(String description)
+    {
+        this._description = description;
     }
 
     public int hashCode()

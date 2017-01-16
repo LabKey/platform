@@ -108,6 +108,8 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
             case Name:
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
+            case Description:
+                return wrapColumn(alias, _rootTable.getColumn("Description"));
             case SampleSet:
             {
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("CpasType"));
@@ -315,6 +317,8 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             nameCol.setReadOnly(true);
             nameCol.setShownInInsertView(false);
         }
+
+        addColumn(Column.Description);
 
         ColumnInfo typeColumnInfo = addColumn(Column.SampleSet);
         typeColumnInfo.setFk(new LookupForeignKey("lsid")

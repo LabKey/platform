@@ -219,6 +219,7 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
                 StringBuilder body = new StringBuilder();
 
                 // Append the interesting standard properties: "Source Experiment Run", "Source Protocol", and "Source Protocol Application"
+                append(body, getDescription());
                 append(body, getRun());
                 append(body, getSourceProtocol());
                 append(body, getSourceApplication());

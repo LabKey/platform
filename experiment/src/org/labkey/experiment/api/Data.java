@@ -31,7 +31,6 @@ public class Data extends ProtocolOutput
 {
     private String dataFileUrl;
     private boolean generated;
-    private String description;
     private Integer classId;
 
     public Data()
@@ -85,16 +84,6 @@ public class Data extends ProtocolOutput
     public void setGenerated(boolean generated)
     {
         this.generated = generated;
-    }
-
-    public String getDescription()
-    {
-        return description;
-    }
-
-    public void setDescription(String description)
-    {
-        this.description = description;
     }
 
     public Integer getClassId()

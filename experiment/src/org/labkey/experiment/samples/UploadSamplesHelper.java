@@ -186,10 +186,17 @@ public class UploadSamplesHelper
                     {
                         hasCommentHeader = true;
                         cd.name = ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI();
+                        cd.clazz = String.class;
                     }
                     else if (isNameHeader(cd.name))
                     {
                         cd.name = ExpMaterialTable.Column.Name.name();
+                        cd.clazz = String.class;
+                    }
+                    else if (isDescriptionHeader(cd.name))
+                    {
+                        // load this column
+                        cd.clazz = String.class;
                     }
                     else if (isInputOutputHeader(cd.name))
                     {
@@ -456,6 +463,11 @@ public class UploadSamplesHelper
         return name.equalsIgnoreCase(ExpMaterialTable.Column.Name.name());
     }
 
+    private boolean isDescriptionHeader(String name)
+    {
+        return name.equalsIgnoreCase(ExpMaterialTable.Column.Description.name());
+    }
+
     private boolean isCommentHeader(String name)
     {
         return name.equalsIgnoreCase(ExpMaterialTable.Column.Flag.name()) || name.equalsIgnoreCase("Comment");
@@ -474,7 +486,7 @@ public class UploadSamplesHelper
 
     private boolean isReservedHeader(String name)
     {
-        if (isNameHeader(name) || isCommentHeader(name) || "CpasType".equalsIgnoreCase(name) || isAliasHeader(name))
+        if (isNameHeader(name) || isDescriptionHeader(name) || isCommentHeader(name) || "CpasType".equalsIgnoreCase(name) || isAliasHeader(name))
             return true;
         if (isInputOutputHeader(name))
             return true;
@@ -1011,12 +1023,16 @@ public class UploadSamplesHelper
             {
                 material = ExperimentServiceImpl.get().createExpMaterial(_container, lsid, name);
                 material.setCpasType(_source.getLSID());
+                if (map.containsKey("Description"))
+                    material.setDescription((String)map.get("Description"));
                 material.save(_user);
             }
             else
             {
                 material = ExperimentServiceImpl.get().getExpMaterial(lsid);
                 assert material != null : "Could not find existing material with lsid " + lsid;
+                if (map.containsKey("Description"))
+                    material.setDescription((String)map.get("Description"));
                 // Save it so that we reset the modified/modified by info
                 material.save(_user);
             }

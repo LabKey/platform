@@ -50,6 +50,19 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
         super(object);
     }
 
+    @Nullable
+    @Override
+    public String getDescription()
+    {
+        return _object.getDescription();
+    }
+
+    public void setDescription(String description)
+    {
+        ensureUnlocked();
+        _object.setDescription(description);
+    }
+
     public List<ExpProtocolApplication> getSuccessorApps()
     {
         if (null == _successorAppList)

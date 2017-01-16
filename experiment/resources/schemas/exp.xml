@@ -264,6 +264,9 @@
       <column columnName="Name">
           <description>Contains a short description for this sample</description>
       </column>
+      <column columnName="Description">
+          <description>Contains a description for this sample</description>
+      </column>
       <column columnName="CpasType">
           <columnTitle>Sample Set</columnTitle>
           <description>If this sample is a member of a sample set, contains a reference to the sample set</description>
