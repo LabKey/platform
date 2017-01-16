@@ -18,6 +18,7 @@ package org.labkey.api.settings;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerManager.RootContainerException;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.User;
 
@@ -53,7 +54,17 @@ public abstract class AbstractSettingsGroup
 
     protected String lookupStringValue(String name, @Nullable String defaultValue)
     {
-        return lookupStringValue(ContainerManager.getRoot(), name, defaultValue);
+        Container root = null;
+
+        try
+        {
+            root = ContainerManager.getRoot();
+        }
+        catch (RootContainerException e)
+        {
+        }
+
+        return null != root ? lookupStringValue(root, name, defaultValue) : defaultValue;
     }
 
     protected String lookupStringValue(Container c, String name, @Nullable String defaultValue)

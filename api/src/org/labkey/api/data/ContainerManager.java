@@ -897,13 +897,18 @@ public class ContainerManager
         if (null != d)
             return d;
 
+        // Special case for ROOT -- we want to throw instead of returning null
         if (path.equals(Path.rootPath))
         {
             try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
             {
-                // Special case for ROOT.  Never return null -- either database error or corrupt database
-                Container result = new SqlSelector(CORE.getSchema(),
-                        "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE Parent IS NULL").getObject(Container.class);
+                TableInfo tinfo = CORE.getTableInfoContainers();
+
+                // This might be called at bootstrap, before schemas have been created
+                if (tinfo.getTableType() == DatabaseTableType.NOT_IN_DB)
+                    throw new RootContainerException("Container table has not been created");
+
+                Container result = new SqlSelector(CORE.getSchema(),"SELECT * FROM " + tinfo + " WHERE Parent IS NULL").getObject(Container.class);
 
                 if (result == null)
                     throw new RootContainerException("Root container does not exist");
