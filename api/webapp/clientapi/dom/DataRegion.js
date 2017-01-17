@@ -2262,6 +2262,70 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
+     * Get the array of selected ColumnAnalyticsProviders for the given column FieldKey in a view.
+     * @param viewName
+     * @param colFieldKey
+     * @param callback
+     * @param callbackScope
+     */
+    LABKEY.DataRegion.prototype.getColumnAnalyticsProviders = function(viewName, colFieldKey, callback, callbackScope) {
+        this.getQueryDetails(function(queryDetails)
+        {
+            var view = _getViewFromQueryDetails(queryDetails, viewName);
+            if (view != null)
+            {
+                if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
+                {
+                    var colProviderNames = [];
+                    $.each(view.analyticsProviders, function(index, existingProvider) {
+                        if (existingProvider.fieldKey == colFieldKey)
+                            colProviderNames.push(existingProvider.name);
+                    });
+
+                    if ($.isFunction(callback)) {
+                        callback.call(callbackScope, colProviderNames);
+                    }
+                }
+            }
+        }, null, this);
+    };
+
+    /**
+     * Set the summary statistic ColumnAnalyticsProviders for the given column FieldKey in the view.
+     * @param viewName
+     * @param colFieldKey
+     * @param summaryStatProviderNames
+     */
+    LABKEY.DataRegion.prototype.setColumnSummaryStatistics = function(viewName, colFieldKey, summaryStatProviderNames) {
+        this.getQueryDetails(function(queryDetails)
+        {
+            var view = _getViewFromQueryDetails(queryDetails, viewName);
+            if (view != null)
+            {
+                if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
+                {
+                    var newAnalyticsProviders = [];
+                    $.each(view.analyticsProviders, function(index, existingProvider) {
+                        if (existingProvider.fieldKey !== colFieldKey || !existingProvider.name.startsWith('AGG_'))
+                            newAnalyticsProviders.push(existingProvider);
+                    });
+
+                    $.each(summaryStatProviderNames, function(index, providerName) {
+                        newAnalyticsProviders.push({
+                            fieldKey: colFieldKey,
+                            name: providerName,
+                            isSummaryStatistic: true
+                        });
+                    });
+
+                    view.analyticsProviders = newAnalyticsProviders;
+                    this._updateSessionCustomView(view, true);
+                }
+            }
+        }, null, this);
+    };
+
+    /**
      * Remove a column from the given DataRegion query view.
      * @param viewName
      * @param colFieldKey

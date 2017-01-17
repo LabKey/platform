@@ -50,6 +50,12 @@ public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsPro
         return "Summary statistic " + getLabel() + " value function to apply to a given column.";
     }
 
+    @Override
+    public boolean isVisible(RenderContext ctx, QuerySettings settings, ColumnInfo col)
+    {
+        return true; //TODO make this false, these aggregates will be displayed as part of the SummaryStatisticsAnalyticsProvider
+    }
+
     public List<Aggregate.Type> getAdditionalAggregateTypes()
     {
         return null;

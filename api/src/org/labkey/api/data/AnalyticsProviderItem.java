@@ -256,20 +256,24 @@ public class AnalyticsProviderItem
             if (analyticsProvider != null && analyticsProvider instanceof BaseAggregatesAnalyticsProvider)
             {
                 BaseAggregatesAnalyticsProvider baseAggProvider = (BaseAggregatesAnalyticsProvider) analyticsProvider;
-
-                List<Aggregate> aggs = new ArrayList<>();
-                aggs.add(new Aggregate(getFieldKey(), baseAggProvider.getAggregateType(), getLabel()));
-
-                if (baseAggProvider.getAdditionalAggregateTypes() != null)
-                {
-                    for (Aggregate.Type addType : baseAggProvider.getAdditionalAggregateTypes())
-                        aggs.add(new Aggregate(getFieldKey(), addType, getLabel()));
-                }
-
-                return aggs;
+                return createAggregates(baseAggProvider, getFieldKey(), getLabel());
             }
         }
 
         return Collections.emptyList();
+    }
+
+    public static List<Aggregate> createAggregates(BaseAggregatesAnalyticsProvider baseAggProvider, FieldKey fieldKey, @Nullable String label)
+    {
+        List<Aggregate> aggs = new ArrayList<>();
+        aggs.add(new Aggregate(fieldKey, baseAggProvider.getAggregateType(), label));
+
+        if (baseAggProvider.getAdditionalAggregateTypes() != null)
+        {
+            for (Aggregate.Type addType : baseAggProvider.getAdditionalAggregateTypes())
+                aggs.add(new Aggregate(fieldKey, addType, label));
+        }
+
+        return aggs;
     }
 }

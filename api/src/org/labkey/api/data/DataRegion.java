@@ -64,7 +64,6 @@ import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.text.Format;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1467,41 +1466,7 @@ public class DataRegion extends AbstractDataRegion
 
                             out.write("<div>");
                             out.write("<span class='summary-stat-label'>" + statLabel + statDescr + ":</span>&nbsp;");
-
-                            // Issue 16570: Formatter is only applicable if the aggregate return type is
-                            // similar to the input jdbcType.  For example, don't apply a date format
-                            // to COUNT aggregates but do apply a string or double format to a MIN/MAX aggregate.
-                            Format formatter = renderer.getFormat();
-
-                            JdbcType inputType = col.getJdbcType();
-                            JdbcType returnType = type.returnType(inputType);
-                            if (type.isLegal(inputType))
-                            {
-                                if (r.getValue() == null)
-                                {
-                                    // no values to aggregate
-                                    out.write("n/a");
-                                }
-                                else if (formatter != null &&
-                                        (inputType == returnType ||
-                                                (inputType.isInteger() && returnType.isInteger()) ||
-                                                (inputType.isReal() && returnType.isReal())))
-                                {
-                                    out.write(formatter.format(r.getValue()));
-                                }
-                                else if (inputType.isNumeric())
-                                {
-                                    out.write(Formats.fv3.format(r.getValue()));
-                                }
-                                else
-                                {
-                                    out.write(r.getValue().toString());
-                                }
-                            }
-                            else
-                            {
-                                out.write("<span class='labkey-error'>Not valid for type '" + col.getFriendlyTypeName() + "'</span>");
-                            }
+                            out.write(r.getFormattedValue(renderer));
                             out.write("</div>");
                         }
                     }

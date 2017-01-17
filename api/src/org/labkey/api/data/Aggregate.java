@@ -22,9 +22,11 @@ import org.junit.Test;
 import org.labkey.api.analytics.BaseAggregatesAnalyticsProvider;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.Formats;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.Format;
 import java.util.Map;
 
 /**
@@ -271,6 +273,44 @@ public class Aggregate
         public String toString()
         {
             return _aggregate.getDisplayString() + ": " + _value;
+        }
+
+        public String getFormattedValue(DisplayColumn renderer)
+        {
+            // Issue 16570: Formatter is only applicable if the aggregate return type is
+            // similar to the input jdbcType.  For example, don't apply a date format
+            // to COUNT aggregates but do apply a string or double format to a MIN/MAX aggregate.
+            Format formatter = renderer.getFormat();
+            ColumnInfo col = renderer.getColumnInfo();
+            Aggregate.Type type = getAggregate().getType();
+
+            JdbcType inputType = col.getJdbcType();
+            JdbcType returnType = type.returnType(inputType);
+            if (type.isLegal(inputType))
+            {
+                if (getValue() == null)
+                {
+                    // no values to aggregate
+                    return "n/a";
+                }
+                else if (formatter != null &&
+                        (inputType == returnType ||
+                                (inputType.isInteger() && returnType.isInteger()) ||
+                                (inputType.isReal() && returnType.isReal())))
+                {
+                    return formatter.format(getValue());
+                }
+                else if (inputType.isNumeric())
+                {
+                    return Formats.fv3.format(getValue());
+                }
+                else
+                {
+                    return getValue().toString();
+                }
+            }
+
+            return "<span class='labkey-error'>Not valid for type '" + col.getFriendlyTypeName() + "'</span>";
         }
     }
 
