@@ -8,31 +8,20 @@
     background-color: #F4F4F4;
 }
 
-.summary-stats-dialog .stat-table td {
-    padding: 5px;
+.summary-stats-dialog .stat-table td.label,
+.summary-stats-dialog .stat-table td.value {
+    padding: 4px;
+}
+.summary-stats-dialog .stat-table td.check {
+    padding: 6px 4px 2px 4px;
 }
 
 .summary-stats-dialog .stat-table tr:hover {
-    cursor: pointer;
     background-color: #C0C0C0;
 }
 
 .summary-stats-dialog .stat-table .check {
-    opacity: 0.2;
     vertical-align: top;
-}
-.summary-stats-dialog .stat-table tr.x4-item-selected .check {
-    opacity: 1;
-}
-
-.summary-stats-dialog .stat-table .label,
-.summary-stats-dialog .stat-table .value {
-    opacity: 0.8;
-}
-.summary-stats-dialog .stat-table tr.x4-item-selected .label,
-.summary-stats-dialog .stat-table tr.x4-item-selected .value {
-    opacity: 1;
-    font-weight: bold;
 }
 
 .summary-stats-dialog .stat-table .value {

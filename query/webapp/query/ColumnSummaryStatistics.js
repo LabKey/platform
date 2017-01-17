@@ -84,7 +84,7 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
 
         // we expect more summary stats for numeric types, so change minHeight accordingly
         var colType = this.column.displayFieldJsonType || this.column.jsonType;
-        if (colType.toLowerCase() == 'int' || colType.toLowerCase() == 'float')
+        if (!this.column.isKeyField && (colType.toLowerCase() == 'int' || colType.toLowerCase() == 'float'))
             this.minHeight = this.minHeight + 150;
 
         this.items = [this.getDialogDescription()];
@@ -93,7 +93,7 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
             xtype: 'toolbar',
             dock: 'bottom',
             ui: 'footer',
-            padding: '0 10px 10px 10px',
+            padding: 10,
             items: [
                 '->',
                 this.getApplyButton(),
@@ -116,8 +116,8 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
             this.dialogDescription = Ext4.create('Ext.Component', {
                 width: 315,
                 padding: '0 0 10px 0',
-                html: 'Select the summary statistics which you would like to apply to the '
-                    + '<b>' + Ext4.String.htmlEncode(this.column.caption) + '</b> column for the '
+                html: 'Select the summary statistics which you would like to show for the '
+                    + '<b>' + Ext4.String.htmlEncode(this.column.caption) + '</b> column in the '
                     + '<b>' + Ext4.String.htmlEncode(viewName) + '</b> view.'
             });
         }
@@ -208,6 +208,7 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
                             label: result.label,
                             description: result.description,
                             value: result.value,
+                            checked: this.initSelection.indexOf(key) > -1,
                             altRow: this.rowCount % 2 == 0
                         });
                     }
@@ -216,6 +217,7 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
                         var rowData = {
                             name: key,
                             label: val.label,
+                            checked: this.initSelection.indexOf(key) > -1,
                             altRow: this.rowCount % 2 == 0
                         };
 
@@ -252,12 +254,14 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
 
             this.displayView = Ext4.create('Ext.view.View', {
                 store: store,
-                itemSelector: 'tr.row',
+                disableSelection: true,
                 tpl: new Ext4.XTemplate(
                     '<table class="stat-table">',
                         '<tpl for=".">',
                             '<tr class="row {[this.getAltRowCls(values.altRow)]}">',
-                                '<td class="check"><i class="fa fa-check-circle"></i></td>',
+                                '<td class="check">',
+                                    '<input type="checkbox" name="stat-cb" value="{name}" {[this.getCheckboxState(values.checked)]}/>',
+                                '</td>',
                                 '<td class="label">{label}',
                                     '{[this.getDescriptionHtml(values)]}',
                                     '{[this.getChildrenLabels(values.children)]}',
@@ -273,6 +277,10 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
                         getAltRowCls: function(altRow)
                         {
                             return altRow ? 'alt-row' : '';
+                        },
+                        getCheckboxState: function(checked)
+                        {
+                            return checked ? 'checked' : '';
                         },
                         getDescriptionHtml: function(values)
                         {
@@ -321,26 +329,40 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
                 )
             });
 
-            this.displayView.getSelectionModel().setSelectionMode('SIMPLE');
-
-            // on render, pre-select the summary stats for the given colFieldKey
-            this.displayView.on('render', function(view)
-            {
-                var selectedRecords = [];
-                Ext4.each(this.initSelection, function(analyticsProviderName)
-                {
-                    var rec = store.findRecord('name', analyticsProviderName, 0, false, true, true);
-                    if (rec)
-                        selectedRecords.push(rec);
-                }, this);
-                view.getSelectionModel().select(selectedRecords, false, true);
-            }, this);
-
-            this.displayView.on('select', function(view, record) { this.getApplyButton().enable(); }, this);
-            this.displayView.on('deselect', function(view, record) { this.getApplyButton().enable(); }, this);
+            this.displayView.on('refresh', this.attachCheckboxClickListeners, this, {single: true});
         }
 
         return this.displayView;
+    },
+
+    attachCheckboxClickListeners : function(view)
+    {
+        Ext4.each(this.getCheckboxInputs(), function(cb)
+        {
+            Ext4.get(cb).on('click', this.toggleApplyButtonState, this);
+        }, this);
+    },
+
+    toggleApplyButtonState : function()
+    {
+        var dirty = !Ext4.Array.equals(this.initSelection, this.getSelectedStats());
+        this.getApplyButton().setDisabled(!dirty);
+    },
+
+    getSelectedStats : function()
+    {
+        var selected = [];
+        Ext4.each(this.getCheckboxInputs(), function(cb)
+        {
+            if (cb.checked)
+                selected.push(cb.value);
+        }, this);
+        return selected;
+    },
+
+    getCheckboxInputs : function()
+    {
+        return Ext4.DomQuery.select('input[name=stat-cb]', this.getDisplayView().getEl().dom);
     },
 
     onFailure : function(response)
@@ -362,20 +384,12 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
         {
             this.applyButton = Ext4.create('Ext.button.Button', {
                 text: 'Apply',
+                width: 63,
                 scope: this,
                 disabled: true,
                 handler: function()
                 {
-                    var selected = this.getDisplayView().getSelectionModel().getSelection(),
-                        colSummaryStatNames = [];
-
-                    Ext4.each(this.getDisplayStore().getRange(), function(record)
-                    {
-                        if (selected.indexOf(record) > -1)
-                            colSummaryStatNames.push(record.get('name'));
-                    }, this);
-
-                    this.fireEvent('applySelection', this,colSummaryStatNames);
+                    this.fireEvent('applySelection', this, this.getSelectedStats());
                 }
             });
         }
@@ -389,6 +403,7 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
         {
             this.cancelButton = Ext4.create('Ext.button.Button', {
                 text: 'Cancel',
+                width: 63,
                 scope: this,
                 handler: function()
                 {
@@ -409,6 +424,7 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsModel', {
         {name: 'description'},
         {name: 'value'},
         {name: 'altRow'},
+        {name: 'checked'},
         {name: 'children'}
     ]
 });
