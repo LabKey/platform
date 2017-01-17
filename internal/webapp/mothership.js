@@ -93,7 +93,7 @@ LABKEY.Mothership = (function () {
         if (!msg)
             return;
         msg = ""+msg;
-        if (_lastErrors.push(msg) > _maxLastErrors)
+        if (_lastErrors.push({msg: msg, stackTrace: undefined}) > _maxLastErrors)
             _lastErrors = _lastErrors.slice(1);
     }
 
@@ -104,7 +104,8 @@ LABKEY.Mothership = (function () {
         // Ignore duplicates from the same page.
         // Also ignores errors that have already been reported and rethrown.
         for (i = 0; i < _lastErrors.length; i++) {
-            if (msg.indexOf(_lastErrors[i]) > -1)
+            var lastError = _lastErrors[i];
+            if (lastError && lastError.msg && msg.indexOf(lastError.msg) > -1)
                 return true;
         }
 
@@ -135,7 +136,8 @@ LABKEY.Mothership = (function () {
         ];
 
         for (i = 0; i < ignoreMsgs.length; i++) {
-            if (msg.indexOf(ignoreMsgs[i]) === 0)
+            var lastError = _lastErrors[i];
+            if (lastError && lastError.msg && lastError.msg.indexOf(msg) === 0)
                 return true;
         }
 
@@ -171,8 +173,81 @@ LABKEY.Mothership = (function () {
         console.debug(err.message);
     }
 
+    function htmlEncode(s) {
+        if (!s) return "";
+
+        var htmlEncodeRules = {
+            "&": "&#38;",
+            "<": "&#60;",
+            ">": "&#62;",
+            '"': "&#34;",
+            "'": "&#39;",
+            "/": "&#47;"
+        };
+        var htmlEncodeRe = /[&<>"'\/]/g;
+
+        return s.toString().replace(htmlEncodeRe, function(m) { return htmlEncodeRules[m] || m; });
+    }
+
+    function whitespace(s) {
+        if (!s) return "";
+
+        var whitespaceRules = {' ': '&nbsp;', '\n': '<br>', '\r': '' };
+        var whitespaceRe = / |\n|\r/g;
+        return s.toString().replace(whitespaceRe, function (m) { return whitespaceRules[m] || m; });
+    }
+
+    function renderLastErrors() {
+        var html =
+                "<div id='mothership-errors' style='" +
+                "background-color:lightyellow; opacity: 0.85; border:1px solid grey; padding: .5em; " +
+                "font-family:monospace; font-size: small; " +
+                "position: fixed; top: 0; left: 0; width: 100%; z-index: 1000" +
+                "'>";
+
+        if (_lastErrors.length) {
+            html += "LABKEY.Mothership most recent client-side errors:";
+            for (var i = 0; i < _lastErrors.length; i++) {
+                html += "<hr style='margin: 0.2em;'>";
+
+                var lastError = _lastErrors[i];
+                if (lastError.stackTrace)
+                    html += "<div>" + whitespace(htmlEncode(lastError.stackTrace)) + "</div>";
+                else
+                    html += "<div>" + whitespace(htmlEncode(lastError.msg)) + "</div>";
+            }
+        }
+        else {
+            html += "LABKEY.Mothership didn't detect any client-side errors";
+        }
+
+        html += "</div>";
+
+        var el = document.getElementById('mothership-errors');
+        if (el) {
+            el.innerHTML = html;
+        }
+        else {
+            el = window.document.createElement("DIV");
+            el.innerHTML = html;
+            window.document.body.appendChild(el);
+        }
+    }
+
     function _report(msg, file, line, column, stackTrace) {
         "use strict";
+
+        // Add the stackTrace to the corresponding lastError if it doesn't include a stackTrace yet.
+        // The stackTrace will be needed in renderLastErrors
+        if (stackTrace) {
+            for (var i = 0; i < _lastErrors.length; i++) {
+                var lastError = _lastErrors[i];
+                if (lastError.msg === msg && lastError.stackTrace === undefined) {
+                    lastError.stackTrace = stackTrace;
+                    break;
+                }
+            }
+        }
 
         // CONSIDER: Remove the _mothership flag and use a site-setting to suppress mothership reporting of client-side exceptions.
         var url;
@@ -774,7 +849,10 @@ LABKEY.Mothership = (function () {
         setDebug : function (b) { _debug = b; },
 
         /** Turn reporting errors to central mothership on or off (default is on). */
-        setReportErrors : function (b) { _mothership = b; }
+        setReportErrors : function (b) { _mothership = b; },
+
+        /** Render a little window displaying the 10 most recent errors collected. */
+        renderLastErrors : renderLastErrors
     };
 })();
 

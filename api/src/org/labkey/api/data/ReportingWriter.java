@@ -299,7 +299,7 @@ public class ReportingWriter
                 {
                     schemaName = SchemaKey.decode(lookupTable.getSchema().getName());
                     TableInfo parentTable = columnInfo.getParentTable();
-                    LOG.warn("userSchema for non-public lookup table " + queryName + " was null on column " + columnInfo.getName() + " in table " + parentTable.getPublicSchemaName() + "." + parentTable.getPublicName() + ". Using " + lookupTable.getSchema().getName());
+                    LOG.debug("userSchema for non-public lookup table " + queryName + " was null on column " + columnInfo.getName() + " in table " + parentTable.getPublicSchemaName() + "." + parentTable.getPublicName() + ". Using " + lookupTable.getSchema().getName());
                 }
             }
             lookupInfo.put("queryName", queryName);
