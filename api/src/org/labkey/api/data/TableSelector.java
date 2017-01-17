@@ -609,7 +609,6 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             aggregateSql.append("SELECT ");
             int validAggregates = 0;
 
-            // Consider: the way these are wired in does not allow for subqueries, which would be easier in some cases.
             for (Aggregate agg : _aggregates)
             {
                 if (agg.isCountStar() || _columnMap.containsKey(agg.getFieldKey()))
@@ -621,6 +620,14 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                             aggregateSql.append(",\n");
 
                         aggregateSql.append(sql);
+                        if (innerSql != null)
+                        {
+                            // If the aggregate uses subqueries, they need the same set of parameters as the outer sql.
+                            for (int i = 0; i < agg.getType().subQueryCount(); i++)
+                            {
+                                aggregateSql.addAll(innerSql.getParams());
+                            }
+                        }
                         validAggregates++;
                     }
                 }
