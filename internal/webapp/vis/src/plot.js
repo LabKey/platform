@@ -564,21 +564,17 @@ boxPlot.render();
         }
     };
 
-    var getDefaultRange = function(scaleName, scale) {
+    var getDefaultRange = function(scaleName, scale, userScale) {
         if (scaleName == 'color' && scale.scaleType == 'continuous') {
             return ['#222222', '#EEEEEE'];
         }
 
         if (scaleName == 'color' && scale.scaleType == 'discrete') {
-            if (scale.colorType === "DarkColorDiscrete") {
-                return LABKEY.vis.Scale.DarkColorDiscrete();
-            }
-            else if (scale.colorType === "DataspaceColor") {
-                return LABKEY.vis.Scale.DataspaceColor();
-            }
-            else {
+            var colorType = (userScale ? userScale.colorType : null) || scale.colorType;
+            if (LABKEY.vis.Scale[colorType])
+                return LABKEY.vis.Scale[colorType]();
+            else
                 return LABKEY.vis.Scale.ColorDiscrete();
-            }
         }
 
         if (scaleName == 'shape') {
@@ -766,7 +762,7 @@ boxPlot.render();
                         }
 
                         if (!scale.range) {
-                            scale.range = getDefaultRange(scaleName, scale);
+                            scale.range = getDefaultRange(scaleName, scale, userScale);
                         }
 
                         if (scale.scale.range) {
@@ -775,7 +771,7 @@ boxPlot.render();
                     }
                 } else {
                     if ((scaleName == 'color' || scaleName == 'size') && !scale.range) {
-                        scale.range = getDefaultRange(scaleName, scale);
+                        scale.range = getDefaultRange(scaleName, scale, userScale);
                     }
 
                     if (scale.range && scale.domain && LABKEY.vis.isValid(scale.domain[0]) && LABKEY.vis.isValid(scale.domain[1])) {
