@@ -54,6 +54,7 @@ import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.exceptions.TableNotFoundException;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Lsid;
@@ -617,7 +618,7 @@ public class StorageProvisioner
 
         SchemaTableInfo sti = schema.getTable(options);
         if (null == sti)
-            throw new IllegalStateException("Table not found (deleted? race condition?): " + schemaName + "." + tableName);
+            throw new TableNotFoundException(schemaName, tableName);
         return sti;
     }
 
@@ -627,7 +628,7 @@ public class StorageProvisioner
         if (null == domain)
             throw new NullPointerException("domain is null");
         DomainKind kind = domain.getDomainKind();
-        if (null == kind)
+        if (null == kind)  // TODO: Consider using TableNotFoundException or something similar
             throw new IllegalArgumentException("Could not find information for domain (deleted?): " + domain.getTypeURI());
         return kind;
     }
