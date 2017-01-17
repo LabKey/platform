@@ -38,6 +38,7 @@ public class Aggregate
 {
     public static String STAR = "*";
     private static FieldKey STAR_FIELDKEY = FieldKey.fromParts(STAR);
+    private static double EPSILON = 0.00001;
 
     public interface Type
     {
@@ -288,7 +289,17 @@ public class Aggregate
             JdbcType returnType = type.returnType(inputType);
             if (type.isLegal(inputType))
             {
-                if (getValue() == null)
+                Object value = getValue();
+
+                // Issue 29012: convert very small double values to zero for display
+                if (value instanceof Double)
+                {
+                    Double dblValue = ((Double) value).doubleValue();
+                    if ((dblValue > 0 && dblValue < EPSILON) || (dblValue < 0 && dblValue > -EPSILON))
+                        value = 0;
+                }
+
+                if (value == null)
                 {
                     // no values to aggregate
                     return "n/a";
@@ -298,15 +309,15 @@ public class Aggregate
                                 (inputType.isInteger() && returnType.isInteger()) ||
                                 (inputType.isReal() && returnType.isReal())))
                 {
-                    return formatter.format(getValue());
+                    return formatter.format(value);
                 }
                 else if (inputType.isNumeric())
                 {
-                    return Formats.fv3.format(getValue());
+                    return Formats.fv3.format(value);
                 }
                 else
                 {
-                    return getValue().toString();
+                    return value.toString();
                 }
             }
 
