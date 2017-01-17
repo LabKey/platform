@@ -53,7 +53,7 @@ public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsPro
     @Override
     public boolean isVisible(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        return true; //TODO make this false, these aggregates will be displayed as part of the SummaryStatisticsAnalyticsProvider
+        return false; // these aggregates will be displayed as part of the SummaryStatisticsAnalyticsProvider
     }
 
     public List<Aggregate.Type> getAdditionalAggregateTypes()

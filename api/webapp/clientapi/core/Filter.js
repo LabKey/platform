@@ -468,7 +468,7 @@ LABKEY.Filter = new function()
 
                 }
             }
-            console.log(params);
+
             return params;
         },
 
