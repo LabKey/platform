@@ -28,6 +28,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
@@ -112,7 +113,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
         List<ViewCategory> categoriesToDelete = new ArrayList<>();
         category = getCategory(category.getContainerId(), category.getRowId());
         if (category == null)
-            throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
+            throw OptimisticConflictException.create(Table.ERROR_DELETED);
 
         categoriesToDelete.add(category);
         categoriesToDelete.addAll(category.getSubcategories());

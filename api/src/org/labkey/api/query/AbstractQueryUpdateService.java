@@ -31,7 +31,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -47,6 +46,7 @@ import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TriggerDataBuilderHelper;
 import org.labkey.api.dataiterator.WrapperDataIterator;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -544,7 +544,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 ValidationException vex = rvex.getValidationException();
                 errors.addRowError(vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), row, i));
             }
-            catch (Table.OptimisticConflictException e)
+            catch (OptimisticConflictException e)
             {
                 errors.addRowError(new ValidationException("Unable to update. Row may have been deleted."));
             }

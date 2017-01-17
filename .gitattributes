@@ -554,6 +554,8 @@ api/src/org/labkey/api/di/TaskRefTask.java -text
 api/src/org/labkey/api/di/columnTransform/AbstractColumnTransform.java -text
 api/src/org/labkey/api/di/columnTransform/ColumnTransform.java -text
 api/src/org/labkey/api/event/PropertyChange.java -text
+api/src/org/labkey/api/exceptions/OptimisticConflictException.java -text
+api/src/org/labkey/api/exceptions/TableNotFoundException.java -text
 api/src/org/labkey/api/exp/AbstractParameter.java -text
 api/src/org/labkey/api/exp/ChangePropertyDescriptorException.java -text
 api/src/org/labkey/api/exp/DomainDescriptor.java -text

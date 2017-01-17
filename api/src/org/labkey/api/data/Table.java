@@ -38,6 +38,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.TableInsertDataIterator;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -1054,43 +1055,6 @@ public class Table
 
         new SqlExecutor(tinfo.getSchema()).execute(sqlSelectInto);
     }
-
-
-    public static class OptimisticConflictException extends RuntimeSQLException
-    {
-        public OptimisticConflictException(String errorMessage, String sqlState, int error)
-        {
-            super(new SQLException(errorMessage, sqlState, error));
-        }
-
-        @Override
-        public boolean isConstraintException()
-        {
-            return true;
-        }
-
-        public static OptimisticConflictException create(int error)
-        {
-            switch (error)
-            {
-                case ERROR_DELETED:
-                    return new OptimisticConflictException("Optimistic concurrency exception: Row deleted",
-                            SQLSTATE_TRANSACTION_STATE,
-                            error);
-                case ERROR_ROWVERSION:
-                    return new OptimisticConflictException("Optimistic concurrency exception: Row updated",
-                            SQLSTATE_TRANSACTION_STATE,
-                            error);
-                case ERROR_TABLEDELETED:
-                    return new OptimisticConflictException("Optimistic concurrency exception: Table deleted",
-                            SQLSTATE_TRANSACTION_STATE,
-                            error);
-            }
-            assert false : "unexpected error code";
-            return null;
-        }
-    }
-
 
 
     // Table modification

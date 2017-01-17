@@ -21,6 +21,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
@@ -101,7 +102,7 @@ public class AtomicDatabaseInteger
             assert out.get(targetColumnName).equals(update);
             return true;
         }
-        catch (Table.OptimisticConflictException e)
+        catch (OptimisticConflictException e)
         {
             return false;
         }

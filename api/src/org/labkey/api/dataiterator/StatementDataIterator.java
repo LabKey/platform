@@ -33,6 +33,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -339,7 +340,7 @@ public class StatementDataIterator extends AbstractDataIterator
             // table does not exist
             else if (SqlDialect.isObjectNotFoundException(x))
             {
-                Table.OptimisticConflictException opt = Table.OptimisticConflictException.create(Table.ERROR_TABLEDELETED);
+                OptimisticConflictException opt = OptimisticConflictException.create(Table.ERROR_TABLEDELETED);
                 getRowError().addGlobalError(opt);
                 throw _errors;
             }

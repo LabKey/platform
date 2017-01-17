@@ -57,6 +57,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -1412,7 +1413,7 @@ public class OntologyManager
             }
             if (null == pd)
             {
-                throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
+                throw OptimisticConflictException.create(Table.ERROR_DELETED);
             }
         }
 

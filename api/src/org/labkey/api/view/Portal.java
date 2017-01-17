@@ -39,6 +39,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.Transient;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -870,7 +871,7 @@ public class Portal
                     else
                         Table.insert(null, getTableInfoPortalWebParts(), m);
                 }
-                catch (Table.OptimisticConflictException ex)
+                catch (OptimisticConflictException ex)
                 {
                     // ignore
                 }
@@ -1353,7 +1354,7 @@ public class Portal
         {
             if (s.isConstraintException())
             {
-                s = new Table.OptimisticConflictException(
+                s = new OptimisticConflictException(
                     "A SQL exception occurred which could have been caused by two clients changing portal page ordering simultaneously. Try again.",
                     Table.SQLSTATE_TRANSACTION_STATE, 0);
             }

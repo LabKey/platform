@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.exceptions.OptimisticConflictException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -63,7 +64,7 @@ public class ServerPrimaryKeyLock implements DbScope.ServerLock
     {
         Map[] maps = new SqlSelector(scope, forUpdate).getArray(Map.class);
         if (failIfRowNotFound && 0 == maps.length)
-            throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
+            throw OptimisticConflictException.create(Table.ERROR_DELETED);
     }
 
     @Override

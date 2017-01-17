@@ -32,6 +32,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.query.FieldKey;
 
 import java.util.ArrayList;
@@ -124,7 +125,7 @@ public class SecurityPolicyManager
             if (null != currentPolicyBean && null != policy.getModified() &&
                     0 != policy.getModified().compareTo(currentPolicyBean.getModified()))
             {
-                throw new Table.OptimisticConflictException("The security policy you are attempting to save" +
+                throw new OptimisticConflictException("The security policy you are attempting to save" +
                 " has been altered by someone else since you selected it.", Table.SQLSTATE_TRANSACTION_STATE, 0);
             }
 
