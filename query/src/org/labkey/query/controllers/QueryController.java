@@ -34,6 +34,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.analytics.BaseAggregatesAnalyticsProvider;
+import org.labkey.api.analytics.ColumnAnalyticsProvider;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.view.AuditChangesView;
@@ -3010,29 +3012,7 @@ public class QueryController extends SpringActionController
                 return null;
             }
 
-            SimpleFilter filter = null;
-
-            // 21032: Respect 'ignoreFilter'
-            if (!settings.getIgnoreUserFilter())
-            {
-                // Attach any URL-based filters. This would apply to 'filterArray' from the JavaScript API.
-                filter = new SimpleFilter(settings.getBaseFilter());
-
-                String dataRegionName = form.getDataRegionName();
-                if (StringUtils.trimToNull(dataRegionName) == null)
-                    dataRegionName = QueryView.DATAREGIONNAME_DEFAULT;
-
-                // Support for 'viewName'
-                CustomView view = settings.getCustomView(getViewContext(), form.getQueryDef());
-                if (null != view && view.hasFilterOrSort())
-                {
-                    ActionURL url = new ActionURL(SelectDistinctAction.class, getContainer());
-                    view.applyFilterAndSortToURL(url, dataRegionName);
-                    filter.addAllClauses(new SimpleFilter(url, dataRegionName));
-                }
-
-                filter.addUrlFilters(settings.getSortFilterURL(), dataRegionName);
-            }
+            SimpleFilter filter = getFilterFromQueryForm(form);
 
             // Strip out filters on columns that don't exist - issue 21669
             service.ensureRequiredColumns(table, columns.values(), filter, null, new HashSet<FieldKey>());
@@ -3073,6 +3053,126 @@ public class QueryController extends SpringActionController
             }
 
             return new SqlSelector(table.getSchema().getScope(), sql, QueryLogging.noValidationNeededQueryLogging());
+        }
+    }
+
+    private SimpleFilter getFilterFromQueryForm(QueryForm form)
+    {
+        QuerySettings settings = form.getQuerySettings();
+        SimpleFilter filter = null;
+
+        // 21032: Respect 'ignoreFilter'
+        if (settings != null && !settings.getIgnoreUserFilter())
+        {
+            // Attach any URL-based filters. This would apply to 'filterArray' from the JavaScript API.
+            filter = new SimpleFilter(settings.getBaseFilter());
+
+            String dataRegionName = form.getDataRegionName();
+            if (StringUtils.trimToNull(dataRegionName) == null)
+                dataRegionName = QueryView.DATAREGIONNAME_DEFAULT;
+
+            // Support for 'viewName'
+            CustomView view = settings.getCustomView(getViewContext(), form.getQueryDef());
+            if (null != view && view.hasFilterOrSort())
+            {
+                ActionURL url = new ActionURL(SelectDistinctAction.class, getContainer());
+                view.applyFilterAndSortToURL(url, dataRegionName);
+                filter.addAllClauses(new SimpleFilter(url, dataRegionName));
+            }
+
+            filter.addUrlFilters(settings.getSortFilterURL(), dataRegionName);
+        }
+
+        return filter;
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class GetColumnSummaryStatsAction extends ApiAction<QueryForm>
+    {
+        private FieldKey _colFieldKey;
+
+        @Override
+        public void validateForm(QueryForm form, Errors errors)
+        {
+            ensureQueryExists(form);
+
+            QuerySettings settings = form.getQuerySettings();
+            List<FieldKey> fieldKeys = settings != null ? settings.getFieldKeys() : null;
+            if (null == fieldKeys || fieldKeys.isEmpty() || fieldKeys.size() != 1)
+                errors.reject(ERROR_MSG, "GetColumnSummaryStats requires that only one column be requested.");
+            else
+                _colFieldKey = fieldKeys.get(0);
+        }
+
+        public ApiResponse execute(QueryForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            QueryView view = QueryView.create(form, errors);
+            DisplayColumn displayColumn = null;
+
+            for (DisplayColumn dc : view.getDisplayColumns())
+            {
+                if (dc.getColumnInfo() != null && _colFieldKey.equals(dc.getColumnInfo().getFieldKey()))
+                {
+                    displayColumn = dc;
+                    break;
+                }
+            }
+
+            if (displayColumn != null && displayColumn.getColumnInfo() != null)
+            {
+                // get the map of the analytics providers to their relevant aggregates and add the information to the response
+                Map<String, Map<String, Object>> analyticsProviders = new LinkedHashMap<>();
+                Set<Aggregate> colAggregates = new HashSet<>();
+                for (ColumnAnalyticsProvider analyticsProvider : displayColumn.getAnalyticsProviders())
+                {
+                    if (analyticsProvider instanceof BaseAggregatesAnalyticsProvider)
+                    {
+                        BaseAggregatesAnalyticsProvider baseAggProvider = (BaseAggregatesAnalyticsProvider) analyticsProvider;
+                        Map<String, Object> props = new HashMap<>();
+                        props.put("label", baseAggProvider.getLabel());
+
+                        List<String> aggregateNames = new ArrayList<>();
+                        for (Aggregate aggregate : AnalyticsProviderItem.createAggregates(baseAggProvider, _colFieldKey, null))
+                        {
+                            aggregateNames.add(aggregate.getType().getName());
+                            colAggregates.add(aggregate);
+                        }
+                        props.put("aggregates", aggregateNames);
+
+                        analyticsProviders.put(baseAggProvider.getName(), props);
+                    }
+                }
+
+                // query the table/view for the aggregate results
+                Collection<ColumnInfo> columns = Collections.singleton(displayColumn.getColumnInfo());
+                SimpleFilter filter = getFilterFromQueryForm(form);
+                TableSelector selector = new TableSelector(view.getTable(), columns, filter, null).setNamedParameters(form.getQuerySettings().getQueryParameters());
+                Map<String, List<Aggregate.Result>> aggResults = selector.getAggregates(new ArrayList(colAggregates));
+
+                // create a response object mapping the analytics providers to their relevant aggregate results
+                Map<String, Map<String, Object>> aggregateResults = new HashMap<>();
+                for (Aggregate.Result r : aggResults.get(_colFieldKey.toString()))
+                {
+                    Map<String, Object> props = new HashMap<>();
+                    Aggregate.Type type = r.getAggregate().getType();
+                    props.put("label", type.getFullLabel());
+                    props.put("description", type.getDescription());
+                    props.put("value", r.getFormattedValue(displayColumn));
+                    aggregateResults.put(type.getName(), props);
+                }
+
+                response.put("success", true);
+                response.put("analyticsProviders", analyticsProviders);
+                response.put("aggregateResults", aggregateResults);
+            }
+            else
+            {
+                response.put("success", false);
+                response.put("message", "Unable to find ColumnInfo for " + _colFieldKey);
+            }
+
+            return response;
         }
     }
 
