@@ -288,7 +288,7 @@ public class QueryModule extends DefaultModule
             analyticsProviderRegistry.registerProvider(new AggregatesMeanAnalyticsProvider());
             analyticsProviderRegistry.registerProvider(new AggregatesMinAnalyticsProvider());
             analyticsProviderRegistry.registerProvider(new AggregatesMaxAnalyticsProvider());
-            //analyticsProviderRegistry.registerProvider(new SummaryStatisticsAnalyticsProvider());
+            analyticsProviderRegistry.registerProvider(new SummaryStatisticsAnalyticsProvider());
             analyticsProviderRegistry.registerProvider(new RemoveColumnAnalyticsProvider());
         }
 

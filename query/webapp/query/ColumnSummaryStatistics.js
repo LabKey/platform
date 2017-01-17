@@ -20,6 +20,7 @@ LABKEY.ColumnSummaryStatistics = new function ()
                 {
                     Ext4.create('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
                         queryConfig: region.getQueryConfig(),
+                        filterArray: LABKEY.Filter.getFiltersFromUrl(region.selectAllURL, 'query'), //Issue 26594
                         containerPath: region.containerPath,
                         column: column,
                         initSelection: colSummaryStats,
@@ -28,6 +29,7 @@ LABKEY.ColumnSummaryStatistics = new function ()
                             {
                                 win.getEl().mask("Applying selection...");
                                 region.setColumnSummaryStatistics(regionViewName, colFieldKey, colSummaryStatsNames);
+                                win.close();
                             }
                         }
                     }).show();
@@ -53,6 +55,7 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
     minHeight: 200,
 
     queryConfig: null,
+    filterArray: null,
     containerPath: null,
     column: null,
     initSelection: null,
@@ -129,7 +132,7 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
         var params = LABKEY.Query.buildQueryParams(
             queryConfig.schemaName,
             queryConfig.queryName,
-            queryConfig.filters,
+            (this.filterArray != null ? this.filterArray : queryConfig.filters),
             null,
             queryConfig.dataRegionName
         );
@@ -333,10 +336,8 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
                 view.getSelectionModel().select(selectedRecords, false, true);
             }, this);
 
-            this.displayView.on('select', function(view, record)
-            {
-                this.getApplyButton().enable();
-            }, this);
+            this.displayView.on('select', function(view, record) { this.getApplyButton().enable(); }, this);
+            this.displayView.on('deselect', function(view, record) { this.getApplyButton().enable(); }, this);
         }
 
         return this.displayView;
@@ -348,6 +349,7 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
             xtype: 'box',
             cls: 'labkey-error',
             border: false,
+            width: 315,
             html: response.exception || response.message
         });
 
