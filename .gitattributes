@@ -444,6 +444,8 @@ api/src/org/labkey/api/data/UserSchemaCustomizer.java -text
 api/src/org/labkey/api/data/VirtualTable.java -text
 api/src/org/labkey/api/data/WhitespacePreservingDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/WrappedColumn.java -text
+api/src/org/labkey/api/data/bigiron/AbstractClrInstallationManager.java -text
+api/src/org/labkey/api/data/bigiron/ClrAssemblyManager.java -text
 api/src/org/labkey/api/data/dialect/AbstractDialectRetrievalTestCase.java -text
 api/src/org/labkey/api/data/dialect/ColumnMetaDataReader.java -text
 api/src/org/labkey/api/data/dialect/DatabaseMaintenanceTask.java -text
