@@ -25,9 +25,11 @@
     opacity: 1;
 }
 
+.summary-stats-dialog .stat-table .label,
 .summary-stats-dialog .stat-table .value {
     opacity: 0.8;
 }
+.summary-stats-dialog .stat-table tr.x4-item-selected .label,
 .summary-stats-dialog .stat-table tr.x4-item-selected .value {
     opacity: 1;
     font-weight: bold;

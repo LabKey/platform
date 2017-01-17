@@ -3144,9 +3144,17 @@ public class QueryController extends SpringActionController
                     }
                 }
 
+                // get the filter set from the queryform and verify that they resolve
+                SimpleFilter filter = getFilterFromQueryForm(form);
+                Map<FieldKey, ColumnInfo> resolvedCols = QueryService.get().getColumns(view.getTable(), filter.getAllFieldKeys());
+                for (FieldKey filterFieldKey : filter.getAllFieldKeys())
+                {
+                    if (!resolvedCols.containsKey(filterFieldKey))
+                        filter.deleteConditions(filterFieldKey);
+                }
+
                 // query the table/view for the aggregate results
                 Collection<ColumnInfo> columns = Collections.singleton(displayColumn.getColumnInfo());
-                SimpleFilter filter = getFilterFromQueryForm(form);
                 TableSelector selector = new TableSelector(view.getTable(), columns, filter, null).setNamedParameters(form.getQuerySettings().getQueryParameters());
                 Map<String, List<Aggregate.Result>> aggResults = selector.getAggregates(new ArrayList(colAggregates));
 
