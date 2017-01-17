@@ -15,169 +15,106 @@
  */
 package org.labkey.bigiron.mssql;
 
-import org.apache.log4j.Level;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.FileSqlScriptProvider;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlScriptManager;
-import org.labkey.api.data.SqlScriptRunner;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.module.ModuleContext;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.bigiron.AbstractClrInstallationManager;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.view.ActionURL;
+import org.labkey.bigiron.BigIronController;
 
-import java.sql.Connection;
+import java.util.Collection;
 
 /**
  * User: adam
  * Date: 10/16/13
  * Time: 3:24 PM
+ *
+ *  This was originally a synchronous upgrade invoked by core-13.22-13.23.sql, see #18600. Then we marked it with
+ * "@DeferredUpgrade" to ensure property manager was completely upgraded, #18979. But this would fail if (e.g.) the
+ * core schema was bootstrapped, the server restarted, and module upgrade continued. So this is now called
+ * (indirectly) from CoreModule.afterUpdate().
+ *
+ * As part of story for spec 28570, which introduced another CLR Assembly for the Premium module, the meat of this
+ * class was abstracted into a common superclass.
  */
-public class GroupConcatInstallationManager
+public class GroupConcatInstallationManager extends AbstractClrInstallationManager
 {
     private static final String INITIAL_VERSION = "1.00.11845";
     private static final String CURRENT_GROUP_CONCAT_VERSION = "1.00.23696";
-
-    private final @Nullable String _installedVersion;
-
+    private static final GroupConcatInstallationManager _instance = new GroupConcatInstallationManager();
 
     private GroupConcatInstallationManager()
     {
-        _installedVersion = determineInstalledVersion();
     }
 
-    private @Nullable String determineInstalledVersion()
+    public static GroupConcatInstallationManager get()
     {
-        return isInstalled() ? getVersion() : null;
+        return _instance;
     }
 
-    private @NotNull String getVersion()
+    @Override
+    protected DbSchema getSchema()
     {
-        try
-        {
-            SqlSelector selector = new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT core.GroupConcatVersion()");
-            selector.setLogLevel(Level.OFF);
-
-            return selector.getObject(String.class);
-        }
-        catch (Exception e)
-        {
-            return INITIAL_VERSION;
-        }
+        return CoreSchema.getInstance().getSchema();
     }
 
-    private boolean isInstalled()
+    @Override
+    protected String getModuleName()
     {
-        return isInstalled(CoreSchema.getInstance().getSchema().getScope());
+        return ModuleLoader.getInstance().getCoreModule().getName();
     }
 
-    @Nullable
-    private String getInstalledVersion()
+    @Override
+    protected String getBaseScriptName()
     {
-        return _installedVersion;
+        return "group_concat";
     }
 
-    private boolean uninstallPrevious(ModuleContext context)
+    @Override
+    protected String getInitialVersion()
     {
-        FileSqlScriptProvider provider = new FileSqlScriptProvider(ModuleLoader.getInstance().getCoreModule());
-        SqlScriptRunner.SqlScript script = new FileSqlScriptProvider.FileSqlScript(provider, CoreSchema.getInstance().getSchema(), "group_concat_uninstall.sql", "core");
-
-        try
-        {
-            SqlScriptManager.get(provider, script.getSchema()).runScript(context.getUpgradeUser(), script, context, null);
-            return true;
-        }
-        catch (Throwable t)
-        {
-            // The GROUP_CONCAT uninstall script can fail if the database user lacks sufficient permissions. If the uninstall
-            // fails then log and display the exception to admins, but continue upgrading. Leaving the old version in place
-            // is not the end of the world
-
-            // Wrap the exception to provide an explanation to the admin
-            Exception wrap = new Exception("Failure uninstalling the existing GROUP_CONCAT aggregate function, which means it can't be upgraded to the latest version. Contact LabKey if you need assistance installing the newest version of this function, or see https://www.labkey.org/wiki/home/Documentation/page.view?name=groupconcatinstall", t);
-            ExceptionUtil.logExceptionToMothership(null, wrap);
-            ModuleLoader.getInstance().addModuleFailure("Core", wrap);
-
-            return false;
-        }
+        return INITIAL_VERSION;
     }
 
-    private void install(ModuleContext context)
+    @Override
+    protected String getCurrentVersion()
     {
-        SqlScriptRunner.SqlScript script = getInstallScript();
-
-        try (Connection conn = CoreSchema.getInstance().getSchema().getScope().getUnpooledConnection())
-        {
-            SqlScriptManager.get(script.getProvider(), script.getSchema()).runScript(context.getUpgradeUser(), script, context, conn);
-        }
-        catch (Throwable t)
-        {
-            // The GROUP_CONCAT install script can fail for a variety of reasons, e.g., the database user lacks sufficient
-            // permissions. If the automatic install fails then log and display the exception to admins, but continue
-            // upgrading. Not having GROUP_CONCAT is not a disaster; admin can install the function manually later.
-
-            // Wrap the exception to provide an explanation to the admin
-            Exception wrap = new Exception("Failure installing GROUP_CONCAT aggregate function. This function is required for optimal operation of this server. Contact LabKey if you need assistance installing this function, or see https://www.labkey.org/wiki/home/Documentation/page.view?name=groupconcatinstall", t);
-            ExceptionUtil.logExceptionToMothership(null, wrap);
-            ModuleLoader.getInstance().addModuleFailure("Core", wrap);
-        }
+        return CURRENT_GROUP_CONCAT_VERSION;
     }
 
-    @NotNull
-    public static SqlScriptRunner.SqlScript getInstallScript()
+    @Override
+    protected String getInstallationExceptionMsg()
     {
-        String scriptName = "group_concat_install_" + CURRENT_GROUP_CONCAT_VERSION + ".sql";
-        FileSqlScriptProvider provider = new FileSqlScriptProvider(ModuleLoader.getInstance().getCoreModule());
-        return new FileSqlScriptProvider.FileSqlScript(provider, CoreSchema.getInstance().getSchema(), scriptName, "core");
+        return "Failure installing GROUP_CONCAT aggregate function. This function is required for optimal operation of this server. Contact LabKey if you need assistance installing this function, or see https://www.labkey.org/wiki/home/Documentation/page.view?name=groupconcatinstall";
     }
 
-    private boolean isInstalled(String version)
+    @Override
+    protected String getUninstallationExceptionMsg()
     {
-        return version.equals(getInstalledVersion());
+        return "Failure uninstalling the existing GROUP_CONCAT aggregate function, which means it can't be upgraded to the latest version. Contact LabKey if you need assistance installing the newest version of this function, or see https://www.labkey.org/wiki/home/Documentation/page.view?name=groupconcatinstall";
     }
 
-    static boolean isInstalled(DbScope scope)
+    @Override
+    protected String getInstallationCheckSql()
     {
-        try
-        {
-            // Attempt to use the core.GROUP_CONCAT() aggregate function. If this succeeds, we know it's installed.
-            SqlExecutor executor = new SqlExecutor(scope);
-            executor.setLogLevel(Level.OFF);  // We expect this to fail in many cases... shut off data layer logging
-            executor.execute("SELECT x.G, core.GROUP_CONCAT('Foo') FROM (SELECT 1 AS G) x GROUP BY G");
-
-            return true;
-        }
-        catch (Exception e)
-        {
-            return false;
-        }
+        return "SELECT x.G, core.GROUP_CONCAT('Foo') FROM (SELECT 1 AS G) x GROUP BY G";
     }
 
-    // This was originally a synchronous upgrade invoked by core-13.22-13.23.sql, see #18600. Then we marked it with
-    // @DeferredUpgrade to ensure property manager was completely upgraded, #18979. But this would fail if (e.g.) the
-    // core schema was bootstrapped, the server restarted, and module upgrade continued. So this is now called
-    // (indirectly) from CoreModule.afterUpdate().
-    static void ensureGroupConcat(ModuleContext context)
+    @Override
+    protected String getVersionCheckSql()
     {
-        GroupConcatInstallationManager manager = new GroupConcatInstallationManager();
+        return "SELECT core.GroupConcatVersion()";
+    }
 
-        // Return if newest version is already present...
-        if (manager.isInstalled(GroupConcatInstallationManager.CURRENT_GROUP_CONCAT_VERSION))
-            return;
-
-        boolean success = manager.uninstallPrevious(context);
-
-        // If we can't uninstall the old version then give up; GroupConcatInstallationManager already logged the error
-        if (!success)
-            return;
-
-        // Attempt to install the new version
-        manager.install(context);
+    @Override
+    protected void addAdminWarningMessages(Collection<String> messages)
+    {
+        ActionURL downloadURL = new ActionURL(BigIronController.DownloadGroupConcatInstallScriptAction.class, ContainerManager.getRoot());
+        messages.add("The GROUP_CONCAT aggregate function is not installed. This function is required for optimal operation of this server. <a href=\"" + downloadURL + "\">Download installation script.</a> " + new HelpTopic("groupconcatinstall").getSimpleLinkHtml("View installation instructions."));
     }
 
     public static class TestCase extends Assert

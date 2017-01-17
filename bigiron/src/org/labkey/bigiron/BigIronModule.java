@@ -17,6 +17,8 @@
 package org.labkey.bigiron;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.bigiron.ClrAssemblyManager;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
@@ -63,6 +65,10 @@ public class BigIronModule extends CodeOnlyModule
 
     public void doStartup(ModuleContext moduleContext)
     {
+        if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
+        {
+            ClrAssemblyManager.registerInstallationManager(GroupConcatInstallationManager.get());
+        }
     }
 
     public TabDisplayMode getTabDisplayMode()

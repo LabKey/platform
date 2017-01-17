@@ -31,7 +31,7 @@ public class BigIronController extends SpringActionController
         @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
-            SqlScriptRunner.SqlScript installScript = GroupConcatInstallationManager.getInstallScript();
+            SqlScriptRunner.SqlScript installScript = GroupConcatInstallationManager.get().getInstallScript();
             response.setCharacterEncoding(StringUtilsLabKey.DEFAULT_CHARSET.name());
             PageFlowUtil.streamFileBytes(response, "groupConcatInstall.sql", installScript.getContents().getBytes(StringUtilsLabKey.DEFAULT_CHARSET), true);
         }
