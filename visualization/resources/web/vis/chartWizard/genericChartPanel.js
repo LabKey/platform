@@ -905,12 +905,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
         }
 
-        if (this.measures.color && !config.scales.color) {
-            config.scales.color = {
-                type: this.options.general.colorPaletteScale
-            };
-        }
-
         if (this.options.developer)
             config.measures.pointClickFn = this.options.developer.pointClickFn;
 

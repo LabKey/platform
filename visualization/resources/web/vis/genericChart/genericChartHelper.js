@@ -354,13 +354,6 @@ LABKEY.vis.GenericChartHelper = new function(){
             };
         }
 
-        if (savedScales.color && measures.color) {
-            scales.color = {
-                colorType: savedScales.color.type,
-                scaleType: isNumericType(measures.color) ? 'continuous' : 'discrete'
-            }
-        }
-
         for (var i = 0; i < fields.length; i++) {
             var type = fields[i].displayFieldJsonType ? fields[i].displayFieldJsonType : fields[i].type;
 
@@ -751,6 +744,7 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param labels
      * @param aes
      * @param scales
+     * @param geom
      * @param data
      * @returns {Object}
      */
@@ -802,6 +796,14 @@ LABKEY.vis.GenericChartHelper = new function(){
                     aes: {hoverText: LABKEY.vis.GenericChartHelper.generatePointHover(chartConfig.measures)}
                 })
             );
+        }
+
+        if (chartConfig.measures.color)
+        {
+            scales.color = {
+                colorType: chartConfig.geomOptions.colorPaletteScale,
+                scaleType: 'discrete'
+            }
         }
 
         layers.push(
