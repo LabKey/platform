@@ -36,6 +36,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exceptions.TableNotFoundException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -643,7 +644,7 @@ public abstract class VisitManager
      *                                       or null if all participants should be examined,
      * @return the number of participants that were deleted
      */
-    public static int performParticipantPurge(@NotNull StudyImpl study, @Nullable Set<String> potentiallyDeletedParticipants)
+    public static int performParticipantPurge(@NotNull StudyImpl study, @Nullable Set<String> potentiallyDeletedParticipants) throws TableNotFoundException
     {
         // Short circuit if we know there are no potentially deleted participants
         if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.isEmpty())
@@ -659,84 +660,49 @@ public abstract class VisitManager
             return 0;
         }
 
-        List<DatasetDefinition> datasets = null;
+        DbSchema schema = StudySchema.getInstance().getSchema();
 
-        try
+        // Exception handling for race conditions (below) assumes this method is not called from within a transaction
+        assert !schema.getScope().isTransactionActive() : "Transaction should not be active!";
+
+        TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
+        TableInfo tableSpecimen = getSpecimenTable(study, null);
+
+        SQLFragment ptids = new SQLFragment();
+        List<DatasetDefinition> datasets = study.getDatasets();
+        SQLFragment studyDataPtids = studyDataPtids(datasets);
+        if (null != studyDataPtids)
         {
-            DbSchema schema = StudySchema.getInstance().getSchema();
-
-            // Exception handling for race conditions (below) assumes this method is not called from within a transaction
-            assert !schema.getScope().isTransactionActive() : "Transaction should not be active!";
-
-            TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
-            TableInfo tableSpecimen = getSpecimenTable(study, null);
-
-            SQLFragment ptids = new SQLFragment();
-            datasets = study.getDatasets();
-            SQLFragment studyDataPtids = studyDataPtids(datasets);
-            if (null != studyDataPtids)
-            {
-                ptids.append(studyDataPtids);
-                ptids.append(" UNION\n");
-            }
-            ptids.append("SELECT DISTINCT ptid AS ParticipantId FROM ");
-            ptids.append(tableSpecimen, "_specimens_");
-
-            SQLFragment ptidsP = new SQLFragment();
-            ptidsP.append("SELECT ParticipantId FROM ").append(tableParticipant.getSelectName()).append(" WHERE Container = ?");
-            ptidsP.add(c);
-            // Databases limit the size of IN clauses, so check that we won't blow the cap
-            if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.size() < 450)
-            {
-                // We have an explicit list of potentially deleted participants, so filter to only look at them
-                ptidsP.append(" AND ParticipantId ");
-                tableParticipant.getSqlDialect().appendInClauseSql(ptidsP, potentiallyDeletedParticipants);
-            }
-
-            SQLFragment del = new SQLFragment();
-            del.append("DELETE FROM ").append(tableParticipant.getSelectName());
-            del.append("\nWHERE Container = ? ");
-            del.add(c);
-            del.append("AND ParticipantId IN\n");
-            del.append("(\n");
-            del.append("    ").append(ptidsP).append("\n");
-            del.append("    EXCEPT\n");
-            del.append("    (SELECT ParticipantId FROM (").append(ptids).append(") _existing_)\n");
-            del.append(")");
-
-            SqlExecutor executor = new SqlExecutor(schema).setExceptionFramework(ExceptionFramework.JDBC);
-            executor.execute(del);
+            ptids.append(studyDataPtids);
+            ptids.append(" UNION\n");
         }
-        catch (Exception x)
+        ptids.append("SELECT DISTINCT ptid AS ParticipantId FROM ");
+        ptids.append(tableSpecimen, "_specimens_");
+
+        SQLFragment ptidsP = new SQLFragment();
+        ptidsP.append("SELECT ParticipantId FROM ").append(tableParticipant.getSelectName()).append(" WHERE Container = ?");
+        ptidsP.add(c);
+        // Databases limit the size of IN clauses, so check that we won't blow the cap
+        if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.size() < 450)
         {
-            // Container might have been deleted while assembling or running this query. If so, just fall through and return 0.
-            if (ContainerManager.exists(c))
-            {
-                // Hit an exception but container still exists... maybe a dataset went away
-                if (null != datasets)
-                {
-                    List<DatasetDefinition> datasetsNow = study.getDatasets();
-
-                    if (datasetsNow.size() != datasets.size())
-                        LOGGER.info("Dataset count changed: " + (datasetsNow.size() - datasets.size()));
-                }
-
-                // TODO: Temporary logging
-                LOGGER.error("Exception during participant purge; perhaps an \"object not found\" exception");
-                if (SqlDialect.isObjectNotFoundException(x))
-                {
-                    // TODO: Temporary logging
-                    LOGGER.error("Exception was determined to be \"object not found\". Container is " + c);
-                    StudyManager.getInstance().clearCaches(c, false);
-
-                    // 2016-12-22: doesn't look like anyone calls this while in a transaction (see assert above), so, assuming
-                    // we're detecting "object not found" correctly, we should be safe to return here or attempt retry.
-                }
-                throw x;
-            }
+            // We have an explicit list of potentially deleted participants, so filter to only look at them
+            ptidsP.append(" AND ParticipantId ");
+            tableParticipant.getSqlDialect().appendInClauseSql(ptidsP, potentiallyDeletedParticipants);
         }
 
-        return 0;
+        SQLFragment del = new SQLFragment();
+        del.append("DELETE FROM ").append(tableParticipant.getSelectName());
+        del.append("\nWHERE Container = ? ");
+        del.add(c);
+        del.append("AND ParticipantId IN\n");
+        del.append("(\n");
+        del.append("    ").append(ptidsP).append("\n");
+        del.append("    EXCEPT\n");
+        del.append("    (SELECT ParticipantId FROM (").append(ptids).append(") _existing_)\n");
+        del.append(")");
+
+        SqlExecutor executor = new SqlExecutor(schema).setExceptionFramework(ExceptionFramework.JDBC);
+        return executor.execute(del);
     }
 
 

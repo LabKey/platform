@@ -17,12 +17,11 @@ package org.labkey.study.visitmanager;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exceptions.TableNotFoundException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.springframework.dao.ConcurrencyFailureException;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -35,7 +34,7 @@ import java.util.TimerTask;
  */
 public class PurgeParticipantsTask extends TimerTask
 {
-    private Map<Container, Set<String>> _potentiallyDeletedParticipants;
+    private final Map<Container, Set<String>> _potentiallyDeletedParticipants;
     private static final Logger _logger = Logger.getLogger(PurgeParticipantsTask.class);
 
     public PurgeParticipantsTask(Map<Container, Set<String>> potentiallyDeletedParticipants)
@@ -68,6 +67,7 @@ public class PurgeParticipantsTask extends TimerTask
                 }
 
                 // Now, outside the synchronization, do the actual purge
+                // TODO: Seems like this code block should be moved into VisitManager and called by PurgeParticipantsMaintenanceTask as well (it has no exception handling and doesn't call updateParticipantVisitTable()
                 StudyImpl study = StudyManager.getInstance().getStudy(container);
                 if (study != null)
                 {
@@ -79,19 +79,24 @@ public class PurgeParticipantsTask extends TimerTask
                             StudyManager.getInstance().getVisitManager(study).updateParticipantVisitTable(null, null);
                         }
                     }
-                    catch (RuntimeSQLException|ConcurrencyFailureException x)
+                    catch (TableNotFoundException tnfe)
                     {
-                        if (SqlDialect.isTransactionException(x) || SqlDialect.isObjectNotFoundException(x))
+                        // Just move on if container went away
+                        if (ContainerManager.exists(container))
                         {
-                            // Might get an error a dataset has been deleted out from under us, so retry
-                            _logger.warn("Unable to complete participant purge, requeuing for another attempt");
+                            // A dataset or specimen table might have been deleted out from under us, so retry
+                            _logger.warn(tnfe.getFullName() + " no longer exists. Requeuing another participant purge attempt.");
                             // throw them back on the queue
                             VisitManager vm = StudyManager.getInstance().getVisitManager(study);
                             vm.scheduleParticipantPurge(potentiallyDeletedParticipants);
                         }
-                        else
+                    }
+                    catch (Exception e)
+                    {
+                        if (ContainerManager.exists(container))
                         {
-                            _logger.error("Failed to purge participants for " + container.getPath(), x);
+                            // Unexpected problem... log it and continue on
+                            _logger.error("Failed to purge participants for " + container.getPath(), e);
                         }
                     }
                 }
