@@ -47,6 +47,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.ModuleLoader;
@@ -1120,7 +1121,7 @@ public class QueryController extends SpringActionController
             {
                 _queryDef.delete(getUser());
             }
-            catch (Table.OptimisticConflictException x)
+            catch (OptimisticConflictException x)
             {
             }
             return true;
@@ -2281,7 +2282,7 @@ public class QueryController extends SpringActionController
                 errors.reject(ERROR_MSG, getMessage(table.getSchema().getSqlDialect(), x));
                 return false;
             }
-            catch (DataIntegrityViolationException | Table.OptimisticConflictException e)
+            catch (DataIntegrityViolationException | OptimisticConflictException e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
                 return false;
@@ -3574,7 +3575,7 @@ public static class ExportSqlForm
 
                 transaction.commit();
             }
-            catch (Table.OptimisticConflictException e)
+            catch (OptimisticConflictException e)
             {
                 //issue 13967: provide better message for OptimisticConflictException
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage());

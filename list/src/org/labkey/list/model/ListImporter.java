@@ -25,9 +25,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ImportTypesHelper;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListDefinition.KeyType;
@@ -138,7 +138,7 @@ public class ListImporter
                 {
                     def.delete(user);
                 }
-                catch (Table.OptimisticConflictException e)
+                catch (OptimisticConflictException e)
                 {
                     throw new ImportException("Error deleting list \"" + name + "\": " + e.getMessage());
                 }

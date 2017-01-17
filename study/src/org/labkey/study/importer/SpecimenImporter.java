@@ -40,6 +40,7 @@ import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIterator;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpSampleSet;
@@ -3237,7 +3238,7 @@ public class SpecimenImporter
                     checkForConflictingSpecimens(tempTableInfo.getSchema(), tempTableInfo.getSelectName(), loadedColumns);
                 }
             }
-            catch (Table.OptimisticConflictException e)
+            catch (OptimisticConflictException e)
             {
                 if (tryCount + 1 < MAX_TRYS)
                     success = false;        // Try again
@@ -3405,7 +3406,7 @@ public class SpecimenImporter
             else if (0 != counts.get(0) && _generateGlobalUniqueIds > 0)
             {
                 // We were trying to generate globalUniqueIds
-                throw new Table.OptimisticConflictException("Attempt to generate global unique ids failed.", null, 0);
+                throw new OptimisticConflictException("Attempt to generate global unique ids failed.", null, 0);
             }
             else if (0 != counts.get(0))
             {

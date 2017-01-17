@@ -32,6 +32,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -187,7 +188,7 @@ public class DemoController extends SpringActionController
                 DemoManager.getInstance().updatePerson(getContainer(), getUser(), person, ts);
                 return true;
             }
-            catch (Table.OptimisticConflictException x)
+            catch (OptimisticConflictException x)
             {
                 errors.addError(new ObjectError("main", new String[]{"Error"}, new Object[]{x}, x.getMessage()));
                 if (x.getSQLException().getErrorCode() == Table.ERROR_ROWVERSION)

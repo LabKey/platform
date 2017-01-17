@@ -41,7 +41,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.Table;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
@@ -408,7 +408,7 @@ public class WikiController extends SpringActionController
                 //delete page and all versions
                 getWikiManager().deleteWiki(getUser(), c, _wiki);
             }
-            catch (Table.OptimisticConflictException e)
+            catch (OptimisticConflictException e)
             {
                 // Issue 13549: if someone else already deleted the wiki, no need to throw exception
             }

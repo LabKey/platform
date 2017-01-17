@@ -49,6 +49,7 @@ import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -734,7 +735,7 @@ public class StudyManager
         {
             DatasetDefinition old = getDatasetDefinition(datasetDefinition.getStudy(), datasetDefinition.getDatasetId());
             if (null == old)
-                throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
+                throw OptimisticConflictException.create(Table.ERROR_DELETED);
 
             // make sure we reload domain and tableinfo
             Domain domain = datasetDefinition.refreshDomain();
@@ -856,7 +857,7 @@ public class StudyManager
         {
             DatasetDefinition old = getDatasetDefinition(datasetDefinition.getStudy(), datasetDefinition.getDatasetId());
             if (null == old)
-                throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
+                throw OptimisticConflictException.create(Table.ERROR_DELETED);
 
             DatasetDefinition original = getDatasetDefinition(datasetDefinition.getDefinitionStudy(), datasetDefinition.getDatasetId());
 
@@ -1675,7 +1676,7 @@ public class StudyManager
                     }
                 }
             }
-            catch (Table.OptimisticConflictException x)
+            catch (OptimisticConflictException x)
             {
                 /* ignore */
             }

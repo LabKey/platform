@@ -34,6 +34,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Selector.ForEachBlock;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
@@ -179,7 +180,7 @@ public class ListManager implements SearchService.DocumentProvider
     {
         Container c = def.lookupContainer();
         if (null == c)
-            throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
+            throw OptimisticConflictException.create(Table.ERROR_DELETED);
 
         TableInfo tinfo = getListMetadataTable();
         DbSequence sequence = DbSequenceManager.get(c, LIST_SEQUENCE_NAME);
@@ -215,7 +216,7 @@ public class ListManager implements SearchService.DocumentProvider
     {
         Container c = def.lookupContainer();
         if (null == c)
-            throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
+            throw OptimisticConflictException.create(Table.ERROR_DELETED);
 
         DbScope scope = getListMetadataSchema().getScope();
         ListDef ret;
@@ -253,7 +254,7 @@ public class ListManager implements SearchService.DocumentProvider
         {
             Table.delete(ListManager.get().getListMetadataTable(), new Object[]{c, listid});
         }
-        catch (Table.OptimisticConflictException x)
+        catch (OptimisticConflictException x)
         {
             // ok
         }
