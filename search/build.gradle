@@ -1,6 +1,23 @@
+configurations {
+   tika // { transitive = false } use this setting if you don't want all of the jars that tika depends on to be copied
+}
+
 dependencies {
    external 'org.apache.lucene:lucene-analyzers-common:6.3.0'
    external 'org.apache.lucene:lucene-core:6.3.0'
    external 'org.apache.lucene:lucene-queryparser:6.3.0'
    external 'org.apache.lucene:lucene-backward-codecs:6.3.0'
+   tika "org.apache.tika:tika-app:${tikaVersion}"
 }
+
+project.task("copyTika",
+        type: Copy,
+        group: "Build",
+        description: "Copy Tika app into directory for use by special classloader",
+        { CopySpec copy ->
+           copy.from project.configurations.tika
+           copy.into new File(project.buildDir, "resources/tika")
+        }
+)
+
+project.tasks.module.dependsOn(project.tasks.copyTika)

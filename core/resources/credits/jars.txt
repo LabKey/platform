@@ -7,8 +7,8 @@ bcprov-jdk15on-1.54.jar|Java Cryptography Extension|1.31.0|{link:BouncyCastle|ht
 bzip2.jar|bzip2|1.0|{link:Apache Ant|http://ant.apache.org/}|{link:Apache 1.1|http://www.apache.org/licenses/LICENSE-1.1}|bbimber|BZIP, required by HTS-JDK
 cglib-nodep-2.2.3.jar|Code Generation Library|2.2.3|{link:SourceForge|http://sourceforge.net/projects/cglib/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Used by Spring Framework and jMock
 commons-beanutils-1.7.jar|Commons Beanutils|1.7|{link:Apache|http://jakarta.apache.org/commons/beanutils/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Reading/writing beans
-commons-collections4-4.1.jar|Commons Collections|4.1|{link:Apache|https://commons.apache.org/proper/commons-collections/index.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Helpful collections
 commons-codec-1.5.jar|Commons Codec|1.5|{link:Apache|http://jakarta.apache.org/commons/codec/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Provides implementations of common encoders and decoders such as Base64, Hex, Phonetic and URLs
+commons-collections4-4.1.jar|Commons Collections|4.1|{link:Apache|https://commons.apache.org/proper/commons-collections/index.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Helpful collections
 commons-compress-1.13.jar|Commons Compress|1.13|{link:Apache|https://commons.apache.org/proper/commons-compress/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Compression/decompression algorithms
 commons-dbcp-1.4.jar|Commons Database Connection Pool|1.4|{link:Apache|http://commons.apache.org/proper/commons-dbcp/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Database connection pooling - Mondrian and TargetedMS dependency
 commons-digester-1.7.jar|Commons Digester|1.7|{link:Apache|http://jakarta.apache.org/commons/digester/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|XML to Java object mapping for configuration, required by other Apache projects
@@ -66,7 +66,7 @@ poi-scratchpad-3.15.jar|Apache POI Scratchpad|3.15|{link:Apache|https://poi.apac
 quartz-2.1.7.jar|quartz|2.1.7|{link:quartz|http://quartz-scheduler.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Scheduling
 rengine-0.6-8.jar|Rengine|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|cnathe|R client classes
 rome-1.7.1.jar|ROME|1.7.1|{link:ROME|https://github.com/rometools/rome}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|Support for RSS and Atom aggregation
-rome-utils-1.7.1.jar|ROME Utils|1.7.1|{link:ROME|https://github.com/rometools/rome}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|Dependency for ROME
+rome-utils-1.7.1.jar|ROME Utils|1.7.1|{link:ROME|https://github.com/rometools/rome}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|ROME dependency
 rserve-0.6-8.jar|Rserve|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|cnathe|Library to connect to an R Server
 slf4j-api-1.7.5.jar|Simple Logging Facade for Java|1.7.5|{link:SLF4J|http://www.slf4j.org/}|{link:MIT|http://www.slf4j.org/license.html}|mbellew|Dependency for Tika, Ehcache, and other libraries
 slf4j-log4j12-1.7.5.jar|Simple Logging Facade for Java|1.7.5|{link:SLF4J|http://www.slf4j.org/}|{link:MIT|http://www.slf4j.org/license.html}|mbellew|Dependency for Tika, Ehcache, and other libraries
@@ -74,11 +74,11 @@ spring-aop-4.0.6.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.spri
 spring-beans-4.0.6.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
 spring-context-4.0.6.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
 spring-core-4.0.6.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
+spring-expression-4.0.6.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
+spring-jdbc-4.0.6.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|SQL exceptions and errors
 spring-test-4.0.6.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Object instantiation framework
 spring-tx-4.0.6.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|DAO and transactions 
-spring-expression-4.0.6.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
 spring-web-4.0.6.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
-spring-jdbc-4.0.6.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|SQL exceptions and errors 
 spring-webmvc-4.0.6.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Basis of web framework
 sqlite-jdbc-3.7.2.jar|SQLite JDBC Driver|3.7.2|{link:bitbucket.org|https://bitbucket.org/xerial/sqlite-jdbc/wiki/Home}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|vsharma|SQLite JDBC Driver
 thumbnailator-0.4.8.jar|Thumbnailator|0.4.8|{link:thumbnailator|https://github.com/coobird/thumbnailator}|{link:MIT|http://www.opensource.org/licenses/mit-license.html}|kevink|Thumbnail generator
