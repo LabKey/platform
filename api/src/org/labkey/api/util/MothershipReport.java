@@ -19,22 +19,20 @@ package org.labkey.api.util;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.labkey.api.data.ContainerManager.RootContainerException;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.settings.AppProps;
 
 import javax.mail.internet.ContentType;
 import javax.net.ssl.HttpsURLConnection;
 import javax.servlet.ServletContext;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.net.HttpURLConnection;
@@ -316,18 +314,7 @@ public class MothershipReport implements Runnable
             addParam("databaseDriverVersion", scope.getDriverVersion());
         }
         addParam("serverSessionGUID", AppProps.getInstance().getServerSessionGUID());
-
-        try
-        {
-            addParam("serverGUID", AppProps.getInstance().getServerGUID());
-        }
-        catch (
-                RootContainerException | // Root container doesn't exist yet
-                IllegalStateException e  // Exception we're about to report might have occurred while attempting to load the root container, #28927
-              )
-        {
-            // Better to send a report with no GUID
-        }
+        addParam("serverGUID", AppProps.getInstance().getServerGUID());
 
         ServletContext context = ModuleLoader.getServletContext();
         String servletContainer = context == null ? null : context.getServerInfo();
@@ -348,7 +335,7 @@ public class MothershipReport implements Runnable
         ServletContext context = ModuleLoader.getServletContext();
         String usedInstaller = context == null ? null : context.getInitParameter("org.labkey.api.util.mothershipreport.usedInstaller");
 
-        return  Boolean.parseBoolean(usedInstaller);
+        return Boolean.parseBoolean(usedInstaller);
     }
 
     private static String getDistributionStamp()
@@ -358,7 +345,7 @@ public class MothershipReport implements Runnable
         {
             if (null != input)
             {
-                distributionStamp = new BufferedReader(new InputStreamReader(input, StringUtilsLabKey.DEFAULT_CHARSET)).lines().collect(Collectors.joining("\n"));
+                distributionStamp = Readers.getReader(input).lines().collect(Collectors.joining("\n"));
                 if (StringUtils.isEmpty(distributionStamp))
                 {
                     distributionStamp = "Distribution File Empty";

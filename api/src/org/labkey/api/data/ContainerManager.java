@@ -904,6 +904,10 @@ public class ContainerManager
             {
                 TableInfo tinfo = CORE.getTableInfoContainers();
 
+                // Unusual, but possible -- if cache loader hits an exception it can end up caching null
+                if (null == tinfo)
+                    throw new RootContainerException("Container table could not be retrieved from the cache");
+
                 // This might be called at bootstrap, before schemas have been created
                 if (tinfo.getTableType() == DatabaseTableType.NOT_IN_DB)
                     throw new RootContainerException("Container table has not been created");
@@ -937,6 +941,11 @@ public class ContainerManager
     @SuppressWarnings({"serial"})
     public static class RootContainerException extends RuntimeException
     {
+        private RootContainerException(String message, Throwable cause)
+        {
+            super(message, cause);
+        }
+
         private RootContainerException(String message)
         {
             super(message);
@@ -946,7 +955,14 @@ public class ContainerManager
 
     public static Container getRoot()
     {
-        return getForPath("/");
+        try
+        {
+            return getForPath("/");
+        }
+        catch (IllegalStateException e)
+        {
+            throw new RootContainerException("Root container can't be retrieved", e);
+        }
     }
 
 
