@@ -92,7 +92,7 @@ List others = [
         "org.xerial:sqlite-jdbc:${sqliteJdbcVersion}",
         "net.coobird:thumbnailator:${thumbnailatorVersion}",
         "org.apache.xmlbeans:xbean:${xmlbeansVersion}",
-        "org.apache.tika:tika-core:${tikaCoreVersion}",
+        "org.apache.tika:tika-core:${tikaVersion}",
         "cglib:cglib-nodep:${cglibNodepVersion}",
         "xerces:xercesImpl:${xercesImplVersion}"
 ]
