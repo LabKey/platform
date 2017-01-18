@@ -16,8 +16,6 @@
 
 package org.labkey.api.util;
 
-import org.apache.log4j.Logger;
-
 /**
  * Starts a thread that can be used as a place to set a breakpoint when other "normal" threads are all blocked
  * or otherwise occupied. This is useful because some debugger functionality, such as a invoking methods through the
@@ -29,8 +27,6 @@ import org.apache.log4j.Logger;
 public class BreakpointThread extends Thread implements ShutdownListener
 {
     private boolean _shutdown = false;
-
-    private static final Logger _log = Logger.getLogger(BreakpointThread.class);
 
     public BreakpointThread()
     {

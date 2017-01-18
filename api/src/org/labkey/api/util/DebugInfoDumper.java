@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
@@ -215,7 +216,10 @@ public class DebugInfoDumper
     public static synchronized void dumpThreads(Logger log)
     {
         log.debug("*********************************************");
-        log.debug("Starting thread dump");
+        log.debug("Starting thread dump - Heap usage at " +
+                FileUtils.byteCountToDisplaySize(ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed()) + " from a total of " +
+                FileUtils.byteCountToDisplaySize(ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax()));
+
         log.debug("*********************************************");
         Map<Thread,StackTraceElement[]> threads = Thread.getAllStackTraces();
         for (Map.Entry<Thread, StackTraceElement[]> threadEntry : threads.entrySet())
