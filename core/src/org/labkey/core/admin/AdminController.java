@@ -579,8 +579,8 @@ public class AdminController extends SpringActionController
             boolean startupInProgress = ModuleLoader.getInstance().isStartupInProgress();
             boolean maintenanceMode = AppProps.getInstance().isUserRequestedAdminOnlyMode();
 
-            String title = "This site is currently undergoing maintenance.";
-            String content = title;
+            String title = "Maintenance in progress";
+            String content = "This site is currently undergoing maintenance, only site admins may login at this time.";
             if (upgradeInProgress)
             {
                 title = "Upgrade in progress";
