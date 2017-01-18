@@ -120,7 +120,7 @@ public class Aggregate
          */
         JdbcType returnType(JdbcType jdbcType);
 
-        default int subQueryCount() { return 0; }
+        default int subQueryCount(SqlDialect dialect) { return 0; }
     }
 
     public enum BaseType implements Type

@@ -623,7 +623,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                         if (innerSql != null)
                         {
                             // If the aggregate uses subqueries, they need the same set of parameters as the outer sql.
-                            for (int i = 0; i < agg.getType().subQueryCount(); i++)
+                            for (int i = 0; i < agg.getType().subQueryCount(_table.getSqlDialect()); i++)
                             {
                                 aggregateSql.addAll(innerSql.getParams());
                             }
