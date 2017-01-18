@@ -1,0 +1,183 @@
+<div id="summary-report"></div>
+
+<script type="text/javascript">
+    Ext4.onReady(function() {
+        var schemaName = LABKEY.ActionURL.getParameter("schemaName"),
+            queryName = LABKEY.ActionURL.getParameter("query.queryName"),
+            viewName = LABKEY.ActionURL.getParameter("query.viewName");
+
+        if (!Ext4.isString(schemaName) || !Ext4.isString(queryName)) {
+            Ext4.create('Ext.Component', {
+                renderTo: 'summary-report',
+                cls: 'labkey-error',
+                html: 'Error: schemaName and query.queryName parameters are required.'
+            });
+            return;
+        }
+
+        Ext4.create('LABKEY.ext4.SummaryReportPanel', {
+            renderTo: 'summary-report',
+            schemaName: schemaName,
+            queryName: queryName,
+            viewName: viewName
+        });
+    });
+
+    Ext4.define('LABKEY.ext4.SummaryReportPanel', {
+        extend: 'Ext.panel.Panel',
+
+        border: false,
+        bodyStyle: 'background-color: transparent;',
+
+        schemaName: null,
+        queryName: null,
+        viewName: null,
+
+        initComponent : function() {
+            this.items = [
+                Ext4.create('Ext.form.field.Display', {
+                    margin: 0,
+                    labelStyle: 'font-weight: bold;',
+                    fieldLabel: 'Schema Name',
+                    value: this.schemaName
+                }),
+                Ext4.create('Ext.form.field.Display', {
+                    margin: 0,
+                    labelStyle: 'font-weight: bold;',
+                    fieldLabel: 'Query Name',
+                    value: this.queryName
+                }),
+                Ext4.create('Ext.form.field.Display', {
+                    margin: 0,
+                    labelStyle: 'font-weight: bold;',
+                    fieldLabel: 'View Name',
+                    value: this.viewName,
+                    hidden: this.viewName == null
+                }),
+                {
+                    // spacer
+                    xtype: 'box',
+                    height: 15
+                }
+            ];
+
+            this.callParent();
+
+            this.on('render', this.queryData, this);
+        },
+
+        queryData : function() {
+            this.getEl().mask('Loading...');
+
+            LABKEY.Query.selectRows({
+                schemaName: this.schemaName,
+                queryName: this.queryName,
+                viewName: this.viewName,
+                requiredVersion: '9.1',
+                maxRows: -1, // ALL
+                success: this.renderQueryColumnSummaries,
+                failure: this.onFailure,
+                scope: this
+            });
+        },
+
+        renderQueryColumnSummaries : function(data) {
+            Ext4.each(data.metaData.fields, function(fieldMetadata) {
+                if (!fieldMetadata.isHidden)
+                    this.renderColumnSummary(data.rows, fieldMetadata);
+            }, this);
+
+            this.doLayout();
+
+            this.getEl().unmask();
+        },
+
+        renderColumnSummary : function(dataArray, fieldMetadata) {
+            this.add(Ext4.create('Ext.form.Panel', {
+                padding: '0 0 15px 0',
+                bodyStyle: 'padding: 10px; background-color: transparent;',
+                defaults: {
+                    margin: 0,
+                    labelStyle: 'font-weight: bold;'
+                },
+                items: [
+                    Ext4.create('Ext.Component', {
+                        style: 'font-weight: bold; font-size: 18px; color: #555555; padding-bottom: 10px;',
+                        html: Ext4.String.htmlEncode(fieldMetadata.caption || fieldMetadata.name)
+                    }),
+                    Ext4.create('Ext.form.field.Display', {
+                        fieldLabel: 'Field Key',
+                        value: fieldMetadata.fieldKey
+                    }),
+                    Ext4.create('Ext.form.field.Display', {
+                        fieldLabel: 'Type',
+                        value: fieldMetadata.friendlyType
+                    }),
+                    Ext4.create('Ext.form.field.Display', {
+                        fieldLabel: 'Description',
+                        value: fieldMetadata.description,
+                        hidden: !Ext4.isDefined(fieldMetadata.description)
+                    }),
+                    Ext4.create('Ext.form.FieldContainer', {
+                        padding: '10px 0 0 0',
+                        layout: 'hbox',
+                        items: [{
+                            xtype: 'fieldset',
+                            title: 'Summary Statistics',
+                            style: 'background-color: #ffffff;',
+                            items: [
+                                Ext4.create('LABKEY.ext4.ColumnSummaryStatisticsPanel', {
+                                    width: 315,
+                                    border: false,
+                                    padding: '5px 0',
+                                    queryConfig: {
+                                        dataRegionName: 'query',
+                                        schemaName: this.schemaName,
+                                        queryName: this.queryName,
+                                        viewName: this.viewName
+                                    },
+                                    column: fieldMetadata
+                                })
+                            ]
+                        },{
+                            // spacer
+                            xtype: 'box',
+                            width: 10
+                        },{
+                            xtype: 'fieldset',
+                            title: 'Charts',
+                            style: 'background-color: #ffffff;',
+                            hidden: !fieldMetadata.measure && !fieldMetadata.dimension,
+                            items: [
+                                Ext4.create('Ext.Component', {
+                                    listeners: {
+                                        scope: this,
+                                        render: function(cmp) {
+                                            if (fieldMetadata.measure) {
+                                                LABKEY.ColumnVisualizationAnalytics.getColumnBoxPlot(cmp.getId(), dataArray, fieldMetadata.name, fieldMetadata, false).render();
+                                            }
+
+                                            if (fieldMetadata.dimension) {
+                                                LABKEY.ColumnVisualizationAnalytics.getColumnBarPlot(cmp.getId(), dataArray, fieldMetadata.name, fieldMetadata, false).render();
+                                                LABKEY.ColumnVisualizationAnalytics.getColumnPieChart(cmp.getId(), dataArray, fieldMetadata.name, fieldMetadata, false);
+                                            }
+                                        }
+                                    }
+                                })
+                            ]
+                        }]
+                    })
+                ]
+            }));
+        },
+
+        onFailure : function(response) {
+            this.insert(0, {
+                xtype: 'box',
+                cls: 'labkey-error',
+                html: 'Error: ' + response.exception
+            });
+            this.getEl().unmask();
+        }
+    });
+</script>

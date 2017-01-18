@@ -1,38 +1,38 @@
 
-.summary-stats-dialog .stat-table {
+.summary-stats-panel .stat-table {
     border-collapse: collapse;
     width: 100%;
 }
 
-.summary-stats-dialog .stat-table tr.alt-row {
+.summary-stats-panel .stat-table tr.alt-row {
     background-color: #F4F4F4;
 }
 
-.summary-stats-dialog .stat-table td {
+.summary-stats-panel .stat-table td {
     padding: 4px;
 }
 
-.summary-stats-dialog .stat-table tr:hover {
+.summary-stats-panel .stat-table tr:hover {
     background-color: #C0C0C0;
 }
 
-.summary-stats-dialog .stat-table .check {
+.summary-stats-panel .stat-table .check {
     vertical-align: top;
 }
 
-.summary-stats-dialog .stat-table .value {
+.summary-stats-panel .stat-table .value {
     text-align: right;
 }
 
-.summary-stats-dialog .stat-table .label {
+.summary-stats-panel .stat-table .label {
     padding-right: 10px;
 }
 
-.summary-stats-dialog .stat-table .indent {
+.summary-stats-panel .stat-table .indent {
     padding-left: 20px;
 }
 
-.summary-stats-dialog .stat-table .description {
+.summary-stats-panel .stat-table .description {
     font-size: 12px;
     vertical-align: top;
 }

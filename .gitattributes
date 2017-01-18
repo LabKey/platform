@@ -3086,6 +3086,8 @@ timeline/webapp/timeline/timeline_2.3.0/timeplot_js/timeplot-bundle.css -text
 timeline/webapp/timeline/timeline_2.3.0/timeplot_js/timeplot-bundle.js -text
 visualization/Visualization.iml -text
 visualization/module.properties -text
+visualization/resources/views/querySummary.html -text
+visualization/resources/views/querySummary.view.xml -text
 visualization/resources/web/vis/ColumnVisualizationAnalytics.css -text
 visualization/resources/web/vis/ColumnVisualizationAnalytics.js -text
 visualization/resources/web/vis/chartWizard/baseChartWizardPanel.js -text

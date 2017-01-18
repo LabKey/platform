@@ -1,0 +1,9 @@
+<view xmlns="http://labkey.org/data/xml/view" title="Query Summary" frame="none">
+    <dependencies>
+        <dependency path="vis/vis"/>
+        <dependency path="vis/ColumnVisualizationAnalytics.js"/>
+        <dependency path="vis/ColumnVisualizationAnalytics.css"/>
+        <dependency path="query/ColumnSummaryStatistics.js"/>
+        <dependency path="query/ColumnSummaryStatistics.css"/>
+    </dependencies>
+</view>
