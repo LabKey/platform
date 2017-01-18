@@ -20,8 +20,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                 title: 'Bar',
                 imgUrl: LABKEY.contextPath + '/visualization/images/barchart.png',
                 fields: [
-                    {name: 'x', label: 'X Axis Category', required: true, nonNumericOnly: true},
-                    {name: 'xSub', label: 'X Axis Subcategory', required: false, nonNumericOnly: true},
+                    {name: 'x', label: 'X Axis Categories', required: true, nonNumericOnly: true},
+                    {name: 'xSub', label: 'Split Categories By', required: false, nonNumericOnly: true},
                     {name: 'y', label: 'Y Axis', numericOnly: true}
                 ],
                 layoutOptions: {line: true, opacity: true, axisBased: true}
@@ -31,7 +31,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 title: 'Box',
                 imgUrl: LABKEY.contextPath + '/visualization/images/boxplot.png',
                 fields: [
-                    {name: 'x', label: 'X Axis Grouping'},
+                    {name: 'x', label: 'X Axis Categories'},
                     {name: 'y', label: 'Y Axis', required: true, numericOnly: true},
                     {name: 'color', label: 'Color', nonNumericOnly: true},
                     {name: 'shape', label: 'Shape', nonNumericOnly: true}
