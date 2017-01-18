@@ -171,7 +171,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 }
             }
 
-            ClassLoader tikaClassLoader = new ChildFirstClassLoader(urls.toArray(new URL[urls.size()]), Thread.currentThread().getContextClassLoader());
+            ClassLoader tikaClassLoader = new ChildFirstClassLoader(urls.toArray(new URL[urls.size()]), Thread.currentThread().getContextClassLoader()) {
+                @Override
+                protected Class<?> findClass(String name) throws ClassNotFoundException
+                {
+                    // Ignore logging facades in search's copy of Tika; delegate to the main class loader to suppress warnings. #29030
+                    // At some point soon, we'll use gradle to create a white-list version of tika that includes just the jars we want.
+                    if (name.startsWith("org.apache.log4j") || name.startsWith("org.slf4j"))
+                        throw new ClassNotFoundException();
+                    return super.findClass(name);
+                }
+            };
             _autoDetectParser = tikaClassLoader.loadClass("org.apache.tika.parser.AutoDetectParser").newInstance();
             _metadataClass = tikaClassLoader.loadClass("org.apache.tika.metadata.Metadata");
             _parseMethod = _autoDetectParser.getClass().getMethod("parse", InputStream.class, ContentHandler.class, _metadataClass);
