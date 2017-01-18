@@ -32,8 +32,6 @@ import java.util.Set;
  */
 public abstract class Stats
 {
-    public static final double MAD_FACTOR = 1.4826;
-
     public abstract int getCount();
 
     public abstract Object getMin();
@@ -607,12 +605,12 @@ public abstract class Stats
 
             // get scaled median of the difference
             if (count == 1)
-                return diff[0] * MAD_FACTOR;
+                return diff[0];
 
             if (count % 2 == 0)
-                return ((diff[count / 2 -1 ] + diff[count / 2]) / 2) * MAD_FACTOR;
+                return ((diff[count / 2 -1 ] + diff[count / 2]) / 2);
 
-            return diff[(count -1) / 2] * MAD_FACTOR;
+            return diff[(count -1) / 2];
         }
     }
 }
