@@ -3687,7 +3687,8 @@ public static class ExportSqlForm
     public static final DbScope.Transaction NO_OP_TRANSACTION = new DbScope.Transaction()
     {
         @Override
-        public <T extends Runnable> T addCommitTask(T runnable, DbScope.CommitTaskOption... taskOption)
+        @NotNull
+        public <T extends Runnable> T addCommitTask(T runnable, DbScope.CommitTaskOption firstOption, DbScope.CommitTaskOption... additionalOptions)
         {
             runnable.run();
             return runnable;
@@ -3700,6 +3701,7 @@ public static class ExportSqlForm
         }
 
         @Override
+        @NotNull
         public Connection getConnection()
         {
             throw new UnsupportedOperationException();
