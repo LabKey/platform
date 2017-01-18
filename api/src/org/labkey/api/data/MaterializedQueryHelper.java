@@ -160,15 +160,13 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
      * because it could re-use the global cached result.
      *
      * TODO: if that's a problem we could put a maker into the cache
-     *
-     * @param c
      */
     public synchronized void uncache(final Container c)
     {
         final String txCacheKey = makeKey(scope.getCurrentTransaction(), c);
         map.remove(txCacheKey);
         if (scope.isTransactionActive())
-            scope.getCurrentTransaction().addCommitTask(() -> map.remove(makeKey(null,c)));
+            scope.getCurrentTransaction().addCommitTask(() -> map.remove(makeKey(null,c)), DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
 
@@ -264,7 +262,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
         if (scope.isTransactionActive())
         {
-            scope.getCurrentTransaction().addCommitTask(() -> map.remove(txCacheKey));
+            scope.getCurrentTransaction().addCommitTask(() -> map.remove(txCacheKey), DbScope.CommitTaskOption.POSTCOMMIT);
         }
 
         lastUsed = HeartBeat.currentTimeMillis();

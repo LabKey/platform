@@ -985,7 +985,8 @@ public class DbScope
      *
      * @return  the task that was inserted or the existing class that will be run instead
      */
-    public <T extends Runnable> T addCommitTask(T task, CommitTaskOption... taskOptions)
+    @NotNull
+    public <T extends Runnable> T addCommitTask(T task, CommitTaskOption firstOption, CommitTaskOption... additionalOptions)
     {
         Transaction t = getCurrentTransaction();
 
@@ -997,7 +998,7 @@ public class DbScope
         }
         else
         {
-            return t.addCommitTask(task, taskOptions);
+            return t.addCommitTask(task, firstOption, additionalOptions);
         }
     }
 
@@ -1533,7 +1534,9 @@ public class DbScope
         /*
          * @return  the task that was inserted or the existing object (equal to the runnable passed in) that will be run instead
          */
-        <T extends Runnable> T addCommitTask(T runnable, CommitTaskOption... taskOption);
+        @NotNull
+        <T extends Runnable> T addCommitTask(@NotNull T runnable, @NotNull CommitTaskOption firstOption, CommitTaskOption... additionalOptions);
+        @NotNull
         Connection getConnection();
         void close();
         void commit();
@@ -1542,7 +1545,7 @@ public class DbScope
          * Commit the current transaction, running pre and post commit tasks, but don't close the connection
          * or remove transaction from thread pool. Effectively starts new transaction with same pre and post commit tasks.
          */
-        public void commitAndKeepConnection();
+        void commitAndKeepConnection();
 
         boolean isAborted();
 
@@ -1586,6 +1589,7 @@ public class DbScope
     protected class TransactionImpl implements Transaction
     {
         private final String id = GUID.makeGUID();
+        @NotNull
         private final ConnectionWrapper _conn;
         private final Map<DatabaseCache<?>, StringKeyCache<?>> _caches = new HashMap<>(20);
 
@@ -1600,12 +1604,12 @@ public class DbScope
         private Throwable _creation = new Throwable();
         private final TransactionKind _transactionKind;
 
-        TransactionImpl(ConnectionWrapper conn, TransactionKind transactionKind)
+        TransactionImpl(@NotNull ConnectionWrapper conn, TransactionKind transactionKind)
         {
             this(conn, transactionKind, Collections.emptyList());
         }
 
-        TransactionImpl(ConnectionWrapper conn, TransactionKind transactionKind, List<Lock> extraLocks)
+        TransactionImpl(@NotNull ConnectionWrapper conn, TransactionKind transactionKind, List<Lock> extraLocks)
         {
             _conn = conn;
             _transactionKind = transactionKind;
@@ -1622,10 +1626,12 @@ public class DbScope
             _caches.put(cache, map);
         }
 
-        public <T extends Runnable> T addCommitTask(T task, CommitTaskOption... taskOptions)
+        @Override
+        @NotNull
+        public <T extends Runnable> T addCommitTask(@NotNull T task, @NotNull DbScope.CommitTaskOption firstOption, CommitTaskOption... additionalOptions)
         {
-            T result = task;
-            for (CommitTaskOption taskOption : taskOptions)
+            T result = firstOption.add(this, task);
+            for (CommitTaskOption taskOption : additionalOptions)
             {
                 result = taskOption.add(this, task);
             }
@@ -1633,6 +1639,7 @@ public class DbScope
             return result;
         }
 
+        @NotNull
         public Connection getConnection()
         {
             return _conn;
