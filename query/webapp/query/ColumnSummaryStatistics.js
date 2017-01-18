@@ -413,12 +413,13 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsPanel', {
     },
 
     onFailure : function(response) {
+        var message = response.exception ? 'There was an error calculating one or more statistics.' : response.message;
         this.add({
             xtype: 'box',
             cls: 'labkey-error',
             border: false,
             width: 315,
-            html: response.exception || response.message
+            html: message
         });
 
         this.getEl().unmask();
