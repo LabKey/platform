@@ -1311,7 +1311,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
 
     private boolean isOverridden(Map<String, Object> extraContext)
     {
-        return (extraContext != null && extraContext.get("override") != null && ((Boolean)extraContext.get("override")));
+        return (extraContext != null && Boolean.TRUE == extraContext.get("overrideOtherTriggerScripts"));
     }
 
     @Override

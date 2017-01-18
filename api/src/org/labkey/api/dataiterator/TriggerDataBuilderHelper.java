@@ -40,7 +40,7 @@ public class TriggerDataBuilderHelper
     {
         _target = target;
         _c = c;
-        _extraContext = extraContext;
+        _extraContext = validExtraContent(extraContext);
         _useImportAliases = useImportAliases;
     }
 
@@ -55,6 +55,18 @@ public class TriggerDataBuilderHelper
         return new After(in);
     }
 
+    /**
+     * extraContext.overrideOtherTriggerScripts is used to allow a module to override a trigger script in a dependency.
+     * This function ensures the value can not be set client side to override any trigger scripts which may control security.
+     */
+    public Map<String, Object> validExtraContent(Map<String,Object> extraContext)
+    {
+        if (extraContext != null)
+        {
+            extraContext.put("overrideOtherTriggerScripts", false);
+        }
+        return extraContext;
+    }
 
     class Before implements DataIteratorBuilder
     {
