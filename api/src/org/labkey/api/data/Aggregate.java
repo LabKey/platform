@@ -22,11 +22,13 @@ import org.junit.Test;
 import org.labkey.api.analytics.BaseAggregatesAnalyticsProvider;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Formats;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.Format;
+import java.util.Date;
 import java.util.Map;
 
 /**
@@ -276,7 +278,7 @@ public class Aggregate
             return _aggregate.getDisplayString() + ": " + _value;
         }
 
-        public String getFormattedValue(DisplayColumn renderer)
+        public String getFormattedValue(DisplayColumn renderer, Container container)
         {
             // Issue 16570: Formatter is only applicable if the aggregate return type is
             // similar to the input jdbcType.  For example, don't apply a date format
@@ -314,6 +316,10 @@ public class Aggregate
                 else if (inputType.isNumeric())
                 {
                     return Formats.fv3.format(value);
+                }
+                else if (returnType.isDateOrTime())
+                {
+                    return DateUtil.formatDateInfer(container, (Date)value);
                 }
                 else
                 {
