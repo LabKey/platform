@@ -336,10 +336,6 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
 
                 this.updateNavPanelTitle(selectedChartType, measures, navRecord);
 
-                //update individual panel items' layout options based on selected measures/render type
-                if (panel.updateLayoutOptions)
-                    panel.updateLayoutOptions(measures, selectedChartType); //TODO: find a way to hide the other panels
-
                 // hide/show individual panel items based on their specific layoutOption type
                 if (panel.getInputFields)
                 {

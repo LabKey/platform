@@ -116,6 +116,15 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             minValue: 250,
             step: 50
         });
+
+        this.colorPaletteFieldContainer = Ext4.create('Ext.Component',  {
+            padding: '0 0 0 100px',
+            html: '<div id="colorPalette" style="width: 175px; overflow-x: hidden;"></div>',
+            listeners: {
+                scope: this,
+                render: this.renderColorPaletteDisplay
+            }
+        });
     },
 
     defineLineOptions : function()
@@ -324,23 +333,12 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             layoutOptions: 'pie'
         });
 
-        this.colorPaletteFieldContainer = Ext4.create('Ext.Component',  {
-            layoutOptions: ['pie'], //different layouts may be added based on chart options
-            padding: '0 0 0 100px',
-            html: '<div id="colorPalette" style="width: 175px; overflow-x: hidden;"></div>',
-            listeners: {
-                scope: this,
-                render: this.renderColorPaletteDisplay
-            }
-        });
-
         this.colorPaletteComboBox = Ext4.create('Ext.form.ComboBox', {
             name: 'colorPaletteScale',
             fieldLabel: 'Color palette',
             getInputValue: this.getColorPalette,
             labelWidth: this.defaultLabelWidth,
             width: 275,
-            layoutOptions: ['pie'], //different layouts may be added based on chart options
             editable: false,
             value: this.defaultColorPaletteScale,
             store: [
@@ -748,39 +746,26 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             else
                 this.setFooter('');
         }
+
+        this.setPointColorVisible(!Ext4.isDefined(measures.color));
+        this.setFillColorVisible(!(renderType == 'bar_chart' && Ext4.isDefined(measures.color)));
+        this.setColorPalletteVisible(renderType == 'pie_chart' || Ext4.isDefined(measures.color));
     },
 
-    updateLayoutOptions : function(measures, renderType)
+    setPointColorVisible : function(visible)
     {
-        if (renderType.name === "bar_chart")
-        {
-            if (measures.xSub && measures.color)
-            {
-                this.colorPaletteComboBox.layoutOptions.push('line');
-                this.colorPaletteFieldContainer.layoutOptions.push('line');
-                this.fillColorPicker.layoutOptions = undefined;
-            }
-            else {
-                this.colorPaletteComboBox.layoutOptions = ['pie'];
-                this.colorPaletteFieldContainer.layoutOptions = ['pie'];
-                this.fillColorPicker.layoutOptions = 'line';
-            }
-        }
+        this.pointColorPicker.hideForDatatype = !visible;
+    },
 
-        else if (renderType.name === "scatter_plot" || renderType.name === "box_plot")
-        {
-            if (measures.color)
-            {
-                this.colorPaletteComboBox.layoutOptions.push('point');
-                this.colorPaletteFieldContainer.layoutOptions.push('point');
-                this.pointColorPicker.layoutOptions = undefined;
-            }
-            else {
-                this.colorPaletteComboBox.layoutOptions = ['pie'];
-                this.colorPaletteFieldContainer.layoutOptions = ['pie'];
-                this.pointColorPicker.layoutOptions = 'point';
-            }
-        }
+    setFillColorVisible : function(visible)
+    {
+      this.fillColorPicker.hideForDatatype = !visible;
+    },
+
+    setColorPalletteVisible : function(visible)
+    {
+        this.colorPaletteComboBox.hideForDatatype = !visible;
+        this.colorPaletteFieldContainer.hideForDatatype = !visible;
     },
 
     onChartSubjectSelectionChange : function(asGroups)
