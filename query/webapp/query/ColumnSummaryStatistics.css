@@ -8,12 +8,8 @@
     background-color: #F4F4F4;
 }
 
-.summary-stats-dialog .stat-table td.label,
-.summary-stats-dialog .stat-table td.value {
+.summary-stats-dialog .stat-table td {
     padding: 4px;
-}
-.summary-stats-dialog .stat-table td.check {
-    padding: 6px 4px 2px 4px;
 }
 
 .summary-stats-dialog .stat-table tr:hover {
