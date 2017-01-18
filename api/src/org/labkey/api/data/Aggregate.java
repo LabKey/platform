@@ -120,6 +120,11 @@ public class Aggregate
          */
         JdbcType returnType(JdbcType jdbcType);
 
+        /**
+         * If aggregates use subqueries, we'll need to add the set of all tableInnerSql parameters for each subquery
+         * @param dialect the use of a subquery may be dialect-specific
+         * @return the number of subqueries the aggregate uses
+         */
         default int subQueryCount(SqlDialect dialect) { return 0; }
     }
 
@@ -127,6 +132,29 @@ public class Aggregate
     {
         SUM("Sum")
                 {
+                    public String getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
+                    {
+                        if (jdbcType != null && !isLegal(jdbcType))
+                            return null;
+
+                        //  upcast to the wider return datatypes to avoid overflows in the database
+                        if (jdbcType != null && returnType(jdbcType) != null)
+                        {
+                            StringBuilder sb = new StringBuilder();
+                            sb.append("SUM(");
+                            if (distinct)
+                                sb.append("DISTINCT ");
+                            sb.append("CAST(").append(dialect.getColumnSelectName(columnName)).append(" AS ")
+                                    .append(returnType(jdbcType).toString()).append(")");
+                            sb.append(") AS ").append(asName);
+                            return sb.toString();
+                        }
+                        else
+                        {
+                            return super.getSQLColumnFragment(dialect, columnName, asName, null, distinct, tableInnerSql);
+                        }
+                    }
+
                     @Override
                     public JdbcType returnType(JdbcType jdbcType)
                     {
@@ -159,7 +187,7 @@ public class Aggregate
                             return null;
 
                         // special case for casting INTEGER to FLOAT
-                        if (jdbcType != null && jdbcType.equals(JdbcType.INTEGER))
+                        if (jdbcType != null && (jdbcType.equals(JdbcType.INTEGER) || jdbcType.equals(JdbcType.BIGINT) || jdbcType.equals(JdbcType.SMALLINT)))
                         {
                             StringBuilder sb = new StringBuilder();
                             sb.append(getSQLFunctionName(dialect)).append("(");
