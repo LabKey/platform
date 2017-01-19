@@ -45,8 +45,6 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
     bodyStyle: 'padding: 10px;',
     border: false,
     modal: true,
-    minWidth: 300,
-    minHeight: 200,
 
     queryConfig: null,
     filterArray: null,
@@ -72,11 +70,6 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
 
         if (this.initSelection == null)
             this.initSelection = [];
-
-        // we expect more summary stats for numeric types, so change minHeight accordingly
-        var colType = this.column.displayFieldJsonType || this.column.jsonType;
-        if (!this.column.isKeyField && (colType.toLowerCase() == 'int' || colType.toLowerCase() == 'float'))
-            this.minHeight = this.minHeight + 150;
 
         this.items = [
             this.getDialogDescription(),
@@ -129,6 +122,9 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
             });
 
             this.summaryStatsPanel.on('selectionchange', this.toggleApplyButtonState, this);
+
+            // center the window after the panel resize event
+            this.summaryStatsPanel.on('resize', function(panel) { this.center(); }, this);
         }
 
         return this.summaryStatsPanel;
@@ -173,7 +169,10 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
 
 Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsPanel', {
     extend: 'Ext.panel.Panel',
+
     cls: 'summary-stats-panel',
+    height: 40, // initial height set for showing loading mask
+
     allowSelection: false,
     queryConfig: null,
     filterArray: null,
@@ -254,7 +253,6 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsPanel', {
         }
 
         this.add(this.getDisplayView(response));
-        this.getEl().unmask();
     },
 
     getDisplayStore : function(response) {
@@ -381,6 +379,11 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsPanel', {
                         }
                 )
             });
+
+            this.displayView.on('refresh', function(view) {
+                this.setHeight(view.getHeight());
+                this.getEl().unmask();
+            }, this);
 
             if (this.allowSelection) {
                 this.displayView.on('refresh', this.attachCheckboxClickListeners, this, {single: true});
