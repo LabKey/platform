@@ -44,7 +44,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                 imgUrl: LABKEY.contextPath + '/visualization/images/piechart.png',
                 fields: [
                     {name: 'x', label: 'Categories', required: true, nonNumericOnly: true},
-                    {name: 'y', label: 'Measure', numericOnly: true}
+                    // Issue #29046  'Remove "measure" option from pie chart'
+                    // {name: 'y', label: 'Measure', numericOnly: true}
                 ],
                 layoutOptions: {pie: true}
             },
