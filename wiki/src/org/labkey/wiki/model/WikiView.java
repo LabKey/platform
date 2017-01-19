@@ -31,5 +31,8 @@ public class WikiView extends BaseWikiView
         this.hasContent = hasContent;
 
         init(getViewContext().getContainer(), wiki.getName());
+
+        // For the webpart version, see sibling class WikiWebPart
+        setIsWebPart(false);
     }
 }
