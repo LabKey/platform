@@ -324,8 +324,8 @@ public class Aggregate
                 // Issue 29012: convert very small double values to zero for display
                 if (value instanceof Double)
                 {
-                    Double dblValue = ((Double) value).doubleValue();
-                    if ((dblValue > 0 && dblValue < EPSILON) || (dblValue < 0 && dblValue > -EPSILON))
+                    double absValue = Math.abs(((Double) value).doubleValue());
+                    if (absValue > 0 && absValue < EPSILON)
                         value = 0;
                 }
 
