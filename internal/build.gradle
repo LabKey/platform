@@ -13,7 +13,7 @@ dependencies {
    BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: ":server:api")
    compile 'org.apache.tomcat:jsp-api'
    compile 'org.apache.tomcat:jasper'
-   external  "org.labkey:labkey-client-api:${labkeyVersion}"
+   compile  "org.labkey:labkey-client-api:${labkeyVersion}"
    external  'com.sun.script.js:jsr223-js-engine:Aug2008'
    external  'org.mozilla:rhino:1.7R3'
 }
