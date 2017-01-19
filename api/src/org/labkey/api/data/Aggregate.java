@@ -137,21 +137,49 @@ public class Aggregate
                         if (jdbcType != null && !isLegal(jdbcType))
                             return null;
 
-                        //  upcast to the wider return datatypes to avoid overflows in the database
-                        if (jdbcType != null && returnType(jdbcType) != null)
+                        if (jdbcType != null)
                         {
                             StringBuilder sb = new StringBuilder();
                             sb.append("SUM(");
                             if (distinct)
                                 sb.append("DISTINCT ");
-                            sb.append("CAST(").append(dialect.getColumnSelectName(columnName)).append(" AS ")
-                                    .append(returnType(jdbcType).toString()).append(")");
+                            if (dialect.isSqlServer() && castType(jdbcType) != null)
+                            {
+                                sb.append("CAST(").append(dialect.getColumnSelectName(columnName)).append(" AS ")
+                                        .append(castType(jdbcType)).append(")");
+                            }
+                            else
+                            {
+                                sb.append(dialect.getColumnSelectName(columnName));
+                            }
                             sb.append(") AS ").append(asName);
                             return sb.toString();
                         }
                         else
                         {
                             return super.getSQLColumnFragment(dialect, columnName, asName, null, distinct, tableInnerSql);
+                        }
+                    }
+
+                    /**
+                     * Upcast to the wider datatypes to avoid overflows in the database. Postgres does this implicitly, but SQL Server does not
+                     * @param jdbcType type of column
+                     * @return cast datatype, if a wider datatype is available
+                     */
+                    private String castType(JdbcType jdbcType)
+                    {
+                        switch (jdbcType)
+                        {
+                            case BIGINT:
+                            case INTEGER:
+                            case SMALLINT:
+                                return JdbcType.BIGINT.toString();
+                            case DECIMAL:
+                            case DOUBLE:
+                            case REAL:
+                                return "FLOAT";
+                            default:
+                                return null;
                         }
                     }
 
