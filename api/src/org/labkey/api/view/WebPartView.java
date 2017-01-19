@@ -141,15 +141,6 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         };
     }
 
-
-    // use WebPartView(FrameType) or use WebPartView(title) which implies FrameType.PORTAL
-    @Deprecated
-    protected WebPartView()
-    {
-        super();
-        setFrame(FrameType.PORTAL);
-    }
-
     public WebPartView(FrameType ft)
     {
         setFrame(ft);
@@ -168,13 +159,6 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     {
         super(model);
         setFrame(FrameType.PORTAL);
-    }
-
-    public WebPartView(String title, HttpView contents)
-    {
-        this();
-        setTitle(title);
-        setBody(contents);
     }
 
     public void setFrame(FrameType type)
@@ -210,7 +194,6 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     }
 
     public void setTitlePopupHelp(String title, String body)
-
     {
         _frameConfig._helpPopup = PageFlowUtil.helpPopup(title, body);
     }
@@ -267,10 +250,6 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         _frameConfig._navMenu = navMenu;
     }
 
-    /** Override to declare your own NavTree menu implementation that will be used by the
-     * WebPartView upon rendering your webpart. NOTE: The top level key of your tree
-     * may be overridden.
-     */
     public NavTree getNavMenu()
     {
         return _frameConfig._navMenu;
@@ -318,7 +297,6 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         return _frameConfig._location;
     }
 
-    /** @return Override to declare if a view is or is not a Web Part. Defaults to true. */
     public boolean isWebPart()
     {
         return _frameConfig._isWebpart;
@@ -351,13 +329,6 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             boolean isDebugHtml = _devMode && _frameConfig._frame != FrameType.NOT_HTML && StringUtils.startsWith(response.getContentType(), "text/html");
             if (isDebugHtml)
                 response.getWriter().print("<!--" + name + "-->");
-
-            // handle WebPartView subclasses that override getNavMenu()
-            // by default this is a no-op
-            _frameConfig._navMenu = getNavMenu();
-
-            // handle WebParView subclasses that override isWebPart()
-            _frameConfig._isWebpart = isWebPart();
 
             WebPartFrame frame = getWebPartFrame();
 
@@ -414,7 +385,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
             frame.doEndTag(response.getWriter());
             if (isDebugHtml)
-                response.getWriter().print("<!--/" + this.getClass() + "-->");
+                response.getWriter().print("<!--/" + name + "-->");
         }
     }
 

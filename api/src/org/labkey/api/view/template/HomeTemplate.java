@@ -50,7 +50,13 @@ public class HomeTemplate extends PrintTemplate
 
     public HomeTemplate(ViewContext context, Container c, ModelAndView body, PageConfig page)
     {
-        super("/org/labkey/api/view/template/HomeTemplate.jsp", page);
+        this("/org/labkey/api/view/template/HomeTemplate.jsp", context, c, body, page);
+    }
+
+
+    protected HomeTemplate(String template, ViewContext context, Container c, ModelAndView body, PageConfig page)
+    {
+        super(template, page);
 
         if (null==page.getNavTrail())
             page.setNavTrail(Collections.emptyList());

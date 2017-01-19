@@ -178,8 +178,8 @@
         var fatBars = function() {
             var topBar = Ext4.get('topmenu');
             if (topBar) {
-                var contentTable = Ext4.get(Ext4.DomQuery.select('table.labkey-proj')[0]).getBox();
-                var width = contentTable.width-5;
+                var contentTable = Ext4.get(Ext4.DomQuery.select('table.labkey-proj')[0]);
+                var width = (contentTable ? contentTable : Ext4.getBody()).getBox() - 5;
                 var menuBarRep = Ext4.get(Ext4.DomQuery.select('.main-menu-replicate')[0]);
                 menuBarRep.setWidth(width);
                 menuBarRep.setStyle('top', '' + topBar.getBox().top + 'px');

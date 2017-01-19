@@ -69,8 +69,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.WebThemeManager;
 import org.labkey.api.view.template.ClientDependency;
-import org.labkey.api.view.template.FrameFactoryClassic;
-import org.labkey.api.view.template.TemplateFactoryClassic;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.web.servlet.ModelAndView;
@@ -168,28 +166,19 @@ public class PageFlowUtil
     // This is a flag that is used to distinguish code paths while migrating the core UI
     public static final String EXPERIMENTAL_MIGRATE_CORE_UI = "migrate-core-ui";
 
+
     public static boolean useExperimentalCoreUI()
     {
-        ExperimentalFeatureService svc = ServiceRegistry.get().getService(ExperimentalFeatureService.class);
-        if (svc != null)
-            return svc.isFeatureEnabled(EXPERIMENTAL_MIGRATE_CORE_UI);
+        if (AppProps.getInstance().isDevMode())
+        {
+            ExperimentalFeatureService svc = ServiceRegistry.get().getService(ExperimentalFeatureService.class);
+            if (svc != null)
+                return svc.isFeatureEnabled(EXPERIMENTAL_MIGRATE_CORE_UI);
+        }
+
         return false;
     }
 
-    public static void configureTemplates()
-    {
-        if (useExperimentalCoreUI())
-        {
-            // Soon, will register different templates/frames
-            new TemplateFactoryClassic().registerTemplates();
-            new FrameFactoryClassic().registerFrames();
-        }
-        else
-        {
-            new TemplateFactoryClassic().registerTemplates();
-            new FrameFactoryClassic().registerFrames();
-        }
-    }
 
     static public String filterXML(String s)
     {

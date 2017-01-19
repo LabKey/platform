@@ -28,13 +28,14 @@ public interface WebPartFrame
         public FrameConfig()
         {
         }
+
         public FrameConfig(String title)
         {
             this._title = title;
         }
 
-        public String _title=null;
-        public String _titleHref=null;
+        public String _title = null;
+        public String _titleHref = null;
         public String _className = null;
         public URLHelper _closeURL = null;
         public boolean _isEmbedded = false;

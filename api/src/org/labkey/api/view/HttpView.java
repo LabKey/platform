@@ -219,7 +219,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
     /**
      * Subclasses usually implement renderInternal(Map, PrintWriter), or they may
-     * implement renderInternal(Map, Request, Resposne)
+     * implement renderInternal(Map, HttpServletRequest, HttpServletResponse)
      */
     protected void renderInternal(ModelBean model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
