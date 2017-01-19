@@ -82,10 +82,10 @@ public class WikiTOC extends NavTreeMenu
         setId(getNavTreeId(_cToc));
         setElements(context, getNavTree());
         setCollapsible(false);
+        setNavMenu(createNavMenu());
     }
 
-    @Override
-    public NavTree getNavMenu()
+    private NavTree createNavMenu()
     {
         ViewContext context = getViewContext();
         User user = context.getUser();

@@ -82,7 +82,7 @@ public abstract class BaseWikiView extends JspView<Object>
         String title;
 
         if (isWebPart())
-            title ="Wiki Web Part";
+            title = "Wiki Web Part";
         else
         {
             if (folderHasWikis)
@@ -242,14 +242,13 @@ public abstract class BaseWikiView extends JspView<Object>
         }
 
         setTitle(title);
+        setNavMenu(initNavMenu());
     }
 
-    @Override
-    public NavTree getNavMenu()
+
+    private NavTree initNavMenu()
     {
         NavTree menu = new NavTree("");
-        String href = (String) getViewContext().get("href");
-        String path = getViewContext().getContextPath();
         if (hasContent && !(isEmbedded() && getFrame() == WebPartView.FrameType.NONE))
         {
             if (null != updateContentURL)
@@ -276,12 +275,13 @@ public abstract class BaseWikiView extends JspView<Object>
                             getContextContainer()).addParameter("name", wiki.getName()));
             }
         }
-        else if(!(isEmbedded() && getFrame() == WebPartView.FrameType.NONE))
+        else if (!(isEmbedded() && getFrame() == WebPartView.FrameType.NONE))
         {
             // The wiki might not have been set yet -- so there is no content
             if (null != customizeURL)
                 setCustomize(new NavTree("", customizeURL.toString()));
         }
+
         return menu;
     }
 }

@@ -198,6 +198,8 @@ import org.labkey.core.test.TestController;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
 import org.labkey.core.user.UserController;
 import org.labkey.core.view.ShortURLServiceImpl;
+import org.labkey.core.view.template.bootstrap.factory.FrameFactoryBootstrap;
+import org.labkey.core.view.template.bootstrap.factory.TemplateFactoryBootstrap;
 import org.labkey.core.webdav.DavController;
 import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookQueryView;
@@ -373,7 +375,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             svc.registerProvider("core", new PermissionsValidator());
         }
 
-        PageFlowUtil.configureTemplates();
+        configureTemplates();
 
         ExperimentalFeatureService expFeatureSvc = ServiceRegistry.get().getService(ExperimentalFeatureService.class);
         if (expFeatureSvc != null)
@@ -381,7 +383,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             expFeatureSvc.addFeatureListener(PageFlowUtil.EXPERIMENTAL_MIGRATE_CORE_UI, (feature, enabled) ->
             {
                 /* featureChange */
-                PageFlowUtil.configureTemplates();
+                configureTemplates();
             });
         }
     }
@@ -846,26 +848,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public ActionURL getTabURL(Container c, User user)
     {
         if (user == null)
-        {
             return AppProps.getInstance().getHomePageActionURL();
-        }
-        else
-        {
-            return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c);
 
-        }
-//        else if (c != null && "/".equals(c.getPath()) && user.isAdministrator())
-//        {
-//            return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
-//        }
-//        else if (c != null && c.hasPermission(user, AdminPermission.class))
-//        {
-//            return PageFlowUtil.urlProvider(SecurityUrls.class).getProjectURL(c);
-//        }
-//        else
-//        {
-//            return PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), AppProps.getInstance().getHomePageActionURL());
-//        }
+        return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c);
     }
 
     @Override
@@ -1142,5 +1127,23 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public void indexDeleted()
     {
         new SqlExecutor(CoreSchema.getInstance().getSchema()).execute("UPDATE core.Documents SET LastIndexed = NULL");
+    }
+
+
+    // This is here for now to allow templates to be defined in core module rather than API.
+    // Possible future work will expose a registration service to configure these UI factories.
+    private static void configureTemplates()
+    {
+        if (PageFlowUtil.useExperimentalCoreUI())
+        {
+            // Soon, will register different templates/frames
+            new TemplateFactoryBootstrap().registerTemplates();
+            new FrameFactoryBootstrap().registerFrames();
+        }
+        else
+        {
+            new TemplateFactoryClassic().registerTemplates();
+            new FrameFactoryClassic().registerFrames();
+        }
     }
 }

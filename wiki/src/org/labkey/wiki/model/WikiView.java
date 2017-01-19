@@ -32,10 +32,4 @@ public class WikiView extends BaseWikiView
 
         init(getViewContext().getContainer(), wiki.getName());
     }
-
-    @Override
-    public boolean isWebPart()
-    {
-        return false;
-    }
 }

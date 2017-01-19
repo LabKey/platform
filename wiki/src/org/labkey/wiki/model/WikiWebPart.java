@@ -45,11 +45,4 @@ public class WikiWebPart extends BaseWikiView
 
         init(c, name);
     }
-
-
-    @Override
-    public boolean isWebPart()
-    {
-        return true;
-    }
 }

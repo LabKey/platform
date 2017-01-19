@@ -539,6 +539,10 @@ core/src/org/labkey/core/user/toggleShowAll.jsp -text
 core/src/org/labkey/core/user/userAccess.jsp -text
 core/src/org/labkey/core/view/ShortURLFilter.java -text
 core/src/org/labkey/core/view/ShortURLServiceImpl.java -text
+core/src/org/labkey/core/view/template/bootstrap/BootstrapTemplate.java -text
+core/src/org/labkey/core/view/template/bootstrap/BootstrapTemplate.jsp -text
+core/src/org/labkey/core/view/template/bootstrap/factory/FrameFactoryBootstrap.java -text
+core/src/org/labkey/core/view/template/bootstrap/factory/TemplateFactoryBootstrap.java -text
 core/src/org/labkey/core/webdav/DavController.java -text
 core/src/org/labkey/core/webdav/WebdavServlet.java -text
 core/src/org/labkey/core/webdav/apache/XMLWriter.java -text
