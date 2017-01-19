@@ -790,7 +790,7 @@ public class AdminController extends SpringActionController
 
             views.addView(new CreditsView("/core/resources/credits/tomcat_jars.txt", getCreditsFile(ModuleLoader.getInstance().getCoreModule(), "tomcat_jars.txt"), getTomcatJars(), "Tomcat JAR", "/external/lib/tomcat directory", null, jarRegEx));
 
-            addCreditsViews(views, modules, "scripts.txt", "JavaScript, Icons and Font");
+            addCreditsViews(views, modules, "scripts.txt", "Script, Icon and Font");
             addCreditsViews(views, modules, "source.txt", "Java Source Code");
             addCreditsViews(views, modules, "executables.txt", "Executable");
 
