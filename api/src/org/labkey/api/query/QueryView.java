@@ -2141,7 +2141,6 @@ public class QueryView extends WebPartView<Object>
         _initializeButtonBar = false;
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
-        //getSettings().setShowRows(ShowRows.ALL);
         rgn.setAllowAsync(false);
         rgn.setShowPagination(false);
         RenderContext rc = view.getRenderContext();
@@ -2151,7 +2150,9 @@ public class QueryView extends WebPartView<Object>
             Results rs = rgn.getResultSet(rc);
             TSVGridWriter tsv = new TSVGridWriter(rs, getExportColumns(rgn.getDisplayColumns()));
             tsv.setFilenamePrefix(getSettings().getQueryName() != null ? getSettings().getQueryName() : "query");
-            tsv.setColumnHeaderType(headerType);
+            // don't step on default
+            if (null != headerType)
+                tsv.setColumnHeaderType(headerType);
             return tsv;
         }
         catch (SQLException e)
