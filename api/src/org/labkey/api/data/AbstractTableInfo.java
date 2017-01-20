@@ -1309,11 +1309,6 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         _triggers = null;
     }
 
-    private boolean isOverridden(Map<String, Object> extraContext)
-    {
-        return (extraContext != null && Boolean.TRUE == extraContext.get("overrideOtherTriggerScripts"));
-    }
-
     @Override
     public void fireBatchTrigger(Container c, TriggerType type, boolean before, BatchValidationException batchErrors, Map<String, Object> extraContext)
             throws BatchValidationException
@@ -1326,9 +1321,6 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         {
             script.batchTrigger(this, c, type, before, batchErrors, extraContext);
             if (batchErrors.hasErrors())
-                break;
-
-            if (isOverridden(extraContext))
                 break;
         }
 
@@ -1353,9 +1345,6 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         {
             script.rowTrigger(this, c, type, before, rowNumber, newRow, oldRow, errors, extraContext);
             if (errors.hasErrors())
-                break;
-
-            if (isOverridden(extraContext))
                 break;
         }
 
