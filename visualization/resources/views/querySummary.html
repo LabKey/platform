@@ -129,14 +129,19 @@
                                 Ext4.create('LABKEY.ext4.ColumnSummaryStatisticsPanel', {
                                     width: 315,
                                     border: false,
-                                    padding: '10px 0',
                                     queryConfig: {
                                         dataRegionName: 'query',
                                         schemaName: this.schemaName,
                                         queryName: this.queryName,
                                         viewName: this.viewName
                                     },
-                                    column: fieldMetadata
+                                    column: fieldMetadata,
+                                    listeners: {
+                                        scope: this,
+                                        resize: function(panel) {
+                                            panel.up('fieldset').setHeight(panel.getHeight() + 25);
+                                        }
+                                    }
                                 })
                             ]
                         },{

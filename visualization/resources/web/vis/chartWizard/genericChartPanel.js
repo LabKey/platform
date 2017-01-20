@@ -656,7 +656,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             schemaName  : this.schemaName,
             queryName   : this.queryName,
             viewName    : this.viewName,
-            columns     : this.savedColumns,        // TODO, qwp does not support passing in a column list
+            columns     : this.savedColumns,
             parameters  : this.parameters,
             frame       : 'none',
             disableAnalytics      : true,
@@ -701,7 +701,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             dataRegionName: this.dataRegionName,
             queryLabel  : this.queryLabel,
             parameters  : this.parameters,
-            requiredVersion : 9.1,
+            requiredVersion : 13.2,
             method: 'POST'
         };
 
@@ -725,6 +725,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 errorDiv = Ext4.create('Ext.container.Container', {
                     border: 1,
                     autoEl: {tag: 'div'},
+                    padding: 10,
                     html: '<h3 style="color:red;">An unexpected error occurred while retrieving data.</h2>' + error,
                     autoScroll: true
                 });
@@ -1250,23 +1251,20 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         var aes, scales, plot, plotConfig, customRenderType, hasNoDataMsg, newChartDiv, valueConversionResponse;
 
-        hasNoDataMsg = LABKEY.vis.GenericChartHelper.validateResponseHasData(this.chartData, true);
+        hasNoDataMsg = LABKEY.vis.GenericChartHelper.validateResponseHasData(this.getMeasureStore(), true);
         if (hasNoDataMsg != null)
-        {
-            this.handleNoData(hasNoDataMsg);
-            return;
-        }
+            this.addWarningText(hasNoDataMsg);
 
         this.getEl().mask('Rendering Chart...');
 
-        aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, this.chartData.schemaName, this.chartData.queryName);
+        aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, this.getSchemaName(), this.getQueryName());
 
-        valueConversionResponse = LABKEY.vis.GenericChartHelper.doValueConversion(chartConfig, aes, this.renderType, this.chartData.rows);
+        valueConversionResponse = LABKEY.vis.GenericChartHelper.doValueConversion(chartConfig, aes, this.renderType, this.getMeasureStoreRecords());
         if (!Ext4.Object.isEmpty(valueConversionResponse.processed))
         {
             Ext4.Object.merge(chartConfig.measures, valueConversionResponse.processed);
             //re-generate aes based on new converted values
-            aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, this.chartData.schemaName, this.chartData.queryName);
+            aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, this.getSchemaName(), this.getQueryName());
             if (valueConversionResponse.warningMessage) {
                 this.addWarningText(valueConversionResponse.warningMessage);
             }
@@ -1276,7 +1274,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (customRenderType && customRenderType.generateAes)
             aes = customRenderType.generateAes(this, chartConfig, aes);
 
-        scales = LABKEY.vis.GenericChartHelper.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, this.chartData, this.defaultNumberFormat);
+        scales = LABKEY.vis.GenericChartHelper.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, this.getMeasureStore(), this.defaultNumberFormat);
         if (customRenderType && customRenderType.generateScales)
             scales = customRenderType.generateScales(this, chartConfig, scales);
 
@@ -1316,7 +1314,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     afterRenderPlotComplete : function(chartDiv)
     {
-        this.addWarningMsg(chartDiv);
+        if (this.warningText !== null)
+            this.addWarningMsg(chartDiv, this.warningText, true);
 
         this.getTopButtonBar().enable();
         this.getChartTypeBtn().enable();
@@ -1330,19 +1329,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.updateSaveChartThumbnail(chartDiv);
     },
 
-    addWarningMsg : function(chartDiv)
+    addWarningMsg : function(chartDiv, warningText, allowDismiss)
     {
-        if (this.warningText !== null)
-        {
-            var warningDivId = Ext4.id();
-            var dismissLink = LABKEY.Utils.textLink({text: 'dismiss', onClick: 'Ext4.get(\'' + warningDivId + '\').destroy();'});
+        var warningDivId = Ext4.id();
+        var dismissLink = allowDismiss ? LABKEY.Utils.textLink({text: 'dismiss', onClick: 'Ext4.get(\'' + warningDivId + '\').destroy();'}) : '';
 
-            var warningDiv = document.createElement('div');
-            warningDiv.setAttribute('id', warningDivId);
-            warningDiv.setAttribute('style', 'padding: 10px; background-color: #ffe5e5; color: #d83f48; font-weight: bold;');
-            warningDiv.innerHTML = this.warningText + ' ' + dismissLink;
-            chartDiv.getEl().insertFirst(warningDiv);
-        }
+        var warningDiv = document.createElement('div');
+        warningDiv.setAttribute('id', warningDivId);
+        warningDiv.setAttribute('style', 'padding: 10px; background-color: #ffe5e5; color: #d83f48; font-weight: bold;');
+        warningDiv.innerHTML = warningText + ' ' + dismissLink;
+        chartDiv.getEl().insertFirst(warningDiv);
     },
 
     updateSaveChartThumbnail : function(chartDiv)
@@ -1364,15 +1360,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             return false;
 
         // validate that the x axis measure exists and data is valid
-        if (hasXMeasure && !this.validateAxisMeasure(chartType, chartConfig, 'x', aes, scales, this.chartData.rows))
+        if (hasXMeasure && !this.validateAxisMeasure(chartType, chartConfig, 'x', aes, scales, this.getMeasureStoreRecords()))
             return false;
 
         // validate that the x subcategory axis measure exists and data is valid
-        if (hasXSubMeasure && !this.validateAxisMeasure(chartType, chartConfig, 'xSub', aes, scales, this.chartData.rows))
+        if (hasXSubMeasure && !this.validateAxisMeasure(chartType, chartConfig, 'xSub', aes, scales, this.getMeasureStoreRecords()))
             return false;
 
         // validate that the y axis measure exists and data is valid
-        if (hasYMeasure && !this.validateAxisMeasure(chartType, chartConfig, 'y', aes, scales, this.chartData.rows))
+        if (hasYMeasure && !this.validateAxisMeasure(chartType, chartConfig, 'y', aes, scales, this.getMeasureStoreRecords()))
             return false;
 
         return true;
@@ -1380,7 +1376,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     getPlotConfig : function(newChartDiv, chartType, chartConfig, aes, scales, customRenderType)
     {
-        var plotConfig, geom, labels, data = this.chartData.rows, me = this;
+        var plotConfig, geom, labels, data = this.getMeasureStoreRecords(), me = this;
 
         if (chartType == 'scatter_plot' && data.length > chartConfig.geomOptions.binThreshold)
         {
@@ -1484,7 +1480,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         // Initialize the x and y measures on first chart load. Returns false if we're missing the x or y measure.
         var measure, fk,
-            measureStore = this.getChartTypePanel().getQueryColumnsStore(),
+            queryColumnStore = this.getChartTypePanel().getQueryColumnsStore(),
             requiredFieldNames = this.getChartTypePanel().getRequiredFieldNames(),
             requiresX = requiredFieldNames.indexOf('x') > -1,
             requiresY = requiredFieldNames.indexOf('y') > -1;
@@ -1528,7 +1524,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
             else if (this.autoColumnYName != null)
             {
-                measure = measureStore.findRecord('label', 'Study: Cohort', 0, false, true, true);
+                measure = queryColumnStore.findRecord('label', 'Study: Cohort', 0, false, true, true);
                 if (measure)
                     this.setXAxisMeasure(measure);
 
@@ -1541,9 +1537,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     getMeasureFromFieldKey : function(fk)
     {
-        var measureStore = this.getChartTypePanel().getQueryColumnsStore(),
+        var queryColumnStore = this.getChartTypePanel().getQueryColumnsStore(),
             fkName = fk.getParts().length > 1 ? fk.toString() : fk.getName();
-        return measureStore.findRecord('name', fkName, 0, false, true, true);
+        return queryColumnStore.findRecord('fieldKey', fkName, 0, false, true, true);
     },
 
     setYAxisMeasure : function(measure)
@@ -1576,7 +1572,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // Checks to make sure the measures are still available, if not we show an error.
         Ext4.each(measureNames, function(propName)
         {
-            if (this.measures[propName] && store.find('name', this.measures[propName].name, null, null, null, true) === -1)
+            if (this.measures[propName] && store.find('fieldKey', this.measures[propName].name, null, null, null, true) === -1)
             {
                 if (message == null)
                     message = '';
@@ -1638,6 +1634,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 var errorDiv = Ext4.create('Ext.container.Container', {
                     border: 1,
                     autoEl: {tag: 'div'},
+                    padding: 10,
                     html: '<h3 style="color:red;">Error rendering chart:</h2>' + validation.message,
                     autoScroll: true
                 });
@@ -1784,22 +1781,64 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     hasChartData : function()
     {
-        return Ext4.isDefined(this.chartData) && Ext4.isArray(this.chartData.rows);
+        return Ext4.isDefined(this.getMeasureStore()) && Ext4.isArray(this.getMeasureStoreRecords());
     },
 
-    onSelectRowsSuccess : function(response)
+    onSelectRowsSuccess : function(measureStore)
     {
-        this.chartData = response;
+        this.measureStore = measureStore;
 
         // when not in edit mode, we'll use the column metadata from the data query
         if (!this.editMode)
-            this.getChartTypePanel().loadQueryColumns(this.chartData.metaData.fields);
+            this.getChartTypePanel().loadQueryColumns(this.getMeasureStoreMetadata().fields);
 
         this.setDataLoading(false);
 
         // If it's already been requested then we just need to request it again, since this time we have the data to render.
         if (this.isRenderRequested())
             this.requestRender();
+    },
+
+    getMeasureStore : function()
+    {
+        return this.measureStore;
+    },
+
+    getMeasureStoreRecords : function()
+    {
+        if (!this.getMeasureStore())
+            console.error('No measureStore object defined.');
+
+        return this.getMeasureStore().records();
+    },
+
+    getMeasureStoreMetadata : function()
+    {
+        if (!this.getMeasureStore())
+            console.error('No measureStore object defined.');
+
+        return this.getMeasureStore().getResponseMetadata();
+    },
+
+    getSchemaName : function()
+    {
+        if (this.getMeasureStoreMetadata() && this.getMeasureStoreMetadata().schemaName)
+        {
+            if (Ext4.isArray(this.getMeasureStoreMetadata().schemaName))
+                return this.getMeasureStoreMetadata().schemaName[0];
+
+            return this.getMeasureStoreMetadata().schemaName;
+        }
+
+        return null;
+    },
+
+    getQueryName : function()
+    {
+        if (this.getMeasureStoreMetadata())
+            return this.getMeasureStoreMetadata().queryName;
+
+        return null;
     },
 
     getDefaultTitle : function()
@@ -1866,7 +1905,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     requestData : function()
     {
         this.setDataLoading(true);
-        LABKEY.Query.selectRows(this.getQueryConfig());
+
+        var config = this.getQueryConfig();
+        LABKEY.Query.experimental.MeasureStore.selectRows(config);
+
         this.requestRender();
     },
 

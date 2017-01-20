@@ -25,22 +25,22 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "        }\n" +
             "    };\n" +
             "\n" +
-            "    var validateChartConfig = function(chartConfig, aes, scales, responseData) {\n" +
-            "        var hasNoDataMsg = LABKEY.vis.GenericChartHelper.validateResponseHasData(responseData, false);\n" +
+            "    var validateChartConfig = function(chartConfig, aes, scales, measureStore) {\n" +
+            "        var hasNoDataMsg = LABKEY.vis.GenericChartHelper.validateResponseHasData(measureStore, false);\n" +
             "        if (hasNoDataMsg != null)\n" +
             "            return {success: false, messages: [hasNoDataMsg]};\n" +
             "\n" +
             "        var measureNames = Object.keys(chartConfig.measures);\n" +
             "        for (var i = 0; i < measureNames.length; i++) {\n" +
             "            var measureProps = chartConfig.measures[measureNames[i]];\n" +
-            "            if (measureProps && measureProps.name && responseData.rows[0][measureProps.name] == undefined)\n" +
+            "            if (measureProps && measureProps.name && measureStore.records()[0][measureProps.name] == undefined)\n" +
             "                return {success: false, messages: ['The measure, ' + measureProps.label + ', is not available. It may have been renamed or removed.']};\n" +
             "        }\n" +
             "\n" +
             "        var messages = [], axisMeasureNames = ['x', 'xSub', 'y'];\n" +
             "        for (var i = 0; i < axisMeasureNames.length; i++) {\n" +
             "            if (measureNames.indexOf(axisMeasureNames[i]) > 0) {\n" +
-            "                var validation = LABKEY.vis.GenericChartHelper.validateAxisMeasure(chartConfig.renderType, chartConfig, axisMeasureNames[i], aes, scales, responseData.rows);\n" +
+            "                var validation = LABKEY.vis.GenericChartHelper.validateAxisMeasure(chartConfig.renderType, chartConfig, axisMeasureNames[i], aes, scales, measureStore.records());\n" +
             "                if (validation.message != null)\n" +
             "                    messages.push(validation.message);\n" +
             "                if (!validation.success)\n" +
@@ -52,8 +52,9 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "\n" +
             "    };\n" +
             "\n" +
-            "    var selectRowsCallback = function(responseData) {\n" +
+            "    var selectRowsCallback = function(measureStore) {\n" +
             "        // After the data is loaded we can render the chart.\n" +
+            "        var responseMetaData = measureStore.getResponseMetadata();\n" +
             "\n" +
             "        // chartConfig is the saved information about the chart (labels, scales, etc.)\n" +
             "        var chartConfig = {{chartConfig}};\n" +
@@ -62,17 +63,17 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "\n" +
             "        var xAxisType = chartConfig.measures.x ? (chartConfig.measures.x.normalizedType || chartConfig.measures.x.type) : null;\n" +
             "        var chartType = LABKEY.vis.GenericChartHelper.getChartType(chartConfig.renderType, xAxisType);\n" +
-            "        var aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, responseData.schemaName, responseData.queryName);\n" +
-            "        var valueConversionResponse = LABKEY.vis.GenericChartHelper.doValueConversion(chartConfig, aes, chartType, responseData.rows); \n" +
+            "        var aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, responseMetaData.schemaName, responseMetaData.queryName);\n" +
+            "        var valueConversionResponse = LABKEY.vis.GenericChartHelper.doValueConversion(chartConfig, aes, chartType, measureStore.records()); \n" +
             "        if (!Ext4.Object.isEmpty(valueConversionResponse.processed)) {\n"+
             "               Ext4.Object.merge(chartConfig.measures, valueConversionResponse.processed);\n"+
-            "               aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, responseData.schemaName, responseData.queryName);\n"+
+            "               aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, responseMetaData.schemaName, responseMetaData.queryName);\n"+
             "        }\n"+
-            "        var scales = LABKEY.vis.GenericChartHelper.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, responseData);\n" +
+            "        var scales = LABKEY.vis.GenericChartHelper.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, measureStore);\n" +
             "        var geom = LABKEY.vis.GenericChartHelper.generateGeom(chartType, chartConfig.geomOptions);\n" +
             "        var labels = LABKEY.vis.GenericChartHelper.generateLabels(chartConfig.labels);\n" +
             "\n" +
-            "        var data = responseData.rows;\n" +
+            "        var data = measureStore.records();\n" +
             "        if (chartType == 'bar_chart' || chartType == 'pie_chart') {\n" +
             "            var dimName = null, subDimName = null; measureName = null;\n"+
             "            if (chartConfig.measures.x) {\n" +
@@ -90,7 +91,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "\n" +
             "        var plotConfig = LABKEY.vis.GenericChartHelper.generatePlotConfig(chartId, chartConfig, labels, aes, scales, geom, data);\n" +
             "\n" +
-            "        var validation = validateChartConfig(chartConfig, aes, scales, responseData);\n" +
+            "        var validation = validateChartConfig(chartConfig, aes, scales, measureStore);\n" +
             "        renderMessages(chartId, validation.messages);\n" +
             "        if (!validation.success)\n" +
             "            return;\n" +
@@ -106,7 +107,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "    };\n" +
             "\n" +
             "    var dependencyCallback = function() {\n" +
-            "        // When all the dependencies are loaded we then load the data via selectRows.\n" +
+            "        // When all the dependencies are loaded we then load the data via the MeasureStore selectRows API.\n" +
             "        // The queryConfig object stores all the information needed to make a selectRows request.\n" +
             "        var queryConfig = {{queryConfig}};\n" +
             "                \n" +
@@ -123,7 +124,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "\n" +
             "        queryConfig.success = selectRowsCallback;\n" +
             "        queryConfig.containerPath = \"{{containerPath}}\";\n" +
-            "        LABKEY.Query.selectRows(queryConfig);\n" +
+            "        LABKEY.Query.experimental.MeasureStore.selectRows(queryConfig);\n" +
             "    };\n" +
             "\n" +
             "   // Load the script dependencies for charts. \n" +

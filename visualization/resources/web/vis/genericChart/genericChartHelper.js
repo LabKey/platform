@@ -211,18 +211,18 @@ LABKEY.vis.GenericChartHelper = new function(){
             f.isSubjectGroupColumn = false;
 
             // issue 23224: distinguish cohort and subject group fields in the list of query columns
-            if (columnTypes['cohort'] && columnTypes['cohort'].indexOf(f.name) > -1)
+            if (columnTypes['cohort'] && columnTypes['cohort'].indexOf(f.fieldKey) > -1)
             {
                 f.shortCaption = 'Study: ' + f.shortCaption;
                 f.isCohortColumn = true;
             }
-            else if (columnTypes['subjectGroup'] && columnTypes['subjectGroup'].indexOf(f.name) > -1)
+            else if (columnTypes['subjectGroup'] && columnTypes['subjectGroup'].indexOf(f.fieldKey) > -1)
             {
                 f.shortCaption = columnList.subject.nounSingular + ' Group: ' + f.shortCaption;
                 f.isSubjectGroupColumn = true;
             }
 
-            if (f.name.toLowerCase() != 'lsid')
+            if (f.fieldKey.toLowerCase() != 'lsid')
                 queryFields.push(f);
         }, this);
 
@@ -274,14 +274,14 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param {Object} measures The measures from generateMeasures.
      * @param {Object} savedScales The scales object from the saved chart config.
      * @param {Object} aes The aesthetic map object from genereateAes.
-     * @param {Object} responseData The data from selectRows.
+     * @param {Object} measureStore The MeasureStore data using a selectRows API call.
      * @param {Function} defaultFormatFn used to format values for tick marks.
      * @returns {Object}
      */
-    var generateScales = function(chartType, measures, savedScales, aes, responseData, defaultFormatFn) {
+    var generateScales = function(chartType, measures, savedScales, aes, measureStore, defaultFormatFn) {
         var scales = {};
-        var data = responseData.rows;
-        var fields = responseData.metaData.fields;
+        var data = Ext4.isArray(measureStore.rows) ? measureStore.rows : measureStore.records();
+        var fields = Ext4.isObject(measureStore.metaData) ? measureStore.metaData.fields : measureStore.getResponseMetadata().fields;
         var subjectColumn = _getStudySubjectInfo().columnName;
 
         if (chartType === "box_plot")
@@ -355,26 +355,35 @@ LABKEY.vis.GenericChartHelper = new function(){
             };
         }
 
+        // if we have no data, show a default y-axis domain
+        if (scales.x && data.length == 0 && scales.x.scaleType == 'continuous')
+            scales.x.domain = [0,1];
+        if (scales.y && data.length == 0)
+            scales.y.domain = [0,1];
+
         for (var i = 0; i < fields.length; i++) {
             var type = fields[i].displayFieldJsonType ? fields[i].displayFieldJsonType : fields[i].type;
 
             if (isNumericType(type)) {
-                if (measures.x && fields[i].name == measures.x.name) {
+                if (measures.x && fields[i].fieldKey == measures.x.name) {
                     if (fields[i].extFormatFn) {
                         scales.x.tickFormat = eval(fields[i].extFormatFn);
-                    } else if (defaultFormatFn) {
+                    }
+                    else if (defaultFormatFn) {
                         scales.x.tickFormat = defaultFormatFn;
                     }
                 }
 
-                if (measures.y && fields[i].name == measures.y.name) {
+                if (measures.y && fields[i].fieldKey == measures.y.name) {
                     if (fields[i].extFormatFn) {
                         scales.y.tickFormat = eval(fields[i].extFormatFn);
-                    } else if (defaultFormatFn) {
+                    }
+                    else if (defaultFormatFn) {
                         scales.y.tickFormat = defaultFormatFn;
                     }
                 }
-            } else if (measures.x && fields[i].name == measures.x.name && measures.x.name == subjectColumn && LABKEY.demoMode) {
+            }
+            else if (measures.x && fields[i].fieldKey == measures.x.name && measures.x.name == subjectColumn && LABKEY.demoMode) {
                     scales.x.tickFormat = function(){return '******'};
             }
         }
@@ -483,45 +492,44 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param {Object} measures The measures object from the saved chart config.
      * @returns {Function}
      */
-    var generatePointHover = function(measures){
+    var generatePointHover = function(measures)
+    {
         return function(row) {
-            var hover;
+            var hover = '', sep = '';
 
-            if(measures.x) {
-                hover = measures.x.label + ': ';
-
-                if(row[measures.x.name].displayValue){
-                    hover = hover + row[measures.x.name].displayValue;
-                } else {
-                    hover = hover + row[measures.x.name].value;
-                }
+            if (measures.x)
+            {
+                hover += sep + measures.x.label + ': ' + _getRowValue(row, measures.x.name);
+                sep = ', \n';
             }
+            hover += sep + measures.y.label + ': ' + _getRowValue(row, measures.y.name);
+            sep = ', \n';
 
-            hover = hover + ', \n' + measures.y.label + ': ' + row[measures.y.name].value;
+            if (measures.color)
+                hover += sep + measures.color.label + ': ' + _getRowValue(row, measures.color.name);
+            if(measures.shape && !(measures.color && measures.color.name == measures.shape.name))
+                hover += sep + measures.shape.label + ': ' + _getRowValue(row, measures.shape.name);
 
-            if(measures.color){
-                hover = hover +  ', \n' + measures.color.label + ': ';
-                if(row[measures.color.name]){
-                    if(row[measures.color.name].displayValue){
-                        hover = hover + row[measures.color.name].displayValue;
-                    } else {
-                        hover = hover + row[measures.color.name].value;
-                    }
-                }
-            }
-
-            if(measures.shape && !(measures.color && measures.color.name == measures.shape.name)){
-                hover = hover +  ', \n' + measures.shape.label + ': ';
-                if(row[measures.shape.name]){
-                    if(row[measures.shape.name].displayValue){
-                        hover = hover + row[measures.shape.name].displayValue;
-                    } else {
-                        hover = hover + row[measures.shape.name].value;
-                    }
-                }
-            }
             return hover;
         };
+    };
+
+    var _getRowValue = function(row, propName)
+    {
+        if (row.hasOwnProperty(propName)) {
+            // backwards compatibility for response row that is not a LABKEY.Query.Row
+            if (!(row instanceof LABKEY.Query.Row)) {
+                return row[propName].displayValue || row[propName].value;
+            }
+
+            if (row.get(propName).hasOwnProperty('displayValue')) {
+                return row.get(propName).displayValue;
+            }
+
+            return row.getValue(propName);
+        }
+
+        return undefined;
     };
 
     /**
@@ -542,20 +550,13 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param {String} measureLabel The label of the measure.
      * @returns {Function}
      */
-    var generateDiscreteAcc = function(measureName, measureLabel) {
-        return function(row){
-            var valueObj = row[measureName];
-            var value = null;
-
-            if(valueObj){
-                value = valueObj.displayValue ? valueObj.displayValue : valueObj.value;
-            } else {
-                return undefined;
-            }
-
-            if(value === null){
+    var generateDiscreteAcc = function(measureName, measureLabel)
+    {
+        return function(row)
+        {
+            var value = _getRowValue(row, measureName);
+            if (value === null)
                 value = "Not in " + measureLabel;
-            }
 
             return value;
         };
@@ -566,21 +567,19 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param {String} measureName The name of the measure.
      * @returns {Function}
      */
-    var generateContinuousAcc = function(measureName){
-        return function(row){
-            var value = null;
+    var generateContinuousAcc = function(measureName)
+    {
+        return function(row)
+        {
+            var value = _getRowValue(row, measureName);
 
-            if (row[measureName])
+            if (value !== undefined)
             {
-                value = row[measureName].value;
-
-                if(Math.abs(value) === Infinity){
+                if (Math.abs(value) === Infinity)
                     value = null;
-                }
 
-                if(value === false || value === true){
+                if (value === false || value === true)
                     value = value.toString();
-                }
 
                 return value;
             }
@@ -594,18 +593,13 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param {String} measureName The name of the measure.
      * @returns {Function}
      */
-    var generateGroupingAcc = function(measureName){
-        return function(row) {
-            var measureObj = row[measureName];
-            var value = null;
-
-            if(measureObj){
-                value = measureObj.displayValue ? measureObj.displayValue : measureObj.value;
-            }
-
-            if(value === null || value === undefined){
+    var generateGroupingAcc = function(measureName)
+    {
+        return function(row)
+        {
+            var value = _getRowValue(row, measureName);
+            if (value === null || value === undefined)
                 value = "n/a";
-            }
 
             return value;
         };
@@ -618,8 +612,7 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @returns {Function}
      */
     var generateMeasurelessAcc = function(measureName) {
-        // Used for boxplots that do not have an x-axis measure. Instead we just return the
-        // queryName for every row.
+        // Used for box plots that do not have an x-axis measure. Instead we just return the queryName for every row.
         return function(row) {
             return measureName;
         }
@@ -828,15 +821,17 @@ LABKEY.vis.GenericChartHelper = new function(){
 
     var _generatePieChartConfig = function(baseConfig, chartConfig, labels, data)
     {
+        var hasData = data.length > 0;
+
         return Ext4.apply(baseConfig, {
-            data: data,
+            data: hasData ? data : [{label: '', value: 1}],
             header: {
                 title: { text: labels.main.value },
                 subtitle: { text: labels.subtitle.value },
                 titleSubtitlePadding: 1
             },
             footer: {
-                text: labels.footer.value,
+                text: hasData ? labels.footer.value : 'No data to display',
                 location: 'bottom-center'
             },
             labels: {
@@ -847,13 +842,13 @@ LABKEY.vis.GenericChartHelper = new function(){
                 },
                 outer: { pieDistance: 20 },
                 inner: {
-                    format: chartConfig.geomOptions.showPiePercentages ? 'percentage' : 'none',
+                    format: hasData && chartConfig.geomOptions.showPiePercentages ? 'percentage' : 'none',
                     hideWhenLessThanPercentage: chartConfig.geomOptions.pieHideWhenLessThanPercentage
                 }
             },
             size: {
-                pieInnerRadius: chartConfig.geomOptions.pieInnerRadius + '%',
-                pieOuterRadius: chartConfig.geomOptions.pieOuterRadius + '%'
+                pieInnerRadius: hasData ? chartConfig.geomOptions.pieInnerRadius + '%' : '100%',
+                pieOuterRadius: hasData ? chartConfig.geomOptions.pieOuterRadius + '%' : '90%'
             },
             misc: {
                 gradient: {
@@ -862,7 +857,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     color: '#' + chartConfig.geomOptions.gradientColor
                 },
                 colors: {
-                    segments: LABKEY.vis.Scale[chartConfig.geomOptions.colorPaletteScale]()
+                    segments: hasData ? LABKEY.vis.Scale[chartConfig.geomOptions.colorPaletteScale]() : ['#333333']
                 }
             },
             effects: { highlightSegmentOnMouseover: false },
@@ -871,14 +866,15 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     /**
-     * Check if the selectRows API response has data. Return an error string if no data exists.
-     * @param response
+     * Check if the MeasureStore selectRows API response has data. Return an error string if no data exists.
+     * @param measureStore
      * @param includeFilterMsg true to include a message about removing filters
      * @returns {String}
      */
-    var validateResponseHasData = function(response, includeFilterMsg)
+    var validateResponseHasData = function(measureStore, includeFilterMsg)
     {
-        if (!Ext4.isDefined(response) || !Ext4.isArray(response.rows) || response.rows.length == 0)
+        var dataArray = Ext4.isDefined(measureStore) ? measureStore.rows || measureStore.records() : [];
+        if (dataArray.length == 0)
         {
             return 'The response returned 0 rows of data. The query may be empty or the applied filters may be too strict.'
                 + (includeFilterMsg ? 'Try removing or adjusting any filters if possible.' : '');
@@ -901,9 +897,13 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param {Array} data The response data from selectRows.
      * @returns {Object}
      */
-    var validateAxisMeasure = function(chartType, chartConfig, measureName, aes, scales, data){
-
+    var validateAxisMeasure = function(chartType, chartConfig, measureName, aes, scales, data) {
         var dataIsNull = true, measureUndefined = true, invalidLogValues = false, hasZeroes = false, message = null;
+
+        // no need to check measures if we have no data
+        if (data.length == 0) {
+            return {success: true, message: message};
+        }
 
         for (var i = 0; i < data.length; i ++)
         {
@@ -1092,7 +1092,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                                 //only try to convert strings to numbers
                                 if (typeof value === 'string') {
                                     value = value.trim();
-                                } else {
+                                }
+                                else {
                                     //dates, objects, booleans etc. to be assigned value: NULL
                                     value = '';
                                 }
@@ -1101,7 +1102,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                                 // empty strings convert to 0, which we must explicitly deny
                                 if (value === '' || isNaN(n)) {
                                     droppedValues[measure].numDropped++;
-                                } else {
+                                }
+                                else {
                                     row[measuresForProcessing[measure].convertedName].value = n;
                                 }
                             }
