@@ -433,7 +433,7 @@ public class RReport extends ExternalScriptEngineReport
                     final String rScript = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
                     final File rScriptFile = new File(getReportDir(context.getContainer().getId()), rName + ".R");
 
-                    String includedScript = processScript(engine, context, rScript, inputData, outputSubst, inputParameters);
+                    String includedScript = processScript(engine, context, rScript, inputData, outputSubst, inputParameters, false);
 
                     try (PrintWriter pw = PrintWriters.getPrintWriter(rScriptFile))
                     {

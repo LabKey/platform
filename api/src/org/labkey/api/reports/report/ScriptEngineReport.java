@@ -641,7 +641,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
      */
     protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws Exception
     {
-        return processScript(engine, context, getDescriptor().getProperty(ScriptReportDescriptor.Prop.script), inputDataTsv, outputSubst, inputParameters);
+        return processScript(engine, context, getDescriptor().getProperty(ScriptReportDescriptor.Prop.script), inputDataTsv, outputSubst, inputParameters, true);
     }
 
     public abstract String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException;
@@ -654,12 +654,12 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
      * @param inputParameters - client-passed params that get injected into the prolog of the report script
      * @throws Exception
      */
-    protected String processScript(ScriptEngine engine, ViewContext context, String script, File inputFile, List<ParamReplacement> outputSubst, Map<String, Object> inputParameters) throws Exception
+    protected String processScript(ScriptEngine engine, ViewContext context, String script, File inputFile, List<ParamReplacement> outputSubst, Map<String, Object> inputParameters, boolean includeProlog) throws Exception
     {
         if (!StringUtils.isEmpty(script))
         {
-            script = StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters)) + script;
-
+            if (includeProlog)
+                script = StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters)) + script;
             if (inputFile != null)
                 script = processInputReplacement(engine, script, inputFile);
             script = processOutputReplacements(engine, script, outputSubst, context);
