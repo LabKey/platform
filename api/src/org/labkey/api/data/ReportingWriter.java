@@ -151,6 +151,7 @@ public class ReportingWriter
         if (displayField != null && displayField != cinfo)
         {
             props.put("displayField", displayField.getFieldKey());
+            props.put("displayFieldJsonType", displayField.getRenderer().getJsonTypeName());
         }
 
         if (cinfo != null)
