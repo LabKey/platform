@@ -17,7 +17,6 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -1459,10 +1458,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 // Parse the single string element value submitted by the generic query insert and the tsv import forms.
                 for (String s : splitAliases((String)value))
                 {
-                    if (NumberUtils.isDigits(s))
-                        aliasIds.add(Integer.parseInt(s));
-                    else
-                        aliasNames.add(s);
+                    aliasNames.add(s);
                 }
             }
             else if (value instanceof Integer)

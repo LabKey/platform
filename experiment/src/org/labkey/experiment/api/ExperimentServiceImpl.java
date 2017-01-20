@@ -46,6 +46,7 @@ import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.MaterializedQueryHelper;
@@ -175,6 +176,8 @@ import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -5484,6 +5487,46 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
         }
         return potentialParents;
+    }
+
+    public enum SampleSequenceType
+    {
+        DAILY("yyyy-MM-dd"),
+        WEEKLY("YYYY-'W'ww"),
+        MONTHLY("yyyy-MM"),
+        YEARLY("yyyy");
+
+        final DateTimeFormatter _formatter;
+
+        SampleSequenceType(String pattern)
+        {
+            _formatter = DateTimeFormatter.ofPattern(pattern);
+        }
+
+        public String getSequenceName()
+        {
+            LocalDateTime ldt = LocalDateTime.now();
+            String suffix = _formatter.format(ldt);
+            return "org.labkey.api.exp.api.ExpMaterial:" + name() + ":" + suffix;
+        }
+    }
+
+    private DbSequence getSampleSequence(@NotNull SampleSequenceType type)
+    {
+        // For now, we only create sequences globally for all samples.  We could create sequences for each SampleSet
+        // as well by using the id parameter as the SampleSet's rowId, but we don't need them at this time.
+        DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), type.getSequenceName());
+        return sequence;
+    }
+
+    public Map<String, Integer> incrementSampleCounts()
+    {
+        Map<String, Integer> counts = new HashMap<>();
+        counts.put("dailySampleCount", getSampleSequence(SampleSequenceType.DAILY).next());
+        counts.put("weeklySampleCount", getSampleSequence(SampleSequenceType.WEEKLY).next());
+        counts.put("monthlySampleCount", getSampleSequence(SampleSequenceType.MONTHLY).next());
+        counts.put("yearlySampleCount", getSampleSequence(SampleSequenceType.YEARLY).next());
+        return counts;
     }
 
     /**

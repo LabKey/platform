@@ -432,6 +432,11 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             }
         }
 
+        // Add the sample counter values for ${dailySampleCount}, ${weeklySampleCount}, ...
+        // Even if the expression doesn't contain a counter replacement token we need to increment the counts.
+        Map<String, Integer> counts = ExperimentServiceImpl.get().incrementSampleCounts();
+        ctx.putAll(counts);
+
         // If needed, add the parent names to the replacement map
         // TODO: Expose the set of expression variables instead of relying on the source
         if (exprSource.contains("${inputs") || exprSource.contains("${datainputs") || exprSource.contains("${materialinputs"))
