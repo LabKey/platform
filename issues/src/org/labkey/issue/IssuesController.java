@@ -706,7 +706,7 @@ public class IssuesController extends SpringActionController
                     return false;
                 }
                 duplicateOf = IssueManager.getIssue(null, getUser(), issue.getDuplicate().intValue());
-                if (duplicateOf == null)
+                if (duplicateOf == null || duplicateOf.lookupContainer() == null)
                 {
                     errors.rejectValue("Duplicate", SpringActionController.ERROR_MSG, "Duplicate issue '" + issue.getDuplicate().intValue() + "' not found");
                     return false;
@@ -719,7 +719,9 @@ public class IssuesController extends SpringActionController
             }
 
             // get previous related issue ids before updating
-            Set<Integer> prevRelatedIds = prevIssue.getRelatedIssues();
+            Set<Integer> prevRelatedIds = new HashSet<>();
+            if (prevIssue != null)
+                prevRelatedIds = prevIssue.getRelatedIssues();
 
             ChangeSummary changeSummary;
             try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())

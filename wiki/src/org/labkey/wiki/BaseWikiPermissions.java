@@ -34,7 +34,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Enacapsulates permission testing for wikis, handling the UPDATEOWN and DELETEOWN cases
+ * Encapsulates permission testing for wikis, handling the UPDATEOWN and DELETEOWN cases
  *
  * Extend this class to do other kinds of permission checking.
  *
@@ -44,8 +44,8 @@ import java.util.Set;
  */
 public class BaseWikiPermissions
 {
-    private User _user;
-    private SecurityPolicy _policy;
+    private final User _user;
+    private final SecurityPolicy _policy;
 
     public BaseWikiPermissions(User user, Container container)
     {
@@ -89,6 +89,7 @@ public class BaseWikiPermissions
 
     public boolean userIsCreator(Wiki wiki)
     {
-        return wiki.getCreatedBy() == _user.getUserId();
+        // Guest is never considered a wiki "creator", #28955
+        return !_user.isGuest() && wiki.getCreatedBy() == _user.getUserId();
     }
 }

@@ -56,11 +56,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.DeveloperRole;
-import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -2044,9 +2041,7 @@ public class WikiController extends SpringActionController
             }
 
             //check permissions
-            Container container = getContainer();
-            User user = getUser();
-            BaseWikiPermissions perms = new BaseWikiPermissions(user, container);
+            BaseWikiPermissions perms = getPermissions();
 
             if (null == wiki)
             {
@@ -2077,9 +2072,9 @@ public class WikiController extends SpringActionController
                     && null != defFormat && defFormat.length() > 0)
                 form.setFormat(defFormat);
 
-            WikiEditModel model = new WikiEditModel(container, wiki, curVersion,
+            WikiEditModel model = new WikiEditModel(getContainer(), wiki, curVersion,
                     form.getRedirect(), form.getCancel(), form.getFormat(), form.getDefName(), useVisualEditor,
-                    form.getWebPartId(), user);
+                    form.getWebPartId(), getUser());
 
             //stash the wiki so we can build the nav trail
             _wiki = wiki;
@@ -2327,15 +2322,13 @@ public class WikiController extends SpringActionController
 
         protected ApiResponse insertWiki(SaveWikiForm form) throws Exception
         {
-            Container c = getContainer();
-            User user = getUser();
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
-            if (!policy.hasPermission(user, InsertPermission.class))
+            if (!getPermissions().allowInsert())
                 throw new UnauthorizedException("You do not have permissions to create a new wiki page in this folder!");
 
             String wikiname = form.getName();
             LOG.debug("Inserting wiki " + wikiname);
 
+            Container c = getContainer();
             Wiki wiki = new Wiki(c, wikiname);
             wiki.setParent(form.getParentId());
             wiki.setShowAttachments(form.isShowAttachments());
@@ -2350,7 +2343,8 @@ public class WikiController extends SpringActionController
             wikiversion.setRendererType(form.getRendererType());
 
             //insert new wiki and new version
-            getWikiManager().insertWiki(getUser(), c, wiki, wikiversion, null);
+            User user = getUser();
+            getWikiManager().insertWiki(user, c, wiki, wikiversion, null);
 
             //if webPartId was sent, update the corresponding
             //web part to show the newly inserted page
@@ -2364,15 +2358,14 @@ public class WikiController extends SpringActionController
                 {
                     webPart.setProperty("webPartContainer", c.getId());
                     webPart.setProperty("name", wikiname);
-                    Portal.updatePart(getUser(), webPart);
+                    Portal.updatePart(user, webPart);
                 }
             }
 
             //save the user's new page format so we can use it
             //as the default for the next new page
             PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(
-                    getUser(), getContainer(),
-                    SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
+                    user, c, SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
             properties.put(PROP_DEFAULT_FORMAT, wikiversion.getRendererTypeEnum().name());
             properties.save();
 
@@ -2401,7 +2394,6 @@ public class WikiController extends SpringActionController
 
         private ApiResponse updateWiki(SaveWikiForm form) throws Exception
         {
-            User user = getUser();
             if (null == form.getEntityId())
                 throw new IllegalArgumentException("The entityId parameter must be supplied.");
 
@@ -2415,12 +2407,7 @@ public class WikiController extends SpringActionController
 
             LOG.debug("Updating wiki " + wikiUpdate.getName());
 
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(getContainer());
-            Set<Role> contextualRoles = new HashSet<>();
-            if (wikiUpdate.getCreatedBy() == user.getUserId())
-                contextualRoles.add(RoleManager.getRole(OwnerRole.class));
-
-            if (!policy.hasPermission(user, UpdatePermission.class, contextualRoles))
+            if (!getPermissions().allowUpdate(wikiUpdate))
                 throw new UnauthorizedException("You are not allowed to edit this wiki page.");
 
             WikiVersion wikiversion = new WikiVersion(wikiUpdate.getLatestVersion());
