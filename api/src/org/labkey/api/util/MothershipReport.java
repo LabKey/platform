@@ -138,7 +138,7 @@ public class MothershipReport implements Runnable
             }
             catch (IllegalStateException e)
             {
-                // Forget about local mothership report... we're probably installing, upgrading, or starting up
+                // Forget about local mothership report... we're probably bootstrapping the server
                 url = null;
             }
 

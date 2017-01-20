@@ -18,6 +18,7 @@ package org.labkey.api.settings;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ContainerManager.RootContainerException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.SecurityManager;
@@ -177,6 +178,11 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
 
     private BaseServerProperties getBaseServerProperties()
     {
+        String baseServerUrl = getBaseServerUrl();
+
+        if (null == baseServerUrl)
+            throw new IllegalStateException("Base server URL is not yet set");
+
         return BaseServerProperties.parse(getBaseServerUrl());
     }
 
@@ -312,9 +318,16 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
         String serverGUID = lookupStringValue(SERVER_GUID, SERVER_SESSION_GUID);
         if (serverGUID.equals(SERVER_SESSION_GUID))
         {
-            WriteableAppProps writeable = AppProps.getWriteableInstance();
-            writeable.storeStringValue(SERVER_GUID, serverGUID);
-            writeable.save();
+            try
+            {
+                WriteableAppProps writeable = AppProps.getWriteableInstance();
+                writeable.storeStringValue(SERVER_GUID, serverGUID);
+                writeable.save();
+            }
+            catch (RootContainerException e)
+            {
+                // Too early (during install) to save the GUID
+            }
         }
         return serverGUID;
     }
