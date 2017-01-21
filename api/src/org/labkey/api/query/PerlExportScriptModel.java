@@ -22,6 +22,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * User: bbimber
@@ -109,6 +110,15 @@ public class PerlExportScriptModel extends ExportScriptModel
 
         if (hasContainerFilter())
             params.append(",\n").append(indent).append("-containerFilterName => '").append(getContainerFilterTypeName()).append("'");
+
+        if (hasQueryParameters())
+        {
+            params.append(",\n").append(indent).append("-parameters => [\n");
+            params.append(getQueryParameters().entrySet().stream()
+                .map(e -> indent + indent + "['" + e.getKey() + "', '" + e.getValue() + "']")
+                .collect(Collectors.joining(",\n")));
+            params.append("\n").append(indent).append("]");
+        }
 
         return params.toString();
     }

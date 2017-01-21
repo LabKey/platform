@@ -25,6 +25,7 @@ import org.labkey.api.util.PageFlowUtil;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * User: jimp
@@ -147,6 +148,15 @@ public class PythonExportScriptModel extends ExportScriptModel
         // Generate ContainerFilter
         if (hasContainerFilter())
             params.append(",\n").append(indent).append("container_filter=").append(PageFlowUtil.jsString(getContainerFilterTypeName()));
+
+        if (hasQueryParameters())
+        {
+            params.append(",\n").append(indent).append("parameters={");
+            params.append(getQueryParameters().entrySet().stream()
+                .map(e -> "'" + e.getKey() + "': '" + e.getValue() + "'")
+                .collect(Collectors.joining(", ")));
+            params.append("}");
+        }
 
         return params.toString();
     }
