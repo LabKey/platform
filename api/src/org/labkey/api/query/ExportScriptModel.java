@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
@@ -34,6 +35,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.replace;
 
@@ -55,7 +58,7 @@ public abstract class ExportScriptModel
     public String getInstallationName()
     {
         LookAndFeelProperties props = LookAndFeelProperties.getInstance(_view.getViewContext().getContainer());
-        return null == props ? "LabKey Server" : props.getShortName();
+        return props.getShortName();
     }
 
     public String getCreatedOn()
@@ -93,6 +96,7 @@ public abstract class ExportScriptModel
     public abstract String getScriptExportText();
 
     public abstract String getFilters();
+
     protected abstract String makeFilterExpression(String name, CompareType operator, String value);
 
     protected List<String> getFilterExpressions()
@@ -167,6 +171,11 @@ public abstract class ExportScriptModel
         return (val instanceof Date ? DateUtil.formatDateISO8601((Date)val) : val.toString());
     }
 
+    public boolean hasSort()
+    {
+        return null != getSort();
+    }
+
     @Nullable
     public String getSort()
     {
@@ -176,6 +185,17 @@ public abstract class ExportScriptModel
             return null;
         else
             return sortParam;
+    }
+
+    public boolean hasQueryParameters()
+    {
+        return !_view.getSettings().getQueryParameters().isEmpty();
+    }
+
+    public @NotNull Map<String, String> getQueryParameters()
+    {
+        // Convert Map<String, Object> to Map<String, String>
+        return _view.getSettings().getQueryParameters().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString()));
     }
 
     protected QueryView getQueryView()
@@ -201,7 +221,27 @@ public abstract class ExportScriptModel
         return scriptView;
     }
 
-    public ContainerFilter getContainerFilter()
+    public boolean hasContainerFilter()
+    {
+        ContainerFilter cFilter = getContainerFilter();
+        return null != cFilter && null != cFilter.getType();
+    }
+
+    /**
+     * Always test with hasContainerFilter() before calling this
+     * @return Name of the ContainerFilter.Type
+     */
+    public @NotNull String getContainerFilterTypeName()
+    {
+        ContainerFilter cFilter = getContainerFilter();
+
+        if (null == cFilter || null == cFilter.getType())
+            throw new IllegalStateException("Must call hasContainerFilter() before calling getContainerFilterTypeName()");
+
+        return cFilter.getType().name();
+    }
+
+    private ContainerFilter getContainerFilter()
     {
         String containerFilterName = _view.getSettings().getSortFilterURL().getParameter(_view.getDataRegionName() + DataRegion.CONTAINER_FILTER_NAME);
 

@@ -19,12 +19,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.CompareType;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /*
 * User: Dave
@@ -112,7 +112,7 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
                 + PageFlowUtil.jsString(value) + ", LABKEY.Filter.Types." + operator.getScriptName() + ")";
     }
 
-    public String getColumns()
+    private String getColumns()
     {
         StringBuilder ret = new StringBuilder();
         String sep = "";
@@ -128,7 +128,7 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
         return ret.toString();
     }
 
-    // Produce javascript code block containing all the standard query parameters.  Callers need to wrap this block in
+    // Produce javascript code block containing all the standard query parameters. Callers need to wrap this block in
     // curly braces (at a minimum) and modify/add parameters as appropriate.
     public String getStandardJavaScriptParameters(int indentSpaces, boolean includeStandardCallbacks)
     {
@@ -144,19 +144,20 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
         params.append(indent).append("columns: ").append(PageFlowUtil.jsString(getColumns())).append(",\n");  // TODO: Inconsistent with R and SAS, which don't include view columns
         params.append(indent).append("filterArray: ").append(getFilters());
 
-        ContainerFilter containerFilter = getContainerFilter();
+        if (hasSort())
+            params.append(",\n").append(indent).append("sort: ").append(PageFlowUtil.jsString(getSort()));
 
-        if (null != containerFilter)
+        if (hasContainerFilter())
+            params.append(",\n").append(indent).append("containerFilter: ").append(PageFlowUtil.jsString(getContainerFilterTypeName()));
+
+        if (hasQueryParameters())
         {
-            ContainerFilter.Type type = containerFilter.getType();
-
-            if (null != type)
-                params.append(",\n").append(indent).append("containerFilter: ").append(PageFlowUtil.jsString(type.name()));
+            params.append(",\n").append(indent).append("parameters: {")
+                .append(getQueryParameters().entrySet().stream()
+                    .map(e -> "'" + e.getKey() + "': '" + e.getValue() + "'")
+                    .collect(Collectors.joining(", ")))
+                .append("}");
         }
-
-        String sort = getSort();
-        if (sort != null)
-            params.append(",\n").append(indent).append("sort: ").append(PageFlowUtil.jsString(sort));
 
         if (includeStandardCallbacks)
         {

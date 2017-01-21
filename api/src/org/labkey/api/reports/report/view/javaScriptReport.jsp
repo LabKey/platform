@@ -16,9 +16,8 @@
  */
 %>
 <%@ page import="org.labkey.api.reports.report.JavaScriptReport.JavaScriptReportBean" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.data.ContainerFilter" %>
+<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JavaScriptReportBean bean = (JavaScriptReportBean)getModelBean();
@@ -43,8 +42,8 @@
 
             var getDataConfig = {
                 source: {
-                    <% if (bean.model.getContainerFilter() != null && bean.model.getContainerFilter().getType() != null) { %>
-                        containerFilter: <%=PageFlowUtil.jsString(bean.model.getContainerFilter().getType().name())%>,
+                    <% if (bean.model.hasContainerFilter()) { %>
+                        containerFilter: <%=PageFlowUtil.jsString(bean.model.getContainerFilterTypeName())%>,
                     <% } %>
                     schemaName: LABKEY.SchemaKey.fromString(<%=PageFlowUtil.jsString(bean.model.getSchemaName())%>),
                     queryName: <%=PageFlowUtil.jsString(bean.model.getQueryName())%>
@@ -62,6 +61,14 @@
                     filters: filterArray
                 });
             }
+            <%
+
+            if (bean.model.hasQueryParameters())
+            {
+                // TODO: Add config for query parameters here... but LABKEY.Query.GetData.getRawData() doesn't support query parameters!? #29094
+            }
+
+            %>
             render(getDataConfig, document.getElementById("<%=text(uniqueDivName)%>"));
             <%
                 }
@@ -74,7 +81,6 @@
             <%
                 }
             %>
-
         }
         else
         {

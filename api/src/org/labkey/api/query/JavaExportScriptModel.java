@@ -17,10 +17,10 @@ package org.labkey.api.query;
 
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.CompareType;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 
 /*
@@ -145,26 +145,29 @@ public class JavaExportScriptModel extends ExportScriptModel
 
         sb.append(getFilters());
 
-        ContainerFilter containerFilter = getContainerFilter();
+        if (hasSort())
+            sb.append("cmd.setSorts(").append(getListOfSorts(getSort())).append(");\n");
 
-        if (null != containerFilter)
+        if (hasContainerFilter())
+            sb.append("cmd.setContainerFilter(ContainerFilter.").append(getContainerFilterTypeName()).append(");\n");
+
+        if (hasQueryParameters())
         {
-            ContainerFilter.Type type = containerFilter.getType();
+            sb.append("\nMap<String, String> parameters = new HashMap<>();\n");
 
-            if (null != type)
-                sb.append("cmd.setContainerFilter(ContainerFilter.").append(type.name()).append(");\n");
+            for (Entry<String, String> entry : getQueryParameters().entrySet())
+            {
+                sb.append("parameters.put(\"").append(entry.getKey()).append("\", \"").append(entry.getValue()).append("\");\n");
+            }
+
+            sb.append("cmd.setQueryParameters(parameters);\n");
         }
 
-        String sort = getSort();
-        if (sort != null)
-            sb.append("cmd.setSorts(").append(getListOfSorts(sort)).append(");\n");
-
-        sb.append("\nSelectRowsResponse response = cmd.execute(cn, " + quote(getFolderPath()) + ");\n" +
-                "System.out.println(\"Number of rows: \" + response.getRowCount());\n\n" +
-                "for (Map<String, Object> row : response.getRows())\n" +
-                "{\n" +
-                "    System.out.println(row);\n" +
-                "}\n");
+        sb.append("\nSelectRowsResponse response = cmd.execute(cn, ")
+            .append(quote(getFolderPath())).append(");\n")
+            .append("System.out.println(\"Number of rows: \" + response.getRowCount());\n\n")
+            .append("for (Map<String, Object> row : response.getRows())\n")
+            .append("{\n").append("    System.out.println(row);\n").append("}\n");
 
         return sb.toString();
     }

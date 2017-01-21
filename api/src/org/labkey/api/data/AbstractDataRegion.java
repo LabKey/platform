@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.query.FieldKey;
@@ -250,7 +251,7 @@ public abstract class AbstractDataRegion extends DisplayElement
         return (ctx.getView() == null || StringUtils.isEmpty(ctx.getView().getName()));
     }
 
-    public Map<String, Object> getQueryParameters()
+    public @NotNull Map<String, Object> getQueryParameters()
     {
         return null == getSettings() ? Collections.emptyMap() : getSettings().getQueryParameters();
     }

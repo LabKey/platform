@@ -17,14 +17,12 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.CompareType;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: bbimber
@@ -33,7 +31,7 @@ import java.util.Map;
  */
 public class URLExportScriptModel extends ExportScriptModel
 {
-    private QueryView _view;
+    private final QueryView _view;
 
     public URLExportScriptModel(QueryView view)
     {
@@ -73,37 +71,29 @@ public class URLExportScriptModel extends ExportScriptModel
         return ret.toString().replace(",$", "");
     }
 
-    public String getURL()
+    private String getURL()
     {
         if (_view.getQueryDef().isTemporary())
             return "This is a temporary query that does not support stable URLs";
 
         ActionURL url = DetailsURL.fromString("/query/executeQuery.view").getActionURL();
-        url.addParameter("schemaName", _view.getSchema().getSchemaName());
+        url.addParameter("schemaName", getSchemaName());
         url.addParameter("query.queryName", _view.getTable().getPublicName());
         url.setContainer(_view.getContainer());
 
-        ContainerFilter containerFilter = getContainerFilter();
-        if (null != containerFilter && null != containerFilter.getType())
-            url.addParameter("query" + DataRegion.CONTAINER_FILTER_NAME, containerFilter.getType().name());
+        if (hasContainerFilter())
+            url.addParameter("query" + DataRegion.CONTAINER_FILTER_NAME, getContainerFilterTypeName());
 
         if (null != getViewName())
             url.addParameter("query.viewName", getViewName());
 
         url.addParameter("query.columns", getColumns());
 
-        Map<String, Object> params = getQueryView().getSettings().getQueryParameters();
-        if (params != null)
-        {
-            for (String param : params.keySet())
-            {
-                url.addParameter("query.param." + param, params.get(param) == null ? null : params.get(param).toString());
-            }
-        }
+        if (hasQueryParameters())
+            getQueryParameters().entrySet().forEach(e->url.addParameter("query.param." + e.getKey(), e.getValue()));
 
-        String sort = getSort();
-        if (!StringUtils.isEmpty(sort))
-            url.addParameter("query.sort", sort);
+        if (hasSort())
+            url.addParameter("query.sort", getSort());
 
         return AppProps.getInstance().getBaseServerUrl() + url.toString() + getFilters();
     }

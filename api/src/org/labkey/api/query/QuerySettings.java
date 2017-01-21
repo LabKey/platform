@@ -22,7 +22,16 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.AnalyticsProviderItem;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.ShowRows;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
@@ -37,14 +46,15 @@ import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
 
 public class QuerySettings
 {
     public static final String URL_PARAMETER_PREFIX = "param.";
+
     private String _schemaName;
     private String _queryName;
     private String _viewName;
@@ -76,6 +86,9 @@ public class QuerySettings
     private Sort _baseSort;
     private QueryDefinition _queryDef;
     private TableInfo _table;
+
+    private final Map<String, Object> _queryParameters = new CaseInsensitiveHashMap<>();
+
 
     // only in use for argos -> rolap development cycle.
     public static boolean useRolap = false;
@@ -300,10 +313,7 @@ public class QuerySettings
             setAllowHeaderLock(BooleanUtils.toBoolean(allowHeaderLock));
     }
 
-
-    Map<String,Object> _queryParameters = new CaseInsensitiveHashMap<>();
-
-    public Map<String,Object> getQueryParameters()
+    public @NotNull Map<String, Object> getQueryParameters()
     {
         return _queryParameters;
     }

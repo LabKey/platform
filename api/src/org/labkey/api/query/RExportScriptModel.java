@@ -17,12 +17,12 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.CompareType;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 import static org.apache.commons.lang3.StringUtils.startsWith;
@@ -35,14 +35,15 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 */
 public class RExportScriptModel extends ExportScriptModel
 {
-    static final String defaultVariableName = "labkey.data";
+    private static final String DEFAULT_VARIABLE_NAME = "labkey.data";
+
     protected final String variableName;
     protected final boolean clean;
     protected final String view;
 
     public RExportScriptModel(QueryView view)
     {
-        this(view, defaultVariableName);
+        this(view, DEFAULT_VARIABLE_NAME);
     }
 
     protected RExportScriptModel(QueryView view, String defaultVariableName)
@@ -63,7 +64,7 @@ public class RExportScriptModel extends ExportScriptModel
         this.view = trimToNull(url.getParameter("r~view"));
     }
 
-    boolean islegal(String v)
+    private boolean islegal(String v)
     {
         if (!Pattern.matches("[\\p{Alnum}\\._]+",v) || Pattern.matches("^\\.\\p{Digit}.*",v))
             return false;
@@ -80,6 +81,7 @@ public class RExportScriptModel extends ExportScriptModel
         return StringUtils.trimToEmpty(super.getViewName());
     }
 
+    @Override
     public String getFilters()
     {
         List<String> filterExprs = getFilterExpressions();
@@ -102,18 +104,15 @@ public class RExportScriptModel extends ExportScriptModel
         return filtersExpr.toString();
     }
 
+    @Override
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
         return "c(" + doubleQuote(name) + ", " + doubleQuote(operator.getScriptName()) + ", " + doubleQuote(value) + ")";
     }
 
-    public String getContainerFilterString()
+    private String getContainerFilterString()
     {
-        ContainerFilter containerFilter = super.getContainerFilter();
-        if (null == containerFilter || null == containerFilter.getType())
-            return "NULL";
-        else
-            return (" " + doubleQuote(containerFilter.getType().name()) + " " );
+        return hasContainerFilter() ? (" " + doubleQuote(getContainerFilterTypeName()) + " ") : "NULL";
     }
 
     @Override
@@ -137,24 +136,34 @@ public class RExportScriptModel extends ExportScriptModel
         }
         String nl = "\n"; //clean ? "" : "\n";
         String indent = "    "; //clean ? StringUtils.repeat(" ", 4) : "";
-        sb.append(variableName + " <- labkey.selectRows(").append(nl);
+        sb.append(variableName).append(" <- labkey.selectRows(").append(nl);
         sb.append(indent).append("baseUrl=").append(doubleQuote(getBaseUrl())).append(", ").append(nl);
         sb.append(indent).append("folderPath=").append(doubleQuote(getFolderPath())).append(", ").append(nl);
         sb.append(indent).append("schemaName=").append(doubleQuote(getSchemaName())).append(", ").append(nl);
         sb.append(indent).append("queryName=").append(doubleQuote(getQueryName())).append(", ").append(nl);
         sb.append(indent).append("viewName=").append(doubleQuote(getViewName())).append(", ").append(nl);
 
-        String sort = getSort();
-        if (sort != null)
+        if (hasSort())
             sb.append(indent).append("colSort=").append(doubleQuote(getSort())).append(", ").append(nl);
         sb.append(indent).append("colFilter=").append(getFilters()).append(", ").append(nl);
-        sb.append(indent).append("containerFilter=").append(getContainerFilterString()).append(nl);
-        sb.append(")\n");
+        sb.append(indent).append("containerFilter=").append(getContainerFilterString());
+
+        if (hasQueryParameters())
+        {
+            sb.append(",").append(nl);
+            sb.append(indent).append("parameters=c(");
+            sb.append(getQueryParameters().entrySet().stream()
+                .map(entry -> "\"" + entry.getKey() + "=" + entry.getValue() + "\"")
+                .collect(Collectors.joining(",")));
+            sb.append(")");
+        }
+
+        sb.append(nl).append(")\n");
 
         if ("rstudio".equals(view))
-            sb.append("\nsprintf(\"" + variableName + " has %d rows(s)\", nrow(" + variableName + "))");
+            sb.append("\nsprintf(\"").append(variableName).append(" has %d rows(s)\", nrow(").append(variableName).append("))");
         if ("r".equals(view))
-            sb.append(variableName + "\n");
+            sb.append(variableName).append("\n");
 
         return sb.toString();
     }

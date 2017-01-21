@@ -19,7 +19,7 @@ var jsDiv;
 
 // When a JavaScript report is viewed, LabKey calls the render() function, passing a query config
 // and a div element. This sample code simply stashes the div, initializes callback functions, and
-// calls selectRows() to retrieve the data from the server. See the "Help" tab for more details.  
+// calls getRawData() to retrieve the data from the server. See the "Help" tab for more details.
 function render(queryConfig, div)
 {
     jsDiv = div;

@@ -19,7 +19,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -141,19 +140,13 @@ public class PythonExportScriptModel extends ExportScriptModel
         if (null != filters)
             params.append(",\n").append(indent).append("filter_array=").append(filters);
 
-        // Generate ContainerFilter
-        ContainerFilter containerFilter = getContainerFilter();
-        if (null != containerFilter)
-        {
-            ContainerFilter.Type type = containerFilter.getType();
-            if (null != type)
-                params.append(",\n").append(indent).append("container_filter=").append(PageFlowUtil.jsString(type.name()));
-        }
-
         // Generate Sort string
-        String sort = getSort();
-        if (sort != null)
-            params.append(",\n").append(indent).append("sort=").append(PageFlowUtil.jsString(sort));
+        if (hasSort())
+            params.append(",\n").append(indent).append("sort=").append(PageFlowUtil.jsString(getSort()));
+
+        // Generate ContainerFilter
+        if (hasContainerFilter())
+            params.append(",\n").append(indent).append("container_filter=").append(PageFlowUtil.jsString(getContainerFilterTypeName()));
 
         return params.toString();
     }
