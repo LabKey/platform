@@ -17,7 +17,6 @@ package org.labkey.bigiron.sas;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.CompareType;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.ExportScriptModel;
 import org.labkey.api.query.QueryView;
 
@@ -90,7 +89,7 @@ public class SasExportScriptModel extends ExportScriptModel
             sb.append(indent).append("viewName=").append(doubleQuote(getViewName()));
         }
 
-        if (null != getSort()) {
+        if (hasSort()) {
             sb.append(",\n");
             sb.append(indent).append("sort=").append(doubleQuote(getSort()));
         }
@@ -100,10 +99,9 @@ public class SasExportScriptModel extends ExportScriptModel
             sb.append(indent).append("filter=").append(getFilters());
         }
 
-        ContainerFilter containerFilter = getContainerFilter();
-        if (null != containerFilter && null != containerFilter.getType()) {
+        if (hasContainerFilter()) {
             sb.append(",\n");
-            sb.append(indent).append("containerFilter=").append(doubleQuote(containerFilter.getType().name()));
+            sb.append(indent).append("containerFilter=").append(doubleQuote(getContainerFilterTypeName()));
         }
 
         sb.append(");\n");
