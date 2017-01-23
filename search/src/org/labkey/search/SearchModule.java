@@ -61,7 +61,7 @@ public class SearchModule extends DefaultModule
 
     public double getVersion()
     {
-        return 16.30;
+        return 16.31;
     }
 
     public boolean hasScripts()
@@ -134,7 +134,7 @@ public class SearchModule extends DefaultModule
             final boolean clearIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 16.13);
 
             // Update the version number below to force an upgrade of the index to the latest format. This is used when we upgrade the indexing library to a new version.
-            final boolean upgradeIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 16.13);
+            final boolean upgradeIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 16.31);
 
             // don't start the crawler or clear the index until all the modules are done starting up
             ContextListener.addStartupListener(new StartupListener()

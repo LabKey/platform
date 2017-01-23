@@ -11,16 +11,16 @@
     <orderEntry type="module" module-name="API" />
     <orderEntry type="module" module-name="Internal" />
     <orderEntry type="module-library">
-      <library name="Lucene 6.3.0">
+      <library name="Lucene 6.4.0">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-core-6.3.0.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/lucene-queryparser-6.3.0.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/lucene-analyzers-common-6.3.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-analyzers-common-6.4.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-core-6.4.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-queryparser-6.4.0.jar!/" />
         </CLASSES>
         <JAVADOC>
-          <root url="http://lucene.apache.org/core/6_3_0/core" />
-          <root url="http://lucene.apache.org/core/6_3_0/queryparser" />
-          <root url="http://lucene.apache.org/core/6_3_0/analyzers-common" />
+          <root url="http://lucene.apache.org/core/6_4_0/core" />
+          <root url="http://lucene.apache.org/core/6_4_0/queryparser" />
+          <root url="http://lucene.apache.org/core/6_4_0/analyzers-common" />
         </JAVADOC>
         <SOURCES />
       </library>
