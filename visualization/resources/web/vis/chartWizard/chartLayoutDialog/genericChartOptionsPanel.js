@@ -93,6 +93,19 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             items: [this.labelBox, this.labelBoxResetButton]
         });
 
+        this.subtitleBox = Ext4.create('Ext.form.field.Text', {
+            name: 'subtitle',
+            getInputValue: this.getSubtitle,
+            fieldLabel: 'Subtitle',
+            labelWidth: this.defaultLabelWidth,
+            width: 275,
+            padding: '0 0 10px 0',
+            enableKeyEvents: true
+        });
+        this.subtitleBox.addListener('keyup', function(){
+            this.userEditedSubtitle = this.subtitleBox.getValue() != '';
+        }, this, {buffer: 500});
+
         this.widthBox = Ext4.create('Ext.form.field.Number', {
             name: 'width',
             getInputValue: this.getWidth,
@@ -247,34 +260,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     definePieOptions : function()
     {
-        this.subtitleBox = Ext4.create('Ext.form.field.Text', {
-            name: 'subtitle',
-            getInputValue: this.getSubtitle,
-            fieldLabel: 'Subtitle',
-            labelWidth: this.defaultLabelWidth,
-            width: 275,
-            padding: '0 0 10px 0',
-            enableKeyEvents: true,
-            layoutOptions: 'pie'
-        });
-        this.subtitleBox.addListener('keyup', function(){
-            this.userEditedSubtitle = this.subtitleBox.getValue() != '';
-        }, this, {buffer: 500});
-
-        this.footerBox = Ext4.create('Ext.form.field.Text', {
-            name: 'footer',
-            getInputValue: this.getFooter,
-            fieldLabel: 'Footer',
-            labelWidth: this.defaultLabelWidth,
-            width: 275,
-            padding: '0 0 10px 0',
-            enableKeyEvents: true,
-            layoutOptions: 'pie'
-        });
-        this.footerBox.addListener('keyup', function(){
-            this.userEditedFooter = this.footerBox.getValue() != '';
-        }, this, {buffer: 500});
-
         this.showPiePercentagesCheckBox = Ext4.create('Ext.form.field.Checkbox', {
             name: 'showPiePercentages',
             getInputValue: this.getShowPiePercentages,
@@ -638,7 +623,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         return [
             this.labelBoxFieldContainer,
             this.subtitleBox,
-            this.footerBox,
             this.widthBox,
             this.heightBox,
             this.pointTypeCombo,
