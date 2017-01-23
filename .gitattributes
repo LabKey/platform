@@ -1,5 +1,6 @@
 * text=auto !eol
 api/build.gradle -text
+api/module.properties -text
 api/src/org/apache/commons/validator/routines/CustomTLDEnabler.java -text
 api/src/org/apache/jasper/runtime/JspSourceImports.java -text
 api/src/org/json/CDL.java -text
@@ -18,6 +19,7 @@ api/src/org/json/JSONWriter.java -text
 api/src/org/json/Test.java -text
 api/src/org/json/XML.java -text
 api/src/org/json/XMLTokener.java -text
+api/src/org/labkey/api/ApiModule.java -text
 api/src/org/labkey/api/Constants.java -text
 api/src/org/labkey/api/action/AbstractFileUploadAction.java -text
 api/src/org/labkey/api/action/Action.java -text
@@ -6608,9 +6610,11 @@ internal/gwtsrc/org/labkey/api/gwt/client/util/StringUtils.java -text
 internal/lib/js-engine.jar -text
 internal/lib/js.jar -text
 internal/lib/rhino1_7R3.zip -text svneol=unset#application/zip
+internal/module.properties -text
 internal/src/META-INF/XMLProteinLoader.uniprot.properties -text
 internal/src/messages/Global.properties -text
 internal/src/messages/Validation.properties -text
+internal/src/org/labkey/InternalModule.java -text
 internal/src/org/labkey/api/action/GWTServiceAction.java -text
 internal/src/org/labkey/api/announcements/CommSchema.java -text
 internal/src/org/labkey/api/announcements/DiscussionService.java -text
