@@ -113,7 +113,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!this.viewPanel)
         {
             this.viewPanel = Ext4.create('Ext.panel.Panel', {
-                overflowY   : 'auto',
+                autoScroll  : true,
                 ui          : 'custom',
                 listeners   : {
                     scope: this,
