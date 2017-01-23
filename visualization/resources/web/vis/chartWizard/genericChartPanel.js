@@ -1381,10 +1381,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (chartType == 'scatter_plot' && data.length > chartConfig.geomOptions.binThreshold)
         {
             chartConfig.geomOptions.binned = true;
-            this.addWarningText(
-                "The number of individual points exceeds the limit set in the Chart Layout options. " +
-                "The data will be displayed according to point density in a heat map."
-            );
+            if (chartConfig.geomOptions.binThreshold == 10000) {
+                this.addWarningText(
+                        "The number of individual points exceeds 10,000. The data is now grouped by density, which overrides some layout options."
+                );
+            }
         }
 
         geom = LABKEY.vis.GenericChartHelper.generateGeom(chartType, chartConfig.geomOptions);

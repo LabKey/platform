@@ -335,7 +335,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.colorPaletteComboBox = Ext4.create('Ext.form.ComboBox', {
             name: 'colorPaletteScale',
-            fieldLabel: 'Color palette',
+            fieldLabel: 'Color Palette',
             getInputValue: this.getColorPalette,
             labelWidth: this.defaultLabelWidth,
             width: 275,
@@ -386,42 +386,29 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     defineBinningOptions : function()
     {
-        this.binFieldContainer = Ext4.create('Ext.form.FieldContainer', {
-            fieldLabel: '',
+        this.binFieldRadioGroup = Ext4.create('Ext.form.RadioGroup', {
             name: 'binThreshold',
-            layoutOptions: 'binnable',
-            labelWidth: this.defaultLabelWidth,
+            fieldLabel: 'Group by Density',
             getInputValue: this.getBinThreshold,
-            layout: 'hbox',
+            columns: 1,
             padding: '0 0 10px 0',
-            width: 320,
-            items: [{
-                xtype: 'component',
-                height: 22,
-                border: 0,
-                html: '<div style="color: black">Bin data (heatmap) at &nbsp;</div>'
-            }, {
-                xtype: 'numberfield',
-                width: 60,
-                height: 22,
-                value: 5000,
-                allowDecimals: false,
-                name: 'binThresholdField',
-                id: 'binThresholdField',
-                minValue: 1,
-                maxValue: 10000
-            }, {
-                xtype: 'component',
-                color: '#000000',
-                height: 22,
-                border: 0,
-                html: '<div style="color: black"> &nbsp; data points </div>'
-            }]
+            layoutOptions: 'binnable',
+            items: [
+                {boxLabel: 'When # of data points exceeds 10,000', inputValue: 10000, name: 'binThresh', checked: true},
+                {boxLabel: 'Always', inputValue: 1, name: 'binThresh'}
+            ],
+            listeners: {
+                scope: this,
+                change: function(field, newValue, oldValue) {
+                    this.toggleBinningControls(newValue.binThresh == 10000);
+                }
+            }
         });
 
         this.binShapeRadioGroup = Ext4.create('Ext.form.RadioGroup', {
             name: 'binShapeGroup',
-            fieldLabel: 'Bin Shape',
+            disabled: true,
+            fieldLabel: 'Grouped Data Shape',
             getInputValue: this.getBinShape,
             columns: 1,
             padding: '0 0 10px 0',
@@ -434,7 +421,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.binColorRadioGroup = Ext4.create('Ext.form.RadioGroup', {
             name: 'binColorGroup',
-            fieldLabel: 'Bin Color',
+            disabled: true,
+            fieldLabel: 'Density Color Palette',
             getInputValue: this.getBinColor,
             columns: 1,
             layoutOptions: 'binnable',
@@ -447,6 +435,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.binSingleColorPicker = Ext4.create('LABKEY.vis.ColorPickerCombo', {
             name: 'binSingleColor',
+            disabled: true,
             getInputValue: this.getBinColorPicker,
             value: '000000',  // initial selected color
             width: 70,
@@ -680,7 +669,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.piePercentagesColorPicker,
             this.gradientSlider,
             this.gradientColorPicker,
-            this.binFieldContainer,
+            this.binFieldRadioGroup,
             this.binShapeRadioGroup,
             this.binColorRadioGroup,
             this.binSingleColorPicker
@@ -714,6 +703,29 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         }, this);
 
         return values;
+    },
+
+    toggleBinningControls : function(binningDisabled)
+    {
+        if (binningDisabled) {
+            this.pointColorPicker.setDisabled(false);
+            this.pointSizeSlider.setDisabled(false);
+            this.opacitySlider.setDisabled(false);
+            this.jitterCheckbox.setDisabled(false);
+            this.colorPaletteComboBox.setDisabled(false);
+            this.binShapeRadioGroup.setDisabled(true);
+            this.binColorRadioGroup.setDisabled(true);
+            this.binSingleColorPicker.setDisabled(true);
+        } else {
+            this.pointColorPicker.setDisabled(true);
+            this.pointSizeSlider.setDisabled(true);
+            this.opacitySlider.setDisabled(true);
+            this.jitterCheckbox.setDisabled(true);
+            this.colorPaletteComboBox.setDisabled(true);
+            this.binShapeRadioGroup.setDisabled(false);
+            this.binColorRadioGroup.setDisabled(false);
+            this.binSingleColorPicker.setDisabled(false);
+        }
     },
 
     getDefaultChartLabel : function()
@@ -775,18 +787,12 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     validateChanges : function()
     {
-        if (this.getBinThreshold() == null )
-        {
-            this.binFieldContainer.getComponent('binThresholdField').markInvalid("You must specify a threshold between 1 and 10,000");
-        }
-        else
-        {
-            var hasValidWidth = this.widthBox.isDisabled() || this.getWidth() == null || this.getWidth() > 0,
-                hasValidHeight = this.heightBox.isDisabled() || this.getHeight() == null || this.getHeight() > 0,
-                hasValidBinThreshold = this.getBinThreshold() <= 10000 && this.getBinThreshold() >= 1;
+        var hasValidWidth = this.widthBox.isDisabled() || this.getWidth() == null || this.getWidth() > 0,
+            hasValidHeight = this.heightBox.isDisabled() || this.getHeight() == null || this.getHeight() > 0,
+            hasValidBinThreshold = this.getBinThreshold() <= 10000 && this.getBinThreshold() >= 1;
 
-            return hasValidWidth && hasValidHeight && hasValidBinThreshold;
-        }
+        return hasValidWidth && hasValidHeight && hasValidBinThreshold;
+
     },
 
     setPanelOptionValues: function(chartConfig)
@@ -1181,11 +1187,14 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     },
 
     getBinThreshold: function() {
-        return this.binFieldContainer.getComponent('binThresholdField').getValue();
+        return this.binFieldRadioGroup.getValue().binThresh;
     },
 
     setBinThreshold: function(value) {
-        this.binFieldContainer.getComponent('binThresholdField').setValue(value);
+        this.binFieldRadioGroup.setValue(value);
+        var radioComp = this.binFieldRadioGroup.down('radio[inputValue="' + value + '"]');
+        if (radioComp)
+            radioComp.setValue(true);
     },
 
     getBinShape: function() {
