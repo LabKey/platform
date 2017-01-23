@@ -3593,6 +3593,7 @@ public static class ExportSqlForm
                 }
                 else
                 {
+                    ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
                     throw e;
                 }
             }
