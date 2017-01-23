@@ -171,9 +171,10 @@ public class RScriptEngine extends ExternalScriptEngine
         // Set the working directory for knitr reports to be the same as
         // where we load the input script.  Knitr will output the R results and final
         // html to this working directory
-        sb.append("setwd(\"");
-        sb.append(getRWorkingDir(context));
-        sb.append("\")\n");
+        // pandoc will fail if HOME is not set
+        String wd = getRWorkingDir(context);
+        sb.append("setwd(\"").append(wd).append("\")\n");
+        sb.append("Sys.setenv(HOME = \"").append(wd).append("\")\n");
         sb.append("library(knitr)\n");
 
         //

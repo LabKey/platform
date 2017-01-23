@@ -32,6 +32,8 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.util.regex.Pattern;
 
+import static org.apache.commons.lang3.StringUtils.startsWith;
+
 /**
  * User: dax
  * Date: May 7, 2008
@@ -105,19 +107,18 @@ public class KnitrOutput extends HtmlOutput
             // do post processing on this html to fixup any hrefs
             if (null != htmlIn)
             {
-                StringBuilder htmlOut = new StringBuilder();
-                String pattern = ParamReplacementSvc.REPLACEMENT_PARAM_ESC;
-
-                // wrap with the labkey-knitr class to get consistent styling
-                htmlOut.append("<div class=\"labkey-knitr\">");
-
                 // replace all ${hrefout:<filename>} with the appropriate url
-                htmlOut.append( ParamReplacementSvc.get().processHrefParamReplacement(_report,
-                        htmlIn, _report.getReportDir(this.getViewContext().getContainer().getId()), Pattern.compile(pattern), 2));
-
-
-                htmlOut.append("</div>");
-                return htmlOut.toString();
+                File reportDir = _report.getReportDir(this.getViewContext().getContainer().getId());
+                String htmlOut = ParamReplacementSvc.get().processHrefParamReplacement(
+                        _report,
+                        htmlIn,
+                        reportDir,
+                        Pattern.compile(ParamReplacementSvc.REPLACEMENT_PARAM_ESC), 2);
+                htmlOut = ParamReplacementSvc.get().processRelativeHrefReplacement(
+                        _report,
+                        htmlOut,
+                        reportDir);
+                return "<div class=\"labkey-knitr\">" + htmlOut + "</div>";
             }
 
             return null;
