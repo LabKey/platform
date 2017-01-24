@@ -74,13 +74,6 @@
 				<inputLength>8</inputLength>
 				<isReadOnly>true</isReadOnly>
 			</column>
-			<column columnName="Container">
-				<columnTitle>Container</columnTitle>
-				<inputType>text</inputType>
-				<inputLength>36</inputLength>
-				<nullable>true</nullable>
-				<isReadOnly>false</isReadOnly>
-			</column>
 			<column columnName="IssueId">
 				<columnTitle>Issue</columnTitle>
 				<inputType>text</inputType>
@@ -90,6 +83,17 @@
 				<isReadOnly>true</isReadOnly>
 				<isUserEditable>false</isUserEditable>
                 <url>org.labkey.issue.IssuesController$DetailsAction.class?issueId=${IssueId}</url>
+			</column>
+			<column columnName="Container">
+				<columnTitle>Container</columnTitle>
+				<inputType>text</inputType>
+				<inputLength>36</inputLength>
+				<nullable>true</nullable>
+				<isReadOnly>false</isReadOnly>
+				<fk>
+					<fkDbSchema>core</fkDbSchema>
+					<fkTable>Containers</fkTable>
+				</fk>
 			</column>
 			<column columnName="Duplicate">
 				<columnTitle>Duplicate</columnTitle>
@@ -103,11 +107,14 @@
 				<inputType>text</inputType>
 				<inputLength>36</inputLength>
 				<isReadOnly>true</isReadOnly>
+				<isHidden>true</isHidden>
 			</column>
             <column columnName="LastIndexed">
                 <isReadOnly>true</isReadOnly>
             </column>
 			<column columnName="IssueDefId">
+				<columnTitle>Issue Definition</columnTitle>
+				<isHidden>true</isHidden>
 				<fk>
 					<fkColumnName>RowId</fkColumnName>
 					<fkTable>IssueListDef</fkTable>

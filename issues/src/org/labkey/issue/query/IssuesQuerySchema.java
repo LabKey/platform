@@ -167,7 +167,7 @@ public class IssuesQuerySchema extends UserSchema
 
             if (name.equalsIgnoreCase(ALL_ISSUE_TABLE))
             {
-                return new AllIssuesTable(this);
+                return new AllIssuesTable(this).init();
             }
         }
         return null;

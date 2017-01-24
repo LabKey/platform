@@ -27,7 +27,6 @@
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.issue.ColumnTypeEnum" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.IssuesController.EmailPrefsAction" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
@@ -35,8 +34,8 @@
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.labkey.issue.model.IssuePage" %>
 <%@ page import="org.labkey.issue.view.IssuesListView" %>
+<%@ page import="org.labkey.issue.view.RelatedIssuesView" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.function.Function" %>
@@ -286,6 +285,12 @@
     if (bean.getCallbackURL() != null)
     {%>
 <input type="hidden" name="callbackURL" value="<%=bean.getCallbackURL()%>"/><%
+    }
+
+    if (!issue.getRelatedIssues().isEmpty())
+    {
+        RelatedIssuesView view = new RelatedIssuesView(context, issue.getRelatedIssues());
+        include(view, out);
     }
 
     for (Issue.Comment comment : commentLinkedList)
