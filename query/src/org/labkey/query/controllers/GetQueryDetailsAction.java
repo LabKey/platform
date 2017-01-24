@@ -57,7 +57,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.query.CustomViewUtil;
-import org.labkey.query.TableQueryDefinition;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -205,7 +204,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 
             JSONArray templates = new JSONArray();
             List<Pair<String, String>> it = tinfo.getImportTemplates(getViewContext());
-            if(null != it && it.size() > 0)
+            if (null != it && it.size() > 0)
             {
                 for (Pair<String, String> pair : it)
                 {
