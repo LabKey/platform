@@ -14,5 +14,16 @@ dependencies {
                 exclude group: "org.slf4j", module: "jcl104-over-slf4j"
             }
     external "com.thoughtworks.xstream:xstream:${xstreamVersion}"
+    // The following are all dependencies of the mule-module-builders, but since we use a version that is not readily available
+    // externally, the pom file that is generated does not work (creates a stack overflow), so we declare these separately
+    // If we ever update the version to use something more standard, I hope that these can go away.
+    external "commons-lang:commons-lang:${commonsLangVersion}"
+    external group: 'org.apache.geronimo.specs', name: 'geronimo-j2ee-connector_1.5_spec', version: geronimoJ2eeConnector15SpecVersion
+//    external group: 'org.apache.geronimo.specs', name: 'geronimo-j2ee-management_1.0_spec', version: geronimoJ2eeManagement10SpecVersion
+    external group: 'org.safehaus.jug', name: 'jug', version: jugVersion
+    external group: 'dom4j', name: 'dom4j', version: dom4jVersion
+
+
+
     BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: ":server:modules:core", depProjectConfig: 'apiCompile')
 }
