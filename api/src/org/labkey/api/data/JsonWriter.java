@@ -82,6 +82,7 @@ public class JsonWriter
             props.put("description", cinfo.getDescription());
 
         String friendlyTypeName = cinfo == null ? ColumnInfo.getFriendlyTypeName(dc.getDisplayValueClass()) : cinfo.getFriendlyTypeName();
+        props.put("align", dc.getTextAlign());
         props.put("friendlyType", friendlyTypeName);
         props.put("type", useFriendlyAsType ? friendlyTypeName : dc.getJsonTypeName());
         props.put("jsonType", dc.getJsonTypeName());
