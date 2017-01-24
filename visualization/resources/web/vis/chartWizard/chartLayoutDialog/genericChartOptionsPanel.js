@@ -100,10 +100,25 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             labelWidth: this.defaultLabelWidth,
             width: 275,
             padding: '0 0 10px 0',
-            enableKeyEvents: true
+            enableKeyEvents: true,
+            layoutOptions: ['line', 'point', 'box', 'pie']
         });
         this.subtitleBox.addListener('keyup', function(){
             this.userEditedSubtitle = this.subtitleBox.getValue() != '';
+        }, this, {buffer: 500});
+
+        this.footerBox = Ext4.create('Ext.form.field.Text', {
+            name: 'footer',
+            getInputValue: this.getFooter,
+            fieldLabel: 'Footer',
+            labelWidth: this.defaultLabelWidth,
+            width: 275,
+            padding: '0 0 10px 0',
+            enableKeyEvents: true,
+            layoutOptions: ['line', 'point', 'box', 'pie']
+        });
+        this.footerBox.addListener('keyup', function(){
+            this.userEditedFooter = this.footerBox.getValue() != '';
         }, this, {buffer: 500});
 
         this.widthBox = Ext4.create('Ext.form.field.Number', {
@@ -623,6 +638,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         return [
             this.labelBoxFieldContainer,
             this.subtitleBox,
+            //this.footerBox,
             this.widthBox,
             this.heightBox,
             this.pointTypeCombo,
@@ -691,25 +707,14 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     toggleBinningControls : function(binningDisabled)
     {
-        if (binningDisabled) {
-            this.pointColorPicker.setDisabled(false);
-            this.pointSizeSlider.setDisabled(false);
-            this.opacitySlider.setDisabled(false);
-            this.jitterCheckbox.setDisabled(false);
-            this.colorPaletteComboBox.setDisabled(false);
-            this.binShapeRadioGroup.setDisabled(true);
-            this.binColorRadioGroup.setDisabled(true);
-            this.binSingleColorPicker.setDisabled(true);
-        } else {
-            this.pointColorPicker.setDisabled(true);
-            this.pointSizeSlider.setDisabled(true);
-            this.opacitySlider.setDisabled(true);
-            this.jitterCheckbox.setDisabled(true);
-            this.colorPaletteComboBox.setDisabled(true);
-            this.binShapeRadioGroup.setDisabled(false);
-            this.binColorRadioGroup.setDisabled(false);
-            this.binSingleColorPicker.setDisabled(false);
-        }
+        this.pointColorPicker.setDisabled(!binningDisabled);
+        this.pointSizeSlider.setDisabled(!binningDisabled);
+        this.opacitySlider.setDisabled(!binningDisabled);
+        this.jitterCheckbox.setDisabled(!binningDisabled);
+        this.colorPaletteComboBox.setDisabled(!binningDisabled);
+        this.binShapeRadioGroup.setDisabled(binningDisabled);
+        this.binColorRadioGroup.setDisabled(binningDisabled);
+        this.binSingleColorPicker.setDisabled(binningDisabled);
     },
 
     getDefaultChartLabel : function()
