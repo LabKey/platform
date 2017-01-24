@@ -388,6 +388,8 @@ pdb	chemical/x-pdb
 xyz	chemical/x-pdb
 ttf font/ttf
 otf font/otf
+woff2 font/woff2
+woff font/woff
 bm	image/bmp
 bmp	image/bmp
 cod	image/cis-cod

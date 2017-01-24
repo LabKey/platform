@@ -130,6 +130,7 @@ public class AppProps
         String getCSRFCheck();
         /** @return "SAMEORIGIN" or "DENY" or "ALLOW" */
         String getXFrameOptions();
+        String getStaticFilesPrefix();
     }
 
     public static final String EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP = "javascriptMothership";

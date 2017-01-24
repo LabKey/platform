@@ -1666,7 +1666,7 @@ public class PageFlowUtil
                         String cssPath = extJsRoot() + "/resources/css/ext-all.css";
 
                         preIncludedCss.add(cssPath);
-                        F.format(link, Path.parse(AppProps.getInstance().getContextPath() + "/" + cssPath));
+                        F.format(link, Path.parse(staticResourceUrl(cssPath)));
                     }
 
                     if (!ext4Included && paths.startsWith("ext-4.2.1/ext-all"))
@@ -1675,7 +1675,7 @@ public class PageFlowUtil
                         String cssPath = ext4ThemeRoot() + "/" + resolveThemeName(c) + "/ext-all.css";
 
                         preIncludedCss.add(cssPath);
-                        F.format(link, Path.parse(AppProps.getInstance().getContextPath() + "/" + cssPath));
+                        F.format(link, staticResourceUrl(cssPath));
                     }
 
                     if (ext3Included && ext4Included)
@@ -1688,14 +1688,14 @@ public class PageFlowUtil
         {
             if (useExperimentalCoreUI())
             {
-                F.format(link, PageFlowUtil.filter(new ResourceURL("/core/css/main.css")));
+                F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/main.css")));
             }
             else
             {
                 String fontAwesomeCss = devMode ? "font-awesome.css" : "font-awesome.min.css";
-                F.format(link, PageFlowUtil.filter(new ResourceURL("/internal/font-awesome-4.4.0/css/" + fontAwesomeCss)));
+                F.format(link, PageFlowUtil.filter(staticResourceUrl("/internal/font-awesome-4.4.0/css/" + fontAwesomeCss)));
 
-                F.format(link, PageFlowUtil.filter(new ResourceURL(theme.getStyleSheet(), ContainerManager.getRoot())));
+                F.format(link, PageFlowUtil.filter(staticResourceUrl(theme.getStyleSheet())));
 
                 ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
 
@@ -1732,9 +1732,8 @@ public class PageFlowUtil
                         F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
                 }
 
-                ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
                 sb.append("    <link href=\"");
-                sb.append(filter(printStyleURL));
+                sb.append(filter(staticResourceUrl("printStyle.css")));
                 sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\">\n");
             }
         }
@@ -1828,21 +1827,38 @@ public class PageFlowUtil
         return themeName.toLowerCase();
     }
 
+
+    /**
+     * Return URL for static webapp resources.
+     *
+     * If we had a way to configure a domain for static resources, this would be the place to
+     * fix-up the generated URL.
+     */
+    final static String staticResourcePrefix = AppProps.getInstance().getStaticFilesPrefix();
+
+    public static String staticResourceUrl(String resourcePath)
+    {
+        String slash = resourcePath.startsWith("/") ? "" : "/";
+        if (null != staticResourcePrefix)
+        {
+            return staticResourcePrefix + slash + resourcePath;
+        }
+        return AppProps.getInstance().getContextPath() + slash + resourcePath + "?" + getServerSessionHash();
+    }
+
+
     public static String getLabkeyJS(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
     {
-        String contextPath = AppProps.getInstance().getContextPath();
-        String serverHash = getServerSessionHash();
-
         StringBuilder sb = new StringBuilder();
 
-        sb.append("    <script src=\"").append(contextPath).append("/labkey.js?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
+        sb.append("    <script src=\"").append(staticResourceUrl("/labkey.js")).append("\" type=\"text/javascript\"></script>\n");
 
         // Include client-side error reporting scripts only if necessary and as early as possible.
         if ((AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP) || AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER)) &&
                 (AppProps.getInstance().getExceptionReportingLevel() != ExceptionReportingLevel.NONE || AppProps.getInstance().isSelfReportExceptions()))
         {
-            sb.append("    <script src=\"").append(contextPath).append("/stacktrace-1.1.2.min.js").append("\" type=\"text/javascript\"></script>\n");
-            sb.append("    <script src=\"").append(contextPath).append("/mothership.js?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
+            sb.append("    <script src=\"").append(staticResourceUrl("/stacktrace-1.1.2.min.js")).append("\" type=\"text/javascript\"></script>\n");
+            sb.append("    <script src=\"").append(staticResourceUrl("/mothership.js")).append("\" type=\"text/javascript\"></script>\n");
         }
 
         sb.append("    <script type=\"text/javascript\">\n");
@@ -1887,7 +1903,7 @@ public class PageFlowUtil
             if (ClientDependency.isExternalDependency(s))
                 sb.append(s);
             else
-                sb.append(contextPath).append("/").append(filter(s)).append("?").append(serverHash);
+                sb.append(filter(staticResourceUrl("/" + s)));
             sb.append("\" type=\"text/javascript\"></script>\n");
         }
 
@@ -1899,7 +1915,6 @@ public class PageFlowUtil
     {
         return validateHtml(html, errors, scriptAsErrors ? null : errors);
     }
-
 
     /** validate an html fragment */
     public static String validateHtml(String html, Collection<String> errors, Collection<String> scriptWarnings)

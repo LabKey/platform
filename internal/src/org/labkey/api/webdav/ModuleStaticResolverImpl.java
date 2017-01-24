@@ -31,6 +31,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewContext;
@@ -393,8 +394,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         @Override
         public String getExecuteHref(ViewContext context)
         {
-            Path contextPath = null==context ? AppProps.getInstance().getParsedContextPath() : Path.parse(context.getContextPath());
-            return contextPath.append(getPath()).encode();            
+            return PageFlowUtil.staticResourceUrl(getPath().encode());
         }
 
         @Override

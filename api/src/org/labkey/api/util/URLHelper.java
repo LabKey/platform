@@ -91,6 +91,12 @@ public class URLHelper implements Cloneable, Serializable, Taintable
 
     public URLHelper(String url) throws URISyntaxException
     {
+        parse(url);
+    }
+
+
+    protected void parse(String url) throws URISyntaxException
+    {
         String p;
         String q;
         int i = url.indexOf('?');
@@ -873,6 +879,19 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         }
     }
 
+    public static String staticResourceUrl(String resourcePath)
+    {
+        boolean useStaticServer = false;
+        if (useStaticServer)
+        {
+            // TODO this is for prototype only
+            return "http://static:" + AppProps.getInstance().getServerPort() + resourcePath;
+        }
+        else
+        {
+            return AppProps.getInstance().getContextPath() + resourcePath;
+        }
+    }
 
     public static class TestCase extends Assert
     {

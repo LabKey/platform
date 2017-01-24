@@ -42,6 +42,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.apache.commons.lang3.StringUtils.trimToNull;
+
 /**
  * User: jeckels
  * Date: Jun 21, 2012
@@ -522,5 +524,14 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
     public String getXFrameOptions()
     {
         return lookupStringValue(X_FRAME_OPTIONS, "SAMEORIGIN");
+    }
+
+    @Override
+    public String getStaticFilesPrefix()
+    {
+        // CURRENTLY SET using -Dstatic.files.prefix=//static.web.site.com
+        // NOT IN UI, because one mistake will probably render the site unusable
+        String s = System.getProperty("static.files.prefix");
+        return trimToNull(s);
     }
 }
