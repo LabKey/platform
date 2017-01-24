@@ -386,11 +386,7 @@ public class Sort
 
     private void replaceSortColumn(SortField sortField, int insertionIndex)
     {
-        int deletedIndex = deleteSortColumn(sortField._fieldKey);
-        if (deletedIndex != -1 && insertionIndex > deletedIndex)
-        {
-//            insertionIndex--;
-        }
+        deleteSortColumn(sortField._fieldKey);
         _sortList.add(insertionIndex, sortField);
     }
 
@@ -482,7 +478,7 @@ public class Sort
         if (null == _sortList || _sortList.size() == 0)
             return "";
 
-        StringBuffer sb = new StringBuffer("ORDER BY ");
+        StringBuffer sb = new StringBuffer("");
 
         //NOTE: we are translating between the raw sort, and the sortFieldKeys() provided by that column
         Set<String>  distinctKeys = new CaseInsensitiveHashSet();
@@ -519,7 +515,13 @@ public class Sort
             }
         }
 
-        return sb.toString();
+        // Determine if any ORDER BY additions were made
+        String orderBy = sb.toString();
+
+        if (orderBy.length() > 0)
+            return "ORDER BY " + orderBy;
+
+        return "";
     }
 
     private void appendColumnToSort(SortField sf, SqlDialect dialect, String alias, Set<String> distinctKeys, StringBuffer sb)
@@ -527,7 +529,7 @@ public class Sort
         if (distinctKeys.contains(alias))
             return;
 
-        if(distinctKeys.size() > 0)
+        if (distinctKeys.size() > 0)
             sb.append(", ");
 
         sb.append(sf.toOrderByString(dialect, alias));
