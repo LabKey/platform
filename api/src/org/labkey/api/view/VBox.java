@@ -30,11 +30,13 @@ import java.util.List;
 public class VBox extends WebPartView
 {
     protected final List<ModelAndView> _views;
+    protected boolean _includeBreak;
 
     public VBox(ModelAndView... views)
     {
         super(FrameType.NONE);
         _views = new ArrayList<>(Arrays.asList(views));
+        _includeBreak = true;
     }
 
     public boolean isVisible()
@@ -65,6 +67,16 @@ public class VBox extends WebPartView
         return ret;
     }
 
+    public boolean isIncludeBreak()
+    {
+        return _includeBreak;
+    }
+
+    public void setIncludeBreak(boolean includeBreak)
+    {
+        _includeBreak = includeBreak;
+    }
+
     @Override
     public void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
@@ -76,7 +88,8 @@ public class VBox extends WebPartView
             if (null == view)
                 continue;
             out.println(sep);
-            sep = "<br/>";
+            if (_includeBreak)
+                sep = "<br/>";
             include(view);
         }
     }
