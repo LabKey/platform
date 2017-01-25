@@ -210,7 +210,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         }
         else {
             xAes = function(row) {
-                return visitMap[row.getValue(intervalKey)].displayOrder;
+                return visitMap[_getRowValue(row, intervalKey, 'value')].displayOrder;
             };
         }
 
@@ -296,7 +296,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                     return function(row){
                         var subject = _getRowValue(row, subjectColumn);
                         var errorVal = _getRowValue(row, errorColumn) || 'n/a';
-                        return ' ' + subject + ',\n '+ visitMap[row.getValue(intervalKey)].displayName +
+                        return ' ' + subject + ',\n '+ visitMap[_getRowValue(row, intervalKey, 'value')].displayName +
                                 ',\n ' + name + ': ' + _getRowValue(row, columnName) +
                                 ',\n ' + errorType + ': ' + errorVal;
                     }
@@ -305,7 +305,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                 {
                     return function(row){
                         var subject = _getRowValue(row, subjectColumn);
-                        return ' ' + subject + ',\n '+ visitMap[row.getValue(intervalKey)].displayName +
+                        return ' ' + subject + ',\n '+ visitMap[_getRowValue(row, intervalKey, 'value')].displayName +
                                 ',\n ' + name + ': ' + _getRowValue(row, columnName);
                     };
                 }
@@ -630,7 +630,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                 var visitMap = data.individual ? data.individual.visitMap : data.aggregate.visitMap;
                 xName = LABKEY.vis.getColumnAlias(columnAliases, nounSingular + "Visit/Visit");
                 xFunc = function(row){
-                    return visitMap[row.getValue(xName)].displayOrder;
+                    return visitMap[_getRowValue(row, xName, 'value')].displayOrder;
                 };
             }
 
@@ -1521,13 +1521,21 @@ LABKEY.vis.TimeChartHelper = new function() {
         return Ext4.Array.unique(Ext4.Array.pluck(measures, 'yAxis'));
     };
 
-    var _getRowValue = function(row, propName)
+    var _getRowValue = function(row, propName, valueName)
     {
         if (row.hasOwnProperty(propName)) {
-            if (row.get(propName).hasOwnProperty('displayValue')) {
-                return row.get(propName).displayValue;
+            // backwards compatibility for response row that is not a LABKEY.Query.Row
+            if (!(row instanceof LABKEY.Query.Row)) {
+                return row[propName].displayValue || row[propName].value;
             }
 
+            var propValue = row.get(propName);
+            if (valueName != undefined && propValue.hasOwnProperty(valueName)) {
+                return propValue[valueName];
+            }
+            else if (propValue.hasOwnProperty('displayValue')) {
+                return propValue['displayValue'];
+            }
             return row.getValue(propName);
         }
 
