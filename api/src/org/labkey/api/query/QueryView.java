@@ -1185,7 +1185,7 @@ public class QueryView extends WebPartView<Object>
                     getDataRegionName(),
                     getExportRegionName(),
                     hasRecordSelectors ? getSettings().getSelectionKey() : null,
-                    getExcelColumnHeaderType(),
+                    getColumnHeaderType(),
                     exportRowsXlsURL,
                     exportRowsXlsxURL,
                     _allowExportExternalQuery ? urlFor(QueryAction.excelWebQueryDefinition) : null
@@ -2112,15 +2112,7 @@ public class QueryView extends WebPartView<Object>
 
     protected ColumnHeaderType getColumnHeaderType()
     {
-        // Return the sort of column names that should be used in TSV export.
-        // @RefactorIn15_1 Switch to using ColumnHeaderType.DisplayFieldKey instead of ColumnHeaderType.Name
-        return ColumnHeaderType.DisplayFieldKey;
-    }
-
-    protected ColumnHeaderType getExcelColumnHeaderType()
-    {
-        // @RefactorIn15_1 Switch to using ColumnHeaderType.DisplayFieldKey instead of ColumnHeaderType.Caption
-        return ColumnHeaderType.DisplayFieldKey;
+        return ColumnHeaderType.Caption;
     }
 
     public TSVGridWriter getTsvWriter() throws IOException
@@ -2375,7 +2367,7 @@ public class QueryView extends WebPartView<Object>
 
     public void exportToExcel(HttpServletResponse response) throws IOException
     {
-        exportToExcel(response, getExcelColumnHeaderType(), ExcelWriter.ExcelDocumentType.xls);
+        exportToExcel(response, getColumnHeaderType(), ExcelWriter.ExcelDocumentType.xls);
     }
 
     public void exportToExcel(HttpServletResponse response, ColumnHeaderType headerType, ExcelWriter.ExcelDocumentType docType) throws IOException
@@ -2410,7 +2402,7 @@ public class QueryView extends WebPartView<Object>
         {
             ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns) : getExcelWriter(docType);
             if (headerType == null)
-                headerType = getExcelColumnHeaderType();
+                headerType = getColumnHeaderType();
             ew.setCaptionType(headerType);
             ew.setShowInsertableColumnsOnly(insertColumnsOnly);
             if (prefix != null)
@@ -2432,7 +2424,7 @@ public class QueryView extends WebPartView<Object>
             try (OutputStream stream = new BufferedOutputStream(byteStream))
             {
                 ExcelWriter ew = getExcelWriter(ExcelWriter.ExcelDocumentType.xls);
-                ew.setCaptionType(getExcelColumnHeaderType());
+                ew.setCaptionType(getColumnHeaderType());
                 ew.setShowInsertableColumnsOnly(false);
                 ew.write(stream);
                 stream.flush();

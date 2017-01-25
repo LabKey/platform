@@ -60,8 +60,6 @@
         headerMap.put(ColumnHeaderType.Name, ColumnHeaderType.Name.getOptionText());
         sb.append("<span><span class='labkey-strong'>").append(ColumnHeaderType.Name.getOptionText()).append("</span>:&nbsp;").append(ColumnHeaderType.Name.getDescription()).append("</span><br>");
     }
-    headerMap.put(ColumnHeaderType.DisplayFieldKey, ColumnHeaderType.DisplayFieldKey.getOptionText());
-    sb.append("<span><span class='labkey-strong'>").append(ColumnHeaderType.DisplayFieldKey.getOptionText()).append("</span>:&nbsp;").append(ColumnHeaderType.DisplayFieldKey.getDescription()).append("</span><br>");
     headerMap.put(ColumnHeaderType.FieldKey, ColumnHeaderType.FieldKey.getOptionText());
     sb.append("<span><span class='labkey-strong'>").append(ColumnHeaderType.FieldKey.getOptionText()).append("</span>:&nbsp;").append(ColumnHeaderType.FieldKey.getDescription()).append("</span><br>");
 
