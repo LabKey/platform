@@ -407,7 +407,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.binShapeRadioGroup = Ext4.create('Ext.form.RadioGroup', {
             name: 'binShapeGroup',
-            disabled: true,
             fieldLabel: 'Grouped Data Shape',
             getInputValue: this.getBinShape,
             columns: 1,
@@ -421,7 +420,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.binColorRadioGroup = Ext4.create('Ext.form.RadioGroup', {
             name: 'binColorGroup',
-            disabled: true,
             fieldLabel: 'Density Color Palette',
             getInputValue: this.getBinColor,
             columns: 1,
@@ -435,7 +433,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.binSingleColorPicker = Ext4.create('LABKEY.vis.ColorPickerCombo', {
             name: 'binSingleColor',
-            disabled: true,
             getInputValue: this.getBinColorPicker,
             value: '000000',  // initial selected color
             width: 70,
@@ -712,9 +709,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.opacitySlider.setDisabled(!binningDisabled);
         this.jitterCheckbox.setDisabled(!binningDisabled);
         this.colorPaletteComboBox.setDisabled(!binningDisabled);
-        this.binShapeRadioGroup.setDisabled(binningDisabled);
-        this.binColorRadioGroup.setDisabled(binningDisabled);
-        this.binSingleColorPicker.setDisabled(binningDisabled);
     },
 
     getDefaultChartLabel : function()
