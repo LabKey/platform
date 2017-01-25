@@ -275,10 +275,16 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 
             if (viewNames.contains("*"))
             {
+                boolean hasDefault = false;
                 for (CustomView cv: allViews.values())
                 {
+                    if (cv.getName() == null)
+                        hasDefault = true;
                     viewInfos.add(CustomViewUtil.toMap(cv, getUser(), true, columnMetadata));
                 }
+
+                if (!hasDefault)
+                    viewInfos.add(CustomViewUtil.toMap(queryDef.createCustomView(getUser(), null), getUser(), true, columnMetadata));
             }
             else
             {
