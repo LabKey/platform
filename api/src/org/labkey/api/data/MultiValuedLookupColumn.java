@@ -21,6 +21,8 @@ import org.labkey.api.data.dialect.SqlDialect;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static org.labkey.api.data.JdbcType.BINARY;
+
 /**
  * Special kind of lookup column that can join and display multiple values, through a junction table, instead of a
  * single, standard foreign-key type relationship.
@@ -42,7 +44,7 @@ public class MultiValuedLookupColumn extends LookupColumn
         _junctionKey = junctionKey;
         copyAttributesFrom(display);
         copyURLFrom(display, parentPkColumn.getFieldKey(), null);
-        // NOTE: Changing the type to a VARCHAR cases MultiValueRenderContext.get() type conversion to be skipped.
+        // NOTE: Changing the type to a VARCHAR causes MultiValueRenderContext.get() type conversion to be skipped and we don't want that.
         //setJdbcType(JdbcType.VARCHAR);
     }
 
@@ -95,8 +97,8 @@ public class MultiValuedLookupColumn extends LookupColumn
         // Select and aggregate all columns in the far right table for now.  TODO: Select only required columns.
         for (ColumnInfo col : _rightFk.getLookupTableInfo().getColumns())
         {
-            // Skip text and ntext columns -- aggregates don't work on them in some databases
-            if (col.isLongTextType())
+            // Skip text and ntext and timestamp columns -- aggregates don't work on them in some databases
+            if (col.isLongTextType() || (col.getJdbcType() == BINARY && "timestamp".equalsIgnoreCase(col.getSqlTypeName())))
                 continue;
 
             ColumnInfo lc = _rightFk.createLookupColumn(_junctionKey, col.getName());
