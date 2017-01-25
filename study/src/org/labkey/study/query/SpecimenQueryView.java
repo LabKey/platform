@@ -987,11 +987,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
     protected ColumnHeaderType getColumnHeaderType()
     {
         // Return the sort of column names that should be used in TSV export.
-        // Consider: maybe all query types should use "ColumnHeaderType.DisplayFieldKey".  That has
-        // dots separating foreign keys, but otherwise looks really nice.
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_EXPORT_COLUMN_HEADER_TYPE))
-            return ColumnHeaderType.DisplayFieldKey;
-        else
-            return ColumnHeaderType.Caption;
+        // Switch to using ColumnHeaderType.DisplayFieldKey instead of ColumnHeaderType.Caption
+        return ColumnHeaderType.DisplayFieldKey;
     }
 }
