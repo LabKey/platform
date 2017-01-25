@@ -86,8 +86,7 @@
 			</column>
 			<column columnName="Container">
 				<columnTitle>Container</columnTitle>
-				<inputType>text</inputType>
-				<inputLength>36</inputLength>
+				<datatype>entityid</datatype>
 				<nullable>true</nullable>
 				<isReadOnly>false</isReadOnly>
 				<fk>
@@ -104,8 +103,7 @@
 			</column>
 			<column columnName="EntityId">
 				<columnTitle>Entity Id</columnTitle>
-				<inputType>text</inputType>
-				<inputLength>36</inputLength>
+				<datatype>entityid</datatype>
 				<isReadOnly>true</isReadOnly>
 				<isHidden>true</isHidden>
 			</column>
