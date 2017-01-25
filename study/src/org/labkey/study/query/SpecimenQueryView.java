@@ -986,8 +986,6 @@ public class SpecimenQueryView extends BaseStudyQueryView
     @Override
     protected ColumnHeaderType getColumnHeaderType()
     {
-        // Return the sort of column names that should be used in TSV export.
-        // Switch to using ColumnHeaderType.DisplayFieldKey instead of ColumnHeaderType.Caption
-        return ColumnHeaderType.DisplayFieldKey;
+        return ColumnHeaderType.Caption;
     }
 }
