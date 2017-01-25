@@ -1097,7 +1097,6 @@ issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-16.10-16.11.sql -te
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-16.11-16.12.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-16.12-16.13.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-16.13-16.14.sql -text
-issues/src/org/labkey/issue/BuildSummaryUtil.java -text
 issues/src/org/labkey/issue/ColumnType.java -text
 issues/src/org/labkey/issue/ColumnTypeEnum.java -text
 issues/src/org/labkey/issue/CustomColumnConfiguration.java -text
@@ -1137,7 +1136,6 @@ issues/src/org/labkey/issue/view/IssuesSummaryWebPartFactory.java -text
 issues/src/org/labkey/issue/view/IssuesWebPartFactory.java -text
 issues/src/org/labkey/issue/view/RelatedIssuesView.java -text
 issues/src/org/labkey/issue/view/SummaryWebPart.java -text
-issues/src/org/labkey/issue/view/buildSummary.jsp -text
 issues/src/org/labkey/issue/view/deleteIssueList.jsp -text
 issues/src/org/labkey/issue/view/detailList.jsp -text
 issues/src/org/labkey/issue/view/detailView.jsp -text
