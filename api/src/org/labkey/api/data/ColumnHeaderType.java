@@ -32,7 +32,7 @@ import java.util.Map;
  */
 public enum ColumnHeaderType
 {
-    None("None") {
+    None("None", "No column headers are exported; only data values are exported.") {
         @Override
         public String getText(DisplayColumn dc)
         {
@@ -40,7 +40,7 @@ public enum ColumnHeaderType
         }
     },
 
-    Caption("Caption (grid captions)") {
+    Caption("Caption", "The column titles as currently displayed on the grid.") {
         @Override
         public String getText(DisplayColumn dc)
         {
@@ -50,7 +50,7 @@ public enum ColumnHeaderType
 
     // The DisplayColumn name mangles special characters and removes spaces
     // making it almost worthless for export and import.
-    Name("Name (property name; Deprecated)") {
+    Name("Name", "Property name; Deprecated") {
         @Override
         public String getText(DisplayColumn dc)
         {
@@ -59,7 +59,7 @@ public enum ColumnHeaderType
     },
 
     // Use ColumnInfo name -- usually just the FieldKey -- and use "." for lookup separators without FieldKey escaping.
-    DisplayFieldKey("Display (friendly field name)") {
+    DisplayFieldKey("Field Name", "The friendly field name, for example 'Participant ID'.") {
         @Override
         public String getText(DisplayColumn dc)
         {
@@ -82,7 +82,7 @@ public enum ColumnHeaderType
     },
 
     // Use the ColumnInfo's FieldKey with FieldKey escaping. Useful for import/export round-tripping, but can lead to ugly names.
-    FieldKey("Field Key (canonical field identifier)") {
+    FieldKey("Field Key", "The column name rendered with FieldKey encoding; unambiguous and canonical, useful for exporting and re-importing.") {
         @Override
         public String getText(DisplayColumn dc)
         {
@@ -106,10 +106,12 @@ public enum ColumnHeaderType
     };
 
     private String _optionText;
+    private String _description;
 
-    ColumnHeaderType(String optionText)
+    ColumnHeaderType(String optionText, String description)
     {
         _optionText = optionText;
+        _description = description;
     }
 
     protected FieldKey fixMissingValueIndicator(ColumnInfo columnInfo, FieldKey fieldKey)
@@ -127,6 +129,11 @@ public enum ColumnHeaderType
     public String getOptionText()
     {
         return _optionText;
+    }
+
+    public String getDescription()
+    {
+        return _description;
     }
 
     public abstract String getText(DisplayColumn dc);

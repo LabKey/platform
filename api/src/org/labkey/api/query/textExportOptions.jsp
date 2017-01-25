@@ -47,13 +47,23 @@
     quoteMap.put(TSVWriter.QUOTE.SINGLE.name(), "Single (" + TSVWriter.QUOTE.SINGLE.quoteChar + ")");
 
     Map<ColumnHeaderType, String> headerMap = new LinkedHashMap<>();
+    StringBuilder sb = new StringBuilder();
+
     headerMap.put(ColumnHeaderType.None, ColumnHeaderType.None.getOptionText());
+    sb.append("<span><span class='labkey-strong'>").append(ColumnHeaderType.None.getOptionText()).append("</span>:&nbsp;").append(ColumnHeaderType.None.getDescription()).append("</span><br>");
     headerMap.put(ColumnHeaderType.Caption, ColumnHeaderType.Caption.getOptionText());
-    // Don't include Name by default since Caption of DisplayFieldKey are better defaults
+    sb.append("<span><span class='labkey-strong'>").append(ColumnHeaderType.Caption.getOptionText()).append("</span>:&nbsp;").append(ColumnHeaderType.Caption.getDescription()).append("</span><br>");
+
+    // Don't include Name or DisplayFieldKey by default since Caption of DisplayFieldKey are better defaults
     if (model.getHeaderType() == ColumnHeaderType.Name)
+    {
         headerMap.put(ColumnHeaderType.Name, ColumnHeaderType.Name.getOptionText());
+        sb.append("<span><span class='labkey-strong'>").append(ColumnHeaderType.Name.getOptionText()).append("</span>:&nbsp;").append(ColumnHeaderType.Name.getDescription()).append("</span><br>");
+    }
     headerMap.put(ColumnHeaderType.DisplayFieldKey, ColumnHeaderType.DisplayFieldKey.getOptionText());
+    sb.append("<span><span class='labkey-strong'>").append(ColumnHeaderType.DisplayFieldKey.getOptionText()).append("</span>:&nbsp;").append(ColumnHeaderType.DisplayFieldKey.getDescription()).append("</span><br>");
     headerMap.put(ColumnHeaderType.FieldKey, ColumnHeaderType.FieldKey.getOptionText());
+    sb.append("<span><span class='labkey-strong'>").append(ColumnHeaderType.FieldKey.getOptionText()).append("</span>:&nbsp;").append(ColumnHeaderType.FieldKey.getDescription()).append("</span><br>");
 
     boolean hasSelected = model.hasSelected(getViewContext());
     String exportRegionName = model.getExportRegionName();
@@ -75,21 +85,15 @@
             </select>
         </td>
     </tr>
-    <% if (AppProps.getInstance().isExperimentalFeatureEnabled(QueryView.EXPERIMENTAL_EXPORT_COLUMN_HEADER_TYPE)) { %>
     <tr>
-        <td><label>Column headers:</label></td>
+        <td><label>Column headers:<%= PageFlowUtil.helpPopup("Column Header Options", sb.toString(), true) %></label></td>
         <td>
             <select id="<%=text(headerGUID)%>" name="headerType">
                 <labkey:options value="<%=model.getHeaderType()%>" map="<%=headerMap%>" />
             </select>
         </td>
     </tr>
-    <% } else { %>
-    <tr style="display:none"><td>
-    <input id="<%=text(headerGUID)%>" name="headerType" value="<%=h(model.getHeaderType().toString())%>">
-    </td></tr>
-    <% }
-    if (model.isSelectable()) { %>
+    <% if (model.isSelectable()) { %>
         <tr><td colspan="2"></td></tr>
         <tr>
             <td valign="center" colspan="2">

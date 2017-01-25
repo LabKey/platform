@@ -2110,25 +2110,17 @@ public class QueryView extends WebPartView<Object>
     }
 
 
-    @RefactorIn15_1 // Switch to using ColumnHeaderType.DisplayFieldKey instead of ColumnHeaderType.Name
     protected ColumnHeaderType getColumnHeaderType()
     {
         // Return the sort of column names that should be used in TSV export.
-        // Consider: maybe all query types should use "ColumnHeaderType.DisplayFieldKey".  That has
-        // dots separating foreign keys, but otherwise looks really nice.
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_EXPORT_COLUMN_HEADER_TYPE))
-            return ColumnHeaderType.DisplayFieldKey;
-        else
-            return ColumnHeaderType.Name;
+        // @RefactorIn15_1 Switch to using ColumnHeaderType.DisplayFieldKey instead of ColumnHeaderType.Name
+        return ColumnHeaderType.DisplayFieldKey;
     }
 
-    @RefactorIn15_1 // Remove this method and make default headers the same for tsv and excel.
     protected ColumnHeaderType getExcelColumnHeaderType()
     {
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_EXPORT_COLUMN_HEADER_TYPE))
-            return ColumnHeaderType.DisplayFieldKey;
-        else
-            return ColumnHeaderType.Caption;
+        // @RefactorIn15_1 Switch to using ColumnHeaderType.DisplayFieldKey instead of ColumnHeaderType.Caption
+        return ColumnHeaderType.DisplayFieldKey;
     }
 
     public TSVGridWriter getTsvWriter() throws IOException
