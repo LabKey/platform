@@ -203,19 +203,33 @@ LABKEY.vis.TimeChartHelper = new function() {
             throw "There must be at least one specified measure in the chartInfo config!";
 
         var xAes;
-        if (config.measures[0].time == "date")
-            xAes = function(row) { return (row[intervalKey] ? row[intervalKey].value : null); };
-        else
-            xAes = function(row) { return visitMap[row[intervalKey].value].displayOrder; };
+        if (config.measures[0].time == "date") {
+            xAes = function(row) {
+                return _getRowValue(row, intervalKey);
+            };
+        }
+        else {
+            xAes = function(row) {
+                return visitMap[row.getValue(intervalKey)].displayOrder;
+            };
+        }
 
         var individualSubjectColumn = individualColumnAliases ? LABKEY.vis.getColumnAlias(individualColumnAliases, nounColumnName) : null;
 
         return {
             x: xAes,
-            color: function(row) { return (row[individualSubjectColumn] ? row[individualSubjectColumn].value : null); },
-            group: function(row) { return (row[individualSubjectColumn] ? row[individualSubjectColumn].value : null); },
-            shape: function(row) { return (row[individualSubjectColumn] ? row[individualSubjectColumn].value : null); },
-            pathColor: function(rows) { return (rows[0][individualSubjectColumn] ? rows[0][individualSubjectColumn].value : null); }
+            color: function(row) {
+                return _getRowValue(row, individualSubjectColumn);
+            },
+            group: function(row) {
+                return _getRowValue(row, individualSubjectColumn);
+            },
+            shape: function(row) {
+                return _getRowValue(row, individualSubjectColumn);
+            },
+            pathColor: function(rows) {
+                return Ext4.isArray(rows) && rows.length > 0 ? _getRowValue(rows[0], individualSubjectColumn) : null;
+            }
         };
     };
 
@@ -248,17 +262,29 @@ LABKEY.vis.TimeChartHelper = new function() {
         var generateLayerAes = function(name, yAxisSide, columnName){
             var yName = yAxisSide == "left" ? "yLeft" : "yRight";
             var aes = {};
-            aes[yName] = function(row){return (row[columnName] ? parseFloat(row[columnName].value) : null)}; // Have to parseFloat because for some reason ObsCon from Luminex was returning strings not floats/ints.
+            aes[yName] = function(row) {
+                // Have to parseFloat because for some reason ObsCon from Luminex was returning strings not floats/ints.
+                return row[columnName] ? parseFloat(_getRowValue(row, columnName)) : null;
+            };
             return aes;
         };
 
         var generateAggregateLayerAes = function(name, yAxisSide, columnName, intervalKey, subjectColumn, errorColumn){
             var yName = yAxisSide == "left" ? "yLeft" : "yRight";
             var aes = {};
-            aes[yName] = function(row){return (row[columnName] ? parseFloat(row[columnName].value) : null)}; // Have to parseFloat because for some reason ObsCon from Luminex was returning strings not floats/ints.
-            aes.group = aes.color = aes.shape = function(row){return row[subjectColumn].displayValue};
-            aes.pathColor = function(rows){return rows[0][subjectColumn].displayValue};
-            aes.error = function(row){return (row[errorColumn] ? row[errorColumn].value : null)};
+            aes[yName] = function(row) {
+                // Have to parseFloat because for some reason ObsCon from Luminex was returning strings not floats/ints.
+                return row[columnName] ? parseFloat(_getRowValue(row, columnName)) : null;
+            };
+            aes.group = aes.color = aes.shape = function(row) {
+                return _getRowValue(row, subjectColumn);
+            };
+            aes.pathColor = function(rows) {
+                return Ext4.isArray(rows) && rows.length > 0 ? _getRowValue(rows[0], subjectColumn) : null;
+            };
+            aes.error = function(row) {
+                return _getRowValue(row, errorColumn);
+            };
             return aes;
         };
 
@@ -268,17 +294,19 @@ LABKEY.vis.TimeChartHelper = new function() {
                 if (errorColumn)
                 {
                     return function(row){
-                        var subject = row[subjectColumn].displayValue ? row[subjectColumn].displayValue : row[subjectColumn].value;
-                        var errorVal = row[errorColumn].value ? row[errorColumn].value : 'n/a';
-                        return ' ' + subject + ',\n '+ visitMap[row[intervalKey].value].displayName + ',\n ' + name + ': ' + row[columnName].value +
+                        var subject = _getRowValue(row, subjectColumn);
+                        var errorVal = _getRowValue(row, errorColumn) || 'n/a';
+                        return ' ' + subject + ',\n '+ visitMap[row.getValue(intervalKey)].displayName +
+                                ',\n ' + name + ': ' + _getRowValue(row, columnName) +
                                 ',\n ' + errorType + ': ' + errorVal;
                     }
                 }
                 else
                 {
                     return function(row){
-                        var subject = row[subjectColumn].displayValue ? row[subjectColumn].displayValue : row[subjectColumn].value;
-                        return ' ' + subject + ',\n '+ visitMap[row[intervalKey].value].displayName + ',\n ' + name + ': ' + row[columnName].value;
+                        var subject = _getRowValue(row, subjectColumn);
+                        return ' ' + subject + ',\n '+ visitMap[row.getValue(intervalKey)].displayName +
+                                ',\n ' + name + ': ' + _getRowValue(row, columnName);
                     };
                 }
             }
@@ -287,17 +315,19 @@ LABKEY.vis.TimeChartHelper = new function() {
                 if (errorColumn)
                 {
                     return function(row){
-                        var subject = row[subjectColumn].displayValue ? row[subjectColumn].displayValue : row[subjectColumn].value;
-                        var errorVal = row[errorColumn].value ? row[errorColumn].value : 'n/a';
-                        return ' ' + subject + ',\n ' + intervalKey + ': ' + row[intervalKey].value + ',\n ' + name + ': ' + row[columnName].value +
+                        var subject = _getRowValue(row, subjectColumn);
+                        var errorVal = _getRowValue(row, errorColumn) || 'n/a';
+                        return ' ' + subject + ',\n ' + intervalKey + ': ' + _getRowValue(row, intervalKey) +
+                                ',\n ' + name + ': ' + _getRowValue(row, columnName) +
                                 ',\n ' + errorType + ': ' + errorVal;
                     };
                 }
                 else
                 {
                     return function(row){
-                        var subject = row[subjectColumn].displayValue ? row[subjectColumn].displayValue : row[subjectColumn].value;
-                        return ' ' + subject + ',\n ' + intervalKey + ': ' + row[intervalKey].value + ',\n ' + name + ': ' + row[columnName].value;
+                        var subject = _getRowValue(row, subjectColumn);
+                        return ' ' + subject + ',\n ' + intervalKey + ': ' + _getRowValue(row, intervalKey) +
+                                ',\n ' + name + ': ' + _getRowValue(row, columnName);
                     };
                 }
             }
@@ -554,10 +584,17 @@ LABKEY.vis.TimeChartHelper = new function() {
         if (!data.individual && !data.aggregate)
             throw "We expect to either be displaying individual series lines or aggregate data!";
 
-        var rows = data.individual ? data.individual.rows : (data.aggregate ? data.aggregate.rows : []);
+        var rows = [];
+        if (Ext4.isDefined(data.individual)) {
+            rows = data.individual.measureStore.records();
+        }
+        else if (Ext4.isDefined(data.aggregate)) {
+            rows = data.aggregate.measureStore.records();
+        }
+
         config.hasNoData = rows.length == 0;
 
-        // In multi-chart case, we need to precompute the default axis ranges so that all charts share them
+        // In multi-chart case, we need to pre-compute the default axis ranges so that all charts share them
         // (if 'automatic across charts' is selected for the given axis)
         if (config.chartLayout != "single")
         {
@@ -585,7 +622,7 @@ LABKEY.vis.TimeChartHelper = new function() {
             {
                 xName = config.measures[0].dateOptions.interval;
                 xFunc = function(row){
-                    return row[xName].value;
+                    return _getRowValue(row, xName);
                 };
             }
             else
@@ -593,16 +630,16 @@ LABKEY.vis.TimeChartHelper = new function() {
                 var visitMap = data.individual ? data.individual.visitMap : data.aggregate.visitMap;
                 xName = LABKEY.vis.getColumnAlias(columnAliases, nounSingular + "Visit/Visit");
                 xFunc = function(row){
-                    return visitMap[row[xName].value].displayOrder;
+                    return visitMap[row.getValue(xName)].displayOrder;
                 };
             }
 
             if (config.axis[xAxisIndex].range.type != 'automatic_per_chart')
             {
-                if (!config.axis[xAxisIndex].range.min)
+                if (config.axis[xAxisIndex].range.min == null)
                     config.axis[xAxisIndex].range.min = d3.min(rows, xFunc);
 
-                if (!config.axis[xAxisIndex].range.max)
+                if (config.axis[xAxisIndex].range.max == null)
                     config.axis[xAxisIndex].range.max = d3.max(rows, xFunc);
             }
 
@@ -614,27 +651,27 @@ LABKEY.vis.TimeChartHelper = new function() {
                 // If we have a left axis then we need to find the min/max
                 min = null; max = null; tempMin = null; tempMax = null;
                 leftAccessor = function(row) {
-                    return (row[leftMeasures[i]] ? row[leftMeasures[i]].value : null);
+                    return _getRowValue(row, leftMeasures[i]);
                 };
 
                 if (errorBarType)
                 {
                     // If we have error bars we need to calculate min/max with the error values in mind.
-                    leftAccessorMin = function(row){
-                        if (row[leftMeasures[i] + errorBarType])
+                    leftAccessorMin = function(row) {
+                        if (row.hasOwnProperty(leftMeasures[i] + errorBarType))
                         {
-                            var error = row[leftMeasures[i] + errorBarType].value;
-                            return row[leftMeasures[i]].value - error;
+                            var error = _getRowValue(row, leftMeasures[i] + errorBarType);
+                            return _getRowValue(row, leftMeasures[i]) - error;
                         }
                         else
                             return null;
                     };
 
-                    leftAccessorMax = function(row){
-                        if (row[leftMeasures[i] + errorBarType])
+                    leftAccessorMax = function(row) {
+                        if (row.hasOwnProperty(leftMeasures[i] + errorBarType))
                         {
-                            var error = row[leftMeasures[i] + errorBarType].value;
-                            return row[leftMeasures[i]].value + error;
+                            var error = _getRowValue(row, leftMeasures[i] + errorBarType);
+                            return _getRowValue(row, leftMeasures[i]) + error;
                         }
                         else
                             return null;
@@ -643,7 +680,7 @@ LABKEY.vis.TimeChartHelper = new function() {
 
                 if (config.axis[leftAxisIndex].range.type != 'automatic_per_chart')
                 {
-                    if (!config.axis[leftAxisIndex].range.min)
+                    if (config.axis[leftAxisIndex].range.min == null)
                     {
                         for (var i = 0; i < leftMeasures.length; i++)
                         {
@@ -653,7 +690,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                         config.axis[leftAxisIndex].range.min = min;
                     }
 
-                    if (!config.axis[leftAxisIndex].range.max)
+                    if (config.axis[leftAxisIndex].range.max == null)
                     {
                         for (var i = 0; i < leftMeasures.length; i++)
                         {
@@ -670,26 +707,26 @@ LABKEY.vis.TimeChartHelper = new function() {
                 // If we have a right axis then we need to find the min/max
                 min = null; max = null; tempMin = null; tempMax = null;
                 rightAccessor = function(row){
-                    return row[rightMeasures[i]].value
+                    return _getRowValue(row, rightMeasures[i]);
                 };
 
                 if (errorBarType)
                 {
-                    rightAccessorMin = function(row){
-                        if (row[rightMeasures[i] + errorBarType])
+                    rightAccessorMin = function(row) {
+                        if (row.hasOwnProperty(rightMeasures[i] + errorBarType))
                         {
-                            var error = row[rightMeasures[i] + errorBarType].value;
-                            return row[rightMeasures[i]].value - error;
+                            var error = _getRowValue(row, rightMeasures[i] + errorBarType);
+                            return _getRowValue(row, rightMeasures[i]) - error;
                         }
                         else
                             return null;
                     };
 
-                    rightAccessorMax = function(row){
-                        if (row[rightMeasures[i] + errorBarType])
+                    rightAccessorMax = function(row) {
+                        if (row.hasOwnProperty(rightMeasures[i] + errorBarType))
                         {
-                            var error = row[rightMeasures[i] + errorBarType].value;
-                            return row[rightMeasures[i]].value + error;
+                            var error = _getRowValue(row, rightMeasures[i] + errorBarType);
+                            return _getRowValue(row, rightMeasures[i]) + error;
                         }
                         else
                             return null;
@@ -698,7 +735,7 @@ LABKEY.vis.TimeChartHelper = new function() {
 
                 if (config.axis[rightAxisIndex].range.type != 'automatic_per_chart')
                 {
-                    if (!config.axis[rightAxisIndex].range.min)
+                    if (config.axis[rightAxisIndex].range.min == null)
                     {
                         for (var i = 0; i < rightMeasures.length; i++)
                         {
@@ -708,7 +745,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                         config.axis[rightAxisIndex].range.min = min;
                     }
 
-                    if (!config.axis[rightAxisIndex].range.max)
+                    if (config.axis[rightAxisIndex].range.max == null)
                     {
                         for (var i = 0; i < rightMeasures.length; i++)
                         {
@@ -747,7 +784,7 @@ LABKEY.vis.TimeChartHelper = new function() {
 
             for (var i = 0; i < rows.length; i++)
             {
-                var rowSubject = rows[i][subjectColumn].value;
+                var rowSubject = _getRowValue(rows[i], subjectColumn);
                 for (var j = 0; j < groups.length; j++)
                 {
                     if (groups[j].participantIds.indexOf(rowSubject) > -1)
@@ -766,7 +803,11 @@ LABKEY.vis.TimeChartHelper = new function() {
         // four options: all series on one chart, one chart per subject, one chart per group, or one chart per measure/dimension
         if (config.chartLayout == "per_subject")
         {
-            var dataPerParticipant = getDataWithSeriesCheck(data.individual.rows, function(row){return row[subjectColumnName].value}, seriesList, data.individual.columnAliases);
+            var groupAccessor = function(row) {
+                return _getRowValue(row, subjectColumnName);
+            };
+
+            var dataPerParticipant = getDataWithSeriesCheck(data.individual.measureStore.records(), groupAccessor, seriesList, data.individual.columnAliases);
             for (var participant in dataPerParticipant)
             {
                 if (dataPerParticipant.hasOwnProperty(participant))
@@ -793,12 +834,18 @@ LABKEY.vis.TimeChartHelper = new function() {
             var groupedIndividualData = null, groupedAggregateData = null;
 
             //Display individual lines
-            if (data.individual)
-                groupedIndividualData = generateGroupSeries(data.individual.rows, config.subject.groups, subjectColumnName);
+            if (data.individual) {
+                groupedIndividualData = generateGroupSeries(data.individual.measureStore.records(), config.subject.groups, subjectColumnName);
+            }
 
             // Display aggregate lines
-            if (data.aggregate)
-                groupedAggregateData = getDataWithSeriesCheck(data.aggregate.rows, function(row){return row.UniqueId.displayValue}, seriesList, data.aggregate.columnAliases);
+            if (data.aggregate) {
+                var groupAccessor = function(row) {
+                    return _getRowValue(row, 'UniqueId');
+                };
+
+                groupedAggregateData = getDataWithSeriesCheck(data.aggregate.measureStore.records(), groupAccessor, seriesList, data.aggregate.columnAliases);
+            }
 
             for (var i = 0; i < (config.subject.groups.length > maxCharts ? maxCharts : config.subject.groups.length); i++)
             {
@@ -839,8 +886,8 @@ LABKEY.vis.TimeChartHelper = new function() {
                     title: config.title ? config.title : seriesList[i].label,
                     subtitle: config.title ? seriesList[i].label : undefined,
                     series: [seriesList[i]],
-                    individualData: data.individual ? data.individual.rows : null,
-                    aggregateData: data.aggregate ? data.aggregate.rows : null,
+                    individualData: data.individual ? data.individual.measureStore.records() : null,
+                    aggregateData: data.aggregate ? data.aggregate.measureStore.records() : null,
                     applyClipRect: applyClipRect
                 });
 
@@ -854,8 +901,8 @@ LABKEY.vis.TimeChartHelper = new function() {
             plotConfigInfoArr.push({
                 title: config.title,
                 series: seriesList,
-                individualData: data.individual ? data.individual.rows : null,
-                aggregateData: data.aggregate ? data.aggregate.rows : null,
+                individualData: data.individual ? data.individual.measureStore.records() : null,
+                aggregateData: data.aggregate ? data.aggregate.measureStore.records() : null,
                 height: 610,
                 style: null,
                 applyClipRect: applyClipRect
@@ -884,7 +931,7 @@ LABKEY.vis.TimeChartHelper = new function() {
             for (var j = 0; j < seriesList.length; j++)
             {
                 var seriesAlias = LABKEY.vis.getColumnAlias(columnAliases, seriesList[j].aliasLookupInfo);
-                if (seriesAlias && data[i][seriesAlias] && data[i][seriesAlias].value)
+                if (seriesAlias && _getRowValue(data[i], seriesAlias) != null)
                 {
                     groupedData[value].hasSeriesData = true;
                     break;
@@ -950,26 +997,12 @@ LABKEY.vis.TimeChartHelper = new function() {
         var isDateBased = config.chartInfo.measures[0].time == "date";
         var seriesList = generateSeriesList(config.chartInfo.measures);
 
-        // Issue 16156: for date based charts, give error message if there are no calculated interval values
-        chartData.hasIntervalData = !isDateBased;
-        var checkForIntervalValues = function(row) {
-            if (isDateBased)
-            {
-                var intervalAlias = config.chartInfo.measures[0].dateOptions.interval;
-                if (row[intervalAlias] && row[intervalAlias].value != null)
-                    chartData.hasIntervalData = true;
-            }
-        };
-
+        // get the visit map info for those visits in the response data
         var trimVisitMapDomain = function(origVisitMap, visitsInDataArr) {
-            // get the visit map info for those visits in the response data
             var trimmedVisits = [];
-            for (var v in origVisitMap)
-            {
-                if (origVisitMap.hasOwnProperty(v))
-                {
-                    if (visitsInDataArr.indexOf(v) != -1)
-                    {
+            for (var v in origVisitMap) {
+                if (origVisitMap.hasOwnProperty(v)) {
+                    if (visitsInDataArr.indexOf(parseInt(v)) != -1) {
                         trimmedVisits.push(Ext4.apply({id: v}, origVisitMap[v]));
                     }
                 }
@@ -994,41 +1027,38 @@ LABKEY.vis.TimeChartHelper = new function() {
                 return;
             }
 
+            // Issue 16156: for date based charts, give error message if there are no calculated interval values
+            if (isDateBased) {
+                var intervalAlias = config.chartInfo.measures[0].dateOptions.interval;
+                var uniqueNonNullValues = Ext4.Array.clean(response.measureStore.members(intervalAlias));
+                chartData.hasIntervalData = uniqueNonNullValues.length > 0;
+            }
+            else {
+                chartData.hasIntervalData = true;
+            }
+
             // make sure each measure/dimension has at least some data, and get a list of which visits are in the data response
             // also keep track of which measure/dimensions have negative values (for log scale)
-            var visitsInData = [];
             response.hasData = {};
             response.hasNegativeValues = {};
             Ext4.each(seriesList, function(s) {
-                response.hasData[s.name] = false;
-                response.hasNegativeValues[s.name] = false;
-                for (var i = 0; i < response.rows.length; i++)
-                {
-                    var row = response.rows[i];
-                    var alias = LABKEY.vis.getColumnAlias(response.columnAliases, s.aliasLookupInfo);
-                    if (row[alias] && row[alias].value != null)
-                    {
-                        response.hasData[s.name] = true;
+                var alias = LABKEY.vis.getColumnAlias(response.columnAliases, s.aliasLookupInfo);
+                var uniqueNonNullValues = Ext4.Array.clean(response.measureStore.members(alias));
 
-                        if (row[alias].value < 0)
-                            response.hasNegativeValues[s.name] = true;
-                    }
-
-                    var nounSingular = config.nounSingular || getStudySubjectInfo().nounSingular;
-                    var visitMappedName = LABKEY.vis.getColumnAlias(response.columnAliases, nounSingular + "Visit/Visit");
-                    if (!isDateBased && row[visitMappedName])
-                    {
-                        var visitVal = row[visitMappedName].value;
-                        if (visitsInData.indexOf(visitVal) == -1)
-                            visitsInData.push(visitVal.toString());
-                    }
-
-                    checkForIntervalValues(row);
-                }
+                response.hasData[s.name] = uniqueNonNullValues.length > 0;
+                response.hasNegativeValues[s.name] = Ext4.Array.min(uniqueNonNullValues) < 0;
             });
 
             // trim the visit map domain to just those visits in the response data
-            response.visitMap = trimVisitMapDomain(response.visitMap, visitsInData);
+            if (!isDateBased) {
+                var nounSingular = config.nounSingular || getStudySubjectInfo().nounSingular;
+                var visitMappedName = LABKEY.vis.getColumnAlias(response.columnAliases, nounSingular + "Visit/Visit");
+                var visitsInData = response.measureStore.members(visitMappedName);
+                response.visitMap = trimVisitMapDomain(response.visitMap, visitsInData);
+            }
+            else {
+                response.visitMap = {};
+            }
 
             chartData[dataType] = response;
 
@@ -1065,15 +1095,14 @@ LABKEY.vis.TimeChartHelper = new function() {
         var queryTempResultsForRows = function(response, dataType)
         {
             // Issue 28529: re-query for the actual data off of the temp query results
-            LABKEY.Query.selectRows({
+            LABKEY.Query.experimental.MeasureStore.selectRows({
                 containerPath: config.containerPath,
                 schemaName: response.schemaName,
                 queryName: response.queryName,
-                requiredVersion: '9.1',
+                requiredVersion : 13.2,
                 sort: getSelectRowsSort(response, dataType),
-                success: function(tempQueryData)
-                {
-                    response.rows = tempQueryData.rows;
+                success: function(measureStore) {
+                    response.measureStore = measureStore;
                     successCallback(response, dataType);
                 }
             });
@@ -1302,8 +1331,9 @@ LABKEY.vis.TimeChartHelper = new function() {
             noDataCounter = 0;
 
         // warn the user if the data limit has been reached
-        if ((data.individual && data.individual.rows.length == limit) || (data.aggregate && data.aggregate.rows.length == limit))
-        {
+        var individualDataCount = Ext4.isDefined(data.individual) ? data.individual.measureStore.records().length : null;
+        var aggregateDataCount = Ext4.isDefined(data.aggregate) ? data.aggregate.measureStore.records().length : null;
+        if (individualDataCount == limit || aggregateDataCount == limit) {
             message += sep + "The data limit for plotting has been reached. Consider filtering your data.";
             sep = "<br/>";
         }
@@ -1489,6 +1519,19 @@ LABKEY.vis.TimeChartHelper = new function() {
     var getDistinctYAxisSides = function(measures)
     {
         return Ext4.Array.unique(Ext4.Array.pluck(measures, 'yAxis'));
+    };
+
+    var _getRowValue = function(row, propName)
+    {
+        if (row.hasOwnProperty(propName)) {
+            if (row.get(propName).hasOwnProperty('displayValue')) {
+                return row.get(propName).displayValue;
+            }
+
+            return row.getValue(propName);
+        }
+
+        return undefined;
     };
 
     return {
