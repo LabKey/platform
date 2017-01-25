@@ -69,11 +69,14 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "               Ext4.Object.merge(chartConfig.measures, valueConversionResponse.processed);\n"+
             "               aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, responseMetaData.schemaName, responseMetaData.queryName);\n"+
             "        }\n"+
+            "        var data = measureStore.records();\n" +
+            "        if (chartType == 'scatter_plot' && data.length > chartConfig.geomOptions.binThreshold) {\n"+
+            "               chartConfig.geomOptions.binned = true;\n"+
+            "        }\n"+
             "        var scales = LABKEY.vis.GenericChartHelper.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, measureStore);\n" +
             "        var geom = LABKEY.vis.GenericChartHelper.generateGeom(chartType, chartConfig.geomOptions);\n" +
             "        var labels = LABKEY.vis.GenericChartHelper.generateLabels(chartConfig.labels);\n" +
             "\n" +
-            "        var data = measureStore.records();\n" +
             "        if (chartType == 'bar_chart' || chartType == 'pie_chart') {\n" +
             "            var dimName = null, subDimName = null; measureName = null;\n"+
             "            if (chartConfig.measures.x) {\n" +
