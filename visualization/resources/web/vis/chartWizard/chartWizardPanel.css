@@ -121,11 +121,13 @@
 .chart-type-panel .field-selections .field-selection-display .field-selection-subtext .unselected {
     opacity: 0.3;
 }
-.chart-type-panel .field-selections .field-selection-display .field-selection-subtext .unselected:hover {
+.chart-type-panel .field-selections .field-selection-display .field-selection-subtext .unselected:hover,
+.chart-type-panel .field-selections .field-selection-display .field-selection-subtext .x4-form-item-label {
     opacity: 1;
     color: #404040;
 }
-.chart-type-panel .field-selections .field-selection-display.x4-item-selected .field-selection-subtext {
+.chart-type-panel .field-selections .field-selection-display.x4-item-selected .field-selection-subtext,
+.chart-type-panel .field-selections .field-selection-display .always-show {
     display: block;
 }
 .chart-type-panel .field-selections .field-selection-display .field-selection-remove {

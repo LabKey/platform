@@ -628,6 +628,12 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 newYAxisSides = this.getFieldValueKeys(newValues.fields, 'yAxis');
             if (!Ext4.Array.equals(initYAxisSides, newYAxisSides))
                 return true;
+
+            // see if any of the aggregate methods have changed
+            var initAggregates = this.getFieldValueKeys(this.initValues.fields, 'aggregate'),
+                    newAggregates = this.getFieldValueKeys(newValues.fields, 'aggregate');
+            if (!Ext4.Array.equals(initAggregates, newAggregates))
+                return true;
         }
 
         return false;
@@ -1045,6 +1051,10 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
                                     rightSide = '<i class="fa fa-arrow-circle-right ' + (values.yAxis != 'right' ? 'unselected' : '') + '"></i>';
                                 label += '<div class="field-selection-subtext">Y Axis Side: ' + leftSide + ' ' + rightSide + '</div>';
                             }
+                            else if (chartTypeName == 'bar_chart' && fieldName == 'y')
+                            {
+                                label += '<div class="field-selection-subtext always-show"><span class="aggregate-method"></span></div>';
+                            }
 
                             return label;
                         },
@@ -1101,10 +1111,55 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
 
                 // 'SIMPLE' mode allows for single click select and deselect
                 this.fieldAreaCmp.getSelectionModel().setSelectionMode('SIMPLE');
+
+                this.fieldAreaCmp.on('refresh', this.attachAggregateMethodCombo, this);
             }
         }
 
         return this.fieldAreaCmp;
+    },
+
+    attachAggregateMethodCombo : function(view) {
+        var aggMethodEls = Ext4.DomQuery.select('span.aggregate-method', view.getEl().dom);
+        if (aggMethodEls.length == 1) {
+            Ext4.create('Ext.form.field.ComboBox', {
+                renderTo: aggMethodEls[0],
+                width: 225,
+                labelWidth: 135,
+                fieldLabel: 'Aggregate Method',
+                queryMode: 'local',
+                displayField: 'name',
+                valueField: 'value',
+                editable: false,
+                value: 'SUM',
+                store: Ext4.create('Ext.data.Store', {
+                    fields: ['name', 'value'],
+                    data: [
+                        {name: 'Count', value: 'COUNT'},
+                        {name: 'Sum', value: 'SUM'},
+                        {name: 'Min', value: 'MIN'},
+                        {name: 'Max', value: 'MAX'},
+                        {name: 'Mean', value: 'MEAN'},
+                        {name: 'Median', value: 'MEDIAN'}
+                    ]
+                }),
+                listeners: {
+                    scope: this,
+                    change: function(combo, newValue, oldValue) {
+                        this.selection.aggregate = newValue;
+                        var labelEls = Ext4.DomQuery.select('div.field-selection-text', view.getEl().dom);
+                        if (labelEls.length > 0)
+                        {
+                            var aggLabelEl = labelEls[0];
+                            aggLabelEl.innerText = combo.rawValue + ' of ' + this.selection.label;
+                        }
+                    },
+                    render: function(){
+                        this.doLayout(); // needed for resetting the field panel height
+                    }
+                }
+            });
+        }
     },
 
     getFieldAreaDropText : function()
@@ -1348,7 +1403,8 @@ Ext4.define('LABKEY.vis.QueryColumnModel',{
 
             return record.data.type;
         }},
-        {name: 'yAxis', defaultValue: undefined}
+        {name: 'yAxis', defaultValue: undefined},
+        {name: 'aggregate', defaultValue: undefined}
     ]
 });
 
