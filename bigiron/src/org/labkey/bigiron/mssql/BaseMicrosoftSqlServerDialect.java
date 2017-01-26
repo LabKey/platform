@@ -1479,8 +1479,14 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                             nameTrigger(change.getTableName(), new String[]{columnName})));
 
                     statements.add(String.format("IF EXISTS (SELECT 1 FROM sys.indexes i WHERE i.name = '%s') DROP INDEX %s ON %s",
-                            nameIndex(change.getTableName(), index.columnNames, false),
-                            nameIndex(change.getTableName(), index.columnNames, false),
+                            nameIndex,
+                            nameIndex,
+                            tableName
+                    ));
+
+                    statements.add(String.format("IF EXISTS (SELECT 1 FROM sys.indexes i where i.name = '%s') DROP INDEX %s ON %s",
+                            nameIndexLegacy,
+                            nameIndexLegacy,
                             tableName
                     ));
 
