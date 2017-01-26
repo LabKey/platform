@@ -44,18 +44,8 @@ public class TempTableWriter
         _loader = loader;
     }
 
-    // TODO: Use streaming DataIterator instead of Loader.load() to support larger files.  Would need to infer varchar column widths via
-    // first n rows approach (and potentially check and ALTER if we find a larger width later)
-    public TempTableInfo loadTempTable() throws IOException, SQLException
+    private List<ColumnInfo> generateColumns() throws IOException
     {
-        //
-        // Load the file
-        //
-        List<Map<String, Object>> maps = _loader.load();
-
-        //
-        // create TableInfo
-        //
         ColumnDescriptor[] allColumns = _loader.getColumns();
         List<ColumnInfo> activeColumns = new ArrayList<>();
 
@@ -70,6 +60,29 @@ public class TempTableWriter
                 activeColumns.add(colTT);
             }
         }
+
+        return activeColumns;
+    }
+
+    // TODO: Use streaming DataIterator instead of Loader.load() to support larger files.  Would need to infer varchar column widths via
+    // first n rows approach (and potentially check and ALTER if we find a larger width later)
+    public TempTableInfo loadTempTable() throws IOException, SQLException
+    {
+        return loadTempTable(null);
+    }
+
+    public TempTableInfo loadTempTable(List<ColumnInfo> activeColumns) throws IOException, SQLException
+    {
+        //
+        // Load the file
+        //
+        List<Map<String, Object>> maps = _loader.load();
+
+        //
+        // create TableInfo
+        //
+        if (activeColumns == null)
+            activeColumns = generateColumns();
 
         // note: this call sets col.parentTable()
         TempTableInfo tinfoTempTable = new TempTableInfo("ttw", activeColumns, null);
