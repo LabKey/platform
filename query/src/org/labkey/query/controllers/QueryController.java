@@ -1058,7 +1058,7 @@ public class QueryController extends SpringActionController
                 errors.reject(ERROR_MSG, "An exception occurred: " + e);
                 LOG.error("Error", e);
             }
-            catch (RuntimeSQLException e)
+            catch (RuntimeException e)
             {
                 errors.reject(ERROR_MSG, "An exception occurred: " + e.getMessage());
                 LOG.error("Error", e);
