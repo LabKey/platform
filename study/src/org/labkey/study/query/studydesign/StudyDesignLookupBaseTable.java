@@ -158,7 +158,7 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // These are editable in Dataspace, but not in a folder within a Dataspace
-        if (getContainer().getProject().isDataspace() && !getContainer().isDataspace())
+        if (null == getContainer() || null == getContainer().getProject() || (getContainer().getProject().isDataspace() && !getContainer().isDataspace()))
             return false;
         return hasPermissionOverridable(user, perm);
     }
