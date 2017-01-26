@@ -1405,7 +1405,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 measureName = chartConfig.measures.y.converted ? chartConfig.measures.y.convertedName : chartConfig.measures.y.name;
             }
 
-            var aggType = chartConfig.measures.y.aggregate ? chartConfig.measures.y.aggregate : 'SUM';
+            var aggType = chartConfig.measures.y && chartConfig.measures.y.aggregate ? chartConfig.measures.y.aggregate : 'COUNT';
             data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]');
         }
 
