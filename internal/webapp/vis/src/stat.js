@@ -79,8 +79,7 @@ LABKEY.vis.Stat.Q2 = function(numbers){
 /**
  * An alias for {@link LABKEY.vis.Stat.Q2}
  */
-LABKEY.vis.Stat.median = LABKEY.vis.Stat.Q2;
-
+LABKEY.vis.Stat.MEDIAN = LABKEY.vis.Stat.Q2;
 
 /**
  * Returns the 3rd quartile for a sorted (asc) array.
@@ -191,6 +190,11 @@ LABKEY.vis.Stat.getMean = function(values)
         throw "invalid input";
     return values.map(function(x,i,arr){return x/arr.length}).reduce(function(a,b){return a + b});
 };
+
+/**
+ * An alias for LABKEY.vis.Stat.getMean
+ */
+LABKEY.vis.Stat.MEAN = LABKEY.vis.Stat.getMean;
 
 /**
  * Returns the standard deviation.
