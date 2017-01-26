@@ -40,8 +40,6 @@
 {
     var CONCAT_STRING = '|\uFFFF|';
 
-    LABKEY.Query.experimental = LABKEY.Query.experimental || {};
-
     var sortValues = function(values)
     {
         if (1 < values.length)
@@ -485,7 +483,7 @@
     };
 
 
-    LABKEY.Query.experimental.MeasureStore = new (function()
+    LABKEY.Query.MeasureStore = new (function()
     {
         function reduceInit(columns)
         {
@@ -1334,7 +1332,7 @@
      *
      * AxisMeasureStore can be used to make all these cases look the same.
      */
-    LABKEY.Query.experimental.AxisMeasureStore = new (function()
+    LABKEY.Query.AxisMeasureStore = new (function()
     {
         var AxisMeasureStore = function()
         {
