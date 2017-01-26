@@ -126,16 +126,16 @@ public abstract class SpringModule extends DefaultModule
     protected abstract void startupAfterSpringConfig(ModuleContext moduleContext);
 
     /**
-     * A module may define a pipeline configuration file in /WEB-INF/[module-name]Context.xml.
+     * A module may define a pipeline configuration file in the deployed webapp at /WEB-INF/[lower_case_module_name]Context.xml.
      * Context may be overridden outside the the module after installation, by specifying a path to
      * the configuration files in the <code>ServletContext</code> parameter
      * <code>INIT_PARAMETER_CONFIG_PATH</code>.
      * <p/>
-     * Module context files must be placed in:<br/>
-     * /WEB-INF/&lt;module name>/&lt;module name>Context.xml.
+     * Module context files must be placed in the source tree:<br/>
+     * /WEB-INF/[lower_case_module_name]/[lower_case_module_name]Context.xml.
      * <p/>
      * Post-installation config files must be placed in:<br/>
-     * &lt;CONFIG_PATH>/&lt;module name>/&lt;module name>Config.xml
+     * [CONFIG_PATH]/[lower_case_module_name]/[lower_case_module_name]Config.xml
      * <p/>
      * By specifying beans in the config XML of the same ID as those in the
      * module's context XML, Spring will use the external versions over those
