@@ -702,6 +702,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             queryLabel  : this.queryLabel,
             parameters  : this.parameters,
             requiredVersion : 13.2,
+            maxRows: -1,
             method: 'POST'
         };
 
@@ -1908,7 +1909,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.setDataLoading(true);
 
         var config = this.getQueryConfig();
-        LABKEY.Query.experimental.MeasureStore.selectRows(config);
+        LABKEY.Query.MeasureStore.selectRows(config);
 
         this.requestRender();
     },

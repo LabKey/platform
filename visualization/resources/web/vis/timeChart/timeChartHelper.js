@@ -1095,11 +1095,12 @@ LABKEY.vis.TimeChartHelper = new function() {
         var queryTempResultsForRows = function(response, dataType)
         {
             // Issue 28529: re-query for the actual data off of the temp query results
-            LABKEY.Query.experimental.MeasureStore.selectRows({
+            LABKEY.Query.MeasureStore.selectRows({
                 containerPath: config.containerPath,
                 schemaName: response.schemaName,
                 queryName: response.queryName,
                 requiredVersion : 13.2,
+                maxRows: -1,
                 sort: getSelectRowsSort(response, dataType),
                 success: function(measureStore) {
                     response.measureStore = measureStore;

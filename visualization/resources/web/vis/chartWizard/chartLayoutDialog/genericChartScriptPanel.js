@@ -127,7 +127,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "\n" +
             "        queryConfig.success = selectRowsCallback;\n" +
             "        queryConfig.containerPath = \"{{containerPath}}\";\n" +
-            "        LABKEY.Query.experimental.MeasureStore.selectRows(queryConfig);\n" +
+            "        LABKEY.Query.MeasureStore.selectRows(queryConfig);\n" +
             "    };\n" +
             "\n" +
             "   // Load the script dependencies for charts. \n" +
