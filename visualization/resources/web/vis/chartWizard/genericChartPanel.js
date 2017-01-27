@@ -1394,7 +1394,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (chartType == 'bar_chart' || chartType == 'pie_chart')
         {
-            var dimName = null, measureName = null, subDimName = null;
+            var dimName = null, measureName = null, subDimName = null,
+                aggType = 'COUNT';
+
             if (chartConfig.measures.x) {
                 dimName = chartConfig.measures.x.converted ? chartConfig.measures.x.convertedName : chartConfig.measures.x.name;
             }
@@ -1403,9 +1405,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
             if (chartConfig.measures.y) {
                 measureName = chartConfig.measures.y.converted ? chartConfig.measures.y.convertedName : chartConfig.measures.y.name;
+
+                if (Ext4.isDefined(chartConfig.measures.y.aggregate)) {
+                    aggType = chartConfig.measures.y.aggregate;
+                }
+                // backwards compatibility for bar charts saved prior to aggregate method selection UI
+                else if (measureName != null) {
+                    aggType = 'SUM';
+                }
             }
 
-            var aggType = chartConfig.measures.y && chartConfig.measures.y.aggregate ? chartConfig.measures.y.aggregate : 'COUNT';
             data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]');
         }
 

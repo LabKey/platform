@@ -78,7 +78,9 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "        var labels = LABKEY.vis.GenericChartHelper.generateLabels(chartConfig.labels);\n" +
             "\n" +
             "        if (chartType == 'bar_chart' || chartType == 'pie_chart') {\n" +
-            "            var dimName = null, subDimName = null; measureName = null;\n"+
+            "            var dimName = null, subDimName = null; measureName = null,\n"+
+            "               aggType = 'COUNT';\n"+
+            "\n" +
             "            if (chartConfig.measures.x) {\n" +
             "               dimName = chartConfig.measures.x.converted ? chartConfig.measures.x.convertedName : chartConfig.measures.x.name;\n" +
             "            }\n"+
@@ -87,8 +89,15 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "            }\n"+
             "            if (chartConfig.measures.y) {\n" +
             "               measureName = chartConfig.measures.y.converted ? chartConfig.measures.y.convertedName : chartConfig.measures.y.name;\n" +
+            "\n" +
+            "               if (Ext4.isDefined(chartConfig.measures.y.aggregate)) {\n" +
+            "                  aggType = chartConfig.measures.y.aggregate;\n" +
+            "               }\n" +
+            "               else if (measureName != null) {\n" +
+            "                  aggType = 'SUM';\n" +
+            "               }\n" +
             "            }\n"+
-            "            var aggType = measureName != null ? 'SUM' : 'COUNT';\n" +
+            "\n" +
             "            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]');\n" +
             "        }\n" +
             "\n" +
