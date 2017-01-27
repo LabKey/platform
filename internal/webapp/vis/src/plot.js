@@ -479,10 +479,8 @@ boxPlot.render();
             }
         }
 
-        /*
-            TODO: Hack to keep time charts from getting in a bad state. They currently rely on us rendering an empty
-            grid when there is an invalid x-axis. We should fix the time chart validation methods and remove this.
-         */
+        // Keep time charts from getting in a bad state.
+        // They currently rely on us rendering an empty grid when there is an invalid x-axis.
         if (isNaN(min) && isNaN(max)) {
             return [0,0];
         }
