@@ -1131,7 +1131,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
                 displayField: 'name',
                 valueField: 'value',
                 editable: false,
-                value: 'SUM',
+                value: this.selection.aggregate ? this.selection.aggregate : 'SUM',
                 store: Ext4.create('Ext.data.Store', {
                     fields: ['name', 'value'],
                     data: [
