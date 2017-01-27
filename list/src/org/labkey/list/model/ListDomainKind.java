@@ -392,12 +392,8 @@ public abstract class ListDomainKind extends AbstractDomainKind
     {
         super.invalidate(domain);
 
-        // Re-index this list, but only after all transactions are committed, #28820
-        getScope().addCommitTask(() ->
-        {
-            ListDefinition list = ListService.get().getList(domain);
-            if (list != null)
-                ListManager.get().indexList(list);
-        }, DbScope.CommitTaskOption.POSTCOMMIT);
+        ListDefinition list = ListService.get().getList(domain);
+        if (list != null)
+            ListManager.get().indexList(list);
     }
 }
