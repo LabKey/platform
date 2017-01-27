@@ -526,7 +526,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                 for (VisualizationSourceColumn col : entry.getValue())
                 {
                     String alias = col.getAlias();
-                    aggregatedSQL.append(", AVG(x.\"").append(alias).append("\") AS \"").append(alias).append("\"")
+                    aggregatedSQL.append(", AVG(CAST(x.\"").append(alias).append("\" AS DOUBLE)) AS \"").append(alias).append("\"")
                             .append(", STDDEV(x.\"").append(alias).append("\") AS \"").append(alias).append("_STDDEV\"")
                             .append(", STDERR(x.\"").append(alias).append("\") AS \"").append(alias).append("_STDERR\"")
                             .append("\n");

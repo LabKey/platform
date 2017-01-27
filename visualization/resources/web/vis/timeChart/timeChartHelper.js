@@ -283,7 +283,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                 return Ext4.isArray(rows) && rows.length > 0 ? _getRowValue(rows[0], subjectColumn) : null;
             };
             aes.error = function(row) {
-                return _getRowValue(row, errorColumn);
+                return row[errorColumn] ? _getRowValue(row, errorColumn) : null;
             };
             return aes;
         };
