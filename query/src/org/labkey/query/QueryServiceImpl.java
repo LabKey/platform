@@ -2311,7 +2311,7 @@ public class QueryServiceImpl extends QueryService
 
         // Create a default sort before ensuring required columns
         if ((sort == null || sort.getSortList().size() == 0) &&
-                (Table.validMaxRows(maxRows) || offset > 0 || forceSort) &&
+                (maxRows > 0 || offset > 0 || Table.NO_ROWS == maxRows || forceSort) &&
                 // Don't add a sort if we're running a custom query and it has its own ORDER BY clause
                 (!(table instanceof QueryTableInfo) || !((QueryTableInfo)table).hasSort()))
         {
