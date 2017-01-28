@@ -2311,7 +2311,7 @@ public class QueryServiceImpl extends QueryService
 
         // Create a default sort before ensuring required columns
         if ((sort == null || sort.getSortList().size() == 0) &&
-                (maxRows > 0 || offset > 0 || Table.NO_ROWS == maxRows || forceSort) &&
+                (Table.validMaxRows(maxRows) || offset > 0 || forceSort) &&
                 // Don't add a sort if we're running a custom query and it has its own ORDER BY clause
                 (!(table instanceof QueryTableInfo) || !((QueryTableInfo)table).hasSort()))
         {
@@ -2326,7 +2326,7 @@ public class QueryServiceImpl extends QueryService
 
         // Check allInvolved columns for which need to be logged
         // Logged columns may also require data logging (e.g. a patientId)
-        // If a data loggin column cannot be found, we will only disallow this query (throw an exception)
+        // If a data logging column cannot be found, we will only disallow this query (throw an exception)
         //      if the logged column that requires data logging is in allColumns (which is selected columns plus ones needed for sort/filter)
         Map<ColumnInfo, Set<FieldKey>> shouldLogNameToDataLoggingMap = new HashMap<>();
         Set<ColumnLogging> shouldLogNameLoggings = new HashSet<>();
@@ -2357,7 +2357,7 @@ public class QueryServiceImpl extends QueryService
                 ColumnInfo loggingColumn = getColumnForDataLogging(table, fieldKey);
                 if (null != loggingColumn)
                 {
-                    // For the case where we had to add the MRN column in Visualization, that columm is in the table.columnMap, but not the local columnMap.
+                    // For the case where we had to add the MRN column in Visualization, that column is in the table.columnMap, but not the local columnMap.
                     // This is because it's marked as hidden in the queryDef, so not to display, but isn't a normal "extra" column that DataRegion deems to add.
                     if (!allColumns.contains(loggingColumn))
                     {
