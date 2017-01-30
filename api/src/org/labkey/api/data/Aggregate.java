@@ -371,7 +371,7 @@ public class Aggregate
                 }
                 else if (inputType.isNumeric())
                 {
-                    return Formats.fv3.format(value);
+                    return Formats.commaf3.format(value);
                 }
                 else if (returnType.isDateOrTime())
                 {
