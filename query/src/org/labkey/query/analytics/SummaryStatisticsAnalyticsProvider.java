@@ -23,7 +23,7 @@ public class SummaryStatisticsAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public String getLabel()
     {
-        return "Summary Statistics";
+        return "Summary Statistics...";
     }
 
     @Override
