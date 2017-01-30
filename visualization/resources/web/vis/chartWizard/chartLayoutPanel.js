@@ -12,6 +12,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
     height: 525,
     isDeveloper: false,
     renderType: null,
+    initMeasures: null,
     defaultChartLabel: null,
     defaultOpacity: null,
     defaultLineWidth: null,
@@ -60,6 +61,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                     defaultLineWidth: this.defaultLineWidth,
                     isSavedReport: this.isSavedReport,
                     renderType: this.renderType,
+                    initMeasures: this.initMeasures,
                     listeners: {
                         scope: this,
                         chartLayoutChange: function(newChartLayout) {

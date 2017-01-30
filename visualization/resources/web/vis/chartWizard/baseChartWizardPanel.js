@@ -189,6 +189,13 @@ Ext4.define('LABKEY.ext4.BaseChartWizardPanel', {
                         var activeItem = this.getLayout().getActiveItem();
                         if (activeItem != null)
                             activeItem.getEl().unmask();
+                    },
+                    close: function()
+                    {
+                        // Issue 28992: Hitting 'ESC' from initial Charting Dialog leaves user kind of stranded
+                        if (this.getLayout().getActiveItem() == null) {
+                            this.back();
+                        }
                     }
                 }
             });

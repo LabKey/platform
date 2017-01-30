@@ -19,6 +19,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     userEditedSubtitle: false,
     userEditedFooter: false,
     isSavedReport: false,
+    renderType: null,
+    initMeasures: null,
 
     initComponent : function()
     {
@@ -742,9 +744,13 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
                 this.setFooter('');
         }
 
-        this.setPointColorVisible(!Ext4.isDefined(measures.color));
-        this.setFillColorVisible(!(renderType == 'bar_chart' && Ext4.isDefined(measures.color)));
-        this.setColorPalletteVisible(renderType == 'pie_chart' || Ext4.isDefined(measures.color));
+        this.adjustColorOptionVisibility(renderType, Ext4.isDefined(measures.color));
+    },
+
+    adjustColorOptionVisibility : function(renderType, hasColorMeasure) {
+        this.setPointColorVisible(!hasColorMeasure);
+        this.setFillColorVisible(!(renderType == 'bar_chart' && hasColorMeasure));
+        this.setColorPalletteVisible(renderType == 'pie_chart' || hasColorMeasure);
     },
 
     setPointColorVisible : function(visible)
@@ -922,6 +928,10 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
             if (chartConfig.geomOptions.boxFillColor)
                 this.setFillColor(chartConfig.geomOptions.boxFillColor);
+        }
+
+        if (this.renderType != null && Ext4.isObject(this.initMeasures)) {
+            this.adjustColorOptionVisibility(this.renderType, Ext4.isDefined(this.initMeasures.color));
         }
     },
 

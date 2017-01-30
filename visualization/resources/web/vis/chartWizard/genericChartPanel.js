@@ -534,6 +534,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 options: this.options,
                 isDeveloper: this.isDeveloper,
                 renderType: this.renderType,
+                initMeasures: this.measures,
                 defaultChartLabel: this.getDefaultTitle(),
                 defaultOpacity: this.renderType == 'bar_chart' ? 100 : undefined,
                 isSavedReport: !this.isNew(),
