@@ -19,9 +19,11 @@
 CREATE SCHEMA list;
 GO
 
-DROP TABLE exp.indexinteger;
-DROP TABLE exp.indexvarchar;
+EXEC core.fn_dropifexists 'indexinteger', 'exp', 'TABLE';
+EXEC core.fn_dropifexists 'indexvarchar', 'exp', 'TABLE';
+EXEC core.fn_dropifexists 'list', 'exp', 'CONSTRAINT', 'UQ_RowId';
+IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = N'rowid' AND Object_ID = OBJECT_ID('exp.list'))
+    BEGIN
+      ALTER TABLE [exp].list DROP COLUMN rowid;
+    END
 
-ALTER TABLE exp.list DROP CONSTRAINT UQ_RowId;
-ALTER TABLE exp.list DROP COLUMN rowid;
-GO

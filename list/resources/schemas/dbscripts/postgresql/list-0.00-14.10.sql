@@ -18,7 +18,8 @@
 
 CREATE SCHEMA list;
 
-DROP TABLE exp.indexinteger, exp.indexvarchar;
+SELECT core.fn_dropifexists('indexinteger', 'exp', 'TABLE', NULL);
+SELECT core.fn_dropifexists('indexvarchar', 'exp', 'TABLE', NULL);
+SELECT core.fn_dropifexists('list', 'exp', 'CONSTRAINT', 'UQ_RowId');
 
-ALTER TABLE exp.list DROP CONSTRAINT uq_rowid;
-ALTER TABLE exp.list DROP COLUMN rowid;
+ALTER TABLE exp.list DROP COLUMN IF EXISTS rowid CASCADE;

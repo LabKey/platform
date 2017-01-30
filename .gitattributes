@@ -191,6 +191,7 @@ core/resources/schemas/dbscripts/postgresql/core-15.20-15.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-15.30-16.10.sql -text
 core/resources/schemas/dbscripts/postgresql/core-16.10-16.20.sql -text
 core/resources/schemas/dbscripts/postgresql/core-16.30-16.31.sql -text
+core/resources/schemas/dbscripts/postgresql/core-16.31-16.32.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/labkey-0.00-13.30.sql -text
@@ -241,6 +242,7 @@ core/resources/schemas/dbscripts/sqlserver/core-15.20-15.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-15.30-16.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-16.10-16.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-16.30-16.31.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-16.31-16.32.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install.sql -text
@@ -717,6 +719,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-16.10-16.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-16.30-16.31.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-16.31-16.32.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-16.32-16.33.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-16.33-16.34.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -754,6 +757,7 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-16.10-16.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-16.30-16.31.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-16.31-16.32.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-16.32-16.33.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-16.33-16.34.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-create.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/deleteOrphans.sql -text
