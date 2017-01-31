@@ -409,7 +409,7 @@ boxPlot.render();
     };
 
     var getDiscreteAxisDomain = function(data, acc) {
-        // If any axis is discerete we need to know the domain before rendering so we render the grid correctly.
+        // If any axis is discrete we need to know the domain before rendering so we render the grid correctly.
         var domain = [], uniques = {}, i, value;
 
         for (i = 0; i < data.length; i++) {
