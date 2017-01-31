@@ -98,7 +98,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "               }\n" +
             "            }\n"+
             "\n" +
-            "            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]');\n" +
+            "            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]', false);\n" +
             "        }\n" +
             "\n" +
             "        var plotConfig = LABKEY.vis.GenericChartHelper.generatePlotConfig(chartId, chartConfig, labels, aes, scales, geom, data);\n" +

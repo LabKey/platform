@@ -704,6 +704,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             parameters  : this.parameters,
             requiredVersion : 13.2,
             maxRows: -1,
+            sort: 'lsid', // needed to keep expected ordering for legend data
             method: 'POST'
         };
 
@@ -1416,7 +1417,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 }
             }
 
-            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]');
+            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]', false);
         }
 
         if (customRenderType && Ext4.isFunction(customRenderType.generatePlotConfig))

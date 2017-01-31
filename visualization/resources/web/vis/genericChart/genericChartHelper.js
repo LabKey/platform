@@ -423,7 +423,9 @@ LABKEY.vis.GenericChartHelper = new function(){
             xMeasureType = getMeasureType(measures.x);
 
         if (chartType == "box_plot" && !measures.x)
+        {
             aes.x = generateMeasurelessAcc(queryName);
+        }
         else if (isNumericType(xMeasureType) || (chartType == 'scatter_plot' && measures.x.measure))
         {
             var xMeasureName = measures.x.converted ? measures.x.convertedName : measures.x.name;
@@ -518,6 +520,13 @@ LABKEY.vis.GenericChartHelper = new function(){
 
             return hover;
         };
+    };
+
+    /**
+     * Backwards compatibility for function that has been moved to LABKEY.vis.getAggregateData.
+     */
+    var generateAggregateData = function(data, dimensionName, measureName, aggregate, nullDisplayValue) {
+        return LABKEY.vis.getAggregateData(data, dimensionName, null, measureName, aggregate, nullDisplayValue, false);
     };
 
     var _getRowValue = function(row, propName)
@@ -1174,6 +1183,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         generateAes: generateAes,
         doValueConversion: doValueConversion,
         removeNumericConversionConfig: removeNumericConversionConfig,
+        generateAggregateData: generateAggregateData,
         generatePointHover: generatePointHover,
         generateBoxplotHover: generateBoxplotHover,
         generateDiscreteAcc: generateDiscreteAcc,
