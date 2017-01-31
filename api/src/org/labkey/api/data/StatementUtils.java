@@ -1037,14 +1037,14 @@ public class StatementUtils
 
     public static class TestCase extends Assert
     {
-        TableInfo issues;
+        TableInfo principals;
         TableInfo test;
         User user;
         Container container;
 
         void init()
         {
-            issues = DbSchema.get("issues", DbSchemaType.Module).getTable("issues");
+            principals = DbSchema.get("core", DbSchemaType.Module).getTable("principals");
             test = DbSchema.get("test", DbSchemaType.Module).getTable("testtable2");
             container = JunitUtil.getTestContainer();
             user = TestContext.get().getUser();
@@ -1056,9 +1056,9 @@ public class StatementUtils
         {
             init();
             Parameter.ParameterMap m = null;
-            try (Connection conn = issues.getSchema().getScope().getConnection())
+            try (Connection conn = principals.getSchema().getScope().getConnection())
             {
-                m = StatementUtils.insertStatement(conn, issues, null, container, user, null, true, true, false);
+                m = StatementUtils.insertStatement(conn, principals, null, container, user, null, true, true, false);
                 System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
 
@@ -1079,9 +1079,9 @@ public class StatementUtils
         {
             init();
             Parameter.ParameterMap m = null;
-            try (Connection conn = issues.getSchema().getScope().getConnection())
+            try (Connection conn = principals.getSchema().getScope().getConnection())
             {
-                m = StatementUtils.updateStatement(conn, issues, container, user, true, true);
+                m = StatementUtils.updateStatement(conn, principals, container, user, true, true);
                 System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
 
@@ -1102,9 +1102,9 @@ public class StatementUtils
         {
             init();
             Parameter.ParameterMap m = null;
-            try (Connection conn = issues.getSchema().getScope().getConnection())
+            try (Connection conn = principals.getSchema().getScope().getConnection())
             {
-                m = StatementUtils.mergeStatement(conn, issues, null, null, container, user, false, true);
+                m = StatementUtils.mergeStatement(conn, principals, null, null, container, user, false, true);
                 System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
 

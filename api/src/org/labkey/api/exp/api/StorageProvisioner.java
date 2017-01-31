@@ -66,6 +66,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.security.User;
@@ -1612,8 +1613,9 @@ public class StorageProvisioner
         public void before() throws Exception
         {
             String domainName = "testdomain_" + System.currentTimeMillis();
+            String domainKindName = ModuleLoader.getInstance().getModule("Study") == null ? "TestDomainKind" : "TestDatasetDomainKind";
 
-            Lsid lsid = new Lsid("TestDatasetDomainKind", "Folder-" + container.getRowId(), domainName);
+            Lsid lsid = new Lsid(domainKindName, "Folder-" + container.getRowId(), domainName);
             domain = PropertyService.get().createDomain(container, lsid.toString(), domainName);
             domain.save(new User());
             StorageProvisioner.createTableInfo(domain);
