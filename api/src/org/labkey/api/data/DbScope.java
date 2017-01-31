@@ -2266,7 +2266,7 @@ public class DbScope
                         {
                             notifier.notify();
                         }
-                        // should block on fg thread, but but we're not deadlocked yet
+                        // should block on fg thread, but we're not deadlocked yet
                         lockUser.lock();
                         txBg.commit();
                     }
