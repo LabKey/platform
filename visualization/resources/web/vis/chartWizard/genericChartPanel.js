@@ -1740,6 +1740,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 {
                     Ext4.create('Ext.tip.ToolTip', {
                         target: cmp.getEl(),
+                        constrainTo: this.getEl(),
+                        width: 110,
                         html: tooltip
                     });
 

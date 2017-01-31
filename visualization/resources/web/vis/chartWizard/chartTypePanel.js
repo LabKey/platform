@@ -501,7 +501,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
     {
         this.getFieldSelectionsPanel().destroyFieldSelectionDropTargets();
         var ddGroup = this.getGridViewDragPluginConfig().ddGroup;
-        this.getFieldSelectionsPanel().addFieldSelectionDropTargets(grid, ddGroup, col);
+        this.getFieldSelectionsPanel().addFieldSelectionDropTargets(ddGroup, col, grid);
     },
 
     getGridViewDragPluginConfig : function()
@@ -792,19 +792,30 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
     chartType: null,
     selection: null,
     baseQueryKey: null,
-    fieldSelectionDropTargets: [],
+    fieldSelectionDropTargets: null,
+    fieldSelectionAreas: null,
 
-    addFieldSelectionDropTargets : function(grid, ddGroup, selectedCol)
+    initComponent : function() {
+        this.fieldSelectionDropTargets = [];
+        this.fieldSelectionAreas = {};
+
+        this.callParent();
+
+        this.on('render', this.initializeFieldDragZone, this);
+    },
+
+    addFieldSelectionDropTargets : function(ddGroup, selectedCol, grid, callbackFn, callbackScope)
     {
-        var gridSelection = grid.getSelectionModel().getSelection();
+        var gridSelection = grid ? grid.getSelectionModel().getSelection() : [],
+            selectedColData = selectedCol.data || selectedCol;
 
         // destroy any previous drop targets based on the last selected column
         this.destroyFieldSelectionDropTargets();
 
         // enable drop target based on allowable column types for the given field
-        var selectedColType = LABKEY.vis.GenericChartHelper.getMeasureType(selectedCol.data),
-                isMeasure = selectedCol.get('measure'),
-                isDimension = selectedCol.get('dimension');
+        var selectedColType = LABKEY.vis.GenericChartHelper.getMeasureType(selectedColData),
+            isMeasure = selectedColData['measure'],
+            isDimension = selectedColData['dimension'];
         Ext4.each(this.query('charttypefield'), function(fieldSelPanel)
         {
             var hasMatchingType = fieldSelPanel.getAllowableTypes().indexOf(selectedColType) > -1,
@@ -812,7 +823,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
 
             if (hasMatchingType || isMeasureDimensionMatch)
             {
-                var dropTarget = fieldSelPanel.createDropTarget(grid, ddGroup);
+                var dropTarget = fieldSelPanel.createDropTarget(ddGroup, grid, callbackFn, callbackScope);
 
                 // for automated test, allow click on field area to apply grid column selection
                 if (gridSelection.length > 0)
@@ -897,17 +908,65 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
                 fieldSelection = undefined;
             }
 
-            this.add(Ext4.create('LABKEY.vis.ChartTypeFieldSelectionPanel', {
+            this.fieldSelectionAreas[field.name] = Ext4.create('LABKEY.vis.ChartTypeFieldSelectionPanel', {
                 chartTypeName: this.chartType.get('name'),
                 field: field,
                 selection: fieldSelection
-            }));
+            });
+
+            this.add(this.fieldSelectionAreas[field.name]);
         }, this);
 
         this.add(Ext4.create('Ext.Component', {
             cls: 'type-footer',
             html: '* Required fields'
         }));
+    },
+
+    initializeFieldDragZone : function() {
+        var ddGroup = 'field-to-field-selection',
+            me = this;
+
+        // initialize the field selection area as a DragZone so that selected fields can be dragged
+        // between field selection areas.
+        this.dragZone = Ext4.create('Ext.dd.DragZone', this.getEl(), {
+            ddGroup: ddGroup,
+            repairHighlightColor: 'ffffff',
+
+            getDragData: function(e) {
+                var fieldDisplayEl = e.getTarget('div.field-selection-display'),
+                    fieldTextEl = e.getTarget('div.field-selection-text');
+
+                if (fieldDisplayEl && fieldTextEl) {
+                    var fieldName = fieldDisplayEl.getAttribute('fieldName'),
+                        recordData = me.selection[fieldName],
+                        d = fieldTextEl.cloneNode(true);
+
+                    d.id = Ext4.id();
+                    d.className += ' chart-type-field-selection-drag';
+
+                    me.dragData = {
+                        ddel: d,
+                        sourceEl: fieldDisplayEl,
+                        repairXY: Ext4.fly(fieldDisplayEl).getXY(),
+                        records: [recordData]
+                    };
+
+                    me.addFieldSelectionDropTargets(ddGroup, recordData, undefined, function(dropFieldCmp) {
+                        this.destroyFieldSelectionDropTargets();
+                        if (dropFieldCmp.field.name != fieldName) {
+                            this.fieldSelectionAreas[fieldName].setSelection(null);
+                        }
+                    }, me);
+
+                    return me.dragData;
+                }
+            },
+
+            getRepairXY: function() {
+                return me.dragData.repairXY;
+            }
+        });
     },
 
     setSelection : function(selection)
@@ -1028,7 +1087,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
             {
                 var tpl = new Ext4.XTemplate(
                     '<tpl for=".">',
-                        '<div class="field-selection-display">',
+                        '<div class="field-selection-display" fieldName="' + this.field.name + '">',
                             '<div class="fa fa-times field-selection-remove" fieldName="{[this.getFieldName(values)]}"></div>',
                             '{[this.getFieldSelectionDisplay("' + this.chartTypeName + '", "' + this.field.name + '", values)]}',
                         '</div>',
@@ -1100,7 +1159,9 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
                                 return false;
                             }
                         },
-                        deselect: this.doLayout,// needed for resetting the field panel height
+                        deselect: function(view) {
+                            this.doLayout();// needed for resetting the field panel height
+                        },
                         select: function(view, record)
                         {
                             view.select(record, false);// force single selection
@@ -1176,7 +1237,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
         return this.fieldAreaDropTextCmp;
     },
 
-    createDropTarget : function(grid, ddGroup)
+    createDropTarget : function(ddGroup, grid, callbackFn, callbackScope)
     {
         var me = this;
 
@@ -1197,7 +1258,15 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
             notifyDrop: function(ddSource, e, data)
             {
                 me.setSelection(data.records[0]);
-                grid.getSelectionModel().deselectAll();
+                me.removeCls('drop-target-over');
+                if (grid) {
+                    grid.getSelectionModel().deselectAll();
+                }
+
+                if (Ext4.isFunction(callbackFn)) {
+                    callbackFn.call(callbackScope, me);
+                }
+
                 return true;
             }
         });
@@ -1207,7 +1276,6 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
     {
         this.removeCls('drop-target');
         this.getFieldAreaDropText().hide();
-        this.getEl().removeCls('drop-target-over');
     },
 
     flagIfRequired : function()

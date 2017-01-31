@@ -100,7 +100,11 @@
 .chart-type-panel .field-selections .drop-target-over .field-selection-display {
     opacity: 0.5;
 }
-.chart-type-panel .field-selections .field-selection-display {
+.chart-type-field-selection-drag {
+    width: 300px;
+}
+.chart-type-panel .field-selections .field-selection-display,
+.chart-type-field-selection-drag {
     background-color: #41c49f;
     margin-top: 4px;
     padding: 4px 8px;
@@ -108,7 +112,8 @@
     border-radius: 8px;
     border: solid transparent 1px;
 }
-.chart-type-panel .field-selections .field-selection-display .field-selection-text {
+.chart-type-panel .field-selections .field-selection-display .field-selection-text,
+.chart-type-field-selection-drag {
     color: #ffffff;
     white-space: nowrap;
     overflow: hidden;

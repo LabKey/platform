@@ -1334,7 +1334,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         // warn the user if the data limit has been reached
         var individualDataCount = Ext4.isDefined(data.individual) ? data.individual.measureStore.records().length : null;
         var aggregateDataCount = Ext4.isDefined(data.aggregate) ? data.aggregate.measureStore.records().length : null;
-        if (individualDataCount == limit || aggregateDataCount == limit) {
+        if (individualDataCount >= limit || aggregateDataCount >= limit) {
             message += sep + "The data limit for plotting has been reached. Consider filtering your data.";
             sep = "<br/>";
         }
