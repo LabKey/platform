@@ -1613,7 +1613,7 @@ public class StorageProvisioner
         public void before() throws Exception
         {
             String domainName = "testdomain_" + System.currentTimeMillis();
-            String domainKindName = ModuleLoader.getInstance().getModule("Study") == null ? "TestDomainKind" : "TestDatasetDomainKind";
+            String domainKindName = ModuleLoader.getInstance().hasModule("Study") ? "TestDatasetDomainKind" : "TestDomainKind";
 
             Lsid lsid = new Lsid(domainKindName, "Folder-" + container.getRowId(), domainName);
             domain = PropertyService.get().createDomain(container, lsid.toString(), domainName);
