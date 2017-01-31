@@ -86,7 +86,7 @@
     <tr>
         <td><label>Column headers:<%= PageFlowUtil.helpPopup("Column Header Options", sb.toString(), true) %></label></td>
         <td>
-            <select id="<%=text(headerGUID)%>" name="headerType">
+            <select id="<%=text(headerGUID)%>" name="txt_header_type">
                 <labkey:options value="<%=model.getHeaderType()%>" map="<%=headerMap%>" />
             </select>
         </td>
