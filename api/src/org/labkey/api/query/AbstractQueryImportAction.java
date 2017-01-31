@@ -83,6 +83,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         public boolean hideTsvCsvCombo = false;
         // extra EXT config to inject into the form
         public JSONArray extraFields = null;
+        public boolean acceptZeroResults;  //0 changes will show the update message/redirect, instead of an error
     }
 
     protected AbstractQueryImportAction(Class<? extends FORM> formClass)
@@ -102,6 +103,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     protected boolean _hideTsvCsvCombo = false;
     protected boolean _importIdentity = false;
     protected boolean _importLookupByAlternateKey = false;
+    protected boolean _acceptZeroResults = false;     //0 returned results are OK
 
     protected void setTarget(TableInfo t) throws ServletException
     {
@@ -152,6 +154,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return getDefaultImportView(form, null, errors);
     }
 
+    public void setAcceptZeroResults(boolean acceptZeroResults)
+    {
+        _acceptZeroResults = acceptZeroResults;
+    }
+    
     public ModelAndView getDefaultImportView(FORM form, JSONArray extraFields, BindException errors) throws Exception
     {
         ActionURL url = getViewContext().getActionURL();
@@ -166,6 +173,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         bean.hideTsvCsvCombo = _hideTsvCsvCombo;
         bean.successMessageSuffix = _successMessageSuffix;
         bean.extraFields = extraFields;
+        bean.acceptZeroResults = _acceptZeroResults;
 
         if (null == bean.urlReturn)
         {

@@ -134,6 +134,23 @@
         submitForm(uploadFileForm);
     }
 
+    function showSuccessMessage(msg)
+    {
+        Ext.Msg.show({
+            title: "Success",
+            msg: msg,
+            closable: false
+        });
+        new Ext.util.DelayedTask(function(){
+            window.location = returnUrl;
+        }).delay(1500);
+    }
+
+    function showError() {
+        serverInvalid({errors: {_form: "No rows were inserted. Please check to make sure your data is formatted properly."}});
+        LABKEY.Utils.signalWebDriverTest('importFailureSignal');
+    }
+
     function submitForm(form)
     {
         if (!form)
@@ -149,30 +166,36 @@
             {
                 Ext.getBody().unmask();
                 var msg = null;
+                var rowCount;
 
                 if ("msg" in action.result)
                     msg = action.result.msg;
                 else if ("rowCount" in action.result)
                 {
-                    var rowCount = action.result.rowCount;
+                    rowCount = action.result.rowCount;
                     msg = rowCount + " row" + (rowCount!=1?"s":"") + " " + successMessageSuffix + ".";
                 }
 
                 if (msg && "rowCount" in action.result && action.result.rowCount > 0)
                 {
-                    Ext.Msg.show({
-                        title: "Success",
-                        msg: msg,
-                        closable: false
-                    });
-                    new Ext.util.DelayedTask(function(){
-                        window.location = returnUrl;
-                    }).delay(1500);
+                    showSuccessMessage(msg);
                 }
-                else if("rowCount" in action.result && action.result.rowCount == 0)
+                else if("rowCount" in action.result && action.result.rowCount <= 0)
                 {
-                    serverInvalid({errors: {_form: "No rows were inserted. Please check to make sure your data is formatted properly."}});
-                    LABKEY.Utils.signalWebDriverTest('importFailureSignal');
+                    <%
+                    if (bean.acceptZeroResults) {%>
+                    if (rowCount == 0)
+                        showSuccessMessage("Upload successful, but 0 updates occurred");
+                    else {
+                        showError();
+                    }
+                    <%
+                    } else {
+                    %>
+                    showError();
+                    <%
+                    }
+                    %>
                 }
                 else
                     window.location = returnUrl;
