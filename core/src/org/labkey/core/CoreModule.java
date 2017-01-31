@@ -54,6 +54,7 @@ import org.labkey.api.dataiterator.StatementDataIterator;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
@@ -799,6 +800,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // Register the standard, wiki-based terms-of-use provider
         SecurityManager.addTermsOfUseProvider(new WikiTermsOfUseProvider());
+
+        PropertyService.get().registerDomainKind(new TestDomainKind());
     }
 
     @Override

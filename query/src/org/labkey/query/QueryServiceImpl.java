@@ -2985,15 +2985,15 @@ public class QueryServiceImpl extends QueryService
             QueryService qs = ServiceRegistry.get().getService(QueryService.class);
             assertNotNull(qs);
             assertEquals(qs, QueryService.get());
-            TableInfo issues = DbSchema.get("issues").getTable("issues");
-            assertNotNull(issues);
+            TableInfo roleAssignments = DbSchema.get("core", DbSchemaType.Module).getTable("roleassignments");
+            assertNotNull(roleAssignments);
 
             {
 				List<ColumnInfo> l = Arrays.asList(
-					issues.getColumn("issueid"),
-					issues.getColumn("duplicate"),
-					issues.getColumn("issuedefid"));
-				rs = qs.select(issues, l, null, null);
+					roleAssignments.getColumn("resourceid"),
+					roleAssignments.getColumn("userid"),
+					roleAssignments.getColumn("role"));
+				rs = qs.select(roleAssignments, l, null, null);
 				assertEquals(rs.getMetaData().getColumnCount(),3);
 				_close();
             }
@@ -3001,35 +3001,35 @@ public class QueryServiceImpl extends QueryService
 
 	        {
 				List<ColumnInfo> l = Arrays.asList(
-					issues.getColumn("issueid"),
-					issues.getColumn("duplicate"),
-					issues.getColumn("issuedefid"));
-		        Sort sort = new Sort("+lastindexed");
-				rs = qs.select(issues, l, null, sort);
+                        roleAssignments.getColumn("resourceid"),
+                        roleAssignments.getColumn("userid"),
+                        roleAssignments.getColumn("role"));
+		        Sort sort = new Sort("+userid");
+				rs = qs.select(roleAssignments, l, null, sort);
 				assertEquals(rs.getMetaData().getColumnCount(),3);
 		        _close();
 	        }
 
 	        {
 				List<ColumnInfo> l = Arrays.asList(
-					issues.getColumn("issueid"),
-					issues.getColumn("duplicate"),
-					issues.getColumn("issuedefid"));
-                Filter f = new SimpleFilter(FieldKey.fromParts("issuedefid"), 1);
-				rs = qs.select(issues, l, f, null);
+                        roleAssignments.getColumn("resourceid"),
+                        roleAssignments.getColumn("userid"),
+                        roleAssignments.getColumn("role"));
+                Filter f = new SimpleFilter(FieldKey.fromParts("userid"), -3);
+				rs = qs.select(roleAssignments, l, f, null);
 				assertEquals(rs.getMetaData().getColumnCount(),3);
 		        _close();
 	        }
 
 	        {
-		        Map<FieldKey,ColumnInfo> map = qs.getColumns(issues, Arrays.asList(
-				        new FieldKey(null, "issueid"),
-				        new FieldKey(null, "duplicate"),
-				        new FieldKey(null, "issuedefid"),
-				        new FieldKey(new FieldKey(null, "issuedefid"), "name")));
-		        Sort sort = new Sort("+lastindexed");
-                Filter f = new SimpleFilter(FieldKey.fromParts("issuedefid"), 1);
-				rs = qs.select(issues, map.values(), f, sort);
+		        Map<FieldKey,ColumnInfo> map = qs.getColumns(roleAssignments, Arrays.asList(
+				        new FieldKey(null, "resourceid"),
+				        new FieldKey(null, "userid"),
+				        new FieldKey(null, "role"),
+				        new FieldKey(new FieldKey(null, "userid"), "name")));
+		        Sort sort = new Sort("+userid");
+                Filter f = new SimpleFilter(FieldKey.fromParts("userid"), -3);
+				rs = qs.select(roleAssignments, map.values(), f, sort);
 				assertEquals(rs.getMetaData().getColumnCount(),4);
 		        _close();
 	        }
