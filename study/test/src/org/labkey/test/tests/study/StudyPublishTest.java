@@ -25,6 +25,7 @@ import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.query.Filter;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.Locators;
 import org.labkey.test.TestFileUtils;
@@ -59,6 +60,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @Category({DailyC.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 30)
 public class StudyPublishTest extends StudyProtectedExportTest
 {
     private final String ID_PREFIX = "PUBLISHED-";
