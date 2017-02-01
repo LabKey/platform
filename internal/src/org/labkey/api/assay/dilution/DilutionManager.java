@@ -32,6 +32,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableResultSet;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -179,10 +180,10 @@ public class DilutionManager
     /**
      * clear all well exclusions for this run
      */
-    public static void clearWellExclusions(int runId)
+    public static void clearWellExclusions(SqlDialect dialect, int runId)
     {
         SQLFragment sql = new SQLFragment("UPDATE ").append(DilutionManager.getTableInfoWellData(), "").
-                append(" SET excluded = false WHERE runid = ?");
+                append(" SET excluded = ").append(dialect.getBooleanFALSE()).append(" WHERE runid = ?");
         sql.addAll(runId);
         new SqlExecutor(getSchema()).execute(sql);
     }
@@ -190,10 +191,10 @@ public class DilutionManager
     /**
      * Set the excluded flag for the collection of well row ids
      */
-    public static int setWellExclusions(Collection<Integer> wellRowIds)
+    public static int setWellExclusions(SqlDialect dialect, Collection<Integer> wellRowIds)
     {
         SQLFragment update = new SQLFragment("UPDATE ").append(DilutionManager.getTableInfoWellData(), "").
-                append(" SET excluded = true WHERE rowid ");
+                append(" SET excluded = ").append(dialect.getBooleanTRUE()).append(" WHERE rowid ");
         getSchema().getSqlDialect().appendInClauseSql(update, wellRowIds);
         return new SqlExecutor(getSchema()).execute(update);
     }
