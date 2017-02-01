@@ -1445,7 +1445,7 @@ boxPlot.render();
             throw new Error("Unable to create pie chart, data not specified");
         }
         else if (Array.isArray(config.data)) {
-            config.data = {content : config.data};
+            config.data = {content : config.data, sortOrder: 'value-desc'};
         }
 
         if(config.width == null && (config.size == null || config.size.canvasWidth == null)){
