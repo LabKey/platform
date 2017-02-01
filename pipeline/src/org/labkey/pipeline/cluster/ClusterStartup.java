@@ -16,7 +16,6 @@
 
 package org.labkey.pipeline.cluster;
 
-import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -85,16 +84,20 @@ public class ClusterStartup extends AbstractPipelineStartup
             }
             finally
             {
-                job.writeToFile(file);
-
                 if (job.getActiveTaskStatus() == PipelineJob.TaskStatus.error)
                 {
                     job.error("Task failed");
-                    System.exit(1);
                 }
                 else if (job.getActiveTaskStatus() != PipelineJob.TaskStatus.complete)
                 {
                     job.error("Task finished running but was not marked as complete - it was in state " + job.getActiveTaskStatus());
+                }
+
+                //NOTE: we need to set error status before writing out the XML so this information is retained
+                job.writeToFile(file);
+
+                if (job.getErrors() > 0)
+                {
                     System.exit(1);
                 }
             }

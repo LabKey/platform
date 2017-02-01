@@ -48,7 +48,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
     private static Logger _systemLog = Logger.getLogger(WorkDirectoryRemote.class);
 
     private static final int FILE_LOCKS_DEFAULT = 5;
-    
+
     private final File _lockDirectory;
     private final File _folderToClean;
 
@@ -242,13 +242,13 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
          * (e.g. some cluster schedulers initialize TMPDIR to a job specific temporary directory
          * which will be removed, if the job is cancelled)
          *
-         * @param tempDirectoryVar environment variable name 
+         * @param tempDirectoryVar environment variable name
          */
         public void setTempDirectoryEnv(String tempDirectoryVar)
         {
             String tempDirectory = System.getenv(tempDirectoryVar);
             if (tempDirectory == null || tempDirectory.length() == 0)
-                throw new IllegalArgumentException("The environment variable " + tempDirectoryVar + " does not exist:\n" + System.getenv());                
+                throw new IllegalArgumentException("The environment variable " + tempDirectoryVar + " does not exist:\n" + System.getenv());
             setTempDirectory(tempDirectory);
         }
 
@@ -408,22 +408,48 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
         // Issue 25166: this was a pre-existing potential bug.  If _sharedTempDirectory is true, we create a second level
         // of temp directory above the primary working dir.  this is added to make sure we clean this up.
-        if (_folderToClean != null && !_dir.getParentFile().equals(_folderToClean))
+        _jobLog.debug("cleaning remote work dir: " + (_folderToClean == null ? _dir.getPath() : _folderToClean.getPath()));
+        if (success && _folderToClean != null && !_dir.equals(_folderToClean))
         {
-            _jobLog.debug("removing complete work dir from: " + _folderToClean.getPath());
-            File toCheck = _dir.getParentFile();
-            while (toCheck != null && toCheck.isDirectory() && URIUtil.isDescendant(_folderToClean.toURI(), toCheck.toURI()))
+            _jobLog.debug("removing entire work dir through: " + _folderToClean.getPath());
+            _jobLog.debug("starting with: " + _dir.getPath());
+            File toCheck = _dir;
+
+            //debugging only:
+            if (!URIUtil.isDescendant(_folderToClean.toURI(), toCheck.toURI()))
             {
+                _jobLog.warn("not a descendant!");
+            }
+
+            while (toCheck != null && URIUtil.isDescendant(_folderToClean.toURI(), toCheck.toURI()))
+            {
+                if (!toCheck.exists())
+                {
+                    _jobLog.debug("directory does not exist: " + toCheck.getPath());
+                    toCheck = toCheck.getParentFile();
+                    continue;
+                }
+
                 String[] children = toCheck.list();
                 if (children != null && children.length == 0)
                 {
-                    _jobLog.debug("removing work dir: " + toCheck.getPath());
-                    toCheck = toCheck.getParentFile();
+                    _jobLog.debug("removing directory: " + toCheck.getPath());
                     FileUtils.deleteDirectory(toCheck);
+                    toCheck = toCheck.getParentFile();
+                }
+                else if (children == null)
+                {
+                    _jobLog.debug("unable to list children, will not delete: " + toCheck.getPath());
+                    continue;
                 }
                 else
                 {
                     _jobLog.debug("work directory has children, will not delete: " + toCheck.getPath());
+                    _jobLog.debug("files:");
+                    for (String fn : children)
+                    {
+                        _jobLog.debug(fn);
+                    }
                     break;
                 }
             }
@@ -495,7 +521,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         private MasterLockInfo(int totalLocks, int currentLock)
         {
             assert totalLocks > 0 : "Total locks must be greater than 0.";
-            
+
             _totalLocks = totalLocks;
             _currentLock = currentLock;
         }
