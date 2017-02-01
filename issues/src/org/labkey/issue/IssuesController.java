@@ -673,11 +673,14 @@ public class IssuesController extends SpringActionController
             boolean ret = relatedIssueHandler(issue, user, errors);
             if (!ret) return false;
 
-            // bind the provisioned table to the form bean so we can get typed properties
             IssueListDef issueListDef = getIssueListDef();
             if (issueListDef == null)
                 return false;
-            form.setTable(issueListDef.createTable(getUser()));
+
+            // bind the user schema table to the form bean so we can get typed properties
+            UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
+            TableInfo table = userSchema.getTable(issueListDef.getName());
+            form.setTable(table);
             issue.setProperties(form.getTypedColumns());
 
             Issue prevIssue = (Issue)form.getOldValues();
@@ -1353,8 +1356,10 @@ public class IssuesController extends SpringActionController
         {
             if (reshow && issueListDef != null)
             {
-                // bind the provisioned table to the form bean so we can get typed properties
-                form.setTable(issueListDef.createTable(getUser()));
+                // bind the user schema table to the form bean so we can get typed properties
+                UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
+                TableInfo table = userSchema.getTable(issueListDef.getName());
+                form.setTable(table);
                 issue.setProperties(form.getTypedColumns());
             }
         }
