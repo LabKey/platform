@@ -209,6 +209,7 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
+import javax.servlet.ServletContext;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -663,7 +664,21 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.addContainerListener(new FolderSettingsCache.FolderSettingsCacheListener());
         SecurityManager.init();
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
-        AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
+
+        ContextListener.addStartupListener(new StartupListener()
+        {
+            @Override
+            public String getName()
+            {
+                return "Schedule Upgrade Check";
+            }
+
+            @Override
+            public void moduleStartupComplete(ServletContext servletContext)
+            {
+                AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
+            }
+        });
 
         AuditLogService.get().registerAuditType(new UserAuditProvider());
         AuditLogService.get().registerAuditType(new GroupAuditProvider());
