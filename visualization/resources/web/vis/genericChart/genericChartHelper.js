@@ -249,6 +249,37 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     /**
+     * Determine a reasonable width for the chart based on the chart type and selected measures / data.
+     * @param chartType
+     * @param measures
+     * @param measureStore
+     * @param defaultWidth
+     * @returns {int}
+     */
+    var getChartTypeBasedWidth = function(chartType, measures, measureStore, defaultWidth) {
+        var width = defaultWidth;
+
+        if (chartType == 'bar_chart' && Ext4.isObject(measures.x)) {
+            // 15px per bar + 15px between bars + 300 for default margins
+            var xBarCount = measureStore.members(measures.x.name).length;
+            width = Math.max((xBarCount * 15 * 2) + 300, defaultWidth);
+
+            if (Ext4.isObject(measures.xSub)) {
+                // 15px per bar per group + 200px between groups + 600 for default margins
+                var xSubCount = measureStore.members(measures.xSub.name).length;
+                width = (xBarCount * xSubCount * 15) + (xSubCount * 200) + 600;
+            }
+        }
+        else if (chartType == 'box_plot' && Ext4.isObject(measures.x)) {
+            // 20px per box + 20px between boxes + 300 for default margins
+            var xBoxCount = measureStore.members(measures.x.name).length;
+            width = Math.max((xBoxCount * 20 * 2) + 300, defaultWidth);
+        }
+
+        return width;
+    };
+
+    /**
      * Given the saved labels object we convert it to include all label types (main, x, and y). Each label type defaults
      * to empty string ('').
      * @param {Object} labels The saved labels object.
@@ -1177,6 +1208,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         getTitleFromMeasures: getTitleFromMeasures,
         getMeasureType: getMeasureType,
         getQueryColumns : getQueryColumns,
+        getChartTypeBasedWidth : getChartTypeBasedWidth,
         isNumericType: isNumericType,
         generateLabels: generateLabels,
         generateScales: generateScales,

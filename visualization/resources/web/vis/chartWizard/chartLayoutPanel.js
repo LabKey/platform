@@ -9,7 +9,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
     cls: 'chart-wizard-panel chart-layout-panel',
     mainTitle: 'Customize look and feel',
     width: 900,
-    height: 525,
+    height: 530,
     isDeveloper: false,
     renderType: null,
     initMeasures: null,

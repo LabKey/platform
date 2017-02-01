@@ -203,6 +203,10 @@
                 };
             }
 
+            categoryData.sort(function(a,b){
+                return LABKEY.vis.discreteSortFn(a.label, b.label);
+            });
+
             // if we have a long list of categories, only show a total of 15 x-axis tick labels
             if (categoryData.length > 15)
             {

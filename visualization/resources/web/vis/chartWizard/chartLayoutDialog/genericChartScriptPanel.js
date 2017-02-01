@@ -58,7 +58,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "\n" +
             "        // chartConfig is the saved information about the chart (labels, scales, etc.)\n" +
             "        var chartConfig = {{chartConfig}};\n" +
-            "        if (!chartConfig.hasOwnProperty('width') || chartConfig.width == null) chartConfig.width = 800;\n" +
+            "        if (!chartConfig.hasOwnProperty('width') || chartConfig.width == null) chartConfig.width = 1000;\n" +
             "        if (!chartConfig.hasOwnProperty('height') || chartConfig.height == null) chartConfig.height = 600;\n" +
             "\n" +
             "        var xAxisType = chartConfig.measures.x ? (chartConfig.measures.x.normalizedType || chartConfig.measures.x.type) : null;\n" +

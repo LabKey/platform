@@ -51,7 +51,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             data: typesArr
         });
 
-        this.height = Math.max((85 * this.typesStore.getCount()) + 185, 525);
+        this.height = Math.max((85 * this.typesStore.getCount()) + 185, 530);
 
         // lookup type by name
         if (Ext4.isString(this.selectedType))
@@ -94,7 +94,10 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             // if we haven't populated the studyColumnsStore, make the request now
             if (this.getStudyColumnsStore().getCount() == 0)
             {
-                this.getStudyQueryCombo().getEl().mask('Loading study measures...', 'query-combo-mask');
+                if (!Ext4.isIE) {
+                    this.getStudyQueryCombo().getEl().mask('Loading study measures...', 'query-combo-mask');
+                }
+
                 LABKEY.vis.TimeChartHelper.getStudyMeasures(this.loadStudyColumns, this);
             }
 

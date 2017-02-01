@@ -1282,7 +1282,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             scales = customRenderType.generateScales(this, chartConfig, scales);
 
         if (!Ext4.isDefined(chartConfig.width) || chartConfig.width == null)
-            chartConfig.width = this.getViewPanel().getWidth();
+            chartConfig.width = LABKEY.vis.GenericChartHelper.getChartTypeBasedWidth(chartType, chartConfig.measures, this.getMeasureStore(), this.getViewPanel().getWidth());
         if (!Ext4.isDefined(chartConfig.height) || chartConfig.height == null)
             chartConfig.height = this.getViewPanel().getHeight() - 25;
 
