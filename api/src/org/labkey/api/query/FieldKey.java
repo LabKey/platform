@@ -25,10 +25,10 @@ import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.util.Path;
 
-import java.util.Comparator;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -196,6 +196,19 @@ public class FieldKey extends QueryKey<FieldKey>
         }
 
         return null;
+    }
+
+    /**
+     * Create a new child FieldKey of this FieldKey using <code>parts</code>
+     */
+    public FieldKey append(String... parts)
+    {
+        FieldKey ret = this;
+        for (String part : parts)
+        {
+            ret = new FieldKey(ret, part);
+        }
+        return ret;
     }
 
     public int compareTo(FieldKey o)
