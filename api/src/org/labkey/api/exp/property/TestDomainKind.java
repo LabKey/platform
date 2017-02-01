@@ -34,7 +34,7 @@ import java.util.Set;
 public class TestDomainKind extends DomainKind
 {
     public static final String NAME = "TestDomainKind";
-    private static final String SCHEMA = "test";
+    private static final String SCHEMA = DbSchema.TEMP_SCHEMA_NAME;
     private static final Set<PropertyStorageSpec> _baseFields;
     private static final Set<PropertyStorageSpec.Index> _propertyIndices;
 
@@ -180,7 +180,7 @@ public class TestDomainKind extends DomainKind
     @Override
     public DbScope getScope()
     {
-        return DbSchema.get(SCHEMA, DbSchemaType.Module).getScope();
+        return DbSchema.get(SCHEMA, DbSchemaType.Provisioned).getScope();
     }
 
     @Override
