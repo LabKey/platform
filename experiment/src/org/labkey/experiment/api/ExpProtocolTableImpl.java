@@ -16,10 +16,13 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.query.ExpProtocolTable;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.query.RowIdForeignKey;
+import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.ExperimentProperty;
+import org.labkey.api.exp.query.ExpProtocolTable;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -33,6 +36,7 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
         super(name, ExperimentServiceImpl.get().getTinfoProtocol(), schema, new ExpProtocolImpl(new Protocol()));
         setTitleColumn("Name");
     }
+
     public ColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
@@ -41,6 +45,8 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
                 return wrapColumn(alias, _rootTable.getColumn("RowId"));
             case Name:
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
+            case Description:
+                return wrapColumn(alias, _rootTable.getColumn("ProtocolDescription"));
             case LSID:
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
             case Folder:
@@ -53,6 +59,20 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
                 return wrapColumn(alias, _rootTable.getColumn("Modified"));
             case ModifiedBy:
                 return createUserColumn(alias, _rootTable.getColumn("ModifiedBy"));
+            case Instrument:
+                return wrapColumn(alias, _rootTable.getColumn("Instrument"));
+            case Software:
+                return wrapColumn(alias, _rootTable.getColumn("Software"));
+            case ApplicationType:
+                return wrapColumn(alias, _rootTable.getColumn("ApplicationType"));
+            case ProtocolImplementation:
+            {
+                PropertyDescriptor pd = ExperimentProperty.PROTOCOLIMPLEMENTATION.getPropertyDescriptor();
+                PropertyColumn col = new PropertyColumn(pd, this, "lsid", getContainer(), getUserSchema().getUser(), true);
+                col.setName(alias);
+                col.setHidden(true);
+                return col;
+            }
         }
         throw new IllegalArgumentException("Unknown column " + column);
     }
@@ -63,15 +83,26 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
         colRowId.setHidden(true);
         colRowId.setFk(new RowIdForeignKey(colRowId));
         colRowId.setKeyField(true);
+
         ColumnInfo colName = addColumn(Column.Name);
         setTitleColumn(colName.getName());
+
         ColumnInfo colLSID = addColumn(Column.LSID);
         colLSID.setHidden(true);
+
         addContainerColumn(Column.Folder, null);
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
-        addColumn(Column.Modified);
-        addColumn(Column.ModifiedBy);
+
+        addColumn(Column.Modified).setHidden(true);
+        addColumn(Column.ModifiedBy).setHidden(true);
+
+        addColumn(Column.Description);
+        addColumn(Column.Instrument);
+        addColumn(Column.Software);
+        addColumn(Column.ApplicationType);
+        addColumn(Column.ProtocolImplementation);
+
         ActionURL urlDetails = new ActionURL(ExperimentController.ProtocolDetailsAction.class, _userSchema.getContainer());
         setDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("rowId", "RowId")));
     }

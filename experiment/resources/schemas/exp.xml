@@ -480,8 +480,14 @@
       <column columnName="Name">
           <description>Contains a short name for this protocol</description>
       </column>
-      <column columnName="ProtocolDescription"/>
-      <column columnName="ApplicationType"/>
+      <column columnName="ProtocolDescription">
+          <columnTitle>Description</columnTitle>
+          <description>Contains a description for this protocol</description>
+      </column>
+      <column columnName="ApplicationType">
+          <description>Contains the application type of this protocol.  One of "ExperimentRun", "ProtocolApplication", or "ExperimentRunOutput"</description>
+          <isHidden>true</isHidden>
+      </column>
       <column columnName="MaxInputMaterialPerInstance"/>
       <column columnName="MaxInputDataPerInstance"/>
       <column columnName="OutputMaterialPerInstance"/>
