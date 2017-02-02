@@ -22,11 +22,16 @@ public interface ExpProtocolTable extends ExpTable<ExpProtocolTable.Column>
     {
         RowId,
         Name,
+        Description,
         LSID,
         Folder,
         Created,
         CreatedBy,
         Modified,
         ModifiedBy,
+        Instrument,
+        Software,
+        ApplicationType,
+        ProtocolImplementation
     }
 }
