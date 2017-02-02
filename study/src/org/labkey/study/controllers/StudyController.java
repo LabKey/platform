@@ -4607,9 +4607,6 @@ public class StudyController extends BaseStudyController
                 transaction.commit();
             }
 
-            StudyServiceImpl.addDatasetAuditEvent(
-                    getUser(), getContainer(), ds, "Dataset deleted: " + ds.getName(),null);
-
             StudyManager.getInstance().getVisitManager((StudyImpl)study).updateParticipantVisits(getUser(), Collections.emptySet());
 
 

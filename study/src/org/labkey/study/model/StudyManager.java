@@ -132,6 +132,7 @@ import org.labkey.study.QueryHelper;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
+import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.DatasetServiceImpl;
@@ -2919,6 +2920,8 @@ public class StudyManager
 
         SchemaKey schemaPath = SchemaKey.fromParts(SCHEMA.getSchemaName());
         QueryService.get().fireQueryDeleted(user, study.getContainer(), null, schemaPath, Collections.singleton(ds.getName()));
+        StudyServiceImpl.addDatasetAuditEvent(
+                user, study.getContainer(), ds, "Dataset deleted: " + ds.getName(),null);
 
         unindexDataset(ds);
     }
