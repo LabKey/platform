@@ -73,6 +73,8 @@ Ext4.define('LABKEY.vis.ChartQueryPanel', {
                     scope : this,
                     change : function(cmp, newValue)
                     {
+                        this.getOkButton().disable();
+                        this.getQueryCombo().disable();
                         this.schemaName = newValue;
 
                         var proxy = this.getQueryCombo().getStore().getProxy();
@@ -82,9 +84,8 @@ Ext4.define('LABKEY.vis.ChartQueryPanel', {
                             this.getQueryCombo().getStore().load();
                         }
 
-                        this.getQueryCombo().enable();
                         this.getQueryCombo().clearValue();
-                        this.getOkButton().disable();
+                        this.getQueryCombo().enable();
                     }
                 }
             });
@@ -137,7 +138,8 @@ Ext4.define('LABKEY.vis.ChartQueryPanel', {
                         var selected = cmp.getStore().getAt(cmp.getStore().find('name', newValue));
                         this.queryLabel = selected ? selected.data.title : null;
                         this.queryName = selected ? selected.data.name : null;
-                        this.getOkButton().enable();
+                        if (newValue)
+                            this.getOkButton().enable();
                     }
                 }
             });
