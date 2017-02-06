@@ -376,7 +376,7 @@ abstract class OracleDialect extends SimpleSqlDialect
                 byte[] val = (byte[]) value;
 
                 //Handle GUID. A GUID in oracle is a 32 character representation of a 16 byte RAW value
-                if(val.length == 16 && rsmd.getColumnDisplaySize(i) == 32)
+                if(val != null && val.length == 16 && rsmd.getColumnDisplaySize(i) == 32)
                 {
                     String hexVal = String.valueOf(Hex.encodeHex(val)); //get the 32 character representation
 
