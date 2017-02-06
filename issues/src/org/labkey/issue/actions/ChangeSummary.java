@@ -16,7 +16,10 @@
 package org.labkey.issue.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.ColumnInfo;
@@ -29,21 +32,39 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.emailTemplate.EmailTemplateService;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.issue.CustomColumnConfiguration;
+import org.labkey.issue.IssueUpdateEmailTemplate;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.CustomColumn;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueListDef;
+import org.labkey.issue.model.IssueManager;
 import org.springframework.web.servlet.mvc.Controller;
 
+import javax.mail.Address;
+import javax.mail.Message;
+import javax.mail.internet.AddressException;
+import javax.servlet.ServletException;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import static org.labkey.api.action.SpringActionController.getActionName;
 
@@ -52,6 +73,8 @@ import static org.labkey.api.action.SpringActionController.getActionName;
  */
 public class ChangeSummary
 {
+    private static final Logger _log = Logger.getLogger(ChangeSummary.class);
+
     private Issue.Comment _comment;
     private String _textChanges;
     private String _summary;
@@ -249,5 +272,149 @@ public class ChangeSummary
             String encTo = PageFlowUtil.filter(to);
             sbHTML.append("<tr><td>").append(encField).append("</td><td>").append(encFrom).append("</td><td>&raquo;</td><td>").append(encTo).append("</td></tr>\n");
         }
+    }
+
+    public static Issue relatedIssueCommentHandler(int issueId, int relatedIssueId, User user, boolean drop)
+    {
+        StringBuilder sb = new StringBuilder();
+        Issue relatedIssue = IssueManager.getIssue(null, user, relatedIssueId);
+        Set<Integer> prevRelated = relatedIssue.getRelatedIssues();
+        Set<Integer> newRelated = new TreeSet<>();
+        newRelated.addAll(prevRelated);
+
+        if (drop)
+            newRelated.remove(new Integer(issueId));
+        else
+            newRelated.add(issueId);
+
+        sb.append("<div class=\"wiki\"><table class=issues-Changes>");
+        sb.append(String.format("<tr><td>Related</td><td>%s</td><td>&raquo;</td><td>%s</td></tr>", StringUtils.join(prevRelated, ", "), StringUtils.join(newRelated, ", ")));
+        sb.append("</table></div>");
+
+        relatedIssue.addComment(user, sb.toString());
+        relatedIssue.setRelatedIssues(newRelated);
+
+        return relatedIssue;
+    }
+
+    public static void sendUpdateEmail(IssueListDef issueListDef, Container container, User u, Issue issue, Issue prevIssue, String fieldChanges, String summary,
+                                 String comment, ActionURL detailsURL, String change, List<AttachmentFile> attachments, Class<? extends Controller> action, User createdByUser) throws ServletException
+    {
+        // Skip the email if no comment and no public fields have changed, #17304
+        if (fieldChanges.isEmpty() && comment.isEmpty())
+            return;
+
+        final Set<User> allAddresses = getUsersToEmail(container, u, issue, prevIssue, action);
+        for (User user : allAddresses)
+        {
+            boolean hasPermission = container.hasPermission(user, ReadPermission.class);
+            if (!hasPermission) continue;
+
+            String to = user.getEmail();
+            try
+            {
+                Issue.Comment lastComment = issue.getLastComment();
+                String messageId = "<" + issue.getEntityId() + "." + lastComment.getCommentId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
+                String references = messageId + " <" + issue.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
+                MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
+                m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(to));
+                Address[] addresses = m.getAllRecipients();
+
+                if (addresses != null && addresses.length > 0)
+                {
+                    IssueUpdateEmailTemplate template = EmailTemplateService.get().getEmailTemplate(IssueUpdateEmailTemplate.class, container);
+                    template.init(issue, detailsURL, change, comment, fieldChanges, allAddresses, attachments, user);
+
+                    m.setSubject(template.renderSubject(container));
+                    m.setFrom(template.renderFrom(container, LookAndFeelProperties.getInstance(container).getSystemEmailAddress()));
+                    m.setHeader("References", references);
+                    String body = template.renderBody(container);
+
+                    m.setTextContent(body);
+                    StringBuilder html = new StringBuilder();
+                    html.append("<html><head></head><body>");
+                    html.append(PageFlowUtil.filter(body,true,true));
+                    html.append(
+                            "<div itemscope itemtype=\"http://schema.org/EmailMessage\">\n" +
+                                    "  <div itemprop=\"action\" itemscope itemtype=\"http://schema.org/ViewAction\">\n" +
+                                    "    <link itemprop=\"url\" href=\"" + PageFlowUtil.filter(detailsURL) + "\"></link>\n" +
+                                    "    <meta itemprop=\"name\" content=\"View Commit\"></meta>\n" +
+                                    "  </div>\n" +
+                                    "  <meta itemprop=\"description\" content=\"View this " + PageFlowUtil.filter(IssueManager.getEntryTypeNames(container, issueListDef.getName()).singularName) + "\"></meta>\n" +
+                                    "</div>\n");
+                    html.append("</body></html>");
+                    m.setEncodedHtmlContent(html.toString());
+
+                    NotificationService.get().sendMessage(container, createdByUser, user, m,
+                            "view " + IssueManager.getEntryTypeNames(container, issueListDef.getName()).singularName,
+                            new ActionURL(IssuesController.DetailsAction.class,container).addParameter("issueId",issue.getIssueId()).getLocalURIString(false),
+                            "issue:" + issue.getIssueId(),
+                            Issue.class.getName(), true);
+                }
+            }
+            catch (ConfigurationException | AddressException e)
+            {
+                _log.error("error sending update email to " + to, e);
+            }
+            catch (Exception e)
+            {
+                _log.error("error sending update email to " + to, e);
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+        }
+    }
+
+    /**
+     * Builds the list of email addresses for notification based on the user
+     * preferences and the explicit notification list.
+     */
+    private static Set<User> getUsersToEmail(Container c, User user, Issue issue, Issue prevIssue, Class<? extends Controller> action) throws ServletException
+    {
+        final Set<User> emailUsers = new HashSet<>();
+        int assignedToPref = IssueManager.getUserEmailPreferences(c, issue.getAssignedTo());
+        int assignedToPrev = prevIssue != null && prevIssue.getAssignedTo() != null ? prevIssue.getAssignedTo() : 0;
+        int assignedToPrevPref = assignedToPrev != 0 ? IssueManager.getUserEmailPreferences(c, prevIssue.getAssignedTo()) : 0;
+        int createdByPref = IssueManager.getUserEmailPreferences(c, issue.getCreatedBy());
+
+        if (IssuesController.InsertAction.class.equals(action))
+        {
+            if ((assignedToPref & IssueManager.NOTIFY_ASSIGNEDTO_OPEN) != 0)
+                safeAddEmailUsers(emailUsers, UserManager.getUser(issue.getAssignedTo()));
+        }
+        else
+        {
+            if ((assignedToPref & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0)
+                safeAddEmailUsers(emailUsers, UserManager.getUser(issue.getAssignedTo()));
+
+            if ((assignedToPrevPref & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0)
+                safeAddEmailUsers(emailUsers, UserManager.getUser(prevIssue.getAssignedTo()));
+
+            if ((createdByPref & IssueManager.NOTIFY_CREATED_UPDATE) != 0)
+                safeAddEmailUsers(emailUsers, UserManager.getUser(issue.getCreatedBy()));
+        }
+
+        // add any users subscribed to this forum
+        List<ValidEmail> subscribedEmails = IssueManager.getSubscribedUserEmails(c);
+        for (ValidEmail email : subscribedEmails)
+            safeAddEmailUsers(emailUsers, UserManager.getUser(email));
+
+        // add any explicit notification list addresses
+        List<ValidEmail> emails = issue.getNotifyListEmail();
+        for (ValidEmail email : emails)
+            safeAddEmailUsers(emailUsers, UserManager.getUser(email));
+
+        boolean selfSpam = !((IssueManager.NOTIFY_SELF_SPAM & IssueManager.getUserEmailPreferences(c, user.getUserId())) == 0);
+        if (selfSpam)
+            safeAddEmailUsers(emailUsers, user);
+        else
+            emailUsers.remove(user);
+
+        return emailUsers;
+    }
+
+    private static void safeAddEmailUsers(Set<User> users, User user)
+    {
+        if (user != null && user.isActive())
+            users.add(user);
     }
 }

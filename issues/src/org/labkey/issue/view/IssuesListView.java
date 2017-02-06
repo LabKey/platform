@@ -41,6 +41,7 @@ import java.io.PrintWriter;
 public class IssuesListView extends VBox
 {
     public static final String ISSUE_LIST_DEF_NAME = "issueDefName";
+    public static final String ISSUE_LIST_DEF_ID = "issueDefId";
 
     public IssuesListView(String issueDefName)
     {
