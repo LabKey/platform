@@ -42,7 +42,7 @@ Ext4.define('LABKEY.vis.TimeChartYMeasureField', {
         {
             this.titleCmp = Ext4.create('Ext.Component', {
                 cls: 'y-measure-label',
-                html: Ext4.String.htmlEncode('Measure: ' + this.measure.label + ' from ' + this.measure.queryLabel)
+                html: Ext4.String.htmlEncode('Measure: ' + this.measure.label + ' from ' + (this.measure.queryLabel || this.measure.queryName))
             })
         }
 
