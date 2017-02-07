@@ -70,6 +70,21 @@ Ext4.define('LABKEY.sqv.Model', {
             sorters : {property: 'name', direction : 'ASC'}
         });
 
+        //Store and model for the columnCombo
+        Ext4.define('columnModel', {
+            extend : 'Ext.data.Model',
+            fields : [
+                {name : 'name',         type : 'string'},
+                {name : 'shortCaption',  type : 'string', sortType: 'asUCString'}
+            ],
+            idProperty: 'name'
+        });
+
+        this.columnStore = Ext4.create('Ext.data.Store', {
+            model : 'columnModel',
+            sorters : {property: 'shortCaption', direction : 'ASC'}
+        });
+
 
         this.addEvents({
             beforeschemaload : true,
@@ -77,7 +92,9 @@ Ext4.define('LABKEY.sqv.Model', {
             beforequeryload : true,
             queryload : true,
             beforeviewload : true,
-            viewload : true
+            viewload : true,
+            beforecolumnload : true,
+            columnload : true
         });
         this.callParent([config]);
     },
@@ -346,6 +363,50 @@ Ext4.define('LABKEY.sqv.Model', {
         return config;
     },
 
+    makeColumnComboConfig : function(config) {
+        Ext4.applyIf(config, {
+            xtype : 'combo',
+            name : 'columnCombo',
+            queryMode : 'local',
+            fieldLabel : 'Column',
+            valueField : 'name',
+            displayField : 'shortCaption',
+            initialValue : '',
+            disabled : true,
+            editable : false,
+            store : this.columnStore,
+            listConfig : {
+                getInnerTpl: function (displayField) {
+                    return '{' + displayField + ':htmlEncode}';
+                }
+            },
+            scope : this
+        });
+
+        config.listeners = {
+            afterrender : function(cb) {
+                this.columnCombo = cb;
+            },
+            change : function (cb, newValue, oldValue) {
+                var record = cb.store.getById(newValue);
+                if (record) {
+                    this.onColumnChange(newValue, oldValue);
+                }
+            },
+            dataloaded : function(cb) {
+                if (!cb.initiallyLoaded) {
+                    cb.initiallyLoaded = true;
+                    if (cb.initialValue !== undefined) {
+                        this.setComboValues(cb, cb.initialValue);
+                    }
+                    cb.addCls('column-loaded-marker');
+                }
+            },
+            scope : this
+        };
+        return config;
+    },
+
     onContainerChange : function (newValue/*, oldValue*/) {
         this.changeSchemaStore(newValue);
     },
@@ -365,6 +426,28 @@ Ext4.define('LABKEY.sqv.Model', {
     },
 
     onQueryChange : function (newValue/*, oldValue*/) {
+        var containerId = this.getContainerIdValue();
+        var schema = this.getSchemaValue();
+
+        if (schema && newValue) {
+            this.changeViewStore(containerId, schema, newValue);
+            if (!this.viewCombo)
+                this.changeColumnStore(containerId, schema, newValue);
+        }
+    },
+
+    onViewChange : function (newValue, oldValue) {
+        var containerId = this.getContainerIdValue();
+        var schema = this.getSchemaValue();
+        var query = this.getQueryValue();
+
+        if (schema && newValue) {
+            this.changeColumnStore(containerId, schema, query, newValue);
+        }
+    },
+
+    getContainerIdValue: function()
+    {
         var containerId = null;
         if (this.containerCombo) {
             containerId = this.containerCombo.getValue();
@@ -372,21 +455,31 @@ Ext4.define('LABKEY.sqv.Model', {
         else if (this.schemaCombo && this.schemaCombo.defaultContainer) {
             containerId = this.schemaCombo.defaultContainer;
         }
+        return containerId;
+    },
 
-        var schema;
+    getSchemaValue: function()
+    {
+        var schema = null;
         if (this.queryCombo && this.queryCombo.defaultSchema) {
             schema = this.queryCombo.defaultSchema;
         }
         else if (this.schemaCombo) {
             schema = this.schemaCombo.getRawValue();
         }
-
-        if (schema && newValue) {
-            this.changeViewStore(containerId, schema, newValue);
-        }
+        return schema;
     },
 
-    onViewChange : function (newValue, oldValue) {
+    getQueryValue: function()
+    {
+        var query = null;
+        if (this.queryCombo) {
+            query = this.queryCombo.getRawValue();
+        }
+        return query;
+    },
+
+    onColumnChange : function (newValue, oldValue) {
 
     },
 
@@ -501,6 +594,39 @@ Ext4.define('LABKEY.sqv.Model', {
                     this.viewCombo.setDisabled(false);
                     this.viewCombo.fireEvent('dataloaded', this.viewCombo);
                     this.fireEvent('viewload', this, selectedContainerId, selectedSchema, selectedQuery);
+                }
+            });
+        }
+    },
+
+    changeColumnStore : function (selectedContainerId, selectedSchema, selectedQuery, selectedView) {
+        if (this.columnCombo) {
+            if (false === this.fireEvent('beforecolumnload', this, selectedContainerId, selectedSchema, selectedQuery))
+                return;
+
+            this.columnCombo.removeCls('column-loaded-marker');
+
+            var currentColumn = this.columnCombo.getValue();
+            this.columnCombo.setDisabled(true);
+            this.columnCombo.clearValue();
+
+            this.columnCombo.setLoading(true);
+            LABKEY.Query.getQueryDetails({
+                scope : this,
+                containerPath: selectedContainerId,
+                schemaName : selectedSchema,
+                queryName : selectedQuery,
+                viewName: selectedView,
+                success : function (details) {
+                    this.columnCombo.setLoading(false);
+                    var columns = [];
+                    if (details && details.columns)
+                        columns = details.columns;
+                    this.columnStore.loadData(columns);
+                    this.setComboValues(this.columnCombo, currentColumn);
+                    this.columnCombo.setDisabled(false);
+                    this.columnCombo.fireEvent('dataloaded', this.columnCombo);
+                    this.fireEvent('columnload', this, selectedContainerId, selectedSchema, selectedQuery);
                 }
             });
         }
