@@ -1550,9 +1550,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     getMeasureFromFieldKey : function(fk)
     {
-        var queryColumnStore = this.getChartTypePanel().getQueryColumnsStore(),
-            fkName = fk.getParts().length > 1 ? fk.toString() : fk.getName();
-        return queryColumnStore.findRecord('fieldKey', fkName, 0, false, true, true);
+        var queryColumnStore = this.getChartTypePanel().getQueryColumnsStore();
+
+        // first search by fk.toString(), for example Analyte.Name -> Analyte$PName
+        var measure = queryColumnStore.findRecord('fieldKey', fk.toString(), 0, false, true, true);
+        if (measure != null) {
+            return measure;
+        }
+
+        // second look by fk.getName()
+        return queryColumnStore.findRecord('fieldKey', fk.getName(), 0, false, true, true);
     },
 
     setYAxisMeasure : function(measure)
@@ -1583,21 +1590,24 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             sep = '';
 
         // Checks to make sure the measures are still available, if not we show an error.
-        Ext4.each(measureNames, function(propName)
-        {
-            if (this.measures[propName] && store.find('fieldKey', this.measures[propName].name, null, null, null, true) === -1)
-            {
-                if (message == null)
-                    message = '';
+        Ext4.each(measureNames, function(propName) {
+            if (this.measures[propName]) {
+                var indexByFieldKey = store.find('fieldKey', this.measures[propName].fieldKey, null, null, null, true),
+                    indexByName = store.find('fieldKey', this.measures[propName].name, null, null, null, true);
 
-                message += sep + 'The saved ' + propName + ' measure, ' + this.measures[propName].label + ', is not available. It may have been renamed or removed.';
-                sep = ' ';
+                if (indexByFieldKey === -1 && indexByName === -1) {
+                    if (message == null)
+                        message = '';
 
-                delete this.measures[propName];
-                this.getChartTypePanel().setToForceApplyChanges();
+                    message += sep + 'The saved ' + propName + ' measure, ' + this.measures[propName].label + ', is not available. It may have been renamed or removed.';
+                    sep = ' ';
 
-                if (requiredMeasureNames.indexOf(propName) > -1)
-                    valid = false;
+                    delete this.measures[propName];
+                    this.getChartTypePanel().setToForceApplyChanges();
+
+                    if (requiredMeasureNames.indexOf(propName) > -1)
+                        valid = false;
+                }
             }
         }, this);
 

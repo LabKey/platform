@@ -573,7 +573,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         return LABKEY.vis.getAggregateData(data, dimensionName, null, measureName, aggregate, nullDisplayValue, false);
     };
 
-    var _getRowValue = function(row, propName)
+    var _getRowValue = function(row, propName, valueName)
     {
         if (row.hasOwnProperty(propName)) {
             // backwards compatibility for response row that is not a LABKEY.Query.Row
@@ -581,10 +581,13 @@ LABKEY.vis.GenericChartHelper = new function(){
                 return row[propName].displayValue || row[propName].value;
             }
 
-            if (row.get(propName).hasOwnProperty('displayValue')) {
-                return row.get(propName).displayValue;
+            var propValue = row.get(propName);
+            if (valueName != undefined && propValue.hasOwnProperty(valueName)) {
+                return propValue[valueName];
             }
-
+            else if (propValue.hasOwnProperty('displayValue')) {
+                return propValue['displayValue'];
+            }
             return row.getValue(propName);
         }
 
@@ -630,7 +633,7 @@ LABKEY.vis.GenericChartHelper = new function(){
     {
         return function(row)
         {
-            var value = _getRowValue(row, measureName);
+            var value = _getRowValue(row, measureName, 'value');
 
             if (value !== undefined)
             {
