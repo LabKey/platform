@@ -20,7 +20,6 @@ package org.labkey.core.webdav;
 
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Level;
@@ -996,14 +995,9 @@ public class DavController extends SpringActionController
             response.setContentType("application/zip");
             response.setHeader("Content-Disposition", "attachment; filename=\"" + zipName + ".zip\"");
 
-            ZipOutputStream out = new ZipOutputStream(response.getOutputStream());
-            try
+            try (ZipOutputStream out = new ZipOutputStream(response.getOutputStream()))
             {
                 addResource(resource, out, user, resource, depth, includeNames);
-            }
-            finally
-            {
-                IOUtils.closeQuietly(out);
             }
             return WebdavStatus.SC_OK;
         }

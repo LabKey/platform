@@ -16,7 +16,6 @@
 
 package org.labkey.filecontent;
 
-import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentFile;
@@ -155,18 +154,15 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
     public void addAttachment(User user, AttachmentFile file) throws IOException
     {
         File fileLocation = getFileSystemDirectory();
-        FileOutputStream fos = null;
         InputStream is = file.openInputStream();
-        try
+        File saveFile = new File(fileLocation, file.getFilename());
+        try (FileOutputStream fos = new FileOutputStream(saveFile))
         {
-            File saveFile = new File(fileLocation, file.getFilename());
-            fos = new FileOutputStream(saveFile);
             FileUtil.copyData(is, fos);
             FileContentServiceImpl.logFileAction(fileLocation, file.getFilename(), FileContentServiceImpl.FileAction.UPLOAD, user);
         }
         finally
         {
-            IOUtils.closeQuietly(fos);
             file.closeInputStream();
         }
     }

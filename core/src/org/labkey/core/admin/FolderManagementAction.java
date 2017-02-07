@@ -15,7 +15,6 @@
  */
 package org.labkey.core.admin;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.FormViewAction;
@@ -508,12 +507,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             case 2:
             {
                 // Write to stream first, so any error can be reported properly
-                OutputStream outputStream = null;
-                try
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); OutputStream outputStream = new BufferedOutputStream(baos))
                 {
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    outputStream = new BufferedOutputStream(baos);
-
                     try (ZipFile zip = new ZipFile(outputStream, true))
                     {
                         writer.write(container, ctx, zip);
@@ -524,10 +519,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 catch (Container.ContainerException e)
                 {
                     errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                }
-                finally
-                {
-                    IOUtils.closeQuietly(outputStream);
                 }
                 break;
             }

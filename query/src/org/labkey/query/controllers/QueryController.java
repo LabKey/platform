@@ -23,7 +23,6 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
@@ -3684,12 +3683,12 @@ public static class ExportSqlForm
         }
     }
 
-    /** A dummy object for swap-in uasge when no transaction is actually desired */
+    /** A dummy object for swap-in usage when no transaction is actually desired */
     public static final DbScope.Transaction NO_OP_TRANSACTION = new DbScope.Transaction()
     {
         @Override
         @NotNull
-        public <T extends Runnable> T addCommitTask(T runnable, DbScope.CommitTaskOption firstOption, DbScope.CommitTaskOption... additionalOptions)
+        public <T extends Runnable> T addCommitTask(@NotNull T runnable, @NotNull DbScope.CommitTaskOption firstOption, DbScope.CommitTaskOption... additionalOptions)
         {
             runnable.run();
             return runnable;
@@ -6122,12 +6121,8 @@ public static class ExportSqlForm
             Container container = getContainer();
             QueryServiceImpl svc = (QueryServiceImpl)QueryService.get();
 
-            OutputStream outputStream = null;
-            try
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); OutputStream outputStream = new BufferedOutputStream(baos))
             {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                outputStream = new BufferedOutputStream(baos);
-
                 try (ZipFile zip = new ZipFile(outputStream, true))
                 {
                     svc.writeTables(container, getUser(), zip, form.getSchemas(), form.getHeaderType());
@@ -6139,10 +6134,6 @@ public static class ExportSqlForm
             {
                 errors.reject(ERROR_MSG, e.getMessage() != null ? e.getMessage() : e.getClass().getName());
                 LOG.error("Errror exporting tables", e);
-            }
-            finally
-            {
-                IOUtils.closeQuietly(outputStream);
             }
 
             if (errors.hasErrors())
