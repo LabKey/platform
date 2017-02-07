@@ -60,7 +60,8 @@ LABKEY.vis.TimeChartHelper = new function() {
 
         var xMin = null, xMax = null, xTrans = null, xTickFormat, xTickHoverText,
             yLeftMin = null, yLeftMax = null, yLeftTrans = null, yLeftTickFormat,
-            yRightMin = null, yRightMax = null, yRightTrans = null, yRightTickFormat;
+            yRightMin = null, yRightMax = null, yRightTrans = null, yRightTickFormat,
+            valExponentialDigits = 6;
 
         for (var i = 0; i < config.axis.length; i++)
         {
@@ -72,14 +73,30 @@ LABKEY.vis.TimeChartHelper = new function() {
                     yLeftMin = typeof axis.range.min == "number" ? axis.range.min : (config.hasNoData ? 0 : null);
                     yLeftMax = typeof axis.range.max == "number" ? axis.range.max : (config.hasNoData ? 10 : null);
                     yLeftTrans = axis.scale ? axis.scale : "linear";
-                    yLeftTickFormat = numberFormats.left ? numberFormats.left : null;
+                    yLeftTickFormat = function(value) {
+                        if (Ext4.isNumber(value) && Math.abs(Math.round(value)).toString().length >= valExponentialDigits) {
+                            return value.toExponential();
+                        }
+                        else if (Ext4.isFunction(numberFormats.left)) {
+                            return numberFormats.left(value);
+                        }
+                        return value;
+                    }
                 }
                 else
                 {
                     yRightMin = typeof axis.range.min == "number" ? axis.range.min : (config.hasNoData ? 0 : null);
                     yRightMax = typeof axis.range.max == "number" ? axis.range.max : (config.hasNoData ? 10 : null);
                     yRightTrans = axis.scale ? axis.scale : "linear";
-                    yRightTickFormat = numberFormats.right ? numberFormats.right : null;
+                    yRightTickFormat = function(value) {
+                        if (Ext4.isNumber(value) && Math.abs(Math.round(value)).toString().length >= valExponentialDigits) {
+                            return value.toExponential();
+                        }
+                        else if (Ext4.isFunction(numberFormats.right)) {
+                            return numberFormats.right(value);
+                        }
+                        return value;
+                    }
                 }
             }
             else

@@ -320,6 +320,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         var data = Ext4.isArray(measureStore.rows) ? measureStore.rows : measureStore.records();
         var fields = Ext4.isObject(measureStore.metaData) ? measureStore.metaData.fields : measureStore.getResponseMetadata().fields;
         var subjectColumn = _getStudySubjectInfo().columnName;
+        var valExponentialDigits = 6;
 
         if (chartType === "box_plot")
         {
@@ -412,11 +413,23 @@ LABKEY.vis.GenericChartHelper = new function(){
                 }
 
                 if (measures.y && fields[i].fieldKey == measures.y.name) {
+                    var tickFormatFn;
+
                     if (fields[i].extFormatFn) {
-                        scales.y.tickFormat = eval(fields[i].extFormatFn);
+                        tickFormatFn = eval(fields[i].extFormatFn);
                     }
                     else if (defaultFormatFn) {
-                        scales.y.tickFormat = defaultFormatFn;
+                        tickFormatFn = defaultFormatFn;
+                    }
+
+                    scales.y.tickFormat = function(value) {
+                        if (Ext4.isNumber(value) && Math.abs(Math.round(value)).toString().length >= valExponentialDigits) {
+                            return value.toExponential();
+                        }
+                        else if (Ext4.isFunction(tickFormatFn)) {
+                            return tickFormatFn(value);
+                        }
+                        return value;
                     }
                 }
             }

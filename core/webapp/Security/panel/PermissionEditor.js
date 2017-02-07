@@ -312,8 +312,16 @@ Ext4.define('Security.panel.PermissionEditor', {
     onCreateGroup :  function(btn, callback) {
         var field = btn.up('panel').down('textfield');
         var groupName = field.getValue();
-        if (!groupName)
+        if (!groupName) {
+            Ext4.Msg.show({
+                title: 'Error',
+                msg: 'No group name provided.',
+                icon: Ext4.Msg.ERROR,
+                buttons: Ext4.Msg.OK
+            });
             return;
+        }
+
         this.securityCache.createGroup(btn.projectId, groupName, callback, this);
         field.reset();
     }

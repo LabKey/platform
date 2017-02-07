@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.data.PropertyManager" %>
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.reports.permissions.ShareReportPermission" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
@@ -48,7 +47,7 @@
     Container c = getContainer();
     User user = getUser();
 
-    String numberFormat = PropertyManager.getProperties(c, "DefaultStudyFormatStrings").get("NumberFormatString");
+    String numberFormat = Formats.getNumberFormatString(c);
     if (numberFormat == null)
         numberFormat = Formats.f1.toPattern();
     String numberFormatFn = ExtUtil.toExtNumberFormatFn(numberFormat);
