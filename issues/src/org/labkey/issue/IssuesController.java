@@ -740,6 +740,12 @@ public class IssuesController extends SpringActionController
                             boolean ret = IssueValidation.relatedIssueHandler(issue, getUser(), errors);
                             if (!ret) return response;
 
+                            // bind the user schema table to the form bean so we can get typed properties
+                            UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
+                            TableInfo table = userSchema.getTable(issueListDef.getName());
+                            issuesForm.setTable(table);
+                            issue.setProperties(issuesForm.getTypedColumns());
+
                             // convert from email addresses & display names to userids before we hit the database
                             issue.parseNotifyList(issue.getNotifyList());
 
