@@ -77,7 +77,7 @@ public class DataClassUserSchema extends AbstractExpSchema
 
     @Nullable
     @Override
-    protected TableInfo createTable(String name)
+    public TableInfo createTable(String name)
     {
         ExpDataClass dataClass = getDataClasses().get(name);
         if (dataClass == null)

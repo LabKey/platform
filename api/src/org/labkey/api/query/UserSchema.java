@@ -250,7 +250,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return getTable(name, true);
     }
 
-    protected abstract @Nullable TableInfo createTable(String name);
+    public abstract @Nullable TableInfo createTable(String name);
 
     abstract public Set<String> getTableNames();
 

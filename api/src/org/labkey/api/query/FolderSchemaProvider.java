@@ -61,7 +61,7 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
             return Collections.emptySet();
         }
 
-        protected TableInfo createTable(String name)
+        public TableInfo createTable(String name)
         {
             return null;
         }

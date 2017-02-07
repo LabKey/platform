@@ -29,34 +29,34 @@ import java.util.Set;
 
 public interface QuerySchema extends SchemaTreeNode
 {
-    public User getUser();
+    User getUser();
 
-    public Container getContainer();
+    Container getContainer();
 
-    public DbSchema getDbSchema();
+    DbSchema getDbSchema();
 
-    public TableInfo getTable(String name);
+    TableInfo getTable(String name);
 
-    public Set<String> getTableNames();
+    Set<String> getTableNames();
 
-    public Collection<TableInfo> getTables();
+    Collection<TableInfo> getTables();
 
     /** Could be null if, for example, provider hides schema when module is inactive. */
-    public @Nullable QuerySchema getSchema(String name);
+    @Nullable QuerySchema getSchema(String name);
 
-    public Set<String> getSchemaNames();
+    Set<String> getSchemaNames();
 
-    public Collection<QuerySchema> getSchemas(boolean includeHidden);
+    Collection<QuerySchema> getSchemas(boolean includeHidden);
 
     /** @return the simple name for this schema, excluding any parent schema names */
-    public String getName();
+    String getName();
 
     /** @return a SchemaKey encoded name for this schema. */
-    public String getSchemaName();
+    String getSchemaName();
 
-    public @Nullable String getDescription();
+    @Nullable String getDescription();
 
-    public NavTree getSchemaBrowserLinks(User user);
+    NavTree getSchemaBrowserLinks(User user);
 
     boolean isHidden();
 

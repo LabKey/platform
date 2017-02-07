@@ -16,7 +16,6 @@
 
 package org.labkey.api.query;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -62,6 +61,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: kevink
@@ -104,7 +104,7 @@ public class SimpleUserSchema extends UserSchema
             _visible.removeAll(hiddenTables);
     }
 
-    protected TableInfo createTable(String name)
+    public TableInfo createTable(String name)
     {
         if (!_available.contains(name))
             return null;
@@ -181,7 +181,7 @@ public class SimpleUserSchema extends UserSchema
      * Supports combining a "real" table in the database with a Domain that adds extra columns that are stored in
      * OntologyManager, and joined based on the _objectUriCol.
      */
-    public static class  SimpleTable<SchemaType extends UserSchema> extends FilteredTable<SchemaType> implements UpdateableTableInfo
+    public static class SimpleTable<SchemaType extends UserSchema> extends FilteredTable<SchemaType> implements UpdateableTableInfo
     {
         protected ColumnInfo _objectUriCol;
         protected Domain _domain;
@@ -374,13 +374,9 @@ public class SimpleUserSchema extends UserSchema
 
         public Iterable<ColumnInfo> getBuiltInColumns()
         {
-            return Iterables.filter(getColumns(), new Predicate<ColumnInfo>() {
-                @Override
-                public boolean apply(ColumnInfo columnInfo)
-                {
-                    return !(columnInfo instanceof PropertyColumn);
-                }
-            });
+            return getColumns().stream()
+                .filter(columnInfo -> !(columnInfo instanceof PropertyColumn))
+                .collect(Collectors.toList());
         }
         
         public Iterable<PropertyColumn> getPropertyColumns()
