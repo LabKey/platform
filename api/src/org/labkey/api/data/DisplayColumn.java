@@ -22,7 +22,7 @@ import org.apache.commons.lang3.time.FastDateFormat;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
-import org.labkey.api.analytics.ColumnAnalyticsProvider;
+import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;

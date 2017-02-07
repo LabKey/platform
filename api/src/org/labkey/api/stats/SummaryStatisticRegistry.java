@@ -13,18 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.analytics;
+package org.labkey.api.stats;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.query.QuerySettings;
+import org.labkey.api.data.Aggregate;
 
-public abstract class QueryAnalyticsProvider implements AnalyticsProvider
+public interface SummaryStatisticRegistry
 {
-    public abstract boolean isApplicable(@NotNull QuerySettings settings);
-
-    @Override
-    public String getLabel()
-    {
-        return getName();
-    }
+    void register(@NotNull Aggregate.Type summaryStatistic);
+    Aggregate.Type getByName(@NotNull String name);
 }

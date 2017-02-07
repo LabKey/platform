@@ -13,15 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.analytics;
+package org.labkey.api.stats;
 
-/**
- * A source of statistics or other summary information for a column, query, or other data source.
- */
-public interface AnalyticsProvider
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.query.QuerySettings;
+
+public abstract class QueryAnalyticsProvider implements AnalyticsProvider
 {
-    String getName();
-    String getLabel();
-    String getDescription();
-    Integer getSortOrder();
+    public abstract boolean isApplicable(@NotNull QuerySettings settings);
+
+    @Override
+    public String getLabel()
+    {
+        return getName();
+    }
 }

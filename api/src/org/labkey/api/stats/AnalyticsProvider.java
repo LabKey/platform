@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.analytics;
+package org.labkey.api.stats;
 
-import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Aggregate;
-
-public interface SummaryStatisticRegistry
+/**
+ * A source of statistics or other summary information for a column, query, or other data source.
+ */
+public interface AnalyticsProvider
 {
-    void register(@NotNull Aggregate.Type summaryStatistic);
-    Aggregate.Type getByName(@NotNull String name);
+    String getName();
+    String getLabel();
+    String getDescription();
+    Integer getSortOrder();
 }

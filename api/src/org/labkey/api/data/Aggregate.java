@@ -19,7 +19,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.analytics.BaseAggregatesAnalyticsProvider;
+import org.labkey.api.stats.BaseAggregatesAnalyticsProvider;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DateUtil;
