@@ -83,7 +83,7 @@ public class PipelineQuerySchema extends UserSchema
         super(SCHEMA_NAME, "Contains data about pipeline jobs", user, container, PipelineSchema.getInstance().getSchema());
     }
 
-    protected TableInfo createTable(String name)
+    public TableInfo createTable(String name)
     {
         if (JOB_TABLE_NAME.equalsIgnoreCase(name))
         {

@@ -85,7 +85,7 @@ public class DataIntegrationQuerySchema extends UserSchema
     }
 
     @Override
-    protected TableInfo createTable(String name)
+    public TableInfo createTable(String name)
     {
         if (TRANSFORMHISTORY_TABLE_NAME.equalsIgnoreCase(name))
             return new TransformHistoryTable(this);

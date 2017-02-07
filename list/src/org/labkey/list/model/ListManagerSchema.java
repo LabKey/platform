@@ -93,7 +93,7 @@ public class ListManagerSchema extends UserSchema
 
     @Nullable
     @Override
-    protected TableInfo createTable(String name)
+    public TableInfo createTable(String name)
     {
         if (LIST_MANAGER.equalsIgnoreCase(name))
         {

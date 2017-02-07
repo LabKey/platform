@@ -17,7 +17,6 @@ package org.labkey.survey.query;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.module.Module;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -52,7 +51,7 @@ public class SurveyQuerySchema extends UserSchema
     }
 
     @Override
-    protected TableInfo createTable(String name)
+    public TableInfo createTable(String name)
     {
         if (SURVEY_DESIGN_TABLE_NAME.equalsIgnoreCase(name))
             return new SurveyDesignTable(SurveySchema.getInstance().getSchema().getTable(SURVEY_DESIGN_TABLE_NAME), this);

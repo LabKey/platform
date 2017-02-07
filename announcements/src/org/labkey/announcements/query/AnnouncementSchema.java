@@ -86,7 +86,7 @@ public class AnnouncementSchema extends UserSchema
     }
 
     @Override
-    protected TableInfo createTable(String name)
+    public TableInfo createTable(String name)
     {
         if (ANNOUNCEMENT_TABLE_NAME.equalsIgnoreCase(name))
         {

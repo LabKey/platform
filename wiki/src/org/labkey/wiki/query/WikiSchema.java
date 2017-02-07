@@ -78,7 +78,7 @@ public class WikiSchema extends UserSchema
     }
 
     @Override
-    protected TableInfo createTable(String name)
+    public TableInfo createTable(String name)
     {
         if (WikiService.RENDERER_TYPE_TABLE_NAME.equalsIgnoreCase(name))
         {
