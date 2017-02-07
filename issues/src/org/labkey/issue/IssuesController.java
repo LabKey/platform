@@ -721,6 +721,7 @@ public class IssuesController extends SpringActionController
 
                 // need to track issues that should be related together
                 List<Issue> newIssues = new ArrayList<>();
+                List<Integer> newIssueIds = new ArrayList<>();
                 try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
                 {
                     for (IssuesForm issuesForm : form.getIssueForms())
@@ -746,6 +747,7 @@ public class IssuesController extends SpringActionController
                                     issue, prevIssue, null, getContainer(), getUser(), InsertAction.class, issuesForm.getComment(), ccc, getUser());
                             IssueManager.saveIssue(getUser(), getContainer(), issue);
                             newIssues.add(issue);
+                            newIssueIds.add(issue.getIssueId());
 
                             // handle attachments
                             String attachmentName = (String)issuesForm.get("attachment");
@@ -792,6 +794,7 @@ public class IssuesController extends SpringActionController
                         IssueManager.saveIssue(getUser(), getContainer(), issue);
                     }
                     transaction.commit();
+                    response.put("issues", newIssueIds);
                     response.put("success", true);
                 }
             }
