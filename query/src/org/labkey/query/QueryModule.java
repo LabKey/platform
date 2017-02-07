@@ -18,8 +18,8 @@ package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
-import org.labkey.api.analytics.AnalyticsProviderRegistry;
-import org.labkey.api.analytics.SummaryStatisticRegistry;
+import org.labkey.api.stats.AnalyticsProviderRegistry;
+import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Aggregate;

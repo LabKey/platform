@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.core.analytics;
+package org.labkey.core.statistics;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.analytics.SummaryStatisticRegistry;
+import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.data.Aggregate;
 
 import java.util.Map;

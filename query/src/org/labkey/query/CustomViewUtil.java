@@ -20,7 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.analytics.BaseAggregatesAnalyticsProvider;
+import org.labkey.api.stats.BaseAggregatesAnalyticsProvider;
 import org.labkey.api.data.AnalyticsProviderItem;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;

@@ -438,9 +438,7 @@ core/src/org/labkey/core/admin/writer/RoleAssignmentsWriterFactory.java -text
 core/src/org/labkey/core/admin/writer/SearchSettingsWriterFactory.java -text
 core/src/org/labkey/core/admin/writer/SecurityGroupWriterFactory.java -text
 core/src/org/labkey/core/analytics/AnalyticsController.java -text
-core/src/org/labkey/core/analytics/AnalyticsProviderRegistryImpl.java -text
 core/src/org/labkey/core/analytics/AnalyticsServiceImpl.java -text
-core/src/org/labkey/core/analytics/SummaryStatisticRegistryImpl.java -text
 core/src/org/labkey/core/analytics/analyticsSettings.jsp -text
 core/src/org/labkey/core/attachment/AttachmentCache.java -text
 core/src/org/labkey/core/attachment/AttachmentServiceImpl.java -text
@@ -518,11 +516,13 @@ core/src/org/labkey/core/security/groupDiagram.jsp -text
 core/src/org/labkey/core/security/permissions.jsp -text
 core/src/org/labkey/core/security/renameGroup.jsp -text
 core/src/org/labkey/core/security/validators/PermissionsValidator.java -text
+core/src/org/labkey/core/statistics/AnalyticsProviderRegistryImpl.java -text
 core/src/org/labkey/core/statistics/DefaultCurveFit.java -text
 core/src/org/labkey/core/statistics/NoCurveFit.java -text
 core/src/org/labkey/core/statistics/ParameterCurveFit.java -text
 core/src/org/labkey/core/statistics/PolynomialCurveFit.java -text
 core/src/org/labkey/core/statistics/StatsServiceImpl.java -text
+core/src/org/labkey/core/statistics/SummaryStatisticRegistryImpl.java -text
 core/src/org/labkey/core/test/TestController.java -text
 core/src/org/labkey/core/test/buttons.jsp -text
 core/src/org/labkey/core/test/complex.jsp -text

@@ -15,7 +15,7 @@
  */
 package org.labkey.query.reports.getdata;
 
-import org.labkey.api.analytics.SummaryStatisticRegistry;
+import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.services.ServiceRegistry;

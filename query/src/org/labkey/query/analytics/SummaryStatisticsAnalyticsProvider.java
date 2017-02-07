@@ -2,7 +2,7 @@ package org.labkey.query.analytics;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.analytics.ColumnAnalyticsProvider;
+import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.QuerySettings;

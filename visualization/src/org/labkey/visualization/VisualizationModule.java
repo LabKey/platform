@@ -17,7 +17,7 @@
 package org.labkey.visualization;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.analytics.AnalyticsProviderRegistry;
+import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;

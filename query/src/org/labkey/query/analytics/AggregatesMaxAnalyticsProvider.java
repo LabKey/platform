@@ -16,7 +16,7 @@
 package org.labkey.query.analytics;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.analytics.BaseAggregatesAnalyticsProvider;
+import org.labkey.api.stats.BaseAggregatesAnalyticsProvider;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ColumnInfo;
 

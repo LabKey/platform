@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.core.analytics;
+package org.labkey.core.statistics;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.analytics.AnalyticsProvider;
-import org.labkey.api.analytics.AnalyticsProviderRegistry;
-import org.labkey.api.analytics.ColumnAnalyticsProvider;
-import org.labkey.api.analytics.QueryAnalyticsProvider;
+import org.labkey.api.stats.AnalyticsProvider;
+import org.labkey.api.stats.AnalyticsProviderRegistry;
+import org.labkey.api.stats.ColumnAnalyticsProvider;
+import org.labkey.api.stats.QueryAnalyticsProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.QuerySettings;
 
