@@ -290,17 +290,12 @@ public class FileSystemResource extends AbstractWebdavResource
             resetMetadata();
         }
 
-        FileOutputStream fos = new FileOutputStream(file);
-        try
+        try (FileOutputStream fos = new FileOutputStream(file))
         {
             long len = FileUtil.copyData(is.openInputStream(), fos);
             fos.getFD().sync();
             resetMetadata();
             return len;
-        }
-        finally
-        {
-            IOUtils.closeQuietly(fos);
         }
     }
 

@@ -16,7 +16,6 @@
 
 package org.labkey.api.files;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.json.JSONArray;
@@ -32,7 +31,13 @@ import org.labkey.data.xml.PipelineOptionsDocument;
 import org.labkey.data.xml.TbarBtnOptions;
 
 import java.io.ByteArrayOutputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: klum
@@ -302,8 +307,8 @@ public class FilesAdminOptions
 
     public String serialize()
     {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        try {
+        try (ByteArrayOutputStream output = new ByteArrayOutputStream())
+        {
             PipelineOptionsDocument doc = PipelineOptionsDocument.Factory.newInstance();
             PipelineOptionsDocument.PipelineOptions pipelineOptions = doc.addNewPipelineOptions();
 
@@ -313,7 +318,7 @@ public class FilesAdminOptions
                 pipelineOptions.setExpandFileUpload(_expandFileUpload);
             if (_showFolderTree != null)
                 pipelineOptions.setShowFolderTree(_showFolderTree);
-            
+
             if (!_pipelineConfig.isEmpty())
             {
                 ActionOptions actionOptions = pipelineOptions.addNewActionConfig();
@@ -367,10 +372,6 @@ public class FilesAdminOptions
         {
             // This is likely a code problem -- propagate it up so we log to mothership
             throw new RuntimeException(e);
-        }
-        finally
-        {
-            IOUtils.closeQuietly(output);
         }
     }
 
