@@ -19,6 +19,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.model.ReportPropsManager;
@@ -57,6 +58,7 @@ public class ScriptReportBean extends ReportDesignBean
     private boolean _sourceTabVisible;
     private String _thumbnailType;
     private String _knitrFormat;
+    private Boolean _useDefaultOutputFormat = null; // pandoc only
     private Boolean _useGetDataApi;
     private LinkedHashSet<ClientDependency> _clientDependencies;
     private String _scriptDependencies;
@@ -164,6 +166,8 @@ public class ScriptReportBean extends ReportDesignBean
             if (getKnitrFormat() != null)
                 descriptor.setProperty(ScriptReportDescriptor.Prop.knitrFormat, getKnitrFormat());
 
+            descriptor.setProperty(ScriptReportDescriptor.Prop.useDefaultOutputFormat, isUseDefaultOutputFormat());
+
             if (isUseGetDataApi() != null)
                 descriptor.setProperty(ScriptReportDescriptor.Prop.useGetDataApi, isUseGetDataApi());
 
@@ -197,6 +201,8 @@ public class ScriptReportBean extends ReportDesignBean
         for (String report : getIncludedReports())
             list.add(new Pair<>(ScriptReportDescriptor.Prop.includedReports.toString(), report));
 
+        list.add(new Pair<>(ScriptReportDescriptor.Prop.useDefaultOutputFormat.toString(), isUseDefaultOutputFormat()?"true":"false"));
+
         return list;
     }
 
@@ -212,6 +218,8 @@ public class ScriptReportBean extends ReportDesignBean
 
         setRunInBackground(BooleanUtils.toBoolean(descriptor.getProperty(ScriptReportDescriptor.Prop.runInBackground)));
         setKnitrFormat(descriptor.getProperty(ScriptReportDescriptor.Prop.knitrFormat));
+        String v = descriptor.getProperty(ScriptReportDescriptor.Prop.useDefaultOutputFormat);
+        setUseDefaultOutputFormat(null==v ? true : (Boolean)JdbcType.BOOLEAN.convert(v));
 
         if (descriptor.getProperty(ScriptReportDescriptor.Prop.useGetDataApi) != null && descriptor.getProperty(ScriptReportDescriptor.Prop.useGetDataApi).equals("true"))
         {
@@ -341,6 +349,16 @@ public class ScriptReportBean extends ReportDesignBean
     public void setKnitrFormat(String knitrFormat)
     {
         _knitrFormat = knitrFormat;
+    }
+
+    public boolean isUseDefaultOutputFormat()
+    {
+        return null==_useDefaultOutputFormat?false:_useDefaultOutputFormat;
+    }
+
+    public void setUseDefaultOutputFormat(boolean useDefaultOutputFormat)
+    {
+        _useDefaultOutputFormat = useDefaultOutputFormat;
     }
 
     public Boolean isUseGetDataApi()

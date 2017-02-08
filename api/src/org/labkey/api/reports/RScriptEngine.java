@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reports;
 
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportDescriptor;
 
@@ -35,6 +36,7 @@ public class RScriptEngine extends ExternalScriptEngine
 {
     public static final String KNITR_FORMAT = "r.script.engine.knitrFormat";
     public static final String KNITR_OUTPUT = "r.script.engine.knitrOutput";
+    public static final String PANDOC_USE_DEFAULT_OUTPUT_FORMAT = "r.script.engine.pandocUseDefaultOutputFormat";
 
     // script engine properties that report can request
     public static final String PROP_REMOTE = "remote";
@@ -125,6 +127,18 @@ public class RScriptEngine extends ExternalScriptEngine
         return _knitrFormat;
     }
 
+    protected boolean useDefaultOutputFormat(ScriptContext context)
+    {
+        Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
+
+        if (!bindings.containsKey(PANDOC_USE_DEFAULT_OUTPUT_FORMAT))
+            return true;
+        Object v = bindings.get(PANDOC_USE_DEFAULT_OUTPUT_FORMAT);
+        if (null == v)
+            return true;
+        return (Boolean)JdbcType.BOOLEAN.convert(v);
+    }
+
     protected String getInputFilename(File inputScript)
     {
         return inputScript.getAbsolutePath().replaceAll("\\\\", "/");
@@ -194,8 +208,16 @@ public class RScriptEngine extends ExternalScriptEngine
             {
                 sb.append("library(rmarkdown)\n");
                 sb.append("opts_knit$set(upload.fun = labkey.makeHref)\n");
-                sb.append("render(run_pandoc=TRUE, output_format=html_document_base(keep_md=TRUE, self_contained=FALSE, fig_caption=TRUE, " +
-                        "theme=NULL, css=NULL, smart=TRUE, highlight=\"default\"), ");
+                sb.append("render(run_pandoc=TRUE, ");
+                if (useDefaultOutputFormat(context))
+                {
+                    sb.append("output_format=html_document_base(keep_md=TRUE, self_contained=TRUE, fig_caption=TRUE, " +
+                            "theme=NULL, css=NULL, smart=TRUE, highlight=\"default\"), ");
+                }
+                else
+                {
+                    sb.append("output_options=list(keep_md=TRUE, self_contained=FALSE, fig_caption=TRUE, smart=TRUE, highlight=\"default\"), ");
+                }
             }
             else
             {

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -82,6 +83,8 @@ public class RReport extends ExternalScriptEngineReport
     public static final int DEFAULT_R_PORT = 6311;
 
     private RReportDescriptor.KnitrFormat _knitrFormat = null;
+
+    private boolean _useDefaultOutputOptions = true;
 
     public String getType()
     {
@@ -212,7 +215,16 @@ public class RReport extends ExternalScriptEngineReport
         return _knitrFormat;
     }
 
-   protected String getKnitrBeginChunk()
+    public boolean isUseDefaultOutputOptions()
+    {
+        ReportDescriptor d = getDescriptor();
+        String value = d.getProperty(ScriptReportDescriptor.Prop.useDefaultOutputFormat);
+        if (value == null)
+            return true;
+        return (Boolean)JdbcType.BOOLEAN.convert(value);
+    }
+
+    protected String getKnitrBeginChunk()
     {
         if (getKnitrFormat() == RReportDescriptor.KnitrFormat.Html)
             return "<!--begin.rcode labkey, echo=FALSE\n";
@@ -500,6 +512,7 @@ public class RReport extends ExternalScriptEngineReport
             {
                 Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
                 bindings.put(RScriptEngine.KNITR_FORMAT, getKnitrFormat());
+                bindings.put(RScriptEngine.PANDOC_USE_DEFAULT_OUTPUT_FORMAT, isUseDefaultOutputOptions());
 
                 Object output = runScript(engine, context, outputSubst, inputDataTsv, inputParameters);
 

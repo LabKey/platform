@@ -139,7 +139,7 @@
                     }
                 %>
                 <td id="bodypanel" class="labkey-body-panel" style="min-width:<%=bean.getMinimumWidth()%>px;">
-                    <img height=1 width=<%=bean.getMinimumWidth()%> src="<%=getWebappURL("/_.gif")%>">
+                    <img height=1 width=<%=bean.getMinimumWidth()%> style="height:1px;" src="<%=getWebappURL("/_.gif")%>">
                     <br />
                     <!-- BODY -->
                     <% me.include(me.getBody(),out); %>

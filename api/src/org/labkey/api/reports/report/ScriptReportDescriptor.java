@@ -36,7 +36,8 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
         runInBackground,
         sourceTabVisible,
         knitrFormat,
-        useGetDataApi
+        useGetDataApi,
+        useDefaultOutputFormat /* pandoc only */
     }
 
     public void setIncludedReports(List<String> reports)
