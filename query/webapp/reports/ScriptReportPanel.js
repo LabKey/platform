@@ -360,6 +360,12 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                         boxLabel : 'Markdown&nbsp;' +
                                 '<span data-qtip="Use knitr to process markdown source"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
                         checked : this.reportConfig.knitrFormat == 'Markdown'},
+                    {name : 'useDefaultOutputFormat',
+                        xtype : 'checkbox',
+                        inputValue : 'true',
+                        boxLabel : 'Use default output_format options (experimental, leave this checked)' +
+                        '<span data-qtip="html_document_base(keep_md=TRUE, self_contained=FALSE, fig_caption=TRUE, theme=NULL, css=NULL, smart=TRUE, highlight=&quot;default&quot;)"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                        checked : this.reportConfig.useDefaultOutputFormat !== false},
                     { xtype : 'label',
                       html : 'Dependencies&nbsp;' +
                               '<span data-qtip="Add a semi-colon delimited list of javascript, CSS, or library dependencies here."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>'},
