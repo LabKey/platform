@@ -549,19 +549,8 @@ public class StorageProvisioner
 
         SchemaTableInfo sti = getSchemaTableInfo(domain, schemaName, tableName, schema);
 
-        // check for any columns where storagecolumnname != name
-        boolean needsAliases = false;
-        for (DomainProperty dp : domain.getProperties())
-        {
-            String scn = dp.getPropertyDescriptor().getStorageColumnName();
-            String name = dp.getName();
-            if (null != scn && !scn.equalsIgnoreCase(name))
-                needsAliases = true;
-        }
-
         // NOTE we could handle this in ProvisionedSchemaOptions.afterLoadTable(), but that would require
         // messing with renaming columns etc, and since this is pretty rare, we'll just do this with an aliased table
-
         CaseInsensitiveHashMap<String> map = new CaseInsensitiveHashMap<>();
         for (DomainProperty dp : domain.getProperties())
         {
