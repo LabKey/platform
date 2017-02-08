@@ -559,10 +559,6 @@ public class StorageProvisioner
                 needsAliases = true;
         }
 
-//  FOR TESTING/VERIFICATION always return wrapped table
-//        if (!needsAliases)
-//            return sti;
-
         // NOTE we could handle this in ProvisionedSchemaOptions.afterLoadTable(), but that would require
         // messing with renaming columns etc, and since this is pretty rare, we'll just do this with an aliased table
 
@@ -574,10 +570,6 @@ public class StorageProvisioner
             if (null != scn && !scn.equals(name))
                 map.put(scn,name);
         }
-
-        //    TODO: Should this be removed?
-        if (1==0 && !needsAliases)
-            return sti;
 
         VirtualTable wrapper = new _VirtualTable(schema, sti.getName(), sti, map);
 
