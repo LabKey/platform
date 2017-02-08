@@ -24,6 +24,7 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
+import org.labkey.api.view.Portal.WebPart;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,22 +41,24 @@ import java.util.Set;
  */
 public abstract class BaseWebPartFactory implements WebPartFactory
 {
-    private static Logger _log = Logger.getLogger(Portal.class);
+    private static final Logger LOG = Logger.getLogger(Portal.class);
 
-    String name;
-    protected Set<String> allowableLocations;
-    Module module = null;
-    private boolean editable;
-    private boolean showCustomizeOnInsert;
+    private final boolean _editable;
+    private final boolean _showCustomizeOnInsert;
+
+    private String _name;
+    private Module _module = null;
     private List<String> _legacyNames = Collections.emptyList();
+
+    protected Set<String> _allowableLocations;
 
     public BaseWebPartFactory(String name, boolean isEditable, boolean showCustomizeOnInsert, @NotNull String defaultLocation, String... additionalLocations)
     {
         if (!isEditable && showCustomizeOnInsert)
             throw new IllegalArgumentException("CustomizeOnInsert is only valid when web part is editable.");
-        this.name = name;
-        this.showCustomizeOnInsert = showCustomizeOnInsert;
-        this.editable = isEditable;
+        _name = name;
+        _showCustomizeOnInsert = showCustomizeOnInsert;
+        _editable = isEditable;
         Set<String> locations = new LinkedHashSet<>();
         locations.add(defaultLocation);
         locations.addAll(Arrays.asList(additionalLocations));
@@ -63,7 +66,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
         {
             throw new IllegalArgumentException("Can't add a null allowable location");
         }
-        this.allowableLocations = Collections.unmodifiableSet(locations);
+        _allowableLocations = Collections.unmodifiableSet(locations);
     }
 
     public BaseWebPartFactory(String name, boolean isEditable, boolean showCustomizeOnInsert)
@@ -83,7 +86,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
 
     public String getName()
     {
-        return name;
+        return _name;
     }
 
     @Override
@@ -94,32 +97,32 @@ public abstract class BaseWebPartFactory implements WebPartFactory
 
     public void setName(String name)
     {
-        this.name = name;
+        _name = name;
     }
 
     public Set<String> getAllowableLocations()
     {
-        return allowableLocations;
+        return _allowableLocations;
     }
 
     public String getDefaultLocation()
     {
-        return allowableLocations.iterator().next();
+        return _allowableLocations.iterator().next();
     }
 
-    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+    public HttpView getEditView(WebPart webPart, ViewContext context)
     {
         return null;
     }
 
-    public Portal.WebPart createWebPart()
+    public WebPart createWebPart()
     {
         return createWebPart(getDefaultLocation());
     }
 
-    public Portal.WebPart createWebPart(String location)
+    public WebPart createWebPart(String location)
     {
-        Portal.WebPart part = new Portal.WebPart();
+        WebPart part = new WebPart();
         part.setLocation(location);
         part.setName(getName());
         return part;
@@ -139,7 +142,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
                 {
                     // Unfortunately, we have to catch Exception here, since BeanUtils throws RuntimeExceptions
                     // for various failures.
-                    _log.error("Couldn't set property " + entry.getKey() + " to value " + entry.getValue(), e);
+                    LOG.error("Couldn't set property " + entry.getKey() + " to value " + entry.getValue(), e);
                 }
             }
             else
@@ -156,26 +159,26 @@ public abstract class BaseWebPartFactory implements WebPartFactory
 
     public boolean isEditable()
     {
-        return editable;
+        return _editable;
     }
 
     public boolean showCustomizeOnInsert()
     {
-        return showCustomizeOnInsert;
+        return _showCustomizeOnInsert;
     }
 
     public Module getModule()
     {
-        if (module == null)
+        if (_module == null)
             throw new IllegalStateException("Module has not been set.");
-        return module;
+        return _module;
     }
 
     public void setModule(Module module)
     {
-        if (this.module != null)
-            throw new IllegalStateException("Module has already been set.");
-        this.module = module;
+        if (_module != null)
+            throw new IllegalStateException("WebPart " + getClass().getName() + " (" + getName() + "): Module has already been set to " + _module.getName() + "; attempt to set to " + module.getName() + " failed.");
+        _module = module;
     }
 
     public List<String> getLegacyNames()
@@ -189,21 +192,18 @@ public abstract class BaseWebPartFactory implements WebPartFactory
         {
             return false;
         }
-        if (c.getFolderType() != null)
+        for (WebPart webPart : c.getFolderType().getPreferredWebParts())
         {
-            for (Portal.WebPart webPart : c.getFolderType().getPreferredWebParts())
+            if (getName().equals(webPart.getName()) || getLegacyNames().contains(webPart.getName()))
             {
-                if (getName().equals(webPart.getName()) || getLegacyNames().contains(webPart.getName()))
-                {
-                    return true;
-                }
+                return true;
             }
-            for (Portal.WebPart webPart : c.getFolderType().getRequiredWebParts())
+        }
+        for (WebPart webPart : c.getFolderType().getRequiredWebParts())
+        {
+            if (getName().equals(webPart.getName()) || getLegacyNames().contains(webPart.getName()))
             {
-                if (getName().equals(webPart.getName()) || getLegacyNames().contains(webPart.getName()))
-                {
-                    return true;
-                }
+                return true;
             }
         }
         return FolderType.NONE.equals(c.getFolderType()) || c.getActiveModules().contains(getModule());
@@ -222,7 +222,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
     }
 
     @Override
-    public boolean includeInExport(ImportContext ctx, Portal.WebPart webPart)
+    public boolean includeInExport(ImportContext ctx, WebPart webPart)
     {
         return true;
     }

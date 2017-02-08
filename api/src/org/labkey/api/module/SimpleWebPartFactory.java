@@ -23,7 +23,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Path;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
@@ -87,16 +86,6 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         return null;
     }
 
-    @Deprecated  // Use Resource version
-    public SimpleWebPartFactory(Module module, String filename)
-    {
-        super(getNameFromFilename(filename));
-        setModule(module);
-        Path resourcePath = new Path(SimpleController.VIEWS_DIRECTORY, filename);
-        loadDefinition(module.getModuleResource(new Path(SimpleController.VIEWS_DIRECTORY, filename)));
-        _resourceName = resourcePath.getName();
-    }
-
     public SimpleWebPartFactory(Module module, Resource resource)
     {
         super(getNameFromFilename(resource.getName()));
@@ -157,7 +146,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
                 // Assume we should default to the main body location
                 locations.add(WebPartFactory.LOCATION_BODY);
             }
-            allowableLocations = Collections.unmodifiableSet(locations);
+            _allowableLocations = Collections.unmodifiableSet(locations);
 
         }
         catch(Exception e)
