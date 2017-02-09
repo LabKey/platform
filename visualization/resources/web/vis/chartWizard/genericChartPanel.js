@@ -171,7 +171,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 },
                 activeItem: 0,
                 items: [this.getViewPanel(), this.getDataPanel()],
-                dockedItems: [this.getTopButtonBar()]
+                dockedItems: [this.getTopButtonBar(), this.getMsgPanel()]
             });
         }
 
@@ -396,6 +396,27 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         return tbarItems;
+    },
+
+    getMsgPanel : function() {
+        if (!this.msgPanel) {
+            this.msgPanel = Ext4.create('Ext.panel.Panel', {
+                hidden: true,
+                bodyStyle: 'border-width: 1px 0 0 0',
+                listeners: {
+                    add: function(panel) {
+                        panel.show();
+                    },
+                    remove: function(panel) {
+                        if (panel.items.items.length == 0) {
+                            panel.hide();
+                        }
+                    }
+                }
+            });
+        }
+
+        return this.msgPanel;
     },
 
     showChartTypeWindow : function()
@@ -1335,19 +1356,31 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     addWarningMsg : function(chartDiv, warningText, allowDismiss)
     {
         var warningDivId = Ext4.id();
-        var dismissLink = allowDismiss ? LABKEY.Utils.textLink({text: 'dismiss', onClick: 'Ext4.get(\'' + warningDivId + '\').destroy();'}) : '';
+        var dismissLink = allowDismiss ? '<a id="dismiss-link-' + warningDivId + '" class="labkey-text-link">dismiss</a>' : '';
 
-        var warningDiv = document.createElement('div');
-        warningDiv.setAttribute('id', warningDivId);
-        warningDiv.setAttribute('style', 'padding: 10px; background-color: #ffe5e5; color: #d83f48; font-weight: bold;');
-        warningDiv.innerHTML = warningText + ' ' + dismissLink;
-        chartDiv.getEl().insertFirst(warningDiv);
+        var warningCmp = Ext4.create('Ext.container.Container', {
+            padding: 10,
+            cls: 'chart-warning',
+            html: warningText + ' ' + dismissLink,
+            listeners: {
+                scope: this,
+                render: function(cmp) {
+                    Ext4.get('dismiss-link-' + warningDivId).on('click', function() {
+                        this.getMsgPanel().remove(cmp);
+                    }, this);
+                }
+            }
+        });
+
+        this.getMsgPanel().add(warningCmp);
     },
 
     updateSaveChartThumbnail : function(chartDiv)
     {
-        this.chartSVG = LABKEY.vis.SVGConverter.svgToStr(chartDiv.getEl().child('svg').dom);
-        this.getSavePanel().updateCurrentChartThumbnail(this.chartSVG);
+        if (chartDiv.getEl()) {
+            this.chartSVG = LABKEY.vis.SVGConverter.svgToStr(chartDiv.getEl().child('svg').dom);
+            this.getSavePanel().updateCurrentChartThumbnail(this.chartSVG);
+        }
     },
 
     isChartConfigValid : function(chartType, chartConfig, aes, scales)

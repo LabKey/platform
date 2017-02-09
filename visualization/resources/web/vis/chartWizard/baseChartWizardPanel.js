@@ -4,7 +4,6 @@ Ext4.define('LABKEY.ext4.BaseChartWizardPanel', {
     layout: 'card',
     border: false,
     bodyStyle: 'background-color: transparent;',
-    height: 650,
 
     renderTo: null,
     savedReportInfo: null,
@@ -103,7 +102,7 @@ Ext4.define('LABKEY.ext4.BaseChartWizardPanel', {
         if (!this.genericChartPanel)
         {
             this.genericChartPanel = Ext4.create('LABKEY.ext4.GenericChartPanel', {
-                height: this.height,
+                height: 650,
                 chartTypeWindow: chartTypeWindow,
                 chartTypePanel: chartTypePanel,
                 initialSelection: initialSelection,
@@ -138,7 +137,7 @@ Ext4.define('LABKEY.ext4.BaseChartWizardPanel', {
         if (!this.timeChartPanel)
         {
             this.timeChartPanel = Ext4.create('LABKEY.vis.TimeChartPanel', {
-                height: this.height,
+                height: 650,
                 chartTypeWindow: chartTypeWindow,
                 chartTypePanel: chartTypePanel,
                 initialSelection: initialSelection,

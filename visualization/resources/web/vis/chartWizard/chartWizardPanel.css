@@ -4,6 +4,14 @@
     background: #ffffff;
 }
 
+.chart-warning {
+    background-color: #ffe5e5;
+}
+.chart-warning span, .chart-warning div {
+    color: #d83f48;
+    font-weight: bold;
+}
+
 .chart-wizard-dialog {
     padding: 0;
     border-color: #b4b4b4;
