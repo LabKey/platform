@@ -116,7 +116,7 @@ public class ClusterStartup extends AbstractPipelineStartup
                 {
                     System.out.println("Failed to stop mule");
                     System.out.println(e.getMessage());
-                    System.out.println(e.getStackTrace());
+                    e.printStackTrace(System.out);
                 }
             }
 
