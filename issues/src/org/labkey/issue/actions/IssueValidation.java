@@ -61,7 +61,7 @@ public class IssueValidation
                     {
                         String msg = validator.validate(0, entry.getValue());
                         if (msg != null)
-                            requiredErrors.rejectValue(col.getName(), "NullError", new Object[] {col.getName()}, msg);
+                            requiredErrors.reject(SpringActionController.ERROR_MSG, msg);
                     }
                 }
             }
@@ -103,7 +103,7 @@ public class IssueValidation
                     }
 
                     String display = name == null ? columnName : name;
-                    errors.rejectValue(columnName, "NullError", new Object[] {display}, display + " is required.");
+                    errors.reject(SpringActionController.ERROR_MSG, display + " is required.");
                 }
             }
         }
@@ -139,7 +139,7 @@ public class IssueValidation
                     if (user == null)
                     {
                         String message = "Failed to add user " + username + ": Invalid user display name";
-                        errors.rejectValue("notifyList", SpringActionController.ERROR_MSG, message);
+                        errors.reject(SpringActionController.ERROR_MSG, message);
                     }
                 }
             }
@@ -155,8 +155,8 @@ public class IssueValidation
         {
             User user = UserManager.getUser(userId);
             // TODO: consider exposing IssueManager.canAssignTo
-            if (!user.isActive() || !container.hasPermission(user, UpdatePermission.class))
-                errors.rejectValue("assignedTo", SpringActionController.ERROR_MSG, "An invalid user was set for the Assigned To");
+            if (user == null || !user.isActive() || !container.hasPermission(user, UpdatePermission.class))
+                errors.reject(SpringActionController.ERROR_MSG, "An invalid user was set for the Assigned To");
         }
     }
 
@@ -189,12 +189,12 @@ public class IssueValidation
                 relatedId = NumberUtils.toInt(relatedText.trim(), 0);
                 if (relatedId == 0)
                 {
-                    errors.rejectValue("Related", SpringActionController.ERROR_MSG, "Invalid issue id in related string.");
+                    errors.reject(SpringActionController.ERROR_MSG, "Invalid issue id in related string.");
                     return false;
                 }
                 if (issue.getIssueId() == relatedId)
                 {
-                    errors.rejectValue("Related", SpringActionController.ERROR_MSG, "As issue may not be related to itself");
+                    errors.reject(SpringActionController.ERROR_MSG, "As issue may not be related to itself");
                     return false;
                 }
 
@@ -203,7 +203,7 @@ public class IssueValidation
                 Issue related = new TableSelector(IssuesSchema.getInstance().getTableInfoIssues()).getObject(relatedId, Issue.class);
                 if (related == null)
                 {
-                    errors.rejectValue("Related", SpringActionController.ERROR_MSG, "Related issue '" + relatedId + "' not found");
+                    errors.reject(SpringActionController.ERROR_MSG, "Related issue '" + relatedId + "' not found");
                     return false;
                 }
                 newRelatedIssues.add(relatedId);
@@ -222,7 +222,7 @@ public class IssueValidation
                 Issue related = IssueManager.getIssue(null, user, relatedId);
                 if (related == null || !related.lookupContainer().hasPermission(user, ReadPermission.class))
                 {
-                    errors.rejectValue("Related", SpringActionController.ERROR_MSG, "User does not have Read Permission for related issue '" + relatedId + "'");
+                    errors.reject(SpringActionController.ERROR_MSG, "User does not have Read Permission for related issue '" + relatedId + "'");
                     return false;
                 }
             }

@@ -16,8 +16,6 @@
 package org.labkey.issue.view;
 
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.Sort;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -48,7 +46,6 @@ public class IssuesListView extends VBox
         String dataRegionName = "issues-" + issueDefName;
         UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), IssuesQuerySchema.SCHEMA_NAME);
         QuerySettings settings = schema.getSettings(getViewContext(), dataRegionName, issueDefName);
-        settings.getBaseSort().insertSortColumn(FieldKey.fromParts("IssueId"), Sort.SortDirection.DESC);
 
         QueryView queryView = schema.createView(getViewContext(), settings, null);
 

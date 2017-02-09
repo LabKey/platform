@@ -40,6 +40,7 @@ import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableExtension;
 import org.labkey.api.data.TableInfo;
@@ -167,6 +168,8 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         issueIdColumn.setKeyField(true);
         issueIdColumn.setLabel(names.singularName + " ID");
         issueIdColumn.setURL(detailsURL);
+        // When no sorts are added by views, QueryServiceImpl.createDefaultSort() adds the primary key's default sort direction
+        issueIdColumn.setSortDirection(Sort.SortDirection.DESC);
         addColumn(issueIdColumn);
 
         ColumnInfo folder = new AliasedColumn(this, "Folder", _rootTable.getColumn("container"));
