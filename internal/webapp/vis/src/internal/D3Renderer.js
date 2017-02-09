@@ -2882,6 +2882,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         rects = barWrappers.selectAll('rect.bar-rect').data(function(d){ return [d] });
         rects.exit().remove();
         heightFn = function(d) {
+            if (geom.getY(d) === null || geom.getY(d) === undefined) {
+                return 0;
+            }
             return Math.abs(geom.getY(d) - geom.getY(yZero))
         };
         rects.enter().append('rect').attr('class', 'bar-rect')
