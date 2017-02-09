@@ -233,7 +233,11 @@ LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, me
         else if (typeof LABKEY.vis.Stat[aggregate] == 'function')
         {
             var values = LABKEY.vis.Stat.sortNumericAscending(groupData[i].rawData, measureAccessor);
-            row.value = LABKEY.vis.Stat[aggregate](values);
+            try {
+                row.value = LABKEY.vis.Stat[aggregate](values);
+            } catch (e) {
+                row.value = null;
+            }
         }
         else
         {
