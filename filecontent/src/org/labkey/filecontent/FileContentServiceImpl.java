@@ -300,6 +300,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         }
     }
 
+    @NotNull
     public File getSiteDefaultRoot()
     {
         File root = AppProps.getInstance().getFileSystemRoot();
@@ -307,12 +308,13 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         if (root == null || !root.exists())
             root = getDefaultRoot();
 
-        if (root != null && !root.exists())
+        if (!root.exists())
             root.mkdirs();
 
         return root;
     }
 
+    @NotNull
     public File getUserFilesRoot()
     {
         File root = AppProps.getInstance().getUserFilesRoot();
@@ -320,12 +322,13 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         if (root == null || !root.exists())
             root = getDefaultRoot();
 
-        if (root != null && !root.exists())
+        if (!root.exists())
             root.mkdirs();
 
         return root;
     }
 
+    @NotNull
     private File getDefaultRoot()
     {
         File explodedPath = ModuleLoader.getInstance().getCoreModule().getExplodedPath();

@@ -24,6 +24,8 @@
 <%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -156,11 +158,11 @@
                             {
                                 localURI: <%=PageFlowUtil.jsString(ScriptEngineReport.getDefaultTempRoot().toURI().toString())%>,
                                 remoteURI: ''
-                            } <% if (AppProps.getInstance().getFileSystemRoot() != null) { %>,
+                            },
                             {
-                                localURI: <%=PageFlowUtil.jsString(AppProps.getInstance().getFileSystemRoot().toURI().toString())%>,
+                                localURI: <%=PageFlowUtil.jsString(ServiceRegistry.get(FileContentService.class).getSiteDefaultRoot().toURI().toString())%>,
                                 remoteURI: ''
-                            } <% } %>
+                            }
                         ]
                     };
 

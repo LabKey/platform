@@ -58,7 +58,7 @@ public class WikiWriterFactory implements FolderWriterFactory
             // Just dump the @wiki WebDav tree to the output
             VirtualFile wikiDir = vf.getDir(DIRECTORY_NAME);
             WikiWebdavProvider.WikiProviderResource parent = new WikiWebdavProvider.WikiProviderResource(new DummyWebdavResource(), container);
-            wikiDir.saveWebdavTree(parent);
+            wikiDir.saveWebdavTree(parent, ctx.getUser());
         }
 
     }

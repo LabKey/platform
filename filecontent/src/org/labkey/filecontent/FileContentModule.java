@@ -18,6 +18,7 @@ package org.labkey.filecontent;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.property.PropertyService;
@@ -148,6 +149,12 @@ public class FileContentModule extends DefaultModule
         MessageConfigService.getInstance().registerConfigType(new FileEmailConfig());
         ContainerManager.addContainerListener(new FileContentContainerListener());
         ContainerManager.addContainerListener(FileContentServiceImpl.getInstance());
+
+        FolderSerializationRegistry fsr = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        if (fsr != null)
+        {
+            fsr.addFactories(new FileWriter.Factory(), new FileImporter.Factory());
+        }
     }
 
     @Override
