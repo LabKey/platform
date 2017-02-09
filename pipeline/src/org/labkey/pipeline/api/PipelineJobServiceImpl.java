@@ -223,6 +223,24 @@ public class PipelineJobServiceImpl extends PipelineJobService
         return TASK_PIPELINE_CACHE.getResourceMap(module).get(id);
     }
 
+    @NotNull
+    @Override
+    public TaskPipeline getTaskPipeline(String taskIdString)
+    {
+        try
+        {
+            TaskId taskId = new TaskId(taskIdString);
+            TaskPipeline pipeline = getTaskPipeline(taskId);
+            if (pipeline == null)
+                throw new NotFoundException("The pipeline '" + taskId + "' was not found.");
+            return pipeline;
+        }
+        catch (ClassNotFoundException e)
+        {
+            throw new NotFoundException("No pipeline found: " + e.getMessage());
+        }
+    }
+
     public void addTaskPipeline(TaskPipelineSettings settings) throws CloneNotSupportedException
     {
         TaskPipeline<TaskPipelineSettings> pipeline = getTaskPipeline(settings.getCloneId());

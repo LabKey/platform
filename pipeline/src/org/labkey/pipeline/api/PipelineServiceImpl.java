@@ -16,38 +16,54 @@
 
 package org.labkey.pipeline.api;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
+import org.labkey.api.pipeline.AnalyzeForm;
+import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineProtocolFactory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.pipeline.TaskPipeline;
+import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
+import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
+import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.pipeline.PipelineController;
+import org.labkey.pipeline.analysis.ProtocolManagementAuditProvider;
 import org.labkey.pipeline.importer.FolderImportJob;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.mule.ResumableDescriptor;
@@ -63,6 +79,7 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -75,6 +92,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import static org.labkey.api.pipeline.file.AbstractFileAnalysisJob.ANALYSIS_PARAMETERS_ROLE_NAME;
 
 public class PipelineServiceImpl extends PipelineService
 {
@@ -566,5 +585,146 @@ public class PipelineServiceImpl extends PipelineService
             rowId = (Integer)m.get("RowId");
         }
         return rowId;
+    }
+
+    @Override
+    public FileAnalysisProperties getFileAnalysisProperties(Container c, String taskId, @Nullable String path)
+    {
+        PipeRoot pr = PipelineService.get().findPipelineRoot(c);
+        if (pr == null || !pr.isValid())
+            throw new NotFoundException();
+
+        File dirData = null;
+        if (path != null)
+        {
+            dirData = pr.resolvePath(path);
+            if (dirData == null || !NetworkDrive.exists(dirData))
+                throw new NotFoundException("Could not resolve path: " + path);
+        }
+
+        TaskPipeline taskPipeline = PipelineJobService.get().getTaskPipeline(taskId);
+        AbstractFileAnalysisProtocolFactory factory = PipelineJobService.get().getProtocolFactory(taskPipeline);
+        return new FileAnalysisProperties(pr, dirData, factory);
+    }
+
+    @Override
+    @NotNull
+    public String startFileAnalysis(AnalyzeForm form, ViewContext context) throws IOException, PipelineValidationException
+    {
+        if (form.getProtocolName() == null)
+        {
+            throw new IllegalArgumentException("Must specify a protocol name");
+        }
+        TaskPipeline taskPipeline = PipelineJobService.get().getTaskPipeline(form.getTaskId());
+        FileAnalysisProperties props = getFileAnalysisProperties(context.getContainer(), form.getTaskId(), form.getPath());
+        PipeRoot root = props.getPipeRoot();
+        File dirData = props.getDirData();
+        AbstractFileAnalysisProtocolFactory factory = props.getFactory();
+
+        if (taskPipeline.isUseUniqueAnalysisDirectory())
+        {
+            dirData = new File(dirData, form.getProtocolName() + "_" + FileUtil.getTimestamp());
+            if (!dirData.mkdir())
+            {
+                throw new IOException("Failed to create unique analysis directory: " + FileUtil.getAbsoluteCaseSensitiveFile(dirData).getAbsolutePath());
+            }
+        }
+        AbstractFileAnalysisProtocol protocol = factory.getProtocol(root, dirData, form.getProtocolName(), false);
+        if (protocol == null)
+        {
+            String xml;
+            if (form.getConfigureXml() != null)
+            {
+                if (form.getConfigureJson() != null)
+                {
+                    throw new IllegalArgumentException("The parameters should be defined as XML or JSON, not both");
+                }
+                xml = form.getConfigureXml();
+            }
+            else
+            {
+                if (form.getConfigureJson() == null)
+                {
+                    throw new IllegalArgumentException("Parameters must be defined, either as XML or JSON");
+                }
+                ParamParser parser = PipelineJobService.get().createParamParser();
+                Map<String, String> params = new HashMap<>();
+                Map<String, Object> parsedMap = new ObjectMapper().readValue(form.getConfigureJson(), new TypeReference<Map<String, Object>>(){});
+                for (Map.Entry<String, Object> entry : parsedMap.entrySet())
+                {
+                    params.put(entry.getKey(), entry.getValue() == null ? null : entry.getValue().toString());
+                }
+                xml = parser.getXMLFromMap(params);
+            }
+
+            protocol = PipelineJobService.get().getProtocolFactory(taskPipeline).createProtocolInstance(
+                    form.getProtocolName(),
+                    form.getProtocolDescription(),
+                    xml);
+
+            protocol.setEmail(context.getUser().getEmail());
+            protocol.validateToSave(root);
+            if (form.isSaveProtocol())
+            {
+                protocol.saveDefinition(root);
+                PipelineService.get().rememberLastProtocolSetting(protocol.getFactory(),
+                        context.getContainer(), context.getUser(), protocol.getName());
+                AuditLogService.get().addEvent(context.getUser(),
+                        new ProtocolManagementAuditProvider.ProtocolManagementEvent(ProtocolManagementAuditProvider.EVENT,
+                                context.getContainer(), factory.getName(), protocol.getName(), "created"));
+            }
+        }
+        else
+        {
+            if (form.getConfigureXml() != null || form.getConfigureJson() != null)
+            {
+                throw new IllegalArgumentException("Cannot redefine an existing protocol");
+            }
+            PipelineService.get().rememberLastProtocolSetting(protocol.getFactory(),
+                    context.getContainer(), context.getUser(), protocol.getName());
+        }
+
+        protocol.getFactory().ensureDefaultParameters(root);
+
+        File fileParameters = protocol.getParametersFile(dirData, root);
+        // Make sure configure.xml file exists for the job when it runs.
+        if (fileParameters != null && !fileParameters.exists())
+        {
+            protocol.setEmail(context.getUser().getEmail());
+            protocol.saveInstance(fileParameters, context.getContainer());
+        }
+
+        Boolean allowNonExistentFiles = form.isAllowNonExistentFiles() != null ? form.isAllowNonExistentFiles() : false;
+        List<File> filesInputList = form.getValidatedFiles(context.getContainer(), allowNonExistentFiles);
+
+        if (form.isActiveJobs())
+        {
+            throw new IllegalArgumentException("Active jobs already exist for this protocol.");
+        }
+
+        if (taskPipeline.isUseUniqueAnalysisDirectory())
+        {
+            for (File inputFile : filesInputList)
+            {
+                if (!(inputFile.renameTo(new File(dirData, inputFile.getName())) || allowNonExistentFiles))
+                {
+                    throw new IOException("Failed to move input file into unique directory: " + FileUtil.getAbsoluteCaseSensitiveFile(inputFile).getAbsolutePath());
+                }
+            }
+        }
+
+        AbstractFileAnalysisJob job =
+                protocol.createPipelineJob(new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL()), root, filesInputList, fileParameters);
+
+        PipelineService.get().queueJob(job);
+
+        return job.getJobGUID();
+    }
+
+    @Nullable
+    @Override
+    public File getProtocolParametersFile(ExpRun expRun)
+    {
+        return expRun.getInputDatas(ANALYSIS_PARAMETERS_ROLE_NAME, null).get(0).getFile();
     }
 }

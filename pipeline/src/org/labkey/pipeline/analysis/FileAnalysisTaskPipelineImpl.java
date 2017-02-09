@@ -181,6 +181,10 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
                 {
                     result.addParameter("path", path);
                 }
+                if (result.getParameter("taskId") == null)
+                {
+                    result.addParameter("taskId", getId().toString());
+                }
                 return result;
             }
             catch (URISyntaxException e)
