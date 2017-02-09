@@ -72,7 +72,7 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
             "\n" +
             "        // Validate that the chart data has expected values and give warnings if certain elements are not present\n" +
             "        var messages = [];\n" +
-            "        var validation = TCH.validateChartData(responseData, this.chartInfo, seriesList, DEFAULT_DATA_LIMIT, false);\n" +
+            "        var validation = TCH.validateChartData(responseData, chartConfig, seriesList, DEFAULT_DATA_LIMIT, false);\n" +
             "        if (validation.message != null)\n" +
             "        {\n" +
             "            messages.push(validation.message);\n" +
@@ -89,7 +89,8 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
             "        {\n" +
             "            var clipRect = plotConfigsArr[configIndex].applyClipRect;\n" +
             "            var series = plotConfigsArr[configIndex].series;\n" +
-            "            var height = plotConfigsArr.length > 1 ? DEFAULT_MULTI_CHART_HEIGHT : DEFAULT_SINGLE_CHART_HEIGHT;\n" +
+            "            var height = chartConfig.height || (plotConfigsArr.length > 1 ? DEFAULT_MULTI_CHART_HEIGHT : DEFAULT_SINGLE_CHART_HEIGHT);\n" +
+            "            var width = chartConfig.width || DEFAULT_WIDTH;\n" +
             "            var labels = TCH.generateLabels(plotConfigsArr[configIndex].title, chartConfig.axis, plotConfigsArr[configIndex].subtitle);\n" +
             "            var layers = TCH.generateLayers(chartConfig, visitMap, individualColumnAliases, aggregateColumnAliases, plotConfigsArr[configIndex].aggregateData, series, intervalKey, STUDY_NOUN_COLUMN);\n" +
             "            var data = plotConfigsArr[configIndex].individualData ? plotConfigsArr[configIndex].individualData : plotConfigsArr[configIndex].aggregateData;\n" +
@@ -97,7 +98,7 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
             "            var plotConfig = {\n" +
             "                renderTo: CHART_ID,\n" +
             "                clipRect: clipRect,\n" +
-            "                width: DEFAULT_WIDTH,\n" +
+            "                width: width,\n" +
             "                height: height,\n" +
             "                labels: labels,\n" +
             "                aes: aes,\n" +

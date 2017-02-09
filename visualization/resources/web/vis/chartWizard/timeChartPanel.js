@@ -694,6 +694,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             else
                 this.chartLayoutOptions.general.label = this.getDefaultTitle();
 
+            if (Ext4.isNumber(chartConfig.height))
+                this.chartLayoutOptions.general.height = chartConfig.height;
+
+            if (Ext4.isNumber(chartConfig.width))
+                this.chartLayoutOptions.general.width = chartConfig.width;
+
             if (Ext4.isNumber(chartConfig.lineWidth))
                 this.chartLayoutOptions.general.lineWidth = chartConfig.lineWidth;
 
@@ -1015,6 +1021,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         // Here we generate a config that is similar, but strips out info that isnt neccessary.
         // We use this to compare two configs to see if the user made any changes to the chart.
         var simplified = {};
+        simplified.height = config.height;
+        simplified.width = config.width;
         simplified.chartLayout = config.chartLayout;
         simplified.chartSubjectSelection = config.chartSubjectSelection;
         simplified.displayAggregate = config.displayAggregate;
@@ -1192,11 +1200,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         for (var configIndex = 0; configIndex < this.plotConfigInfoArr.length; configIndex++)
         {
-            var newChart = this.generatePlot(
-                    configIndex,
-                    this.plotConfigInfoArr[configIndex].height || (this.plotConfigInfoArr.length > 1 ? 380 : 600),
-                    this.plotConfigInfoArr[configIndex].style
-                );
+            var newChart = this.generatePlot(configIndex, this.plotConfigInfoArr[configIndex].height || (this.plotConfigInfoArr.length > 1 ? 380 : 600));
             charts.push(newChart);
         }
 
@@ -1316,7 +1320,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.getExportScriptWindow().show();
     },
 
-    generatePlot: function(configIndex, chartHeight, chartStyle){
+    generatePlot: function(configIndex, chartHeight){
         // This function generates a plot config and renders a plot for given data.
         // Should be used in per_subject, single, per_measure, and per_group
         var mainTitle = this.plotConfigInfoArr[configIndex].title;
@@ -1346,8 +1350,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             layers: LABKEY.vis.TimeChartHelper.generateLayers(this.chartInfo, visitMap, individualColumnAliases, aggregateColumnAliases, aggregateData, seriesList, intervalKey, this.SUBJECT.columnName),
             aes: LABKEY.vis.TimeChartHelper.generateAes(this.chartInfo, visitMap, individualColumnAliases, intervalKey, this.SUBJECT.columnName),
             scales: LABKEY.vis.TimeChartHelper.generateScales(this.chartInfo, tickMap, this.chartData.numberFormats),
-            width: newChartDiv.getWidth() - 20, // -20 prevents horizontal scrollbars in cases with multiple charts.
-            height: chartHeight - 20, // -20 prevents vertical scrollbars in cases with one chart.
+            width: this.chartInfo.width || (newChartDiv.getWidth() - 20), // -20 prevents horizontal scrollbars in cases with multiple charts.
+            height: this.chartInfo.height || (chartHeight - 20), // -20 prevents vertical scrollbars in cases with one chart.
             data: individualData ? individualData : aggregateData
         };
 
@@ -1531,6 +1535,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         this.ensureChartLayoutOptions();
         config.title = this.chartLayoutOptions.general.label;
+        config.height = this.chartLayoutOptions.general.height;
+        config.width = this.chartLayoutOptions.general.width;
         config.lineWidth = this.chartLayoutOptions.general.lineWidth;
         config.hideDataPoints = this.chartLayoutOptions.general.hideDataPoints;
         config.chartLayout = this.chartLayoutOptions.general.chartLayout;
