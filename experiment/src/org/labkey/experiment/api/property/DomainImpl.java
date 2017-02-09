@@ -728,14 +728,13 @@ public class DomainImpl implements Domain
             }
         }
 
-        // we could just call _aliasManager.decideAlias(pd.getName()) here, however the StorageProvisioner
-        // indexes, and foreignkeys still reply on storage names matching prooperty names.  So try to keep the
-        // names the same if at all possible (especially short names)
+        // Keep the names the same if short enough,
+        // But always leave room for MV suffix in case it's changed to MV later
         String storage = null;
-        if (pd.getName().length() < 60)
+        if (pd.getName().length() + OntologyManager.MV_INDICATOR_SUFFIX.length() + 1 < 60)
             storage = _aliasManager.decideAlias(pd.getName(), pd.getName());
         else
-            storage = _aliasManager.decideAlias(pd.getName());
+            storage = _aliasManager.decideAlias(pd.getName(), OntologyManager.MV_INDICATOR_SUFFIX.length() + 1);
         pd.setStorageColumnName(storage);
     }
 

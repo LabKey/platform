@@ -1353,7 +1353,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
                 if (p.isMvEnabled())
                 {
-                    ColumnInfo baseColumn = getStorageColumn(PropertyStorageSpec.getMvIndicatorColumnName(col.getName()));
+                    ColumnInfo baseColumn = getStorageColumn(PropertyStorageSpec.getMvIndicatorStorageColumnName(pd));
                     if (null == baseColumn)
                         throw new IllegalStateException("Should have found base MV column for '" + col.getName() + "' in dataset '" + getName() + "' in container " + getContainer().getPath());
                     ColumnInfo mvColumn = newDatasetColumnInfo(this, baseColumn, p.getPropertyDescriptor().getPropertyURI());
