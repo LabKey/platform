@@ -98,15 +98,20 @@ public abstract class CompareType
         };
     public static final CompareType DATE_EQUAL = new CompareType("(Date) Equals", "dateeq", "DATE_EQUAL", true, null, OperatorType.DATEEQ)
         {
-            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            @Override
+            public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
+                //Use the IsBlank
+                if (value == null || "".equals(value))
+                    return ISBLANK.createFilterClause(fieldKey, value);
+
                 return new DateEqCompareClause(fieldKey, toDatePart(asDate(value)));
             }
 
             @Override
             public boolean meetsCriteria(Object value, Object[] paramVals)
             {
-                CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
+                FilterClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
                 return clause.meetsCriteria(value);
             }
         };
@@ -127,15 +132,19 @@ public abstract class CompareType
         };
     public static final CompareType DATE_NOT_EQUAL = new CompareType("(Date) Does Not Equal", "dateneq", "DATE_NOT_EQUAL", true, null, OperatorType.DATENEQ)
         {
-            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
+                //Use the non-blank
+                if (value == null || "".equals(value))
+                    return NONBLANK.createFilterClause(fieldKey, value);
+
                 return new DateNeqCompareClause(fieldKey, toDatePart(asDate(value)));
             }
 
             @Override
             public boolean meetsCriteria(Object value, Object[] paramVals)
             {
-                CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
+                FilterClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
                 return clause.meetsCriteria(value);
             }
         };
