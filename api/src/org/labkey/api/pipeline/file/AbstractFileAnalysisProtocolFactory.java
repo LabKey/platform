@@ -328,4 +328,31 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         // TODO: Return some default?
         return null;
     }
+
+    @Nullable
+    public AbstractFileAnalysisProtocol getProtocol(PipeRoot root, File dirData, String protocolName, boolean archived)
+    {
+        try
+        {
+            File protocolFile = getParametersFile(dirData, protocolName, root);
+            AbstractFileAnalysisProtocol result;
+            if (NetworkDrive.exists(protocolFile))
+            {
+                result = loadInstance(protocolFile);
+
+                // Don't allow the instance file to override the protocol name.
+                result.setName(protocolName);
+            }
+            else
+            {
+                result = load(root, protocolName, archived);
+            }
+            return result;
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
+    }
+
 }
