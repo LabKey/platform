@@ -458,11 +458,13 @@ public class StorageProvisioner
 
         for (Map.Entry<DomainProperty, PropertyDescriptor> rename : propsRenamed.entrySet())
         {
-            PropertyStorageSpec prop = new PropertyStorageSpec(rename.getKey().getPropertyDescriptor());
-            String oldPropName = rename.getValue().getName();
-            String oldColumnName = rename.getValue().getStorageColumnName();
+            PropertyDescriptor newPropDescriptor = rename.getKey().getPropertyDescriptor();
+            PropertyDescriptor oldPropDescriptor = rename.getValue();
+            PropertyStorageSpec prop = new PropertyStorageSpec(newPropDescriptor);
+            String oldPropName = oldPropDescriptor.getName();
+            String oldColumnName = oldPropDescriptor.getStorageColumnName();
 
-            renamePropChange.addColumnRename(oldColumnName, prop.getName());
+            renamePropChange.addColumnRename(oldColumnName, newPropDescriptor.getStorageColumnName());
 
             if (!allowRenameOfColumnsDuringUpgrade)
             {
@@ -480,7 +482,7 @@ public class StorageProvisioner
             // of the column doesn't have MV enabled
             if (rename.getValue().isMvEnabled())
             {
-                renamePropChange.addColumnRename(PropertyStorageSpec.getMvIndicatorColumnName(oldPropName), prop.getMvIndicatorColumnName());
+                renamePropChange.addColumnRename(PropertyStorageSpec.getMvIndicatorStorageColumnName(oldPropDescriptor), PropertyStorageSpec.getMvIndicatorStorageColumnName(newPropDescriptor));
             }
         }
 
@@ -1084,7 +1086,7 @@ public class StorageProvisioner
             {
                 c.setDisplayColumnFactory(new MVDisplayColumnFactory());
 
-                ColumnInfo mvColumn = ti.getColumn(PropertyStorageSpec.getMvIndicatorColumnName(p.getName()));
+                ColumnInfo mvColumn = ti.getColumn(PropertyStorageSpec.getMvIndicatorStorageColumnName(p.getPropertyDescriptor()));
                 assert mvColumn != null : "No MV column found for " + p.getName();
                 if (mvColumn != null)
                 {
@@ -1313,7 +1315,8 @@ public class StorageProvisioner
                 ProvisioningReport.ColumnStatus status = new ProvisioningReport.ColumnStatus();
                 domainReport._columns.add(status);
                 status.prop = domainProp;
-                if (hardColumnNames.remove(domainProp.getPropertyDescriptor().getStorageColumnName()))
+                PropertyDescriptor propDescriptor = domainProp.getPropertyDescriptor();
+                if (hardColumnNames.remove(propDescriptor.getStorageColumnName()))
                 {
                     status.colName = domainProp.getName();
                 }
@@ -1323,19 +1326,20 @@ public class StorageProvisioner
                     status.fix = "Create column '" + domainProp.getName() + "'";
                     status.hasProblem = true;
                 }
-                if (hardColumnNames.remove(PropertyStorageSpec.getMvIndicatorColumnName(domainProp.getName())))
-                    status.mvColName = PropertyStorageSpec.getMvIndicatorColumnName(domainProp.getName());
+                String mvColName = PropertyStorageSpec.getMvIndicatorColumnName(propDescriptor);
+                if (hardColumnNames.remove(mvColName))
+                    status.mvColName = mvColName;
                 if (null == status.mvColName && domainProp.isMvEnabled())
                 {
                     domainReport.addError(String.format("database table %s.%s has mvindicator enabled but expected '%s' column wasn't present",
-                            domainReport.getSchemaName(), domainReport.getTableName(), PropertyStorageSpec.getMvIndicatorColumnName(domainProp.getName())));
-                    status.fix += (status.fix.isEmpty() ? "C" : " and c") + "reate column '" + PropertyStorageSpec.getMvIndicatorColumnName(domainProp.getName()) + "'";
+                            domainReport.getSchemaName(), domainReport.getTableName(), mvColName));
+                    status.fix += (status.fix.isEmpty() ? "C" : " and c") + "reate column '" + mvColName + "'";
                     status.hasProblem = true;
                 }
                 if (null != status.mvColName && !domainProp.isMvEnabled())
                 {
                     domainReport.addError(String.format("database table %s.%s has mvindicator disabled but '%s' column is present",
-                            domainReport.getSchemaName(), domainReport.getTableName(), PropertyStorageSpec.getMvIndicatorColumnName(domainProp.getName())));
+                            domainReport.getSchemaName(), domainReport.getTableName(), mvColName));
                     status.fix += (status.fix.isEmpty() ? "D" : " and d") +  "rop column '" + status.mvColName + "'";
                     status.hasProblem = true;
                 }
@@ -1353,19 +1357,20 @@ public class StorageProvisioner
                     status.fix = "'" + spec.getName() + "' is a built-in column.  Contact LabKey support.";
                     status.hasProblem = true;
                 }
-                if (hardColumnNames.remove(spec.getMvIndicatorColumnName()))
-                    status.mvColName = spec.getMvIndicatorColumnName();
+                String mvColName = PropertyStorageSpec.getMvIndicatorColumnName(spec);
+                if (hardColumnNames.remove(mvColName))
+                    status.mvColName = mvColName;
                 if (null == status.mvColName && spec.isMvEnabled())
                 {
                         domainReport.addError(String.format("database table %s.%s has mvindicator enabled but expected '%s' column wasn't present",
-                                domainReport.getSchemaName(), domainReport.getTableName(), spec.getMvIndicatorColumnName()));
+                                domainReport.getSchemaName(), domainReport.getTableName(), mvColName));
                         status.fix = "'" + spec.getName() + "' is a built-in column.  Contact LabKey support.";
                         status.hasProblem = true;
                 }
                 if (null != status.mvColName && !spec.isMvEnabled())
                 {
                         domainReport.addError(String.format("database table %s.%s has mvindicator disabled but '%s' column is present",
-                                domainReport.getSchemaName(), domainReport.getTableName(), spec.getMvIndicatorColumnName()));
+                                domainReport.getSchemaName(), domainReport.getTableName(), mvColName));
                         status.fix = "'" + spec.getName() + "' is a built-in column.  Contact LabKey support.";
                         status.hasProblem = true;
                 }

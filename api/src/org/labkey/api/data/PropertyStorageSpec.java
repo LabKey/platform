@@ -376,14 +376,24 @@ public class PropertyStorageSpec
         return this;
     }
 
-    public String getMvIndicatorColumnName()
+    public static String getMvIndicatorStorageColumnName(PropertyDescriptor rootProp)
     {
-        return getMvIndicatorColumnName(getName());
+        return rootProp.getStorageColumnName() + "_" + MvColumn.MV_INDICATOR_SUFFIX;
     }
 
-    public static String getMvIndicatorColumnName(String rootName)
+    public static String getMvIndicatorColumnName(String rootName)          // Only for display name, not storage
     {
         return rootName + "_" + MvColumn.MV_INDICATOR_SUFFIX;
+    }
+
+    public static String getMvIndicatorColumnName(PropertyDescriptor rootProp)
+    {
+        return getMvIndicatorColumnName(rootProp.getName());
+    }
+
+    public static String getMvIndicatorColumnName(PropertyStorageSpec rootProp)
+    {
+        return getMvIndicatorColumnName(rootProp.getName());
     }
 
     public Object getDefaultValue()

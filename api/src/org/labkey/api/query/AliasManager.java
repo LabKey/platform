@@ -137,6 +137,10 @@ public class AliasManager
         return makeLegalName(str, _dialect);
     }
 
+    private String makeLegalName(String str, int reserveCount)
+    {
+        return makeLegalName(str, _dialect, true, false, reserveCount);
+    }
 
     public static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean useLegacyMaxLength)
     {
@@ -152,6 +156,11 @@ public class AliasManager
 
     public static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean truncate, boolean useLegacyMaxLength)
     {
+        return makeLegalName(str, dialect, truncate, useLegacyMaxLength, 0);
+    }
+
+    private static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean truncate, boolean useLegacyMaxLength, int reserveCount)
+    {
         String ret = legalNameFromName(str);
         if (null != dialect && dialect.isReserved(ret))
             ret = "_" + ret;
@@ -160,6 +169,10 @@ public class AliasManager
             return "_";
         // we use 28 here because Oracle has a limit or 30 characters, and that is likely the shortest restriction
         int maxLength = useLegacyMaxLength ? 40 : (dialect == null ? 28 : dialect.getIdentifierMaxLength());
+        if (reserveCount > 0)
+            maxLength -= reserveCount;
+        if (maxLength < 5)
+            throw new IllegalStateException("Maxlength for legal name too small: " + maxLength);
         return (truncate && length > maxLength) ? truncate(ret, maxLength) : ret;
     }
 
@@ -193,14 +206,7 @@ public class AliasManager
 
     public String decideAlias(String name)
     {
-        String legalName = makeLegalName(name);
-        String ret = legalName;
-        for (int i = 1; _aliases.containsKey(ret); i ++)
-        {
-            ret = legalName + i;
-        }
-        _aliases.put(ret, name);
-        return ret;
+        return checkAndFinishAlias(makeLegalName(name), name);
     }
 
     public String decideAlias(String name, String preferred)
@@ -210,7 +216,16 @@ public class AliasManager
             _aliases.put(preferred, name);
             return preferred;
         }
-        String legalName = makeLegalName(name);
+        return checkAndFinishAlias(makeLegalName(name), name);
+    }
+
+    public String decideAlias(String name, int reserveCount)
+    {
+        return checkAndFinishAlias(makeLegalName(name, reserveCount), name);
+    }
+
+    private String checkAndFinishAlias(String legalName, String name)
+    {
         String ret = legalName;
         for (int i = 1; _aliases.containsKey(ret); i ++)
         {
@@ -219,7 +234,6 @@ public class AliasManager
         _aliases.put(ret, name);
         return ret;
     }
-
 
 /*
     public String decideAlias(FieldKey key)

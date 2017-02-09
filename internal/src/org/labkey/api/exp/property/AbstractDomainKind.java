@@ -174,7 +174,7 @@ public abstract class AbstractDomainKind extends DomainKind
             if (prop.isMvEnabled())
             {
                 nonBlankRowsSQL.append(" OR x.");
-                nonBlankRowsSQL.append(dialect.makeLegalIdentifier(PropertyStorageSpec.getMvIndicatorColumnName(prop.getName()).toLowerCase()));
+                nonBlankRowsSQL.append(PropertyStorageSpec.getMvIndicatorStorageColumnName(prop.getPropertyDescriptor()).toLowerCase());
                 nonBlankRowsSQL.append(" IS NOT NULL");
             }
         }
