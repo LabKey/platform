@@ -71,7 +71,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     private Map<String, String> _parametersDefaults;
     private Map<String, String> _parametersOverrides;
 
-    private static final String ANALYSIS_PARAMETERS_ROLE_NAME = "AnalysisParameters";
+    public static final String ANALYSIS_PARAMETERS_ROLE_NAME = "AnalysisParameters";
 
     public AbstractFileAnalysisJob(AbstractFileAnalysisProtocol protocol,
                                    String providerName,

@@ -48,6 +48,9 @@ public interface TaskPipelineRegistry
     @Nullable
     TaskPipeline getTaskPipeline(TaskId id);
 
+    @NotNull
+    TaskPipeline getTaskPipeline(String taskIdString);
+
     /**
      * Add or replace an existing TaskPipeline definition. Server-specific configuration overrides (usually specified
      * in a Spring Config.xml file) may replace a TaskPipeline that's built-in to a module with one that adds

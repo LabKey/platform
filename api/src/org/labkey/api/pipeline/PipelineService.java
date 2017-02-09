@@ -20,6 +20,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
@@ -29,6 +31,7 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.sql.SQLException;
 import java.util.List;
@@ -122,6 +125,9 @@ abstract public class PipelineService
 
     abstract public String getPipelineProperty(Container container, String name);
 
+    @NotNull
+    public abstract String startFileAnalysis(AnalyzeForm form, ViewContext viewContext) throws IOException, PipelineValidationException;
+
     /** Configurations for the pipeline job webpart ButtonBar */
     public enum PipelineButtonOption { Minimal, Assay, Standard }
 
@@ -155,4 +161,38 @@ abstract public class PipelineService
     abstract public boolean runFolderImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
 
     abstract public Integer getJobId(User u, Container c, String jobGUID);
+
+    abstract public FileAnalysisProperties getFileAnalysisProperties(Container c, String taskId, String path);
+
+    public class FileAnalysisProperties
+    {
+        private final PipeRoot _pipeRoot;
+        private final File _dirData;
+        private final AbstractFileAnalysisProtocolFactory _factory;
+
+        public FileAnalysisProperties(PipeRoot pipeRoot, File dirData, AbstractFileAnalysisProtocolFactory factory)
+        {
+            _pipeRoot = pipeRoot;
+            _dirData = dirData;
+            _factory = factory;
+        }
+
+        public PipeRoot getPipeRoot()
+        {
+            return _pipeRoot;
+        }
+
+        public File getDirData()
+        {
+            return _dirData;
+        }
+
+        public AbstractFileAnalysisProtocolFactory getFactory()
+        {
+            return _factory;
+        }
+    }
+
+    @Nullable
+    public abstract File getProtocolParametersFile(ExpRun expRun);
 }
