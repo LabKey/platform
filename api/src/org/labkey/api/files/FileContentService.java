@@ -65,9 +65,11 @@ public interface FileContentService
     void setIsUseDefaultRoot(Container container, boolean useDefaultRoot);
 
 
+    @NotNull
     File getSiteDefaultRoot();
     void setSiteDefaultRoot(File root);
 
+    @NotNull
     File getUserFilesRoot();
     void setUserFilesRoot(File root);
 

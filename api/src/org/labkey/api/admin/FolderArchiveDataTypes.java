@@ -40,4 +40,5 @@ public class FolderArchiveDataTypes
     public static final String SECURITY_GROUPS = "Project-level groups and members";
     public static final String ROLE_ASSIGNMENTS = "Role assignments for users and groups";
     public static final String STUDY = "Study";
+    public static final String FILES = "Files";
 }

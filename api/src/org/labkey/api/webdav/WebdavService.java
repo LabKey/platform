@@ -67,6 +67,7 @@ public class WebdavService
     }
 
 
+    @Nullable
     public WebdavResource lookup(Path path)
     {
         return _resolver.lookup(path);

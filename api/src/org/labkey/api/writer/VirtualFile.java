@@ -16,6 +16,7 @@
 package org.labkey.api.writer;
 
 import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.security.User;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.io.IOException;
@@ -36,11 +37,13 @@ public interface VirtualFile extends AutoCloseable
     public OutputStream getOutputStream(String filename) throws IOException;
     public void saveXmlBean(String filename, XmlObject doc) throws IOException;
     /** Recursively exports the contents of the resource to this directory */
-    public void saveWebdavTree(WebdavResource resource) throws IOException;
+    public void saveWebdavTree(WebdavResource resource, User user) throws IOException;
     public XmlObject getXmlBean(String filename) throws IOException;
     public InputStream getInputStream(String filename) throws IOException;
     public String getRelativePath(String filename);
+    /** @return all of the file children */
     public String[] list();
+    /** @return all of the directory children */
     public String[] listDirs();
     public boolean delete(String filename);
 

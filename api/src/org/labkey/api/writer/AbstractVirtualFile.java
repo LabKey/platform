@@ -15,6 +15,7 @@
  */
 package org.labkey.api.writer;
 
+import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.webdav.WebdavResource;
 
@@ -28,18 +29,19 @@ import java.io.OutputStream;
  */
 public abstract class AbstractVirtualFile implements VirtualFile
 {
+    /** Writes the contents of the WebDAV resource into the virtual file */
     @Override
-    public void saveWebdavTree(WebdavResource resource) throws IOException
+    public void saveWebdavTree(WebdavResource resource, User user) throws IOException
     {
         for (WebdavResource child : resource.list())
         {
             if (child.isCollection())
             {
-                getDir(child.getName()).saveWebdavTree(child);
+                getDir(child.getName()).saveWebdavTree(child, user);
             }
             else
             {
-                try (InputStream inputStream = child.getInputStream(); OutputStream outputStream = getOutputStream(child.getName()))
+                try (InputStream inputStream = child.getInputStream(user); OutputStream outputStream = getOutputStream(child.getName()))
                 {
                     if (inputStream != null)
                         FileUtil.copyData(inputStream, outputStream);
