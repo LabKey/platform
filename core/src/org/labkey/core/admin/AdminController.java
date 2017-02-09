@@ -3581,6 +3581,11 @@ public class AdminController extends SpringActionController
 
                 appProps.save();
                 lafProps.save();
+
+                // If the admin has not opted out of usage reporting, send an immediate report
+                // now that they've set up their account and defaults, and then every 24 hours after.
+                ModuleLoader.getInstance().setDeferUsageReport(false);
+                AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
                 return true;
             }
             return false;

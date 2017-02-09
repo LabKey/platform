@@ -676,6 +676,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             @Override
             public void moduleStartupComplete(ServletContext servletContext)
             {
+                // On bootstrap in production mode, this will send an initial ping with very little
+                // information, as the admin will not have set up their account yet.
+                // On later startups, depending on the reporting level, this will send an immediate
+                // ping, and then once every 24 hours.
                 AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
             }
         });
