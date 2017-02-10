@@ -192,6 +192,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
@@ -203,6 +204,16 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 {
     private DatabaseCache<MaterialSource> materialSourceCache;
     private StringKeyCache<Protocol> protocolCache;
+
+    private final StringKeyCache<SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DEFAULT_TIMEOUT, "DataClass", (containerId, argument) ->
+    {
+        Container c = ContainerManager.getForId(containerId);
+        if (c == null)
+            return Collections.emptySortedSet();
+
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        return Collections.unmodifiableSortedSet(new TreeSet<>(new TableSelector(getTinfoDataClass(), filter, null).getCollection(DataClass.class)));
+    });
 
     public static final String EXPERIMENTAL_LEGACY_LINEAGE = "legacy-lineage";
     public static final String DEFAULT_MATERIAL_SOURCE_NAME = "Unspecified";
@@ -224,6 +235,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             materialSourceCache = new DatabaseCache<>(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Material source");
         }
         return materialSourceCache;
+    }
+
+    StringKeyCache<SortedSet<DataClass>> getDataClassCache()
+    {
+        return dataClassCache;
     }
 
     synchronized StringKeyCache<Protocol> getProtocolCache()
@@ -1246,8 +1262,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     @Override
     public List<ExpDataClassImpl> getDataClasses(Container container, User user, boolean includeOtherContainers)
     {
-        SimpleFilter filter = createContainerFilter(container, user, includeOtherContainers);
-        List<DataClass> classes = new TableSelector(getTinfoDataClass(), filter, null).getArrayList(DataClass.class);
+        SortedSet<DataClass> classes = new TreeSet<>();
+        List<String> containerIds = createContainerList(container, user, includeOtherContainers);
+        for (String containerId : containerIds)
+        {
+            SortedSet<DataClass> dataClasses = getDataClassCache().get(containerId);
+            classes.addAll(dataClasses);
+        }
+
         // Do the sort on the Java side to make sure it's always case-insensitive, even on Postgres
         return Collections.unmodifiableList(classes.stream().map(ExpDataClassImpl::new).sorted().collect(Collectors.toList()));
     }
@@ -1266,14 +1288,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     private ExpDataClassImpl getDataClass(Container c, @Nullable User user, String dataClassName, boolean includeOtherContainers)
     {
-        SimpleFilter filter = createContainerFilter(c, user, includeOtherContainers)
-                .addCondition(FieldKey.fromParts("name"), dataClassName);
+        List<String> containerIds = createContainerList(c, user, includeOtherContainers);
+        for (String containerId : containerIds)
+        {
+            Collection<DataClass> dataClasses = getDataClassCache().get(containerId);
+            for (DataClass dataClass : dataClasses)
+            {
+                if (dataClass.getName().equalsIgnoreCase(dataClassName))
+                    return new ExpDataClassImpl(dataClass);
+            }
+        }
 
-        DataClass dataClass = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
-        if (dataClass == null)
-            return null;
-
-        return new ExpDataClassImpl(dataClass);
+        return null;
     }
 
     @Override
@@ -2415,7 +2441,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return LsidType.get(typeName);
     }
 
-    public SimpleFilter createContainerFilter(Container container, User user, boolean includeProjectAndShared)
+    public List<String> createContainerList(Container container, User user, boolean includeProjectAndShared)
     {
         List<String> containerIds = new ArrayList<>();
         containerIds.add(container.getId());
@@ -2436,8 +2462,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 containerIds.add(shared.getId());
             }
         }
+        return containerIds;
+    }
+
+    public SimpleFilter createContainerFilter(Container container, User user, boolean includeProjectAndShared)
+    {
         SimpleFilter filter = new SimpleFilter();
-        filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts("Container"), containerIds));
+        filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts("Container"), createContainerList(container, user, includeProjectAndShared)));
         return filter;
     }
 
@@ -2480,6 +2511,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public void clearCaches()
     {
         getMaterialSourceCache().clear();
+        getDataClassCache().clear();
         getProtocolCache().clear();
     }
 
@@ -5014,6 +5046,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
 
             transaction.commit();
+            getMaterialSourceCache().clear();
         }
 
         return ss;
@@ -5096,6 +5129,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
 
             tx.commit();
+            getDataClassCache().clear();
         }
 
         return impl;

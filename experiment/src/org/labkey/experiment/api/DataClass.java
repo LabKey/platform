@@ -15,13 +15,16 @@
  */
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Objects;
 
 /**
  * User: kevink
  * Date: 9/21/15
  */
-public class DataClass extends IdentifiableEntity
+public class DataClass extends IdentifiableEntity implements Comparable<DataClass>
 {
     private String _description;
     private String _nameExpression;
@@ -57,4 +60,26 @@ public class DataClass extends IdentifiableEntity
     {
         _materialSourceId = materialSourceId;
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (!(o instanceof DataClass)) return false;
+        DataClass dataClass = (DataClass) o;
+        return Objects.equals(this.getLSID(), dataClass.getLSID());
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(getLSID());
+    }
+
+    @Override
+    public int compareTo(@NotNull DataClass o)
+    {
+        return getName().compareToIgnoreCase(o.getName());
+    }
+
 }
