@@ -17,6 +17,7 @@ package org.labkey.issue.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -33,6 +34,8 @@ import java.util.Map;
  */
 public class IssuesWebPartFactory extends BaseWebPartFactory
 {
+    private boolean _showCustomizeOnInsert;
+
     public IssuesWebPartFactory()
     {
         super("Issues List", true, true);
@@ -42,6 +45,8 @@ public class IssuesWebPartFactory extends BaseWebPartFactory
     {
         Map<String, String> properties = webPart.getPropertyMap();
         String issueDefName = properties.get(IssuesListView.ISSUE_LIST_DEF_NAME);
+        _showCustomizeOnInsert = IssueManager.getDefaultIssueListDefName(context.getContainer()) != null;
+
         if (issueDefName == null)
             issueDefName = IssueManager.getDefaultIssueListDefName(context.getContainer());
 
@@ -58,6 +63,13 @@ public class IssuesWebPartFactory extends BaseWebPartFactory
         return view;
     }
 
+    @Override
+    public boolean showCustomizeOnInsert()
+    {
+        return _showCustomizeOnInsert;
+    }
+
+    @Nullable
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return new IssuesListView.IssuesListConfig(webPart);
