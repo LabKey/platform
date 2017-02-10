@@ -268,6 +268,9 @@ public class JsonWriter
             }
         }
 
+        if (dc instanceof IMultiValuedDisplayColumn)
+            props.put("multiValue", true);
+
         return props;
     }
 
