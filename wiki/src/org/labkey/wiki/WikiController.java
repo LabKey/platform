@@ -980,6 +980,11 @@ public class WikiController extends SpringActionController
             //Get destination container. Handle both post and get cases.
             Container cDest = getDestContainer(form.getDestContainer(), form.getPath());
 
+            if (cSrc.equals(cDest))
+            {
+                throw new NotFoundException("Cannot copy a wiki into the folder it is being copied from.");
+            }
+
             //get page name if specified (indicates we are copying subtree)
             String pageName = form.getPageName();
             //get selected page (top of subtree)
