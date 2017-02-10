@@ -957,9 +957,10 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param {Object} aes The aes object from generateAes.
      * @param {Object} scales The scales object from generateScales.
      * @param {Array} data The response data from selectRows.
+     * @param {Boolean} dataConversionHappened Whether we converted any values in the measure data
      * @returns {Object}
      */
-    var validateAxisMeasure = function(chartType, chartConfig, measureName, aes, scales, data) {
+    var validateAxisMeasure = function(chartType, chartConfig, measureName, aes, scales, data, dataConversionHappened) {
         var dataIsNull = true, measureUndefined = true, invalidLogValues = false, hasZeroes = false, message = null;
 
         // no need to check measures if we have no data
@@ -990,7 +991,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             return {success: false, message: message};
         }
 
-        if ((chartType == 'scatter_plot' || measureName == 'y') && dataIsNull)
+        if ((chartType == 'scatter_plot' || measureName == 'y') && dataIsNull && !dataConversionHappened)
         {
             message = 'All data values for ' + chartConfig.measures[measureName].label + ' are null. Please choose a different measure.';
             return {success: false, message: message};
@@ -1134,12 +1135,13 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @returns {{droppedValues: {}, processed: {}}}
      */
     var _processMeasureData = function(rows, aes, measuresForProcessing) {
-        var droppedValues = {}, processedMeasures = {};
+        var droppedValues = {}, processedMeasures = {}, dataIsNull;
         rows.forEach(function(row) {
             //convert measures if applicable
             if (!Ext4.Object.isEmpty(measuresForProcessing)) {
                 for (var measure in measuresForProcessing) {
                     if (measuresForProcessing.hasOwnProperty(measure)) {
+                        dataIsNull = true;
                         if (!droppedValues[measure]) {
                             droppedValues[measure] = {};
                             droppedValues[measure].label = measuresForProcessing[measure].label;
@@ -1148,6 +1150,9 @@ LABKEY.vis.GenericChartHelper = new function(){
 
                         if (aes.hasOwnProperty(measure)) {
                             var value = aes[measure](row);
+                            if (value !== null) {
+                                dataIsNull = false;
+                            }
                             row[measuresForProcessing[measure].convertedName] = {value: null};
                             if (typeof value !== 'number' && value !== null) {
 
@@ -1173,7 +1178,7 @@ LABKEY.vis.GenericChartHelper = new function(){
 
                         if (!processedMeasures[measure]) {
                             processedMeasures[measure] = {
-                                converted: true,
+                                converted: !dataIsNull,
                                 convertedName: measuresForProcessing[measure].convertedName,
                                 type: 'float',
                                 normalizedType: 'float'

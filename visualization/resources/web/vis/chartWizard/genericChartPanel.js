@@ -1404,7 +1404,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             return false;
 
         // validate that the y axis measure exists and data is valid
-        if (hasYMeasure && !this.validateAxisMeasure(chartType, chartConfig, 'y', aes, scales, this.getMeasureStoreRecords()))
+        if (hasYMeasure && !this.validateAxisMeasure(chartType, chartConfig, 'y', aes, scales, this.getMeasureStoreRecords(), this.measures['y'].converted))
             return false;
 
         return true;
@@ -1649,9 +1649,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return valid;
     },
 
-    validateAxisMeasure : function(chartType, chartConfig, measureName, aes, scales, data)
+    validateAxisMeasure : function(chartType, chartConfig, measureName, aes, scales, data, dataConversionHappened)
     {
-        var validation = LABKEY.vis.GenericChartHelper.validateAxisMeasure(chartType, chartConfig, measureName, aes, scales, data);
+        var validation = LABKEY.vis.GenericChartHelper.validateAxisMeasure(chartType, chartConfig, measureName, aes, scales, data, dataConversionHappened);
         if (!validation.success)
             delete this.measures[measureName];
 
