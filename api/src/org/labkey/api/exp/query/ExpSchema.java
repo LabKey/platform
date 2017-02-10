@@ -31,6 +31,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
@@ -302,7 +303,7 @@ public class ExpSchema extends AbstractExpSchema
 
     public ForeignKey getProtocolApplicationForeignKey()
     {
-        return new ExperimentLookupForeignKey("RowId")
+        return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.ProtocolApplications.name(), "RowId", null)
         {
             public TableInfo getLookupTableInfo()
             {
@@ -342,7 +343,7 @@ public class ExpSchema extends AbstractExpSchema
 
     public ForeignKey getRunIdForeignKey()
     {
-        return new ExperimentLookupForeignKey("RowId")
+        return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Runs.name(), "RowId", null)
         {
             public TableInfo getLookupTableInfo()
             {
@@ -354,7 +355,7 @@ public class ExpSchema extends AbstractExpSchema
     /** @param includeBatches if false, then filter out run groups of type batch when doing the join */
     public ForeignKey getRunGroupIdForeignKey(final boolean includeBatches)
     {
-        return new ExperimentLookupForeignKey("RowId")
+        return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.RunGroups.name(), "RowId", null)
         {
             public TableInfo getLookupTableInfo()
             {
@@ -371,7 +372,7 @@ public class ExpSchema extends AbstractExpSchema
 
     public ForeignKey getDataIdForeignKey()
     {
-        return new ExperimentLookupForeignKey("RowId")
+        return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Data.name(), "RowId", null)
         {
             public TableInfo getLookupTableInfo()
             {
@@ -388,7 +389,7 @@ public class ExpSchema extends AbstractExpSchema
     {
         if (targetSampleSet == null)
         {
-            return new ExperimentLookupForeignKey("RowId")
+            return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Materials.name(), "RowId", null)
             {
                 public TableInfo getLookupTableInfo()
                 {
@@ -453,6 +454,11 @@ public class ExpSchema extends AbstractExpSchema
         public ExperimentLookupForeignKey(String pkColumnName)
         {
             super(pkColumnName);
+        }
+
+        public ExperimentLookupForeignKey(ActionURL baseURL, String paramName, String schemaName, String tableName, String pkColumnName, String titleColumn)
+        {
+            super(baseURL, paramName, schemaName, tableName, pkColumnName, titleColumn);
         }
 
         @Override

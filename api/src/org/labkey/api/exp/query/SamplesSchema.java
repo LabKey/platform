@@ -20,22 +20,25 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.module.Module;
-import org.labkey.api.security.User;
-import org.labkey.api.query.*;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.module.Module;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.SchemaKey;
+import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.NotFoundException;
 
 import java.util.ArrayList;
-import java.util.Set;
 import java.util.Map;
+import java.util.Set;
 
 public class SamplesSchema extends AbstractExpSchema
 {
@@ -126,11 +129,12 @@ public class SamplesSchema extends AbstractExpSchema
      */
     public ForeignKey materialIdForeignKey(@NotNull final ExpSampleSet ss, @Nullable DomainProperty domainProperty)
     {
-        return new LookupForeignKey("RowId")
+        final String tableName = ExpSchema.TableType.Materials.toString();
+        return new LookupForeignKey(null, null, SamplesSchema.SCHEMA_NAME, tableName, "RowId", null)
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), SamplesSchema.this);
+                ExpMaterialTable ret = ExperimentService.get().createMaterialTable(tableName, SamplesSchema.this);
                 ret.populate(ss, true);
                 ret.setContainerFilter(new ContainerFilter.SimpleContainerFilter(ExpSchema.getSearchContainers(getContainer(), ss, domainProperty, getUser())));
                 ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
