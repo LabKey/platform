@@ -321,7 +321,7 @@ public class IssueManager
         return false;
     }
 
-    public static void saveIssue(User user, Container container, Issue issue) throws SQLException
+    public static void saveIssue(User user, Container container, Issue issue) throws SQLException, BatchValidationException
     {
         if (issue.getAssignedTo() == null)
             issue.setAssignedTo(0);
@@ -357,8 +357,13 @@ public class IssueManager
                     issue.beforeInsert(user, container.getId());
                     results = qus.insertRows(user, container, Collections.singletonList(row), batchErrors, null, null);
 
-                    assert results.size() == 1;
-                    issue.setIssueId((int)results.get(0).get("IssueId"));
+                    if (!batchErrors.hasErrors())
+                    {
+                        assert results.size() == 1;
+                        issue.setIssueId((int)results.get(0).get("IssueId"));
+                    }
+                    else
+                        throw batchErrors;
                 }
                 else
                 {
@@ -1815,7 +1820,7 @@ public class IssueManager
         }
 
         @Test
-        public void testIssues() throws IOException, SQLException, ServletException
+        public void testIssues() throws IOException, SQLException, ServletException, BatchValidationException
         {
             TestContext context = TestContext.get();
 

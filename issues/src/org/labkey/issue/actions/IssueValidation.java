@@ -1,5 +1,7 @@
 package org.labkey.issue.actions;
 
+import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
@@ -24,6 +26,7 @@ import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.validation.FieldError;
 import org.springframework.validation.MapBindingResult;
 
 import java.util.Collections;
@@ -62,6 +65,15 @@ public class IssueValidation
                         String msg = validator.validate(0, entry.getValue());
                         if (msg != null)
                             requiredErrors.reject(SpringActionController.ERROR_MSG, msg);
+                    }
+
+                    try
+                    {
+                        ConvertUtils.convert(entry.getValue(), col.getJavaClass());
+                    }
+                    catch (ConversionException e)
+                    {
+                        errors.reject(SpringActionController.ERROR_MSG, String.format("Could not convert '%s' to an %s", entry.getValue(), col.getJavaClass().getSimpleName()));
                     }
                 }
             }

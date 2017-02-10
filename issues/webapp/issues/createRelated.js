@@ -48,11 +48,6 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
             validateOnChange: false,
             validateOnBlur  : false,
             allowBlank      : false,
-            tpl: Ext4.create('Ext.XTemplate',
-                    '<tpl for=".">',
-                    '<div class="x4-boundlist-item">{containerPath:htmlEncode}</div>',
-                    '</tpl>'
-            ),
             listeners : {
                 scope: this,
                 'change': function(cb, value) {

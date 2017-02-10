@@ -16,6 +16,7 @@
 package org.labkey.issue.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -26,10 +27,12 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -61,6 +64,14 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
         issueIdColumn.setLabel(names.singularName);
         ActionURL base = IssuesController.issueURL(_userSchema.getContainer(), IssuesController.DetailsAction.class);
         issueIdColumn.setURL(new DetailsURL(base, Collections.singletonMap("issueId", "IssueId")));
+        issueIdColumn.setFk(new LookupForeignKey("IssueId", "IssueId")
+        {
+            @Override
+            public @Nullable TableInfo getLookupTableInfo()
+            {
+                return IssuesSchema.getInstance().getTableInfoIssues();
+            }
+        });
         issueIdColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             @Override
@@ -147,6 +158,13 @@ class IssueIdDisplayColumn extends DataColumn
     @Override
     public String getFormattedValue(RenderContext ctx)
     {
+        String title = getIssueTitle(ctx);
+        return title != null ? title : super.getFormattedValue(ctx);
+    }
+
+    @Nullable
+    private String getIssueTitle(RenderContext ctx)
+    {
         Object o = getValue(ctx);
         if (o instanceof Integer)
         {
@@ -156,7 +174,7 @@ class IssueIdDisplayColumn extends DataColumn
                 return issue.getTitle();
             }
         }
-        return super.getFormattedValue(ctx);
+        return null;
     }
 }
 
