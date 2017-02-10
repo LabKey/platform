@@ -152,7 +152,8 @@ public class ContainerManager
         Description,
         SiteRoot,
         StudyChange,
-        UserFilesRoot
+        UserFilesRoot,
+        EndpointDirectory,
     }
 
     static Path makePath(Container parent, String name)
