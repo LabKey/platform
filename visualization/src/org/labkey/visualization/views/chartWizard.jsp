@@ -48,9 +48,7 @@
     User user = getUser();
 
     String numberFormat = Formats.getNumberFormatString(c);
-    if (numberFormat == null)
-        numberFormat = Formats.f1.toPattern();
-    String numberFormatFn = ExtUtil.toExtNumberFormatFn(numberFormat);
+    String numberFormatFn = numberFormat != null ? ExtUtil.toExtNumberFormatFn(numberFormat) : null;
 
     boolean canShare = ctx.hasPermission(ShareReportPermission.class);
     boolean isDeveloper = user.isDeveloper();

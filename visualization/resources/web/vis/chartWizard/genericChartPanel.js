@@ -497,7 +497,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         // close the window and clear any previous charts
         this.closeChartTypeWindow();
-        this.clearChartPanel();
+        this.clearChartPanel(true);
 
         // only apply the values for the applicable chart type
         if (Ext4.isObject(values) && values.type == 'time_chart')
@@ -1239,7 +1239,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // Keep the toggle button enabled so the user can remove filters
         this.getToggleViewBtn().enable();
 
-        this.clearChartPanel();
+        this.clearChartPanel(true);
         this.getViewPanel().add(errorDiv);
         this.getEl().unmask();
     },
@@ -1254,7 +1254,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!this.initMeasures())
             return;
 
-        this.clearChartPanel();
+        this.clearChartPanel(false);
 
         var chartConfig = this.getChartConfig(),
             renderType = this.getRenderType();
@@ -1686,7 +1686,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
             else
             {
-                this.clearChartPanel();
+                this.clearChartPanel(true);
                 var errorDiv = Ext4.create('Ext.container.Container', {
                     border: 1,
                     autoEl: {tag: 'div'},
@@ -1732,10 +1732,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return xMeasure ? (xMeasure.normalizedType || xMeasure.type) : null;
     },
 
-    clearChartPanel : function()
+    clearChartPanel : function(clearMessages)
     {
         this.clearWarningText();
         this.getViewPanel().removeAll();
+        if (clearMessages) {
+            this.getMsgPanel().removeAll();
+        }
     },
 
     clearWarningText : function()

@@ -430,7 +430,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                             return tickFormatFn(value);
                         }
                         return value;
-                    }
+                    };
                 }
             }
             else if (measures.x && fields[i].fieldKey == measures.x.name && measures.x.name == subjectColumn && LABKEY.demoMode) {
@@ -830,17 +830,16 @@ LABKEY.vis.GenericChartHelper = new function(){
                 aes.color = 'label';
             }
 
-            if (scales.y.domain)
-            {
-                scales.y = { domain: scales.y.domain };
+            if (!scales.y) {
+                scales.y = {};
             }
-            else
-            {
+
+            if (!scales.y.domain) {
                 var values = Ext4.Array.pluck(data, 'value'),
                     min = Math.min(0, Ext4.Array.min(values)),
                     max = Math.max(0, Ext4.Array.max(values));
 
-                scales.y = { domain: [min, max] };
+                scales.y.domain = [min, max];
             }
         }
         else if (renderType == 'box_plot' && chartConfig.pointType == 'all')
