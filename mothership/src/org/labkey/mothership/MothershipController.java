@@ -382,7 +382,7 @@ public class MothershipController extends SpringActionController
 
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "ExceptionSummary", MothershipSchema.EXCEPTION_STACK_TRACE_TABLE_NAME);
-            settings.getBaseSort().insertSortColumn("-ExceptionStackTraceId");
+            settings.getBaseSort().insertSortColumn(FieldKey.fromParts("ExceptionStackTraceId"), Sort.SortDirection.DESC);
 
             QueryView queryView = schema.createView(getViewContext(), settings, errors);
             queryView.setShowDetailsColumn(false);
@@ -743,14 +743,7 @@ public class MothershipController extends SpringActionController
         {
             try
             {
-                ExceptionStackTrace stackTrace = new ExceptionStackTrace();
-                stackTrace.setStackTrace(form.getStackTrace());
-                stackTrace.setContainer(getContainer().getId());
-
-                ServerSession session = form.toSession(getContainer());
-
                 ServerInstallation installation = new ServerInstallation();
-                installation.setServerIP(getViewContext().getRequest().getRemoteAddr());
                 if (form.getServerGUID() == null)
                 {
                     logger.warn("No serverGUID specified in exception report from " + installation.getServerIP() + ", making one up so we don't lose the exception");
@@ -758,8 +751,21 @@ public class MothershipController extends SpringActionController
                 }
                 else
                 {
+                    ServerInstallation existingInstallation = MothershipManager.get().getServerInstallation(form.getServerGUID(), getContainer());
+                    if (null != existingInstallation && Boolean.TRUE.equals(existingInstallation.getIgnoreExceptions()))
+                    {
+                        // Mothership is set to ignore exceptions from this installation, so just return
+                        return null;
+                    }
                     installation.setServerInstallationGUID(form.getServerGUID());
                 }
+
+                installation.setServerIP(getViewContext().getRequest().getRemoteAddr());
+                ExceptionStackTrace stackTrace = new ExceptionStackTrace();
+                stackTrace.setStackTrace(form.getStackTrace());
+                stackTrace.setContainer(getContainer().getId());
+
+                ServerSession session = form.toSession(getContainer());
 
                 installation.setUsedInstaller(form.isUsedInstaller());
                 session = MothershipManager.get().updateServerSession(session, installation, getContainer());
@@ -1630,6 +1636,7 @@ public class MothershipController extends SpringActionController
             requestedColumns.add(FieldKey.fromParts("MostRecentSession", "Distribution"));
             requestedColumns.add(FieldKey.fromParts("MostRecentSession", "UsageReportingLevel"));
             requestedColumns.add(FieldKey.fromParts("MostRecentSession", "ExceptionReportingLevel"));
+            requestedColumns.add(FieldKey.fromParts("IgnoreExceptions"));
 
             Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(serverInstallationTable, requestedColumns);
 
@@ -1637,7 +1644,7 @@ public class MothershipController extends SpringActionController
             {
                 // The 5 columns from the lookup via MostRecentSession are all user editable by default, which is
                 // incorrect for their usage on this page.
-                if (!"Note".equalsIgnoreCase(col.getColumnName()))
+                if (!("Note".equalsIgnoreCase(col.getColumnName()) || "IgnoreExceptions".equalsIgnoreCase(col.getColumnName())))
                 {
                     col.setUserEditable(false);
                 }

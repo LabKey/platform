@@ -33,6 +33,7 @@ public class ServerInstallation
     private String _serverIP;
     private String _serverHostName;
     private Boolean _usedInstaller; // The Windows installer was used to install LabKey, Tomcat, Postgres.
+    private Boolean _ignoreExceptions;
 
     public String getSystemDescription()
     {
@@ -142,5 +143,15 @@ public class ServerInstallation
     public void setUsedInstaller(Boolean usedInstaller)
     {
         _usedInstaller = usedInstaller;
+    }
+
+    public Boolean getIgnoreExceptions()
+    {
+        return _ignoreExceptions;
+    }
+
+    public void setIgnoreExceptions(Boolean ignoreExceptions)
+    {
+        _ignoreExceptions = ignoreExceptions;
     }
 }

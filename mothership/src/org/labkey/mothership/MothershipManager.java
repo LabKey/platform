@@ -92,6 +92,7 @@ public class MothershipManager
         // Synchronize to prevent two different threads from creating duplicate rows in the ExceptionStackTrace table
         try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction(INSERT_EXCEPTION_LOCK))
         {
+            boolean isNew = false;
             stackTrace.hashStackTrace();
             ExceptionStackTrace existingStackTrace = getExceptionStackTrace(stackTrace.getStackTraceHash(), stackTrace.getContainer());
             if (existingStackTrace != null)
@@ -101,6 +102,7 @@ public class MothershipManager
             else
             {
                 stackTrace = Table.insert(null, getTableInfoExceptionStackTrace(), stackTrace);
+                isNew = true;
             }
 
             report.setExceptionStackTraceId(stackTrace.getExceptionStackTraceId());
@@ -133,7 +135,15 @@ public class MothershipManager
                 report.setPageflowName(controllerName.substring(0, 29));
             }
 
-            Table.insert(null, getTableInfoExceptionReport(), report);
+            report = Table.insert(null, getTableInfoExceptionReport(), report);
+            stackTrace.setInstances(stackTrace.getInstances() + 1);
+            stackTrace.setLastReport(report.getCreated());
+            if (isNew)
+            {
+                stackTrace.setFirstReport(report.getCreated());
+            }
+            Table.update(null, getTableInfoExceptionStackTrace(), stackTrace, stackTrace.getExceptionStackTraceId());
+
             transaction.commit();
         }
     }

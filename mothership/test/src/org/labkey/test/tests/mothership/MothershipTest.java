@@ -33,11 +33,8 @@ import org.labkey.test.pages.mothership.ReportsPage;
 import org.labkey.test.pages.mothership.ShowExceptionsPage;
 import org.labkey.test.pages.mothership.ShowExceptionsPage.ExceptionSummaryDataRegion;
 import org.labkey.test.pages.mothership.StackTraceDetailsPage;
-import org.labkey.test.pages.test.TestActions;
 import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.IssuesHelper;
-import org.labkey.test.util.LogMethod;
-import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.Maps;
 import org.labkey.test.util.PermissionsHelper.MemberType;
 import org.labkey.test.util.PortalHelper;
@@ -109,7 +106,9 @@ public class MothershipTest extends BaseWebDriverTest
     @Before
     public void preTest() throws Exception
     {
-        _mothershipHelper = new MothershipHelper(getDriver());
+        _mothershipHelper = new MothershipHelper(this);
+        // In case the testIgnoreInstallationExceptions() test case didn't reset this flag after itself.
+        _mothershipHelper.setIgnoreExceptions(false);
         goToMothership();
     }
 
@@ -203,7 +202,7 @@ public class MothershipTest extends BaseWebDriverTest
     @Test
     public void testCombiningIdenticalExceptions() throws Exception
     {
-        List<Integer> exceptionIds = triggerExceptions(ExceptionActions.illegalState, ExceptionActions.illegalState);
+        List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(ExceptionActions.illegalState, ExceptionActions.illegalState);
         assertEquals("Should group identical exceptions", exceptionIds.get(0), exceptionIds.get(1));
     }
 
@@ -214,7 +213,7 @@ public class MothershipTest extends BaseWebDriverTest
         actions.add(new Pair<>(ExceptionActions.multiException, "NPE"));
         actions.add(new Pair<>(ExceptionActions.multiException, "NPE2"));
 
-        List<Integer> exceptionIds = triggerExceptions(actions);
+        List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(actions);
         assertEquals("Should group same exception type from same action", exceptionIds.get(0), exceptionIds.get(1));
     }
 
@@ -225,14 +224,14 @@ public class MothershipTest extends BaseWebDriverTest
         actions.add(new Pair<>(ExceptionActions.multiException, "NPE"));
         actions.add(new Pair<>(ExceptionActions.multiException, "ISE"));
 
-        List<Integer> exceptionIds = triggerExceptions(actions);
+        List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(actions);
         assertNotEquals("Should not group different exception types", exceptionIds.get(0), exceptionIds.get(1));
     }
 
     @Test
     public void testNotCombiningFromDifferentActions() throws Exception
     {
-        List<Integer> exceptionIds = triggerExceptions(ExceptionActions.npeother, ExceptionActions.npe);
+        List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(ExceptionActions.npeother, ExceptionActions.npe);
         assertNotEquals("Should not group exceptions from different actions", exceptionIds.get(0), exceptionIds.get(1));
     }
 
@@ -258,40 +257,12 @@ public class MothershipTest extends BaseWebDriverTest
 
     protected int ensureUnassignedException()
     {
-        int stackTraceId = triggerException(ExceptionActions.npe);
+        int stackTraceId = _mothershipHelper.triggerException(ExceptionActions.npe);
         _mothershipHelper.resetStackTrace(stackTraceId);
         return stackTraceId;
     }
 
-    protected int triggerException(ExceptionActions action)
-    {
-        return triggerExceptions(action).get(0);
-    }
 
-    protected List<Integer> triggerExceptions(ExceptionActions... actions)
-    {
-        List<Pair<ExceptionActions, String>> actionsWithMessages = new ArrayList<>();
-        for (ExceptionActions action : actions)
-        {
-            actionsWithMessages.add(new Pair<>(action, null));
-        }
-        return triggerExceptions(actionsWithMessages);
-    }
-
-    @LogMethod
-    protected List<Integer> triggerExceptions(@LoggedParam List<Pair<TestActions.ExceptionActions, String>> actionsWithMessages)
-    {
-        List<Integer> exceptionIds = new ArrayList<>();
-        checkErrors();
-        for (Pair<TestActions.ExceptionActions, String> action : actionsWithMessages)
-        {
-            action.first.triggerException(action.second);
-            sleep(100); // Wait for mothership to pick up exception
-            exceptionIds.add(_mothershipHelper.getLatestStackTraceId());
-        }
-        resetErrors();
-        return exceptionIds;
-    }
 
     @Override
     protected BrowserType bestBrowser()

@@ -15,31 +15,44 @@
  */
 package org.labkey.test.util.mothership;
 
+import org.labkey.api.util.Pair;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.PostCommand;
+import org.labkey.remoteapi.query.Filter;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.remoteapi.query.Sort;
+import org.labkey.remoteapi.query.UpdateRowsCommand;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.WebDriverWrapperImpl;
+import org.labkey.test.pages.test.TestActions;
 import org.labkey.test.util.APIUserHelper;
-import org.openqa.selenium.WebDriver;
+import org.labkey.test.util.LogMethod;
+import org.labkey.test.util.LoggedParam;
+import org.labkey.test.util.Maps;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import static org.labkey.test.WebDriverWrapper.sleep;
 
 public class MothershipHelper
 {
     public static final String ID_COLUMN = "ExceptionStackTraceId";
     public static final String MOTHERSHIP_PROJECT = "_mothership";
 
-    WebDriverWrapper driver;
+    private final WebDriverWrapper driver;
+    private final BaseWebDriverTest test;
 
-    public MothershipHelper(WebDriver driver)
+    public MothershipHelper(BaseWebDriverTest test)
     {
-        this.driver = new WebDriverWrapperImpl(driver);
+        this.test = test;
+        driver = new WebDriverWrapperImpl(test.getDriver());
     }
 
     public int getLatestStackTraceId()
@@ -92,6 +105,22 @@ public class MothershipHelper
         }
     }
 
+    public int getReportCount(int stackTraceId)
+    {
+        Connection connection = driver.createDefaultConnection(true);
+        SelectRowsCommand command = new SelectRowsCommand("mothership", "ExceptionStackTrace");
+        command.addFilter(ID_COLUMN, stackTraceId, Filter.Operator.EQUAL);
+        try
+        {
+            SelectRowsResponse response = command.execute(connection, MOTHERSHIP_PROJECT);
+            return (int) response.getRows().get(0).get("instances");
+        }
+        catch (IOException|CommandException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
     public enum ReportLevel
     {
         NONE,
@@ -116,5 +145,43 @@ public class MothershipHelper
                 "&level=" + level.toString() +
                 "&submit=" + submit;
         driver.beginAt(relativeUrl);
+    }
+
+    public void setIgnoreExceptions(boolean ignore) throws IOException, CommandException
+    {
+        Connection connection = driver.createDefaultConnection(true);
+        UpdateRowsCommand command = new UpdateRowsCommand("mothership", "ServerInstallations");
+        command.addRow(Maps.of("ServerInstallationId", 1, "IgnoreExceptions", ignore));
+        command.execute(connection, MOTHERSHIP_PROJECT);
+    }
+
+    public int triggerException(TestActions.ExceptionActions action)
+    {
+        return triggerExceptions(action).get(0);
+    }
+
+    public List<Integer> triggerExceptions(TestActions.ExceptionActions... actions)
+    {
+        List<Pair<TestActions.ExceptionActions, String>> actionsWithMessages = new ArrayList<>();
+        for (TestActions.ExceptionActions action : actions)
+        {
+            actionsWithMessages.add(new Pair<>(action, null));
+        }
+        return triggerExceptions(actionsWithMessages);
+    }
+
+    @LogMethod
+    public List<Integer> triggerExceptions(@LoggedParam List<Pair<TestActions.ExceptionActions, String>> actionsWithMessages)
+    {
+        List<Integer> exceptionIds = new ArrayList<>();
+        test.checkErrors();
+        for (Pair<TestActions.ExceptionActions, String> action : actionsWithMessages)
+        {
+            action.first.triggerException(action.second);
+            sleep(100); // Wait for mothership to pick up exception
+            exceptionIds.add(getLatestStackTraceId());
+        }
+        test.resetErrors();
+        return exceptionIds;
     }
 }

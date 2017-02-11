@@ -41,6 +41,9 @@ public class ExceptionStackTrace
     private String _comments;
     private Date _modified;
     private User _modifiedBy;
+    private Integer _instances;
+    private Date _lastReport;
+    private Date _firstReport;
 
     public String getStackTrace()
     {
@@ -196,6 +199,36 @@ public class ExceptionStackTrace
     public void setModifiedBy(User modifiedBy)
     {
         _modifiedBy = modifiedBy;
+    }
+
+    public Integer getInstances()
+    {
+        return _instances == null ? 0 : _instances;
+    }
+
+    public void setInstances(Integer instances)
+    {
+        _instances = instances;
+    }
+
+    public Date getLastReport()
+    {
+        return _lastReport;
+    }
+
+    public void setLastReport(Date lastReport)
+    {
+        _lastReport = lastReport;
+    }
+
+    public Date getFirstReport()
+    {
+        return _firstReport;
+    }
+
+    public void setFirstReport(Date firstReport)
+    {
+        _firstReport = firstReport;
     }
 
     public static class TestCase extends Assert

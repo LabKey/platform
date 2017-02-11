@@ -17,6 +17,7 @@
 package org.labkey.mothership.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -37,7 +38,10 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SimpleQueryUpdateService;
+import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -57,7 +61,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -320,20 +323,6 @@ public class MothershipSchema extends UserSchema
                 return new StackTraceDisplayColumn(colInfo);
             }
         });
-        ExprColumn lastReportColumn = new ExprColumn(result, "LastReport", new SQLFragment("(SELECT MAX(Created) FROM " +
-                MothershipManager.get().getTableInfoExceptionReport() + " er WHERE er.ExceptionStackTraceId = " +
-                ExprColumn.STR_TABLE_ALIAS + ".ExceptionStackTraceId)"), JdbcType.TIMESTAMP);
-        result.addColumn(lastReportColumn);
-
-        ExprColumn firstReportColumn = new ExprColumn(result, "FirstReport", new SQLFragment("(SELECT MIN(Created) FROM " +
-                MothershipManager.get().getTableInfoExceptionReport() + " er WHERE er.ExceptionStackTraceId = " +
-                ExprColumn.STR_TABLE_ALIAS + ".ExceptionStackTraceId)"), JdbcType.TIMESTAMP);
-        result.addColumn(firstReportColumn);
-
-        ExprColumn countColumn = new ExprColumn(result, "Instances", new SQLFragment("(SELECT COUNT(*) FROM " +
-                MothershipManager.get().getTableInfoExceptionReport() + " er WHERE er.ExceptionStackTraceId = " +
-                ExprColumn.STR_TABLE_ALIAS + ".ExceptionStackTraceId)"), JdbcType.INTEGER);
-        result.addColumn(countColumn);
 
         LookupForeignKey softwareReleaseFK = new LookupForeignKey("SoftwareReleaseId")
         {
@@ -396,7 +385,7 @@ public class MothershipSchema extends UserSchema
 
     private SQLFragment getSoftwareReleaseSQL(String sort, boolean lookup)
     {
-        // We want the SoftwareReleaseId from the row that has the minimum SVN revision value
+        // We want the SoftwareReleaseId from the row that has the min or max SVN revision value
 
         // Do a sort by SVNRevision 
         SQLFragment subselect = new SQLFragment("SELECT " + (lookup ? "ss.SoftwareReleaseId" : "sr.Description" ) + " FROM " +
@@ -417,13 +406,7 @@ public class MothershipSchema extends UserSchema
     {
         FilteredTable result = createExceptionReportTable();
         List<FieldKey> defaultCols = new ArrayList<>(result.getDefaultVisibleColumns());
-        for (Iterator<FieldKey> i = defaultCols.iterator(); i.hasNext(); )
-        {
-            if (i.next().getParts().get(0).equals("ServerSessionId"))
-            {
-                i.remove();
-            }
-        }
+        defaultCols.removeIf(fieldKey -> fieldKey.getParts().get(0).equals("ServerSessionId"));
         defaultCols.add(0, FieldKey.fromParts("ExceptionStackTraceId"));
         defaultCols.add(1, FieldKey.fromParts("ExceptionStackTraceId", "StackTrace"));
         result.setDefaultVisibleColumns(defaultCols);
@@ -558,6 +541,13 @@ public class MothershipSchema extends UserSchema
         public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
         {
             return getContainer().hasPermission(user, perm) && !DeletePermission.class.equals(perm);
+        }
+
+        @Nullable
+        @Override
+        public QueryUpdateService getUpdateService()
+        {
+            return new SimpleQueryUpdateService(new SimpleUserSchema.SimpleTable<>(this.getUserSchema(), this.getRealTable()).init(), this.getRealTable());
         }
     }
 }

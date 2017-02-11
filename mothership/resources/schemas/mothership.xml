@@ -65,6 +65,9 @@
             </column>
             <column columnName="Modified"/>
             <column columnName="ModifiedBy"/>
+            <column columnName="LastReport"/>
+            <column columnName="FirstReport"/>
+            <column columnName="Instances"/>
         </columns>
     </table>
     <table tableName="ServerInstallation" tableDbType="TABLE">
@@ -105,6 +108,7 @@
                 <isReadOnly>true</isReadOnly>
             </column>
             <column columnName="UsedInstaller"/>
+            <column columnName="IgnoreExceptions"/>
         </columns>
         <pkColumnName>ServerInstallationId</pkColumnName>
         <titleColumn>OrganizationName</titleColumn>

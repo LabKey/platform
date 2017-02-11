@@ -9,6 +9,7 @@ import org.labkey.test.TestProperties;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyB;
 import org.labkey.test.pages.mothership.ShowInstallationDetailPage;
+import org.labkey.test.pages.test.TestActions;
 import org.labkey.test.util.mothership.MothershipHelper;
 
 import java.util.Arrays;
@@ -54,7 +55,9 @@ public class MothershipReportTest extends BaseWebDriverTest
     @Before
     public void preTest() throws Exception
     {
-        _mothershipHelper = new MothershipHelper(getDriver());
+        _mothershipHelper = new MothershipHelper(this);
+        // In case the testIgnoreInstallationExceptions() test case didn't reset this flag after itself.
+        _mothershipHelper.setIgnoreExceptions(false);
     }
 
     @Test
@@ -86,7 +89,23 @@ public class MothershipReportTest extends BaseWebDriverTest
         // TODO: Verify jsonMetrics persisted?
     }
 
+    @Test
+    public void testIgnoreInstallationExceptions() throws Exception
+    {
+        int firstCount = triggerNpeAndGetCount();
+        int secondCount = triggerNpeAndGetCount();
+        // Verify the count incremented
+        assertEquals("Second count did not increment correctly.", firstCount + 1, secondCount);
+        _mothershipHelper.setIgnoreExceptions(true);
+        int thirdCount = triggerNpeAndGetCount();
+        assertEquals("Report count incremented; exception that should have been ignored was logged.", secondCount, thirdCount);
+        _mothershipHelper.setIgnoreExceptions(false);
+    }
 
+    private int triggerNpeAndGetCount()
+    {
+        return _mothershipHelper.getReportCount(_mothershipHelper.triggerException(TestActions.ExceptionActions.npe));
+    }
     // TODO: Test output of each reporting level
 
     // TODO: test the View sample report buttons from Customize Site page?
