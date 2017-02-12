@@ -743,7 +743,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private void handleTikaException(WebdavResource r, TikaException e)
     {
-
         String topMessage = (null != e.getMessage() ? e.getMessage() : "");
         Throwable cause = e.getCause();
 
@@ -886,7 +885,26 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             _parseMethod.invoke(_autoDetectParser, is, handler, md);
             copyProperties(md, metadata);
         }
-        catch (IllegalAccessException | InvocationTargetException | InstantiationException e)
+        catch (InvocationTargetException e)
+        {
+            Throwable cause = e.getCause();
+
+            if (null != cause)
+            {
+                // Need to translate TikaException in Tika classloader to TikaException in this classloader
+                if ("org.apache.tika.exception.TikaException".equals(cause.getClass().getName()))
+                    throw new TikaException(cause.getMessage(), cause.getCause());
+
+                // Need to unwrap SAXException and IOException
+                if (cause instanceof SAXException)
+                    throw (SAXException) cause;
+                if (cause instanceof IOException)
+                    throw (IOException) cause;
+            }
+
+            throw new RuntimeException(e);
+        }
+        catch (IllegalAccessException | InstantiationException e)
         {
             throw new RuntimeException(e);
         }
