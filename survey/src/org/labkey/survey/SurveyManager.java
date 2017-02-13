@@ -152,7 +152,14 @@ public class SurveyManager
                             JSONObject lookup = (JSONObject)trimmedMap.get("lookup");
                             if (!lookup.containsKey("containerPath"))
                             {
-                                lookup.put("containerPath", context.getContainer().getPath());
+                                // use the container Id for the generated property as it avoids dealing with special/tricky characters
+                                // the user can still enter the path as a string if they would like
+                                String containerPath = context.getContainer().getPath();
+                                if (containerPath.matches("\\A\\p{ASCII}*\\z"))
+                                    lookup.put("containerPath", containerPath);
+                                else
+                                    lookup.put("containerPath", context.getContainer().getEntityId());
+
                                 trimmedMap.put("lookup", lookup);
                             }
                         }
