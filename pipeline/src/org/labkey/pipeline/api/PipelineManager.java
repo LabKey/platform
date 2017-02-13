@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingStringKeyCache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
@@ -42,6 +41,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -71,14 +71,8 @@ public class PipelineManager
 {
     private static final Logger _log = Logger.getLogger(PipelineManager.class);
     private static final PipelineSchema pipeline = PipelineSchema.getInstance();
-    private static final BlockingStringKeyCache<PipelineRoot> CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Pipeline roots", new CacheLoader<String, PipelineRoot>()
-    {
-        @Override
-        public PipelineRoot load(String key, @Nullable Object argument)
-        {
-            return new TableSelector(pipeline.getTableInfoPipelineRoots(), (Filter)argument, null).getObject(PipelineRoot.class);
-        }
-    });
+    private static final BlockingStringKeyCache<PipelineRoot> CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Pipeline roots",
+        (key, argument) -> new TableSelector(pipeline.getTableInfoPipelineRoots(), (Filter)argument, null).getObject(PipelineRoot.class));
 
     protected static PipelineRoot getPipelineRootObject(Container container, String type)
     {
@@ -278,19 +272,27 @@ public class PipelineManager
                 PipelineEmailPreferences.get().getNotifyUsersOnSuccess(c),
                 min, max);
 
-        try {
-            if (messages != null)
+        if (messages != null)
+        {
+            for (PipelineDigestMessage msg : messages)
             {
-                for (PipelineDigestMessage msg : messages)
+                try
                 {
                     Message m = msg.createMessage();
                     MailHelper.send(m, null, c);
                 }
+                catch (ConfigurationException me)
+                {
+                    // Stop trying if email is misconfigured
+                    _log.error("Failed sending an email notification message for a pipeline job", me);
+                    return;
+                }
+                catch (Exception e)
+                {
+                    // Keep trying to send to other recipients
+                    ExceptionUtil.logExceptionToMothership(null, e);
+                }
             }
-        }
-        catch (ConfigurationException me)
-        {
-            _log.error("Failed sending an email notification message for a pipeline job", me);
         }
     }
 
