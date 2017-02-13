@@ -96,6 +96,7 @@ public class IssuesUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = Logger.getLogger(IssuesUpgradeCode.class);
     private static final String DEFAULT_SITE_ISSUE_LIST_NAME = "siteIssues";
+    private static final String DEFAULT_FOLDER_ISSUE_LIST_NAME = "folderIssues";
 
     /**
      * Invoked by issues-16.10-16.20.sql
@@ -558,7 +559,7 @@ public class IssuesUpgradeCode implements UpgradeCode
                     {
                         // single folder dependency, create at the folder level
                         Container folder = entry.getValue().iterator().next();
-                        migrationPlans.put(folder, new IssueMigrationPlan(entry.getKey(), entry.getValue(), folder.getName()));
+                        migrationPlans.put(folder, new IssueMigrationPlan(entry.getKey(), entry.getValue(), getNameFromFolder(folder.getName())));
                     }
                 }
             }
@@ -572,7 +573,7 @@ public class IssuesUpgradeCode implements UpgradeCode
             {
                 // for single container dependencies, create at the folder level
                 Container folder = entry.getValue().iterator().next();
-                migrationPlans.put(folder, new IssueMigrationPlan(entry.getKey(), entry.getValue(), folder.getName()));
+                migrationPlans.put(folder, new IssueMigrationPlan(entry.getKey(), entry.getValue(), getNameFromFolder(folder.getName())));
             }
             else if (entry.getValue().size() > 1)
             {
@@ -678,6 +679,20 @@ public class IssuesUpgradeCode implements UpgradeCode
         return name;
     }
 
+    /**
+     * Generates an issue list name from a folder name.
+     *
+     * Issue : 29290 - The name of the issue list name is used to construct the default lookup lists name (area, priority, resolution, etc).
+     * Lists names are limited to 64 characters, to be conservative if the folder name exceeds 30 characters we will use
+     * the default : 'folderissues' name otherwise we allow the issue list name to be the name of the folder.
+     */
+    private String getNameFromFolder(String folderName)
+    {
+        if (folderName.length() > 30)
+            return DEFAULT_FOLDER_ISSUE_LIST_NAME;
+        else
+            return folderName;
+    }
     /**
      * Repair any lookup values that may not have gotten migrated properly
      * @param context
