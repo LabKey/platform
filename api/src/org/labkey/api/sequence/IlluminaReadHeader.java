@@ -95,7 +95,13 @@ public class IlluminaReadHeader
                     // may mean new header format, so attempt to process differently
                     _sampleName = filename.split("_")[0];
                     if(_sampleName.endsWith(".gz"))  // whoops, may be new filename format, so try one more filename format
-                        _sampleName = filename.split("-")[2].split("\\.")[0];
+                    {
+                        String[] sampleNameParts = filename.split("-");
+                        if(sampleNameParts.length == 3)
+                            _sampleName = sampleNameParts[2].split("\\.")[0];
+                        else
+                            throw new IllegalArgumentException("Filename '" + filename + "' is in an unknown name format.");
+                    }
                 }
             }
         }
