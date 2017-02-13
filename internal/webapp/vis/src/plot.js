@@ -2417,6 +2417,9 @@ boxPlot.render();
             max = timeDifference > max ? timeDifference : max;
         }
         var numParentChildUniques = parents.size + children.size;
+        if (children.has(null)) {
+            numParentChildUniques--;
+        }
         var numParentUniques = parents.size;
         domain.sort().reverse();
 
@@ -2429,15 +2432,24 @@ boxPlot.render();
         config.labels.x = {value: capitalizeFirstLetter(config.options.timeUnit) + " Since " + min.toDateString()};
 
         if (!config.options.isCollapsed) {
-            config.scales.yLeft.domain = domain;
-            config.options.rowHeight = Math.floor(config.options.rowHeight * .75);
-            config.height = (config.options.rowHeight) * numParentChildUniques;
             config.aes.typeSubtype = "typeSubtype";
+
+            config.scales.yLeft.domain = domain;
+            var chartHeightMultiplier = numParentChildUniques !== numParentUniques ? Math.floor(config.options.rowHeight * .75) : config.options.rowHeight;
+            config.height = (chartHeightMultiplier * numParentChildUniques) + config.margins.top + config.margins.bottom;
             config.options.rowHeight = (config.height - (config.margins.top + config.margins.bottom)) / numParentChildUniques;
+            if (numParentChildUniques < 10) {
+                //small visual adjustment for short charts without many data points
+                config.options.rowHeight = config.options.rowHeight - (12 - numParentChildUniques);
+            }
         } else {
             config.scales.yLeft.domain = domain;
-            config.height = (config.options.rowHeight) * numParentUniques;
+            config.height = (config.options.rowHeight * numParentUniques) + config.margins.top + config.margins.bottom;
+
             config.options.rowHeight = (config.height - (config.margins.top + config.margins.bottom)) / numParentUniques;
+            if (numParentUniques < 10) {
+                config.options.rowHeight = config.options.rowHeight - (12 - numParentUniques);
+            }
         }
 
         config.scales.x.domain = [0, Math.ceil(max)];
