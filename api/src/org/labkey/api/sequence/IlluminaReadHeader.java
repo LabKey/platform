@@ -32,8 +32,16 @@ public class IlluminaReadHeader
     private boolean _failedFilter;
     private int _controlBits;
     private int _sampleNum;
+    private String _sampleName;
+
+    private static final int NO_SAMPLE_NUMBER_FOUND = -1;
 
     public IlluminaReadHeader(String header) throws IllegalArgumentException
+    {
+        this(header, null);
+    }
+
+    public IlluminaReadHeader(String header, String filename) throws IllegalArgumentException
     {
         String[] h;
         int minLength;
@@ -73,7 +81,8 @@ public class IlluminaReadHeader
                 _controlBits = Integer.parseInt(h[9]);
             }
 
-            _sampleNum = -1;
+            _sampleNum = NO_SAMPLE_NUMBER_FOUND;
+            _sampleName = null;
             if (h.length > 10)
             {
                 //Note: if this read was not demultiplexed by illumina, the index sequence may appear in this position
@@ -83,7 +92,8 @@ public class IlluminaReadHeader
                 }
                 catch (NumberFormatException e)
                 {
-                    //ignore
+                    // may mean new header format, so attempt to process differently
+                    _sampleName = filename.split("_")[0];
                 }
             }
         }
@@ -199,7 +209,7 @@ public class IlluminaReadHeader
     }
 
     /**
-     * @return Sample index, as assigned by illumina.  -1 indicates this is part of non-assigned reads.
+     * @return Sample index, as assigned by illumina.  NO_SAMPLE_NUMBER_FOUND indicates this is part of non-assigned reads.
      */
     public int getSampleNum()
     {
@@ -209,5 +219,15 @@ public class IlluminaReadHeader
     public void setSampleNum(int sampleNum)
     {
         this._sampleNum = sampleNum;
+    }
+
+    public String getSampleName()
+    {
+        return _sampleName;
+    }
+
+    public void setSampleName(String sampleName)
+    {
+        _sampleName = sampleName;
     }
 }
