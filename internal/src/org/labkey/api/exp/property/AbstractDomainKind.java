@@ -169,7 +169,7 @@ public abstract class AbstractDomainKind extends DomainKind
             SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
             // Issue 17183 - Postgres uses lower case column names when quoting is required
             nonBlankRowsSQL.append("x.");
-            nonBlankRowsSQL.append(dialect.makeLegalIdentifier(prop.getName().toLowerCase()));
+            nonBlankRowsSQL.append(prop.getPropertyDescriptor().getStorageColumnName());
             nonBlankRowsSQL.append(" IS NOT NULL");
             if (prop.isMvEnabled())
             {
