@@ -87,7 +87,11 @@ public class ViewBackgroundInfo implements Serializable, ContainerUser
     {
         if (user == null)
             user = UserManager.getGuestUser();
-        _userEmail = user.getEmail();
+
+        // Leave _userEmail null if guest, #29159
+        if (!user.isGuest())
+            _userEmail = user.getEmail();
+
         _userId = user.getUserId();
         _user = user;
     }
