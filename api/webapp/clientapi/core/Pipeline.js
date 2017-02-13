@@ -198,7 +198,7 @@ LABKEY.Pipeline = new function(){
                 // Convert from an Element to a string if needed
                 // params.configureXml = Ext4.DomHelper.markup(config.xmlParameters);
                 if (typeof config.xmlParameters == "object")
-                    throw new Error('The xml configuration is deprecated, please user the jsonParameters option to specify your protocol description.');
+                    throw new Error('The xml configuration is deprecated, please use the jsonParameters option to specify your protocol description.');
                 else
                     params.configureXml = config.xmlParameters;
             }
