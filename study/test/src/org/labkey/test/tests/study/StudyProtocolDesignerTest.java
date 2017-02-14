@@ -60,7 +60,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
     // Cohorts: defined in study archive
     private static final String[] COHORTS = {"Positive", "Negative"};
 
-    private static final File FOLDER_ARCHIVE = new File(TestFileUtils.getSampledataPath(), "FolderExport/ProtocolLookup.folder.zip");
+    private static final File FOLDER_ARCHIVE = TestFileUtils.getSampleData("FolderExport/ProtocolLookup.folder.zip");
     // lookups: defined in folder archive
     private static final String[] IMMUNOGEN_TYPES = {"Canarypox", "Fowlpox", "Subunit Protein"};
     private static final String[] GENES = {"Env", "Gag"};

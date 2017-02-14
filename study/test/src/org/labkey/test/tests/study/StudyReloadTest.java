@@ -36,14 +36,14 @@ public class StudyReloadTest extends StudyBaseTest
     protected void doCreateSteps()
     {
         initializeFolder();
-        importStudyFromZip(new File(TestFileUtils.getSampledataPath(), "studyreload/original.zip"));
+        importStudyFromZip(TestFileUtils.getSampleData("studyreload/original.zip"));
     }
 
     @Override
     @LogMethod
     protected void doVerifySteps()
     {
-        reloadStudyFromZip(new File(TestFileUtils.getSampledataPath(), "/studyreload/edited.zip"));
+        reloadStudyFromZip(TestFileUtils.getSampleData("studyreload/edited.zip"));
         //query validation should have been run by default
         new PipelineStatusTable(this).clickStatusLink(0);
         checkQueryValidationInLog(true);
@@ -56,7 +56,7 @@ public class StudyReloadTest extends StudyBaseTest
         verifyProtectedColumn();
 
         //verify skipping query validation during reload
-        reloadStudyFromZip(new File(TestFileUtils.getSampledataPath(), "/studyreload/edited.zip"), false, 3);
+        reloadStudyFromZip(TestFileUtils.getSampleData("studyreload/edited.zip"), false, 3);
         new PipelineStatusTable(this).clickStatusLink(0);
         checkQueryValidationInLog(false);
     }
