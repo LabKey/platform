@@ -170,6 +170,7 @@ public class WebdavResolverImpl implements WebdavResolver
                     case Policy:
                     case AttachmentDirectory:
                     case WebRoot:
+                    case EndpointDirectory:
                     default:
                     {
                         invalidate(c.getParsedPath(), true);
