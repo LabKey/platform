@@ -503,7 +503,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/htsjdk-2.2.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/htsjdk-2.8.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
