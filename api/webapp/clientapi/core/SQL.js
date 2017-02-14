@@ -47,7 +47,7 @@
     {
         console.log(new Date());
         var rows = text.split(eol);
-        if ("" === rows[rows.length-1].trimRight())
+        if ("" === trimRight(rows[rows.length-1]))
             rows.pop();
 
         // names
@@ -101,6 +101,9 @@
         return result;
     }
 
+    function trimRight(s) {
+        return s.replace(/[\s\uFEFF\xA0]+$/g, '');
+    }
 
     LABKEY.Query.experimental.SQL = new (function()
     {

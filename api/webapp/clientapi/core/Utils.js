@@ -191,7 +191,7 @@ LABKEY.Utils = new function()
         isFunction: function(value) {
             // http://stackoverflow.com/questions/5999998/how-can-i-check-if-a-javascript-variable-is-function-type
             var getType = {};
-            return value && getType.toString.call(value) === '[object Function]';
+            return value !== null && value !== undefined && getType.toString.call(value) === '[object Function]';
         },
 
         isObject: isObject,
@@ -328,7 +328,7 @@ LABKEY.Utils = new function()
          * also be set to null or false to prohibit that property from being applied.
          * By default, this function will also apply all other properties on the source
          * object that are not listed in the translation map, but you can override this
-         * by supplying false for the applyOthers paramer.
+         * by supplying false for the applyOthers parameter.
          * @param target The target object
          * @param source The source object
          * @param translationMap A map listing property name translations

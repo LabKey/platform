@@ -118,7 +118,7 @@ LABKEY.Specimen = new function()
          * @param {Function} config.success Required. Function called when the
          "getOpenRequests" function executes successfully.  Will be called with the argument:
          {@link LABKEY.Specimen.Request[]}.
-         * @param {Boolean} [config.allUsers] Indicates whether to retrive open requests for all users, rather than just those created
+         * @param {Boolean} [config.allUsers] Indicates whether to retrieve open requests for all users, rather than just those created
          * by the current user.  If not supplied, requests will be returned based on the user's permission.  Administrators will
          * see all open requests, while non-admin users will only see those requests that they have created.
          * @param {Function} [config.failure] Function called when execution of the "getOpenRequests" function fails.

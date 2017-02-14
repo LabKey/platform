@@ -160,7 +160,7 @@ LABKEY.Message = new function()
             });
         },
         /**
-         * A utility fuction to create a message content object used in LABKEY.Message.sendMessage.
+         * A utility function to create a message content object used in LABKEY.Message.sendMessage.
          * @param {LABKEY.Message.msgType} type The content type of this message part.
          * @param {String} content The message part content.
          */
@@ -172,7 +172,7 @@ LABKEY.Message = new function()
             };
         },
         /**
-         * A utility fuction to create a recipient object used in LABKEY.Message.sendMessage.
+         * A utility function to create a recipient object used in LABKEY.Message.sendMessage.
          * @param {LABKEY.Message.recipientType} type Determines where the recipient email address will appear in the message.
          * @param {String} email The email address of the recipient.
          */
@@ -185,7 +185,7 @@ LABKEY.Message = new function()
         },
 
         /**
-         * A utility fuction to create a recipient object (based on a user ID or group ID) used in LABKEY.Message.sendMessage.
+         * A utility function to create a recipient object (based on a user ID or group ID) used in LABKEY.Message.sendMessage.
          * Note: only server side validation or transformation scripts can specify a user or group ID.
          * @param {LABKEY.Message.recipientType} type Determines where the recipient email address will appear in the message.
          * @param {Integer} id The user or group id of the recipient.

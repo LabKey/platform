@@ -217,7 +217,7 @@ LABKEY.Report = new function(){
         },
 
         /**
-         * Executes a single method avaiable in the namespace of a previously created session context.
+         * Executes a single method available in the namespace of a previously created session context.
          *
          * @param {Object} config A configuration object with the following properties.
          * @param {String} [config.containerPath] The container in which to make the request (defaults to current container)

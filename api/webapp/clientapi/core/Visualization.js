@@ -507,43 +507,43 @@ LABKEY.Query.Visualization.Measure = function(config) {
 };
 
 /**
- * Returns the name of the query associated with this dimension.
+ * Returns the name of the query associated with this measure.
  */
 LABKEY.Query.Visualization.Measure.prototype.getQueryName = function() {
     return this.queryName;
 };
 /**
- * Returns the name of the schema assocated with this dimension.
+ * Returns the name of the schema associated with this measure.
  */
 LABKEY.Query.Visualization.Measure.prototype.getSchemaName = function() {
     return this.schemaName;
 };
 /**
- * Returns whether this dimension is part of a user-defined query (versus a built-in/system-provided query).
+ * Returns whether this measure is part of a user-defined query (versus a built-in/system-provided query).
  */
 LABKEY.Query.Visualization.Measure.prototype.isUserDefined = function() {
     return this.isUserDefined;
 };
 /**
- * Returns the column name of this dimension.
+ * Returns the column name of this measure.
  */
 LABKEY.Query.Visualization.Measure.prototype.getName = function() {
     return this.name;
 };
 /**
- * Returns the label of this dimension.
+ * Returns the label of this measure.
  */
 LABKEY.Query.Visualization.Measure.prototype.getLabel = function() {
     return this.label;
 };
 /**
- * Returns the data types of this dimension.
+ * Returns the data types of this measure.
  */
 LABKEY.Query.Visualization.Measure.prototype.getType = function() {
     return this.type;
 };
 /**
- * Returns a description of this dimension.
+ * Returns a description of this measure.
  */
 LABKEY.Query.Visualization.Measure.prototype.getDescription = function() {
     return this.description;
