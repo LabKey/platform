@@ -3189,7 +3189,10 @@ public class DavController extends SpringActionController
             deleteCollection(resource, errorList);
             removeFromDataObject(resource);
             if (!resource.delete(getUser()))
+            {
+                resource.notify(getViewContext(), "deleteFailed");
                 errorList.put(resource.getPath(), WebdavStatus.SC_INTERNAL_SERVER_ERROR);
+            }
             else
                 resource.notify(getViewContext(), "deleted");
             if (!errorList.isEmpty())
