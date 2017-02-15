@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
@@ -33,6 +34,7 @@ public class ViewBackgroundInfo implements Serializable, ContainerUser
     // Helper variables stored for use outside LabKey Server context
     private String _containerId;
     private String _urlString;
+    @Nullable
     private String _userEmail;
     private int _userId;
 
@@ -53,6 +55,7 @@ public class ViewBackgroundInfo implements Serializable, ContainerUser
         return _containerId;
     }
 
+    @Nullable
     public String getUserEmail()
     {
         return _userEmail;
