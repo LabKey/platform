@@ -288,6 +288,20 @@ public class RenderContext implements Map<String, Object>, Serializable
         return null == _rs ? null : _rs.getFieldMap();
     }
 
+    private List<ColumnInfo> getColumnInfos(List<DisplayColumn> displayColumns)
+    {
+        // collect the ColumnInfo for each DisplayColumn
+        List<ColumnInfo> columnInfos = new ArrayList<>();
+        if (null != displayColumns && !displayColumns.isEmpty())
+        {
+            displayColumns
+                    .stream()
+                    .filter(dc -> dc.getColumnInfo() != null)
+                    .forEach(dc -> columnInfos.add(dc.getColumnInfo()));
+        }
+        return columnInfos;
+    }
+
     public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
     {
         ActionURL url;
@@ -296,18 +310,8 @@ public class RenderContext implements Map<String, Object>, Serializable
         else
             url = getViewContext().cloneActionURL();
 
-        // collect the ColumnInfo for each DisplayColumn
-        List<ColumnInfo> displayColumnInfos = new ArrayList<>();
-        if (null != displayColumns && !displayColumns.isEmpty())
-        {
-            displayColumns
-                    .stream()
-                    .filter(dc -> dc.getColumnInfo() != null)
-                    .forEach(dc -> displayColumnInfos.add(dc.getColumnInfo()));
-        }
-
         Sort sort = buildSort(tinfo, url, name);
-        SimpleFilter filter = buildFilter(tinfo, displayColumnInfos, url, name, maxRows, offset, sort);
+        SimpleFilter filter = buildFilter(tinfo, getColumnInfos(displayColumns), url, name, maxRows, offset, sort);
 
         Collection<ColumnInfo> cols = fieldMap.values();
         if (null != QueryService.get())
@@ -322,19 +326,18 @@ public class RenderContext implements Map<String, Object>, Serializable
         if (aggregatesIn == null || aggregatesIn.isEmpty())
             return Collections.emptyMap();
 
-        Set<FieldKey> ignoredAggregateFilters = new HashSet<>();
-
         ActionURL url;
         if (null != settings)
             url = settings.getSortFilterURL();
         else
             url = getViewContext().cloneActionURL();
 
-        Collection<ColumnInfo> cols = getSelectColumns(displayColumns, tinfo);
-
         Sort sort = buildSort(tinfo, url, dataRegionName);
-        SimpleFilter filter = buildFilter(tinfo, url, dataRegionName, Table.ALL_ROWS, Table.NO_OFFSET, sort);
+        SimpleFilter filter = buildFilter(tinfo, getColumnInfos(displayColumns), url, dataRegionName, Table.ALL_ROWS, Table.NO_OFFSET, sort);
 
+        Set<FieldKey> ignoredAggregateFilters = new HashSet<>();
+
+        Collection<ColumnInfo> cols = getSelectColumns(displayColumns, tinfo);
         if (null != QueryService.get())
             cols = QueryService.get().ensureRequiredColumns(tinfo, cols, filter, sort, ignoredAggregateFilters);
 

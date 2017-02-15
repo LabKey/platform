@@ -837,8 +837,6 @@ public class DataRegion extends AbstractDataRegion
         boolean showRecordSelectors = getShowRecordSelectors(ctx);
 
         List<DisplayColumn> renderers = getDisplayColumns();
-        Map<FieldKey, ColumnInfo> fieldMap = ctx.getFieldMap();
-        Set<FieldKey> fieldKeys = null == fieldMap ? null : fieldMap.keySet();
 
         //determine number of HTML table columns...watch out for hidden display columns
         //and include one extra if showing record selectors

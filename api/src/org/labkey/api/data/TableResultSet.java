@@ -27,11 +27,11 @@ import java.util.Map;
 */
 public interface TableResultSet extends ResultSet, Iterable<Map<String, Object>>
 {
-    public boolean isComplete();
+    boolean isComplete();
 
-    public Map<String, Object> getRowMap() throws SQLException;
+    Map<String, Object> getRowMap() throws SQLException;
 
-    public Iterator<Map<String, Object>> iterator();
+    Iterator<Map<String, Object>> iterator();
 
     String getTruncationMessage(int maxRows);
 
