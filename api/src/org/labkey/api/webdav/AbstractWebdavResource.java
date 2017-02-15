@@ -533,6 +533,10 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         {
             message = "File replaced in " + c.getContainerNoun() + ": " + c.getPath();
         }
+        else if ("deleteFailed".equalsIgnoreCase(message))
+        {
+            message = "Directory delete failed " + c.getContainerNoun() + ": " + c.getPath();
+        }
 
 //        String subject = "File Management Tool notification: " + message;
 
