@@ -65,6 +65,9 @@ public class IssuesSummaryWebPartFactory extends BaseWebPartFactory
 
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
-        return new IssuesListView.IssuesListConfig(webPart);
+        if (IssueManager.getDefaultIssueListDefName(context.getContainer()) != null)
+            return new IssuesListView.IssuesListConfig(webPart);
+        else
+            return null;
     }
 }
