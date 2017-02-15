@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryNestingOption;
 import org.labkey.api.query.QuerySettings;
@@ -42,7 +43,7 @@ public abstract class NestableQueryView extends QueryView
 
     protected final boolean _expanded;
     protected final boolean _allowNesting;
-    private final QueryNestingOption[] _queryNestingOptions;
+    protected final QueryNestingOption[] _queryNestingOptions;
     protected List<FieldKey> _overrideColumns;
 
     public NestableQueryView(UserSchema schema, QuerySettings settings, boolean expanded, boolean allowNesting, QueryNestingOption... queryNestingOptions)
@@ -91,6 +92,20 @@ public abstract class NestableQueryView extends QueryView
         return result;
     }
 
+    /** Derive the best nesting option given the selected columns */
+    @Nullable
+    protected QueryNestingOption determineNestingOption()
+    {
+        for (QueryNestingOption queryNestingOption : _queryNestingOptions)
+        {
+            if (queryNestingOption.isNested(getDisplayColumns()))
+            {
+                return queryNestingOption;
+            }
+        }
+        return null;
+    }
+
     @Override
     protected DataRegion createDataRegion()
     {
@@ -99,14 +114,7 @@ public abstract class NestableQueryView extends QueryView
         // Figure out if we have nestable columns
         if (_allowNesting)
         {
-            for (QueryNestingOption queryNestingOption : _queryNestingOptions)
-            {
-                if (queryNestingOption.isNested(originalColumns))
-                {
-                    _selectedNestingOption = queryNestingOption;
-                    break;
-                }
-            }
+            _selectedNestingOption = determineNestingOption();
         }
 
         // Create the right kind of data region
