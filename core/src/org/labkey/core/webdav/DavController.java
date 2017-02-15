@@ -3187,11 +3187,11 @@ public class DavController extends SpringActionController
             LinkedHashMap<Path,WebdavStatus> errorList = new LinkedHashMap<>();
 
             deleteCollection(resource, errorList);
-
             removeFromDataObject(resource);
             if (!resource.delete(getUser()))
                 errorList.put(resource.getPath(), WebdavStatus.SC_INTERNAL_SERVER_ERROR);
-            resource.notify(getViewContext(), "deleted");
+            else
+                resource.notify(getViewContext(), "deleted");
             if (!errorList.isEmpty())
                 return sendReport(errorList);
             return WebdavStatus.SC_NO_CONTENT;
