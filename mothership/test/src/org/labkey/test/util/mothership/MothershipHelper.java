@@ -25,6 +25,7 @@ import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.remoteapi.query.Sort;
 import org.labkey.remoteapi.query.UpdateRowsCommand;
 import org.labkey.test.BaseWebDriverTest;
+import org.labkey.test.Locator;
 import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.WebDriverWrapperImpl;
 import org.labkey.test.pages.test.TestActions;
@@ -35,6 +36,7 @@ import org.labkey.test.util.Maps;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +46,8 @@ import static org.labkey.test.WebDriverWrapper.sleep;
 public class MothershipHelper
 {
     public static final String ID_COLUMN = "ExceptionStackTraceId";
+    public static final String SERVER_INSTALLATION_ID_COLUMN = "ServerInstallationId";
+    public static final String SERVER_INSTALLATION_QUERY = "ServerInstallations";
     public static final String MOTHERSHIP_PROJECT = "_mothership";
 
     private final WebDriverWrapper driver;
@@ -149,10 +153,22 @@ public class MothershipHelper
 
     public void setIgnoreExceptions(boolean ignore) throws IOException, CommandException
     {
+        // Find the current server GUID
+        test.goToAdmin();
+        String serverGUID = test.getText(Locator.lkLabel("Server GUID").followingSibling("td"));
+
         Connection connection = driver.createDefaultConnection(true);
-        UpdateRowsCommand command = new UpdateRowsCommand("mothership", "ServerInstallations");
-        command.addRow(Maps.of("ServerInstallationId", 1, "IgnoreExceptions", ignore));
-        command.execute(connection, MOTHERSHIP_PROJECT);
+        // Find the corresponding serverInstallationId
+        SelectRowsCommand select = new SelectRowsCommand("mothership", SERVER_INSTALLATION_QUERY);
+        select.setColumns(Collections.singletonList(SERVER_INSTALLATION_ID_COLUMN));
+        select.addFilter("ServerInstallationGUID", serverGUID, Filter.Operator.EQUAL);
+        SelectRowsResponse response = select.execute(connection, MOTHERSHIP_PROJECT);
+        int installationId = (int) response.getRows().get(0).get(SERVER_INSTALLATION_ID_COLUMN);
+
+        // Set the flag for the installation
+        UpdateRowsCommand update = new UpdateRowsCommand("mothership", SERVER_INSTALLATION_QUERY);
+        update.addRow(Maps.of(SERVER_INSTALLATION_ID_COLUMN, installationId, "IgnoreExceptions", ignore));
+        update.execute(connection, MOTHERSHIP_PROJECT);
     }
 
     public int triggerException(TestActions.ExceptionActions action)
