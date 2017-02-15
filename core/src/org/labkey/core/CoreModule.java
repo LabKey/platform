@@ -26,6 +26,7 @@ import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.attachments.AttachmentService;
@@ -159,6 +160,7 @@ import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sitevalidation.SiteValidationServiceImpl;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.admin.test.SchemaXMLTestCase;
+import org.labkey.core.admin.usageMetrics.UsageMetricsServiceImpl;
 import org.labkey.core.admin.writer.FolderSerializationRegistryImpl;
 import org.labkey.core.admin.writer.FolderTypeWriterFactory;
 import org.labkey.core.admin.writer.ModulePropertiesWriterFactory;
@@ -325,6 +327,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ServiceRegistry.get().registerService(SiteValidationService.class, new SiteValidationServiceImpl());
         ServiceRegistry.get().registerService(AnalyticsProviderRegistry.class, new AnalyticsProviderRegistryImpl());
         ServiceRegistry.get().registerService(SummaryStatisticRegistry.class, new SummaryStatisticRegistryImpl());
+        ServiceRegistry.get().registerService(UsageMetricsService.class, new UsageMetricsServiceImpl());
 
         WebdavService.get().setResolver(ModuleStaticResolverImpl.get());
 

@@ -82,7 +82,7 @@ public class MothershipReportTest extends BaseWebDriverTest
                 "CoreController", // in the module page hit counts
                 "folderTypeCounts",
                 "Collaboration", // a folder type guaranteed to exist, different from any module name
-                "targetedMSRuns",
+                "runCount", // targetedMS runs. TODO: this makes the test dependent on the TargetedMS module. replace this once a base build module registers usage metrics.
                 "activeDayCount" // a LOW level metric, should also exist at MEDIUM
         );
 

@@ -424,6 +424,7 @@ core/src/org/labkey/core/admin/systemMaintenance.jsp -text
 core/src/org/labkey/core/admin/test/SchemaXMLTestCase.java -text
 core/src/org/labkey/core/admin/testNetworkDrive.jsp -text
 core/src/org/labkey/core/admin/threads.jsp -text
+core/src/org/labkey/core/admin/usageMetrics/UsageMetricsServiceImpl.java -text
 core/src/org/labkey/core/admin/view/filesNotifySettings.jsp -text
 core/src/org/labkey/core/admin/view/filesProjectSettings.jsp -text
 core/src/org/labkey/core/admin/view/filesSiteSettings.jsp -text
