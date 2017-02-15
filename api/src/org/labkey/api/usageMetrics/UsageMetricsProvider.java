@@ -7,7 +7,7 @@ import java.util.Map;
  *
  * Modules can report their own usage metrics by registering a subclass with UsageMetricsService at startup.
  */
-public abstract class UsageMetricsProvider
+public interface UsageMetricsProvider
 {
-    public abstract Map<String, Object> getUsageMetrics();
+    Map<String, Object> getUsageMetrics();
 }
