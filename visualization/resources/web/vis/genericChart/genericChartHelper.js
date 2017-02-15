@@ -1093,8 +1093,9 @@ LABKEY.vis.GenericChartHelper = new function(){
                 configMeasure = chartConfig.measures[measureName];
                 Ext4.apply(measureRestrictions, _getMeasureRestrictions(renderType, measureName));
 
-                if (configMeasure.measure && ((measureName !== 'x' && measureName !== 'xSub' && measureRestrictions.numericOnly ) || renderType === 'scatter_plot')
-                         && !isNumericType(configMeasure.type)) {
+                if (configMeasure.measure &&  measureName !== 'color' && measureName !== 'shape' &&
+                        ((measureName !== 'x' && measureName !== 'xSub' && measureRestrictions.numericOnly ) ||
+                        renderType === 'scatter_plot') && !isNumericType(configMeasure.type)) {
                     measuresForProcessing[measureName] = {};
                     measuresForProcessing[measureName].name = configMeasure.name;
                     measuresForProcessing[measureName].convertedName = configMeasure.name + "_converted";
@@ -1177,12 +1178,14 @@ LABKEY.vis.GenericChartHelper = new function(){
 
                         if (!processedMeasures[measure]) {
                             processedMeasures[measure] = {
-                                converted: !dataIsNull,
+                                converted: false,
                                 convertedName: measuresForProcessing[measure].convertedName,
                                 type: 'float',
                                 normalizedType: 'float'
                             }
                         }
+
+                        processedMeasures[measure].converted = processedMeasures[measure].converted || !dataIsNull;
                     }
                 }
             }
