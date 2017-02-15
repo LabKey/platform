@@ -22,13 +22,12 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.ActionsHelper;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -110,7 +109,6 @@ public enum UsageReportingLevel
 
             metrics.put("modules", getModulesStats());
             metrics.put("folderTypeCounts", ContainerManager.getFolderTypeNameContainerCounts(ContainerManager.getRoot()));
-            metrics.put("targetedMSRuns", getTargetedMSRunCount());
         }
     };
 
@@ -151,7 +149,7 @@ public enum UsageReportingLevel
     protected TimerTask createTimerTask()
     {
         return new UsageTimerTask(this);
-    };
+    }
 
     public static String getUpgradeMessage()
     {
@@ -174,7 +172,7 @@ public enum UsageReportingLevel
             report.addServerSessionParams();
             Map<String, Object> additionalMetrics = new LinkedHashMap<>();
             level.addExtraParams(report, additionalMetrics);
-            addJsonMetricsParam(report, additionalMetrics);
+            serializeMetrics(report, additionalMetrics);
             return report;
         }
         else
@@ -208,7 +206,7 @@ public enum UsageReportingLevel
          }
     }
 
-    private static void addJsonMetricsParam(MothershipReport report, Map<String, Object> metrics)
+    private static void serializeMetrics(MothershipReport report, Map<String, Object> metrics)
     {
         if (metrics.size() > 0)
         {
@@ -227,32 +225,38 @@ public enum UsageReportingLevel
         }
     }
 
-    private static Map<String, Map<String, Long>> getModulesStats()
+    private static Map<String, Map<String, Object>> getModulesStats()
     {
-        Map<String, Map<String, Long>> modulesStats = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        Map<String, Map<String, Object>> allModulesStats = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         try
         {
             ActionsHelper.getActionStatistics().forEach((module, controllersMap) -> {
-                Map<String, Long> controllerHitCounts = new TreeMap<>();
-                modulesStats.put(module, controllerHitCounts);
-                controllersMap.forEach((controller, actionStatsMap) -> {
-                    controllerHitCounts.put(controller,
-                            actionStatsMap.values().stream().mapToLong(SpringActionController.ActionStats::getCount).sum());
-                });
+                Map<String, Object> controllerHitCounts = new TreeMap<>();
+                allModulesStats.put(module, controllerHitCounts);
+                controllersMap.forEach((controller, actionStatsMap) -> controllerHitCounts.put(controller,
+                        actionStatsMap.values().stream().mapToLong(SpringActionController.ActionStats::getCount).sum()));
             });
         }
         catch (InstantiationException | IllegalAccessException e)
         {
             // Unlikely to hit this, but just in case, still give module list
-            ModuleLoader.getInstance().getModules().stream().map(module -> modulesStats.put(module.getName(), new HashMap<>()));
-            // TODO: Report!
+            ModuleLoader.getInstance().getModules().forEach(module -> allModulesStats.put(module.getName(), new HashMap<>()));
+            Map<String, Object> errors = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+            errors.put("controllerCounts", e.getMessage());
+            allModulesStats.put(UsageMetricsService.ERRORS, errors);
         }
 
-        return modulesStats;
-    }
+        UsageMetricsService svc = ServiceRegistry.get().getService(UsageMetricsService.class);
+        if (null != svc)
+        {
+            svc.getModuleUsageMetrics().forEach((module, metrics) ->
+            {
+                // Add to the existing stats for the module, but don't assume ActionsHelper.getActionStatistics hit every module
+                Map<String, Object> moduleStats = allModulesStats.computeIfAbsent(module, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
+                moduleStats.putAll(metrics);
+            });
+        }
 
-    private static long getTargetedMSRunCount()
-    {
-        return new SqlSelector(DbSchema.get("TargetedMS", DbSchemaType.Module), "SELECT COUNT(*) FROM TargetedMS.Runs WHERE Deleted = ?", Boolean.FALSE).getObject(Long.class);
+        return allModulesStats;
     }
 }
