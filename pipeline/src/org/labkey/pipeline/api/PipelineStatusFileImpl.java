@@ -241,7 +241,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
 
     public void setRowId(int rowId)
     {
-        this._rowId = rowId;
+        _rowId = rowId;
     }
 
     public String getJobId()
@@ -256,7 +256,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
 
     public void setJob(String job)
     {
-        this._job = job;
+        _job = job;
     }
 
     public String getJobParentId()
@@ -320,7 +320,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
 
     public void setProvider(String provider)
     {
-        this._provider = provider;
+        _provider = provider;
     }
 
     public String getStatus()
@@ -332,7 +332,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     {
         if (status != null && status.length() > MAX_STATUS_LENGTH)
             status = status.substring(0, MAX_STATUS_LENGTH);
-        this._status = status;
+        _status = status;
         if (PipelineJob.TaskStatus.error.matches(status))
             _hadError = true;
     }
@@ -347,7 +347,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     {
         if (info != null && info.length() > MAX_INFO_LEN)
             info = info.substring(0, MAX_INFO_LEN);
-        this._info = info;
+        _info = info;
     }
 
     public String getFilePath()
@@ -359,7 +359,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     {
         if (filePath != null && filePath.length() > MAX_FILEPATH_LENGTH)
             filePath = filePath.substring(0, MAX_FILEPATH_LENGTH);
-        this._filePath = PipelineJobService.statusPathOf(filePath);
+        _filePath = PipelineJobService.statusPathOf(filePath);
     }
 
     public String getDataUrl()
@@ -371,7 +371,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     {
         if (dataUrl != null && dataUrl.length() > MAX_DATAURL_LENGTH)
             dataUrl = dataUrl.substring(0, MAX_DATAURL_LENGTH);
-        this._dataUrl = dataUrl;
+        _dataUrl = dataUrl;
     }
 
     public String getDescription()
@@ -383,7 +383,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     {
         if (description != null && description.length() > MAX_DESCRIPTION_LENGTH)
             description = description.substring(0, MAX_DESCRIPTION_LENGTH);
-        this._description = description;
+        _description = description;
     }
 
     public String getEmail()
@@ -395,7 +395,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     {
         if (email != null && email.length() > MAX_EMAIL_LENGTH)
             email = email.substring(0, MAX_EMAIL_LENGTH);
-        this._email = email;
+        _email = email;
     }
 
     public boolean isHadError()
@@ -405,7 +405,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
 
     public void setHadError(boolean hadError)
     {
-        this._hadError = hadError;
+        _hadError = hadError;
     }
 
     public String getActiveHostName()
