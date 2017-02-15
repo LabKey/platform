@@ -1219,6 +1219,12 @@ public class Query
                 "FROM R\n" +
                 "GROUP BY seven, month\n" +
                 "PIVOT C BY month IN('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')"),
+        // Regression tests for issue 27910: pivot query summary columns not aggregated correctly
+        new SqlTest("SELECT day, month, count(*) as total, " +
+                "SUM(CASE WHEN month = 'April' THEN 1 ELSE 0 END) AS A, " +
+                "SUM(CASE WHEN month = 'May' THEN 1 ELSE 0 END) AS M " +
+                "FROM lists.R GROUP BY month, day " +
+                "PIVOT A, M BY month IN ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", 28, 7),
 
         // saved queries
         new SqlTest("Rquery",
