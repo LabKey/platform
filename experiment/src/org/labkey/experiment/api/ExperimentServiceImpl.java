@@ -205,7 +205,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     private DatabaseCache<MaterialSource> materialSourceCache;
     private StringKeyCache<Protocol> protocolCache;
 
-    private final StringKeyCache<SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DEFAULT_TIMEOUT, "DataClass", (containerId, argument) ->
+    private final StringKeyCache<SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "DataClass", (containerId, argument) ->
     {
         Container c = ContainerManager.getForId(containerId);
         if (c == null)
@@ -240,6 +240,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     StringKeyCache<SortedSet<DataClass>> getDataClassCache()
     {
         return dataClassCache;
+    }
+
+    void clearDataClassCache(@Nullable Container c)
+    {
+        if (c == null)
+            dataClassCache.clear();
+        else
+            dataClassCache.removeUsingPrefix(c.getId());
     }
 
     synchronized StringKeyCache<Protocol> getProtocolCache()
@@ -1206,7 +1214,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public ExpSampleSetImpl getSampleSet(Container c, String name, boolean includeOtherContainers)
     {
         ExpSampleSetImpl ss = getSampleSet(c, name);
-        if (ss == null && !c.isProject())
+        if (ss == null && !c.isProject() && c.getProject() != null)
             ss = getSampleSet(c.getProject(), name);
         if (ss == null && !c.equals(ContainerManager.getSharedContainer()))
             ss = getSampleSet(ContainerManager.getSharedContainer(), name);
@@ -1302,6 +1310,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return null;
     }
 
+    // TODO: add container parameter and use getDataClassCache()
     @Override
     public ExpDataClassImpl getDataClass(int rowId)
     {
@@ -1312,6 +1321,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpDataClassImpl(dataClass);
     }
 
+    // TODO: add container parameter and use getDataClassCache()
     @Override
     public ExpDataClassImpl getDataClass(String lsid)
     {
@@ -3631,6 +3641,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             throw new ExperimentException("Trying to delete a DataClass from a different container");
 
         Domain d = dataClass.getDomain();
+        Container dcContainer = dataClass.getContainer();
 
         try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
@@ -3640,12 +3651,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             d.delete(user);
 
-            deleteDomainObjects(dataClass.getContainer(), dataClass.getLSID());
+            deleteDomainObjects(dcContainer, dataClass.getLSID());
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
             executor.execute("DELETE FROM " + getTinfoDataClass() + " WHERE RowId = ?", rowId);
 
             transaction.commit();
+            clearDataClassCache(dcContainer);
         }
 
         SchemaKey expDataSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
@@ -5129,7 +5141,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
 
             tx.commit();
-            getDataClassCache().clear();
+            clearDataClassCache(c);
         }
 
         return impl;
