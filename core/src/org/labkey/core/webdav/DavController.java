@@ -1755,30 +1755,54 @@ public class DavController extends SpringActionController
                     // Establish size
                     resourceWriter.writeProperty("fileCount", resources.size());
 
-                    // Sort
-                    Collections.sort(resources, (o1, o2) -> {
-                        if (o1 == null && o2 == null) return 0;
-                        if (o1 == null) return 1;
-                        if (o2 == null) return -1;
-
-                        boolean o1Collection = o1.isCollection();
-                        boolean o2Collection = o2.isCollection();
-
-                        if (o1Collection && o2Collection || (!o1Collection && !o2Collection))
+                    // Fix for Issue 22598
+                    // these comparisons on the attributes of a file (last modified, size, created by, description) runs the risk
+                    // of the file being deleted or its attribute being modified by some other process while this sort is going on.
+                    // this may lead to: IllegalArgumentException: Comparison method violates its general contract!
+                    // shouldn't happen too often, so when it does we will stop and then try the entire sort again a maximum of 5 times
+                    boolean sortComplete = false;
+                    int numAttempts = 0;
+                    while (!sortComplete)
+                    {
+                        try
                         {
-                            try {
-                                return doCompare(o1, o2);
-                            }
-                            catch (IOException e)
+                            // Sort
+                            Collections.sort(resources, (o1, o2) -> {
+                                if (o1 == null && o2 == null) return 0;
+                                if (o1 == null) return 1;
+                                if (o2 == null) return -1;
+
+                                boolean o1Collection = o1.isCollection();
+                                boolean o2Collection = o2.isCollection();
+
+                                if (o1Collection && o2Collection || (!o1Collection && !o2Collection))
+                                {
+                                    try {
+                                        return doCompare(o1, o2);
+                                    }
+                                    catch (IOException e)
+                                    {
+                                        throw new RuntimeException(e);
+                                    }
+                                }
+                                if (o1Collection)
+                                    return -1;
+                                else
+                                    return 1;
+                            });
+                            // made it to the end of the sort ok
+                            sortComplete=true;
+                        }
+                        catch (IllegalArgumentException e)
+                        {
+                            sortComplete = false;
+                            numAttempts++;
+                            if(numAttempts > 4)
                             {
-                                throw new RuntimeException(e);
+                                throw e;
                             }
                         }
-                        if (o1Collection)
-                            return -1;
-                        else
-                            return 1;
-                    });
+                    }
 
                     // Support for Limits
                     int limitCount = 0;
