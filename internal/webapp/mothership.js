@@ -76,15 +76,19 @@ LABKEY.Mothership = (function () {
     /** send an async GET message. */
     function send(url, data) {
         log("submitting error", data);
-        url = url + '?' + encodeQuery(data);
+        var postData = JSON.stringify(data);
 
         var req = new XMLHttpRequest();
         if (!req) {
             warn("** Failed to send error report: ", data);
             return;
         }
-        req.open('GET', url, true);
-        var transId = req.send('');
+        req.open('POST', url, true);
+        req.setRequestHeader('Content-Type', 'application/json');
+        req.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        if (LABKEY.CSRF)
+            req.setRequestHeader('X-LABKEY-CSRF', LABKEY.CSRF);
+        var transId = req.send(postData);
         return transId;
     }
 
@@ -136,8 +140,8 @@ LABKEY.Mothership = (function () {
         ];
 
         for (i = 0; i < ignoreMsgs.length; i++) {
-            var lastError = _lastErrors[i];
-            if (lastError && lastError.msg && lastError.msg.indexOf(msg) === 0)
+            var ignoreMsg = ignoreMsgs[i];
+            if (ignoreMsg.indexOf(msg) === 0)
                 return true;
         }
 
@@ -156,7 +160,7 @@ LABKEY.Mothership = (function () {
         if (!fileName)
             return false;
 
-        // remove stacktrace-1.1.2.min.js and mothership.js from the stack
+        // remove stacktrace-1.3.0.min.js and mothership.js from the stack
         if (_filterStacktrace &&
                 fileName.indexOf("/stacktrace-") > -1 ||
                 fileName.indexOf("/mothership.js") != -1)
@@ -164,7 +168,7 @@ LABKEY.Mothership = (function () {
 
         // remove defeat cache and server-session number from URLs
         // so stack doesn't change between server requests.
-        stackframe.setFileName(fileName.replace(_defeatCacheRegex, '?_dc'));
+        stackframe.setFileName(fileName.replace(_defeatCacheRegex, ''));
 
         return true;
     }
@@ -267,12 +271,6 @@ LABKEY.Mothership = (function () {
                 column: column,
                 browser: navigator && navigator.userAgent || "Unknown",
                 platform:  navigator && navigator.platform  || "Unknown"
-            };
-        } else {
-            url = LABKEY.contextPath + '/admin/log.api';
-            o = {
-                message: msg + ":\n\n" + stackTrace,
-                level: 'error'
             };
         }
 
@@ -811,7 +809,7 @@ LABKEY.Mothership = (function () {
 
     function register() {
         // Default stacktrace is only 10 frames on Google Chrome
-        Error.stackTraceLimit = Infinity;
+        Error.stackTraceLimit = 20;
         registerOnError();
 
         // BUGBUG: Unfortunately, I'm not sure how to collect the allocation stacktrace where the

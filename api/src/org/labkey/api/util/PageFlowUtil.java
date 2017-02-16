@@ -1857,7 +1857,7 @@ public class PageFlowUtil
         if ((AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP) || AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER)) &&
                 (AppProps.getInstance().getExceptionReportingLevel() != ExceptionReportingLevel.NONE || AppProps.getInstance().isSelfReportExceptions()))
         {
-            sb.append("    <script src=\"").append(staticResourceUrl("/stacktrace-1.1.2.min.js")).append("\" type=\"text/javascript\"></script>\n");
+            sb.append("    <script src=\"").append(staticResourceUrl("/stacktrace-1.3.0.min.js")).append("\" type=\"text/javascript\"></script>\n");
             sb.append("    <script src=\"").append(staticResourceUrl("/mothership.js")).append("\" type=\"text/javascript\"></script>\n");
         }
 
