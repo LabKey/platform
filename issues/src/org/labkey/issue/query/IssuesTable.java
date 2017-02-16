@@ -233,6 +233,9 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         ColumnInfo entityId = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("EntityId")));
         entityId.setHidden(true);
 
+        ColumnInfo issueDefId = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("IssueDefId")));
+        issueDefId.setHidden(true);
+
         ColumnInfo duplicateCol = addWrapColumn(_rootTable.getColumn("Duplicate"));
         duplicateCol.setURL(new DetailsURL(base, Collections.singletonMap("issueId", "Duplicate")));
         duplicateCol.setDisplayColumnFactory(new URLTitleDisplayColumnFactory("Issue ${Duplicate}: ${Duplicate/Title:htmlEncode}"));
