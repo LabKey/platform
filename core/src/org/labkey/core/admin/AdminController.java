@@ -47,6 +47,8 @@ import org.labkey.api.action.HasValidator;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.IgnoresAllocationTracking;
 import org.labkey.api.action.LabkeyError;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -6798,12 +6800,13 @@ public class AdminController extends SpringActionController
 
     // API for reporting client-side exceptions.
     // UNDONE: Throttle by IP to avoid DOS from buggy clients.
+    @Marshal(Marshaller.Jackson)
     @SuppressWarnings("UnusedDeclaration")
     @RequiresNoPermission
-    public class LogClientExceptionAction extends SimpleViewAction<ExceptionForm>
+    public class LogClientExceptionAction extends MutatingApiAction<ExceptionForm>
     {
         @Override
-        public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
+        public Object execute(ExceptionForm form, BindException errors) throws Exception
         {
             if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP))
             {
@@ -6830,21 +6833,19 @@ public class AdminController extends SpringActionController
 
             return null;
         }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
     }
 
     public static class ExceptionForm
     {
+        private String _exceptionMessage;
         private String _stackTrace;
         private String _requestURL;
         private String _browser;
         private String _username;
         private String _referrerURL;
+        private String _file;
+        private String _line;
+        private String _platform;
 
         public String getExceptionMessage()
         {
@@ -6855,8 +6856,6 @@ public class AdminController extends SpringActionController
         {
             _exceptionMessage = exceptionMessage;
         }
-
-        private String _exceptionMessage;
 
         public String getUsername()
         {
@@ -6906,6 +6905,36 @@ public class AdminController extends SpringActionController
         public void setReferrerURL(String referrerURL)
         {
             _referrerURL = referrerURL;
+        }
+
+        public String getFile()
+        {
+            return _file;
+        }
+
+        public void setFile(String file)
+        {
+            _file = file;
+        }
+
+        public String getLine()
+        {
+            return _line;
+        }
+
+        public void setLine(String line)
+        {
+            _line = line;
+        }
+
+        public String getPlatform()
+        {
+            return _platform;
+        }
+
+        public void setPlatform(String platform)
+        {
+            _platform = platform;
         }
     }
 
