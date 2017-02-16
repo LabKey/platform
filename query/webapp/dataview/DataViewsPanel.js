@@ -471,11 +471,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             this.getCenter().getEl().unmask();
             this._height = parseInt(json.webpart.height);
             this.getCenter().removeAll(true);
-            this.setHeight(this._height);
+            if (this._useDynamicHeight)
+                this.setHeight(this.getCalculatedPanelHeight());
+            else
+                this.setHeight(this._height);
             this.initGrid(json.visibleColumns);
             this.getFullStore().load();
         };
-
         this.getCenter().getEl().mask('Initializing...');
         this.getConfiguration(handler, this);
     },
@@ -1032,14 +1034,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         if (this.customPanel && this.customPanel.isVisible()) {
             this.getNorth().hide();
         }
-        if (this._useDynamicHeight) {
-            // use dynamic height calculated from number of rows in results set
-            this.setHeight(this.getCalculatedPanelHeight());
-        }
-        else {
-            // use custom height the user specified
-            this.setHeight(this._height);
-        }
         this.customMode = false;
         this.refreshViewStore();
     },
@@ -1196,11 +1190,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 if (grp.inputValue === 0) {
                     this._useDynamicHeight = false;
                 }
-                else {
-                    this._useDynamicHeight = true;
-                }
-                this.updateConfig = true;
             }
+            else {
+                this._useDynamicHeight = true;
+                // remove any value the user may have placed in the height input box before they clicked the use dynamic height radio button
+                fields[0].setValue(this._height);
+            }
+            this.updateConfig = true;
             // always show the custom height size selector, and make it enabled
             if (fields && fields.length == 1) {
                 fields[0].setVisible(true);
@@ -1239,7 +1235,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 name            : 'height',
                 listeners       : {change: {fn: function (cmp, newValue){
                     this.updateConfig = true;
-                    this._height = parseInt(newValue);
+                    if (parseInt(newValue) <= 3000 && parseInt(newValue) >= 200) {
+                        this._height = parseInt(newValue);
+                    }
                 }, scope: this}}
             },{
                 xtype      : 'radiogroup',
@@ -1311,6 +1309,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             buttons : [{
                 text    : 'Cancel',
                 handler : function() {
+                    // remove any value the user may have placed in the height input box before they clicked the cancel button
+                    var fields = this.query('numberfield');
+                    fields[0].setValue(this._height);
                     this.fireEvent('disableCustomMode');
                 },
                 scope   : this
