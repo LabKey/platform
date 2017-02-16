@@ -686,130 +686,133 @@ public class IssuesController extends SpringActionController
         @Override
         public void validateForm(IssuesApiForm form, Errors errors)
         {
+            if (form.getIssueForms().isEmpty())
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "At least one issue record is required");
+                return;
+            }
+
             for (IssuesForm issuesForm : form.getIssueForms())
             {
                 IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), NumberUtils.toInt(issuesForm.getIssueDefId()));
-                if (issueListDef != null)
+                if (issueListDef == null)
                 {
-                    AbstractIssuesListDefDomainKind kind = issueListDef.getDomainKind();
-                    if (kind != null)
-                    {
-                        Map<String, String> stringMap = new CaseInsensitiveHashMap<>(issuesForm.getStrings());
-                        for (PropertyStorageSpec prop : kind.getRequiredProperties())
-                        {
-                            if (!"resolution".equalsIgnoreCase(prop.getName()))
-                                stringMap.putIfAbsent(prop.getName(), null);
-                        }
-                        issuesForm.setStrings(stringMap);
-                    }
-                    CustomColumnConfiguration ccc = new NewCustomColumnConfiguration(getContainer(), getUser(), issueListDef);
-                    IssueValidation.validateRequiredFields(issueListDef, ccc, issuesForm, getUser(), errors);
-                    IssueValidation.validateNotifyList(issuesForm, errors);
-                    IssueValidation.validateAssignedTo(issuesForm, getContainer(), errors);
-                    IssueValidation.validateStringFields(issuesForm, ccc, errors);
+                    errors.reject(ERROR_MSG, "IssueListDef not found: " + issuesForm.getIssueDefId());
+                    continue;
                 }
+
+                AbstractIssuesListDefDomainKind kind = issueListDef.getDomainKind();
+                if (kind != null)
+                {
+                    Map<String, String> stringMap = new CaseInsensitiveHashMap<>(issuesForm.getStrings());
+                    for (PropertyStorageSpec prop : kind.getRequiredProperties())
+                    {
+                        if (!"resolution".equalsIgnoreCase(prop.getName()))
+                            stringMap.putIfAbsent(prop.getName(), null);
+                    }
+                    issuesForm.setStrings(stringMap);
+                }
+                CustomColumnConfiguration ccc = new NewCustomColumnConfiguration(getContainer(), getUser(), issueListDef);
+                IssueValidation.validateRequiredFields(issueListDef, ccc, issuesForm, getUser(), errors);
+                IssueValidation.validateNotifyList(issuesForm, errors);
+                IssueValidation.validateAssignedTo(issuesForm, getContainer(), errors);
+                IssueValidation.validateStringFields(issuesForm, ccc, errors);
             }
         }
 
         @Override
         public ApiResponse execute(IssuesApiForm form, BindException errors) throws Exception
         {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            if (!form.getIssueForms().isEmpty())
-            {
-                Map<String, MultipartFile> attachmentMap = getFileMap();
+            Map<String, MultipartFile> attachmentMap = getFileMap();
 
-                // need to track issues that should be related together
-                List<Issue> newIssues = new ArrayList<>();
-                List<Integer> newIssueIds = new ArrayList<>();
-                try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
+            // need to track issues that should be related together
+            List<Issue> newIssues = new ArrayList<>();
+            List<Integer> newIssueIds = new ArrayList<>();
+            try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
+            {
+                for (IssuesForm issuesForm : form.getIssueForms())
                 {
-                    for (IssuesForm issuesForm : form.getIssueForms())
+                    IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), NumberUtils.toInt(issuesForm.getIssueDefId()));
+                    if (issueListDef != null)
                     {
-                        IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), NumberUtils.toInt(issuesForm.getIssueDefId()));
-                        if (issueListDef != null)
-                        {
-                            CustomColumnConfiguration ccc = new NewCustomColumnConfiguration(getContainer(), getUser(), issueListDef);
-                            Issue issue = issuesForm.getBean();
+                        CustomColumnConfiguration ccc = new NewCustomColumnConfiguration(getContainer(), getUser(), issueListDef);
+                        Issue issue = issuesForm.getBean();
 
-                            issue.open(getContainer(), getUser());
-                            Issue prevIssue = new Issue();
-                            prevIssue.open(getContainer(), getUser());
+                        issue.open(getContainer(), getUser());
+                        Issue prevIssue = new Issue();
+                        prevIssue.open(getContainer(), getUser());
 
-                            // validate any related issue values
-                            boolean ret = IssueValidation.relatedIssueHandler(issue, getUser(), errors);
-                            if (!ret) return response;
+                        // validate any related issue values
+                        IssueValidation.relatedIssueHandler(issue, getUser(), errors);
+                        if (errors.hasErrors())
+                            return null;
 
-                            // bind the user schema table to the form bean so we can get typed properties
-                            UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-                            TableInfo table = userSchema.getTable(issueListDef.getName());
-                            issuesForm.setTable(table);
-                            issue.setProperties(issuesForm.getTypedColumns());
+                        // bind the user schema table to the form bean so we can get typed properties
+                        UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
+                        TableInfo table = userSchema.getTable(issueListDef.getName());
+                        issuesForm.setTable(table);
+                        issue.setProperties(issuesForm.getTypedColumns());
 
-                            // convert from email addresses & display names to userids before we hit the database
-                            issue.parseNotifyList(issue.getNotifyList());
+                        // convert from email addresses & display names to userids before we hit the database
+                        issue.parseNotifyList(issue.getNotifyList());
 
-                            ChangeSummary changeSummary = ChangeSummary.createChangeSummary(getViewContext(), issueListDef,
-                                    issue, prevIssue, null, getContainer(), getUser(), InsertAction.class, issuesForm.getComment(), ccc, getUser());
-                            IssueManager.saveIssue(getUser(), getContainer(), issue);
-                            newIssues.add(issue);
-                            newIssueIds.add(issue.getIssueId());
-
-                            // handle attachments
-                            String attachmentName = (String)issuesForm.get("attachment");
-                            if (attachmentName != null && attachmentMap.containsKey(attachmentName))
-                            {
-                                MultipartFile file = attachmentMap.get(attachmentName);
-                                if (!file.isEmpty())
-                                {
-                                    AttachmentService.get().addAttachments(changeSummary.getComment(), Collections.singletonList(new SpringAttachmentFile(file)), getUser());
-                                }
-                            }
-                        }
-                    }
-
-                    // link up any related issues
-                    int idx = 0;
-                    Map<Integer, Issue> relatedIssuesToSave = new HashMap<>();
-                    for (IssuesForm issuesForm : form.getIssueForms())
-                    {
-                        int related = NumberUtils.toInt((String)issuesForm.get("relatedIssue"), -1);
-                        if (related != -1)
-                        {
-                            // stash everything away so we only have to do one save
-                            if (!relatedIssuesToSave.containsKey(idx))
-                                relatedIssuesToSave.put(idx, newIssues.get(idx));
-                            if (!relatedIssuesToSave.containsKey(related))
-                                relatedIssuesToSave.put(related, newIssues.get(related));
-
-                            Issue current = relatedIssuesToSave.get(idx);
-                            Issue relatedIssue = relatedIssuesToSave.get(related);
-
-                            if (current != null && relatedIssue != null)
-                            {
-                                addRelatedIssue(current, relatedIssue.getIssueId());
-                                addRelatedIssue(relatedIssue, current.getIssueId());
-                            }
-                        }
-                        idx++;
-                    }
-
-                    // save any related issues
-                    for (Issue issue : relatedIssuesToSave.values())
-                    {
+                        ChangeSummary changeSummary = ChangeSummary.createChangeSummary(getViewContext(), issueListDef,
+                                issue, prevIssue, null, getContainer(), getUser(), InsertAction.class, issuesForm.getComment(), ccc, getUser());
                         IssueManager.saveIssue(getUser(), getContainer(), issue);
+                        newIssues.add(issue);
+                        newIssueIds.add(issue.getIssueId());
+
+                        // handle attachments
+                        String attachmentName = (String)issuesForm.get("attachment");
+                        if (attachmentName != null && attachmentMap.containsKey(attachmentName))
+                        {
+                            MultipartFile file = attachmentMap.get(attachmentName);
+                            if (!file.isEmpty())
+                            {
+                                AttachmentService.get().addAttachments(changeSummary.getComment(), Collections.singletonList(new SpringAttachmentFile(file)), getUser());
+                            }
+                        }
                     }
-                    transaction.commit();
-                    response.put("issues", newIssueIds);
-                    response.put("success", true);
                 }
+
+                // link up any related issues
+                int idx = 0;
+                Map<Integer, Issue> relatedIssuesToSave = new HashMap<>();
+                for (IssuesForm issuesForm : form.getIssueForms())
+                {
+                    int related = NumberUtils.toInt((String)issuesForm.get("relatedIssue"), -1);
+                    if (related != -1)
+                    {
+                        // stash everything away so we only have to do one save
+                        if (!relatedIssuesToSave.containsKey(idx))
+                            relatedIssuesToSave.put(idx, newIssues.get(idx));
+                        if (!relatedIssuesToSave.containsKey(related))
+                            relatedIssuesToSave.put(related, newIssues.get(related));
+
+                        Issue current = relatedIssuesToSave.get(idx);
+                        Issue relatedIssue = relatedIssuesToSave.get(related);
+
+                        if (current != null && relatedIssue != null)
+                        {
+                            addRelatedIssue(current, relatedIssue.getIssueId());
+                            addRelatedIssue(relatedIssue, current.getIssueId());
+                        }
+                    }
+                    idx++;
+                }
+
+                // save any related issues
+                for (Issue issue : relatedIssuesToSave.values())
+                {
+                    IssueManager.saveIssue(getUser(), getContainer(), issue);
+                }
+                transaction.commit();
+
+                ApiSimpleResponse response = new ApiSimpleResponse();
+                response.put("issues", newIssueIds);
+                response.put("success", true);
+                return response;
             }
-            else
-            {
-                errors.reject(SpringActionController.ERROR_MSG, "Zero issue records specified in the request");
-                response.put("success", false);
-            }
-            return response;
         }
 
         private void addRelatedIssue(Issue issue, int relatedIssueId)
@@ -840,8 +843,9 @@ public class IssuesController extends SpringActionController
             setIssue(issue);
 
             // validate any related issue values
-            boolean ret = IssueValidation.relatedIssueHandler(issue, user, errors);
-            if (!ret) return false;
+            IssueValidation.relatedIssueHandler(issue, user, errors);
+            if (errors.hasErrors())
+                return false;
 
             IssueListDef issueListDef = getIssueListDef();
             if (issueListDef == null)
