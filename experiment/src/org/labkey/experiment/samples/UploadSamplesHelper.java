@@ -88,6 +88,7 @@ public class UploadSamplesHelper
     public static final String DATA_INPUT_PARENT = "DataInputs";
     public static final String MATERIAL_OUTPUT_CHILD = "MaterialOutputs";
     public static final String DATA_OUTPUT_CHILD = "DataOutputs";
+    private static final String MATERIAL_LSID_SUFFIX = "ToBeReplaced";
 
     UploadMaterialSetForm _form;
     private MaterialSource _materialSource;
@@ -336,7 +337,6 @@ public class UploadSamplesHelper
     }
 
 
-
     // Remember the actual set of properties that we received, so we don't end up deleting unspecified values.
     @NotNull
     private Set<PropertyDescriptor> getPropertyDescriptors(Domain domain, List<Map<String, Object>> maps)
@@ -344,10 +344,8 @@ public class UploadSamplesHelper
         Set<PropertyDescriptor> descriptors = new HashSet<>();
         descriptors.add(ExperimentProperty.COMMENT.getPropertyDescriptor());
 
-        ListIterator<Map<String, Object>> li = maps.listIterator();
-        while (li.hasNext())
+        for (Map<String, Object> map : maps)
         {
-            Map<String, Object> map = li.next();
             for (Map.Entry<String, Object> entry : map.entrySet())
             {
                 DomainProperty prop = domain.getPropertyByURI(entry.getKey());
@@ -405,7 +403,7 @@ public class UploadSamplesHelper
         Set<String> reusedMaterialLSIDs = new HashSet<>();
         InsertUpdateChoice insertUpdate = _form.getInsertUpdateChoiceEnum();
         ListIterator<Map<String, Object>> li = maps.listIterator();
-        Lsid.LsidBuilder builder = new Lsid.LsidBuilder(_materialSource.getMaterialLSIDPrefix() + "ToBeReplaced");
+        Lsid.LsidBuilder builder = generateSampleLSID(_materialSource);
         while (li.hasNext())
         {
             Map<String, Object> map = li.next();
@@ -900,6 +898,11 @@ public class UploadSamplesHelper
                 .filter(s -> !s.isEmpty());
     }
 
+    public static Lsid.LsidBuilder generateSampleLSID(MaterialSource source)
+    {
+        return new Lsid.LsidBuilder(source.getMaterialLSIDPrefix() + MATERIAL_LSID_SUFFIX);
+    }
+
     // CONSIDER: This method shouldn't update the domain to make the property into a lookup..
     private static void ensureTargetColumnLookup(User user, Container c, MaterialSource source, String propName, String schemaName, String queryName) throws ExperimentException
     {
@@ -1016,7 +1019,7 @@ public class UploadSamplesHelper
         {
             String name = (String)map.get("Name");
             assert name != null : "Name should have been generated";
-            String lsid = new Lsid.LsidBuilder(_source.getMaterialLSIDPrefix() + "ToBeReplaced").setObjectId(name).toString();
+            String lsid = generateSampleLSID(_source).setObjectId(name).toString();
 
             ExpMaterialImpl material;
             if (!_reusedMaterialLSIDs.contains(lsid))
@@ -1050,6 +1053,4 @@ public class UploadSamplesHelper
         {
         }
     }
-
-
 }

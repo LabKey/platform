@@ -27,6 +27,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpData;
@@ -52,7 +53,6 @@ import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashSet;
@@ -62,7 +62,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleSet
 {
@@ -493,25 +492,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     private Collection<String> parentNames(Object value, String parentColName)
     {
-        Stream<String> stringStream;
-        if (value instanceof String)
-        {
-            stringStream = Arrays.stream(((String)value).split(","));
-        }
-        else if (value instanceof Collection)
-        {
-            Collection<?> c = (Collection)value;
-            stringStream = c.stream().map(String::valueOf);
-        }
-        else
-        {
-            throw new IllegalStateException("Expected string or collection for '" + parentColName + "': " + value);
-        }
-
-        return stringStream
-            .map(String::trim)
-            .filter(s -> !s.isEmpty())
-            .collect(Collectors.toList());
+        return UploadSamplesHelper.parentNames(value, parentColName).collect(Collectors.toList());
     }
 
 
@@ -674,6 +655,12 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         {
             throw new UnexpectedException(e);
         }
+    }
+
+    @Override
+    public Lsid.LsidBuilder generateSampleLSID()
+    {
+        return UploadSamplesHelper.generateSampleLSID(this.getDataObject());
     }
 
     @Override

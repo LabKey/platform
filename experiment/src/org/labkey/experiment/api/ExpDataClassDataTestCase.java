@@ -36,7 +36,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpLineage;
@@ -357,12 +356,12 @@ public class ExpDataClassDataTestCase
         // Create a SampleSet and some samples
         final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user, "Samples", null, props, Collections.emptyList(), 0, -1, -1, -1, null, null);
         final ExpMaterial s1 = ExperimentService.get().createExpMaterial(c,
-                new Lsid.LsidBuilder(ss.getMaterialLSIDPrefix() + "ToBeReplaced").setObjectId("S-1").toString(), "S-1");
+                ss.generateSampleLSID().setObjectId("S-1").toString(), "S-1");
         s1.setCpasType(ss.getLSID());
         s1.save(user);
 
         final ExpMaterial s2 = ExperimentService.get().createExpMaterial(c,
-                new Lsid.LsidBuilder(ss.getMaterialLSIDPrefix() + "ToBeReplaced").setObjectId("S-2").toString(), "S-2");
+                ss.generateSampleLSID().setObjectId("S-2").toString(), "S-2");
         s2.setCpasType(ss.getLSID());
         s2.save(user);
 
