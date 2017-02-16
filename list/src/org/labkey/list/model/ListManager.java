@@ -774,8 +774,9 @@ public class ListManager implements SearchService.DocumentProvider
 
     private void setLastIndexed(ListDefinition list, long ms)
     {
+        // list table does not have an index on listid, so we should include container in the WHERE
         new SqlExecutor(getListMetadataSchema()).execute("UPDATE " + getListMetadataTable().getSelectName() +
-                " SET LastIndexed = ? WHERE ListId = ?", new Timestamp(ms), list.getListId());
+                " SET LastIndexed = ? WHERE Container = ? AND ListId = ?", new Timestamp(ms), list.getContainer(), list.getListId());
     }
 
 
