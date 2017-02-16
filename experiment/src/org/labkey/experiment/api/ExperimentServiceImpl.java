@@ -247,7 +247,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (c == null)
             dataClassCache.clear();
         else
-            dataClassCache.removeUsingPrefix(c.getId());
+            dataClassCache.remove(c.getId());
     }
 
     synchronized StringKeyCache<Protocol> getProtocolCache()

@@ -132,6 +132,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             }
             case SourceProtocolLSID:
             {
+                // NOTE: This column is incorrectly named "Protocol", but we are keeping it for backwards compatibility to avoid breaking queries in hvtnFlow module
                 ExprColumn columnInfo = new ExprColumn(this, ExpDataTable.Column.Protocol.toString(), new SQLFragment(
                         "(SELECT ProtocolLSID FROM " + ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa " +
                         " WHERE pa.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId)"), JdbcType.VARCHAR);//, getColumn("SourceProtocolApplication"));

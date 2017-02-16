@@ -25,6 +25,7 @@ import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
 
@@ -76,6 +77,9 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
 
     protected TableInfo createLineageJunctionTable(ColumnInfo[] arguments)
     {
+        if (arguments.length > 2)
+            throw new QueryException("Lineage method supports 0, 1, or 2 arguments");
+
         TableInfo parentTable = _lsidColumn.getParentTable();
         UserSchema schema = parentTable.getUserSchema();
 
@@ -106,7 +110,6 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
                 depth = Integer.parseInt(s);
             }
             catch (NumberFormatException ex) { /* ok */ }
-
         }
 
         return new LineageTableInfo("Foo", schema, lsids, _parents, depth, expType, cpasType);
@@ -117,12 +120,6 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
     {
         String alias = _lsidColumn.getAlias();
         return new SQLFragment(tableAlias + "." + alias);
-    }
-
-    @Override
-    protected SQLFragment[] getSQLFragments(ColumnInfo[] arguments)
-    {
-        return super.getSQLFragments(arguments);
     }
 
     public static boolean isSimpleString(SQLFragment f)
