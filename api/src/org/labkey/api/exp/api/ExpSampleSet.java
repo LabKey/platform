@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.util.StringExpression;
@@ -159,4 +160,9 @@ public interface ExpSampleSet extends ExpObject
     /** @return all of the ID columns. Should be a list of 0-3 elements */
     @NotNull
     List<DomainProperty> getIdCols();
+
+    /**
+     * @return LSID that is prepared for use as a material in this Sample Set.
+     */
+    Lsid.LsidBuilder generateSampleLSID();
 }

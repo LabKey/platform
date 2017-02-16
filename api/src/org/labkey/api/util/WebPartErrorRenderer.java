@@ -42,6 +42,5 @@ class WebPartErrorRenderer extends ErrorRenderer
     {
         super.renderEnd(out);
         out.println("</div>");
-        out.println("<script>new Ext.Resizable(Ext.get('" + _id + "'), { handles:'se', minWidth:200, minHeight:100, wrap:true, style:{padding:2}})</script>");
     }
 }
