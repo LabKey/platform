@@ -371,9 +371,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                     if (!attachmentFiles.isEmpty())
                         AttachmentService.get().addAttachments(new ListItemAttachmentParent(entityId, _list.getContainer()), attachmentFiles, user);
                 }
-                catch (AttachmentService.DuplicateFilenameException e)
+                catch (AttachmentService.DuplicateFilenameException | AttachmentService.FileTooLargeException e)
                 {
-                    // issue 21503: turn this into a validation exception to get a nicer error
+                    // issues 21503, 28633: turn these into a validation exception to get a nicer error
                     throw new ValidationException(e.getMessage());
                 }
                 catch (IOException e)
