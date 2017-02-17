@@ -1094,6 +1094,10 @@ boxPlot.render();
             }
         };
 
+        this.getHeight = function(){
+            return this.grid.height;
+        };
+
         /**
          * Sets the width of the plot and re-renders if requested.
          * @param {Number} w The width in pixels.
@@ -1109,6 +1113,10 @@ boxPlot.render();
             if(render === true){
                 this.render();
             }
+        };
+
+        this.getWidth = function(){
+            return this.grid.width;
         };
 
         /**
