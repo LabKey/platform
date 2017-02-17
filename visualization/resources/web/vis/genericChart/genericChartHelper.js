@@ -401,8 +401,9 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         for (var i = 0; i < fields.length; i++) {
             var type = fields[i].displayFieldJsonType ? fields[i].displayFieldJsonType : fields[i].type;
+            var isConvertedYMeasure = measures.y && measures.y.converted && fields[i].fieldKey == measures.y.name;
 
-            if (isNumericType(type)) {
+            if (isNumericType(type) || isConvertedYMeasure) {
                 if (measures.x && fields[i].fieldKey == measures.x.name) {
                     if (fields[i].extFormatFn) {
                         scales.x.tickFormat = eval(fields[i].extFormatFn);
@@ -1000,7 +1001,8 @@ LABKEY.vis.GenericChartHelper = new function(){
         {
             if (invalidLogValues)
             {
-                message = "Unable to use a log scale on the y-axis. All y-axis values must be >= 0. Reverting to linear scale on y-axis.";
+                message = "Unable to use a log scale on the " + measureName + "-axis. All " + measureName
+                        + "-axis values must be >= 0. Reverting to linear scale on " + measureName + "-axis.";
                 scales[measureName].trans = 'linear';
             }
             else if (hasZeroes)

@@ -569,6 +569,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     {
                         // note: this event will only fire if a change was made in the Chart Layout panel
                         this.ensureChartLayoutOptions();
+                        this.clearChartPanel(true);
                         this.renderChart();
                         this.getChartLayoutWindow().hide();
                     }
@@ -1325,7 +1326,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             plot.render();
         }
 
-        this.afterRenderPlotComplete(newChartDiv);
+        this.afterRenderPlotComplete(newChartDiv, plot);
     },
 
     getNewChartDisplayDiv : function()
@@ -1336,10 +1337,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         });
     },
 
-    afterRenderPlotComplete : function(chartDiv)
+    afterRenderPlotComplete : function(chartDiv, plot)
     {
         if (this.warningText !== null)
-            this.addWarningMsg(chartDiv, this.warningText, true);
+            this.addWarningMsg(chartDiv, plot, this.warningText, true);
 
         this.getTopButtonBar().enable();
         this.getChartTypeBtn().enable();
@@ -1353,7 +1354,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.updateSaveChartThumbnail(chartDiv);
     },
 
-    addWarningMsg : function(chartDiv, warningText, allowDismiss)
+    addWarningMsg : function(chartDiv, plot, warningText, allowDismiss)
     {
         var warningDivId = Ext4.id();
         var dismissLink = allowDismiss ? '<a id="dismiss-link-' + warningDivId + '" class="labkey-text-link">dismiss</a>' : '';
@@ -1372,7 +1373,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
         });
 
+        // add the warning message which will adjust the view panel height so we need to update the plot height accordingly
+        this.getViewPanel().suspendEvents();
         this.getMsgPanel().add(warningCmp);
+        var newViewPanelHeight = this.getViewPanel().getHeight() - 25;
+        if (newViewPanelHeight < plot.getHeight()) {
+            plot.setHeight(newViewPanelHeight);
+        }
+        this.getViewPanel().resumeEvents();
     },
 
     updateSaveChartThumbnail : function(chartDiv)
@@ -1386,9 +1394,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     isChartConfigValid : function(chartType, chartConfig, aes, scales)
     {
         var selectedMeasureNames = Object.keys(this.measures),
-            hasXMeasure = selectedMeasureNames.indexOf('x') > 0 && Ext4.isDefined(aes.x),
-            hasXSubMeasure = selectedMeasureNames.indexOf('xSub') > 0 && Ext4.isDefined(aes.xSub),
-            hasYMeasure = selectedMeasureNames.indexOf('y') > 0 && Ext4.isDefined(aes.y),
+            hasXMeasure = selectedMeasureNames.indexOf('x') > -1 && Ext4.isDefined(aes.x),
+            hasXSubMeasure = selectedMeasureNames.indexOf('xSub') > -1 && Ext4.isDefined(aes.xSub),
+            hasYMeasure = selectedMeasureNames.indexOf('y') > -1 && Ext4.isDefined(aes.y),
             requiredMeasureNames = this.getChartTypePanel().getRequiredFieldNames();
 
         // validate that all selected measures still exist by name in the query/dataset
