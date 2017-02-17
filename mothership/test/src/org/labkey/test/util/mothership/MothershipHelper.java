@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertFalse;
 import static org.labkey.test.WebDriverWrapper.sleep;
 
 public class MothershipHelper
@@ -151,6 +152,7 @@ public class MothershipHelper
         driver.beginAt(relativeUrl);
     }
 
+    @LogMethod
     public void setIgnoreExceptions(boolean ignore) throws IOException, CommandException
     {
         // Find the current server GUID
@@ -163,12 +165,19 @@ public class MothershipHelper
         select.setColumns(Collections.singletonList(SERVER_INSTALLATION_ID_COLUMN));
         select.addFilter("ServerInstallationGUID", serverGUID, Filter.Operator.EQUAL);
         SelectRowsResponse response = select.execute(connection, MOTHERSHIP_PROJECT);
-        int installationId = (int) response.getRows().get(0).get(SERVER_INSTALLATION_ID_COLUMN);
-
-        // Set the flag for the installation
-        UpdateRowsCommand update = new UpdateRowsCommand("mothership", SERVER_INSTALLATION_QUERY);
-        update.addRow(Maps.of(SERVER_INSTALLATION_ID_COLUMN, installationId, "IgnoreExceptions", ignore));
-        update.execute(connection, MOTHERSHIP_PROJECT);
+        if (!response.getRows().isEmpty())
+        {
+            int installationId = (int) response.getRows().get(0).get(SERVER_INSTALLATION_ID_COLUMN);
+            // Set the flag for the installation
+            UpdateRowsCommand update = new UpdateRowsCommand("mothership", SERVER_INSTALLATION_QUERY);
+            update.addRow(Maps.of(SERVER_INSTALLATION_ID_COLUMN, installationId, "IgnoreExceptions", ignore));
+            update.execute(connection, MOTHERSHIP_PROJECT);
+        }
+        else
+        {
+            test.log("No existing server installation record to update.");
+            assertFalse("Attempting to set ignore exceptions true but no existing server installation record.", ignore);
+        }
     }
 
     public int triggerException(TestActions.ExceptionActions action)
