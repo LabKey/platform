@@ -88,6 +88,12 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             TableInfo tinfo = tt.isEvents() ? tableInfoSpecimenEvent : tableInfoSpecimenDetail;
             TableInfo queryTable = tt.isEvents() ? queryTableSpecimenEvent : queryTableSpecimenDetail;
             ColumnInfo ci = tinfo.getColumn(column.getDbColumnName());
+            if (null == ci)
+            {
+                ctx.getLogger().warn("Specimen Column '" + column.getDbColumnName() + "' not found in table '" +
+                                     tinfo.getPublicName() + "'");
+                continue;
+            }
             DataColumn dc = new DataColumn(ci);
             selectColumns.add(dc.getDisplayColumn());
             dc.setCaption(column.getTsvColumnName());
