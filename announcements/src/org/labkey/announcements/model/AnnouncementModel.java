@@ -166,7 +166,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
      */
     public void setBody(String body)
     {
-        _body = body;
+        _body = body == null ? null : body.replaceAll("\\r\\n", "\n"); // Handle OS-specific new lines;
     }
 
     public String getParent()
