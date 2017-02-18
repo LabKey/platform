@@ -2241,6 +2241,9 @@ public class PageFlowUtil
                 _errors.add("Illegal element <" + qName + ">. For permissions to use this element, contact your system administrator.");
             }
 
+            String hrefTarget = null;
+            String hrefRel = null;
+
             for (int i = 0; i < attributes.getLength(); i++)
             {
                 String a = attributes.getQName(i).toLowerCase();
@@ -2267,6 +2270,22 @@ public class PageFlowUtil
                         _reported.add("style");
                         _errors.add("Style attribute cannot contain behaviors, expresssions, or urls. Error on element <" + qName + ">.");
                     }
+                }
+                if ("a".equals(e))
+                {
+                    if ("target".equals(a))
+                        hrefTarget = value;
+                    else if ("rel".equals(a))
+                        hrefRel = value;
+                }
+            }
+
+            if ("a".equals(e) && "_blank".equals(hrefTarget))
+            {
+                if (hrefRel == null || !hrefRel.contains("noopener") || !hrefRel.contains("noreferrer"))
+                {
+                    _reported.add("rel");
+                    _errors.add("Rel attribute must be set to \"noopener noreferrer\" with target=\"_blank\". Error on element <" + qName + ">.");
                 }
             }
         }
