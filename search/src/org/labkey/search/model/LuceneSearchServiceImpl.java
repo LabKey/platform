@@ -76,12 +76,14 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUtils;
 import org.labkey.api.search.SearchUtils.HtmlParseException;
 import org.labkey.api.search.SearchUtils.LuceneMessageParser;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
@@ -99,6 +101,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.search.view.SearchWebPart;
@@ -124,6 +127,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -478,7 +482,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
     @Override
-    boolean processAndIndex(String id, WebdavResource r, Throwable[] handledException)
+    public boolean processAndIndex(String id, WebdavResource r, Throwable[] handledException)
     {
         FileStream fs = null;
 
@@ -833,6 +837,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             // Tika flags some .key files as "zip bombs"
             logAsWarning(r, "Can't parse this KEY file", rootMessage);
         }
+        else if (topMessage.equals("Unable to unpack document stream"))
+        {
+            // Usually "org.apache.commons.compress.archivers.ArchiveException: No Archiver found for the stream signature"
+            logAsWarning(r, "Can't decompress this file", rootMessage);
+         }
         else
         {
             logAsPreProcessingException(r, e);
@@ -1689,6 +1698,42 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         private final SearchCategory _category = new SearchCategory("SearchTest", "Just a test");
         private final SearchService _ss = ServiceRegistry.get(SearchService.class);
         private final CountDownLatch _latch = new CountDownLatch(DOC_COUNT);
+
+        /**
+         * Traverses the specified directory and indexes only the files that meet the fileFilter. This "test" is not normally
+         * run, but it can be re-enabled locally to investigate and fix issues with specific file types.
+         */
+        // @Test
+        @SuppressWarnings("unused")
+        public void testTika()
+        {
+            File root = new File("c:\\Users\\adam");
+            Predicate<WebdavResource> fileFilter = webdavResource -> webdavResource.getName().endsWith(".pdf");
+
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(ContainerManager.getRoot());
+            policy.addRoleAssignment(User.getSearchUser(), ReaderRole.class);
+            FileSystemResource rootResource = new FileSystemResource(Path.parse(root.getAbsolutePath()), root, policy)
+            {
+                @Override
+                public String getContainerId()
+                {
+                    return ContainerManager.getRoot().getId();
+                }
+            };
+
+            traverse(rootResource, fileFilter);
+        }
+
+        private void traverse(WebdavResource rootResource, Predicate<WebdavResource> fileFilter)
+        {
+            rootResource.list().stream().filter(Resource::isFile).filter(fileFilter).forEach(resource -> {
+                ((AbstractSearchService)_ss).processAndIndex(resource.getPath().encode(), resource, new Throwable[]{null});
+            });
+
+            rootResource.list().stream().filter(Resource::isCollection).forEach(dir -> {
+                traverse(dir, fileFilter);
+            });
+        }
 
         @Test
         public void testAnalyzers() throws IOException

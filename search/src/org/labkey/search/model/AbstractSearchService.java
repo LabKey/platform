@@ -919,7 +919,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             try
             {
-                  _indexLoop();
+                _indexLoop();
             }
             catch (Throwable t)
             {
@@ -1096,7 +1096,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     protected abstract void clearIndex();  // must be callable before (and after) start() has been called.
 
 
-    boolean processAndIndex(String id, WebdavResource r, Throwable[] handledException)
+    public boolean processAndIndex(String id, WebdavResource r, Throwable[] handledException)
     {
         return false;
     }
