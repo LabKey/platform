@@ -33,7 +33,7 @@
 <p><%= button("Site Admin Login").href(bean.loginURL) %></p>
 <% } %>
 
-<script type="javascript">
+<script type="text/javascript">
 (function () {
     // initial delay of 0.5 second
     var delay = 500;
