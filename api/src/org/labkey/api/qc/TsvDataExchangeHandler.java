@@ -768,7 +768,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         // if input data was transformed,
         if (runInfo.exists())
         {
-            Reader runPropsReader = null;    // TODO: Delete... not used!
             try
             {
                 List<Map<String, Object>> maps = parseRunInfo(runInfo);
@@ -957,10 +956,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             catch (Exception e)
             {
                 throw new ValidationException(e.getMessage());
-            }
-            finally
-            {
-                IOUtils.closeQuietly(runPropsReader);
             }
         }
         return result;
