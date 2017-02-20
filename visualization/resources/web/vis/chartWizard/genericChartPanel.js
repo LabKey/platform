@@ -1450,7 +1450,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 measureName = chartConfig.measures.y.converted ? chartConfig.measures.y.convertedName : chartConfig.measures.y.name;
 
                 if (Ext4.isDefined(chartConfig.measures.y.aggregate)) {
-                    aggType = chartConfig.measures.y.aggregate;
+                    aggType = chartConfig.measures.y.aggregate.value || chartConfig.measures.y.aggregate;
                 }
                 // backwards compatibility for bar charts saved prior to aggregate method selection UI
                 else if (measureName != null) {

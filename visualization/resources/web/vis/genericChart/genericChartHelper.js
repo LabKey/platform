@@ -112,8 +112,10 @@ LABKEY.vis.GenericChartHelper = new function(){
         var label = properties ? properties.label || properties.queryName : '';
 
         if (label != '' && measureName == 'y' && (renderType == 'bar_chart' || renderType == 'pie_chart')) {
-            if (properties.aggregate) {
-                label = Ext4.String.capitalize(properties.aggregate.toLowerCase()) + ' of ' + label;
+            if (Ext4.isDefined(properties.aggregate)) {
+                var aggLabel = Ext4.isObject(properties.aggregate) ? properties.aggregate.name
+                        : Ext4.String.capitalize(properties.aggregate.toLowerCase());
+                label = aggLabel + ' of ' + label;
             }
             else {
                 label = 'Sum of ' + label;

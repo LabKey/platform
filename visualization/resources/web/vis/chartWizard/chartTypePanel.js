@@ -662,7 +662,8 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
 
     getFieldValueKey : function(fieldName, value, additionalPropName)
     {
-        return fieldName + '|' + value.queryName + '|' + value.name + (additionalPropName ? '|' + value[additionalPropName] : '');
+        return fieldName + '|' + value.queryName + '|' + value.name + (additionalPropName && value[additionalPropName]
+                    ? '|' + value[additionalPropName].value || value[additionalPropName] : '');
     },
 
     allowTypeSelect : function(view, selected)
@@ -1188,18 +1189,18 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
         if (aggMethodEls.length == 1) {
             Ext4.create('Ext.form.field.ComboBox', {
                 renderTo: aggMethodEls[0],
-                width: 225,
+                width: 270,
                 labelWidth: 135,
                 fieldLabel: 'Aggregate Method',
                 queryMode: 'local',
                 displayField: 'name',
                 valueField: 'value',
                 editable: false,
-                value: this.selection.aggregate ? this.selection.aggregate : 'SUM',
+                value: this.selection.aggregate ? this.selection.aggregate.value || this.selection.aggregate : 'SUM',
                 store: Ext4.create('Ext.data.Store', {
                     fields: ['name', 'value'],
                     data: [
-                        {name: 'Count', value: 'COUNT'},
+                        {name: 'Count (non-blank)', value: 'COUNT'},
                         {name: 'Sum', value: 'SUM'},
                         {name: 'Min', value: 'MIN'},
                         {name: 'Max', value: 'MAX'},
@@ -1210,7 +1211,8 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
                 listeners: {
                     scope: this,
                     change: function(combo, newValue, oldValue) {
-                        this.selection.aggregate = newValue;
+                        var rec = combo.getStore().findRecord('value', newValue);
+                        this.selection.aggregate = rec != null ? rec.data : newValue;
                         var labelEls = Ext4.DomQuery.select('div.field-selection-text', view.getEl().dom);
                         if (labelEls.length > 0)
                         {
