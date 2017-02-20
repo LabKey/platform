@@ -508,7 +508,10 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         // assert column.getParentTable() == this;
         if (_columnMap.containsKey(column.getName()))
         {
-            throw new IllegalArgumentException("Column " + column.getName() + " already exists for table " + getName() + ". Full set of existing columns: " + _columnMap.keySet());
+            String message = "Column " + column.getName() + " already exists for table " + getName() + ". Full set of existing columns: " + _columnMap.keySet();
+            LOG.warn(message);
+            // Treat this as non-fatal since blowing up on production servers can often lock out access to broad functionality
+            assert false : message;
         }
         _columnMap.put(column.getName(), column);
         // Clear the cached resolved columns so we regenerate it if the shape of the table changes
