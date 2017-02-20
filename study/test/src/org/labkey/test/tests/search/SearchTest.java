@@ -25,6 +25,7 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.tests.issues.IssuesTest;
 import org.labkey.test.tests.study.StudyTest;
 import org.labkey.test.util.IssuesHelper;
+import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.SearchHelper;
 import org.labkey.test.util.WikiHelper;
@@ -84,8 +85,7 @@ public abstract class SearchTest extends StudyTest
     @Override
     protected String getProjectName()
     {
-        //return "SearchTest" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES + " Project";
-        return "SearchTest" + " Project";
+        return "SearchTest Project";// + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
     }
 
     public abstract SearchAdminAPIHelper.DirectoryType directoryType();
@@ -127,6 +127,7 @@ public abstract class SearchTest extends StudyTest
     private static final String listToDelete = "List To Delete";
     private static final String listIndexAsWhole = "Indexed as one doc";
 
+    @LogMethod
     private void addSearchableLists()
     {
         clickTab("Overview");
@@ -233,12 +234,14 @@ public abstract class SearchTest extends StudyTest
         }
     }
 
+    @LogMethod
     private void addSearchableContainers()
     {
         clickProject(getProjectName());
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), FOLDER_B, "None", null);
     }
 
+    @LogMethod
     private void addSearchableStudy()
     {
         importStudy();
@@ -252,6 +255,7 @@ public abstract class SearchTest extends StudyTest
                                                      Locator.linkContainingText("URS-1"));
     }
 
+    @LogMethod
     private void addSearchableReports()
     {
         clickFolder(FOLDER_A);
@@ -296,6 +300,7 @@ public abstract class SearchTest extends StudyTest
         clickButton("Save");
     }
 
+    @LogMethod
     private void addSearchableWiki()
     {
         WikiHelper _wikiHelper = new WikiHelper(this);
@@ -315,6 +320,7 @@ public abstract class SearchTest extends StudyTest
         _searchHelper.enqueueSearchItem("Sample", Locator.linkWithText(String.format("\"%s\" attached to page \"%s\"", attachedFile.getName(), WIKI_TITLE))); // some text from attached file
     }
 
+    @LogMethod
     private void addSearchableIssues()
     {
         _permissionsHelper.createPermissionsGroup(GROUP_NAME, USER1);
@@ -353,6 +359,7 @@ public abstract class SearchTest extends StudyTest
         //_searchHelper.enqueueSearchItem("Override", Locator.linkWithText("\"common.properties\" attached to issue \"" + ISSUE_TITLE + "\"")); // some text from attached file
     }
 
+    @LogMethod
     private void addSearchableMessages()
     {
         clickFolder(getFolderName());
@@ -370,6 +377,7 @@ public abstract class SearchTest extends StudyTest
         _searchHelper.enqueueSearchItem("persimmon", Locator.linkContainingText("\"fruits.tsv\" attached to message \"" + MESSAGE_TITLE + "\"")); // some text from attached file
     }
 
+    @LogMethod
     private void addSearchableFiles()
     {
         clickFolder(getFolderName());
