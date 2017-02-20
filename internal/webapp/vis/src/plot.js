@@ -1285,9 +1285,6 @@ boxPlot.render();
         if (!config.aggregateType) {
             config.options.aggregateType = config.aes.y ? 'SUM' : 'COUNT'; //aggregate defaults
         }
-        if (!config.aes.y) {
-            config.aes.y = 'value';
-        }
 
         var showCumulativeTotals = config.options && config.options.showCumulativeTotals;
         if (showCumulativeTotals && config.aes.xSub) {

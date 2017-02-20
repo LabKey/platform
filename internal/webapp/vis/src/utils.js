@@ -227,7 +227,7 @@ LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, me
             row['total'] = groupData[i]['total'];
         }
 
-        var values = LABKEY.Utils.isDefined(measureAccessor) && measureAccessor != null
+        var values = measureAccessor != undefined && measureAccessor != null
                 ? LABKEY.vis.Stat.sortNumericAscending(groupData[i].rawData, measureAccessor)
                 : null;
 
