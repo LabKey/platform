@@ -226,13 +226,17 @@ LABKEY.vis.getAggregateData = function(data, dimensionName, subDimensionName, me
         if (includeTotal) {
             row['total'] = groupData[i]['total'];
         }
+
+        var values = Ext4.isDefined(measureAccessor) && measureAccessor != null
+                ? LABKEY.vis.Stat.sortNumericAscending(groupData[i].rawData, measureAccessor)
+                : null;
+
         if (aggregate == undefined || aggregate == null || aggregate == 'COUNT')
         {
-            row['value'] = groupData[i]['count'];
+            row['value'] = values != null ? values.length : groupData[i]['count'];
         }
         else if (typeof LABKEY.vis.Stat[aggregate] == 'function')
         {
-            var values = LABKEY.vis.Stat.sortNumericAscending(groupData[i].rawData, measureAccessor);
             try {
                 row.value = LABKEY.vis.Stat[aggregate](values);
             } catch (e) {
