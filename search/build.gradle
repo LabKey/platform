@@ -3,10 +3,10 @@ configurations {
 }
 
 dependencies {
-   external 'org.apache.lucene:lucene-analyzers-common:6.4.0'
-   external 'org.apache.lucene:lucene-core:6.4.0'
-   external 'org.apache.lucene:lucene-queryparser:6.4.0'
-   external 'org.apache.lucene:lucene-backward-codecs:6.4.0'
+   external 'org.apache.lucene:lucene-analyzers-common:6.4.1'
+   external 'org.apache.lucene:lucene-core:6.4.1'
+   external 'org.apache.lucene:lucene-queryparser:6.4.1'
+   external 'org.apache.lucene:lucene-backward-codecs:6.4.1'
    tika "org.apache.tika:tika-app:${tikaVersion}"
 }
 

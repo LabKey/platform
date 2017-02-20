@@ -4,6 +4,14 @@ download lucene-x.x.x.tgz and open
 - in /lucene-x.x.x/core, copy lucene-core-x.x.x.jar to /labkey/server/modules/search/lib
 - in /lucene-x.x.x/queryparser, copy lucene-queryparser-x.x.x.jar to /labkey/server/modules/search/lib
 
+update the search module dependencies:
+- add the three exposed jars (not backward-codecs) and remove the old ones
+- update links to the three javadoc roots
+- update /search/resources/credits/jars.txt with new version numbers
+- update build.gradle with new version numbers 
+
+=============
+
 we're not committing all the source code to svn anymore, but if you need source code, do this:
 download lucene-x.x.x-src.tgz
 - right click "analysis" directory and "Copy To..." c:\temp
@@ -16,9 +24,3 @@ download lucene-x.x.x-src.tgz
   - delete directory "/analysis/common/src/test"
   - delete directory "/core/src/test"
   - delete directory "/queryparser/src/test"
-
-update the search module dependencies:
-- Add the three exposed jars (not backward-codecs)
-- Add links to the three javadoc roots
-
-update /search/resources/credits/jars.txt with new jar names & version numbers. Update search module dependencies in IntelliJ.
