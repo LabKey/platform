@@ -18,6 +18,7 @@ package org.labkey.api.study.actions;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -39,6 +40,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.qc.TsvDataExchangeHandler;
@@ -59,7 +61,10 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
@@ -256,6 +261,20 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         return _uploadedData;
     }
 
+    public Map<DomainProperty, File> getAdditionalFiles()
+    {
+        return _additionalFiles;
+    }
+
+    public static File getAssayDirectory(Container c, File root)
+    {
+        if(null != root)
+            return new File(root.getAbsolutePath() + File.separator + AssayFileWriter.DIR_NAME);
+        else
+            return new File(PipelineService.get().findPipelineRoot(c).getRootPath().getAbsolutePath() + File.separator + AssayFileWriter.DIR_NAME);
+
+    }
+
     public Map<DomainProperty, File> getAdditionalPostedFiles(List<? extends DomainProperty> pds) throws ExperimentException
     {
         if (_additionalFiles == null)
@@ -277,6 +296,36 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                     Map<String, File> postedFiles = writer.savePostedFiles(this, fileParameters.keySet());
                     for (Map.Entry<String, File> entry : postedFiles.entrySet())
                         _additionalFiles.put(fileParameters.get(entry.getKey()), entry.getValue());
+
+                    File previousFile;
+                    HttpServletRequest request = getViewContext().getRequest();
+
+                    // Hidden values in form containing previously uploaded files if previous upload resulted in error
+                    for (String fileParam : fileParameters.keySet())
+                    {
+                        if (null != request.getParameterMap().get(fileParam))
+                        {
+                            String previousFileName = request.getParameterMap().get(fileParam)[0];
+                            if (null != previousFileName)
+                            {
+                                previousFile = new File(getAssayDirectory(getContainer(), null).getAbsolutePath() + File.separator + previousFileName);
+
+                                MultipartFile multiFile = ((MultipartHttpServletRequest)request).getFileMap().get(fileParam);
+
+                                // If file is removed from form after error, override hidden file name with empty file
+                                if (null != multiFile && multiFile.getOriginalFilename().isEmpty())
+                                    _additionalFiles.put(fileParameters.get(fileParam), new File(""));
+
+                                // Only add hidden file parameter if it is a valid file in the pipeline root directory and
+                                // a new file hasn't been uploaded for that parameter
+                                if (previousFile.isFile() && FileUtils.directoryContains(getAssayDirectory(getContainer(), null), previousFile)
+                                        && !_additionalFiles.containsKey(fileParameters.get(fileParam)))
+                                {
+                                    _additionalFiles.put(fileParameters.get(fileParam), previousFile);
+                                }
+                            }
+                        }
+                    }
                 }
                 catch (IOException e)
                 {

@@ -78,7 +78,8 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
-
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.support.DefaultMultipartHttpServletRequest;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.Writer;
@@ -218,6 +219,19 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         Map<String, Object> parameterValueMap = ViewServlet.adaptParameterMap(getViewContext().getRequest().getParameterMap());
 
+        String contentType = getViewContext().getRequest().getContentType();
+        if (null != contentType && contentType.startsWith("multipart/form-data"))
+        {
+            Map<String, MultipartFile> fileMap = (((DefaultMultipartHttpServletRequest) getViewContext().getRequest()).getFileMap());
+            for (String key : fileMap.keySet())
+            {
+                if (!key.startsWith(AssayDataCollector.PRIMARY_FILE))
+                {
+                    parameterValueMap.put(key, fileMap.get(key).getOriginalFilename());
+                }
+            }
+        }
+
         InsertView view = new UploadWizardInsertView(createDataRegionForInsert(baseTable, lsidCol, properties, null), getViewContext(), errors);
 
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
@@ -270,6 +284,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         view.getDataRegion().addHiddenFormField("resetDefaultValues", "false");
         view.getDataRegion().addHiddenFormField("rowId", Integer.toString(_protocol.getRowId()));
         view.getDataRegion().addHiddenFormField("uploadAttemptID", form.getUploadAttemptID());
+        if (errorReshow)
+        {
+            // Add unique name of uploaded files as hidden parameters
+            for (DomainProperty dp : form.getAdditionalFiles().keySet())
+            {
+                view.getDataRegion().addHiddenFormField(dp.getName(), form.getAdditionalFiles().get(dp).getName());
+            }
+        }
         if (form.getReRunId() != null)
         {
             view.getDataRegion().addHiddenFormField("reRunId", form.getReRunId().toString());

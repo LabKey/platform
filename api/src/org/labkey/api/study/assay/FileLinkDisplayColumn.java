@@ -26,8 +26,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RemappingDisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TableViewForm;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
@@ -148,6 +150,23 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         }
     }
 
+    protected Object getInputValue(RenderContext ctx)
+    {
+        ColumnInfo col = getColumnInfo();
+        Object val = null;
+        TableViewForm viewForm = ctx.getForm();
+
+        if (col != null)
+        {
+            if (null != viewForm && viewForm.contains(this, ctx))
+            {
+                val = viewForm.get(getFormFieldName(ctx));
+            }
+        }
+
+        return val;
+    }
+
     @Override
     public void addQueryFieldKeys(Set<FieldKey> keys)
     {
@@ -217,6 +236,13 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         if (value != null)
         {
             File f = new File(value.toString());
+
+            if(!f.exists())
+            {
+                String fullPath = PipelineService.get().findPipelineRoot(_container).getRootPath().getAbsolutePath() + File.separator + AssayFileWriter.DIR_NAME + File.separator + value.toString();
+                f = new File(fullPath);
+            }
+
             // It's probably a file, so check that first
             if (f.isFile())
             {
