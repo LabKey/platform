@@ -1321,8 +1321,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
                     if (null != moduleEnlistmentId)
                     {
-                        String serverEnlisthmentId = AppProps.getInstance().getEnlistmentId();
-                        boolean useSource = (null != serverEnlisthmentId && serverEnlisthmentId.equals(moduleEnlistmentId));
+                        String serverEnlistmentId = AppProps.getInstance().getEnlistmentId();
+                        boolean useSource = (null != serverEnlistmentId && serverEnlistmentId.equals(moduleEnlistmentId));
 
                         // Server enlistment ID didn't work... try module enlistment ID
                         if (!useSource)
