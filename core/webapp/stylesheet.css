@@ -808,7 +808,7 @@ regions on mouseover */
 /* This is used for bold text in a couple places. */
 .labkey-strong
 {
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
 }
 
 .labkey-emphasis
@@ -1052,25 +1052,6 @@ table.labkey-show-surrounding-border
     padding: 1px 4px;
 }
 
-table.wiki-table, table.wiki-table td, table.wiki-table th {
-    border-color: #e5e5e5;
-    border-style: solid;
-}
-
-table.wiki-table {
-    border-width: 0 0 1px 1px;
-    border-spacing: 0;
-    border-collapse: collapse;
-}
-
-table.wiki-table td, table.wiki-table th
-{
-    margin: 0;
-    padding: 4px;
-    border-width: 1px 1px 0 0;
-    text-align: left;
-}
-
 .labkey-pad-cells td
 {
     padding:2px;
@@ -1198,7 +1179,7 @@ th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-
     .labkey-data-region .labkey-col-total, .labkey-data-region .labkey-row-total,
     .labkey-data-region .labkey-col-total td, .labkey-data-region .labkey-col-header th
 {
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
     background-color: #EEEEEE;
 }
 
@@ -1219,7 +1200,7 @@ th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-
     border: 0;
     border-top: hidden;
     border-left: hidden;
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
 }
 
 .labkey-data-region-header-container
@@ -1346,7 +1327,7 @@ img.labkey-grid-filter-icon
 
 .labkey-customview-filter-item .item-caption,
 .labkey-customview-sort-item .item-caption {
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
 }
 
 .labkey-customview-item {
@@ -1446,7 +1427,7 @@ img.labkey-grid-filter-icon
 .labkey-customview-tab {
     cursor: pointer;
     font-size: 11px;
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
     padding: 6px  !important;
     color: #555555;
 }
@@ -1898,7 +1879,7 @@ td.labkey-nav-tree-text a {
 
 a.nav-tree-selected
 {
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
     font-style: italic;
 }
 
@@ -2255,7 +2236,7 @@ table.labkey-manage-default-reqs
 
 .labkey-data-region .labkey-participant-view-header
 {
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
     border: solid 1px #808080;
 }
 
@@ -2301,16 +2282,46 @@ table.labkey-manage-default-reqs
     background-position: -9px 0;
 }
 
-
+/********/
 /* Wiki */
+/********/
+
+.labkey-wiki, div.labkey-wiki {
+    margin: 20px 40px;
+    line-height: 1.4;
+    font-size: 16px;
+    letter-spacing: 0px;
+    font-weight: 200;
+}
+
+div.labkey-wiki img {
+    display: inline-table;
+    max-width: 800px;
+    margin: 0px 20px;
+}
+
+div.labkey-wiki li
+{
+    margin-bottom: 0.3em;
+    line-height: 1.2;
+}
+
 div.labkey-wiki h1
 {
-    font-size: 2em;
+    font-size: 2.2em;
     margin: 0.83em 0;
     font-weight: 500;
 }
 
 .labkey-wiki .heading-1, div.labkey-wiki h2
+{
+    font-size: 1.5em; /* our "1" */
+    margin: .83em 0;
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
+    font-weight: normal;
+}
+
+.labkey-wiki .heading-1-1, div.labkey-wiki h3 /* This is our "1.1" */
 {
     font-size: 1.2em;
     margin: 0.83em 0;
@@ -2318,31 +2329,83 @@ div.labkey-wiki h1
     font-weight: normal;
 }
 
-.labkey-wiki .heading-1-1, div.labkey-wiki h3
+.labkey-wiki .heading-1-1-1, div.labkey-wiki h4 /* This is our "1.1.1" */
 {
-    font-size: 1.0em;
+    font-size: 1em;
     margin: 0.83em 0;
     font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
     font-weight: normal;
 }
 
-.labkey-wiki .heading-1-1-1, div.labkey-wiki h4
+table.wiki-table, table.wiki-table td, table.wiki-table th {
+    border: solid #808080;
+    line-height: 1.35;
+    font-size: 15px;
+    letter-spacing: 0px;
+}
+
+table.wiki-table {
+    border-width: 0 0 1px 1px;
+    border-spacing: 0;
+    border-collapse: collapse;
+    margin: 0px 20px;
+}
+
+table.wiki-table td, table.wiki-table th
 {
-    text-transform: uppercase;
-    font-size: 0.8em;
-    margin: 0.83em 0 0.0px 0;
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
-    font-weight: normal;
+    padding: 4px 6px;
+    border-width: 1px 1px 0 0;
+    text-align: left;
 }
 
 .labkey-wiki .code
 {
-    padding-left: 0.25in;
-    padding-top: 5px; padding-bottom:5px;
-    background-color: #EEE;
-    border: 1px solid #CCC;
+    background-color: #F8F8F8;
     color: #2020BE;
-    font-family: "Bitstream Vera Sans Mono", "Courier New", monospace;
+    border: 1px solid #CCCCCC;
+    padding: 0px 20px;
+}
+
+/* Added for Div-in-Wiki Feature, an alternative to wiki {code}...{code} macro */
+div.plaincode
+{
+    white-space: pre;
+    font-family: monospace;
+    background-color: #FFFFFF;
+    color: #000000;
+    border: 1px solid #DDDDDD;
+    line-height: 1.2;
+    padding: 0px 20px;
+}
+
+/* Added for Div-in-Wiki Feature */
+div.bluebox
+{
+    background-color: #E7EFF4;
+    border: 1px solid #DEE0E1;
+    font-size: 16px;
+    line-height: 1.2;
+    padding: 0px 20px;
+}
+
+/* Added for Note-in-Wiki */
+div.note {
+    background-color: #FFFFFF;
+    border: 1px solid #DDDDDD;
+    font-size: 16px;
+    line-height: 1.2;
+    padding: 10px 20px;
+    margin:  0px 20px;
+}
+
+/* Added for Note-in-Wiki */
+div.yellownote {
+    background-color: #FFF6D8;
+    border: 1px solid #DDDDDD;
+    font-size: 16px;
+    line-height: 1.2;
+    padding: 10px 20px;
+    margin: 0px 20px;
 }
 
 .CodeMirror pre {
@@ -2383,14 +2446,14 @@ div.labkey-knitr h1
 {
     font-size: 1.2em;
     margin: 0.83em 0;
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
 }
 
 .labkey-knitr .heading-1-1, div.labkey-knitr h3
 {
     font-size: 1.0em;
     margin: 0.83em 0;
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
 }
 
 .labkey-knitr .heading-1-1-1, div.labkey-knitr h4
@@ -2398,7 +2461,7 @@ div.labkey-knitr h1
     text-transform: uppercase;
     font-size: 0.8em;
     margin: 0.83em 0 0.0px 0;
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
 }
 
 .labkey-knitr .code
@@ -2773,13 +2836,13 @@ li.labkey-tab-active a
     border-bottom : 1px solid #fff;
     margin-bottom: -1px;
     color: #000000;
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
 }
 
 li.labkey-tab-inactive a
 {
     background-color: #f4f4f4;
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
 }
 
 .labkey-tab-strip-spacer
@@ -2862,23 +2925,6 @@ li.labkey-tab-inactive a
 .drag-target-table-positioner {
   border-top: 2px solid green;
   margin-top: 1px;
-}
-
-/* Added for Div-in-Wiki Feature */
-.bluebox
-{
-    background-color: #EDF0F1;
-    border: 1px solid #DEE0E1;
-    padding: 0 20px 0 20px;
-    margin: 0 25px 0 25px;
-}
-
-/* Added for Note-in-Wiki */
-div.note {
-    background-color: #FFFFFF;
-    border: 1px solid #DDDDDD;
-    padding: 0 20px;
-    margin: 0 25px;
 }
 
 /* Generic selector to add for normal wrap element */
@@ -3658,7 +3704,7 @@ a.x4-menu-item-link {
 .fbrowser .iconbtn-label,
 .schemabrowser .iconbtn-label {
     text-transform: uppercase;
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
     color: black;
     font-size: 10px;
     letter-spacing: .5px;
@@ -3666,7 +3712,7 @@ a.x4-menu-item-link {
 
 .x4-menu-body .iconbtn-label{
     text-transform: uppercase;
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
     color: black;
     font-size: 11px;
     margin-left: 1em;
