@@ -182,7 +182,7 @@ public class VisitMapImporter
             transaction.commit();
             return true;
         }
-        catch (StudyManager.VisitCreationException e)
+        catch (StudyManager.VisitCreationException|VisitMapImportException e)
         {
             errors.add(e.getMessage());
             return false;
@@ -254,6 +254,12 @@ public class VisitMapImporter
                 }
                 if (visit.isMutable())
                 {
+                    if (visitManager.isVisitOverlapping(visit))
+                    {
+                        String visitLabel = visit.getLabel() != null ? visit.getLabel() : ""+visit.getSequenceNumMin();
+                        throw new VisitMapImportException("Visit " + visitLabel + " range overlaps an existing visit in this study.");
+                    }
+
                     StudyManager.getInstance().updateVisit(user, visit);
                 }
                 record.setVisitRowId(visit.getRowId()); // used by saveVisitMap
@@ -349,5 +355,13 @@ public class VisitMapImporter
     private Map<String, VisitTag> saveVisitTags(User user, Study study, List<VisitTag> visitTags) throws ValidationException
     {
         return StudyManager.getInstance().importVisitTags(study, user, visitTags);
+    }
+
+    public static class VisitMapImportException extends RuntimeException
+    {
+        public VisitMapImportException(String message)
+        {
+            super(message);
+        }
     }
 }

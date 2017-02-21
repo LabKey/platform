@@ -78,6 +78,7 @@ public class VisitTable extends BaseStudyTable
         cohortColumn.setFk(new CohortForeignKey(schema, showCohorts, cohortColumn.getLabel()));
         addColumn(cohortColumn);
         setTitleColumn("Label");
+        setDeleteURL(LINK_DISABLER);
     }
 
     @Override

@@ -36,17 +36,17 @@
 <labkey:form action="<%=h(buildURL(DatasetController.BulkDatasetDeleteAction.class))%>" name="bulkDatasetDelete" method="POST">
 <table class="labkey-data-region labkey-show-borders">
     <tr>
-        <th><input type="checkbox" onchange="toggleAllRows(this);"></th>
-        <th>ID</th>
-        <th>Label</th>
-        <th>Category</th>
-        <th>Type</th>
-        <th>Number of data rows</th>
+        <td class="labkey-column-header"><input type="checkbox" onchange="toggleAllRows(this);"></td>
+        <td class="labkey-column-header">ID</td>
+        <td class="labkey-column-header">Label</td>
+        <td class="labkey-column-header">Category</td>
+        <td class="labkey-column-header">Type</td>
+        <td class="labkey-column-header">Number of data rows</td>
     </tr>
 
     <%
     Study study = getStudy();
-
+    int rowCount = 0;
     ActionURL cancelURL = new ActionURL(StudyController.ManageTypesAction.class, study.getContainer());
 
     for (Dataset def : StudyManager.getInstance().getDatasetDefinitionsLocal(study, null, Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER))
@@ -54,9 +54,10 @@
         ActionURL detailsURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, study.getContainer());
         detailsURL.addParameter("datasetId", def.getDatasetId());
         String detailsLink = detailsURL.getLocalURIString();
+        rowCount++;
     %>
 
-    <tr>
+    <tr class="<%=h(rowCount % 2 == 1 ? "labkey-alternate-row" : "labkey-row")%>">
         <td><input type="checkbox" name="datasetIds" value="<%=def.getDatasetId()%>"></td>
         <td><a href="<%=detailsLink%>"><%=def.getDatasetId()%></a></td>
         <td><a href="<%=detailsLink%>"><%= h(def.getLabel()) %></a></td>
@@ -70,6 +71,7 @@
         
 %>
 </table>
+<br/>
 <%= button("Delete Selected").id("delete_btn").submit(true).onClick(
         "if (confirm('Delete selected datasets?')){" +
             "Ext4.get(this).replaceCls('labkey-button', 'labkey-disabled-button');" +

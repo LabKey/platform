@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.SpecimenManager" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
@@ -28,6 +27,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
@@ -54,17 +54,25 @@
 
 <labkey:form action="<%=urlFor(StudyController.DeleteVisitAction.class)%>" method="POST">
     Do you want to delete <%=h(visitManager.getLabel())%> <b><%=h(visit.getDisplayString())%></b>?<p/>
-    <%if (datasetRowCount != 0)
+    <%
+    if (datasetRowCount > 0 || vialCount > 0)
     {
-        %>This <%=h(visitManager.getLabel())%> has <%=datasetRowCount%> dataset results
-        <%
+        String dataCountMsg = "This " + visitManager.getLabel().toLowerCase() + " has ";
+        String sep = "";
+        if (datasetRowCount > 0)
+        {
+            dataCountMsg += StringUtilsLabKey.pluralize(datasetRowCount, "dataset result");
+            sep = " and ";
+        }
         if (vialCount > 0)
         {
-            %> and <%= vialCount %> specimen vials<%
+            dataCountMsg += sep + StringUtilsLabKey.pluralize(vialCount, "specimen vial");
         }
-        %>
-        which will also be deleted.<p/><%
-    }%>
+        dataCountMsg += " which will also be deleted.";
+        %><%=h(dataCountMsg)%><p/>
+    <%
+    }
+    %>
     <%= button("Delete").submit(true) %>&nbsp;<%= generateBackButton("Cancel") %>
     <input type=hidden name=id value="<%=visit.getRowId()%>">
 </labkey:form>

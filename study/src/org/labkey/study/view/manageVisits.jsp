@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController.CreateVisitAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ImportVisitMapAction" %>
@@ -27,13 +26,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController.VisitVisibilityAction" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
-<%!
-    @Override
-    public void addClientDependencies(ClientDependencies dependencies)
-    {
-        dependencies.add("study/ManageVisit.css");
-    }
-%>
 <table>
     <tr>
         <td>View study schedule</td>
@@ -81,23 +73,25 @@
     {
 %>
 <p>
-<table id="visits" cellpadding="3" class="manage-visit-table">
+<table id="visits" class="labkey-data-region labkey-show-borders">
     <tr>
-        <th>&nbsp;</th>
-        <th>Label</th>
-        <th>Sequence</th>
-        <th>Cohort</th>
-        <th>Type</th>
-        <th>Show By Default</th>
-        <th>Description</th>
+        <td class="labkey-column-header">&nbsp;</td>
+        <td class="labkey-column-header">Label</td>
+        <td class="labkey-column-header">Sequence</td>
+        <td class="labkey-column-header">Cohort</td>
+        <td class="labkey-column-header">Type</td>
+        <td class="labkey-column-header">Show By Default</td>
+        <td class="labkey-column-header">Description</td>
     </tr>
     <%
+        int rowCount = 0;
         for (VisitImpl visit : getVisits(Visit.Order.DISPLAY))
         {
+            rowCount++;
     %>
-        <tr>
+        <tr class="<%=h(rowCount % 2 == 1 ? "labkey-alternate-row" : "labkey-row")%>">
             <td><%= textLink("edit", buildURL(VisitSummaryAction.class)+ "id=" + visit.getRowId()) %></td>
-            <th align=left><%= h(visit.getDisplayString()) %></th>
+            <td align=left><%= h(visit.getDisplayString()) %></td>
             <td><%= visit.getSequenceNumMin() %><%= h(visit.getSequenceNumMin()!= visit.getSequenceNumMax() ? "-" + visit.getSequenceNumMax() : "") %></td>
             <td><%= h(visit.getCohort() != null ? h(visit.getCohort().getLabel()) : "All") %></td>
             <td><%= h(visit.getType() != null ? visit.getType().getMeaning() : "[Not defined]") %></td>

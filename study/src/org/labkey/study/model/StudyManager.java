@@ -1060,7 +1060,11 @@ public class StudyManager
             boolean disjoint = visit.getSequenceNumMax() < existingVisit.getSequenceNumMin() ||
                     visit.getSequenceNumMin() > existingVisit.getSequenceNumMax();
             if (!disjoint)
-                throw new VisitCreationException("New visit " + visit.getLabel() + " overlaps existing visit " + existingVisit.getLabel());
+            {
+                String visitLabel = visit.getLabel() != null ? visit.getLabel() : ""+visit.getSequenceNumMin();
+                String existingVisitLabel = existingVisit.getLabel() != null ? existingVisit.getLabel() : ""+existingVisit.getSequenceNumMin();
+                throw new VisitCreationException("New visit " + visitLabel + " overlaps existing visit " + existingVisitLabel);
+            }
         }
 
         // if our visit doesn't have a display order or chronological order set, but the visit before our new visit

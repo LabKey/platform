@@ -2784,7 +2784,6 @@ study/test/src/org/labkey/test/tests/study/VaccineProtocolTest.java -text
 study/test/test_study.iml -text
 study/webapp/WEB-INF/study/studyContext.xml -text
 study/webapp/sampleRequest.js -text
-study/webapp/study/ManageVisit.css -text
 study/webapp/study/MeasurePicker.js -text
 study/webapp/study/ParticipantFilter.lib.xml -text
 study/webapp/study/ParticipantFilterPanel.js -text

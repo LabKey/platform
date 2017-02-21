@@ -135,18 +135,19 @@
 <% WebPartView.endTitleFrame(out); %>
 
 <% WebPartView.startTitleFrame(out, "Datasets", null, null, "datasets"); %>
-<table id="dataregion_datasets" class="labkey-data-region">
+<br/>
+<table id="dataregion_datasets" class="labkey-data-region labkey-show-borders">
     <tr>
-        <th class="labkey-column-header" align="left">ID</th>
-        <th class="labkey-column-header" align="left">Name</th>
-        <th class="labkey-column-header" align="left">Label</th>
-        <th class="labkey-column-header" align="left">Category</th>
-        <th class="labkey-column-header" align="left">Type</th>
-        <th class="labkey-column-header" align="left">Cohort</th>
-        <th class="labkey-column-header" align="left">Shown</th>
-        <th class="labkey-column-header" align="left">Demographic</th>
-        <th class="labkey-column-header" align="left">Keys</th>
-        <th class="labkey-column-header" align="left">Source Assay</th>
+        <td class="labkey-column-header">ID</td>
+        <td class="labkey-column-header">Name</td>
+        <td class="labkey-column-header">Label</td>
+        <td class="labkey-column-header">Category</td>
+        <td class="labkey-column-header">Type</td>
+        <td class="labkey-column-header">Cohort</td>
+        <td class="labkey-column-header">Shown</td>
+        <td class="labkey-column-header">Demographic</td>
+        <td class="labkey-column-header">Keys</td>
+        <td class="labkey-column-header">Source Assay</td>
     </tr>
     <%
 

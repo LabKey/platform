@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController.CreateVisitAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.UpdateParticipantVisitsAction" %>
@@ -28,13 +27,6 @@
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%!
-    @Override
-    public void addClientDependencies(ClientDependencies dependencies)
-    {
-        dependencies.add("study/ManageVisit.css");
-    }
-%>
 <labkey:errors />
 <%
     StudyController.StudyPropertiesForm form = (StudyController.StudyPropertiesForm) getModelBean();
@@ -99,24 +91,27 @@
 <%WebPartView.startTitleFrame(out, "Timepoints", null, "900", null);%>
 <p>NOTE: If you edit the day range of timepoints, use <%= textLink("Recompute Timepoints", UpdateParticipantVisitsAction.class)%> to
 assign dataset data to the correct timepoints.</p>
-<table cellpadding="3" class="manage-visit-table">
+<table class="labkey-data-region labkey-show-borders">
     <tr>
-        <th>&nbsp;</th>
-        <th>Label</th>
-        <th>Start Day</th>
-        <th>End Day</th>
-        <th>Cohort</th>
-        <th>Type</th>
-        <th>Show By Default</th>
-        <th>Description</th>
+        <td class="labkey-column-header">&nbsp;</td>
+        <td class="labkey-column-header">Label</td>
+        <td class="labkey-column-header">Start Day</td>
+        <td class="labkey-column-header">End Day</td>
+        <td class="labkey-column-header">Cohort</td>
+        <td class="labkey-column-header">Type</td>
+        <td class="labkey-column-header">Show By Default</td>
+        <td class="labkey-column-header">Description</td>
     </tr>
 <%
     Study study = getStudy();
     List<VisitImpl> timepoints = StudyManager.getInstance().getVisits(study, Visit.Order.DISPLAY);
     ActionURL editTimepointURL = new ActionURL(StudyController.VisitSummaryAction.class, study.getContainer());
+    int rowCount = 0;
     for (VisitImpl timepoint : timepoints)
-    {%>
-    <tr>
+    {
+        rowCount++;
+%>
+    <tr class="<%=h(rowCount % 2 == 1 ? "labkey-alternate-row" : "labkey-row")%>">
         <td><%=textLink("edit", editTimepointURL.replaceParameter("id", String.valueOf(timepoint.getRowId())))%></td>
         <td><%=h(timepoint.getLabel())%></td>
         <td><%=h(""+timepoint.getSequenceNumMin())%></td>
