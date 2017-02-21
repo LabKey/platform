@@ -75,6 +75,7 @@ Ext4.define('LABKEY.vis.ChartQueryPanel', {
                     {
                         this.getOkButton().disable();
                         this.getQueryCombo().disable();
+                        this.getQueryCombo().clearValue();
                         this.schemaName = newValue;
 
                         var proxy = this.getQueryCombo().getStore().getProxy();
@@ -84,7 +85,6 @@ Ext4.define('LABKEY.vis.ChartQueryPanel', {
                             this.getQueryCombo().getStore().load();
                         }
 
-                        this.getQueryCombo().clearValue();
                         this.getQueryCombo().enable();
                     }
                 }
