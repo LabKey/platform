@@ -3193,6 +3193,7 @@ public class DavController extends SpringActionController
         {
             if (!resource.delete(getUser()))
             {
+                resource.notify(getViewContext(), "fileDeleteFailed");
                 if (null != resource.getFile())
                     throw new ConfigurationException("Unable to delete resource: " + resource.getPath().toString());
                 else
@@ -3214,7 +3215,7 @@ public class DavController extends SpringActionController
             removeFromDataObject(resource);
             if (!resource.delete(getUser()))
             {
-                resource.notify(getViewContext(), "deleteFailed");
+                resource.notify(getViewContext(), "dirDeleteFailed");
                 errorList.put(resource.getPath(), WebdavStatus.SC_INTERNAL_SERVER_ERROR);
             }
             else
@@ -3350,6 +3351,7 @@ public class DavController extends SpringActionController
                 outMessage.clear();
                 if (!child.canDelete(getUser(),true,outMessage))
                 {
+                    child.notify(getViewContext(), "fileDeleteFailed");
                     setLastError(new DavException(WebdavStatus.SC_FORBIDDEN, outMessage.isEmpty() ? null : outMessage.get(0), child.getPath()));
                     errorList.put(childName, WebdavStatus.SC_FORBIDDEN);
                     continue;
@@ -3374,6 +3376,10 @@ public class DavController extends SpringActionController
                 {
                     child.notify(getViewContext(), "deleted");
                     removeFromIndex(child);
+                }
+                else
+                {
+                    child.notify(getViewContext(), "fileDeleteFailed");
                 }
             }
         }
