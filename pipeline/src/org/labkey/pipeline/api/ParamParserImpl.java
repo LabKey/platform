@@ -17,6 +17,7 @@ package org.labkey.pipeline.api;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.ParamParser;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -269,6 +270,12 @@ public class ParamParserImpl implements ParamParser
             el.insertBefore(elParameter, beforeNode);
     }
 
+    @Override
+    public void addInputParameters(Map<String, Object> parameters)
+    {
+        parameters.forEach((key, value) -> setInputParameter(key, value == null ? null : value.toString()));
+    }
+
     public String removeInputParameter(String name)
     {
         String value = null;
@@ -334,7 +341,7 @@ public class ParamParserImpl implements ParamParser
         String xmlEmpty = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
                 "<bioml>\n" +
                 "</bioml>";
-        parse(new ByteArrayInputStream(xmlEmpty.getBytes()));
+        parse(new ByteArrayInputStream(xmlEmpty.getBytes(StringUtilsLabKey.DEFAULT_CHARSET)));
         String[] keys = params.keySet().toArray(new String[params.size()]);
         Arrays.sort(keys);
         for (String key : keys)

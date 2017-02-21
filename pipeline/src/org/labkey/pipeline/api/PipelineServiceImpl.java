@@ -18,6 +18,7 @@ package org.labkey.pipeline.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -630,12 +631,12 @@ public class PipelineServiceImpl extends PipelineService
             }
         }
         AbstractFileAnalysisProtocol protocol = factory.getProtocol(root, dirData, form.getProtocolName(), false);
-        if (protocol == null)
+        if (protocol == null || form.isAllowProtocolRedefinition())
         {
             String xml;
-            if (form.getConfigureXml() != null)
+            if (StringUtils.isNotBlank(form.getConfigureXml()))
             {
-                if (form.getConfigureJson() != null)
+                if (StringUtils.isNotBlank(form.getConfigureJson()))
                 {
                     throw new IllegalArgumentException("The parameters should be defined as XML or JSON, not both");
                 }
@@ -643,7 +644,7 @@ public class PipelineServiceImpl extends PipelineService
             }
             else
             {
-                if (form.getConfigureJson() == null)
+                if (StringUtils.isBlank(form.getConfigureJson()))
                 {
                     throw new IllegalArgumentException("Parameters must be defined, either as XML or JSON");
                 }
@@ -663,9 +664,10 @@ public class PipelineServiceImpl extends PipelineService
                     xml);
 
             protocol.setEmail(context.getUser().getEmail());
-            protocol.validateToSave(root);
+            protocol.validate(root);
             if (form.isSaveProtocol())
             {
+                protocol.validateToSave(root, false, !form.isAllowProtocolRedefinition());
                 protocol.saveDefinition(root);
                 PipelineService.get().rememberLastProtocolSetting(protocol.getFactory(),
                         context.getContainer(), context.getUser(), protocol.getName());
@@ -676,7 +678,7 @@ public class PipelineServiceImpl extends PipelineService
         }
         else
         {
-            if (form.getConfigureXml() != null || form.getConfigureJson() != null)
+            if (StringUtils.isNotBlank(form.getConfigureXml()) || StringUtils.isNotBlank(form.getConfigureJson()))
             {
                 throw new IllegalArgumentException("Cannot redefine an existing protocol");
             }
