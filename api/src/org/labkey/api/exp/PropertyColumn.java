@@ -182,6 +182,9 @@ public class PropertyColumn extends LookupColumn
 
     static private String getPropertyCol(PropertyDescriptor pd)
     {
+        if (pd.getPropertyType() == null)
+            throw new IllegalStateException("No storage type");
+
         switch (pd.getPropertyType().getStorageType())
         {
             case 's':
