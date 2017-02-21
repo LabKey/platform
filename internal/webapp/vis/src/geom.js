@@ -480,6 +480,7 @@ LABKEY.vis.Geom.DataspaceBoxPlot.prototype.render = function(renderer, grid, sca
  * @param {String} [config.fillTotal] (Optional) A string value used for the fill color in the cumulative bar plot. Defaults to black (#000000)
  * @param {Number} [config.lineWidthTotal] (Optional) A used to set the width of the lines used in the cumulative bar plot. Defaults to 1.
  * @param {Number} [config.opacityTotal] (Optional) A number between 0 and 1 used to set the opacity of the cumulative bar plot. Defaults to 1.
+ * @param {Boolean} [config.showValues] (Optional) True to show the bar height values as text above the rendered bar.
  */
 LABKEY.vis.Geom.BarPlot = function(config){
     this.type = "Barplot";
@@ -498,6 +499,7 @@ LABKEY.vis.Geom.BarPlot = function(config){
     this.opacity = ('opacity' in config && config.opacity != null && config.opacity != undefined) ? config.opacity : 1;
     this.opacityTotal = ('opacityTotal' in config && config.opacityTotal != null && config.opacityTotal != undefined) ? config.opacityTotal : 1;
     this.showCumulativeTotals = ('showCumulativeTotals' in config && config.showCumulativeTotals != null && config.showCumulativeTotals != undefined) ? config.showCumulativeTotals : false;
+    this.showValues = ('showValues' in config && config.showValues != null && config.showValues != undefined) ? config.showValues : false;
 
     return this;
 };

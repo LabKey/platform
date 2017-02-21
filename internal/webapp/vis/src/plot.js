@@ -1245,7 +1245,8 @@ boxPlot.render();
         colorTotal: 'black',
         fillTotal: 'steelblue',
         opacityTotal: .8,
-        showCumulativeTotals: true
+        showCumulativeTotals: true,
+        showValues: true
     },
     xAes: function(row){return row['age']},
     data: barPlotData

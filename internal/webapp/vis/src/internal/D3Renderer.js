@@ -2901,11 +2901,16 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .attr('fill', colorAcc).attr('fill-opacity', geom.opacity);
 
         // For selenium testing
-        rects.enter().append("text").style('display', 'none')
+        rects.enter().append("text").style('display', (geom.showValues ? 'block' : 'none'))
                 .attr('class', 'bar-text')
+                .attr('text-anchor', 'middle')
                 .attr('x', xAcc)
-                .attr('y', yAcc)
-                .text(function(d) { return d.count; });
+                .attr('x', function(d) { return xAcc(d) + (barWidth/2); })
+                .attr('y', function(d) {
+                    var offset = geom.yAes.getValue(d) >=0 ? 4 : -15;
+                    return yAcc(d) - offset;
+                })
+                .text(function(d) { return geom.yAes.getValue(d); });
 
         if (geom.clickFn) {
             barWrappers.on('click', function(data) {
@@ -2953,10 +2958,15 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     .attr('fill', geom.fillTotal).attr('fill-opacity', geom.opacityTotal);
 
             // For selenium testing
-            rects.enter().append("text").style('display', 'none')
+            rects.enter().append("text").style('display', (geom.showValues ? 'block' : 'none'))
                     .attr('class', 'bar-text')
+                    .attr('text-anchor', 'middle')
                     .attr('x', xAcc)
-                    .attr('y', yAcc)
+                    .attr('x', function(d) { return xAcc(d) + (barWidth/2); })
+                    .attr('y', function(d) {
+                        var offset = geom.yAes.getValue(d) >=0 ? 4 : -15;
+                        return yAcc(d) - offset;
+                    })
                     .text(function(d) { return d.total });
 
             // Render legend for Individual vs Total bars
