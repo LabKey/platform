@@ -154,18 +154,25 @@ public class DomainUtil
         if (null == dd)
             return null;
         Domain domain = PropertyService.get().getDomain(dd.getDomainId());
-        return getDomainDescriptor(user, domain);
+        return getDomainDescriptor(domainContainer, user, domain);
     }
 
     @NotNull
     public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(User user, @NotNull Domain domain)
+    {
+        return getDomainDescriptor(domain.getContainer(), user, domain);
+    }
+
+    @NotNull
+    public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(Container container, User user, @NotNull Domain domain)
     {
         GWTDomain<GWTPropertyDescriptor> d = getDomain(domain);
 
         ArrayList<GWTPropertyDescriptor> list = new ArrayList<>();
 
         List<? extends DomainProperty> properties = domain.getProperties();
-        Map<DomainProperty, Object> defaultValues = DefaultValueService.get().getDefaultValues(domain.getContainer(), domain);
+
+        Map<DomainProperty, Object> defaultValues = DefaultValueService.get().getDefaultValues(container, domain);
 
         for (DomainProperty prop : properties)
         {
