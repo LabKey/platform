@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -1202,6 +1203,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _type;
     }
 
+    @JsonIgnore
     public void setType(TYPE type)
     {
         _type = type;

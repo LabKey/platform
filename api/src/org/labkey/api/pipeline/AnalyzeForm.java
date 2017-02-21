@@ -30,6 +30,7 @@ public class AnalyzeForm extends PipelinePathForm
     private boolean activeJobs = false;
     private Boolean allowNonExistentFiles;
     private Boolean includeWorkbooks = false;
+    private boolean allowProtocolRedefinition = false;
 
     private static final String UNKNOWN_STATUS = "UNKNOWN";
 
@@ -183,5 +184,15 @@ public class AnalyzeForm extends PipelinePathForm
     public void setAllowNonExistentFiles(Boolean allowNonExistentFiles)
     {
         this.allowNonExistentFiles = allowNonExistentFiles;
+    }
+
+    public boolean isAllowProtocolRedefinition()
+    {
+        return allowProtocolRedefinition;
+    }
+
+    public void setAllowProtocolRedefinition(boolean allowProtocolRedefinition)
+    {
+        this.allowProtocolRedefinition = allowProtocolRedefinition;
     }
 }

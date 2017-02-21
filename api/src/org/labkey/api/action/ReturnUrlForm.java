@@ -16,6 +16,7 @@
 
 package org.labkey.api.action;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
@@ -60,6 +61,7 @@ public class ReturnUrlForm
         setReturnUrl(new ReturnURLString(s));
     }
 
+    @JsonIgnore // Otherwise on deserialization, there's a conflict with the overloaded setter
     private void setReturnUrl(ReturnURLString returnUrl)
     {
         if (null == returnUrl || returnUrl.isEmpty())

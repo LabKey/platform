@@ -16,6 +16,7 @@
 
 package org.labkey.api.util;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
@@ -352,6 +353,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         return this;
     }
 
+    @JsonIgnore
     public URLHelper setContextPath(Path contextPath)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();

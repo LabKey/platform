@@ -41,6 +41,8 @@ public interface ParamParser
 
     void setInputParameter(String name, String value, String before);
 
+    void addInputParameters(Map<String, Object> params);
+
     String removeInputParameter(String name);
 
     String[] getInputParameterNames();
