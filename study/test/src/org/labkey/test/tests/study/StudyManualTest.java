@@ -218,7 +218,7 @@ public abstract class StudyManualTest extends StudyTest
     // row is one-based
     private String getVisitLabel(int row)
     {
-        return getText(Locator.xpath("//table[@id='visits']/tbody/tr[" + row + "]/th"));
+        return getText(Locator.xpath("//table[@id='visits']/tbody/tr[" + row + "]/td[2]"));
     }
 
     protected void createCustomAssays()
