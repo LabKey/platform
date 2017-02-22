@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
@@ -66,6 +67,7 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
@@ -92,6 +94,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
+import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
@@ -303,6 +306,23 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     {
         super.setContainer(container);
         _study = null;
+    }
+
+    @Override
+    public void savePolicy(MutableSecurityPolicy policy, User user)
+    {
+        String baseDescription = "Security changed.";
+        String removalDescription = "Removed assignments";
+        String additionDescription = "Added assignments";
+
+        SecurityPolicy existingPolicy = SecurityPolicyManager.getPolicy(this);
+        if (!existingPolicy.getAssignments().equals(policy.getAssignments()))
+        {
+            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(getContainer().getId(), getPolicyChangeSummary(policy, existingPolicy, baseDescription, removalDescription, additionDescription));
+            event.setDatasetId(getDatasetId());
+            AuditLogService.get().addEvent(user, event);
+        }
+        super.savePolicy(policy, user);
     }
 
     public boolean isShared()

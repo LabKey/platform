@@ -23,7 +23,9 @@ import org.labkey.api.data.Transient;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
@@ -31,6 +33,8 @@ import org.labkey.api.study.StudyEntity;
 import org.labkey.study.StudyModule;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -150,7 +154,45 @@ public abstract class AbstractStudyEntity<T>
         }
     }
 
-    public void savePolicy(MutableSecurityPolicy policy)
+    protected String getPolicyChangeSummary(MutableSecurityPolicy policy, SecurityPolicy existingPolicy, String baseDescription, String removalDescription, String additionDescription)
+    {
+        StringBuilder sb = new StringBuilder(baseDescription);
+
+        List<RoleAssignment> removedAssignments = new ArrayList<>(existingPolicy.getAssignments());
+        removedAssignments.removeAll(policy.getAssignments());
+        sb.append(appendRoleDescriptions(removalDescription, removedAssignments));
+
+        List<RoleAssignment> addedAssignments = new ArrayList<>(policy.getAssignments());
+        addedAssignments.removeAll(existingPolicy.getAssignments());
+        sb.append(appendRoleDescriptions(additionDescription, addedAssignments));
+
+        return sb.toString();
+    }
+
+    /** Useful for building up audit event descriptions */
+    private String appendRoleDescriptions(String action, Collection<RoleAssignment> assignments)
+    {
+        StringBuilder sb = new StringBuilder();
+        if (!assignments.isEmpty())
+        {
+            sb.append(" ");
+            sb.append(action);
+            sb.append(": ");
+            String separator = "";
+            for (RoleAssignment removedAssignment : assignments)
+            {
+                sb.append(separator);
+                separator = ", ";
+                sb.append(SecurityManager.getPrincipal(removedAssignment.getUserId()).getName());
+                sb.append(" - ");
+                sb.append(removedAssignment.getRole().getName());
+            }
+            sb.append(".");
+        }
+        return sb.toString();
+    }
+
+    public void savePolicy(MutableSecurityPolicy policy, User user)
     {
         if (!supportsPolicyUpdate())
             throw new IllegalArgumentException("unexpected class " + this.getClass().getName());

@@ -244,7 +244,7 @@ public class StudyPermissionExporter
                     throw new IllegalArgumentException("Unexpected permission type: " + securityType.name());
             }
 
-            SecurityPolicyManager.savePolicy(policy);
+            study.savePolicy(policy, u);
 
             if (sp.isSetPerDatasetPermissions())
             {
@@ -308,7 +308,7 @@ public class StudyPermissionExporter
                         }
                     }
 
-                    SecurityPolicyManager.savePolicy(dsPolicy);
+                    ds.savePolicy(dsPolicy, u);
                 }
             }
         }

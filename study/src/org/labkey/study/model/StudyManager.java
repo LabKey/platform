@@ -31,6 +31,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
@@ -134,6 +135,7 @@ import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayManager;
+import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.DatasetServiceImpl;
 import org.labkey.study.controllers.StudyController;
@@ -637,7 +639,7 @@ public class StudyManager
 
     public void updateStudy(@Nullable User user, StudyImpl study)
     {
-        Study oldStudy = getStudy(study.getContainer());
+        StudyImpl oldStudy = getStudy(study.getContainer());
         Date oldStartDate = oldStudy.getStartDate();
         _studyHelper.update(user, study, study.getContainer());
 
@@ -652,6 +654,13 @@ public class StudyManager
         {
             // Need to get rid of any old copies of the study
             clearCaches(study.getContainer(), false);
+        }
+
+        if (oldStudy.getSecurityType() != study.getSecurityType())
+        {
+            String comment = "Dataset security type changed from " + oldStudy.getSecurityType() + " to " + study.getSecurityType();
+            AuditTypeEvent event = new AuditTypeEvent(StudyAuditProvider.STUDY_AUDIT_EVENT, study.getContainer(), comment);
+            AuditLogService.get().addEvent(user, event);
         }
     }
 

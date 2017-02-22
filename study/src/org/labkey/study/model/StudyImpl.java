@@ -28,6 +28,8 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.FileAttachmentFile;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.BeanObjectFactory;
@@ -47,6 +49,8 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -67,8 +71,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.study.DataspaceStudyFolderType;
 import org.labkey.study.SpecimenManager;
+import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.StudyDesignInfo;
 import org.labkey.study.designer.StudyDesignManager;
@@ -374,9 +378,16 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public void savePolicy(MutableSecurityPolicy policy)
+    public void savePolicy(MutableSecurityPolicy policy, User user)
     {
-        super.savePolicy(policy);
+        SecurityPolicy existingPolicy = SecurityPolicyManager.getPolicy(this);
+        if (!existingPolicy.getAssignments().equals(policy.getAssignments()))
+        {
+            AuditTypeEvent event = new AuditTypeEvent(StudyAuditProvider.STUDY_AUDIT_EVENT, getContainer(), getPolicyChangeSummary(policy, existingPolicy, "Group dataset access type changed.", "Previous access", "New access"));
+            AuditLogService.get().addEvent(user, event);
+        }
+
+        super.savePolicy(policy, user);
         StudyManager.getInstance().scrubDatasetAcls(this, policy);
     }
 
