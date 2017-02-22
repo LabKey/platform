@@ -204,11 +204,11 @@ public class SharedStudyTest extends BaseWebDriverTest
     {
         goToManageStudy();
         clickAndWait(Locator.linkWithText("manage shared visits"));
-        clickAndWait(Locator.xpath("//th[text() = 'Visit 1']/../td/a[text() = 'edit']"));
+        clickAndWait(_studyHelper.editVisitLoc("Visit 1"));
         setFormElement(Locator.name("description"), "This is the first visit");
         clickButton("Save");
 
-        String description = getText(Locator.xpath("//th[text() = 'Visit 1']/../td[6]"));
+        String description = getText(Locator.xpath("//td[text() = 'Visit 1']/../td[7]"));
         Assert.assertEquals("This is the first visit", description);
     }
 
@@ -225,7 +225,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         String url = getCurrentRelativeURL();
         Assert.assertFalse("Expected redirect to project manage visits page, got: " + url, url.contains(STUDY1));
 
-        click(Locator.xpath("//th[text() = 'Visit 4']/../td/a[text() = 'edit']"));
+        clickAndWait(_studyHelper.editVisitLoc("Visit 4"));
         clickButton("Delete visit");
         clickButton("Delete");
     }

@@ -115,7 +115,7 @@ public class StudyScheduleTest extends StudyBaseTest
 
         // change a required visit to optional
         portalHelper.clickWebpartMenuItem("Study Schedule", "Manage Visits");
-        clickAndWait(Locator.xpath("//table[@id='visits']//tr[./th[text() = '" + visit + "']]/td/a[text() = 'edit']"));
+        clickAndWait(_studyHelper.editVisitLoc(visit));
         selectOption("datasetStatus", 2, "OPTIONAL");
         clickButton("Save");
 
@@ -125,7 +125,7 @@ public class StudyScheduleTest extends StudyBaseTest
 
         // revert change
         portalHelper.clickWebpartMenuItem("Study Schedule", "Manage Visits");
-        clickAndWait(Locator.xpath("//table[@id='visits']//tr[./th[text() = '" + visit + "']]/td/a[text() = 'edit']"));
+        clickAndWait(_studyHelper.editVisitLoc(visit));
         selectOption("datasetStatus", 2, "REQUIRED");
         clickButton("Save");
 

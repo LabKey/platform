@@ -175,7 +175,7 @@ public class StudyExportTest extends StudyManualTest
         assertTextBefore("Cycle 3", MODIFIED_VISIT);
 
         // verify visit modifications
-        editVisit(MODIFIED_VISIT);
+        clickAndWait(_studyHelper.editVisitLoc(MODIFIED_VISIT));
         assertFormElementEquals(Locator.name("datasetStatus"), "OPTIONAL");
         assertOptionEquals(Locator.name("cohortId"), GROUP_2);
     }
@@ -540,7 +540,7 @@ public class StudyExportTest extends StudyManualTest
         selectOptionByText(Locator.name("displayOrderItems"), MODIFIED_VISIT);
         clickButton("Move Down", 0);
         clickButton("Save");
-        editVisit(MODIFIED_VISIT);
+        clickAndWait(_studyHelper.editVisitLoc(MODIFIED_VISIT));
         selectOption("datasetStatus", 0, "OPTIONAL");
         selectOptionByText(Locator.name("cohortId"), GROUP_2);
         clickButton("Save");
@@ -588,11 +588,6 @@ public class StudyExportTest extends StudyManualTest
     private void setParticipantCohort(String ptid, String cohort)
     {
         selectOptionByText(Locator.xpath("//tr[./td = '" + ptid + "']//select"), cohort);
-    }
-
-    protected void editVisit(String visit)
-    {
-        clickAndWait(Locator.xpath("//table[@id='visits']//tr[./th[text() = '" + visit + "']]/td/a[text() = 'edit']"));
     }
 
     protected void doTestDatasetImport()

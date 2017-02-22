@@ -340,7 +340,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickButton("Save");
 
         log("Visit Properties: edit visit description and set sequence num target");
-        waitAndClickAndWait(Locator.xpath("//th[text()='" + visitLabel + "']/../td/a[text()='edit']"));
+        waitAndClickAndWait(_studyHelper.editVisitLoc(visitLabel));
         waitForElement(Locator.name("description"));
         assertFormElementEquals(Locator.name("label"), visitLabel);
         assertFormElementEquals(Locator.name("description"), visitDescription);
@@ -370,7 +370,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickFolder("Visit Properties");
         goToManageStudy();
         waitAndClickAndWait(Locator.linkWithText("Manage Visits"));
-        waitAndClickAndWait(Locator.xpath("//th[text()='" + visitLabel + "']/../td/a[text()='edit']"));
+        waitAndClickAndWait(_studyHelper.editVisitLoc(visitLabel));
         waitForElement(Locator.name("description"));
         assertFormElementEquals(Locator.name("label"), visitLabel);
         assertFormElementEquals(Locator.name("description"), visitDescription);
@@ -398,7 +398,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickFolder(getFolderName());
         goToManageStudy();
         waitAndClickAndWait(Locator.linkWithText("Manage Visits"));
-        waitAndClickAndWait(Locator.xpath("//th[text()='" + visitLabel + "']/../td/a[text()='edit']"));
+        waitAndClickAndWait(_studyHelper.editVisitLoc(visitLabel));
         clickButton("Delete visit");
         waitForText("Do you want to delete Visit");
         clickButton("Delete");
