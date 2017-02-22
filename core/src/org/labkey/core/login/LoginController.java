@@ -1946,35 +1946,38 @@ public class LoginController extends SpringActionController
             {
                 ValidEmail email = new ValidEmail(form.getEmail());
 
-                // Add the initial user
-                SecurityManager.NewUserStatus newUserBean = SecurityManager.addUser(email, null);
-                // Set the password
-                success = super.handlePost(form, errors);
-
-                // If successful, add audit event, make site admin, set some properties based on email domain, and commit
-                if (success)
+                synchronized (ModuleLoader.SCRIPT_RUNNING_LOCK)
                 {
-                    SecurityManager.addMember(SecurityManager.getGroup(Group.groupAdministrators), newUserBean.getUser());
+                    // Add the initial user
+                    SecurityManager.NewUserStatus newUserBean = SecurityManager.addUser(email, null);
+                    // Set the password
+                    success = super.handlePost(form, errors);
 
-                    //set default "from" address for system emails to first registered user
-                    WriteableLookAndFeelProperties laf = LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
-                    laf.setSystemEmailAddress(newUserBean.getEmail());
-                    laf.save();
-
-                    //set default domain to user email domain
-                    String userEmailAddress = newUserBean.getEmail().getEmailAddress();
-                    int atSign = userEmailAddress.indexOf("@");
-
-                    //did user most likely enter a valid email address? if so, set default domain
-                    if (atSign > 0 && atSign < userEmailAddress.length() - 1)
+                    // If successful, add audit event, make site admin, set some properties based on email domain, and commit
+                    if (success)
                     {
-                        String defaultDomain = userEmailAddress.substring(atSign + 1, userEmailAddress.length());
-                        WriteableAppProps appProps = AppProps.getWriteableInstance();
-                        appProps.setDefaultDomain(defaultDomain);
-                        appProps.save();
-                    }
+                        SecurityManager.addMember(SecurityManager.getGroup(Group.groupAdministrators), newUserBean.getUser());
 
-                    transaction.commit();
+                        //set default "from" address for system emails to first registered user
+                        WriteableLookAndFeelProperties laf = LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
+                        laf.setSystemEmailAddress(newUserBean.getEmail());
+                        laf.save();
+
+                        //set default domain to user email domain
+                        String userEmailAddress = newUserBean.getEmail().getEmailAddress();
+                        int atSign = userEmailAddress.indexOf("@");
+
+                        //did user most likely enter a valid email address? if so, set default domain
+                        if (atSign > 0 && atSign < userEmailAddress.length() - 1)
+                        {
+                            String defaultDomain = userEmailAddress.substring(atSign + 1, userEmailAddress.length());
+                            WriteableAppProps appProps = AppProps.getWriteableInstance();
+                            appProps.setDefaultDomain(defaultDomain);
+                            appProps.save();
+                        }
+
+                        transaction.commit();
+                    }
                 }
             }
             catch (SecurityManager.UserManagementException e)
