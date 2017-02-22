@@ -67,6 +67,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -74,6 +75,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * User: brittp
@@ -279,11 +281,16 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     {
         if (_additionalFiles == null)
         {
-            Map<String, DomainProperty> fileParameters = new HashMap<>();
+            Map<String, DomainProperty> fileParameters = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+            List<String> filePdNames = new ArrayList<>();
+
             for (DomainProperty pd : pds)
             {
                 if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.FILE_LINK)
+                {
                     fileParameters.put(UploadWizardAction.getInputName(pd), pd);
+                    filePdNames.add(pd.getName());
+                }
             }
 
             if (!fileParameters.isEmpty())
@@ -301,11 +308,11 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                     HttpServletRequest request = getViewContext().getRequest();
 
                     // Hidden values in form containing previously uploaded files if previous upload resulted in error
-                    for (String fileParam : fileParameters.keySet())
+                    for (String fileParam : filePdNames)
                     {
-                        if (null != request.getParameterMap().get(fileParam))
+                        if (request instanceof MultipartHttpServletRequest && null != request.getParameter(fileParam))
                         {
-                            String previousFileName = request.getParameterMap().get(fileParam)[0];
+                            String previousFileName = request.getParameter(fileParam);
                             if (null != previousFileName)
                             {
                                 previousFile = new File(getAssayDirectory(getContainer(), null).getAbsolutePath() + File.separator + previousFileName);
