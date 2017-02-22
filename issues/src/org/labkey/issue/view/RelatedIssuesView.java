@@ -5,22 +5,24 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartView;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
-import org.labkey.issue.query.AllIssuesTable;
 import org.labkey.issue.query.IssuesQuerySchema;
 import org.springframework.validation.BindException;
 
@@ -38,72 +40,87 @@ public class RelatedIssuesView extends VBox
 {
     public RelatedIssuesView(@NotNull ViewContext context, @NotNull Set<Integer> relatedIssues)
     {
-        setFrame(WebPartView.FrameType.DIV);
+        setFrame(FrameType.DIV);
         setBodyClass("labkey-indented");
         setIncludeBreak(false);
 
-        // Get the issue def types from the related issues
-        IssuesQuerySchema querySchema = new IssuesQuerySchema(getViewContext().getUser(), getViewContext().getContainer());
-        AllIssuesTable issues = (AllIssuesTable)querySchema.getTable(IssuesQuerySchema.ALL_ISSUE_TABLE);
-        issues.setContainerFilter(new ContainerFilter.AllFolders(context.getUser()));
-        SimpleFilter f = new SimpleFilter();
-        f.addCondition(FieldKey.fromParts("issueId"), relatedIssues, CompareType.IN);
+        TableInfo issues = IssuesSchema.getInstance().getTableInfoIssues();
+        SimpleFilter f = new SimpleFilter(FieldKey.fromParts("issueId"), relatedIssues, CompareType.IN);
         TableSelector ts = new TableSelector(issues, issues.getColumns( "issueDefId", "issueId", "container"), f, null);
 
-        Map<Integer, IssueListDef> issueListDefs = new HashMap<>();
-        Map<Integer, Set<Integer>> byIssueDef = new HashMap<>();
-        ts.forEachMap(m -> {
+        // Group issues by issuesListDef from the domain definition container
+        Map<Integer, IssuesByListDef> issuesByListDefMap = new HashMap<>();
+        ts.forEachMap((Map<String, Object> m) -> {
             Integer issueDefId = (Integer)m.get("issueDefId");
             Integer issueId = (Integer)m.get("issueId");
             String containerId = (String)m.get("container");
             Container c = ContainerManager.getForId(containerId);
-
-            IssueListDef issueListDef = issueListDefs.computeIfAbsent(issueDefId, id -> {
-                IssueListDef d = IssueManager.getIssueListDef(c, id);
-                if (d == null)
-                    return null;
-
-                // Associate all issues with the issueListDef from the definition container
-                Container defContainer = d.getDomainContainer(getViewContext().getUser());
-                if (defContainer != null)
-                {
-                    if (!defContainer.equals(c))
-                        d = IssueManager.getIssueListDef(defContainer, d.getName());
-                }
-                return d;
-            });
-
-            if (issueListDef == null)
+            if (c == null || !c.hasPermission(getViewContext().getUser(), ReadPermission.class))
                 return;
 
-            Set<Integer> ids = byIssueDef.computeIfAbsent(issueListDef.getRowId(), x -> new HashSet<>());
-            ids.add(issueId);
+            IssueListDef d = IssueManager.getIssueListDef(c, issueDefId);
+            if (d == null)
+                return;
+
+            // If the user doesn't have ReadPermission to the domain container, we won't be able to create a query
+            // table in that container.  In this case, just use the issue's container.  As a consequence, any other
+            // from the same domain definition issueListDef that live in different containers will appear in separate grids.
+            IssueListDef domainDefinitionIssueListDef = d;
+            Container defContainer = d.getDomainContainer(getViewContext().getUser());
+            if (defContainer != null && !defContainer.equals(c) && defContainer.hasPermission(getViewContext().getUser(), ReadPermission.class))
+            {
+                IssueListDef q = IssueManager.getIssueListDef(defContainer, d.getName());
+                if (q != null)
+                    domainDefinitionIssueListDef = q;
+            }
+
+            IssuesByListDef issuesByListDef = issuesByListDefMap.get(domainDefinitionIssueListDef.getRowId());
+            if (issuesByListDef == null)
+            {
+                issuesByListDef = new IssuesByListDef(domainDefinitionIssueListDef);
+                issuesByListDefMap.put(domainDefinitionIssueListDef.getRowId(), issuesByListDef);
+            }
+            issuesByListDef.issues.add(issueId);
+            issuesByListDef.containers.add(c);
         });
 
-        for (Integer issueDefId : byIssueDef.keySet())
+        for (IssuesByListDef issuesByListDef : issuesByListDefMap.values())
         {
-            IssueListDef issueListDef = issueListDefs.get(issueDefId);
-            Set<Integer> ids = byIssueDef.get(issueDefId);
+            IssueListDef issueListDef = issuesByListDef.issueListDef;
+            Set<Integer> ids = issuesByListDef.issues;
+            Set<Container> containers = issuesByListDef.containers;
 
             // NOTE: We could probably use FrameType.TITLE, but it adds too much padding-top
-            addView(new HtmlView("<br><b>Related " + PageFlowUtil.filter(issueListDef.getLabel()) + "</b>"));
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(issueListDef.lookupContainer(), issueListDef.getName());
+            addView(new HtmlView("<br><b>Related " + PageFlowUtil.filter(names.pluralName) + "</b>"));
 
-            QueryView view = createRelatedIssueGrid(context, querySchema, issueListDef, ids);
+            ViewContext ctx = new ViewContext(context);
+            ctx.setContainer(issueListDef.lookupContainer());
+            QueryView view = createRelatedIssueGrid(ctx, issueListDef, ids, containers);
             addView(view);
         }
     }
 
-    private QueryView createRelatedIssueGrid(ViewContext context, IssuesQuerySchema schema, IssueListDef issueListDef, Collection<Integer> ids)
+    private static class IssuesByListDef
     {
-        BindException errors = new NullSafeBindException(new Object(), "fake");
-        QuerySettings settings = schema.getSettings(context, "related", issueListDef.getName());
-        settings.setContainerFilterName(ContainerFilter.Type.AllFolders.name());
-        QueryView view = schema.createView(context, settings, errors);
+        IssueListDef issueListDef;
+        Set<Integer> issues = new HashSet<>();
+        Set<Container> containers = new HashSet<>();
 
-        view.setShowTitle(true);
-        // NOTE: We could probably use FrameType.TITLE, but it adds too much padding-top
-//        view.setTitle("Related " + issueListDef.getLabel());
-//        view.setFrame(WebPartView.FrameType.TITLE);
+        IssuesByListDef(IssueListDef issueListDef)
+        {
+            this.issueListDef = issueListDef;
+        }
+    }
+
+    private QueryView createRelatedIssueGrid(ViewContext ctx, IssueListDef issueListDef, Collection<Integer> ids, Collection<Container> containers)
+    {
+        IssuesQuerySchema querySchema = new IssuesQuerySchema(ctx.getUser(), ctx.getContainer());
+        BindException errors = new NullSafeBindException(new Object(), "fake");
+        QuerySettings settings = querySchema.getSettings(ctx, "related", issueListDef.getName());
+        QueryView view = querySchema.createView(ctx, settings, errors);
+
+        view.setShowTitle(false);
         view.setFrame(FrameType.NONE);
 
         view.setShadeAlternatingRows(true);
@@ -117,6 +134,14 @@ public class RelatedIssuesView extends VBox
         view.getSettings().setAllowChooseQuery(false);
         view.getSettings().setAllowChooseView(false);
         view.getSettings().setAllowCustomizeView(false);
+
+        TableInfo table = view.getTable();
+        if (table instanceof ContainerFilterable)
+        {
+            ContainerFilterable cf = (ContainerFilterable) table;
+            ContainerFilter filter = new ContainerFilter.SimpleContainerFilter(containers);
+            cf.setContainerFilter(filter);
+        }
 
         return view;
     }
