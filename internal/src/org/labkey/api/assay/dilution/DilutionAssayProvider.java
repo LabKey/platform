@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
 /**
  * User: klum
@@ -45,7 +46,7 @@ public interface DilutionAssayProvider<FormType extends DilutionRunUploadForm> e
     ActionURL getUploadWizardCompleteURL(FormType form, ExpRun run);
 
     @Nullable
-    default ActionURL getAssayQCRunURL(Container container, ExpRun run)
+    default ActionURL getAssayQCRunURL(ViewContext context, ExpRun run)
     {
         return null;
     }

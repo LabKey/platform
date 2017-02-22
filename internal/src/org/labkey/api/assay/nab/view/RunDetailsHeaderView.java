@@ -103,7 +103,7 @@ public class RunDetailsHeaderView extends AssayHeaderView
         }
 
         // quality control actions menu
-        if (_provider instanceof DilutionAssayProvider && (((DilutionAssayProvider)_provider).getAssayQCRunURL(_container, _run) != null))
+        if (_provider instanceof DilutionAssayProvider && (((DilutionAssayProvider)_provider).getAssayQCRunURL(_viewContext, _run) != null))
             links.add(getQCMenu());
 
         NavTree graphOptionsMenu = new NavTree("Change Graph Options");
@@ -269,10 +269,10 @@ public class RunDetailsHeaderView extends AssayHeaderView
         // must be an administrator to access the QC workflow
         if (_container.hasPermission(_user, AdminPermission.class))
         {
-            NavTree excludedDataMenu = new NavTree("Review/QC Data", ((DilutionAssayProvider)_provider).getAssayQCRunURL(_container, _run));
+            NavTree excludedDataMenu = new NavTree("Review/QC Data", ((DilutionAssayProvider)_provider).getAssayQCRunURL(_viewContext, _run));
             qcMenu.addChild(excludedDataMenu);
         }
-        NavTree excludedDataMenu = new NavTree("View Excluded Data", ((DilutionAssayProvider)_provider).getAssayQCRunURL(_container, _run).addParameter("edit", false));
+        NavTree excludedDataMenu = new NavTree("View Excluded Data", ((DilutionAssayProvider)_provider).getAssayQCRunURL(_viewContext, _run).addParameter("edit", false));
         qcMenu.addChild(excludedDataMenu);
 
         return qcMenu;
