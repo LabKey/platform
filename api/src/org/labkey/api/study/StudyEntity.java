@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.User;
 
 /**
  * User: Matthew
@@ -52,6 +53,6 @@ public interface StudyEntity extends SecurableResource
 
     SecurityPolicy getPolicy();
 
-    void savePolicy(MutableSecurityPolicy policy);
+    void savePolicy(MutableSecurityPolicy policy, User user);
 
 }
