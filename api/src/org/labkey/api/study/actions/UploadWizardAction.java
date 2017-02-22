@@ -77,6 +77,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.support.DefaultMultipartHttpServletRequest;
@@ -219,8 +220,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         Map<String, Object> parameterValueMap = ViewServlet.adaptParameterMap(getViewContext().getRequest().getParameterMap());
 
-        String contentType = getViewContext().getRequest().getContentType();
-        if (null != contentType && contentType.startsWith("multipart/form-data"))
+        if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
         {
             Map<String, MultipartFile> fileMap = (((DefaultMultipartHttpServletRequest) getViewContext().getRequest()).getFileMap());
             for (String key : fileMap.keySet())

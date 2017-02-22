@@ -105,6 +105,8 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private TransformResult _transformResult = DefaultTransformResult.createEmptyResult();
     private ExpRun _reRun;
 
+    public static File BLANK_FILE = new File("");
+
     public List<? extends DomainProperty> getRunDataProperties()
     {
         Domain domain = getProvider().getResultsDomain(getProtocol());
@@ -271,9 +273,9 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public static File getAssayDirectory(Container c, File root)
     {
         if(null != root)
-            return new File(root.getAbsolutePath() + File.separator + AssayFileWriter.DIR_NAME);
+            return new File(root.getAbsolutePath(), AssayFileWriter.DIR_NAME);
         else
-            return new File(PipelineService.get().findPipelineRoot(c).getRootPath().getAbsolutePath() + File.separator + AssayFileWriter.DIR_NAME);
+            return new File(PipelineService.get().findPipelineRoot(c).getRootPath().getAbsolutePath(), AssayFileWriter.DIR_NAME);
 
     }
 
@@ -315,13 +317,13 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                             String previousFileName = request.getParameter(fileParam);
                             if (null != previousFileName)
                             {
-                                previousFile = new File(getAssayDirectory(getContainer(), null).getAbsolutePath() + File.separator + previousFileName);
+                                previousFile = new File(getAssayDirectory(getContainer(), null).getAbsolutePath(), previousFileName);
 
-                                MultipartFile multiFile = ((MultipartHttpServletRequest)request).getFileMap().get(fileParam);
+                                MultipartFile multiFile = ((MultipartHttpServletRequest)request).getFileMap().get(UploadWizardAction.getInputName(fileParameters.get(fileParam)));
 
                                 // If file is removed from form after error, override hidden file name with empty file
                                 if (null != multiFile && multiFile.getOriginalFilename().isEmpty())
-                                    _additionalFiles.put(fileParameters.get(fileParam), new File(""));
+                                    _additionalFiles.put(fileParameters.get(fileParam), BLANK_FILE);
 
                                 // Only add hidden file parameter if it is a valid file in the pipeline root directory and
                                 // a new file hasn't been uploaded for that parameter
