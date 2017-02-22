@@ -233,16 +233,15 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
                     out.print(PageFlowUtil.filter(title));
                 out.print("\">");
 
-                if (config._collapsed && config._isCollapsible)
+                if (config._isCollapsible)
                 {
                     ActionURL expandCollapseUrl = null;
                     String expandCollapseGifId = "expandCollapse-" + config._rootId;
-                    if (config._collapsed)
-                    {
-                        if (config._rootId == null)
-                            throw new IllegalArgumentException("pathToHere or rootId not provided");
-                        expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getExpandCollapseURL(context.getContainer(), "", config._rootId);
-                    }
+
+                    if (config._rootId == null)
+                        throw new IllegalArgumentException("pathToHere or rootId not provided");
+                    expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getExpandCollapseURL(context.getContainer(), "", config._rootId);
+
 
                     out.printf("<a href=\"%s\" onclick=\"return LABKEY.Utils.toggleLink(this, %s);\" id=\"%s\">",
                             filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);

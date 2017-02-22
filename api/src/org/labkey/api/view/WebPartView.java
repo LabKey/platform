@@ -241,6 +241,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
     public void enableExpandCollapse(String rootId, boolean collapsed)
     {
+        _frameConfig._isCollapsible = true;
         _frameConfig._collapsed = collapsed;
         _frameConfig._rootId = rootId;
     }

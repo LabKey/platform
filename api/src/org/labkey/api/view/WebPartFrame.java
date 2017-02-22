@@ -50,7 +50,7 @@ public interface WebPartFrame
         public String _location;
         public NavTree _customize;
         public boolean _hidePageTitle = false;
-        public boolean _isCollapsible = true;
+        public boolean _isCollapsible = false;
         public boolean _collapsed = false;
         public NavTree _portalLinks = new NavTree();
         public String _rootId = null;
