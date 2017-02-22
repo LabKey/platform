@@ -135,16 +135,17 @@ public class ModuleLoader implements Filter
     private static final CoreSchema _core = CoreSchema.getInstance();
     private static final Object UPGRADE_LOCK = new Object();
     private static final Object STARTUP_LOCK = new Object();
-    public static final String MODULE_NAME_REGEX = "\\w+";
+    private static final String APACHE_TOMCAT_SERVER_NAME_PREFIX = "Apache Tomcat/";
 
+    public static final String MODULE_NAME_REGEX = "\\w+";
     public static final String PRODUCTION_BUILD_TYPE = "Production";
     public static final String LABKEY_DATA_SOURCE = "labkeyDataSource";
     public static final String CPAS_DATA_SOURCE = "cpasDataSource";
+    public static final Object SCRIPT_RUNNING_LOCK = new Object();
 
     private static ModuleLoader _instance = null;
     private static Throwable _startupFailure = null;
     private static boolean _newInstall = false;
-    public static final String APACHE_TOMCAT_SERVER_NAME_PREFIX = "Apache Tomcat/";
 
     private static final String BANNER = "\n" +
             "   __                                   \n" +

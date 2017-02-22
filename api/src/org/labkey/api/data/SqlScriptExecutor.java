@@ -95,7 +95,12 @@ public class SqlScriptExecutor
 
     public void execute()
     {
-        getBlocks().forEach(Block::execute);
+        getBlocks().forEach(block -> {
+            synchronized (ModuleLoader.SCRIPT_RUNNING_LOCK)  // Prevent deadlocks between script running and initial user, #26165
+            {
+                block.execute();
+            }
+        });
     }
 
     private Collection<Block> getBlocks()
