@@ -19,17 +19,20 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.PipelineDataCollector;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -64,17 +67,10 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
             _runProperties = new HashMap<>(super.getRunProperties());
             if (isBulkUploadAttempted())
             {
-                try
+                Map<String, Object> values = getBulkProperties();
+                for (DomainProperty prop : _runProperties.keySet())
                 {
-                    Map<String, Object> values = getBulkProperties();
-                    for (DomainProperty prop : _runProperties.keySet())
-                    {
-                        _runProperties.put(prop, getPropertyValue(values, prop));
-                    }
-                }
-                catch (ExperimentException e)
-                {
-                    throw new UnexpectedException(e);
+                    _runProperties.put(prop, getPropertyValue(values, prop));
                 }
             }
         }

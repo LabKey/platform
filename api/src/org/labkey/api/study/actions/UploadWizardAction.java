@@ -229,7 +229,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
         catch(ExperimentException e)
         {
-            errors.addError(new ObjectError("main", null, null, e.toString()));
+            errors.addError(new ObjectError("main", null, null, e.getMessage()));
         }
 
         InsertView view = new UploadWizardInsertView(createDataRegionForInsert(baseTable, lsidCol, properties, null), getViewContext(), errors);
