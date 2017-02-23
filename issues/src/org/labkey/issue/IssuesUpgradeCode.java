@@ -963,10 +963,11 @@ public class IssuesUpgradeCode implements UpgradeCode
             TableInfo table = issueListDef.createTable(user);
             if (table != null)
             {
-                SQLFragment sql = new SQLFragment("UPDATE ").append(table, "ILD").
+                String tableName = table.getSelectName();
+                SQLFragment sql = new SQLFragment("UPDATE ").append(tableName).
                         append(" SET CreatedBy = Issues.CreatedBy, ModifiedBy = Issues.ModifiedBy, Modified = Issues.Modified ").
                         append("FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "Issues").
-                        append(" WHERE ILD.entityId = Issues.entityId AND ILD.container = Issues.container");
+                        append(" WHERE ").append(tableName).append(".entityId = Issues.entityId AND ").append(tableName).append(".container = Issues.container");
 
                 int result = new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(sql);
                 _log.info("Number of rows updated for table : " + table.getName() + " was : " + result);
