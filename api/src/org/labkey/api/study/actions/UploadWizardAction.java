@@ -77,10 +77,8 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.support.DefaultMultipartHttpServletRequest;
+
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.Writer;
@@ -220,16 +218,18 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         Map<String, Object> parameterValueMap = ViewServlet.adaptParameterMap(getViewContext().getRequest().getParameterMap());
 
-        if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
+        try
         {
-            Map<String, MultipartFile> fileMap = (((DefaultMultipartHttpServletRequest) getViewContext().getRequest()).getFileMap());
-            for (String key : fileMap.keySet())
+            Map<DomainProperty, String> runProperties = form.getRunProperties();
+
+            for (DomainProperty dp : runProperties.keySet())
             {
-                if (!key.startsWith(AssayDataCollector.PRIMARY_FILE))
-                {
-                    parameterValueMap.put(key, fileMap.get(key).getOriginalFilename());
-                }
+                parameterValueMap.put(dp.getName(), runProperties.get(dp));
             }
+        }
+        catch(ExperimentException e)
+        {
+            errors.addError(new ObjectError("main", null, null, e.toString()));
         }
 
         InsertView view = new UploadWizardInsertView(createDataRegionForInsert(baseTable, lsidCol, properties, null), getViewContext(), errors);
