@@ -174,7 +174,7 @@ Ext4.define('LABKEY.pipeline.AnalyzeForm', {
                 mode: "xml",
                 lineNumbers: true
             });
-            this.codeMirror.setSize(null, '220px');
+            this.codeMirror.setSize(null, '200px');
             LABKEY.codemirror.RegisterEditorInstance('xmlParameters', this.codeMirror);
             document.getElementsByClassName("CodeMirror")[0].style.border = window.getComputedStyle(this.getElementById("protocolDescriptionInput")).border;
         }
