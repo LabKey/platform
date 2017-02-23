@@ -18,6 +18,7 @@ package org.labkey.issue.actions;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -28,6 +29,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -58,8 +60,11 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.Address;
 import javax.mail.Message;
+import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
 import javax.servlet.ServletException;
+import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -305,6 +310,8 @@ public class ChangeSummary
             return;
 
         final Set<User> allAddresses = getUsersToEmail(container, u, issue, prevIssue, action);
+        MailHelper.BulkEmailer emailer = new MailHelper.BulkEmailer(createdByUser);
+
         for (User user : allAddresses)
         {
             boolean hasPermission = container.hasPermission(user, ReadPermission.class);
@@ -345,11 +352,20 @@ public class ChangeSummary
                     html.append("</body></html>");
                     m.setEncodedHtmlContent(html.toString());
 
-                    NotificationService.get().sendMessage(container, createdByUser, user, m,
+                    emailer.addMessage(user.getEmail(), m);
+                    Notification notification = createNotification(user, m,
                             "view " + IssueManager.getEntryTypeNames(container, issueListDef.getName()).singularName,
                             new ActionURL(IssuesController.DetailsAction.class,container).addParameter("issueId",issue.getIssueId()).getLocalURIString(false),
                             "issue:" + issue.getIssueId(),
-                            Issue.class.getName(), true);
+                            Issue.class.getName());
+
+                    if (notification != null)
+                    {
+                        NotificationService.get().removeNotifications(container, notification.getObjectId(),
+                                Collections.singletonList(notification.getType()), notification.getUserId());
+
+                        NotificationService.get().addNotification(container, createdByUser, notification);
+                    }
                 }
             }
             catch (ConfigurationException | AddressException e)
@@ -362,6 +378,28 @@ public class ChangeSummary
                 ExceptionUtil.logExceptionToMothership(null, e);
             }
         }
+        emailer.run();
+    }
+
+    /**
+     * Create a notification object from the message object
+     */
+    @Nullable
+    private static Notification createNotification(User notifyUser, MailHelper.MultipartMessage m, String linkText,
+                                                   String linkURL, String id, String type) throws IOException, MessagingException
+    {
+        if (!AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
+            return null;
+
+        Notification notification = new Notification();
+        notification.setActionLinkText(linkText);
+        notification.setActionLinkURL(linkURL);
+        notification.setObjectId(id);
+        notification.setType(type);
+        notification.setUserId(notifyUser.getUserId());
+        notification.setContent(m.getSubject());
+
+        return notification;
     }
 
     /**
