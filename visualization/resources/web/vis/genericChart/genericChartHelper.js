@@ -403,10 +403,12 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         for (var i = 0; i < fields.length; i++) {
             var type = fields[i].displayFieldJsonType ? fields[i].displayFieldJsonType : fields[i].type;
-            var isConvertedYMeasure = measures.y && measures.y.converted && fields[i].fieldKey == measures.y.name;
+            var isMeasureXMatch = measures.x && (fields[i].fieldKey == measures.x.name || fields[i].fieldKey == measures.x.fieldKey);
+            var isMeasureYMatch = measures.y && (fields[i].fieldKey == measures.y.name || fields[i].fieldKey == measures.y.fieldKey);
+            var isConvertedYMeasure = isMeasureYMatch && measures.y.converted;
 
             if (isNumericType(type) || isConvertedYMeasure) {
-                if (measures.x && fields[i].fieldKey == measures.x.name) {
+                if (isMeasureXMatch) {
                     if (fields[i].extFormatFn) {
                         scales.x.tickFormat = eval(fields[i].extFormatFn);
                     }
@@ -415,7 +417,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     }
                 }
 
-                if (measures.y && fields[i].fieldKey == measures.y.name) {
+                if (isMeasureYMatch) {
                     var tickFormatFn;
 
                     if (fields[i].extFormatFn) {
@@ -436,7 +438,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     };
                 }
             }
-            else if (measures.x && fields[i].fieldKey == measures.x.name && measures.x.name == subjectColumn && LABKEY.demoMode) {
+            else if (isMeasureXMatch && measures.x.name == subjectColumn && LABKEY.demoMode) {
                     scales.x.tickFormat = function(){return '******'};
             }
         }
