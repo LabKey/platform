@@ -662,8 +662,8 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
 
     getFieldValueKey : function(fieldName, value, additionalPropName)
     {
-        return fieldName + '|' + value.queryName + '|' + value.name + (additionalPropName && value[additionalPropName]
-                    ? '|' + value[additionalPropName].value || value[additionalPropName] : '');
+        var additionalPropVal = additionalPropName && value[additionalPropName] ? value[additionalPropName].value || value[additionalPropName] : '';
+        return fieldName + '|' + value.queryName + '|' + value.name + '|' + additionalPropVal;
     },
 
     allowTypeSelect : function(view, selected)
