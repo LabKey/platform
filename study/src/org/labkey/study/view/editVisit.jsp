@@ -237,7 +237,11 @@
     </table>
     <table>
         <tr>
-            <td><%= button("Save").submit(true) %>&nbsp;<%= button("Delete visit").href(buildURL(StudyController.ConfirmDeleteVisitAction.class, "id="+visit.getRowId())) %>&nbsp;<%= button("Cancel").href(StudyController.ManageVisitsAction.class, getContainer()) %></td>
+            <td>
+                <%= button("Save").submit(true) %>&nbsp;
+                <%= button(isDateBased ? "Delete timepoint" : "Delete visit").href(buildURL(StudyController.ConfirmDeleteVisitAction.class, "id="+visit.getRowId())) %>&nbsp;
+                <%= button("Cancel").href(StudyController.ManageVisitsAction.class, getContainer()) %>
+            </td>
         </tr>
     </table>
 </labkey:form>

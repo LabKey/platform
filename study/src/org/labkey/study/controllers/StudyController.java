@@ -2158,16 +2158,105 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @RequiresPermission(AdminPermission.class)
+    public class BulkDeleteVisitsAction extends FormViewAction<DeleteVisitsForm>
+    {
+        private TimepointType _timepointType;
+        private List<VisitImpl> _visitsToDelete;
+
+        public ModelAndView getView(DeleteVisitsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            StudyImpl study = getStudyRedirectIfNull();
+            _timepointType = study.getTimepointType();
+
+            Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
+            if (sharedStudy != null && sharedStudy.getShareVisitDefinitions())
+                return new HtmlView("<span class='labkey-error'>Can't delete visits from a study with shared visits.</span>");
+
+            if (_timepointType == TimepointType.CONTINUOUS)
+                return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous study.</span>");
+
+            return new StudyJspView<>(getStudyRedirectIfNull(), "bulkVisitDelete.jsp", form, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendNavTrailVisitAdmin(root);
+            return root.addChild("Delete " + (_timepointType == TimepointType.DATE ? "Timepoints" : "Visits"));
+        }
+
+        public void validateCommand(DeleteVisitsForm form, Errors errors)
+        {
+            StudyImpl study = getStudyThrowIfNull();
+
+            Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
+            if (sharedStudy != null && sharedStudy.getShareVisitDefinitions())
+            {
+                errors.reject(null, "Can't delete visits from a study with shared visits.");
+                return;
+            }
+
+            int[] visitIds = form.getVisitIds();
+            if (visitIds == null || visitIds.length == 0)
+            {
+                errors.reject(ERROR_MSG, "No " + (_timepointType == TimepointType.DATE ? "timepoints" : "visits") + " selected.");
+                return;
+            }
+
+            _visitsToDelete = new ArrayList<>();
+            for (int id : visitIds)
+            {
+                VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, id);
+                if (visit == null)
+                    errors.reject(ERROR_MSG, "Unable to find visit for id " + id);
+                else
+                    _visitsToDelete.add(visit);
+            }
+        }
+
+        public boolean handlePost(DeleteVisitsForm form, BindException errors) throws Exception
+        {
+            long start = System.currentTimeMillis();
+            StudyImpl study = getStudyThrowIfNull();
+            StudyManager.getInstance().deleteVisits(study, _visitsToDelete, getUser(), false);
+            _log.info("Bulk delete visits took: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
+            return true;
+        }
+
+        public ActionURL getSuccessURL(DeleteVisitsForm form)
+        {
+            return new ActionURL(ManageVisitsAction.class, getContainer());
+        }
+    }
+
+    public static class DeleteVisitsForm
+    {
+        private int[] _visitIds;
+
+        public int[] getVisitIds()
+        {
+            return _visitIds;
+        }
+
+        public void setVisitIds(int[] visitIds)
+        {
+            _visitIds = visitIds;
+        }
+    }
 
     @RequiresPermission(AdminPermission.class)
     public class ConfirmDeleteVisitAction extends SimpleViewAction<IdForm>
     {
         private VisitImpl _visit;
+        private TimepointType _timepointType;
+
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
             int visitId = form.getId();
             StudyImpl study = getStudyRedirectIfNull();
-            if (study.getTimepointType() == TimepointType.CONTINUOUS)
+            _timepointType = study.getTimepointType();
+
+            if (_timepointType == TimepointType.CONTINUOUS)
                 return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous study</span>");
 
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
@@ -2181,7 +2270,8 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Delete visit -- " + _visit.getDisplayString());
+            String noun = _timepointType == TimepointType.DATE ? "Timepoint" : "Visit";
+            return root.addChild("Delete " + noun + " -- " + _visit.getDisplayString());
         }
     }
 

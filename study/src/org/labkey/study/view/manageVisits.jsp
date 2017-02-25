@@ -25,14 +25,18 @@
 <%@ page import="org.labkey.study.controllers.StudyController.VisitSummaryAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.VisitVisibilityAction" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%
+    List<VisitImpl> allVisits = getVisits(Visit.Order.DISPLAY);
+%>
 <table>
     <tr>
         <td>View study schedule</td>
         <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
     </tr>
 <%
-    if (getVisits(Visit.Order.DISPLAY).size() > 0)
+    if (allVisits.size() > 0)
     {
 %>
     <tr>
@@ -43,13 +47,17 @@
         <td>Visit visibility and label can be changed</td>
         <td><%= textLink("Change Properties", VisitVisibilityAction.class)%></td>
     </tr>
+    <tr>
+        <td>Visits may be deleted by an administrator</td>
+        <td><%= textLink("Delete Multiple Visits", StudyController.BulkDeleteVisitsAction.class) %></td>
+    </tr>
+    <tr>
+        <td>Delete unused visits</td>
+        <td><%= textLink("Delete Unused Visits", StudyController.DeleteUnusedVisitsAction.class) %></td>
+    </tr>
 <%
     }
 %>
-    <tr>
-        <td>New visits can be defined for this study at any time</td>
-        <td><%= textLink("Create New Visit", CreateVisitAction.class)%></td>
-    </tr>
     <tr>
         <td>Recalculate visit dates</td>
         <td><%= textLink("Recalculate Visit Dates", UpdateParticipantVisitsAction.class)%></td>
@@ -63,13 +71,13 @@
         <td><%= textLink("Visit Import Mapping", ShowVisitImportMappingAction.class) %></td>
     </tr>
     <tr>
-        <td>Delete unused visits</td>
-        <td><%= textLink("Delete Unused Visits", StudyController.DeleteUnusedVisitsAction.class) %></td>
+        <td>New visits can be defined for this study at any time</td>
+        <td><%= textLink("Create New Visit", CreateVisitAction.class)%></td>
     </tr>
 </table>
 
 <%
-    if (getVisits(Visit.Order.DISPLAY).size() > 0)
+    if (allVisits.size() > 0)
     {
 %>
 <p>
@@ -92,7 +100,7 @@
         <tr class="<%=h(rowCount % 2 == 1 ? "labkey-alternate-row" : "labkey-row")%>">
             <td><%= textLink("edit", buildURL(VisitSummaryAction.class)+ "id=" + visit.getRowId()) %></td>
             <td align=left><%= h(visit.getDisplayString()) %></td>
-            <td><%= visit.getSequenceNumMin() %><%= h(visit.getSequenceNumMin()!= visit.getSequenceNumMax() ? "-" + visit.getSequenceNumMax() : "") %></td>
+            <td><%= visit.getSequenceNumMin() %><%= h(visit.getSequenceNumMin()!= visit.getSequenceNumMax() ? " - " + visit.getSequenceNumMax() : "") %></td>
             <td><%= h(visit.getCohort() != null ? h(visit.getCohort().getLabel()) : "All") %></td>
             <td><%= h(visit.getType() != null ? visit.getType().getMeaning() : "[Not defined]") %></td>
             <td><%= visit.isShowByDefault()%></td>

@@ -73,7 +73,7 @@
 </table>
 <br/>
 <%= button("Delete Selected").id("delete_btn").submit(true).onClick(
-        "if (confirm('Delete selected datasets?')){" +
+        "if (confirm('Are you sure you want to delete the selected datasets? This action cannot be undone.')){" +
             "Ext4.get(this).replaceCls('labkey-button', 'labkey-disabled-button');" +
             "return true;" +
         "} " +

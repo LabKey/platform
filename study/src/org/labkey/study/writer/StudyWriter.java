@@ -55,7 +55,7 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
             {
                 String text = writer.getDataType();
 
-                if (null == text || dataTypes.contains(text) || exportDatasets && text.endsWith("Datasets"))
+                if (null == text || dataTypes.contains(text) || (exportDatasets && text.endsWith("Datasets")))
                     writer.write(study, ctx, vf);
             }
             catch (Exception e)

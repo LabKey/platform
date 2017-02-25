@@ -30,13 +30,16 @@
 <labkey:errors />
 <%
     StudyController.StudyPropertiesForm form = (StudyController.StudyPropertiesForm) getModelBean();
+    Study study = getStudy();
+    List<VisitImpl> timepoints = StudyManager.getInstance().getVisits(study, Visit.Order.DISPLAY);
+
     if (form.getStartDate() == null)
     {
-        form.setStartDate(getStudy().getStartDate());
+        form.setStartDate(study.getStartDate());
     }
     if (form.getDefaultTimepointDuration() == 0)
     {
-        form.setDefaultTimepointDuration(getStudy().getDefaultTimepointDuration());
+        form.setDefaultTimepointDuration(study.getDefaultTimepointDuration());
     }
 %>
 
@@ -46,12 +49,18 @@
         <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
     </tr>
     <tr>
-        <td>New visits can be defined for this study at any time.</td>
-        <td><%= textLink("Create New Timepoint", CreateVisitAction.class)%></td>
-    </tr>
-    <tr>
         <td>Assign data to the correct timepoint</td>
         <td><%= textLink("Recompute Timepoints", UpdateParticipantVisitsAction.class)%></td>
+    </tr>
+<% if (timepoints.size() > 0) { %>
+    <tr>
+        <td>Timepoints may be deleted by an administrator</td>
+        <td><%= textLink("Delete Multiple Timepoints", StudyController.BulkDeleteVisitsAction.class) %></td>
+    </tr>
+<% } %>
+    <tr>
+        <td>New visits can be defined for this study at any time.</td>
+        <td><%= textLink("Create New Timepoint", CreateVisitAction.class)%></td>
     </tr>
 </table>
 
@@ -88,6 +97,8 @@
     </table>
 </labkey:form>
 <%WebPartView.endTitleFrame(out);%>
+
+<% if (timepoints.size() > 0) { %>
 <%WebPartView.startTitleFrame(out, "Timepoints", null, "900", null);%>
 <p>NOTE: If you edit the day range of timepoints, use <%= textLink("Recompute Timepoints", UpdateParticipantVisitsAction.class)%> to
 assign dataset data to the correct timepoints.</p>
@@ -103,8 +114,6 @@ assign dataset data to the correct timepoints.</p>
         <td class="labkey-column-header">Description</td>
     </tr>
 <%
-    Study study = getStudy();
-    List<VisitImpl> timepoints = StudyManager.getInstance().getVisits(study, Visit.Order.DISPLAY);
     ActionURL editTimepointURL = new ActionURL(StudyController.VisitSummaryAction.class, study.getContainer());
     int rowCount = 0;
     for (VisitImpl timepoint : timepoints)
@@ -125,3 +134,4 @@ assign dataset data to the correct timepoints.</p>
 %>
 </table>
 <%WebPartView.endTitleFrame(out);%>
+<% } %>
