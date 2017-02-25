@@ -2882,18 +2882,18 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         rects = barWrappers.selectAll('rect.bar-rect').data(function(d){ return [d] });
         rects.exit().remove();
         heightFn = function(d) {
-            if (geom.getY(d) === null || geom.getY(d) === undefined) {
+            if (yAcc(d) === null || yAcc(d) === undefined) {
                 return 0;
             }
-            return Math.abs(geom.getY(d) - geom.getY(yZero))
+            return Math.abs(yAcc(d) - yAcc(yZero));
         };
         rects.enter().append('rect').attr('class', 'bar-rect')
                 .attr('x', xAcc)
                 .attr('y', function(d) {
-                    if (geom.getY(d) > geom.getY(yZero)) {
-                        return geom.getY(yZero); // negative value
+                    if (yAcc(d) > yAcc(yZero)) {
+                        return yAcc(yZero); // negative value
                     } else {
-                        return geom.getY(d); // positive value
+                        return yAcc(d); // positive value
                     }
                 })
                 .attr('width', barWidth).attr('height', heightFn)
@@ -2923,9 +2923,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             layer.append('line')
                     .attr('class', 'zero-line')
                     .attr('x1', plot.grid.leftEdge)
-                    .attr('y1', geom.getY(yZero))
+                    .attr('y1', yAcc(yZero))
                     .attr('x2', plot.grid.rightEdge)
-                    .attr('y2', geom.getY(yZero))
+                    .attr('y2', yAcc(yZero))
                     .attr('stroke-width', 1)
                     .attr('stroke', "#000000");
         }
@@ -2948,8 +2948,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             rects.enter().append('rect').attr('class', 'bar-rect')
                     .attr('x', xAcc)
                     .attr('y', function(d) {
-                        if (geom.getY(d) > geom.getY(yZero))
-                            return geom.getY(yZero);
+                        if (yAcc(d) > yAcc(yZero))
+                            return yAcc(yZero);
                         else
                             return geom.yScale.scale(d.total);
                     })
