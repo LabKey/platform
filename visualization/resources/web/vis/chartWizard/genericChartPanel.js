@@ -1303,13 +1303,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (customRenderType && customRenderType.generateScales)
             scales = customRenderType.generateScales(this, chartConfig, scales);
 
+        if (!this.isChartConfigValid(chartType, chartConfig, aes, scales))
+            return;
+
+        this.beforeRenderPlotComplete();
+
         if (!Ext4.isDefined(chartConfig.width) || chartConfig.width == null)
             chartConfig.width = LABKEY.vis.GenericChartHelper.getChartTypeBasedWidth(chartType, chartConfig.measures, this.getMeasureStore(), this.getViewPanel().getWidth());
         if (!Ext4.isDefined(chartConfig.height) || chartConfig.height == null)
             chartConfig.height = this.getViewPanel().getHeight() - 25;
-
-        if (!this.isChartConfigValid(chartType, chartConfig, aes, scales))
-            return;
 
         newChartDiv = this.getNewChartDisplayDiv();
         this.getViewPanel().add(newChartDiv);
@@ -1337,11 +1339,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         });
     },
 
+    beforeRenderPlotComplete : function()
+    {
+        // add the warning msg before the plot so the plot has the proper height
+        if (this.warningText !== null)
+            this.addWarningMsg(this.warningText, true);
+    },
+
     afterRenderPlotComplete : function(chartDiv, plot)
     {
-        if (this.warningText !== null)
-            this.addWarningMsg(chartDiv, plot, this.warningText, true);
-
         this.getTopButtonBar().enable();
         this.getChartTypeBtn().enable();
         this.getChartLayoutBtn().enable();
@@ -1354,7 +1360,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.updateSaveChartThumbnail(chartDiv);
     },
 
-    addWarningMsg : function(chartDiv, plot, warningText, allowDismiss)
+    addWarningMsg : function(warningText, allowDismiss)
     {
         var warningDivId = Ext4.id();
         var dismissLink = allowDismiss ? '<a id="dismiss-link-' + warningDivId + '" class="labkey-text-link">dismiss</a>' : '';
@@ -1373,13 +1379,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
         });
 
-        // add the warning message which will adjust the view panel height so we need to update the plot height accordingly
+        // add the warning message which will adjust the view panel height,
+        // so suspend events temporarily
         this.getViewPanel().suspendEvents();
         this.getMsgPanel().add(warningCmp);
-        var newViewPanelHeight = this.getViewPanel().getHeight() - 25;
-        if (newViewPanelHeight < plot.getHeight()) {
-            plot.setHeight(newViewPanelHeight);
-        }
         this.getViewPanel().resumeEvents();
     },
 
@@ -1459,6 +1462,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
 
             data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]', false);
+
+            // convert any undefined values to zero for display purposes in Bar and Pie chart case
+            Ext4.each(data, function(d) {
+                if (d.hasOwnProperty('value') && (!Ext4.isDefined(d.value) || isNaN(d.value))) {
+                    d.value = 0;
+                }
+            });
         }
 
         if (customRenderType && Ext4.isFunction(customRenderType.generatePlotConfig))

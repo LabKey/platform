@@ -1099,9 +1099,13 @@ LABKEY.vis.GenericChartHelper = new function(){
                 configMeasure = chartConfig.measures[measureName];
                 Ext4.apply(measureRestrictions, _getMeasureRestrictions(renderType, measureName));
 
-                if (configMeasure.measure &&  measureName !== 'color' && measureName !== 'shape' &&
-                        ((measureName !== 'x' && measureName !== 'xSub' && measureRestrictions.numericOnly ) ||
-                        renderType === 'scatter_plot') && !isNumericType(configMeasure.type)) {
+                var isColorOrShape = measureName === 'color' || measureName === 'shape';
+                var isXAxis = measureName === 'x' || measureName === 'xSub';
+                var isScatter = renderType === 'scatter_plot';
+                var isBarYCount = renderType === 'bar_chart' && configMeasure.aggregate && (configMeasure.aggregate === 'COUNT' || configMeasure.aggregate.value === 'COUNT');
+
+                if (configMeasure.measure && !isColorOrShape && !isBarYCount
+                        && ((!isXAxis && measureRestrictions.numericOnly ) || isScatter) && !isNumericType(configMeasure.type)) {
                     measuresForProcessing[measureName] = {};
                     measuresForProcessing[measureName].name = configMeasure.name;
                     measuresForProcessing[measureName].convertedName = configMeasure.name + "_converted";
