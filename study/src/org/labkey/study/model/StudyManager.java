@@ -4150,6 +4150,10 @@ public class StudyManager
                 def.setTag(info.tag);
                 defEntryMap.put(name, new DatasetDefinitionEntry(def, true, info.tags));
             }
+            else if (def.isAssayData())
+            {
+                 errors.reject("importDatasetSchemas", "Unable to modify assay dataset '" + def.getLabel() + "'.");
+            }
             else
             {
                 // TODO: modify shared definition?
