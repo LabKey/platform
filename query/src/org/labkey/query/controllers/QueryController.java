@@ -2679,32 +2679,35 @@ public class QueryController extends SpringActionController
             boolean arrayMultiValueColumns = getRequestedApiVersion() >= 16.2;
             boolean includeFormattedValue = getRequestedApiVersion() >= 17.1;
 
+            ApiQueryResponse response;
+
             // 13.2 introduced the getData API action, a condensed response wire format, and a js wrapper to consume the wire format. Support this as an option for legacy APIs.
             if (getRequestedApiVersion() >= 13.2)
             {
-                ReportingApiQueryResponse response = new ReportingApiQueryResponse(view, isEditable, true, view.getQueryDef().getName(), form.getQuerySettings().getOffset(), null,
+                ReportingApiQueryResponse fancyResponse = new ReportingApiQueryResponse(view, isEditable, true, view.getQueryDef().getName(), form.getQuerySettings().getOffset(), null,
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
-                response.includeStyle(form.isIncludeStyle());
-                response.arrayMultiValueColumns(arrayMultiValueColumns);
-                response.includeFormattedValue(includeFormattedValue);
-                return response;
+                fancyResponse.arrayMultiValueColumns(arrayMultiValueColumns);
+                fancyResponse.includeFormattedValue(includeFormattedValue);
+                response = fancyResponse;
             }
             //if requested version is >= 9.1, use the extended api query response
             else if (getRequestedApiVersion() >= 9.1)
             {
-                ExtendedApiQueryResponse response = new ExtendedApiQueryResponse(view, isEditable, true,
+                response = new ExtendedApiQueryResponse(view, isEditable, true,
                         form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), null,
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
-                response.includeStyle(form.isIncludeStyle());
-                return response;
             }
             else
             {
-                return new ApiQueryResponse(view, isEditable, true,
+                response = new ApiQueryResponse(view, isEditable, true,
                         form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), null,
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
                         form.isIncludeDisplayValues());
             }
+            response.includeStyle(form.isIncludeStyle());
+            response.setColumnFilter(form.getQuerySettings().getFieldKeys());
+
+            return response;
         }
     }
 
