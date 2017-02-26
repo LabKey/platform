@@ -140,10 +140,17 @@ dependencies {
   }
   external ant,apache,caching,charting,gwt,jackson,javax,logging,others,r,spring
 
-    // These are required for running unit tests through the server junit controller
+  // These are required for running unit tests through the server junit controller
   external test
+
   jspCompile files(project.tasks.jar)
   jspCompile apache, jackson, spring
+  webappCompile files(project.tasks.jar)
+  webappCompile "com.google.code.kaptcha:kaptcha:${kaptchaVersion}"
+  webappCompile "org.springframework:spring-context:${springVersion}"
+  webappCompile "com.sun.mail:javax.mail:${javaxMailVersion}"
+  BuildUtils.addLabKeyDependency(project: project, config: "webappCompile", depProjectPath: ":server:modules:core")
+  BuildUtils.addLabKeyDependency(project: project, config: "webappCompile", depProjectPath: ":server:internal")
 }
 
 // We need to copy resource files into the staging webapp directory so they can be copied to
