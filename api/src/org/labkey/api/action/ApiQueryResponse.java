@@ -57,7 +57,6 @@ import java.util.Set;
 public class ApiQueryResponse implements ApiResponse
 {
     private static final String URL_COL_PREFIX = "_labkeyurl_";
-    boolean _doItWithStyle = false;
     private TableInfo _tinfo = null;
     private List<DisplayColumn> _displayColumns = null;
     private Map<DisplayColumn, String> _displayColumnCaptions = new HashMap<>();
@@ -80,7 +79,6 @@ public class ApiQueryResponse implements ApiResponse
     private boolean _includeDetailsColumn;
     private boolean _includeUpdateColumn;
     private boolean _includeDisplayValues;
-    private List<FieldKey> _columnFilter;
 
     public ApiQueryResponse(QueryView view, boolean schemaEditable, boolean includeLookupInfo,
                             String schemaName, String queryName, long offset, List<FieldKey> fieldKeys, boolean metaDataOnly,
@@ -236,11 +234,6 @@ public class ApiQueryResponse implements ApiResponse
         _ctx.setCache(false);
     }
 
-
-    public void includeStyle(boolean withStyle)
-    {
-        _doItWithStyle = withStyle;
-    }
 
     protected double getFormatVersion()
     {
@@ -491,10 +484,6 @@ public class ApiQueryResponse implements ApiResponse
 
     protected boolean includeColumnInResponse(DisplayColumn dc)
     {
-        if (_columnFilter != null && dc.getColumnInfo() != null && !_columnFilter.contains(dc.getColumnInfo().getFieldKey()))
-        {
-            return false;
-        }
         return dc.isQueryColumn() || (dc instanceof DetailsColumn && _includeDetailsColumn) || (dc instanceof UpdateColumn && _includeUpdateColumn);
     }
 
@@ -588,11 +577,5 @@ public class ApiQueryResponse implements ApiResponse
             columnName = "~~Details~~";
         }
         return columnName;
-    }
-
-    /** The client has requested an explicit column list, so remember it and filter the response to include only those columns */
-    public void setColumnFilter(List<FieldKey> columnFilter)
-    {
-        _columnFilter = columnFilter;
     }
 }
