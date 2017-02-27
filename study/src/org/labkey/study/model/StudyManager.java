@@ -2200,6 +2200,27 @@ public class StudyManager
         return visits;
     }
 
+    public List<Double> getUndefinedSequenceNumsForDataset(Container container, int datasetId)
+    {
+        DatasetDefinition def = getDatasetDefinition(getStudy(container), datasetId);
+        TableInfo ds = def.getTableInfo(null, false);
+
+        final Study study = def.getStudy();
+        final Study visitStudy = getStudyForVisits(study);
+
+        SQLFragment sql = new SQLFragment();
+        sql.append("SELECT DISTINCT sd.SequenceNum FROM ").append(ds.getFromSQL("sd")).append("\n" +
+                "LEFT JOIN study.Visit v ON\n" +
+                "\tsd.SequenceNum >= v.SequenceNumMin AND sd.SequenceNum <=v.SequenceNumMin AND v.Container = ?\n" +
+                "WHERE v.RowId IS NULL"
+        );
+        // shared visit container
+        sql.add(visitStudy.getContainer().getId());
+
+        SqlSelector selector = new SqlSelector(StudySchema.getInstance().getSchema(), sql);
+        return selector.getArrayList(Double.class);
+    }
+
     public void updateDataQCState(Container container, User user, int datasetId, Collection<String> lsids, QCState newState, String comments)
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();

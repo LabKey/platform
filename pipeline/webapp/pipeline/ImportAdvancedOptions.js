@@ -20,6 +20,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
     isValidateQueries: true,
     isSpecificImportOptions: false,
     isApplyToMultipleFolders: false,
+    isFailForUndefinedVisits: false,
 
     initComponent: function()
     {
@@ -101,6 +102,16 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                 optionsForm: null
             },{
                 header: 'Advanced Import Options',
+                description: 'By default, new visit rows will be created in the study during import for any dataset rows which have a new, undefined visit. '
+                    + 'If you would instead like for the import of that dataset to fail when a visit is encountered, which is not already defined in the study '
+                    + 'or as part of the incoming visit map, check the box below.',
+                name: 'failForUndefinedVisits',
+                initChecked: this.isFailForUndefinedVisits ? "checked": "",
+                isChecked: this.isFailForUndefinedVisits,
+                label: 'Fail import for undefined visits',
+                optionsForm: null
+            },{
+                header: null,
                 description: 'By default, all objects and settings from the import archive will be used. If you would '
                     + 'like to select a subset of those import objects, check the box below to see the full list of '
                     + 'folder archive objects to be imported.',

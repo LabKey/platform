@@ -86,7 +86,8 @@ Ext4.onReady(function()
                 isCreateSharedDatasets: <%=bean.isCreateSharedDatasets()%>,
                 isValidateQueries: <%=bean.isValidateQueries()%>,
                 isSpecificImportOptions: <%=bean.isSpecificImportOptions()%>,
-                isApplyToMultipleFolders: <%=bean.isApplyToMultipleFolders()%>
+                isApplyToMultipleFolders: <%=bean.isApplyToMultipleFolders()%>,
+                isFailForUndefinedVisits: <%=bean.isFailForUndefinedVisits()%>
             });
         }
     });

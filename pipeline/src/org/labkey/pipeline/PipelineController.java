@@ -1344,6 +1344,7 @@ public class PipelineController extends SpringActionController
                     ImportOptions options = new ImportOptions(container.getId(), getUser().getUserId());
                     options.setSkipQueryValidation(!form.isValidateQueries());
                     options.setCreateSharedDatasets(form.isCreateSharedDatasets());
+                    options.setFailForUndefinedVisits(form.isFailForUndefinedVisits());
                     options.setDataTypes(form.getDataTypes());
                     options.setIncludeSubfolders(!form.isApplyToMultipleFolders());
 
@@ -1472,6 +1473,7 @@ public class PipelineController extends SpringActionController
         private boolean _createSharedDatasets;
         private boolean _specificImportOptions;
         private boolean _applyToMultipleFolders;
+        private boolean _failForUndefinedVisits;
         private Set<String> _dataTypes;
         private List<Integer> _folderRowIds;
 
@@ -1523,6 +1525,16 @@ public class PipelineController extends SpringActionController
         public void setApplyToMultipleFolders(boolean applyToMultipleFolders)
         {
             _applyToMultipleFolders = applyToMultipleFolders;
+        }
+
+        public boolean isFailForUndefinedVisits()
+        {
+            return _failForUndefinedVisits;
+        }
+
+        public void setFailForUndefinedVisits(boolean failForUndefinedVisits)
+        {
+            _failForUndefinedVisits = failForUndefinedVisits;
         }
 
         public Set<String> getDataTypes()

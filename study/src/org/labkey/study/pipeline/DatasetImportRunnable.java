@@ -16,6 +16,7 @@
 
 package org.labkey.study.pipeline;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -27,6 +28,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Filter;
 import org.labkey.api.writer.VirtualFile;
@@ -196,13 +198,28 @@ public class DatasetImportRunnable implements Runnable
                     );
                     if (errors.size() == 0)
                     {
-                        assert cpuCommit.start();
-                        transaction.commit();
-                        String msg = _datasetDefinition.getLabel() + ": Successfully imported " + imported.size() + " rows from " + _tsvName;
-                        if (useCutoff && skippedRowCount[0] > 0)
-                            msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
-                        _job.info(msg);
-                        assert cpuCommit.stop();
+                        // optional check if new visits exist before committing, visit based timepoint studies only
+                        boolean shouldCommit = true;
+                        if (_studyImportContext.isFailForUndefinedVisits() && _study.getTimepointType() == TimepointType.VISIT)
+                        {
+                            List<Double> undefinedSequenceNums = StudyManager.getInstance().getUndefinedSequenceNumsForDataset(_datasetDefinition.getContainer(), _datasetDefinition.getDatasetId());
+                            if (!undefinedSequenceNums.isEmpty())
+                            {
+                                _job.error("The following undefined visits exist in the data: " + StringUtils.join(undefinedSequenceNums, ", "));
+                                shouldCommit = false;
+                            }
+                        }
+
+                        if (shouldCommit)
+                        {
+                            assert cpuCommit.start();
+                            transaction.commit();
+                            String msg = _datasetDefinition.getLabel() + ": Successfully imported " + imported.size() + " rows from " + _tsvName;
+                            if (useCutoff && skippedRowCount[0] > 0)
+                                msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
+                            _job.info(msg);
+                            assert cpuCommit.stop();
+                        }
                     }
                     assert cpuImport.stop();
                 }
