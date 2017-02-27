@@ -162,6 +162,16 @@ public class StringUtilsLabKey
         );
     }
 
+    public static int toInt(Object value)
+    {
+        if (null == value)
+            return 0;
+        if (String.class.isInstance(value))
+            return Integer.valueOf((String) value);
+        else
+            return (Integer) value;
+    }
+
     public static class TestCase extends Assert
     {
         @Test

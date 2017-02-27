@@ -20,6 +20,8 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -104,5 +106,14 @@ public class JsonUtil
             return n.textValue();
 
         throw new JsonParseException("Unexpected value type: " + n.getNodeType(), null);
+    }
+
+    public static String[] getStringArray(JSONObject json, String propName)
+    {
+        JSONArray jsonValues = (JSONArray)json.get(propName);
+        String[] strValues = new String[jsonValues.length()];
+        for (int i = 0; i < jsonValues.length(); i++)
+            strValues[i] = jsonValues.getString(i);
+        return strValues;
     }
 }
