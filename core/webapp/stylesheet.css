@@ -2294,7 +2294,7 @@ table.labkey-manage-default-reqs
     font-weight: 200;
 }
 
-div.labkey-wiki img {
+div.labkey-wiki img.radeox-image {
     display: inline-table;
     max-width: 800px;
     margin: 0px 20px;
