@@ -806,11 +806,11 @@ public class AssayTest extends AbstractAssayTest
         clickAndWait(Locator.linkWithText("Manage Visits"));
         assertTextPresent(
                 "Test Visit1",
-                "6.0-13.0",
+                "6.0 - 13.0",
                 "Test Visit2",
-                "50.0-70.0",
+                "50.0 - 70.0",
                 "Test Visit3",
-                "302.0-303.0");
+                "302.0 - 303.0");
     }
 
     /**
