@@ -75,6 +75,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     private static MimeMap mimeMap = new MimeMap();
 
     private static final String LINK_CLASS_NAME = "link";
+    private static final String RADEOX_IMG_CLASS = "radeox-image";
     private static final String MISSING_CLASS_NAME = "missing";
     private static final String WIKI_DEPENDENCIES_KEY = "~~wiki.dependencies~~";
     private static final String ANCHORS_KEY = "~~wiki.anchors~~";
@@ -306,7 +307,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             if (img != null)
             {
                 StringBuilder buf = new StringBuilder();
-                buf.append("<img src=\"").append(img).append("\"");
+                buf.append("<img class=\"").append(RADEOX_IMG_CLASS).append("\" src=\"").append(img).append("\"");
                 if (alt != null)
                     buf.append(" alt=\"").append(alt).append("\"");
                 if (align != null)
