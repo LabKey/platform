@@ -11,7 +11,6 @@
 
     <filter>
         <filter-name>Form Authentication Filter</filter-name>
-        <description/>
         <filter-class>org.labkey.api.security.AuthFilter</filter-class>
     </filter>
     <filter>
@@ -146,7 +145,10 @@
           <param-value>org.labkey.api.webdav.ModuleStaticResolverImpl</param-value>
         </init-param>
     </servlet>
-    
+
+    <!-- To display a nice error message in the case of a database error, remove the
+         comments around this servlet and servlet-mapping, and edit the message in the init-param
+         above.
     <servlet>
         <servlet-name>SiteDownServlet</servlet-name>
         <servlet-class>org.labkey.api.view.SiteDownServlet</servlet-class>
@@ -155,6 +157,12 @@
             <param-value>This LabKey Server is currently down for maintenance.</param-value>
         </init-param>
     </servlet>
+
+    <servlet-mapping>
+        <servlet-name>SiteDownServlet</servlet-name>
+        <url-pattern>/*</url-pattern>
+    </servlet-mapping>
+    -->
 
     <!--
         even though there is one webdav tree rooted at "/" we still use two servlet bindings.
@@ -166,14 +174,6 @@
         <url-pattern>/_webdav/*</url-pattern>
     </servlet-mapping>
 
-    <!-- To display a nice error message in the case of a database error, remove the
-         comments around this servlet-mapping and edit the message in the init-param
-         above.
-    <servlet-mapping>
-        <servlet-name>SiteDownServlet</servlet-name>
-        <url-pattern>/*</url-pattern>
-    </servlet-mapping>
-    -->
 
     <servlet-mapping>
         <servlet-name>ViewServlet</servlet-name>
