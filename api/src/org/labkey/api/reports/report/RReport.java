@@ -354,6 +354,20 @@ public class RReport extends ExternalScriptEngineReport
         return labkey.toString();
     }
 
+    @Override
+    protected String concatScriptProlog(ScriptEngine engine, ViewContext context, String script, File inputFile, Map<String, Object> inputParameters)
+    {
+        String yamlScript = "";
+        String yamlSyntaxPrefix = "---\n";
+        if (getKnitrFormat() != null && script.startsWith(yamlSyntaxPrefix))
+        {
+            yamlScript = script.substring(0, script.indexOf(yamlSyntaxPrefix, yamlSyntaxPrefix.length()) + yamlSyntaxPrefix.length());
+            script = script.substring(yamlScript.length() + 1);
+        }
+
+        return yamlScript + StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters)) + script;
+    }
+
     // append the pipeline roots to the prolog
     public File getPipelineRoot(ViewContext context)
     {

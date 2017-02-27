@@ -659,7 +659,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         if (!StringUtils.isEmpty(script))
         {
             if (includeProlog)
-                script = StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters)) + script;
+                script = concatScriptProlog(engine, context, script, inputFile, inputParameters);
             if (inputFile != null)
                 script = processInputReplacement(engine, script, inputFile);
             script = processOutputReplacements(engine, script, outputSubst, context);
@@ -670,6 +670,11 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     protected String getScriptProlog(ScriptEngine engine, ViewContext context, File inputFile, Map<String, Object> inputParameters)
     {
         return null;
+    }
+
+    protected String concatScriptProlog(ScriptEngine engine, ViewContext context, String script, File inputFile, Map<String, Object> inputParameters)
+    {
+        return StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters)) + script;
     }
 
     protected String processInputReplacement(ScriptEngine engine, String script, File inputFile) throws Exception
