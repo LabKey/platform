@@ -44,6 +44,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     private final Map<Class<? extends ImportContext>, ImportContext> _contextMap = new HashMap<>();
     private boolean _skipQueryValidation;
     private boolean _createSharedDatasets;
+    private boolean _failForUndefinedVisits;
     private boolean _includeSubfolders = true; // default to true, unless explicitly disabled (i.e. advanced import to multiple folders option)
 
     private transient XmlDocument _xmlDocument;
@@ -219,6 +220,17 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     public void setCreateSharedDatasets(boolean createSharedDatasets)
     {
         _createSharedDatasets = createSharedDatasets;
+    }
+
+    @Override
+    public boolean isFailForUndefinedVisits()
+    {
+        return _failForUndefinedVisits;
+    }
+
+    public void setFailForUndefinedVisits(boolean failForUndefinedVisits)
+    {
+        _failForUndefinedVisits = failForUndefinedVisits;
     }
 
     @Override
