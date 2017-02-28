@@ -102,8 +102,8 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                 optionsForm: null
             },{
                 header: 'Advanced Import Options',
-                description: 'By default, new visit rows will be created in the study during import for any dataset rows which have a new, undefined visit. '
-                    + 'If you would instead like for the import of that dataset to fail when a visit is encountered, which is not already defined in the study '
+                description: 'By default, new visit rows will be created in the study during import for any dataset or specimen rows which have a new, undefined visit. '
+                    + 'If, instead, you would like for the import of the study archive to fail when it encounters a visit that is not already defined in the study '
                     + 'or as part of the incoming visit map, check the box below.',
                 name: 'failForUndefinedVisits',
                 initChecked: this.isFailForUndefinedVisits ? "checked": "",

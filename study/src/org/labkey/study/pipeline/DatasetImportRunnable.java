@@ -205,7 +205,7 @@ public class DatasetImportRunnable implements Runnable
                             List<Double> undefinedSequenceNums = StudyManager.getInstance().getUndefinedSequenceNumsForDataset(_datasetDefinition.getContainer(), _datasetDefinition.getDatasetId());
                             if (!undefinedSequenceNums.isEmpty())
                             {
-                                _job.error("The following undefined visits exist in the data: " + StringUtils.join(undefinedSequenceNums, ", "));
+                                _job.error("The following undefined visits exist in the dataset data: " + StringUtils.join(undefinedSequenceNums, ", "));
                                 shouldCommit = false;
                             }
                         }

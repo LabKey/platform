@@ -6454,6 +6454,7 @@ public class StudyController extends BaseStudyController
         private int interval = 0;
         private boolean _ui = false;
         private boolean _queryValidation;
+        private boolean _failForUndefinedVisits;
 
         public boolean isAllowReload()
         {
@@ -6493,6 +6494,16 @@ public class StudyController extends BaseStudyController
         public void setQueryValidation(boolean queryValidation)
         {
             _queryValidation = queryValidation;
+        }
+
+        public boolean isFailForUndefinedVisits()
+        {
+            return _failForUndefinedVisits;
+        }
+
+        public void setFailForUndefinedVisits(boolean failForUndefinedVisits)
+        {
+            _failForUndefinedVisits = failForUndefinedVisits;
         }
     }
 
@@ -6612,6 +6623,7 @@ public class StudyController extends BaseStudyController
             {
                 User user = getUser();
                 ImportOptions options = new ImportOptions(getContainer().getId(), !user.isGuest() ? user.getUserId() : null);
+                options.setFailForUndefinedVisits(form.isFailForUndefinedVisits());
 
                 final String source;
 

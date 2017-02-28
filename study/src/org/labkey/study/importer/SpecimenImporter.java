@@ -1292,16 +1292,23 @@ public class SpecimenImporter
         return updated;
     }
 
-    public void process(VirtualFile specimensDir, boolean merge, Logger logger, @Nullable PipelineJob job, boolean syncParticipantVisit)
+    public void process(VirtualFile specimensDir, boolean merge, StudyImportContext ctx, @Nullable PipelineJob job, boolean syncParticipantVisit)
             throws SQLException, IOException, ValidationException
     {
         Map<SpecimenTableType, SpecimenImportFile> sifMap = populateFileMap(specimensDir, new HashMap<>());
 
-        process(sifMap, merge, logger, job, syncParticipantVisit, false);
+        process(sifMap, merge, ctx.getLogger(), job, syncParticipantVisit, false, ctx.isFailForUndefinedVisits());
     }
 
     protected void process(Map<SpecimenTableType, SpecimenImportFile> sifMap, boolean merge, Logger logger, @Nullable PipelineJob job,
                            boolean syncParticipantVisit, boolean editingSpecimens)
+            throws IOException, ValidationException
+    {
+        process(sifMap, merge, logger, job, syncParticipantVisit, editingSpecimens, false);
+    }
+
+    private void process(Map<SpecimenTableType, SpecimenImportFile> sifMap, boolean merge, Logger logger, @Nullable PipelineJob job,
+                           boolean syncParticipantVisit, boolean editingSpecimens, boolean failForUndefinedVisits)
             throws IOException, ValidationException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
@@ -1346,6 +1353,10 @@ public class SpecimenImporter
             SpecimenImportFile specimenFile = sifMap.get(_specimensTableType);
             SpecimenLoadInfo loadInfo = populateTempSpecimensTable(specimenFile, merge);
 
+            StudyImpl study = StudyManager.getInstance().getStudy(_container);
+            if (loadInfo.getRowCount() > 0 && failForUndefinedVisits && study.getTimepointType() == TimepointType.VISIT)
+                checkForUndefinedVisits(loadInfo, study);
+
             // NOTE: if no rows were loaded in the temp table, don't remove existing materials/specimens/vials/events.
             if (loadInfo.getRowCount() > 0)
                 populateSpecimenTables(loadInfo, merge);
@@ -1370,7 +1381,7 @@ public class SpecimenImporter
             ensureNotCanceled();
             _iTimer.setPhase(ImportPhases.SetLastSpecimenLoad);
             // Set LastSpecimenLoad to now... we'll check this before snapshot study specimen refresh
-            StudyImpl study = StudyManager.getInstance().getStudy(_container).createMutable();
+            study = StudyManager.getInstance().getStudy(_container).createMutable();
             study.setLastSpecimenLoad(new Date());
             StudyManager.getInstance().updateStudy(_user, study);
 
@@ -1429,6 +1440,24 @@ public class SpecimenImporter
         return new SpecimenLoadInfo(_user, _container, DbSchema.getTemp(), columns, rowCount, tempTablesHolder.getTempTableInfo());
     }
 
+    private void checkForUndefinedVisits(SpecimenLoadInfo info, StudyImpl study) throws ValidationException
+    {
+        SQLFragment sql = new SQLFragment();
+        sql.append("SELECT DISTINCT VisitValue FROM ")
+            .append(info.getTempTableName()).append(" tt ")
+            .append("\nLEFT JOIN study.Visit v")
+            .append("\nON tt.VisitValue >= v.SequenceNumMin AND tt.VisitValue <=v.SequenceNumMax AND v.Container = ?")
+            .append("\nWHERE tt.VisitValue IS NOT NULL AND v.RowId IS NULL");
+
+        // shared visit container
+        Study visitStudy = StudyManager.getInstance().getStudyForVisits(study);
+        sql.add(visitStudy.getContainer().getId());
+
+        SqlSelector selector = new SqlSelector(StudySchema.getInstance().getSchema(), sql);
+        List<Double> undefinedVisits = selector.getArrayList(Double.class);
+        if (!undefinedVisits.isEmpty())
+            throw new ValidationException("The following undefined visits exist in the specimen data: " + StringUtils.join(undefinedVisits, ", "));
+    }
 
     private void populateSpecimenTables(SpecimenLoadInfo info, boolean merge) throws IOException, ValidationException
     {
