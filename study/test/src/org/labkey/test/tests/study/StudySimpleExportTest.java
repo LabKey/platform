@@ -329,8 +329,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         log("Visit Properties: create visit with description");
         goToProjectHome();
         clickFolder(getFolderName());
-        goToManageStudy();
-        waitAndClickAndWait(Locator.linkWithText("Manage Visits"));
+        _studyHelper.goToManageVisits();
         waitAndClickAndWait(Locator.linkWithText("Create New Visit"));
         waitForElement(Locator.name("description"));
         setFormElement(Locator.name("label"), visitLabel);
@@ -368,8 +367,7 @@ public class StudySimpleExportTest extends StudyBaseTest
 
         log("Visit Properties: verify imported settings");
         clickFolder("Visit Properties");
-        goToManageStudy();
-        waitAndClickAndWait(Locator.linkWithText("Manage Visits"));
+        _studyHelper.goToManageVisits();
         waitAndClickAndWait(_studyHelper.editVisitLoc(visitLabel));
         waitForElement(Locator.name("description"));
         assertFormElementEquals(Locator.name("label"), visitLabel);
@@ -396,8 +394,7 @@ public class StudySimpleExportTest extends StudyBaseTest
 
         log("Visit Properties: remove visit");
         clickFolder(getFolderName());
-        goToManageStudy();
-        waitAndClickAndWait(Locator.linkWithText("Manage Visits"));
+        _studyHelper.goToManageVisits();
         waitAndClickAndWait(_studyHelper.editVisitLoc(visitLabel));
         clickButton("Delete visit");
         waitForText("Do you want to delete Visit");

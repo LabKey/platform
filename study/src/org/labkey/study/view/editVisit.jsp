@@ -239,7 +239,7 @@
         <tr>
             <td>
                 <%= button("Save").submit(true) %>&nbsp;
-                <%= button(isDateBased ? "Delete timepoint" : "Delete visit").href(buildURL(StudyController.ConfirmDeleteVisitAction.class, "id="+visit.getRowId())) %>&nbsp;
+                <%= button(isDateBased ? "Delete Timepoint" : "Delete Visit").href(buildURL(StudyController.ConfirmDeleteVisitAction.class, "id="+visit.getRowId())) %>&nbsp;
                 <%= button("Cancel").href(StudyController.ManageVisitsAction.class, getContainer()) %>
             </td>
         </tr>

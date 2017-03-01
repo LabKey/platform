@@ -42,6 +42,7 @@ import org.labkey.study.model.StudyManager;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -205,6 +206,7 @@ public class DatasetImportRunnable implements Runnable
                             List<Double> undefinedSequenceNums = StudyManager.getInstance().getUndefinedSequenceNumsForDataset(_datasetDefinition.getContainer(), _datasetDefinition.getDatasetId());
                             if (!undefinedSequenceNums.isEmpty())
                             {
+                                Collections.sort(undefinedSequenceNums);
                                 _job.error("The following undefined visits exist in the dataset data: " + StringUtils.join(undefinedSequenceNums, ", "));
                                 shouldCommit = false;
                             }

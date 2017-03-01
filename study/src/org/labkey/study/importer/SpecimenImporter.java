@@ -1456,7 +1456,10 @@ public class SpecimenImporter
         SqlSelector selector = new SqlSelector(StudySchema.getInstance().getSchema(), sql);
         List<Double> undefinedVisits = selector.getArrayList(Double.class);
         if (!undefinedVisits.isEmpty())
+        {
+            Collections.sort(undefinedVisits);
             throw new ValidationException("The following undefined visits exist in the specimen data: " + StringUtils.join(undefinedVisits, ", "));
+        }
     }
 
     private void populateSpecimenTables(SpecimenLoadInfo info, boolean merge) throws IOException, ValidationException

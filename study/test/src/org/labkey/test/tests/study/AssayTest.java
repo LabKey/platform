@@ -495,8 +495,7 @@ public class AssayTest extends AbstractAssayTest
     {
         log("Prepare visit map to check PTID counts in study navigator.");
         clickFolder(TEST_ASSAY_FLDR_STUDY1);
-        clickAndWait(Locator.linkWithText("Manage"));
-        clickAndWait(Locator.linkWithText("Manage Visits"));
+        _studyHelper.goToManageVisits();
         clickAndWait(Locator.linkWithText("Import Visit Map"));
         setFormElement(Locator.name("content"),
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -725,8 +724,7 @@ public class AssayTest extends AbstractAssayTest
         clickProject(TEST_ASSAY_PRJ_SECURITY);
         clickFolder(TEST_ASSAY_FLDR_STUDY2);
 
-        clickAndWait(Locator.linkWithText("Manage"));
-        clickAndWait(Locator.linkWithText("Manage Visits"));
+        _studyHelper.goToManageVisits();
         clickAndWait(Locator.linkWithText("Import Visit Map"));
         setFormElement(Locator.name("content"),
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -802,8 +800,7 @@ public class AssayTest extends AbstractAssayTest
         log("Test that correct timepoints were created");
 
         clickTab("Overview");
-        clickAndWait(Locator.linkWithText("Manage Study"));
-        clickAndWait(Locator.linkWithText("Manage Visits"));
+        _studyHelper.goToManageVisits();
         assertTextPresent(
                 "Test Visit1",
                 "6.0 - 13.0",
