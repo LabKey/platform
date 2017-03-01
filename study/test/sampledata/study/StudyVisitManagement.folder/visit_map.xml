@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<visitMap xmlns="http://labkey.org/study/xml">
+  <visit label="1 week Post-V#1" typeCode="S" sequenceNum="301.0" maxSequenceNum="391.0"/>
+  <visit label="2 week Post-V#1" typeCode="T" sequenceNum="400.0" maxSequenceNum="499.0"/>
+  <visit label="3 week Post-V#1" typeCode="B" sequenceNum="501.0"/>
+</visitMap>

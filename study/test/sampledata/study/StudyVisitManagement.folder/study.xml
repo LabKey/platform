@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Exported from LabKey Server (17.1 Postgres) at http://localhost:8080/labkey/StudyVisitTesting/project-begin.view by cnathe on Tue Feb 28 11:04:31 CST 2017-->
+<study archiveVersion="16.32" label="Study 001" timepointType="VISIT" subjectNounSingular="Mouse" subjectNounPlural="Mice" subjectColumnName="MouseId" investigator="" grant="" species="" alternateIdPrefix="" alternateIdDigits="6" defaultTimepointDuration="1" startDate="2009-08-17-05:00" securityType="BASIC_READ" xmlns="http://labkey.org/study/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <cohorts type="MANUAL" mode="SIMPLE" file="cohorts.xml"/>
+  <datasets dir="datasets" file="datasets_manifest.xml">
+    <definition file="Study.dataset"/>
+  </datasets>
+  <specimens dir="specimens" settings="specimen_settings.xml" file="Study.specimens"/>
+  <visits file="visit_map.xml"/>
+  <studyDescription rendererType="TEXT_WITH_LINKS">
+    <description xsi:nil="true"/>
+  </studyDescription>
+  <properties dir="properties"/>
+</study>

@@ -1,0 +1,9 @@
+MouseId	SequenceNum	date	QCStateLabel	URFmenst	URFddone	URFdsdt	URFdsloc	URFdprot	URFdprqc	URFdhemo	URFdheqc	URFdoabn	URFdotqc	URFdoabx	URFdover	URFdovqc	URFmei	URFmedn	URFco1x	formlang	sfdt_140
+999320016	301.0000			No	Yes		0	0		0		0			0		0	No			0
+999320016	401.0000			0	0		0	0		0		0			0		0	0			0
+999320016	411.0000			0	0		0	0		0		0			0		0	0			0
+999320485	401.0000			0	0		0	0		0		0			0		0	No			0
+999320624	401.0000			0	Yes	2006-02-23 00:00:00.0	site	3+		Negative		No			abnormal/significant		Yes	Yes		English	0
+999320695	401.0000			No	Yes	2006-02-16 00:00:00.0	site	Negative		Negative		No			normal		0	0		English	1
+999320719	401.0000			0	Yes	2006-02-01 00:00:00.0	site	Negative		4+		No			abnormal/significant		Yes	Yes		English	0
+999321033	401.0000			0	Yes	2006-02-14 00:00:00.0	site	Negative		Negative		No			normal		0	0		English	0

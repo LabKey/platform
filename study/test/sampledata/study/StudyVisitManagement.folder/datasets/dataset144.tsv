@@ -1,0 +1,11 @@
+MouseId	SequenceNum	date	QCStateLabel	CPFdt	CPFaltn	CPFaltdt	CPFalt	CPFaltgr	CPFaltpg	CPFaltqc	CPFcren	CPFcredt	CPFcre	CPFcregr	CPFcrepg	CPFcreqc	CPFcomm	formlang	sfdt_144
+999320016	401.0000			2005-02-15 00:00:00.0	0						0							English	1
+999320016	411.0000				0						0							English	1
+999320638	701.0000			2006-03-10 00:00:00.0	0		441	3	1		0		1.1					English	1
+999320646	401.0000			2006-02-21 00:00:00.0	0		45				0		3.5	3	1			English	0
+999320646	411.0000			2006-02-26 00:00:00.0	1a. ALT Not Done/Not Coll						0		1.9	2	1			English	0
+999320695	401.0000			2006-02-16 00:00:00.0	0		35				0		3.0	3	1			English	1
+999320695	411.0000			2006-02-23 00:00:00.0	0		35				0		1.9	2	1			English	1
+999320719	401.0000			2006-02-01 00:00:00.0	0		80				0		0.5					English	0
+999321029	401.0000			2006-02-05 00:00:00.0	0		13				0		0.6					English	0
+999321033	401.0000			2006-02-14 00:00:00.0	0		13				0		0.6					English	0

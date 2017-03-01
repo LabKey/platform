@@ -1,0 +1,2 @@
+Label	StartDate	EndDate	TimepointType	SubjectNounSingular	SubjectNounPlural	SubjectColumnName	Grant	Investigator	Species	ParticipantAliasDatasetId	ParticipantAliasProperty	ParticipantAliasSourceProperty	AssayPlan	Description	DescriptionRendererType	DateBased	LSID
+Study 001	2009-08-17 02:00:00.0		VISIT	Mouse	Mice	MouseId									TEXT_WITH_LINKS	false	urn:lsid:labkey.com:Study.Folder-5626:5626

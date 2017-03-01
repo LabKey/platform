@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tables xmlns="http://labkey.org/data/xml">
+  <table tableName="Personnel" tableDbType="TABLE">
+    <description>Contains one row per each study personnel</description>
+    <columns/>
+  </table>
+  <table tableName="Study" tableDbType="TABLE">
+    <description>Contains one row per study, describing basic and extended study properties.</description>
+    <columns/>
+  </table>
+</tables>

@@ -1,0 +1,1413 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tables xmlns="http://labkey.org/data/xml">
+  <table tableName="VAC-1" tableDbType="TABLE">
+    <description>Contains up to one row of VAC-1 (VAC-1: Post-enrollment Vaccination) data for each Mouse/Visit combination.</description>
+    <columns>
+      <column columnName="MouseId">
+        <datatype>varchar</datatype>
+        <columnTitle>Mouse Id</columnTitle>
+        <description>Subject identifier</description>
+        <propertyURI>http://cpas.labkey.com/Study#ParticipantId</propertyURI>
+        <nullable>false</nullable>
+        <importAliases>
+          <importAlias>ptid</importAlias>
+        </importAliases>
+        <fk>
+          <fkDbSchema>study</fkDbSchema>
+          <fkTable>Mouse</fkTable>
+          <fkColumnName>MouseId</fkColumnName>
+        </fk>
+        <scale>32</scale>
+      </column>
+      <column columnName="SequenceNum">
+        <datatype>double</datatype>
+        <columnTitle>Sequence Num</columnTitle>
+        <propertyURI>http://cpas.labkey.com/Study#SequenceNum</propertyURI>
+        <nullable>false</nullable>
+        <importAliases>
+          <importAlias>visit</importAlias>
+          <importAlias>visitid</importAlias>
+        </importAliases>
+      </column>
+      <column columnName="date">
+        <datatype>timestamp</datatype>
+        <columnTitle>Date</columnTitle>
+        <propertyURI>http://cpas.labkey.com/Study#VisitDate</propertyURI>
+        <formatString>Date</formatString>
+      </column>
+      <column columnName="VACgiven">
+        <datatype>varchar</datatype>
+        <columnTitle>1. Was vaccination given?</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="VACdt">
+        <datatype>timestamp</datatype>
+        <columnTitle>2. Date of today's vacc.</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#dateTime</rangeURI>
+      </column>
+      <column columnName="VACdelt">
+        <datatype>varchar</datatype>
+        <columnTitle>3a. Location of injection</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="VACtm">
+        <datatype>varchar</datatype>
+        <columnTitle>3b.Time of injection</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="VACadmby">
+        <datatype>varchar</datatype>
+        <columnTitle>Injection administered by</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="formlang">
+        <datatype>varchar</datatype>
+        <columnTitle>Form Language</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="sfdt_135">
+        <datatype>varchar</datatype>
+        <columnTitle>Staff Initials/Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+    </columns>
+    <tableTitle>VAC-1: Post-enrollment Vaccination</tableTitle>
+  </table>
+  <table tableName="APX-1" tableDbType="TABLE">
+    <description>Contains up to one row of APX-1 (APX-1: Abbreviated Physical Exam) data for each Mouse/Visit combination.</description>
+    <columns>
+      <column columnName="MouseId">
+        <datatype>varchar</datatype>
+        <columnTitle>Mouse Id</columnTitle>
+        <description>Subject identifier</description>
+        <propertyURI>http://cpas.labkey.com/Study#ParticipantId</propertyURI>
+        <nullable>false</nullable>
+        <importAliases>
+          <importAlias>ptid</importAlias>
+        </importAliases>
+        <fk>
+          <fkDbSchema>study</fkDbSchema>
+          <fkTable>Mouse</fkTable>
+          <fkColumnName>MouseId</fkColumnName>
+        </fk>
+        <scale>32</scale>
+      </column>
+      <column columnName="SequenceNum">
+        <datatype>double</datatype>
+        <columnTitle>Sequence Num</columnTitle>
+        <propertyURI>http://cpas.labkey.com/Study#SequenceNum</propertyURI>
+        <nullable>false</nullable>
+        <importAliases>
+          <importAlias>visit</importAlias>
+          <importAlias>visitid</importAlias>
+        </importAliases>
+      </column>
+      <column columnName="date">
+        <datatype>timestamp</datatype>
+        <columnTitle>Date</columnTitle>
+        <propertyURI>http://cpas.labkey.com/Study#VisitDate</propertyURI>
+        <formatString>Date</formatString>
+      </column>
+      <column columnName="APXdt">
+        <datatype>timestamp</datatype>
+        <columnTitle>Exam Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#dateTime</rangeURI>
+      </column>
+      <column columnName="APXwtkg">
+        <datatype>double</datatype>
+        <columnTitle>1. Weight</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#double</rangeURI>
+        <formatString>##0</formatString>
+      </column>
+      <column columnName="APXwtqc">
+        <datatype>varchar</datatype>
+        <columnTitle>Weight QC</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXtempc">
+        <datatype>double</datatype>
+        <columnTitle>2. Body Temp</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#double</rangeURI>
+        <formatString>#0.0</formatString>
+      </column>
+      <column columnName="APXtemqc">
+        <datatype>varchar</datatype>
+        <columnTitle>Body Temp QC</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXbpsys">
+        <datatype>integer</datatype>
+        <columnTitle>3. BP systolic xxx/</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>##0</formatString>
+      </column>
+      <column columnName="APXbpdia">
+        <datatype>integer</datatype>
+        <columnTitle>3. BP diastolic /xxx</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>##0</formatString>
+      </column>
+      <column columnName="APXbpqc">
+        <datatype>varchar</datatype>
+        <columnTitle>Blood Pressure QC</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXpulse">
+        <datatype>integer</datatype>
+        <columnTitle>4. Pulse</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>##0</formatString>
+      </column>
+      <column columnName="APXresp">
+        <datatype>integer</datatype>
+        <columnTitle>5. Respirations</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>#0</formatString>
+      </column>
+      <column columnName="APXheent">
+        <datatype>varchar</datatype>
+        <columnTitle>6. HEENT</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXheenx">
+        <datatype>varchar</datatype>
+        <columnTitle>6. HEENT Notes</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXneck">
+        <datatype>varchar</datatype>
+        <columnTitle>7. Neck</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXneckx">
+        <datatype>varchar</datatype>
+        <columnTitle>7. Neck Notes</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXlymph">
+        <datatype>varchar</datatype>
+        <columnTitle>8. Lymph Nodes</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXlympx">
+        <datatype>varchar</datatype>
+        <columnTitle>8. Lymph Nodes Notes</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXheart">
+        <datatype>varchar</datatype>
+        <columnTitle>9. Heart</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXhrtx">
+        <datatype>varchar</datatype>
+        <columnTitle>9. Heart Notes</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXchest">
+        <datatype>varchar</datatype>
+        <columnTitle>10. Chest</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXchstx">
+        <datatype>varchar</datatype>
+        <columnTitle>10. Chest Notes</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXabdom">
+        <datatype>varchar</datatype>
+        <columnTitle>11. Abdomen</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXabdox">
+        <datatype>varchar</datatype>
+        <columnTitle>11. Abdomen Notes</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXextrm">
+        <datatype>varchar</datatype>
+        <columnTitle>12. Extremities</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXextrx">
+        <datatype>varchar</datatype>
+        <columnTitle>12. Extremities Notes</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXneuro">
+        <datatype>varchar</datatype>
+        <columnTitle>13. Neurological</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXneurx">
+        <datatype>varchar</datatype>
+        <columnTitle>13. Neurological Notes</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXskin">
+        <datatype>varchar</datatype>
+        <columnTitle>14. Skin</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXskinx">
+        <datatype>varchar</datatype>
+        <columnTitle>14. Skin Notes</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXother">
+        <datatype>varchar</datatype>
+        <columnTitle>15. Other</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXothex">
+        <datatype>varchar</datatype>
+        <columnTitle>15. Other Notes</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXcemqc">
+        <datatype>varchar</datatype>
+        <columnTitle>Sx-directed eval deemed</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXcemh">
+        <datatype>varchar</datatype>
+        <columnTitle>16. Evaluation Summary</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXsign">
+        <datatype>varchar</datatype>
+        <columnTitle>Clinician signature/date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXprdt">
+        <datatype>timestamp</datatype>
+        <columnTitle>17. Date Pregnancy test</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#dateTime</rangeURI>
+      </column>
+      <column columnName="APXprtna">
+        <datatype>varchar</datatype>
+        <columnTitle>17. Pregnancy test N/A</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXpregt">
+        <datatype>varchar</datatype>
+        <columnTitle>17a. Preg. test result</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="APXco1x">
+        <datatype>varchar</datatype>
+        <columnTitle>Comments</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="formlang">
+        <datatype>varchar</datatype>
+        <columnTitle>Form Language</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="sfdt_136">
+        <datatype>varchar</datatype>
+        <columnTitle>Staff Initials/Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+    </columns>
+    <tableTitle>APX-1: Abbreviated Physical Exam</tableTitle>
+  </table>
+  <table tableName="URF-1" tableDbType="TABLE">
+    <description>Contains up to one row of URF-1 (URF-1: Follow-up Urinalysis (Page 1)) data for each Mouse/Visit combination.</description>
+    <columns>
+      <column columnName="MouseId">
+        <datatype>varchar</datatype>
+        <columnTitle>Mouse Id</columnTitle>
+        <description>Subject identifier</description>
+        <propertyURI>http://cpas.labkey.com/Study#ParticipantId</propertyURI>
+        <nullable>false</nullable>
+        <importAliases>
+          <importAlias>ptid</importAlias>
+        </importAliases>
+        <fk>
+          <fkDbSchema>study</fkDbSchema>
+          <fkTable>Mouse</fkTable>
+          <fkColumnName>MouseId</fkColumnName>
+        </fk>
+        <scale>32</scale>
+      </column>
+      <column columnName="SequenceNum">
+        <datatype>double</datatype>
+        <columnTitle>Sequence Num</columnTitle>
+        <propertyURI>http://cpas.labkey.com/Study#SequenceNum</propertyURI>
+        <nullable>false</nullable>
+        <importAliases>
+          <importAlias>visit</importAlias>
+          <importAlias>visitid</importAlias>
+        </importAliases>
+      </column>
+      <column columnName="date">
+        <datatype>timestamp</datatype>
+        <columnTitle>Date</columnTitle>
+        <propertyURI>http://cpas.labkey.com/Study#VisitDate</propertyURI>
+        <formatString>Date</formatString>
+      </column>
+      <column columnName="URFmenst">
+        <datatype>varchar</datatype>
+        <columnTitle>1. Menstruation occurring</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="URFddone">
+        <datatype>varchar</datatype>
+        <columnTitle>2.Dipstick exam done?</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="URFdsdt">
+        <datatype>timestamp</datatype>
+        <columnTitle>2a.Dipstick Coll. Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#dateTime</rangeURI>
+      </column>
+      <column columnName="URFdsloc">
+        <datatype>varchar</datatype>
+        <columnTitle>2b.Dipstick performed by</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="URFdprot">
+        <datatype>varchar</datatype>
+        <columnTitle>3a.Protein</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="URFdprqc">
+        <datatype>varchar</datatype>
+        <columnTitle>Protein</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="URFdhemo">
+        <datatype>varchar</datatype>
+        <columnTitle>3b.Hemoglobin</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="URFdheqc">
+        <datatype>varchar</datatype>
+        <columnTitle>Hemoglobin</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="URFdoabn">
+        <datatype>varchar</datatype>
+        <columnTitle>3c.Othr abnml findings?</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="URFdotqc">
+        <datatype>varchar</datatype>
+        <columnTitle>macroscopic findings</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="URFdoabx">
+        <datatype>varchar</datatype>
+        <columnTitle>3c1.Specify abnormality</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="URFdover">
+        <datatype>varchar</datatype>
+        <columnTitle>4.Dipstick overall result</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="URFdovqc">
+        <datatype>varchar</datatype>
+        <columnTitle>dipstick overall result</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="URFmei">
+        <datatype>varchar</datatype>
+        <columnTitle>5.Micro exam indicated</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="URFmedn">
+        <datatype>varchar</datatype>
+        <columnTitle>5a.Micro exam done?</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="URFco1x">
+        <datatype>varchar</datatype>
+        <columnTitle>Comments</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="formlang">
+        <datatype>varchar</datatype>
+        <columnTitle>Form Language</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="sfdt_140">
+        <datatype>varchar</datatype>
+        <columnTitle>Staff Initials/Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+    </columns>
+    <tableTitle>URF-1: Follow-up Urinalysis (Page 1)</tableTitle>
+  </table>
+  <table tableName="LLF-1" tableDbType="TABLE">
+    <description>Contains up to one row of LLF-1 (LLF-1: Follow-up Local Lab Results (Page 1)) data for each Mouse/Visit combination.</description>
+    <columns>
+      <column columnName="MouseId">
+        <datatype>varchar</datatype>
+        <columnTitle>Mouse Id</columnTitle>
+        <description>Subject identifier</description>
+        <propertyURI>http://cpas.labkey.com/Study#ParticipantId</propertyURI>
+        <nullable>false</nullable>
+        <importAliases>
+          <importAlias>ptid</importAlias>
+        </importAliases>
+        <fk>
+          <fkDbSchema>study</fkDbSchema>
+          <fkTable>Mouse</fkTable>
+          <fkColumnName>MouseId</fkColumnName>
+        </fk>
+        <scale>32</scale>
+      </column>
+      <column columnName="SequenceNum">
+        <datatype>double</datatype>
+        <columnTitle>Sequence Num</columnTitle>
+        <propertyURI>http://cpas.labkey.com/Study#SequenceNum</propertyURI>
+        <nullable>false</nullable>
+        <importAliases>
+          <importAlias>visit</importAlias>
+          <importAlias>visitid</importAlias>
+        </importAliases>
+      </column>
+      <column columnName="date">
+        <datatype>timestamp</datatype>
+        <columnTitle>Date</columnTitle>
+        <propertyURI>http://cpas.labkey.com/Study#VisitDate</propertyURI>
+        <formatString>Date</formatString>
+      </column>
+      <column columnName="LLFdt">
+        <datatype>timestamp</datatype>
+        <columnTitle>Initial Spec. Coll. Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#dateTime</rangeURI>
+      </column>
+      <column columnName="LLFhemn">
+        <datatype>varchar</datatype>
+        <columnTitle>1.Hem Not Done/Not Collec</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFhemdt">
+        <datatype>timestamp</datatype>
+        <columnTitle>1.Hemo. Alt. Coll. Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#dateTime</rangeURI>
+      </column>
+      <column columnName="LLFwbcn">
+        <datatype>varchar</datatype>
+        <columnTitle>1a. WBC not reported</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFwbc">
+        <datatype>double</datatype>
+        <columnTitle>1a. WBC</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#double</rangeURI>
+        <formatString>##0.0</formatString>
+      </column>
+      <column columnName="LLFwbcgr">
+        <datatype>integer</datatype>
+        <columnTitle>1a. WBC AE Severity Grade</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+      </column>
+      <column columnName="LLFwbcpg">
+        <datatype>integer</datatype>
+        <columnTitle>1a. WBC AE Log Page #</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+      </column>
+      <column columnName="LLFwbcqc">
+        <datatype>varchar</datatype>
+        <columnTitle>WBC</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFhgbn">
+        <datatype>varchar</datatype>
+        <columnTitle>1b. Hemoglobin not report</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFhgb">
+        <datatype>double</datatype>
+        <columnTitle>1b. Hemoglobin</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#double</rangeURI>
+        <formatString>#0.0</formatString>
+      </column>
+      <column columnName="LLFhgbgr">
+        <datatype>integer</datatype>
+        <columnTitle>1b.HgB AE Severity Grade</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+      </column>
+      <column columnName="LLFhgbpg">
+        <datatype>integer</datatype>
+        <columnTitle>1b.HgB AE Log Page #</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+      </column>
+      <column columnName="LLFhgbqc">
+        <datatype>varchar</datatype>
+        <columnTitle>HgB</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFhctn">
+        <datatype>varchar</datatype>
+        <columnTitle>1c.Hematocrit not done</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFhct">
+        <datatype>double</datatype>
+        <columnTitle>1c.Hematocrit</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#double</rangeURI>
+        <formatString>#0.0</formatString>
+      </column>
+      <column columnName="LLFhctqc">
+        <datatype>varchar</datatype>
+        <columnTitle>Hct</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFmcvn">
+        <datatype>varchar</datatype>
+        <columnTitle>1d.MCV not done</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFmcv">
+        <datatype>integer</datatype>
+        <columnTitle>1d. MCV</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>##0.0</formatString>
+      </column>
+      <column columnName="LLFmcvqc">
+        <datatype>varchar</datatype>
+        <columnTitle>MCV</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFpltn">
+        <datatype>varchar</datatype>
+        <columnTitle>1e.Platelets not done</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFplt">
+        <datatype>integer</datatype>
+        <columnTitle>1e. Platelets</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>######0</formatString>
+      </column>
+      <column columnName="LLFpltgr">
+        <datatype>integer</datatype>
+        <columnTitle>1e.Plt AE Severity Grade</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+      </column>
+      <column columnName="LLFpltpg">
+        <datatype>integer</datatype>
+        <columnTitle>1e. Plate. AE Log Page #</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+      </column>
+      <column columnName="LLFpltqc">
+        <datatype>varchar</datatype>
+        <columnTitle>Platelets</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFdifn">
+        <datatype>varchar</datatype>
+        <columnTitle>2.Diff Not Done/Not Coll</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFdifdt">
+        <datatype>timestamp</datatype>
+        <columnTitle>2. Diff. Alt Coll Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#dateTime</rangeURI>
+      </column>
+      <column columnName="LLFneun">
+        <datatype>varchar</datatype>
+        <columnTitle>2a.Neuts Not Reported</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFneup">
+        <datatype>double</datatype>
+        <columnTitle>2a.Neutrophils %</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#double</rangeURI>
+        <formatString>#0.0</formatString>
+      </column>
+      <column columnName="LLFneu">
+        <datatype>integer</datatype>
+        <columnTitle>2a.Neutrophils cells/mm3</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>####0</formatString>
+      </column>
+      <column columnName="LLFneugr">
+        <datatype>integer</datatype>
+        <columnTitle>2a.Neut. AE Sever. Grade</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+      </column>
+      <column columnName="LLFneupg">
+        <datatype>integer</datatype>
+        <columnTitle>2a.Neut. AE Log Page #</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+      </column>
+      <column columnName="LLFneuqc">
+        <datatype>varchar</datatype>
+        <columnTitle>Neutrophils</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFlymn">
+        <datatype>varchar</datatype>
+        <columnTitle>2b.Lymphs Not Reported</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFlymp">
+        <datatype>double</datatype>
+        <columnTitle>2b.Lymphocites %</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#double</rangeURI>
+        <formatString>#0.0</formatString>
+      </column>
+      <column columnName="LLFlym">
+        <datatype>integer</datatype>
+        <columnTitle>2b.Lymphs cells/mm3</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>###0</formatString>
+      </column>
+      <column columnName="LLFlymgr">
+        <datatype>integer</datatype>
+        <columnTitle>2b.Lymph AE Sever. Grade</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+      </column>
+      <column columnName="LLFlympg">
+        <datatype>integer</datatype>
+        <columnTitle>2b.Lymph AE Log Page #</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+      </column>
+      <column columnName="LLFlymqc">
+        <datatype>varchar</datatype>
+        <columnTitle>Lymphocites</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFmonn">
+        <datatype>varchar</datatype>
+        <columnTitle>2c.Monocytes Not Reported</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFmonp">
+        <datatype>double</datatype>
+        <columnTitle>2c.Monocytes %</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#double</rangeURI>
+        <formatString>#0.0</formatString>
+      </column>
+      <column columnName="LLFmon">
+        <datatype>integer</datatype>
+        <columnTitle>2c.Monocytes cells/mm3</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>###0</formatString>
+      </column>
+      <column columnName="LLFmonqc">
+        <datatype>varchar</datatype>
+        <columnTitle>Monocytes</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFeosn">
+        <datatype>varchar</datatype>
+        <columnTitle>2d.Eosinophils Not Rprtd.</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFeosp">
+        <datatype>double</datatype>
+        <columnTitle>2d.Eosinophils %</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#double</rangeURI>
+        <formatString>#0.0</formatString>
+      </column>
+      <column columnName="LLFeos">
+        <datatype>integer</datatype>
+        <columnTitle>2d.Eosinophils cells/mm3</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>###0</formatString>
+      </column>
+      <column columnName="LLFeosqc">
+        <datatype>varchar</datatype>
+        <columnTitle>Eosinophils</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFbasn">
+        <datatype>varchar</datatype>
+        <columnTitle>2e.Basophils Not Reprtd.</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFbasp">
+        <datatype>double</datatype>
+        <columnTitle>2e.Basophils %</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#double</rangeURI>
+        <formatString>#0.0</formatString>
+      </column>
+      <column columnName="LLFbas">
+        <datatype>integer</datatype>
+        <columnTitle>2e.Basophils cells/mm3</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>###0</formatString>
+      </column>
+      <column columnName="LLFbasqc">
+        <datatype>varchar</datatype>
+        <columnTitle>Basophils</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFbann">
+        <datatype>varchar</datatype>
+        <columnTitle>2f.Bands Not Reported</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFbanp">
+        <datatype>integer</datatype>
+        <columnTitle>2f.Bands %</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>#0.0</formatString>
+      </column>
+      <column columnName="LLFban">
+        <datatype>integer</datatype>
+        <columnTitle>2f.Bands cells/mm3</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>###0</formatString>
+      </column>
+      <column columnName="LLFbanqc">
+        <datatype>varchar</datatype>
+        <columnTitle>Bands</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFatyn">
+        <datatype>varchar</datatype>
+        <columnTitle>2g.Atypic lymph Nt Reprtd</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFatyp">
+        <datatype>integer</datatype>
+        <columnTitle>2g.Atypical lymphocytes %</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>#0.0</formatString>
+      </column>
+      <column columnName="LLFaty">
+        <datatype>integer</datatype>
+        <columnTitle>2g.Atyp Lymphs cells/mm3</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>###0</formatString>
+      </column>
+      <column columnName="LLFatyqc">
+        <datatype>varchar</datatype>
+        <columnTitle>Atypical lymphocyte</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFodn">
+        <datatype>varchar</datatype>
+        <columnTitle>2h.Other Not Reported</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFodp">
+        <datatype>integer</datatype>
+        <columnTitle>2h.Other %</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>#0.0</formatString>
+      </column>
+      <column columnName="LLFod">
+        <datatype>integer</datatype>
+        <columnTitle>2h.Other cells/mm3</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>###0</formatString>
+      </column>
+      <column columnName="LLFodqc">
+        <datatype>varchar</datatype>
+        <columnTitle>Other Differential</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFodx">
+        <datatype>varchar</datatype>
+        <columnTitle>2h.Other, specify text</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="LLFco2x">
+        <datatype>varchar</datatype>
+        <columnTitle>Comments</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="formlang">
+        <datatype>varchar</datatype>
+        <columnTitle>Form Language</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="sfdt_143">
+        <datatype>varchar</datatype>
+        <columnTitle>Staff Initials/Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+    </columns>
+    <tableTitle>LLF-1: Follow-up Local Lab Results (Page 1)</tableTitle>
+  </table>
+  <table tableName="CPF-1" tableDbType="TABLE">
+    <description>Contains up to one row of CPF-1 (CPF-1: Follow-up Chemistry Panel) data for each Mouse/Visit combination.</description>
+    <columns>
+      <column columnName="MouseId">
+        <datatype>varchar</datatype>
+        <columnTitle>Mouse Id</columnTitle>
+        <description>Subject identifier</description>
+        <propertyURI>http://cpas.labkey.com/Study#ParticipantId</propertyURI>
+        <nullable>false</nullable>
+        <importAliases>
+          <importAlias>ptid</importAlias>
+        </importAliases>
+        <fk>
+          <fkDbSchema>study</fkDbSchema>
+          <fkTable>Mouse</fkTable>
+          <fkColumnName>MouseId</fkColumnName>
+        </fk>
+        <scale>32</scale>
+      </column>
+      <column columnName="SequenceNum">
+        <datatype>double</datatype>
+        <columnTitle>Sequence Num</columnTitle>
+        <propertyURI>http://cpas.labkey.com/Study#SequenceNum</propertyURI>
+        <nullable>false</nullable>
+        <importAliases>
+          <importAlias>visit</importAlias>
+          <importAlias>visitid</importAlias>
+        </importAliases>
+      </column>
+      <column columnName="date">
+        <datatype>timestamp</datatype>
+        <columnTitle>Date</columnTitle>
+        <propertyURI>http://cpas.labkey.com/Study#VisitDate</propertyURI>
+        <formatString>Date</formatString>
+      </column>
+      <column columnName="CPFdt">
+        <datatype>timestamp</datatype>
+        <columnTitle>Initial Spec Coll Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#dateTime</rangeURI>
+      </column>
+      <column columnName="CPFaltn">
+        <datatype>varchar</datatype>
+        <columnTitle>1a. ALT Not Done/Not Coll</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="CPFaltdt">
+        <datatype>timestamp</datatype>
+        <columnTitle>1a. ALT Alternate Coll Dt</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#dateTime</rangeURI>
+      </column>
+      <column columnName="CPFalt">
+        <datatype>integer</datatype>
+        <columnTitle>1a. ALT (SGPT)</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>###0</formatString>
+      </column>
+      <column columnName="CPFaltgr">
+        <datatype>integer</datatype>
+        <columnTitle>1a.ALT AE Severity Grade</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+      </column>
+      <column columnName="CPFaltpg">
+        <datatype>integer</datatype>
+        <columnTitle>1a. ALT AE Log Page #</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+      </column>
+      <column columnName="CPFaltqc">
+        <datatype>varchar</datatype>
+        <columnTitle>ALT (SGPT)</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="CPFcren">
+        <datatype>varchar</datatype>
+        <columnTitle>2a.Crea Not Done/Not Coll</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="CPFcredt">
+        <datatype>timestamp</datatype>
+        <columnTitle>2a.Creat. Alter. Coll Dt</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#dateTime</rangeURI>
+      </column>
+      <column columnName="CPFcre">
+        <datatype>double</datatype>
+        <columnTitle>2a. Creatinine</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#double</rangeURI>
+        <formatString>#0.0</formatString>
+      </column>
+      <column columnName="CPFcregr">
+        <datatype>integer</datatype>
+        <columnTitle>2a.Creat. AE Sever. Grade</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+      </column>
+      <column columnName="CPFcrepg">
+        <datatype>integer</datatype>
+        <columnTitle>2a. Creat. AE Log Page #</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+      </column>
+      <column columnName="CPFcreqc">
+        <datatype>varchar</datatype>
+        <columnTitle>Creatinine</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="CPFcomm">
+        <datatype>varchar</datatype>
+        <columnTitle>Comments</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="formlang">
+        <datatype>varchar</datatype>
+        <columnTitle>Form Language</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="sfdt_144">
+        <datatype>varchar</datatype>
+        <columnTitle>Staff Initials/Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+    </columns>
+    <tableTitle>CPF-1: Follow-up Chemistry Panel</tableTitle>
+  </table>
+  <table tableName="OTB-1" tableDbType="TABLE">
+    <description>Contains up to one row of OTB-1 (OTB-1: Outside Testing/Belief) data for each Mouse/Visit combination.</description>
+    <columns>
+      <column columnName="MouseId">
+        <datatype>varchar</datatype>
+        <columnTitle>Mouse Id</columnTitle>
+        <description>Subject identifier</description>
+        <propertyURI>http://cpas.labkey.com/Study#ParticipantId</propertyURI>
+        <nullable>false</nullable>
+        <importAliases>
+          <importAlias>ptid</importAlias>
+        </importAliases>
+        <fk>
+          <fkDbSchema>study</fkDbSchema>
+          <fkTable>Mouse</fkTable>
+          <fkColumnName>MouseId</fkColumnName>
+        </fk>
+        <scale>32</scale>
+      </column>
+      <column columnName="SequenceNum">
+        <datatype>double</datatype>
+        <columnTitle>Sequence Num</columnTitle>
+        <propertyURI>http://cpas.labkey.com/Study#SequenceNum</propertyURI>
+        <nullable>false</nullable>
+        <importAliases>
+          <importAlias>visit</importAlias>
+          <importAlias>visitid</importAlias>
+        </importAliases>
+      </column>
+      <column columnName="date">
+        <datatype>timestamp</datatype>
+        <columnTitle>Date</columnTitle>
+        <propertyURI>http://cpas.labkey.com/Study#VisitDate</propertyURI>
+        <formatString>Date</formatString>
+      </column>
+      <column columnName="OTBdt">
+        <datatype>timestamp</datatype>
+        <columnTitle>Contact Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#dateTime</rangeURI>
+      </column>
+      <column columnName="OTBhivt">
+        <datatype>varchar</datatype>
+        <columnTitle>1.HIV test outside study?</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="OTBhivtn">
+        <datatype>integer</datatype>
+        <columnTitle>1a.# times tested</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>#0</formatString>
+      </column>
+      <column columnName="OTBhors">
+        <datatype>varchar</datatype>
+        <columnTitle>1b1.Req. by other study</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="OTBmed">
+        <datatype>varchar</datatype>
+        <columnTitle>1b2.Req. by med provider</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="OTBhins">
+        <datatype>varchar</datatype>
+        <columnTitle>1b3.Req. for insurance</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="OTBhtrvl">
+        <datatype>varchar</datatype>
+        <columnTitle>1b4.Req. for travel/imm.</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="OTBhjail">
+        <datatype>varchar</datatype>
+        <columnTitle>1b5.Req. by jail/drug tx</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="OTBhblod">
+        <datatype>varchar</datatype>
+        <columnTitle>1b6.Sold or donated blood</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="OTBhhrsk">
+        <datatype>varchar</datatype>
+        <columnTitle>1b7.Poss. hi-risk expos.</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="OTBant">
+        <datatype>varchar</datatype>
+        <columnTitle>1b8.Antibodies to vaccine</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="OTBhothr">
+        <datatype>varchar</datatype>
+        <columnTitle>1b9.Other reason</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="OTBspe">
+        <datatype>varchar</datatype>
+        <columnTitle>1b9.Other, specify text</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="OTBvacpl">
+        <datatype>varchar</datatype>
+        <columnTitle>2.Vaccine or Placebo?</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="formlang">
+        <datatype>varchar</datatype>
+        <columnTitle>Form Language</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="sfdt_173">
+        <datatype>varchar</datatype>
+        <columnTitle>Staff Initials/Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+    </columns>
+    <tableTitle>OTB-1: Outside Testing/Belief</tableTitle>
+  </table>
+  <table tableName="IV-1" tableDbType="TABLE">
+    <description>Contains up to one row of IV-1 (IV-1:Interim Visit) data for each Mouse/Visit combination.</description>
+    <columns>
+      <column columnName="MouseId">
+        <datatype>varchar</datatype>
+        <columnTitle>Mouse Id</columnTitle>
+        <description>Subject identifier</description>
+        <propertyURI>http://cpas.labkey.com/Study#ParticipantId</propertyURI>
+        <nullable>false</nullable>
+        <importAliases>
+          <importAlias>ptid</importAlias>
+        </importAliases>
+        <fk>
+          <fkDbSchema>study</fkDbSchema>
+          <fkTable>Mouse</fkTable>
+          <fkColumnName>MouseId</fkColumnName>
+        </fk>
+        <scale>32</scale>
+      </column>
+      <column columnName="SequenceNum">
+        <datatype>double</datatype>
+        <columnTitle>Sequence Num</columnTitle>
+        <propertyURI>http://cpas.labkey.com/Study#SequenceNum</propertyURI>
+        <nullable>false</nullable>
+        <importAliases>
+          <importAlias>visit</importAlias>
+          <importAlias>visitid</importAlias>
+        </importAliases>
+      </column>
+      <column columnName="date">
+        <datatype>timestamp</datatype>
+        <columnTitle>Date</columnTitle>
+        <propertyURI>http://cpas.labkey.com/Study#VisitDate</propertyURI>
+        <formatString>Date</formatString>
+      </column>
+      <column columnName="IVdt">
+        <datatype>timestamp</datatype>
+        <columnTitle>Form Completion Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#dateTime</rangeURI>
+      </column>
+      <column columnName="IVrmakup">
+        <datatype>varchar</datatype>
+        <columnTitle>1a. Visit missed</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="IVvisit">
+        <datatype>integer</datatype>
+        <columnTitle>1a1. Visit complte/replce</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#int</rangeURI>
+        <formatString>#0.0</formatString>
+      </column>
+      <column columnName="IVrae">
+        <datatype>varchar</datatype>
+        <columnTitle>1b. Ppt reported AE</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="IVrspec">
+        <datatype>varchar</datatype>
+        <columnTitle>1c. Repeat spec. coll.</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="IVrfupae">
+        <datatype>varchar</datatype>
+        <columnTitle>1d. F/U abnormal safety</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="IVriht">
+        <datatype>varchar</datatype>
+        <columnTitle>1e. Interim HIV testing</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="IVroth">
+        <datatype>varchar</datatype>
+        <columnTitle>1f. Other, specify</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="IVrothx">
+        <datatype>varchar</datatype>
+        <columnTitle>1f. Specify text</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="IVpapx">
+        <datatype>varchar</datatype>
+        <columnTitle>2a. Abbrev. phys. exam</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="IVpsia">
+        <datatype>varchar</datatype>
+        <columnTitle>2b. Social impact</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="IVpotb">
+        <datatype>varchar</datatype>
+        <columnTitle>2c. OTB questionnaire</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="IVpiht">
+        <datatype>varchar</datatype>
+        <columnTitle>2d. HIV infection</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="IVpllf">
+        <datatype>varchar</datatype>
+        <columnTitle>2e. Local Lab</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="IVpcpf">
+        <datatype>varchar</datatype>
+        <columnTitle>2f. Chemistry panel</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="IVpurf">
+        <datatype>varchar</datatype>
+        <columnTitle>2g. Urine dip/micro exam</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="IVpoth">
+        <datatype>varchar</datatype>
+        <columnTitle>2h. Other, specify</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="IVpothx">
+        <datatype>varchar</datatype>
+        <columnTitle>2h. Specify text</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="formlang">
+        <datatype>varchar</datatype>
+        <columnTitle>Form Language</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="sfdt_350">
+        <datatype>varchar</datatype>
+        <columnTitle>Staff Initials/Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+    </columns>
+    <tableTitle>IV-1:Interim Visit</tableTitle>
+  </table>
+  <table tableName="SCL-1" tableDbType="TABLE">
+    <description>Contains up to one row of SCL-1 (SCL-1: Specimen Collection) data for each Mouse/Visit combination.</description>
+    <columns>
+      <column columnName="MouseId">
+        <datatype>varchar</datatype>
+        <columnTitle>Mouse Id</columnTitle>
+        <description>Subject identifier</description>
+        <propertyURI>http://cpas.labkey.com/Study#ParticipantId</propertyURI>
+        <nullable>false</nullable>
+        <importAliases>
+          <importAlias>ptid</importAlias>
+        </importAliases>
+        <fk>
+          <fkDbSchema>study</fkDbSchema>
+          <fkTable>Mouse</fkTable>
+          <fkColumnName>MouseId</fkColumnName>
+        </fk>
+        <scale>32</scale>
+      </column>
+      <column columnName="SequenceNum">
+        <datatype>double</datatype>
+        <columnTitle>Sequence Num</columnTitle>
+        <propertyURI>http://cpas.labkey.com/Study#SequenceNum</propertyURI>
+        <nullable>false</nullable>
+        <importAliases>
+          <importAlias>visit</importAlias>
+          <importAlias>visitid</importAlias>
+        </importAliases>
+      </column>
+      <column columnName="date">
+        <datatype>timestamp</datatype>
+        <columnTitle>Date</columnTitle>
+        <propertyURI>http://cpas.labkey.com/Study#VisitDate</propertyURI>
+        <formatString>Date</formatString>
+      </column>
+      <column columnName="SCLdt">
+        <datatype>timestamp</datatype>
+        <columnTitle>Visit Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#dateTime</rangeURI>
+      </column>
+      <column columnName="SCLcoll">
+        <datatype>varchar</datatype>
+        <columnTitle>No spec coll/Spec coll</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="SCLscdt">
+        <datatype>timestamp</datatype>
+        <columnTitle>Specimen Collection Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#dateTime</rangeURI>
+      </column>
+      <column columnName="SCLsctm">
+        <datatype>varchar</datatype>
+        <columnTitle>Collection Time</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="SCLcomm">
+        <datatype>varchar</datatype>
+        <columnTitle>Comments</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="formlang">
+        <datatype>varchar</datatype>
+        <columnTitle>Form Language</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+      <column columnName="sfdt_449">
+        <datatype>varchar</datatype>
+        <columnTitle>Staff Initials/Date</columnTitle>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>4000</scale>
+      </column>
+    </columns>
+    <tableTitle>SCL-1: Specimen Collection</tableTitle>
+  </table>
+</tables>

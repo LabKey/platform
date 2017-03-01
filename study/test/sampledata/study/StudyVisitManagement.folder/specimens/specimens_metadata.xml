@@ -1,0 +1,741 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tables xmlns="http://labkey.org/data/xml">
+  <table tableName="Specimen" tableDbType="TABLE">
+    <columns>
+      <column columnName="SpecimenHash">
+        <datatype>varchar</datatype>
+        <columnTitle>Specimen Hash</columnTitle>
+        <description>A string value that uniquely identifies the specimen/draw-level properties of the specimen, including subject, visit, and specimen type.</description>
+        <scale>256</scale>
+      </column>
+      <column columnName="PTID">
+        <datatype>varchar</datatype>
+        <columnTitle>PTID</columnTitle>
+        <description>The ID of the subject providing each specimen.</description>
+        <scale>32</scale>
+      </column>
+      <column columnName="VisitDescription">
+        <datatype>varchar</datatype>
+        <columnTitle>Visit Description</columnTitle>
+        <description>A description of the visit type for each specimen.  For example, "visit", "day", or "week".</description>
+        <scale>10</scale>
+      </column>
+      <column columnName="VisitValue">
+        <datatype>double</datatype>
+        <columnTitle>Visit Value</columnTitle>
+        <description>The visit value (sequence num) of specimen collection.</description>
+        <formatString>0.####</formatString>
+      </column>
+      <column columnName="VolumeUnits">
+        <datatype>varchar</datatype>
+        <columnTitle>Volume Units</columnTitle>
+        <description>The units of volume for each specimen.</description>
+        <scale>20</scale>
+      </column>
+      <column columnName="PrimaryTypeId">
+        <datatype>integer</datatype>
+        <columnTitle>Primary Type Id</columnTitle>
+        <description>The ID of the primary type of each specimen.</description>
+      </column>
+      <column columnName="AdditiveTypeId">
+        <datatype>integer</datatype>
+        <columnTitle>Additive Type Id</columnTitle>
+        <description>The ID of the additive type of each specimen.</description>
+      </column>
+      <column columnName="DerivativeTypeId">
+        <datatype>integer</datatype>
+        <columnTitle>Derivative Type Id</columnTitle>
+        <description>The ID of the derivative type of each specimen.</description>
+      </column>
+      <column columnName="DerivativeTypeId2">
+        <datatype>integer</datatype>
+        <columnTitle>Derivative Type Id2</columnTitle>
+        <description>The ID of the second derivative type of each specimen.</description>
+      </column>
+      <column columnName="SubadditiveDerivative">
+        <datatype>varchar</datatype>
+        <columnTitle>Subadditive Derivative</columnTitle>
+        <description>The sub-additive/derivative type of each specimen.</description>
+        <scale>50</scale>
+      </column>
+      <column columnName="DrawTimestamp">
+        <datatype>timestamp</datatype>
+        <columnTitle>Draw Timestamp</columnTitle>
+        <description>The timestamp of specimen collection.</description>
+        <formatString>DateTime</formatString>
+      </column>
+      <column columnName="DrawDate">
+        <datatype>timestamp</datatype>
+        <columnTitle>Draw Date</columnTitle>
+        <description>The date of specimen collection.</description>
+        <formatString>Date</formatString>
+      </column>
+      <column columnName="DrawTime">
+        <datatype>timestamp</datatype>
+        <columnTitle>Draw Time</columnTitle>
+        <description>The time of specimen collection.</description>
+        <formatString>Time</formatString>
+      </column>
+      <column columnName="SalReceiptDate">
+        <datatype>timestamp</datatype>
+        <columnTitle>Sal Receipt Date</columnTitle>
+        <description>The timestamp of specimen receipt at the site-affiliated laboratory.</description>
+      </column>
+      <column columnName="ClassId">
+        <datatype>varchar</datatype>
+        <columnTitle>Class Id</columnTitle>
+        <description>The class, network, or study associated with each specimen.</description>
+        <scale>20</scale>
+      </column>
+      <column columnName="ProtocolNumber">
+        <datatype>varchar</datatype>
+        <columnTitle>Protocol Number</columnTitle>
+        <description>The protocol associated with each specimen.</description>
+        <scale>20</scale>
+      </column>
+      <column columnName="OriginatingLocationId">
+        <datatype>integer</datatype>
+        <columnTitle>Originating Location Id</columnTitle>
+        <description>The ID of the originating (collection) location of each specimen.</description>
+      </column>
+      <column columnName="TotalVolume">
+        <datatype>double</datatype>
+        <columnTitle>Total Volume</columnTitle>
+        <description>The total volume of all vials from each specimen.</description>
+      </column>
+      <column columnName="AvailableVolume">
+        <datatype>double</datatype>
+        <columnTitle>Available Volume</columnTitle>
+        <description>The total volume of all vials from each specimen that are currently available for request.</description>
+      </column>
+      <column columnName="VialCount">
+        <datatype>integer</datatype>
+        <columnTitle>Vial Count</columnTitle>
+        <description>The total number of vials from each specimen.</description>
+      </column>
+      <column columnName="LockedInRequestCount">
+        <datatype>integer</datatype>
+        <columnTitle>Locked In Request Count</columnTitle>
+        <description>The number of vials from each specimen that are currently locked in requests.</description>
+      </column>
+      <column columnName="AtRepositoryCount">
+        <datatype>integer</datatype>
+        <columnTitle>At Repository Count</columnTitle>
+        <description>The number of vials from each specimen that are currently at a repository.</description>
+      </column>
+      <column columnName="AvailableCount">
+        <datatype>integer</datatype>
+        <columnTitle>Available Count</columnTitle>
+        <description>The number of vials from each specimen that are currently available for request.</description>
+      </column>
+      <column columnName="ExpectedAvailableCount">
+        <datatype>integer</datatype>
+        <columnTitle>Expected Available Count</columnTitle>
+        <description>The total volume of all vials from each specimen that are expected to become available for request.  This includes vials currently available as well as those not available but not yet requested.</description>
+      </column>
+      <column columnName="ParticipantSequenceNum">
+        <datatype>varchar</datatype>
+        <columnTitle>Participant Sequence Num</columnTitle>
+        <description>A string value uniquely identifying the subject/visit combination for each specimen row.</description>
+        <scale>200</scale>
+      </column>
+      <column columnName="ProcessingLocation">
+        <datatype>integer</datatype>
+        <columnTitle>Processing Location</columnTitle>
+        <description>The ID of the processing location of each vial.</description>
+      </column>
+      <column columnName="FirstProcessedByInitials">
+        <datatype>varchar</datatype>
+        <columnTitle>First Processed By Initials</columnTitle>
+        <description>The common FirstProcessedByInitials value for all vials in this specimen.  Will be null if all vials do not share a common FirstProcessedByInitials values.</description>
+        <scale>32</scale>
+      </column>
+    </columns>
+  </table>
+  <table tableName="SpecimenEvent" tableDbType="TABLE">
+    <columns>
+      <column columnName="VialId">
+        <datatype>bigint</datatype>
+        <columnTitle>Vial Id</columnTitle>
+        <description>The ID of the vial.</description>
+        <nullable>false</nullable>
+      </column>
+      <column columnName="LabId">
+        <datatype>integer</datatype>
+        <columnTitle>Lab Id</columnTitle>
+        <description>The ID of the location associated with each event.</description>
+      </column>
+      <column columnName="UniqueSpecimenId">
+        <datatype>varchar</datatype>
+        <columnTitle>Unique Specimen Id</columnTitle>
+        <description>The unique specimen ID provided by the LIMS at the storage location.</description>
+        <scale>50</scale>
+      </column>
+      <column columnName="ParentSpecimenId">
+        <datatype>integer</datatype>
+        <columnTitle>Parent Specimen Id</columnTitle>
+        <description>The parent specimen ID provided by the LIMS at the storage location.</description>
+      </column>
+      <column columnName="Stored">
+        <datatype>integer</datatype>
+        <columnTitle>Stored</columnTitle>
+        <description>The location-specific storage code.</description>
+      </column>
+      <column columnName="StorageFlag">
+        <datatype>integer</datatype>
+        <columnTitle>Storage Flag</columnTitle>
+        <description>The location-specific storage flag.</description>
+      </column>
+      <column columnName="StorageDate">
+        <datatype>timestamp</datatype>
+        <columnTitle>Storage Date</columnTitle>
+        <description>The date/time of vial storage.</description>
+      </column>
+      <column columnName="ShipFlag">
+        <datatype>integer</datatype>
+        <columnTitle>Ship Flag</columnTitle>
+        <description>The location-specific shipment flag.</description>
+      </column>
+      <column columnName="ShipBatchNumber">
+        <datatype>integer</datatype>
+        <columnTitle>Ship Batch Number</columnTitle>
+        <description>The shipment batch number, if the vial/specimen has left this location.</description>
+      </column>
+      <column columnName="ShipDate">
+        <datatype>timestamp</datatype>
+        <columnTitle>Ship Date</columnTitle>
+        <description>The date/time of shipment, if the vial has left this location.</description>
+      </column>
+      <column columnName="ImportedBatchNumber">
+        <datatype>integer</datatype>
+        <columnTitle>Imported Batch Number</columnTitle>
+        <description>The ID of the import batch that included this vial/specimen.</description>
+      </column>
+      <column columnName="LabReceiptDate">
+        <datatype>timestamp</datatype>
+        <columnTitle>Lab Receipt Date</columnTitle>
+        <description>The date/time of vial receipt.</description>
+      </column>
+      <column columnName="Comments">
+        <datatype>varchar</datatype>
+        <inputType>textarea</inputType>
+        <columnTitle>Comments</columnTitle>
+        <description>Location-specific comments associated with each vial.</description>
+        <scale>500</scale>
+      </column>
+      <column columnName="SpecimenCondition">
+        <datatype>varchar</datatype>
+        <columnTitle>Specimen Condition</columnTitle>
+        <description>The condition code for the vial.</description>
+        <scale>30</scale>
+      </column>
+      <column columnName="SampleNumber">
+        <datatype>integer</datatype>
+        <columnTitle>Sample Number</columnTitle>
+        <description>A text identifier of the collection/draw.  This value may vary by location/LIMS, so it should not be used to group events cross-location.</description>
+      </column>
+      <column columnName="XsampleOrigin">
+        <datatype>varchar</datatype>
+        <columnTitle>Xsample Origin</columnTitle>
+        <description>The LIMS-provided sample origin.</description>
+        <scale>50</scale>
+      </column>
+      <column columnName="ExternalLocation">
+        <datatype>varchar</datatype>
+        <columnTitle>External Location</columnTitle>
+        <description>The LIMS-provided external location.</description>
+        <scale>50</scale>
+      </column>
+      <column columnName="UpdateTimestamp">
+        <datatype>timestamp</datatype>
+        <columnTitle>Update Timestamp</columnTitle>
+        <description>The date/time of last record modification in the external LIMS.</description>
+        <formatString>DateTime</formatString>
+      </column>
+      <column columnName="OtherSpecimenId">
+        <datatype>varchar</datatype>
+        <columnTitle>Other Specimen Id</columnTitle>
+        <description>Alternate specimen ID, if needed.</description>
+        <scale>50</scale>
+      </column>
+      <column columnName="ExpectedTimeUnit">
+        <datatype>varchar</datatype>
+        <columnTitle>Expected Time Unit</columnTitle>
+        <description>The LIMS-provided expected time units.</description>
+        <scale>15</scale>
+      </column>
+      <column columnName="ExpectedTimeValue">
+        <datatype>double</datatype>
+        <columnTitle>Expected Time Value</columnTitle>
+        <description>The LIMS-provided expected time value.</description>
+      </column>
+      <column columnName="GroupProtocol">
+        <datatype>integer</datatype>
+        <columnTitle>Group Protocol</columnTitle>
+        <description>The group/protocol of each vial.</description>
+      </column>
+      <column columnName="RecordSource">
+        <datatype>varchar</datatype>
+        <columnTitle>Record Source</columnTitle>
+        <description>The LIMS system responsible for each event.  Generally used when multiple LIMS (LDMS and Labware, for example) are providing loading data into a single repository.</description>
+        <scale>20</scale>
+      </column>
+      <column columnName="SpecimenNumber">
+        <datatype>varchar</datatype>
+        <columnTitle>Specimen Number</columnTitle>
+        <description>A text identifier of the collection/draw.  This value may vary by location/LIMS, so it should not be used to group events cross-location.</description>
+        <scale>50</scale>
+      </column>
+      <column columnName="ExternalId">
+        <datatype>bigint</datatype>
+        <columnTitle>External Id</columnTitle>
+        <description>The external identifier for each event, if imported from an external data source.</description>
+      </column>
+      <column columnName="ShippedFromLab">
+        <datatype>varchar</datatype>
+        <columnTitle>Shipped From Lab</columnTitle>
+        <description>The date/time each vial was shipped from the lab.</description>
+        <scale>32</scale>
+      </column>
+      <column columnName="ShippedToLab">
+        <datatype>varchar</datatype>
+        <columnTitle>Shipped To Lab</columnTitle>
+        <description>The date/time each vial was shipped to the lab.</description>
+        <scale>32</scale>
+      </column>
+      <column columnName="PTID">
+        <datatype>varchar</datatype>
+        <columnTitle>PTID</columnTitle>
+        <description>The ID of the subject providing each specimen.</description>
+        <scale>32</scale>
+      </column>
+      <column columnName="DrawTimestamp">
+        <datatype>timestamp</datatype>
+        <columnTitle>Draw Timestamp</columnTitle>
+        <description>The timestamp of specimen collection.</description>
+        <formatString>DateTime</formatString>
+      </column>
+      <column columnName="SalReceiptDate">
+        <datatype>timestamp</datatype>
+        <columnTitle>Sal Receipt Date</columnTitle>
+        <description>The timestamp of specimen receipt at the site-affiliated laboratory.</description>
+      </column>
+      <column columnName="ClassId">
+        <datatype>varchar</datatype>
+        <columnTitle>Class Id</columnTitle>
+        <description>The class, network, or study associated with each specimen.</description>
+        <scale>20</scale>
+      </column>
+      <column columnName="VisitValue">
+        <datatype>double</datatype>
+        <columnTitle>Visit Value</columnTitle>
+        <description>The visit value (sequence num) of specimen collection.</description>
+      </column>
+      <column columnName="ProtocolNumber">
+        <datatype>varchar</datatype>
+        <columnTitle>Protocol Number</columnTitle>
+        <description>The protocol associated with each specimen.</description>
+        <scale>20</scale>
+      </column>
+      <column columnName="VisitDescription">
+        <datatype>varchar</datatype>
+        <columnTitle>Visit Description</columnTitle>
+        <description>A description of the visit type for each specimen.  For example, "visit", "day", or "week".</description>
+        <scale>10</scale>
+      </column>
+      <column columnName="Volume">
+        <datatype>double</datatype>
+        <columnTitle>Volume</columnTitle>
+        <description>The volume of each vial.</description>
+      </column>
+      <column columnName="VolumeUnits">
+        <datatype>varchar</datatype>
+        <columnTitle>Volume Units</columnTitle>
+        <description>The units of volume for each specimen.</description>
+        <scale>20</scale>
+      </column>
+      <column columnName="SubadditiveDerivative">
+        <datatype>varchar</datatype>
+        <columnTitle>Subadditive Derivative</columnTitle>
+        <description>The sub-additive/derivative type of each specimen.</description>
+        <scale>50</scale>
+      </column>
+      <column columnName="PrimaryTypeId">
+        <datatype>integer</datatype>
+        <columnTitle>Primary Type Id</columnTitle>
+        <description>The ID of the primary type of each specimen.</description>
+      </column>
+      <column columnName="AdditiveTypeId">
+        <datatype>integer</datatype>
+        <columnTitle>Additive Type Id</columnTitle>
+        <description>The ID of the additive type of each specimen.</description>
+      </column>
+      <column columnName="DerivativeTypeId">
+        <datatype>integer</datatype>
+        <columnTitle>Derivative Type Id</columnTitle>
+        <description>The ID of the derivative type of each specimen.</description>
+      </column>
+      <column columnName="DerivativeTypeId2">
+        <datatype>integer</datatype>
+        <columnTitle>Derivative Type Id2</columnTitle>
+        <description>The ID of the second derivative type of each specimen.</description>
+      </column>
+      <column columnName="OriginatingLocationId">
+        <datatype>integer</datatype>
+        <columnTitle>Originating Location Id</columnTitle>
+        <description>The ID of the originating (collection) location of each specimen.</description>
+      </column>
+      <column columnName="FrozenTime">
+        <datatype>timestamp</datatype>
+        <columnTitle>Frozen Time</columnTitle>
+        <description>The duration of the freezing process.</description>
+        <formatString>H:mm:ss</formatString>
+      </column>
+      <column columnName="ProcessingTime">
+        <datatype>timestamp</datatype>
+        <columnTitle>Processing Time</columnTitle>
+        <description>The duration of the processing process.</description>
+        <formatString>H:mm:ss</formatString>
+      </column>
+      <column columnName="PrimaryVolume">
+        <datatype>double</datatype>
+        <columnTitle>Primary Volume</columnTitle>
+        <description>The primary/original volume of each vial. This value is passed through from the specimen data feed, so the provided data determines whether this is primary volume per vial or primary volume per collection/draw.</description>
+      </column>
+      <column columnName="PrimaryVolumeUnits">
+        <datatype>varchar</datatype>
+        <columnTitle>Primary Volume Units</columnTitle>
+        <description>The units of the primary volume value of each vial.  For example, cells or milliliters.</description>
+        <scale>20</scale>
+      </column>
+      <column columnName="ProcessedByInitials">
+        <datatype>varchar</datatype>
+        <columnTitle>Processed By Initials</columnTitle>
+        <description>The initials of the vial's processor.</description>
+        <scale>32</scale>
+      </column>
+      <column columnName="ProcessingDate">
+        <datatype>timestamp</datatype>
+        <columnTitle>Processing Date</columnTitle>
+        <description>The date/time of vial processing.</description>
+      </column>
+      <column columnName="TotalCellCount">
+        <datatype>double</datatype>
+        <columnTitle>Total Cell Count</columnTitle>
+        <description>The total cell count for each vial.</description>
+        <formatString>0.####</formatString>
+      </column>
+      <column columnName="QualityComments">
+        <datatype>varchar</datatype>
+        <inputType>textarea</inputType>
+        <columnTitle>Quality Comments</columnTitle>
+        <scale>500</scale>
+      </column>
+      <column columnName="InputHash">
+        <datatype>varchar</datatype>
+        <columnTitle>Input Hash</columnTitle>
+        <scale>16</scale>
+      </column>
+      <column columnName="Obsolete">
+        <datatype>boolean</datatype>
+        <columnTitle>Obsolete</columnTitle>
+        <description>Indicates the event precedes the last edit of the vial.</description>
+        <nullable>false</nullable>
+      </column>
+      <column columnName="TubeType">
+        <datatype>varchar</datatype>
+        <columnTitle>Tube Type</columnTitle>
+        <description>The type of vial.</description>
+        <scale>64</scale>
+      </column>
+      <column columnName="DeviationCode1">
+        <datatype>varchar</datatype>
+        <columnTitle>Deviation Code1</columnTitle>
+        <description>Site-defined deviation code.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <importAliases>
+          <importAlias>deviation_code1</importAlias>
+        </importAliases>
+        <scale>50</scale>
+      </column>
+      <column columnName="DeviationCode2">
+        <datatype>varchar</datatype>
+        <columnTitle>Deviation Code2</columnTitle>
+        <description>Site-defined deviation code.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <importAliases>
+          <importAlias>deviation_code2</importAlias>
+        </importAliases>
+        <scale>50</scale>
+      </column>
+      <column columnName="DeviationCode3">
+        <datatype>varchar</datatype>
+        <columnTitle>Deviation Code3</columnTitle>
+        <description>Site-defined deviation code.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <importAliases>
+          <importAlias>deviation_code3</importAlias>
+        </importAliases>
+        <scale>50</scale>
+      </column>
+      <column columnName="Concentration">
+        <datatype>float</datatype>
+        <columnTitle>Concentration</columnTitle>
+        <description>Processing concentration value.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#float</rangeURI>
+        <scale>20</scale>
+      </column>
+      <column columnName="Integrity">
+        <datatype>float</datatype>
+        <columnTitle>Integrity</columnTitle>
+        <description>Processing integrity value.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#float</rangeURI>
+        <scale>20</scale>
+      </column>
+      <column columnName="Ratio">
+        <datatype>float</datatype>
+        <columnTitle>Ratio</columnTitle>
+        <description>Processing ratio value.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#float</rangeURI>
+        <scale>20</scale>
+      </column>
+      <column columnName="Yield">
+        <datatype>float</datatype>
+        <columnTitle>Yield</columnTitle>
+        <description>Processing yield value.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#float</rangeURI>
+        <scale>20</scale>
+      </column>
+      <column columnName="Freezer">
+        <datatype>varchar</datatype>
+        <columnTitle>Freezer</columnTitle>
+        <description>The ID of the storage freezer.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>200</scale>
+      </column>
+      <column columnName="Fr_Container">
+        <datatype>varchar</datatype>
+        <columnTitle>Fr Container</columnTitle>
+        <description>The container location within the storage freezer.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>200</scale>
+      </column>
+      <column columnName="Fr_Position">
+        <datatype>varchar</datatype>
+        <columnTitle>Fr Position</columnTitle>
+        <description>The storage position within the storage freezer.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>200</scale>
+      </column>
+      <column columnName="Fr_Level1">
+        <datatype>varchar</datatype>
+        <columnTitle>Fr Level1</columnTitle>
+        <description>The level 1 location within the storage freezer.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>200</scale>
+      </column>
+      <column columnName="Fr_Level2">
+        <datatype>varchar</datatype>
+        <columnTitle>Fr Level2</columnTitle>
+        <description>The level 2 location within the storage freezer.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>200</scale>
+      </column>
+    </columns>
+  </table>
+  <table tableName="Vial" tableDbType="TABLE">
+    <columns>
+      <column columnName="GlobalUniqueId">
+        <datatype>varchar</datatype>
+        <columnTitle>Global Unique Id</columnTitle>
+        <description>The global unique ID of each vial.  Assumed to be globally unique within a study, but duplicates can exist cross-study.</description>
+        <nullable>false</nullable>
+        <scale>50</scale>
+      </column>
+      <column columnName="Volume">
+        <datatype>double</datatype>
+        <columnTitle>Volume</columnTitle>
+        <description>The volume of each vial.</description>
+        <formatString>#,###.0#</formatString>
+      </column>
+      <column columnName="SpecimenHash">
+        <datatype>varchar</datatype>
+        <columnTitle>Specimen Hash</columnTitle>
+        <description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including subject, visit, and specimen type.</description>
+        <scale>256</scale>
+      </column>
+      <column columnName="Requestable">
+        <datatype>boolean</datatype>
+        <columnTitle>Requestable</columnTitle>
+        <description>Whether or not each vial should be requestable.  If null, requestability will be determined by whether the vial is at a repository or locked in another request.  If true/false, repository calculation is overridden, and only locked status will be considered.</description>
+      </column>
+      <column columnName="CurrentLocation">
+        <datatype>integer</datatype>
+        <columnTitle>Current Location</columnTitle>
+        <description>The ID of the current location of the vial.  Current location is determined by the most recent event for each vial, and may be null if the most recent specimen event indicates that the vial has been shipped.</description>
+      </column>
+      <column columnName="AtRepository">
+        <datatype>boolean</datatype>
+        <columnTitle>At Repository</columnTitle>
+        <description>Whether each vial is currently at a repository.</description>
+        <nullable>false</nullable>
+      </column>
+      <column columnName="LockedInRequest">
+        <datatype>boolean</datatype>
+        <columnTitle>Locked In Request</columnTitle>
+        <description>Whether each vial is currently locked in a specimen request.</description>
+        <nullable>false</nullable>
+      </column>
+      <column columnName="Available">
+        <datatype>boolean</datatype>
+        <columnTitle>Available</columnTitle>
+        <description>Whether each vial is currently available for request.  Calculated from the Requestable, AtRepository, and LockedInRequest columns.</description>
+        <nullable>false</nullable>
+      </column>
+      <column columnName="ProcessingLocation">
+        <datatype>integer</datatype>
+        <columnTitle>Processing Location</columnTitle>
+        <description>The ID of the processing location of each vial.</description>
+      </column>
+      <column columnName="SpecimenId">
+        <datatype>bigint</datatype>
+        <columnTitle>Specimen Id</columnTitle>
+        <description>The ID of the primary specimen associated with each vial.</description>
+        <nullable>false</nullable>
+      </column>
+      <column columnName="PrimaryVolume">
+        <datatype>double</datatype>
+        <columnTitle>Primary Volume</columnTitle>
+        <description>The primary/original volume of each vial. This value is passed through from the specimen data feed, so the provided data determines whether this is primary volume per vial or primary volume per collection/draw.</description>
+      </column>
+      <column columnName="PrimaryVolumeUnits">
+        <datatype>varchar</datatype>
+        <columnTitle>Primary Volume Units</columnTitle>
+        <description>The units of the primary volume value of each vial.  For example, cells or milliliters.</description>
+        <scale>20</scale>
+      </column>
+      <column columnName="FirstProcessedByInitials">
+        <datatype>varchar</datatype>
+        <columnTitle>First Processed By Initials</columnTitle>
+        <description>The value of the ProcessedByInitials from the first recorded event for this vial.</description>
+        <scale>32</scale>
+      </column>
+      <column columnName="AvailabilityReason">
+        <datatype>varchar</datatype>
+        <columnTitle>Availability Reason</columnTitle>
+        <description>Text explanation for why each vial is or is not available for request.  May be null if the vial is available and no special circumstances apply.</description>
+        <scale>256</scale>
+      </column>
+      <column columnName="TotalCellCount">
+        <datatype>double</datatype>
+        <columnTitle>Total Cell Count</columnTitle>
+        <description>The total cell count for each vial.</description>
+        <formatString>0.####</formatString>
+      </column>
+      <column columnName="LatestComments">
+        <datatype>varchar</datatype>
+        <inputType>textarea</inputType>
+        <columnTitle>Latest Comments</columnTitle>
+        <description>Additional comments on processing quality from latest event.</description>
+        <scale>500</scale>
+      </column>
+      <column columnName="LatestQualityComments">
+        <datatype>varchar</datatype>
+        <inputType>textarea</inputType>
+        <columnTitle>Latest Quality Comments</columnTitle>
+        <description>Additional comments on processing quality from latest event.</description>
+        <scale>500</scale>
+      </column>
+      <column columnName="TubeType">
+        <datatype>varchar</datatype>
+        <columnTitle>Tube Type</columnTitle>
+        <description>The type of vial.</description>
+        <scale>64</scale>
+      </column>
+      <column columnName="LatestDeviationCode1">
+        <datatype>varchar</datatype>
+        <columnTitle>Latest Deviation Code1</columnTitle>
+        <description>Site-defined deviation code from latest event.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>50</scale>
+      </column>
+      <column columnName="LatestDeviationCode2">
+        <datatype>varchar</datatype>
+        <columnTitle>Latest Deviation Code2</columnTitle>
+        <description>Site-defined deviation code from latest event.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>50</scale>
+      </column>
+      <column columnName="LatestDeviationCode3">
+        <datatype>varchar</datatype>
+        <columnTitle>Latest Deviation Code3</columnTitle>
+        <description>Site-defined deviation code from latest event.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>50</scale>
+      </column>
+      <column columnName="LatestConcentration">
+        <datatype>float</datatype>
+        <columnTitle>Latest Concentration</columnTitle>
+        <description>Processing concentration value from latest event.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#float</rangeURI>
+        <scale>20</scale>
+      </column>
+      <column columnName="LatestIntegrity">
+        <datatype>float</datatype>
+        <columnTitle>Latest Integrity</columnTitle>
+        <description>Processing integrity value from latest event.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#float</rangeURI>
+        <scale>20</scale>
+      </column>
+      <column columnName="LatestRatio">
+        <datatype>float</datatype>
+        <columnTitle>Latest Ratio</columnTitle>
+        <description>Processing ratio value from latest event.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#float</rangeURI>
+        <scale>20</scale>
+      </column>
+      <column columnName="LatestYield">
+        <datatype>float</datatype>
+        <columnTitle>Latest Yield</columnTitle>
+        <description>Processing yield value from latest event.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#float</rangeURI>
+        <scale>20</scale>
+      </column>
+      <column columnName="Freezer">
+        <datatype>varchar</datatype>
+        <columnTitle>Freezer</columnTitle>
+        <description>The ID of the storage freezer.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>200</scale>
+      </column>
+      <column columnName="Fr_Container">
+        <datatype>varchar</datatype>
+        <columnTitle>Fr Container</columnTitle>
+        <description>The container location within the storage freezer.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>200</scale>
+      </column>
+      <column columnName="Fr_Position">
+        <datatype>varchar</datatype>
+        <columnTitle>Fr Position</columnTitle>
+        <description>The storage position within the storage freezer.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>200</scale>
+      </column>
+      <column columnName="Fr_Level1">
+        <datatype>varchar</datatype>
+        <columnTitle>Fr Level1</columnTitle>
+        <description>The level 1 location within the storage freezer.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>200</scale>
+      </column>
+      <column columnName="Fr_Level2">
+        <datatype>varchar</datatype>
+        <columnTitle>Fr Level2</columnTitle>
+        <description>The level 2 location within the storage freezer.</description>
+        <rangeURI>http://www.w3.org/2001/XMLSchema#string</rangeURI>
+        <scale>200</scale>
+      </column>
+    </columns>
+  </table>
+</tables>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cohorts xmlns="http://labkey.org/study/xml">
+  <cohort label="Group 1" enrolled="true"/>
+  <cohort label="Group 2" enrolled="true"/>
+</cohorts>

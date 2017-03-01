@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specimens repositoryType="ADVANCED" enableRequests="true" editableRepository="true" xmlns="http://labkey.org/study/xml">
+  <webPartGroupings>
+    <grouping>
+      <groupBy>Primary Type</groupBy>
+      <groupBy>Derivative Type</groupBy>
+      <groupBy>Additive Type</groupBy>
+    </grouping>
+    <grouping>
+      <groupBy>Derivative Type</groupBy>
+      <groupBy>Additive Type</groupBy>
+      <groupBy/>
+    </grouping>
+  </webPartGroupings>
+  <locationTypes>
+    <repository allowRequests="true"/>
+    <clinic allowRequests="true"/>
+    <siteAffiliatedLab allowRequests="true"/>
+    <endpointLab allowRequests="true"/>
+  </locationTypes>
+  <displaySettings>
+    <commentsAndQC defaultToCommentsMode="false" enableManualQCFlagging="true"/>
+    <lowSpecimenWarnings lastVial="ALL_USERS" zeroVials="ALL_USERS"/>
+  </displaySettings>
+  <requestForms>
+    <form multiLine="true" required="true" rememberSiteValue="false" displayOrder="0">
+      <title>Assay Plan</title>
+      <helpText>Please enter a description of or reference to the assay plan(s) that will be used for the requested specimens.</helpText>
+    </form>
+    <form multiLine="true" required="true" rememberSiteValue="true" displayOrder="1">
+      <title>Shipping Information</title>
+      <helpText>Please enter your shipping address along with any special instructions.</helpText>
+    </form>
+    <form multiLine="true" required="false" rememberSiteValue="false" displayOrder="2">
+      <title>Comments</title>
+      <helpText>Please enter any additional information regarding your request.</helpText>
+    </form>
+  </requestForms>
+  <notifications newRequestNotifyCheckbox="false" ccCheckbox="false">
+    <replyTo>cnathe@labkey.com</replyTo>
+    <cc/>
+    <subjectSuffix>Specimen Request Notification</subjectSuffix>
+    <newRequestNotify/>
+    <defaultEmailNotify>ActorsInvolved</defaultEmailNotify>
+    <specimensAttachment>InEmailBody</specimensAttachment>
+  </notifications>
+  <requestabilityRules>
+    <rule type="AT_REPOSITORY"/>
+    <rule type="ADMIN_OVERRIDE"/>
+    <rule type="LOCKED_IN_REQUEST"/>
+  </requestabilityRules>
+</specimens>

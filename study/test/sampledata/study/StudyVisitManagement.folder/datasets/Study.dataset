@@ -1,0 +1,19 @@
+# default group can be used to avoid repeating definitions for each dataset
+#
+# action=[REPLACE,APPEND,DELETE] (default:REPLACE)
+# deleteAfterImport=[TRUE|FALSE] (default:FALSE)
+
+default.action=REPLACE
+default.deleteAfterImport=FALSE
+
+# map a source tsv column (right side) to a property name or full propertyURI (left)
+# predefined properties: ParticipantId, SiteId, VisitId, Created
+default.property.ParticipantId=ptid
+default.property.Created=dfcreate
+
+# use to map from filename->datasetid
+# NOTE: if there are NO explicit import definitions, we will try to import all files matching pattern
+# NOTE: if there are ANY explicit mapping, we will only import listed datasets
+
+default.filePattern=dataset(\\d*).tsv
+default.importAllMatches=TRUE

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<datasets metaDataFile="datasets_metadata.xml" xmlns="http://labkey.org/study/xml">
+  <datasets>
+    <dataset name="VAC-1" id="135" type="Standard">
+      <tags/>
+    </dataset>
+    <dataset name="APX-1" id="136" type="Standard">
+      <tags/>
+    </dataset>
+    <dataset name="URF-1" id="140" type="Standard">
+      <tags/>
+    </dataset>
+    <dataset name="LLF-1" id="143" type="Standard">
+      <tags/>
+    </dataset>
+    <dataset name="CPF-1" id="144" type="Standard">
+      <tags/>
+    </dataset>
+    <dataset name="OTB-1" id="173" type="Standard">
+      <tags/>
+    </dataset>
+    <dataset name="IV-1" id="350" type="Standard">
+      <tags/>
+    </dataset>
+    <dataset name="SCL-1" id="449" type="Standard">
+      <tags/>
+    </dataset>
+  </datasets>
+</datasets>

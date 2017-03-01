@@ -1,0 +1,13 @@
+MouseId	SequenceNum	date	QCStateLabel	SCLdt	SCLcoll	SCLscdt	SCLsctm	SCLcomm	formlang	sfdt_449
+999320016	301.0000			2005-02-08 00:00:00.0	0					0
+999320016	401.0000			2005-02-15 00:00:00.0	0					0
+999320016	501.0000			2005-02-22 00:00:00.0	0					0
+999320016	701.0000				0					0
+999320485	301.0000				0					0
+999320485	501.0000				0					0
+999321029	301.0000			2006-01-30 00:00:00.0	No specimen collected				English	1
+999321029	401.0000			2006-02-05 00:00:00.0	Specimen collected (part/whole)		10:30:00		English	0
+999321029	501.0000			2005-02-16 00:00:00.0	No specimen collected				English	0
+999321029	601.0000			2006-03-24 00:00:00.0	Specimen collected (part/whole)		12:30:00		English	0
+999321033	401.0000			2006-02-14 00:00:00.0	Specimen collected (part/whole)		09:09:00		English	0
+999321033	601.0000			2006-03-01 00:00:00.0	Specimen collected (part/whole)				English	0

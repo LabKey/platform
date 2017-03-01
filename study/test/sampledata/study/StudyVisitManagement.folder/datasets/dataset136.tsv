@@ -1,0 +1,27 @@
+MouseId	SequenceNum	date	QCStateLabel	APXdt	APXwtkg	APXwtqc	APXtempc	APXtemqc	APXbpsys	APXbpdia	APXbpqc	APXpulse	APXresp	APXheent	APXheenx	APXneck	APXneckx	APXlymph	APXlympx	APXheart	APXhrtx	APXchest	APXchstx	APXabdom	APXabdox	APXextrm	APXextrx	APXneuro	APXneurx	APXskin	APXskinx	APXother	APXothex	APXcemqc	APXcemh	APXsign	APXprdt	APXprtna	APXpregt	APXco1x	formlang	sfdt_136
+999320016	301.0000			2005-02-08 00:00:00.0	100.0		37.1		110	79		85	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		0	0		English	1
+999320016	401.0000			2005-02-15 00:00:00.0	150.0		36.0		50	115		115	5	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			abnormal/insignificant	1		0	0		English	1
+999320016	411.0000			2005-02-20 00:00:00.0	200.0		32.0		110	110		115	5	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			abnormal/insignificant	1		0	0		English	1
+999320016	501.0000			2005-02-22 00:00:00.0										0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	1
+999320016	701.0000													0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	1
+999320485	301.0000													0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	1
+999320485	401.0000			2005-01-14 00:00:00.0										0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	1
+999320485	501.0000													0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	0
+999320485	601.0000			2005-01-29 00:00:00.0										0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	1
+999320557	401.0000			2006-03-30 00:00:00.0	77.0		37.1		138	86		72	14	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		0	0		English	1
+999320557	601.0000			2006-04-14 00:00:00.0	77.0		36.9		130	80		70	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		0	0		English	1
+999320576	601.0000			2006-03-11 00:00:00.0	65.0		37.0		138	86		72	14	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1	2006-03-11 00:00:00.0	0	Negative		English	1
+999320624	401.0000			2006-02-23 00:00:00.0	65.0		37.0		138	87		72	16	Normal		Normal		Normal		Normal		Normal		Abnormal	Y	Normal		Normal		Normal		Normal			abnormal/significant	1		0	0		English	1
+999320646	401.0000			2006-02-21 00:00:00.0	73.0		37.0		99	62		67	16	Not Done		Not Done		Not Done		Not Done		Not Done		Not Done		Not Done		Not Done		Not Done		Not Done			normal	1		17. Pregnancy test N/A	0		English	1
+999320652	401.0000			2006-02-20 00:00:00.0	73.0		37.0		138	87		72	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		0	0		English	1
+999320660	401.0000			2006-02-19 00:00:00.0	79.0		37.0		140	89		72	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Not Done			normal	1		0	0		English	1
+999320695	401.0000			2006-02-16 00:00:00.0	72.0		37.2		135	86		72	16	Normal		Normal		Normal		Abnormal	Y	Normal		Normal		Normal		Normal		Normal		Not Done			abnormal/significant	1	2006-02-16 00:00:00.0	0	Negative		English	0
+999320703	601.0000			2006-03-01 00:00:00.0	89.0		37.1		135	75		92	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Not Done	Y		abnormal/significant	1		0	0		English	0
+999320719	401.0000			2006-02-01 00:00:00.0	48.0		36.9		120	90		60	10	Normal		Normal		Abnormal		Normal		Normal		Normal		Normal		Normal		Normal		Not Done			abnormal/insignificant	1		0	0		English	0
+999320719	601.0000			2006-02-15 00:00:00.0	55.0		36.8		117	82		65	13	Not Done		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Not Done		Not Done			normal	1		0	0		English	0
+999321029	301.0000			2006-01-30 00:00:00.0	75.0		37.2		117	71		68	15	Not Done		Normal		Not Done		Normal		Not Done		Normal		Not Done		Normal		Not Done		Normal			normal	1		0	0		English	0
+999321029	401.0000			2006-02-05 00:00:00.0	72.0		37.1		121	69		64	15	Not Done		Normal		Not Done		Normal		Not Done		Normal		Not Done		Normal		Not Done		Normal			normal	1		0	0		English	0
+999321029	501.0000			2005-02-16 00:00:00.0	72.0		37.2		115	71		67	13	Not Done		Normal		Not Done		Normal		Not Done		Normal		Not Done		Normal		Not Done		Normal			normal	1		0	0		English	1
+999321029	601.0000			2006-01-24 00:00:00.0	73.0		37.2		125	75		64	15	Normal		Not Done		Normal		Not Done		Normal		Not Done		Normal		Not Done		Normal		Not Done			normal	1		0	0		English	0
+999321033	401.0000			2006-02-14 00:00:00.0	85.0		37.0		124	74		63	18	Normal		Normal		Normal		Normal		Normal		Normal		Not Done		Not Done		Not Done		Not Done			normal	1		0	0		English	0
+999321033	601.0000			2006-03-16 00:00:00.0	86.0		37.1		130	80		65	19	Normal		Normal		Normal		Normal		Normal		Normal		Not Done		Not Done		Not Done		Not Done			normal	1		0	0		English	0
