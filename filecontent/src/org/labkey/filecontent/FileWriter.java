@@ -9,11 +9,15 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
+
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * Writes the content of the webdav file root to the archive.
@@ -53,7 +57,26 @@ public class FileWriter extends BaseFolderWriter
         if (resource != null)
         {
             VirtualFile virtualRoot = vf.getDir(DIR_NAME);
-            virtualRoot.saveWebdavTree(resource, ctx.getUser());
+
+            // In-line first level of recursion to be able to exclude the "./export" directory, as we may be writing into it right now
+            for (WebdavResource child : resource.list())
+            {
+                if (child.isCollection())
+                {
+                    if (!child.getName().equalsIgnoreCase("export"))
+                    {
+                        virtualRoot.getDir(child.getName()).saveWebdavTree(child, ctx.getUser());
+                    }
+                }
+                else
+                {
+                    try (InputStream inputStream = child.getInputStream(ctx.getUser()); OutputStream outputStream = virtualRoot.getOutputStream(child.getName()))
+                    {
+                        if (inputStream != null)
+                            FileUtil.copyData(inputStream, outputStream);
+                    }
+                }
+            }
         }
     }
 }
