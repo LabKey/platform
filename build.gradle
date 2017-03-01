@@ -1,4 +1,10 @@
+import org.labkey.gradle.util.ModuleFinder
+
 subprojects {
-  apply plugin: 'java'
-  apply plugin: 'org.labkey.module'
+  Project p ->
+    if (ModuleFinder.isPotentialModule(p))
+    {
+      apply plugin: 'java'
+      apply plugin: 'org.labkey.module'
+    }
 }
