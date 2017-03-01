@@ -21,6 +21,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
     isSpecificImportOptions: false,
     isApplyToMultipleFolders: false,
     isFailForUndefinedVisits: false,
+    showFailForUndefinedVisits: true,
 
     initComponent: function()
     {
@@ -102,16 +103,6 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                 optionsForm: null
             },{
                 header: 'Advanced Import Options',
-                description: 'By default, new visit rows will be created in the study during import for any dataset or specimen rows which have a new, undefined visit. '
-                    + 'If, instead, you would like for the import of the study archive to fail when it encounters a visit that is not already defined in the study '
-                    + 'or as part of the incoming visit map, check the box below.',
-                name: 'failForUndefinedVisits',
-                initChecked: this.isFailForUndefinedVisits ? "checked": "",
-                isChecked: this.isFailForUndefinedVisits,
-                label: 'Fail import for undefined visits',
-                optionsForm: null
-            },{
-                header: null,
                 description: 'By default, all objects and settings from the import archive will be used. If you would '
                     + 'like to select a subset of those import objects, check the box below to see the full list of '
                     + 'folder archive objects to be imported.',
@@ -131,6 +122,21 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                 label: 'Apply to multiple folders',
                 optionsForm: this.getApplyToMultipleFoldersForm
             }];
+
+            if (this.showFailForUndefinedVisits)
+            {
+                data.splice(1, 0, {
+                    header: 'Study Import Options',
+                    description: 'By default, new visit rows will be created in the study during import for any dataset or specimen rows which have a new, undefined visit. '
+                    + 'If, instead, you would like for the import of the study archive to fail when it encounters a visit that is not already defined in the study '
+                    + 'or as part of the incoming visit map, check the box below.',
+                    name: 'failForUndefinedVisits',
+                    initChecked: this.isFailForUndefinedVisits ? "checked": "",
+                    isChecked: this.isFailForUndefinedVisits,
+                    label: 'Fail import for undefined visits',
+                    optionsForm: null
+                });
+            }
 
             if (this.canCreateSharedDatasets)
             {

@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="org.labkey.pipeline.PipelineController.StartFolderImportForm" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -52,6 +53,9 @@
                 canCreateSharedDatasets = true;
         }
     }
+
+    Study study = StudyService.get().getStudy(getContainer());
+    TimepointType timepointType = study != null ? study.getTimepointType() : null;
 %>
 
 <labkey:errors/>
@@ -87,7 +91,8 @@ Ext4.onReady(function()
                 isValidateQueries: <%=bean.isValidateQueries()%>,
                 isSpecificImportOptions: <%=bean.isSpecificImportOptions()%>,
                 isApplyToMultipleFolders: <%=bean.isApplyToMultipleFolders()%>,
-                isFailForUndefinedVisits: <%=bean.isFailForUndefinedVisits()%>
+                isFailForUndefinedVisits: <%=bean.isFailForUndefinedVisits()%>,
+                showFailForUndefinedVisits: <%=timepointType == null || timepointType == TimepointType.VISIT%>
             });
         }
     });
