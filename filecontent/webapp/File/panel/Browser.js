@@ -1220,7 +1220,7 @@ Ext4.define('File.panel.Browser', {
         LABKEY.Query.selectRows({
             schemaName : 'exp',
             queryName : 'Data',
-            columns : ['Name', 'Flag/Comment', 'Run', 'Data File URL'].concat(extraColumnNames),
+            columns : ['Name', 'Flag/Comment', 'Run', 'DataFileUrl', 'RowId'].concat(extraColumnNames),
             requiredVersion : '9.1',
             success : function(resp) {
                 this.processCustomFileProperties(resp.rows, extraColumnNames);
