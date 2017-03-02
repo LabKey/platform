@@ -27,6 +27,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.FileBrowser;
+import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -329,8 +330,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         log("Visit Properties: create visit with description");
         goToProjectHome();
         clickFolder(getFolderName());
-        _studyHelper.goToManageVisits();
-        waitAndClickAndWait(Locator.linkWithText("Create New Visit"));
+        _studyHelper.goToManageVisits().goToCreateNewVisit();
         waitForElement(Locator.name("description"));
         setFormElement(Locator.name("label"), visitLabel);
         setFormElement(Locator.name("sequenceNumMin"), visitSeqNumMin);
@@ -339,7 +339,8 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickButton("Save");
 
         log("Visit Properties: edit visit description and set sequence num target");
-        waitAndClickAndWait(_studyHelper.editVisitLoc(visitLabel));
+        ManageVisitPage manageVisitPage = new ManageVisitPage(getDriver());
+        manageVisitPage.goToEditVisit(visitLabel);
         waitForElement(Locator.name("description"));
         assertFormElementEquals(Locator.name("label"), visitLabel);
         assertFormElementEquals(Locator.name("description"), visitDescription);
@@ -367,8 +368,7 @@ public class StudySimpleExportTest extends StudyBaseTest
 
         log("Visit Properties: verify imported settings");
         clickFolder("Visit Properties");
-        _studyHelper.goToManageVisits();
-        waitAndClickAndWait(_studyHelper.editVisitLoc(visitLabel));
+        _studyHelper.goToManageVisits().goToEditVisit(visitLabel);
         waitForElement(Locator.name("description"));
         assertFormElementEquals(Locator.name("label"), visitLabel);
         assertFormElementEquals(Locator.name("description"), visitDescription);
@@ -394,8 +394,7 @@ public class StudySimpleExportTest extends StudyBaseTest
 
         log("Visit Properties: remove visit");
         clickFolder(getFolderName());
-        _studyHelper.goToManageVisits();
-        waitAndClickAndWait(_studyHelper.editVisitLoc(visitLabel));
+        _studyHelper.goToManageVisits().goToEditVisit(visitLabel);
         clickButton("Delete Visit");
         waitForText("Do you want to delete Visit");
         clickButton("Delete");

@@ -204,9 +204,7 @@ public class CohortTest extends BaseWebDriverTest
 
         // Check that switching visit order changes cohort.
         clickProject(PROJECT_NAME);
-        clickTab("Manage");
-        clickAndWait(Locator.linkWithText("Manage Visits"));
-        clickAndWait(Locator.linkWithText("Change Visit Order"));
+        _studyHelper.goToManageVisits().goToChangeVisitOrder();
         checkCheckbox(Locator.checkboxByName("explicitChronologicalOrder"));
         checkCheckbox(Locator.checkboxByName("explicitDisplayOrder"));
         selectOptionByText(Locator.name("displayOrderItems"), "Visit 3");

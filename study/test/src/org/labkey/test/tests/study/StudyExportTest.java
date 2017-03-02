@@ -23,6 +23,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.FileBrowser;
+import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 
@@ -170,12 +171,11 @@ public class StudyExportTest extends StudyManualTest
 
         // verify visit display order
         clickFolder(getFolderName());
-        clickTab("Manage");
-        clickAndWait(Locator.linkWithText("Manage Visits"));
+        ManageVisitPage manageVisitPage = _studyHelper.goToManageVisits();
         assertTextBefore("Cycle 3", MODIFIED_VISIT);
 
         // verify visit modifications
-        clickAndWait(_studyHelper.editVisitLoc(MODIFIED_VISIT));
+        manageVisitPage.goToEditVisit(MODIFIED_VISIT);
         assertFormElementEquals(Locator.name("datasetStatus"), "OPTIONAL");
         assertOptionEquals(Locator.name("cohortId"), GROUP_2);
     }
@@ -535,12 +535,14 @@ public class StudyExportTest extends StudyManualTest
     private void modifyVisits()
     {
         hideSceeningVisit();
-        clickAndWait(Locator.linkWithText("Change Visit Order"));
+        _studyHelper.goToManageVisits().goToChangeVisitOrder();
         checkCheckbox(Locator.checkboxByName("explicitDisplayOrder"));
         selectOptionByText(Locator.name("displayOrderItems"), MODIFIED_VISIT);
         clickButton("Move Down", 0);
         clickButton("Save");
-        clickAndWait(_studyHelper.editVisitLoc(MODIFIED_VISIT));
+
+        ManageVisitPage manageVisitPage = new ManageVisitPage(getDriver());
+        manageVisitPage.goToEditVisit(MODIFIED_VISIT);
         selectOption("datasetStatus", 0, "OPTIONAL");
         selectOptionByText(Locator.name("cohortId"), GROUP_2);
         clickButton("Save");

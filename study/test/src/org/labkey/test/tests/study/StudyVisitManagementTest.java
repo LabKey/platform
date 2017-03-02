@@ -113,9 +113,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
 
     private DeleteMultipleVisitsPage goToDeleteMultipleVisits()
     {
-        _studyHelper.goToManageVisits();
-        ManageVisitPage manageVisitPage = new ManageVisitPage(getDriver());
-        return manageVisitPage.goToDeleteMultipleVisits();
+        return _studyHelper.goToManageVisits().goToDeleteMultipleVisits();
     }
 
     private void verifySpecimenDataRowCount(int expectedRowCount)
@@ -258,8 +256,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
 
     private void verifyStudyVisits(@NotNull List<String> definedVisits, @Nullable List<String> undefinedVisits)
     {
-        _studyHelper.goToManageVisits();
-        ManageVisitPage manageVisitPage = new ManageVisitPage(getDriver());
+        ManageVisitPage manageVisitPage = _studyHelper.goToManageVisits();
         assertEquals("Unexpected number of existing visits.", definedVisits.size(), manageVisitPage.getVisitRowCount());
         for (String visitSeqRangeStr : definedVisits)
             assertTrue("Expected visit range not found: " + visitSeqRangeStr, manageVisitPage.hasVisitForSequenceRange(visitSeqRangeStr));
@@ -282,9 +279,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
 
     private void deleteSingleVisit(String visitLabel)
     {
-        _studyHelper.goToManageVisits();
-        ManageVisitPage manageVisitPage = new ManageVisitPage(getDriver());
-        manageVisitPage.goToEditVisit(visitLabel);
+        _studyHelper.goToManageVisits().goToEditVisit(visitLabel);
         clickButton("Delete Visit");
         clickButton("Delete");
     }

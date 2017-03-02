@@ -531,8 +531,7 @@ public class AssayTest extends AbstractAssayTest
     {
         log("Prepare visit map to check PTID counts in study navigator.");
         clickFolder(TEST_ASSAY_FLDR_STUDY1);
-        _studyHelper.goToManageVisits();
-        clickAndWait(Locator.linkWithText("Import Visit Map"));
+        _studyHelper.goToManageVisits().goToImportVisitMap();
         setFormElement(Locator.name("content"),
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<visitMap xmlns=\"http://labkey.org/study/xml\">\n" +
@@ -760,8 +759,7 @@ public class AssayTest extends AbstractAssayTest
         clickProject(TEST_ASSAY_PRJ_SECURITY);
         clickFolder(TEST_ASSAY_FLDR_STUDY2);
 
-        _studyHelper.goToManageVisits();
-        clickAndWait(Locator.linkWithText("Import Visit Map"));
+        _studyHelper.goToManageVisits().goToImportVisitMap();
         setFormElement(Locator.name("content"),
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<visitMap xmlns=\"http://labkey.org/study/xml\">\n" +

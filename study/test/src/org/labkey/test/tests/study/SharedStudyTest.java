@@ -33,6 +33,7 @@ import org.labkey.test.categories.DailyA;
 import org.labkey.test.components.ParticipantListWebPart;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.pages.DatasetInsertPage;
+import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.DatasetDesignerPage;
 import org.labkey.test.util.Ext4Helper;
@@ -204,7 +205,8 @@ public class SharedStudyTest extends BaseWebDriverTest
     {
         goToManageStudy();
         clickAndWait(Locator.linkWithText("manage shared visits"));
-        clickAndWait(_studyHelper.editVisitLoc("Visit 1"));
+        ManageVisitPage manageVisitPage = new ManageVisitPage(getDriver());
+        manageVisitPage.goToEditVisit("Visit 1");
         setFormElement(Locator.name("description"), "This is the first visit");
         clickButton("Save");
 
@@ -225,7 +227,8 @@ public class SharedStudyTest extends BaseWebDriverTest
         String url = getCurrentRelativeURL();
         Assert.assertFalse("Expected redirect to project manage visits page, got: " + url, url.contains(STUDY1));
 
-        clickAndWait(_studyHelper.editVisitLoc("Visit 4"));
+        ManageVisitPage manageVisitPage = new ManageVisitPage(getDriver());
+        manageVisitPage.goToEditVisit("Visit 4");
         clickButton("Delete Visit");
         clickButton("Delete");
     }

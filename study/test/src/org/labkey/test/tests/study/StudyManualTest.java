@@ -68,11 +68,8 @@ public abstract class StudyManualTest extends StudyTest
         assertTextPresent(getStudyLabel());
 
         // import visit map
-        clickTab("Manage");
-        clickAndWait(Locator.linkWithText("Manage Visits"));
-        clickAndWait(Locator.linkWithText("Import Visit Map"));
-        String visitMapData = TestFileUtils.getFileContents(VISIT_MAP);
-        setFormElement(Locator.name("content"), visitMapData);
+        _studyHelper.goToManageVisits().goToImportVisitMap();
+        setFormElement(Locator.name("content"), TestFileUtils.getFileContents(VISIT_MAP));
         clickButton("Import");
 
         // import custom visit mapping

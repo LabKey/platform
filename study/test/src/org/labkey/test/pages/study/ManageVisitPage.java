@@ -40,6 +40,21 @@ public class ManageVisitPage extends LabKeyPage<ManageVisitPage.ElementCache>
         return elementCache().getVisitsBySequenceRange(rangeStr).size() == 1;
     }
 
+    public void goToChangeVisitOrder()
+    {
+        clickAndWait(elementCache().changeVisitOrderLoc);
+    }
+
+    public void goToCreateNewVisit()
+    {
+        clickAndWait(elementCache().createNewVisitLoc);
+    }
+
+    public void goToImportVisitMap()
+    {
+        clickAndWait(elementCache().importVisitMapLoc);
+    }
+
     public DeleteMultipleVisitsPage goToDeleteMultipleVisits()
     {
         clickAndWait(elementCache().deleteMultipleVisitsLoc);
@@ -60,7 +75,10 @@ public class ManageVisitPage extends LabKeyPage<ManageVisitPage.ElementCache>
     protected class ElementCache extends LabKeyPage.ElementCache
     {
         Locator.XPathLocator visitsTableLoc = Locator.id("visits");
+        Locator.XPathLocator changeVisitOrderLoc = Locator.linkWithText("Change Visit Order");
+        Locator.XPathLocator createNewVisitLoc = Locator.linkWithText("Create New Visit");
         Locator.XPathLocator deleteMultipleVisitsLoc = Locator.linkWithText("Delete Multiple Visits");
+        Locator.XPathLocator importVisitMapLoc = Locator.linkWithText("Import Visit Map");
 
         List<WebElement> getVisitRows()
         {

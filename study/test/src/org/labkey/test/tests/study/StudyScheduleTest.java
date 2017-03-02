@@ -19,6 +19,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
@@ -115,7 +116,8 @@ public class StudyScheduleTest extends StudyBaseTest
 
         // change a required visit to optional
         portalHelper.clickWebpartMenuItem("Study Schedule", "Manage Visits");
-        clickAndWait(_studyHelper.editVisitLoc(visit));
+        ManageVisitPage manageVisitPage = new ManageVisitPage(getDriver());
+        manageVisitPage.goToEditVisit(visit);
         selectOption("datasetStatus", 2, "OPTIONAL");
         clickButton("Save");
 
@@ -125,7 +127,8 @@ public class StudyScheduleTest extends StudyBaseTest
 
         // revert change
         portalHelper.clickWebpartMenuItem("Study Schedule", "Manage Visits");
-        clickAndWait(_studyHelper.editVisitLoc(visit));
+        manageVisitPage = new ManageVisitPage(getDriver());
+        manageVisitPage.goToEditVisit(visit);
         selectOption("datasetStatus", 2, "REQUIRED");
         clickButton("Save");
 
