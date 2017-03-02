@@ -53,43 +53,50 @@ public class AssayTest extends AbstractAssayTest
     protected static final String[] TEST_ASSAY_SET_PROPERTIES = { "false", "100.0", "200", "2001-10-10" };
     protected static final String TEST_ASSAY_RUN_PROP_NAME = "testAssayRunProp";
     protected static final int TEST_ASSAY_RUN_PREDEFINED_PROP_COUNT = 0;
-    protected static final ListColumnType[] TEST_ASSAY_RUN_PROP_TYPES = { ListHelper.ListColumnType.String, ListHelper.ListColumnType.Boolean, ListHelper.ListColumnType.Double, ListHelper.ListColumnType.Integer, ListHelper.ListColumnType.DateTime };
+    protected static final ListColumnType[] TEST_ASSAY_RUN_PROP_TYPES = { ListHelper.ListColumnType.String, ListHelper.ListColumnType.Boolean, ListHelper.ListColumnType.Double, ListHelper.ListColumnType.Integer, ListHelper.ListColumnType.DateTime, ListHelper.ListColumnType.File };
     protected static final String TEST_ASSAY_RUN_PROP1 = "TestRunProp";
     protected static final String TEST_ASSAY_DATA_PROP_NAME = "testAssayDataProp";
     protected static final String TEST_ASSAY_DATA_ALIASED_PROP_NAME = "testAssayAliasedData";
     protected static final String ALIASED_DATA = "aliasedData";
     public static final int TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT = 4;
     protected static final ListColumnType[] TEST_ASSAY_DATA_PROP_TYPES = { ListHelper.ListColumnType.Boolean, ListHelper.ListColumnType.Integer, ListHelper.ListColumnType.DateTime, ListHelper.ListColumnType.String };
+
     protected static final String TEST_RUN1 = "FirstRun";
     protected static final String TEST_RUN1_COMMENTS = "First comments";
-    protected static final String TEST_RUN1_DATA1 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "20\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\n" +
-            "AAA07XK5-05\t\t\ttrue\t20\t2000-01-01\n" +
-            "AAA07XMC-02\t\t\ttrue\t19\t2000-02-02\n" +
-            "AAA07XMC-04\t\t\ttrue\t18\t2000-03-03\n" +
-            "AAA07XSF-02\t\t\tfalse\t17\t2000-04-04\n" +
-            "AssayTestControl1\te\t5\tfalse\t16\t2000-05-05\n" +
-            "AssayTestControl2\tf\tg\tfalse\t15\t2000-06-06";
-    protected static final String TEST_RUN1_DATA2 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\n" +
-            "AAA07XK5-05\t\ttrue\t20\t2000-01-01\n" +
-            "AAA07XMC-02\t\t\ttrue\t19\t2000-02-02\n" +
-            "AAA07XMC-04\t\t\ttrue\t18\t2000-03-03\n" +
-            "AAA07XSF-02\t\t\tfalse\t17\t2000-04-04\n" +
-            "AssayTestControl1\te\t5\tfalse\t16\t2000-05-05\n" +
-            "AssayTestControl2\tf\tg\tfalse\t15\t2000-06-06";
-    protected static final String TEST_RUN1_DATA3 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\n" +
-            "AAA07XK5-05\t\t\ttrue\t20\t\n" +
-            "AAA07XMC-02\t\t\ttrue\t19\t\n" +
-            "AAA07XMC-04\t\t\ttrue\t18\t";
-    protected static final String TEST_RUN1_DATA4 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\t" + TEST_ASSAY_DATA_ALIASED_PROP_NAME + "\n" +
+    protected static final String TEST_RUN1_DATA1 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\t" + TEST_ASSAY_DATA_ALIASED_PROP_NAME + "\n" +
             "AAA07XK5-05\t\t\ttrue\t\t2000-01-01\t"+ALIASED_DATA+"\n" +
             "AAA07XMC-02\t\t\ttrue\t\t2000-02-02\t"+ALIASED_DATA+"\n" +
             "AAA07XMC-04\t\t\ttrue\t\t2000-03-03\t"+ALIASED_DATA+"\n" +
             "AAA07XSF-02\t\t\tfalse\t\t2000-04-04\t"+ALIASED_DATA+"\n" +
             "AssayTestControl1\te\t5\tfalse\t\t2000-05-05\t"+ALIASED_DATA+"\n" +
             "AssayTestControl2\tf\t6\tfalse\t\t2000-06-06\t"+ALIASED_DATA;
+
     protected static final String TEST_RUN2 = "SecondRun";
     protected static final String TEST_RUN2_COMMENTS = "Second comments";
-    protected static final String TEST_RUN2_DATA1 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\n" +
+    protected static final String TEST_RUN2_DATA1 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "20\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\n" +
+            "AAA07XK5-05\t\t\ttrue\t20\t2000-01-01\n" +
+            "AAA07XMC-02\t\t\ttrue\t19\t2000-02-02\n" +
+            "AAA07XMC-04\t\t\ttrue\t18\t2000-03-03\n" +
+            "AAA07XSF-02\t\t\tfalse\t17\t2000-04-04\n" +
+            "AssayTestControl1\te\t5\tfalse\t16\t2000-05-05\n" +
+            "AssayTestControl2\tf\tg\tfalse\t15\t2000-06-06";
+    protected static final String TEST_RUN2_DATA2 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\n" +
+            "AAA07XK5-05\t\ttrue\t20\t2000-01-01\n" +
+            "AAA07XMC-02\t\t\ttrue\t19\t2000-02-02\n" +
+            "AAA07XMC-04\t\t\ttrue\t18\t2000-03-03\n" +
+            "AAA07XSF-02\t\t\tfalse\t17\t2000-04-04\n" +
+            "AssayTestControl1\te\t5\tfalse\t16\t2000-05-05\n" +
+            "AssayTestControl2\tf\tg\tfalse\t15\t2000-06-06";
+    protected static final String TEST_RUN2_DATA3 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\n" +
+            "AAA07XK5-05\t\t\ttrue\t20\t\n" +
+            "AAA07XMC-02\t\t\ttrue\t19\t\n" +
+            "AAA07XMC-04\t\t\ttrue\t18\t";
+    protected static final String TEST_RUN2_DATA4 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\t" + TEST_ASSAY_DATA_ALIASED_PROP_NAME + "\n" +
+            "1\tj\t1\t\t\t4/4/06";
+
+    protected static final String TEST_RUN3 = "ThirdRun";
+    protected static final String TEST_RUN3_COMMENTS = "Third comments";
+    protected static final String TEST_RUN3_DATA1 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\n" +
             "BAQ00051-09\tg\t7\ttrue\t20\t2000-01-01\n" +
             "BAQ00051-08\th\t8\ttrue\t19\t2000-02-02\n" +
             "BAQ00051-11\ti\t9\ttrue\t18\t2000-03-03\n";
@@ -97,6 +104,9 @@ public class AssayTest extends AbstractAssayTest
     private static final String INVESTIGATOR = "Dr. No";
     private static final String GRANT = "SPECTRE";
     private static final String DESCRIPTION = "World Domination.";
+
+    private final File PROTOCOL_DOC = TestFileUtils.getSampleData("study/Protocol.txt");
+    private final File PROTOCOL_DOC2 = TestFileUtils.getSampleData("study/Protocol2.txt");
 
     public List<String> getAssociatedModules()
     {
@@ -159,7 +169,7 @@ public class AssayTest extends AbstractAssayTest
         assayRuns.checkCheckbox(0);
         clickButton("Delete");
         // Make sure that it shows that the data is part of study datasets
-        assertTextPresent("SecondRun", "2 dataset(s)", TEST_ASSAY);
+        assertTextPresent(TEST_RUN3, "2 dataset(s)", TEST_ASSAY);
         assertTextNotPresent("FirstRun");
         // Do the delete
         clickButton("Confirm Delete");
@@ -172,8 +182,8 @@ public class AssayTest extends AbstractAssayTest
         clickFolder(TEST_ASSAY_FLDR_STUDY2);
         clickAndWait(Locator.linkWithText("1 dataset"));
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
-        assertTextPresent("AAA07XMC-04", "FirstRun");
-        assertTextNotPresent("BAQ00051-09", "SecondRun");
+        assertTextPresent("AAA07XMC-04", TEST_RUN1);
+        assertTextNotPresent("BAQ00051-09", TEST_RUN3);
     }
 
     //Issue 12203: Incorrect files are visible from pipeline directory
@@ -207,7 +217,7 @@ public class AssayTest extends AbstractAssayTest
         clickFolder(TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         clickAndWait(Locator.linkWithText("view results"));
-        assertElementPresent(Locator.xpath("//img[@src='/labkey/Experiment/unflagDefault.gif'][@title='Flag for review']"), 9);
+        assertElementPresent(Locator.xpath("//img[@src='/labkey/Experiment/unflagDefault.gif'][@title='Flag for review']"), 10);
         clickAndWait(Locator.linkWithText("edit"));
         setFormElement(Locator.name("quf_SpecimenID"), "EditedSpecimenID");
         setFormElement(Locator.name("quf_VisitID"), "601.5");
@@ -219,7 +229,7 @@ public class AssayTest extends AbstractAssayTest
         clickButton("Submit");
         assertTextPresent("EditedSpecimenID", "601.5", "514801");
         assertElementPresent(Locator.xpath("//img[@src='/labkey/Experiment/flagDefault.gif'][@title='This Flag Has Been Edited']"), 1);
-        assertElementPresent(Locator.xpath("//img[@src='/labkey/Experiment/unflagDefault.gif'][@title='Flag for review']"), 8);
+        assertElementPresent(Locator.xpath("//img[@src='/labkey/Experiment/unflagDefault.gif'][@title='Flag for review']"), 9);
 
         // Try a delete
         checkCheckbox(Locator.checkboxByName(".select"));
@@ -374,38 +384,64 @@ public class AssayTest extends AbstractAssayTest
                 TEST_ASSAY_SET_PROPERTIES[0]);
 
         log("Run properties and data");
+        setFormElement(Locator.name(TEST_ASSAY_RUN_PROP_NAME + "5"), PROTOCOL_DOC);
         clickButton("Save and Finish");
+
         assertTextPresent(TEST_ASSAY_RUN_PROP_NAME + "0 is required and must be of type Text (String).");
+        assertTextPresent(PROTOCOL_DOC.getName());
+        waitAndClick(Locator.linkWithText("remove"));
         setFormElement(Locator.name("name"), TEST_RUN1);
         setFormElement(Locator.name("comments"), TEST_RUN1_COMMENTS);
         setFormElement(Locator.name(TEST_ASSAY_RUN_PROP_NAME + "0"), TEST_ASSAY_RUN_PROP1);
         clickButton("Save and Finish");
+
+        assertFormElementEquals(Locator.name(TEST_ASSAY_RUN_PROP_NAME + "5"), "");
         assertTextPresent("Data file contained zero data rows");
         click(Locator.xpath("//input[@value='textAreaDataProvider']"));
         setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN1_DATA1);
-        clickButton("Save and Finish");
-
-        click(Locator.xpath("//input[@value='textAreaDataProvider']"));
-        setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN1_DATA2);
-        clickButton("Save and Finish");
-        assertTextPresent("There are errors in the uploaded data: VisitID must be of type Number (Double)");
-        assertFormElementEquals(Locator.name("name"), TEST_RUN1);
-        assertFormElementEquals(Locator.name("comments"), TEST_RUN1_COMMENTS);
-        click(Locator.xpath("//input[@value='textAreaDataProvider']"));
-        setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN1_DATA3);
         clickButton("Save and Import Another Run");
-        assertTextPresent("Missing value for required property: " + TEST_ASSAY_DATA_PROP_NAME + "6");
 
+        setFormElement(Locator.name("name"), TEST_RUN2);
+        setFormElement(Locator.name("comments"), TEST_RUN2_COMMENTS);
+        setFormElement(Locator.name(TEST_ASSAY_RUN_PROP_NAME + "0"), TEST_ASSAY_RUN_PROP1);
+        setFormElement(Locator.name(TEST_ASSAY_RUN_PROP_NAME + "5"), PROTOCOL_DOC2);
+        setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN2_DATA1);
+        clickButton("Save and Finish");
+
+        assertTextPresent(PROTOCOL_DOC2.getName());
         click(Locator.xpath("//input[@value='textAreaDataProvider']"));
-        setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN1_DATA4);
+        setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN2_DATA2);
+        clickButton("Save and Finish");
+
+        assertTextPresent("There are errors in the uploaded data: VisitID must be of type Number (Double)");
+        assertTextPresent(PROTOCOL_DOC2.getName());
+        assertFormElementEquals(Locator.name("name"), TEST_RUN2);
+        assertFormElementEquals(Locator.name("comments"), TEST_RUN2_COMMENTS);
+        click(Locator.xpath("//input[@value='textAreaDataProvider']"));
+        setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN2_DATA3);
+        clickButton("Save and Import Another Run");
+
+        assertTextPresent("Missing value for required property: " + TEST_ASSAY_DATA_PROP_NAME + "6");
+        click(Locator.xpath("//input[@value='textAreaDataProvider']"));
+        setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN2_DATA4);
         clickButton("Save and Import Another Run");
 
         assertFormElementEquals(Locator.name("name"), "");
         assertFormElementEquals(Locator.name("comments"), "");
-        setFormElement(Locator.name("name"), TEST_RUN2);
-        setFormElement(Locator.name("comments"), TEST_RUN2_COMMENTS);
-        setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN2_DATA1);
+        setFormElement(Locator.name("name"), TEST_RUN3);
+        setFormElement(Locator.name("comments"), TEST_RUN3_COMMENTS);
+        setFormElement(Locator.name(TEST_ASSAY_RUN_PROP_NAME + "5"), PROTOCOL_DOC2);
         clickButton("Save and Finish");
+
+        assertTextPresent(PROTOCOL_DOC2.getName().substring(0, PROTOCOL_DOC2.getName().lastIndexOf(".")) + "-1");
+        setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN3_DATA1);
+        clickButton("Save and Finish");
+
+        // Verify the first run did not have a file, the second run had the attached file and the third run had a file
+        // with a unique name.
+        assertTextNotPresent(PROTOCOL_DOC.getName());
+        assertTextPresent(PROTOCOL_DOC2.getName());
+        assertTextPresent(PROTOCOL_DOC2.getName().substring(0, PROTOCOL_DOC2.getName().lastIndexOf(".")) + "-1");
 
         log("Check out the data for one of the runs");
         assertNoLabKeyErrors();
@@ -558,17 +594,17 @@ public class AssayTest extends AbstractAssayTest
         clickAndWait(Locator.linkWithText("Study Navigator"));
 
         log("Test participant counts and row counts in study overview");
-        String[] row2 = new String[]{TEST_ASSAY, "7", "1", "1", "1", "1", "1", "2"};
+        String[] row2 = new String[]{TEST_ASSAY, "8", "1", "1", "1", "1", "1", "1", "2"};
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
         // Manually click the checkbox -- normal checkCheckbox() method doesn't seem to work for checkbox that reloads using onchange event
         clickAndWait(Locator.checkboxByNameAndValue("visitStatistic", "RowCount"));
-        row2 = new String[]{TEST_ASSAY, "7 / 8", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "2 / 3"};
+        row2 = new String[]{TEST_ASSAY, "8 / 9", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "2 / 3"};
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
         doAndWaitForPageToLoad(() -> uncheckCheckbox(Locator.checkboxByNameAndValue("visitStatistic", "ParticipantCount")));
-        row2 = new String[]{TEST_ASSAY, "8", "1", "1", "1", "1", "1", "3"};
+        row2 = new String[]{TEST_ASSAY, "9", "1", "1", "1", "1", "1", "1", "3"};
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
 
-        clickAndWait(Locator.linkWithText("8"));
+        clickAndWait(Locator.linkWithText("9"));
 
         assertElementPresent(Locator.linkWithText("999320885"), 1);
         assertElementPresent(Locator.linkWithText("999320885"), 1);
@@ -654,7 +690,7 @@ public class AssayTest extends AbstractAssayTest
         assertTextPresent("Copy to " + TEST_ASSAY_FLDR_STUDY3 + " Study: Verify Results");
 
         //populate initial set of values and verify the timepoint preview column
-        String[] dates = new String[]{"2000-02-02", "2000-03-03", "2000-04-04", "2000-05-05", "2000-06-06", "2000-01-01", "2000-02-02", "2000-03-03"};
+        String[] dates = new String[]{"2000-02-02", "2000-03-03", "2000-04-04", "2000-05-05", "2000-06-06", "2001-01-01", "2000-01-01", "2000-02-02", "2000-03-03"};
         int idx = 1;
         for (String d : dates)
         {
@@ -689,11 +725,11 @@ public class AssayTest extends AbstractAssayTest
         clickAndWait(Locator.linkWithText("Study Navigator"));
 
         log("Test participant counts and row counts in study overview");
-        String[] row2 = new String[]{TEST_ASSAY, "8", "1", "2", "2", "1", "1", "1"};
+        String[] row2 = new String[]{TEST_ASSAY, "9", "1", "2", "2", "1", "1", "1"};
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
         // Manually click the checkbox -- normal checkCheckbox() method doesn't seem to work for checkbox that reloads using onchange event
         clickAndWait(Locator.checkboxByNameAndValue("visitStatistic", "RowCount"));
-        row2 = new String[]{TEST_ASSAY, "8 / 8", "1 / 1", "2 / 2", "2 / 2", "1 / 1", "1 / 1", "1 / 1"};
+        row2 = new String[]{TEST_ASSAY, "9 / 9", "1 / 1", "2 / 2", "2 / 2", "1 / 1", "1 / 1", "1 / 1"};
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
 
         log("Test that correct timepoints were created");
@@ -790,11 +826,11 @@ public class AssayTest extends AbstractAssayTest
         clickAndWait(Locator.linkWithText("Study Navigator"));
 
         log("Test participant counts and row counts in study overview");
-        String[] row2 = new String[]{TEST_ASSAY, "8", " ", " ", " ", " ", " ", " ", "1", " ", " ", "4", " ", " ", " ", " ", "1", "1", " ", " ", " ", "1", " ", " ", " ", " ", " "};
+        String[] row2 = new String[]{TEST_ASSAY, "9", " ", " ", " ", "1", " ", " ", "1", " ", " ", "4", " ", " ", " ", " ", "1", "1", " ", " ", " ", "1", " ", " ", " ", " ", " "};
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
         // Manually click the checkbox -- normal checkCheckbox() method doesn't seem to work for checkbox that reloads using onchange event
         clickAndWait(Locator.checkboxByNameAndValue("visitStatistic", "RowCount"));
-        row2 = new String[]{TEST_ASSAY, "8 / 8", " ", " ", " ", " ", " ", " ", "1 / 1", " ", " ", "4 / 4", " ", " ", " ", " ", "1 / 1", "1 / 1", " ", " ", " ", "1 / 1", " ", " ", " ", " ", " "};
+        row2 = new String[]{TEST_ASSAY, "9 / 9", " ", " ", " ", "1 / 1", " ", " ", "1 / 1", " ", " ", "4 / 4", " ", " ", " ", " ", "1 / 1", "1 / 1", " ", " ", " ", "1 / 1", " ", " ", " ", " ", " "};
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
 
         log("Test that correct timepoints were created");
@@ -855,7 +891,7 @@ public class AssayTest extends AbstractAssayTest
         DataRegionTable assayRuns = DataRegionTable.findDataRegionWithinWebpart(this, TEST_ASSAY + " Runs");
         assayRuns.clickHeaderMenu("Grid Views", "Folder Filter", "Current folder and subfolders");
 
-        assertTextPresent("FirstRun", "SecondRun");
+        assertTextPresent(TEST_RUN1, TEST_RUN2);
 
         log("Setting the customized view to include subfolders");
         assayRuns = DataRegionTable.findDataRegionWithinWebpart(this, TEST_ASSAY + " Runs");
@@ -865,7 +901,7 @@ public class AssayTest extends AbstractAssayTest
         customizeViewsHelper.clipFolderFilter();
         customizeViewsHelper.saveCustomView("");
 
-        assertTextPresent("FirstRun", "SecondRun");
+        assertTextPresent(TEST_RUN1, TEST_RUN2);
 
         log("Testing select all data and view");
         assayRuns = DataRegionTable.findDataRegionWithinWebpart(this, TEST_ASSAY + " Runs");
@@ -875,7 +911,7 @@ public class AssayTest extends AbstractAssayTest
 
         log("Testing clicking on a run");
         clickProject(TEST_ASSAY_PRJ_SECURITY);
-        clickAndWait(Locator.linkWithText("FirstRun"));
+        clickAndWait(Locator.linkWithText(TEST_RUN1));
         verifySpecimensPresent(3, 2, 0);
 
         clickAndWait(Locator.linkWithText("view results"));
@@ -889,9 +925,9 @@ public class AssayTest extends AbstractAssayTest
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         clickButton("View Source Assay", defaultWaitForPage);
 
-        assertTextPresent("FirstRun", "SecondRun");
+        assertTextPresent(TEST_RUN1, TEST_RUN2);
 
-        clickAndWait(Locator.linkWithText("FirstRun"));
+        clickAndWait(Locator.linkWithText(TEST_RUN1));
         verifySpecimensPresent(3, 2, 0);
 
         clickAndWait(Locator.linkWithText("view results"));
@@ -904,7 +940,7 @@ public class AssayTest extends AbstractAssayTest
 
         log("Testing copy to study availability");
         clickProject(TEST_ASSAY_PRJ_SECURITY);
-        clickAndWait(Locator.linkWithText("SecondRun"));
+        clickAndWait(Locator.linkWithText(TEST_RUN3));
 
         checkAllOnPage("Data");
         clickButton("Copy to Study", defaultWaitForPage);
