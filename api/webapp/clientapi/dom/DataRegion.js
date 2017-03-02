@@ -3447,12 +3447,7 @@ if (!LABKEY.DataRegions) {
         var me = this,
             timeout;
 
-        var calculateHeaderPosition = function(recalcPosition) {
-            calculateLockPosition(recalcPosition);
-            onScroll();
-        };
-
-        var calculateLockPosition = function(recalcPosition) {
+        var calculateHeaderPosition = function() {
             var el, s, src, i = 0;
 
             for (; i < me.rowContent.length; i++) {
@@ -3462,18 +3457,16 @@ if (!LABKEY.DataRegions) {
                 s = {
                     width: src.width(),
                     height: el.height()
-                }; // note: width coming from data row not header
+                }; // note: width coming from data row, not header
 
                 el.width(s.width); // 15420
 
                 $(me.rowSpacerContent[i]).height(s.height).width(s.width);
             }
 
-            if (recalcPosition === true) {
-                me.hdrCoord = findPos();
-            }
+            me.hdrCoord = findPos();
 
-            me.hdrLocked = false;
+            onScroll();
         };
 
         var disable = function() {
@@ -3505,8 +3498,8 @@ if (!LABKEY.DataRegions) {
 
         /**
          * Returns an array of containing the following values:
-         * [0] - X-coordinate of the top of the object relative to the offset parent. See Ext.Element.getXY()
-         * [1] - Y-coordinate of the top of the object relative to the offset parent. See Ext.Element.getXY()
+         * [0] - X-coordinate of the top of the object relative to the offset parent.
+         * [1] - Y-coordinate of the top of the object relative to the offset parent.
          * [2] - Y-coordinate of the bottom of the object.
          * [3] - The height of the header for this Data Region. This includes the button bar if it is present.
          * This method assumes interaction with the Header of the Data Region.
@@ -3549,105 +3542,78 @@ if (!LABKEY.DataRegions) {
 
         /**
          * WARNING: This function is called often. Performance implications for each line.
-         * NOTE: window.pageYOffset and pageXOffset are not available in IE7-. For these document.documentElement.scrollTop
-         * and document.documentElement.scrollLeft could be used. Additionally, position: fixed is not recognized by
-         * IE7- and can be best approximated with position: absolute and explicit top/left.
          */
         var onScroll = function() {
-            var hrStyle, chrStyle;
-
-            // calculate Y scrolling
             if (window.pageYOffset >= me.hdrCoord[1] && window.pageYOffset < me.hdrCoord[2]) {
                 // The header has reached the top of the window and needs to be locked
                 var tWidth = me.table.width();
+                var left = me.hdrCoord[0] - window.pageXOffset;
 
-                hrStyle = {
-                    top: 0,
-                    position: 'fixed',
-                    'min-width': tWidth,
-                    'z-index': 9000 // 13229
+                var hrStyle = {
+                    left: left,
+                    'min-width': tWidth
                 };
-                chrStyle = {
+
+                var chrStyle = {
+                    left: left,
                     top: me.hdrCoord[3],
-                    position: 'fixed',
-                    background: 'white',
-                    'min-width': tWidth,
-                    'box-shadow': '-2px 5px 5px #DCDCDC',
-                    'z-index': 9000 // 13229
+                    'min-width': tWidth
                 };
 
-                me.headerSpacer.css('display', 'table-row');
-                me.colHeaderRowSpacer.css('display', 'table-row');
+                // following properties only need to be set when enabling locking
+                if (!me.hdrLocked) {
+                    hrStyle.top = 0;
+                    hrStyle.position = 'fixed';
+                    hrStyle['z-index'] = 9000; // 13229
+
+                    chrStyle.background = 'white';
+                    chrStyle['box-shadow'] = '-2px 5px 5px #DCDCDC';
+                    chrStyle.position = 'fixed';
+                    chrStyle['z-index'] = 9000; // 13229
+
+                    me.headerSpacer.show();
+                    me.colHeaderRowSpacer.show();
+                    me.hdrLocked = true;
+                }
+
+                me.headerRow.css(hrStyle);
+                me.colHeaderRow.css(chrStyle);
                 me.headerRowContent.css('min-width', tWidth - 3);
-                me.hdrLocked = true;
             }
             else if (me.hdrLocked && window.pageYOffset >= me.hdrCoord[2]) {
                 // The bottom of the Data Region is near the top of the window and the locked header
                 // needs to start 'sliding' out of view.
                 var top = me.hdrCoord[2] - window.pageYOffset;
-                hrStyle = { top: top };
-                chrStyle = { top: (top + me.hdrCoord[3]) };
+                me.headerRow.css({ top: top });
+                me.colHeaderRow.css({ top: (top + me.hdrCoord[3]) });
             }
-            else if (me.hdrLocked) { // only reset if the header is locked
-                // the header should not be locked
-                reset(false);
-            }
-
-            // Calculate X Scrolling
-            if (me.hdrLocked) {
-                if (!hrStyle) {
-                    hrStyle = {};
-                }
-                if (!chrStyle) {
-                    chrStyle = {};
-                }
-
-                hrStyle.left = me.hdrCoord[0] - window.pageXOffset;
-                chrStyle.left = me.hdrCoord[0] - window.pageXOffset;
-            }
-
-            if (hrStyle) {
-                me.headerRow.css(hrStyle);
-            }
-            if (chrStyle) {
-                me.colHeaderRow.css(chrStyle);
+            else if (me.hdrLocked && window.pageYOffset < me.hdrCoord[1]) {
+                // only reset if the header is locked
+                reset();
             }
         };
 
         /**
          * Adjusts the header styling to the best approximate of what the defaults are when the header is not locked
          */
-        var reset = function(recalc) {
+        var reset = function() {
             me.hdrLocked = false;
-            me.headerRow.css({
-                top: 'auto',
-                position: 'static',
-                'min-width': 0
-            });
-            me.headerRowContent.css('min-width', 0);
-            me.colHeaderRow.css({
-                top: 'auto',
-                position: 'static',
-                'min-width': 0,
-                'box-shadow': 'none'
-            });
+            me.headerRow.removeAttr('style');
+            me.headerRowContent.css('min-width', '');
+            me.colHeaderRow.removeAttr('style');
             me.headerSpacer.hide();
-            me.headerSpacer.height(me.headerRow.height());
             me.colHeaderRowSpacer.hide();
-            calculateHeaderPosition(recalc);
+            me.headerSpacer.height(me.headerRow.height());
+            calculateHeaderPosition();
         };
 
         var resizeTask = function() {
-            reset(true);
+            reset();
             ensurePaginationVisible();
         };
 
-        var validBrowser = function() {
-            return true; // Ext.isIE9 || Ext.isIE10p || Ext.isWebKit || Ext.isGecko
-        };
-
         // init
-        if (!region.headerLock() || !validBrowser()) {
+        if (!region.headerLock()) {
             region._allowHeaderLock = false;
             return;
         }
@@ -3669,7 +3635,7 @@ if (!LABKEY.DataRegions) {
         this.paginationEl = $('#' + region.domId + '-header');
 
         // check if the header row is being used
-        this.includeHeader = this.headerRow.is(':visible'); // formerly isDisplayed()
+        this.includeHeader = this.headerRow.is(':visible');
 
         // initialize row contents
         // Check if we have colHeaderRow and colHeaderRowSpacer - they won't be present if there was an SQLException
@@ -3723,7 +3689,7 @@ if (!LABKEY.DataRegions) {
 
         this.hdrCoord = [];
 
-        reset(true);
+        reset();
 
         // public methods
         return {
