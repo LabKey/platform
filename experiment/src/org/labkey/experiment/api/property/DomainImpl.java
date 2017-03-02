@@ -19,6 +19,7 @@ package org.labkey.experiment.api.property;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
@@ -383,9 +384,17 @@ public class DomainImpl implements Domain
                 }
                 catch (QueryUpdateServiceException | BatchValidationException | SQLException e)
                 {
-                   throw new ChangePropertyDescriptorException(e);
+                    throw new ChangePropertyDescriptorException(e);
                 }
             }
+
+            Set<String> baseProperties = Sets.newCaseInsensitiveHashSet();
+            if (null != kind)
+            {
+                for (PropertyStorageSpec s : kind.getBaseProperties(this))
+                    baseProperties.add(s.getName());
+            }
+
 
             // Delete first #8978
             for (DomainPropertyImpl impl : _properties)
@@ -416,7 +425,12 @@ public class DomainImpl implements Domain
                 {
                     // make sure all properties have storageColumnName
                     if (null == impl._pd.getStorageColumnName())
-                        generateStorageColumnName(impl._pd);
+                    {
+                        if (!allowAddBaseProperty && baseProperties.contains(impl._pd.getName()))
+                            impl._pd.setStorageColumnName(impl._pd.getName()); // Issue 29047: if we allow base property (like "date"), we're later going to use the base property name for storage
+                        else
+                            generateStorageColumnName(impl._pd);
+                    }
 
                     if (impl.isRecreateRequired())
                     {
