@@ -41,7 +41,6 @@ import java.util.Map;
  */
 public class ExtendedApiQueryResponse extends ApiQueryResponse
 {
-    boolean _doItWithStyle = false;
     boolean _arrayMultiValueColumns = false;
     boolean _includeFormattedValue = false;
 
@@ -67,11 +66,6 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
                                     long offset, List<FieldKey> fieldKeys, boolean metaDataOnly, boolean includeDetailsColumn, boolean includeUpdateColumn)
     {
         super(view, schemaEditable, includeLookupInfo, schemaName, queryName, offset, fieldKeys, metaDataOnly, includeDetailsColumn, includeUpdateColumn, false);
-    }
-
-    public void includeStyle(boolean withStyle)
-    {
-        _doItWithStyle = withStyle;
     }
 
     // When true, serialize multi-value columns as an array of objects containing 'value', 'url', 'displayValue'

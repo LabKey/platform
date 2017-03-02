@@ -1993,6 +1993,10 @@ public class QueryView extends WebPartView<Object>
                     addDetailsAndUpdateColumns(rgn.getDisplayColumns(), table);
                     rgn.addColumns(table.getColumns());
                     keys.remove(starKey);
+                    if (keys.isEmpty())
+                    {
+                        getSettings().setFieldKeys(null);
+                    }
                 }
 
                 if (keys.size() > 0)
