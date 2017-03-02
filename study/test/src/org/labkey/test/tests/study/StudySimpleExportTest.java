@@ -396,7 +396,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickFolder(getFolderName());
         _studyHelper.goToManageVisits();
         waitAndClickAndWait(_studyHelper.editVisitLoc(visitLabel));
-        clickButton("Delete visit");
+        clickButton("Delete Visit");
         waitForText("Do you want to delete Visit");
         clickButton("Delete");
         waitForText("Manage Visits");

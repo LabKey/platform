@@ -226,7 +226,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         Assert.assertFalse("Expected redirect to project manage visits page, got: " + url, url.contains(STUDY1));
 
         clickAndWait(_studyHelper.editVisitLoc("Visit 4"));
-        clickButton("Delete visit");
+        clickButton("Delete Visit");
         clickButton("Delete");
     }
 
