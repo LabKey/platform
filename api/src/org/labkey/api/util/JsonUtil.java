@@ -110,6 +110,9 @@ public class JsonUtil
 
     public static String[] getStringArray(JSONObject json, String propName)
     {
+        if (!json.has(propName) || json.get(propName) == null)
+            return null;
+
         JSONArray jsonValues = (JSONArray)json.get(propName);
         String[] strValues = new String[jsonValues.length()];
         for (int i = 0; i < jsonValues.length(); i++)
