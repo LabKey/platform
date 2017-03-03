@@ -1710,7 +1710,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             store: new LABKEY.ext.Store({
                 schemaName: 'study',
                 queryName: 'visit',
-                columns: 'RowId, Label, SequenceNumMin, SequenceNumMax, DisplayOrder',
+                columns: 'RowId, Label, SequenceNumMin, SequenceNumMax, DisplayOrder, Folder',
                 sort: 'DisplayOrder, SequenceNumMin'
             }),
             loadMask:{msg:"Loading, please wait..."},
