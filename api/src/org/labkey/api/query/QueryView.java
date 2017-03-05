@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.annotations.RefactorIn15_1;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -1993,10 +1992,8 @@ public class QueryView extends WebPartView<Object>
                     addDetailsAndUpdateColumns(rgn.getDisplayColumns(), table);
                     rgn.addColumns(table.getColumns());
                     keys.remove(starKey);
-                    if (keys.isEmpty())
-                    {
-                        getSettings().setFieldKeys(null);
-                    }
+                    // Since the client requested all columns, don't filter which ones get sent back
+                    getSettings().setFieldKeys(null);
                 }
 
                 if (keys.size() > 0)
