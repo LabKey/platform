@@ -200,7 +200,7 @@
         LABKEY.Query.selectRows({
             schemaName : 'study',
             queryName : 'Datasets',
-            columns: 'Name',
+            columns: 'Name, DataSetId',
             sort: 'Name',
             success : function(details){
                 var rows = details.rows;
