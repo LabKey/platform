@@ -11,6 +11,10 @@
     padding-bottom: 20px;
 }
 
+.import-options-panel .advanced-options-panel .look-disabled {
+    color: #C0C0C0;
+}
+
 .import-options-panel .advanced-options-panel .x4-panel-body {
     padding: 10px;
 }

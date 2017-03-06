@@ -358,7 +358,7 @@ Ext4.define('LABKEY.import.SpecificImportOptions', {
         return {
             xtype: 'box',
             cls: hide ? 'advanced-options-hide' : 'advanced-options-input',
-            html: '<label><input type="checkbox" name="dataTypes" '
+            html: '<label class="' + (showDisabled ? 'look-disabled' : '') + '"><input type="checkbox" name="dataTypes" '
                 + 'value="' + dataType + '" ' + parentAttr + checked + disabled + '>' + dataType + '</label>',
             listeners: {
                 render: function(b) {
