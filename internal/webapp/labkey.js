@@ -417,7 +417,12 @@ if (typeof LABKEY == "undefined")
             }
             else
             {
-                requiresCss(configs.extJsRoot + '/resources/css/ext-all.css');
+                var cssRoot = configs.extJsRoot + '/resources/css/ext-all.css';
+                if (LABKEY.experimental && LABKEY.experimental.useExperimentalCoreUI === true)
+                {
+                    cssRoot = 'core/css/ext3.css';
+                }
+                requiresCss(cssRoot);
                 requiresLib('Ext3', callback, scope);
             }
         };

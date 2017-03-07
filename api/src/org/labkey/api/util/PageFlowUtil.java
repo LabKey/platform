@@ -1612,6 +1612,13 @@ public class PageFlowUtil
             else if (AppProps.getInstance().isExt3Required())
                 resources.add(ClientDependency.fromPath("Ext3"));
 
+            if (useExperimentalCoreUI())
+            {
+                // TODO: Turn this into a lib.xml
+                resources.add(ClientDependency.fromPath("internal/jQuery"));
+                resources.add(ClientDependency.fromPath("core/css/core.js"));
+            }
+
             // Always include clientapi and internal
             resources.add(ClientDependency.fromPath("clientapi"));
             resources.add(ClientDependency.fromPath("internal"));
@@ -1663,7 +1670,11 @@ public class PageFlowUtil
                     if (!ext3Included && paths.startsWith("ext-3.4.1/ext-all"))
                     {
                         ext3Included = true;
-                        String cssPath = extJsRoot() + "/resources/css/ext-all.css";
+                        String cssPath;
+                        if (useExperimentalCoreUI())
+                            cssPath = "/core/css/ext3.css";
+                        else
+                            cssPath = extJsRoot() + "/resources/css/ext-all.css";
 
                         preIncludedCss.add(cssPath);
                         F.format(link, Path.parse(staticResourceUrl(cssPath)));
@@ -1688,7 +1699,7 @@ public class PageFlowUtil
         {
             if (useExperimentalCoreUI())
             {
-                F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/main.css")));
+                F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/core.css")));
             }
             else
             {
@@ -2009,6 +2020,7 @@ public class PageFlowUtil
         // Expose some experimental flags to the client
         JSONObject experimental = new JSONObject();
         experimental.put("containerRelativeURL", appProps.getUseContainerRelativeURL());
+        experimental.put("useExperimentalCoreUI", useExperimentalCoreUI());
         json.put("experimental", experimental);
 
         json.put("contextPath", contextPath);
