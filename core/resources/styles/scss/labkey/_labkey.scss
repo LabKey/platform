@@ -1,12 +1,12 @@
-@import "labkey/fonts";
-@import "labkey/variables";
+@import "fonts";
+@import "variables";
 
 html, body
 {
   height: 100%;
 }
 
-body, div, td, table, img, form, input, select
+body
 {
   font-family: $font-family-sans-serif;
   font-size: $font-size-base;
@@ -31,15 +31,10 @@ th
   line-height: 1.25;
 }
 
-.x-btn, .x4-btn {
+.x4-btn {
   font-family: $font-family-sans-serif-bold;
   font-size: 12px;
   letter-spacing: .5px;
-}
-
-strong, b {
-  font-family: $font-family-sans-serif-bold;
-  font-weight: normal;
 }
 
 img
@@ -98,22 +93,15 @@ li.labkey-ancillary-wizard-active-step
   height: 100%;
 }
 
-a, a:visited, .labkey-link, .labkey-link:visited
-{
+.labkey-link {
   color: $lk-link-color;
   cursor: pointer;
   text-decoration: none;
-}
 
-/* Skipped in themeStylesheet.jsp */
-a:hover, a:visited:hover, .labkey-link:hover, .labkey-link:visited:hover
-{
-  color: #000000;
-}
-
-h3
-{
-  font-size: 14px;
+  &:hover,
+  &:visited:hover {
+    color: $lk-text-color;
+  }
 }
 
 fieldset
@@ -1240,7 +1228,7 @@ img.labkey-grid-filter-icon
   background-position: -15px -90px;
 }
 
-@import "labkey/components/customView";
+@import "components/customView";
 
 .labkey-fieldmeta-tree .x4-grid-body
 {
@@ -2186,7 +2174,7 @@ table.labkey-r-tsvout
   border-spacing: 0; *border-collapse: collapse;
 }
 
-@import "labkey/gwt";
+@import "gwt";
 
 /* Create Chart View */
 table.chart-preview td {
@@ -2223,8 +2211,6 @@ div.clear:after, div.bd:after {
 .labkey-force-word-break
 {
   word-wrap: break-word;
-  /* NOTE: note sure how this is used yet but the word-break might be necessary too! */
-  /*word-break: break-all;*/
 }
 
 /*used to mark ext grid rows/cells as invalid*/
@@ -2261,7 +2247,7 @@ a.upload-button
   border: 1px solid #DDD;
 }
 
-@import "labkey/components/tabStrip";
+@import "components/tabStrip";
 
 /* This is used as the final tab in a tab strip */
 #labkey-end-tab-space
@@ -3142,7 +3128,7 @@ a div.x4-menu-item-icon.fa-users
   background-image: none;
 }
 
-@import "labkey/ribbon";
+@import "ribbon";
 
 .labkey-hidden
 {

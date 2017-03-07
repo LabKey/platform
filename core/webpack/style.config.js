@@ -10,7 +10,9 @@ module.exports = {
     context: path.resolve(__dirname, '..'),
 
     entry: {
-        core_style: './resources/styles/style.js'
+        core: './resources/styles/js/style.js',
+        ext3: './resources/styles/js/ext3.js',
+        guide: './resources/styles/js/guide.js'
     },
 
     output: {
@@ -20,7 +22,7 @@ module.exports = {
     },
 
     plugins: [
-        new ExtractTextPlugin('main.css', {
+        new ExtractTextPlugin('[name].css', {
             allChunks: true
         })
     ],

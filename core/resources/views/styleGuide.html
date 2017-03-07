@@ -13,4 +13,108 @@
             <li><a href="#">Action 4</a></li>
         </ul>
     </div>
+    <div class="lk-sg-section">
+        <h2 class="page-header">Typography</h2>
+        <h3>Headings</h3>
+        <p>Displays all the headers</p>
+        <div class="lk-sg-example lk-sg-example-typography">
+            <table class="table">
+                <tbody>
+                <tr><td><h1>h1. LabKey Heading</h1></td></tr>
+                <tr><td><h2>h2. LabKey Heading</h2></td></tr>
+                <tr><td><h3>h3. LabKey Heading</h3></td></tr>
+                <tr><td><h4>h4. LabKey Heading</h4></td></tr>
+                <tr><td><h5>h5. LabKey Heading</h5></td></tr>
+                <tr><td><h6>h6. LabKey Heading</h6></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <h3>Elements</h3>
+        <p>Different types of elements</p>
+        <div class="lk-sg-example lk-sg-example-typography">
+            <table class="table">
+                <tbody>
+                <tr><td><strong>strong. Display some text.</strong></td></tr>
+                <tr><td><p>p. Display some text.</p></td></tr>
+                <tr><td><em>em. Display some text.</em></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!--<div class="lk-sg-section">-->
+        <!--<h2 class="page-header">Colors</h2>-->
+        <!--<div class="lk-sg-example">-->
+            <!--<div class="color-swatches">-->
+                <!--<div class="color-swatch"></div>-->
+            <!--</div>-->
+        <!--</div>-->
+    <!--</div>-->
+    <div class="lk-sg-section">
+        <h2>Components</h2>
+        <h3>Query Web Part</h3>
+        <div class="lk-sg-example">
+            <div id="querywebpart">This will display a QueryWebPart</div>
+        </div>
+        <script type="application/javascript">
+            (function($) {
+                $(function() {
+//                    var qwp = new LABKEY.QueryWebPart({
+//                        renderTo: 'querywebpart',
+//                        schemaName: 'core',
+//                        queryName: 'users'
+//                    })
+                });
+            })(jQuery);
+        </script>
+    </div>
+    <div class="lk-sg-section">
+        <h2 class="page-header">ExtJS 3.4.0</h2>
+        <div class="lk-sg-example">
+            <div class="lk-sg-example-ext3">
+                <div id="ext3-panel" class="extContainer"></div>
+                <div id="ext3-button" class="extContainer"></div>
+                <div id="ext3-dialog" class="extContainer"></div>
+            </div>
+            <script type="application/javascript">
+                if (typeof Ext !== 'undefined') {
+                    Ext.onReady(function() {
+                        var panel = new Ext.Panel({
+                            renderTo: 'ext3-panel',
+                            title: 'Ext 3 Panel',
+                            html: 'Body',
+                            bbar: [{
+                                text: 'Button One'
+                            },{
+                                text: 'Button Two'
+                            },{
+                                text: 'Button Three'
+                            }]
+                        });
+
+                        var btn = new Ext.Button({
+                            renderTo: 'ext3-button',
+                            text: 'Ext 3 Button'
+                        });
+
+                        var dialog = new Ext.Button({
+                            renderTo: 'ext3-dialog',
+                            text: 'See Modal Window',
+                            handler: function() {
+                                var win = new Ext.Window({
+                                    title: 'Ext 3 Window',
+                                    height: 300,
+                                    width: 400,
+                                    modal: true,
+                                    html: 'Content'
+                                }).show();
+                            }
+                        });
+                    });
+                }
+                else {
+                    document.getElementById('ext3-panel').innerHTML = 'Ext 3 is not available.'
+                }
+            </script>
+        </div>
+    </div>
 </div>

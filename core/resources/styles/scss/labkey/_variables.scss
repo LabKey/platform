@@ -8,6 +8,7 @@ $api-webapp-dir: '../..';
 $internal-webapp-dir: '../..';
 $ext3-images-dir: '#{$api-webapp-dir}/ext-3.4.1/resources/images';
 $ext4-images-dir: '#{$api-webapp-dir}/ext-4.2.1/resources/ext-theme-classic-sandbox/images';
+$api-images-dir: '#{$api-webapp-dir}/_images';
 $internal-images-dir: '#{$internal-webapp-dir}/_images';
 
 //== Colors
@@ -19,7 +20,9 @@ $lk-base-color: #226495; // TODO: Suspicious that this was intended to be #12649
 $lk-panel-base-color: #DFE8F6;
 
 $lk-text-color: #000000;
-$lk-link-color: #126495;
+$lk-link-color: #126495 !default;
+$lk-link-hover-color: darken($lk-link-color, 15%) !default;
+$lk-link-hover-decoration: none;
 $lk-grid-color: #E7EFF4;
 $lk-primary-bg-color: #F8F8F8;
 $lk-secondary-bg-color: #FFFFFF;
@@ -57,22 +60,21 @@ $brand-danger:          #d9534f !default;
 //** Background color for `<body>`.
 $body-bg:               #fff !default;
 //** Global text color on `<body>`.
-$text-color:            $gray-dark !default;
+$text-color:            $lk-text-color; //$gray-dark !default;
 
 //** Global textual link color.
-$link-color:            $brand-primary !default;
+$link-color:            red; //$lk-link-color; //$brand-primary !default;
 //** Link hover color set via `darken()` function.
-$link-hover-color:      darken($link-color, 15%) !default;
+$link-hover-color:      $lk-link-hover-color; //darken($link-color, 15%) !default;
 //** Link hover decoration.
-$link-hover-decoration: underline !default;
+$link-hover-decoration: $lk-link-hover-decoration; //underline !default;
 
 
 //== Typography
 //
 //## Font, line-height, and color for body text, headings, and more.
 
-//$font-family-sans-serif:  "Helvetica Neue", Helvetica, Arial, sans-serif !default;
-$font-family-sans-serif:  Roboto, Arial, Helvetica, sans-serif;
+$font-family-sans-serif:  'Roboto', Arial, Helvetica, sans-serif; // "Helvetica Neue", Helvetica, Arial, sans-serif !default;
 $font-family-sans-serif-bold:  'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
 
 $font-family-serif:       Georgia, "Times New Roman", Times, serif !default;
