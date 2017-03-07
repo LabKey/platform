@@ -200,7 +200,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     
 
     // find most top-most view context on stack
-    static ViewContext topViewContext()
+    public static ViewContext topViewContext()
     {
         Stack<ViewStackEntry> stack = _viewContexts.get();
         for (int i=stack.size()-1 ; i>= 0 ;i--)
