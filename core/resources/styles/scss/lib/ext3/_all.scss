@@ -67,13 +67,13 @@
   left: 0;
   border:1px solid;
   background:repeat-x 0 -16px;
-  padding:2px;
-}
+  padding: 2px;
 
-.ext-el-mask-msg div {
-  padding:5px 10px 5px 10px;
-  border:1px solid;
-  cursor:wait;
+  div {
+    padding:5px 10px 5px 10px;
+    border:1px solid;
+    cursor:wait;
+  }
 }
 
 .ext-shim {
@@ -86,11 +86,6 @@
 
 .ext-ie .ext-shim {
   filter: alpha(opacity=0);
-}
-
-.ext-ie6 .ext-shim {
-  margin-left: 5px;
-  margin-top: 3px;
 }
 
 .x-mask-loading div {
@@ -656,9 +651,8 @@ ul.x-tab-strip li.x-tab-edge {
 }
 
 .x-tab-strip .x-tab-with-icon span.x-tab-strip-text {
-  padding-left:20px;
-  background-position: 0 3px;
-  background-repeat: no-repeat;
+  padding-left: 20px;
+  background: no-repeat 0 3px;
 }
 
 .x-tab-strip-active, .x-tab-strip-active a.x-tab-right {
@@ -934,12 +928,6 @@ textarea.x-form-field {
   vertical-align:middle;
 }
 
-.ext-ie6 .x-form-text, .ext-ie7 .x-form-text {
-  margin:-1px 0; /* ie bogus margin bug */
-  height:22px; /* ie quirks */
-  line-height:18px;
-}
-
 .x-quirks .ext-ie9 .x-form-text {
   height: 22px;
   padding-top: 3px;
@@ -954,14 +942,6 @@ textarea.x-form-field {
 }
 .x-quirks .ext-ie9 .x-input-wrapper .x-form-element {
   margin-bottom: -1px;
-}
-
-.ext-ie6 .x-form-field-wrap .x-form-file-btn, .ext-ie7 .x-form-field-wrap .x-form-file-btn {
-  top: -1px; /* because of all these margin hacks, these buttons are off by one pixel in IE6,7 */
-}
-
-.ext-ie6 textarea.x-form-field, .ext-ie7 textarea.x-form-field {
-  margin:-1px 0; /* ie bogus margin bug */
 }
 
 .ext-strict .x-form-text {
@@ -981,10 +961,6 @@ textarea.x-form-field {
 .ext-gecko .x-form-text , .ext-ie8 .x-form-text {
   padding-top:2px; /* FF won't center the text vertically */
   padding-bottom:0;
-}
-
-.ext-ie6 .x-form-composite .x-form-text.x-box-item, .ext-ie7 .x-form-composite .x-form-text.x-box-item {
-  margin: 0 !important; /* clear ie bogus margin bug fix */
 }
 
 textarea {
@@ -1208,20 +1184,8 @@ textarea {
   vertical-align:middle;
 }
 
-.ext-ie6 .x-small-editor .x-form-text, .ext-ie7 .x-small-editor .x-form-text {
-  margin-top:-1px !important; /* ie bogus margin bug */
-  margin-bottom:-1px !important;
-  height:20px !important; /* ie quirks */
-  line-height:16px !important;
-}
-
 .ext-strict .x-small-editor .x-form-text {
   height:16px !important;
-}
-
-.ext-ie6 .x-small-editor .x-form-text, .ext-ie7 .x-small-editor .x-form-text {
-  height:20px;
-  line-height:16px;
 }
 
 .ext-border-box .x-small-editor .x-form-text {
@@ -1263,7 +1227,7 @@ textarea {
   font-size:0;
 }
 
-.ext-ie6 .x-form-check-wrap input, .ext-border-box .x-form-check-wrap input{
+.ext-border-box .x-form-check-wrap input {
   margin-top: 3px;
 }
 
@@ -1277,7 +1241,7 @@ textarea {
   top: 1px;
 }
 
-.ext-ie6 .x-form-cb-label, .ext-border-box .x-form-cb-label{
+.ext-border-box .x-form-cb-label {
   top: 3px;
 }
 
@@ -1285,7 +1249,7 @@ textarea {
   padding-top: 2px;
 }
 
-.ext-gecko .x-form-display-field, .ext-strict .ext-ie7 .x-form-display-field{
+.ext-gecko .x-form-display-field {
   padding-top: 1px;
 }
 
@@ -1420,13 +1384,6 @@ fieldset.x-panel-collapsed {
   border-right-color: transparent;
 }
 
-.ext-ie6 fieldset.x-panel-collapsed{
-  padding-bottom:0 !important;
-  border-width: 1px 0 0 0 !important;
-  margin-left: 1px;
-  margin-right: 1px;
-}
-
 fieldset.x-panel-collapsed .x-fieldset-bwrap {
   visibility:hidden;
   position:absolute;
@@ -1494,27 +1451,6 @@ fieldset.x-panel-collapsed .x-fieldset-bwrap {
 
 .x-fieldset-body {
   overflow:hidden;
-}
-.x-btn {
-  cursor: pointer;
-  white-space: nowrap;
-
-  button {
-    border: 0 none;
-    background-color: transparent;
-    padding-left: 3px;
-    padding-right: 3px;
-    cursor: pointer;
-    margin: 0;
-    overflow: visible;
-    width: auto;
-    -moz-outline: 0 none;
-    outline: 0 none;
-  }
-
-  td {
-    padding: 0 !important;
-  }
 }
 
 * html .ext-ie .x-btn button {
@@ -1724,12 +1660,7 @@ fieldset.x-panel-collapsed .x-fieldset-bwrap {
   white-space:nowrap;
 }
 
-/* Fixes an issue with the button height */
-.ext-strict .ext-ie6 .x-btn-mc, .ext-strict .ext-ie7 .x-btn-mc {
-  height: 100%;
-}
-
-.x-btn-bl{
+.x-btn-bl {
   width:3px;
   height:3px;
   background:no-repeat 0 -3px;
@@ -2418,12 +2349,8 @@ td.x-grid3-hd-over .x-grid3-hd-inner, td.sort-desc .x-grid3-hd-inner, td.sort-as
 }
 
 /* Header position fixes for IE strict mode */
-.ext-strict .ext-ie .x-grid3-header-inner, .ext-strict .ext-ie6 .x-grid3-hd {
+.ext-strict .ext-ie .x-grid3-header-inner {
   position:relative;
-}
-
-.ext-strict .ext-ie6 .x-grid3-hd-inner{
-  position:static;
 }
 
 /* Body Styles */
@@ -2717,11 +2644,6 @@ a.x-grid3-hd-btn:hover {
   display:none;
 }
 
-.ext-ie6 .x-grid3 .x-editor .x-form-text, .ext-ie7 .x-grid3 .x-editor .x-form-text {
-  position:relative;
-  top:-1px;
-}
-
 .ext-ie .x-props-grid .x-editor .x-form-text {
   position:static;
   top:0;
@@ -2729,23 +2651,6 @@ a.x-grid3-hd-btn:hover {
 
 .x-grid-empty {
   padding:10px;
-}
-
-/* fix floating toolbar issue */
-.ext-ie7 .x-grid-panel .x-panel-bbar {
-  position:relative;
-}
-
-
-/* Reset position to static when Grid Panel has been framed */
-/* to resolve 'snapping' from top to bottom behavior. */
-/* @forumThread 86656 */
-.ext-ie7 .x-grid-panel .x-panel-mc .x-panel-bbar {
-  position: static;
-}
-
-.ext-ie6 .x-grid3-header {
-  position: relative;
 }
 
 /* Fix WebKit bug in Grids */
@@ -3548,8 +3453,8 @@ td.x-date-mp-sep {
   -webkit-user-select:ignore;
 }
 
-.x-menu-item-arrow{
-  background:transparent no-repeat right;
+.x-menu-item-arrow {
+  background: transparent url('#{api-images-dir}/arrow_right.png') no-repeat right;
 }
 
 .x-menu-sep {
@@ -3626,10 +3531,6 @@ td.x-date-mp-sep {
   left: 3px;
 }
 
-.ext-ie6 .x-menu-item-icon {
-  left: -24px;
-}
-
 .ext-ie .x-menu-item-icon {
   vertical-align: middle;
 }
@@ -3675,17 +3576,6 @@ td.x-date-mp-sep {
 }
 
 /*
- * fixes separator visibility problem in IE 6
- */
-.ext-strict .ext-ie6 .x-menu-sep-li {
-  padding: 3px 4px;
-}
-.ext-strict .ext-ie6 .x-menu-sep {
-  margin: 0;
-  height: 1px;
-}
-
-/*
  * Fixes an issue with "fat" separators in webkit
  */
 .ext-webkit .x-menu-sep{
@@ -3701,10 +3591,6 @@ td.x-date-mp-sep {
 
 .ext-strict .ext-ie .x-date-menu, .ext-border-box .ext-ie8 .x-date-menu{
   height: 197px;
-}
-
-.ext-strict .ext-ie7 .x-date-menu{
-  height: 195px;
 }
 
 .ext-strict .ext-ie8 .x-date-menu{
@@ -3830,11 +3716,11 @@ td.x-date-mp-sep {
 }
 
 .x-combo-list-item {
-  padding:2px;
-  border:1px solid;
+  padding: 2px;
   white-space: nowrap;
-  overflow:hidden;
+  overflow: hidden;
   text-overflow: ellipsis;
+  border: none;
 }
 
 .x-combo-list .x-combo-selected{
@@ -3848,8 +3734,7 @@ td.x-date-mp-sep {
 }
 
 .x-panel {
-  border-style: solid;
-  border-width:0;
+  border: 0 solid;
 }
 
 .x-panel-header {
@@ -3916,11 +3801,6 @@ td.x-date-mp-sep {
 .x-panel-tc {
   background: transparent repeat-x 0 0;
   overflow:hidden;
-}
-
-/* fix ie7 strict mode bug */
-.ext-strict .ext-ie7 .x-panel-tc {
-  overflow: visible;
 }
 
 .x-panel-tl {
@@ -4492,10 +4372,6 @@ td.x-date-mp-sep {
   left:0;top:0;
 }
 
-.x-window-tl .x-window-header {
-  padding:5px 0 4px 0;
-}
-
 .x-window-header-text {
   cursor:pointer;
 }
@@ -4658,14 +4534,6 @@ td.x-date-mp-sep {
   filter: alpha(opacity=50);
 }
 
-body.ext-ie6.x-body-masked select {
-  visibility:hidden;
-}
-
-body.ext-ie6.x-body-masked .x-window select {
-  visibility:visible;
-}
-
 .x-window-plain .x-window-mc {
   border: 1px solid;
 }
@@ -4752,8 +4620,7 @@ body.ext-ie6.x-body-masked .x-window select {
 }
 
 .x-html-editor-tip .x-tip-bd .x-tip-bd-inner {
-  padding:5px;
-  padding-bottom:1px;
+  padding: 5px 5px 1px;
 }
 
 .x-html-editor-tb .x-toolbar {
@@ -4951,20 +4818,12 @@ body.ext-ie6.x-body-masked .x-window select {
   background-color:transparent;
 }
 
-/* IE6 strict won't drag w/out a color */
-.ext-strict .ext-ie6 .x-layout-split{
-  background-color: #fff !important;
-  filter: alpha(opacity=1);
-}
-
 .x-layout-split-h{
-  background-image:url('#{$ext3-images-dir}/default/s.gif');
-  background-position: left;
+  background: url('#{$ext3-images-dir}/default/s.gif') left;
 }
 
 .x-layout-split-v{
-  background-image:url('#{$ext3-images-dir}/default/s.gif');
-  background-position: top;
+  background: url('#{$ext3-images-dir}/default/s.gif') top;
 }
 
 .x-column-layout-ct {
@@ -5131,14 +4990,11 @@ body.ext-ie6.x-body-masked .x-window select {
   line-height:15px;
 }
 
-.ext-strict .ext-ie7 .x-progress-text-back{
-  width: 100%;
-}
-.x-list-header{
-  background: repeat-x 0 bottom;
-  cursor:default;
-  zoom:1;
-  height:22px;
+.x-list-header {
+  cursor: default;
+  zoom: 1;
+  height: 22px;
+  background: #f9f9f9 url('#{$ext3-images-dir}/default/grid/grid3-hrow.gif');
 }
 
 .x-list-header-inner div {
@@ -5468,7 +5324,7 @@ ul.x-tab-strip-bottom{
 }
 
 .x-tab-strip span.x-tab-strip-text {
-  font:normal 11px 'Roboto',arial,helvetica;
+  font: normal $lk-font-size-base $font-family-sans-serif;
   color:#416aa3;
 }
 
@@ -5558,13 +5414,14 @@ ul.x-tab-strip-bottom{
 
 .x-tab-panel-bbar .x-toolbar, .x-tab-panel-tbar .x-toolbar {
   border-color:#99bbe8;
-}.x-form-field {
-   font:normal 12px 'Roboto', arial, helvetica, sans-serif;
- }
+}
+
+.x-form-field {
+  font: normal $lk-font-size-base $font-family-sans-serif;
+}
 
 .x-form-text, textarea.x-form-field {
-  background-color:#fff;
-  background-image:url('#{$ext3-images-dir}/default/form/text-bg.gif');
+  background: #fff url('#{$ext3-images-dir}/default/form/text-bg.gif');
   border-color:#b5b8c8;
 }
 
@@ -5667,21 +5524,6 @@ ul.x-tab-strip-bottom{
 .x-fieldset legend {
   font:bold 11px $font-family-sans-serif;
   color:#15428b;
-}
-
-.x-btn {
-  font: normal $font-size-small $font-family-sans-serif-bold;
-  letter-spacing: .5px;
-
-  button {
-    font: normal $font-size-small $font-family-sans-serif-bold;
-    color: #333;
-  }
-
-  em {
-    font-style: normal;
-    font-weight: normal;
-  }
 }
 
 .x-btn-tl, .x-btn-tr, .x-btn-tc, .x-btn-ml, .x-btn-mr, .x-btn-mc, .x-btn-bl, .x-btn-br, .x-btn-bc{
@@ -5890,14 +5732,13 @@ ul.x-tab-strip-bottom{
   border-color:#99bbe8;
 }
 
-.x-grid3-row td, .x-grid3-summary-row td{
-  font:normal 11px/13px 'Roboto', arial, tahoma, helvetica, sans-serif;
+.x-grid3-row,
+.x-grid3-hd-row,
+.x-grid3-summary-row {
+  td {
+    font: normal $lk-font-size-base $font-family-sans-serif;
+  }
 }
-
-.x-grid3-hd-row td {
-  font:normal 11px/15px 'Roboto', arial, tahoma, helvetica, sans-serif;
-}
-
 
 .x-grid3-hd-row td {
   border-left-color:#eee;
@@ -5905,8 +5746,7 @@ ul.x-tab-strip-bottom{
 }
 
 .x-grid-row-loading {
-  background-color: #fff;
-  background-image:url('#{$ext3-images-dir}/default/shared/loading-balls.gif');
+  background: #fff url('#{$ext3-images-dir}/default/shared/loading-balls.gif');
 }
 
 .x-grid3-row {
@@ -5920,8 +5760,7 @@ ul.x-tab-strip-bottom{
 
 .x-grid3-row-over {
   border-color:#ddd;
-  background-color:#efefef;
-  background-image:url('#{$ext3-images-dir}/default/grid/row-over.gif');
+  background: #efefef url('#{$ext3-images-dir}/default/grid/row-over.gif');
 }
 
 .x-grid3-resize-proxy {
@@ -6528,10 +6367,6 @@ td.x-date-mp-sep {
   font:normal 11px 'Roboto', arial,tahoma,sans-serif;
 }
 
-.x-menu-item-arrow{
-  background-image:url('#{$ext3-images-dir}/default/menu/menu-parent.gif');
-}
-
 .x-menu-sep {
   background-color:#e0e0e0;
   border-bottom-color:#fff;
@@ -6659,10 +6494,12 @@ td.x-date-mp-sep {
 
 .x-box-blue .x-box-mr {
   background-image: url('#{$ext3-images-dir}/default/box/r-blue.gif');
-}.x-combo-list {
+}
+
+.x-combo-list {
    border-color:#98c0f4;
    background-color:#ddecfe;
-   font:normal 12px 'Roboto', arial, helvetica, sans-serif;
+   font: normal $lk-font-size-base $font-family-sans-serif;
  }
 
 .x-combo-list-inner {
@@ -6678,10 +6515,6 @@ td.x-date-mp-sep {
 
 .x-resizable-pinned .x-combo-list-inner {
   border-bottom-color:#98c0f4;
-}
-
-.x-combo-list-item {
-  border-color:#fff;
 }
 
 .x-combo-list .x-combo-selected{
@@ -6762,11 +6595,11 @@ td.x-date-mp-sep {
 }
 
 .x-panel-ghost {
-  background-color:#cbddf3;
-}
+  background-color: #cbddf3;
 
-.x-panel-ghost ul {
-  border-color:#99bbe8;
+  ul {
+    border-color: #99bbe8;
+  }
 }
 
 .x-panel-dd-spacer {
@@ -6782,9 +6615,9 @@ td.x-date-mp-sep {
 }
 
 .x-window-tl .x-window-header {
-  color:#15428b;
-  font:bold 11px 'Roboto',arial,verdana,sans-serif;
+  font: normal $lk-font-size-small $font-family-sans-serif;
   letter-spacing: .5px;
+  padding: 5px 0 4px 0;
 }
 
 .x-window-tc {
@@ -6813,7 +6646,7 @@ td.x-date-mp-sep {
 
 .x-window-mc {
   border-color:#99bbe8;
-  font: normal 11px 'Roboto',arial,helvetica,sans-serif;
+  font: normal $lk-font-size-small $font-family-sans-serif;
   background-color:#dfe8f6;
 }
 
@@ -6931,13 +6764,11 @@ body.x-body-masked .x-window-plain .x-window-mc {
  }
 
 .x-progress-inner {
-  background-color:#e0e8f3;
-  background-image:url('#{$ext3-images-dir}/default/qtip/bg.gif');
+  background: #e0e8f3 url('#{$ext3-images-dir}/default/qtip/bg.gif');
 }
 
 .x-progress-bar {
-  background-color:#9cbfee;
-  background-image:url('#{$ext3-images-dir}/default/progress/progress-bg.gif');
+  background: #9cbfee url('#{$ext3-images-dir}/default/progress/progress-bg.gif');
   border-top-color:#d1e4fd;
   border-bottom-color:#7fa9e4;
   border-right-color:#7fa9e4;
@@ -6951,10 +6782,7 @@ body.x-body-masked .x-window-plain .x-window-mc {
 
 .x-progress-text-back {
   color:#396095;
-}.x-list-header{
-   background-color:#f9f9f9;
-   background-image:url('#{$ext3-images-dir}/default/grid/grid3-hrow.gif');
- }
+}
 
 .x-list-header-inner div em {
   border-left-color:#ddd;
@@ -7026,7 +6854,7 @@ body.x-body-masked .x-window-plain .x-window-mc {
 
 /* LabKey Overrides */
 
-.x-form-item, .x-panel-header, .x-btn button {
+.x-form-item, .x-panel-header {
   font-size: 13px;
 }
 
@@ -7268,12 +7096,35 @@ li.x-menu-item-active a.x-menu-item {
 
 
 /* Buttons */
-.x-btn button {
-  font-size: 10px;
-  color: #126495;
-  font-family: 'Roboto-Bold', Arial, Helvetica, sans serif;
-  padding-bottom: 3px;
-  text-transform: uppercase;
+.x-btn {
+  font: normal $lk-font-size-small $font-family-sans-serif-bold;
+  letter-spacing: .5px;
+  cursor: pointer;
+  white-space: nowrap;
+
+  button {
+    background-color: transparent;
+    border: 0 none;
+    color: $lk-link-color;
+    cursor: pointer;
+    font: normal $lk-font-size-small $font-family-sans-serif-bold;
+    margin: 0;
+    -moz-outline: 0 none;
+    outline: 0 none;
+    overflow: visible;
+    padding: 2px 3px 3px 3px;
+    text-transform: uppercase;
+    width: auto;
+  }
+
+  em {
+    font-style: normal;
+    font-weight: normal;
+  }
+
+  td {
+    padding: 0 !important;
+  }
 }
 
 /* 13193 : Fix text alignment for buttons */
@@ -7303,7 +7154,7 @@ li.x-menu-item-active a.x-menu-item {
 }
 
 .x-btn-text {
-  font-size: $font-size-small;
+  font-size: $lk-font-size-small;
   font-family: $font-family-sans-serif-bold;
   letter-spacing: .5px;
 }
@@ -7333,13 +7184,14 @@ li.x-menu-item-active a.x-menu-item {
 .x-toolbar {
   background: #F4F4F4;
   border: #d0d0d0 solid 0;
-}
-.x-toolbar .x-btn {
-  margin-right: 2px;
-}
 
-.x-toolbar .x-btn-over button {
-  color: #000000;
+  .x-btn {
+    margin-right: 2px;
+  }
+
+  .x-btn-over button {
+    color: $lk-text-color;
+  }
 }
 
 .x-btn-tl, .x-btn-tr, .x-btn-tc, .x-btn-ml, .x-btn-mr, .x-btn-mc, .x-btn-bl, .x-btn-br, .x-btn-bc{
@@ -7356,7 +7208,7 @@ li.x-menu-item-active a.x-menu-item {
 body .x-window .x-window-header-text, body .x-panel-ghost .x-window-header-text {
   color: #FFFFFF;
   font-weight: normal;
-  font-size: 13px;
+  font-size: $lk-font-size-base;
 }
 
 
@@ -7364,7 +7216,7 @@ body .x-window .x-window-header-text, body .x-panel-ghost .x-window-header-text 
 
 .x-panel-tc {
   background: #FFFFFF;
-  font-size: 14px;
+  font-size: $lk-font-size-base;
 }
 .x-panel-tl {
   background: #FFFFFF;
@@ -7461,11 +7313,9 @@ body .x-window .x-window-header-text, body .x-panel-ghost .x-window-header-text 
 
 .x-window-plain .x-window-mc {
   background: #e8e8e8;
-  border-right:1px solid #eeeeee;
-  border-bottom:1px solid #eeeeee;
-  border-top:1px solid #d0d0d0;
-  border-left:1px solid #d0d0d0;
-  border:none;
+  border: 1px none #d0d0d0;
+  border-right-color: #eeeeee;
+  border-bottom-color: #eeeeee;
 }
 
 .x-window-plain .x-window-body {
@@ -7555,7 +7405,6 @@ body .x-grid3 .x-grid3-row-alt {
 }
 
 .x-combo-list .x-combo-selected { border:none !important;}
-.x-combo-list-item { border:none; }
 .x-check-group {
   border-bottom: 1px dashed #C0C0C0;
 }
@@ -7609,10 +7458,7 @@ div.extContainer .x-tab-panel {
 
 .x-tab-panel-header, .x-tab-panel-footer {
   background-color: #fff;
-  border-color: #b4b4b4;
-  border: none;
-  border-left: none;
-  border-right: none;
+  border: none #b4b4b4;
   padding-bottom: 3px;
 }
 
@@ -7689,10 +7535,6 @@ ul.x-tab-strip-top li {
   background-image: none;
 }
 
-.x-tab-strip-top .x-tab-right, .x-tab-strip-top .x-tab-left, .x-tab-strip-top .x-tab-strip-inner {
-  background-image: none;
-}
-
 .x-tab-panel-header-plain .x-tab-strip-top  {
   padding-top: 3px !important;
   padding-left: 6px;
@@ -7715,44 +7557,41 @@ ul.x-tab-strip-top li {
   color: #000 !important;
 }
 
-.x-grid3-hd-inner
-{
+.x-grid3-hd-inner {
   color: #126495;
 }
 
-/* ext dropdown menu arrows */
-.x-menu-item-arrow {
-  background-image: url('#{api-images-dir}/arrow_right.png');
+//== FilterDialog
+//
+.x-grid-noborder {
+  * {
+    border-width: 0 !important;
+  }
+
+  td.x-grid3-td-checker,
+  .x-grid3-body .x-grid3-row-selected .x-grid3-td-checker {
+    background-image: none;
+  }
+
+  .x-grid3 div.x-grid3-row-selected,
+  .x-grid3 div.x-grid3-row-over {
+    background: none !important;
+  }
+
+  .x-grid3 .x-grid3-row {
+    padding-top: 1px;
+  }
 }
 
-/* Used in FilterDialog */
-.x-grid-noborder * {
-  border-width: 0px !important;
-}
+.labkey-filter-dialog {
+  ul.x-tab-strip-top {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
 
-.x-grid-noborder td.x-grid3-td-checker {
-  background-image: none;
+  div.x-tab-panel-header {
+    padding-bottom: 0;
+  }
 }
-
-.x-grid-noborder .x-grid3-body .x-grid3-row-selected .x-grid3-td-checker {
-  background-image: none;
-}
-
-.labkey-filter-dialog ul.x-tab-strip-top {
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
-.labkey-filter-dialog div.x-tab-panel-header {
-  padding-bottom: 0;
-}
-
-.x-grid-noborder .x-grid3 div.x-grid3-row-selected,
-.x-grid-noborder .x-grid3 div.x-grid3-row-over {
-  background: none !important;
-}
-
-.x-grid-noborder .x-grid3 .x-grid3-row {
-  padding-top: 1px;
-}
-/* end of filter dialog*/
+//
+//== End FilterDialog

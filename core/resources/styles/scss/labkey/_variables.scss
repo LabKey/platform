@@ -15,10 +15,8 @@ $internal-images-dir: '#{$internal-webapp-dir}/_images';
 //
 // # Imported "labkey-theme" colors
 // TODO: Integrate these with bootstrap
-
 $lk-base-color: #226495; // TODO: Suspicious that this was intended to be #126495
 $lk-panel-base-color: #DFE8F6;
-
 $lk-text-color: #000000;
 $lk-link-color: #126495 !default;
 $lk-link-hover-color: darken($lk-link-color, 15%) !default;
@@ -29,6 +27,11 @@ $lk-secondary-bg-color: #FFFFFF;
 $lk-border-title-color: #676767;
 $lk-webpart-color: #E0E6EA;
 
+//== Fonts
+//
+$lk-font-size-base: 14px !default;
+$lk-font-size-large: 16px !default;
+$lk-font-size-small: 12px !default;
 
 $bootstrap-sass-asset-helper: false !default;
 //
@@ -63,7 +66,7 @@ $body-bg:               #fff !default;
 $text-color:            $lk-text-color; //$gray-dark !default;
 
 //** Global textual link color.
-$link-color:            red; //$lk-link-color; //$brand-primary !default;
+$link-color:            $lk-link-color; //$brand-primary !default;
 //** Link hover color set via `darken()` function.
 $link-hover-color:      $lk-link-hover-color; //darken($link-color, 15%) !default;
 //** Link hover decoration.
@@ -82,9 +85,9 @@ $font-family-serif:       Georgia, "Times New Roman", Times, serif !default;
 $font-family-monospace:   Menlo, Monaco, Consolas, "Courier New", monospace !default;
 $font-family-base:        $font-family-sans-serif !default;
 
-$font-size-base:          14px !default;
-$font-size-large:         ceil(($font-size-base * 1.25)) !default; // ~18px
-$font-size-small:         ceil(($font-size-base * 0.85)) !default; // ~12px
+$font-size-base:          $lk-font-size-base;
+$font-size-large:         $lk-font-size-large; //ceil(($font-size-base * 1.25)) !default;
+$font-size-small:         $lk-font-size-small; //ceil(($font-size-base * 0.85)) !default;
 
 $font-size-h1:            floor(($font-size-base * 2.6)) !default; // ~36px
 $font-size-h2:            floor(($font-size-base * 2.15)) !default; // ~30px

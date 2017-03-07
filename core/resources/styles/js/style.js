@@ -4,12 +4,8 @@
  */
 // TODO: Switch to using _core.scss paradigm, figure out how to resolve library urls from ~scss imports
 // Core variables and mixins
-require('../scss/labkey/_variables.scss');
+require('../scss/labkey/_core.scss');
 
 // Dependencies
 require('bootstrap-sass'); // javascript
-require('bootstrap-sass/assets/stylesheets/_bootstrap.scss');
 require('font-awesome/scss/font-awesome.scss');
-
-// Core CSS
-require('../scss/labkey/_labkey.scss');

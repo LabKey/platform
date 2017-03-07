@@ -6,15 +6,17 @@ html, body
   height: 100%;
 }
 
-body
-{
-  font-family: $font-family-sans-serif;
-  font-size: $font-size-base;
-  color: $text-color;
-  line-height: $line-height-base;
-}
+// This is specified in bootstrap/_scaffolding.scss -- can remove this and comment
+// once we're satisfied
+//body
+//{
+//  font-family: $font-family-sans-serif;
+//  font-size: $lk-font-size-base;
+//  color: $text-color;
+//  line-height: $line-height-base;
+//}
 
-h1, h2, h3, h4
+h1, h2, h3, h4, h5, h6
 {
   font-weight: normal;
   font-family: $font-family-sans-serif-bold;
@@ -1070,17 +1072,13 @@ table.labkey-show-borders
   background: #FFBBBB;
 }
 
-/* This is used for the headers on data regions that highlight on mouseover and give a drop down
-of filter options when clicked */
-th.labkey-col-header-filter, td.labkey-col-header-filter, tr.labkey-col-header-filter th
-{
-  color: $lk-link-color;
-}
+.labkey-col-header-filter {
 
-th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-col-header-filter th:hover
-{
-  background-color: $lk-grid-color;
-  cursor: pointer;
+  &:hover,
+  th:hover {
+    background-color: $lk-grid-color;
+    cursor: pointer;
+  }
 }
 
 .labkey-data-region .labkey-col-header, .labkey-data-region .labkey-row-header,
