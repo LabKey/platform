@@ -11,7 +11,7 @@ public class SharedViewEditorRole extends AbstractRole
 {
     protected SharedViewEditorRole()
     {
-        super("Shared view editor", "Shared view editors may create and update shared custom views",
+        super("Shared View Editor", "Shared view editors may create and update shared custom grid views",
                 ReadPermission.class,
                 EditSharedViewPermission.class);
     }
