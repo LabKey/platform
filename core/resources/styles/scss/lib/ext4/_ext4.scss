@@ -1,4 +1,5 @@
 @import "../../labkey/variables";
+@import "grayVariables";
 
 /* including package ext-theme-base */
 /**
@@ -3956,7 +3957,8 @@
 /* including package ext-theme-base */
 /* line 1, ../../../ext-theme-base/sass/src/Component.scss */
 .x4-body {
-  margin: 0;
+  // remove ExtJs styles applied at body tag scope
+  //margin: 0;
 }
 
 /* line 5, ../../../ext-theme-base/sass/src/Component.scss */
@@ -5662,9 +5664,10 @@ svg, vml {
 /* including package ext-theme-neutral */
 /* line 1, ../../../ext-theme-neutral/sass/src/Component.scss */
 .x4-body {
-  color: black;
-  font-size: 12px;
-  font-family: tahoma, arial, verdana, sans-serif;
+  // remove ExtJs styles applied at body tag scope
+  //color: black;
+  //font-size: 12px;
+  //font-family: tahoma, arial, verdana, sans-serif;
 }
 
 /* line 13, ../../../ext-theme-neutral/sass/src/Component.scss */
@@ -9422,14 +9425,14 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 
 /* line 206, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-default {
-  border-color: #99bce8;
+  border-color: $panel-border-color;
   padding: 0;
 }
 
 /* line 212, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-header-default {
   font-size: 11px;
-  border: 1px solid #99bce8;
+  border: 1px solid $panel-border-color;
 }
 
 /* line 232, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
@@ -9454,7 +9457,7 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 
 /* line 260, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-header-text-container-default {
-  color: #04408c;
+  color: $panel-header-color;
   font-size: 11px;
   font-weight: bold;
   font-family: tahoma, arial, verdana, sans-serif;
@@ -9466,7 +9469,7 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 /* line 272, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-body-default {
   background: white;
-  border-color: #99bce8;
+  border-color: $panel-border-color;
   color: black;
   font-size: 12px;
   font-size: normal;
@@ -9477,23 +9480,23 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 /* line 432, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-header-default {
   background-image: none;
-  background-color: #cbddf3;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #dae7f6), color-stop(45%, #cddef3), color-stop(46%, #abc7ec), color-stop(50%, #abc7ec), color-stop(51%, #b8cfee), color-stop(100%, #cbddf3));
-  background-image: -webkit-linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -moz-linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -o-linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
+  background-color: $panel-background-color;
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $panel-background-start), color-stop(100%, #d7d7d7));
+  background-image: -webkit-linear-gradient(top, $panel-background-start, #d7d7d7);
+  background-image: -moz-linear-gradient(top, $panel-background-start, #d7d7d7);
+  background-image: -o-linear-gradient(top, $panel-background-start, #d7d7d7);
+  background-image: linear-gradient(top, $panel-background-start, #d7d7d7);
 }
 
 /* line 436, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-header-default-vertical {
   background-image: none;
-  background-color: #cbddf3;
-  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, #dae7f6), color-stop(45%, #cddef3), color-stop(46%, #abc7ec), color-stop(50%, #abc7ec), color-stop(51%, #b8cfee), color-stop(100%, #cbddf3));
-  background-image: -webkit-linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -moz-linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -o-linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
+  background-color: $panel-background-color;
+  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, $panel-background-start), color-stop(100%, #d7d7d7));
+  background-image: -webkit-linear-gradient(right, $panel-background-start, #d7d7d7);
+  background-image: -moz-linear-gradient(right, $panel-background-start, #d7d7d7);
+  background-image: -o-linear-gradient(right, $panel-background-start, #d7d7d7);
+  background-image: linear-gradient(right, $panel-background-start, #d7d7d7);
 }
 
 /* line 454, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
@@ -9579,8 +9582,8 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 }
 /* line 36, ../../../ext-theme-base/sass/etc/mixins/rotate-element.scss */
 .x4-ie9m .x4-panel-header-default-vertical .x4-panel-header-text-container {
-  background-color: #cbddf3;
-  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1), progid:DXImageTransform.Microsoft.Chroma(color=#cbddf3);
+  background-color: $panel-background-color;
+  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1), progid:DXImageTransform.Microsoft.Chroma(color=$panel-background-color);
 }
 
 /* line 533, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
@@ -9619,7 +9622,7 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 }
 /* line 556, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-header-default .x4-panel-header-glyph {
-  color: #04408c;
+  color: $panel-header-color;
   font-size: 16px;
   line-height: 16px;
   opacity: 0.5;
@@ -9673,14 +9676,14 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 
 /* line 206, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-default-framed {
-  border-color: #99bce8;
+  border-color: $panel-border-color;
   padding: 4px;
 }
 
 /* line 212, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-header-default-framed {
   font-size: 11px;
-  border: 1px solid #99bce8;
+  border: 1px solid $panel-border-color;
 }
 
 /* line 232, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
@@ -9705,7 +9708,7 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 
 /* line 260, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-header-text-container-default-framed {
-  color: #04408c;
+  color: $panel-header-color;
   font-size: 11px;
   font-weight: bold;
   font-family: tahoma, arial, verdana, sans-serif;
@@ -9735,12 +9738,12 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
   padding: 4px 4px 4px 4px;
   border-width: 1px;
   border-style: solid;
-  background-color: #dfe9f6;
+  background-color: $panel-frame-background-color;
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-default-framed-mc {
-  background-color: #dfe9f6;
+  background-color: $panel-frame-background-color;
 }
 
 /* line 235, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -9884,19 +9887,19 @@ body.x4-nbr .x4-panel-default-framed-frameInfo {
   border-width: 1px 1px 0 1px;
   border-style: solid;
   background-image: none;
-  background-color: #cbddf3;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #dae7f6), color-stop(45%, #cddef3), color-stop(46%, #abc7ec), color-stop(50%, #abc7ec), color-stop(51%, #b8cfee), color-stop(100%, #cbddf3));
-  background-image: -webkit-linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -moz-linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -o-linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
+  background-color: $panel-background-color;
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $panel-background-start), color-stop(100%, $panel-background-end));
+  background-image: -webkit-linear-gradient(top, $panel-background-start, $panel-background-end);
+  background-image: -moz-linear-gradient(top, $panel-background-start, $panel-background-end);
+  background-image: -o-linear-gradient(top, $panel-background-start, $panel-background-end);
+  background-image: linear-gradient(top, $panel-background-start, $panel-background-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-header-default-framed-top-mc {
   background-image: url('#{$ext4-images-dir}/panel-header/panel-header-default-framed-top-fbg.gif');
   background-position: 0 top;
-  background-color: #cbddf3;
+  background-color: $panel-background-color;
 }
 
 /* line 212, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -10046,19 +10049,19 @@ body.x4-nbr .x4-panel-header-default-framed-top-frameInfo {
   border-width: 1px 1px 1px 0;
   border-style: solid;
   background-image: none;
-  background-color: #cbddf3;
-  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, #dae7f6), color-stop(45%, #cddef3), color-stop(46%, #abc7ec), color-stop(50%, #abc7ec), color-stop(51%, #b8cfee), color-stop(100%, #cbddf3));
-  background-image: -webkit-linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -moz-linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -o-linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
+  background-color: $panel-background-color;
+  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, $panel-background-start), color-stop(100%, $panel-background-end));
+  background-image: -webkit-linear-gradient(right, $panel-background-start, $panel-background-end);
+  background-image: -moz-linear-gradient(right, $panel-background-start, $panel-background-end);
+  background-image: -o-linear-gradient(right, $panel-background-start, $panel-background-end);
+  background-image: linear-gradient(right, $panel-background-start, $panel-background-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-header-default-framed-right-mc {
   background-image: url('#{$ext4-images-dir}/panel-header/panel-header-default-framed-right-fbg.gif');
   background-position: right 0;
-  background-color: #cbddf3;
+  background-color: $panel-background-color;
 }
 
 /* line 212, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -10209,19 +10212,19 @@ body.x4-nbr .x4-panel-header-default-framed-right-frameInfo {
   border-width: 0 1px 1px 1px;
   border-style: solid;
   background-image: none;
-  background-color: #cbddf3;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #dae7f6), color-stop(45%, #cddef3), color-stop(46%, #abc7ec), color-stop(50%, #abc7ec), color-stop(51%, #b8cfee), color-stop(100%, #cbddf3));
-  background-image: -webkit-linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -moz-linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -o-linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
+  background-color: $panel-background-color;
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $panel-background-start), color-stop(100%, $panel-background-end));
+  background-image: -webkit-linear-gradient(top, $panel-background-start, $panel-background-end);
+  background-image: -moz-linear-gradient(top, $panel-background-start, $panel-background-end);
+  background-image: -o-linear-gradient(top, $panel-background-start, $panel-background-end);
+  background-image: linear-gradient(top, $panel-background-start, $panel-background-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-header-default-framed-bottom-mc {
   background-image: url('#{$ext4-images-dir}/panel-header/panel-header-default-framed-bottom-fbg.gif');
   background-position: 0 bottom;
-  background-color: #cbddf3;
+  background-color: $panel-background-color;
 }
 
 /* line 212, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -10371,19 +10374,19 @@ body.x4-nbr .x4-panel-header-default-framed-bottom-frameInfo {
   border-width: 1px 0 1px 1px;
   border-style: solid;
   background-image: none;
-  background-color: #cbddf3;
-  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, #dae7f6), color-stop(45%, #cddef3), color-stop(46%, #abc7ec), color-stop(50%, #abc7ec), color-stop(51%, #b8cfee), color-stop(100%, #cbddf3));
-  background-image: -webkit-linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -moz-linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -o-linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
+  background-color: $panel-background-color;
+  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, $panel-background-start), color-stop(100%, $panel-background-end));
+  background-image: -webkit-linear-gradient(right, $panel-background-start, $panel-background-end);
+  background-image: -moz-linear-gradient(right, $panel-background-start, $panel-background-end);
+  background-image: -o-linear-gradient(right, $panel-background-start, $panel-background-end);
+  background-image: linear-gradient(right, $panel-background-start, $panel-background-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-header-default-framed-left-mc {
   background-image: url('#{$ext4-images-dir}/panel-header/panel-header-default-framed-left-fbg.gif');
   background-position: left 0;
-  background-color: #cbddf3;
+  background-color: $panel-background-color;
 }
 
 /* line 212, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -10534,19 +10537,19 @@ body.x4-nbr .x4-panel-header-default-framed-left-frameInfo {
   border-width: 1px;
   border-style: solid;
   background-image: none;
-  background-color: #cbddf3;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #dae7f6), color-stop(45%, #cddef3), color-stop(46%, #abc7ec), color-stop(50%, #abc7ec), color-stop(51%, #b8cfee), color-stop(100%, #cbddf3));
-  background-image: -webkit-linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -moz-linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -o-linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
+  background-color: $panel-background-color;
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $panel-background-start), color-stop(100%, $panel-background-end));
+  background-image: -webkit-linear-gradient(top, $panel-background-start, $panel-background-end);
+  background-image: -moz-linear-gradient(top, $panel-background-start, $panel-background-end);
+  background-image: -o-linear-gradient(top, $panel-background-start, $panel-background-end);
+  background-image: linear-gradient(top, $panel-background-start, $panel-background-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-header-default-framed-collapsed-top-mc {
   background-image: url('#{$ext4-images-dir}/panel-header/panel-header-default-framed-collapsed-top-fbg.gif');
   background-position: 0 top;
-  background-color: #cbddf3;
+  background-color: $panel-background-color;
 }
 
 /* line 212, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -10696,19 +10699,19 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-top-frameInfo {
   border-width: 1px;
   border-style: solid;
   background-image: none;
-  background-color: #cbddf3;
-  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, #dae7f6), color-stop(45%, #cddef3), color-stop(46%, #abc7ec), color-stop(50%, #abc7ec), color-stop(51%, #b8cfee), color-stop(100%, #cbddf3));
-  background-image: -webkit-linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -moz-linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -o-linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
+  background-color: $panel-background-color;
+  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, $panel-background-start), color-stop(100%, $panel-background-end));
+  background-image: -webkit-linear-gradient(right, $panel-background-start, $panel-background-end);
+  background-image: -moz-linear-gradient(right, $panel-background-start, $panel-background-end);
+  background-image: -o-linear-gradient(right, $panel-background-start, $panel-background-end);
+  background-image: linear-gradient(right, $panel-background-start, $panel-background-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-header-default-framed-collapsed-right-mc {
   background-image: url('#{$ext4-images-dir}/panel-header/panel-header-default-framed-collapsed-right-fbg.gif');
   background-position: right 0;
-  background-color: #cbddf3;
+  background-color: $panel-background-color;
 }
 
 /* line 212, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -10859,19 +10862,19 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-right-frameInfo {
   border-width: 1px;
   border-style: solid;
   background-image: none;
-  background-color: #cbddf3;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #dae7f6), color-stop(45%, #cddef3), color-stop(46%, #abc7ec), color-stop(50%, #abc7ec), color-stop(51%, #b8cfee), color-stop(100%, #cbddf3));
-  background-image: -webkit-linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -moz-linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -o-linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: linear-gradient(top, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
+  background-color: $panel-background-color;
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $panel-background-start), color-stop(100%, $panel-background-end));
+  background-image: -webkit-linear-gradient(top, $panel-background-start, $panel-background-end);
+  background-image: -moz-linear-gradient(top, $panel-background-start, $panel-background-end);
+  background-image: -o-linear-gradient(top, $panel-background-start, $panel-background-end);
+  background-image: linear-gradient(top, $panel-background-start, $panel-background-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-header-default-framed-collapsed-bottom-mc {
   background-image: url('#{$ext4-images-dir}/panel-header/panel-header-default-framed-collapsed-bottom-fbg.gif');
   background-position: 0 bottom;
-  background-color: #cbddf3;
+  background-color: $panel-background-color;
 }
 
 /* line 212, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -11021,19 +11024,19 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-bottom-frameInfo {
   border-width: 1px;
   border-style: solid;
   background-image: none;
-  background-color: #cbddf3;
-  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, #dae7f6), color-stop(45%, #cddef3), color-stop(46%, #abc7ec), color-stop(50%, #abc7ec), color-stop(51%, #b8cfee), color-stop(100%, #cbddf3));
-  background-image: -webkit-linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -moz-linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: -o-linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
-  background-image: linear-gradient(right, #dae7f6, #cddef3 45%, #abc7ec 46%, #abc7ec 50%, #b8cfee 51%, #cbddf3);
+  background-color: $panel-background-color;
+  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, $panel-background-start), color-stop(100%, $panel-background-end));
+  background-image: -webkit-linear-gradient(right, $panel-background-start, $panel-background-end);
+  background-image: -moz-linear-gradient(right, $panel-background-start, $panel-background-end);
+  background-image: -o-linear-gradient(right, $panel-background-start, $panel-background-end);
+  background-image: linear-gradient(right, $panel-background-start, $panel-background-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-header-default-framed-collapsed-left-mc {
   background-image: url('#{$ext4-images-dir}/panel-header/panel-header-default-framed-collapsed-left-fbg.gif');
   background-position: left 0;
-  background-color: #cbddf3;
+  background-color: $panel-background-color;
 }
 
 /* line 212, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -11213,8 +11216,8 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-left-frameInfo {
 }
 /* line 36, ../../../ext-theme-base/sass/etc/mixins/rotate-element.scss */
 .x4-ie9m .x4-panel-header-default-framed-vertical .x4-panel-header-text-container {
-  background-color: #cbddf3;
-  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1), progid:DXImageTransform.Microsoft.Chroma(color=#cbddf3);
+  background-color: $panel-background-color;
+  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1), progid:DXImageTransform.Microsoft.Chroma(color=$panel-background-color);
 }
 
 /* line 533, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
@@ -11253,7 +11256,7 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-left-frameInfo {
 }
 /* line 556, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-header-default-framed .x4-panel-header-glyph {
-  color: #04408c;
+  color: $panel-header-color;
   font-size: 16px;
   line-height: 16px;
   opacity: 0.5;

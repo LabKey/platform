@@ -318,6 +318,7 @@ core/resources/styles/scss/labkey/components/_tabStrip.scss -text
 core/resources/styles/scss/lib/bootstrap/_bootstrap.scss -text
 core/resources/styles/scss/lib/ext3/_all.scss -text
 core/resources/styles/scss/lib/ext4/_ext4.scss -text
+core/resources/styles/scss/lib/ext4/_grayVariables.scss -text
 core/resources/views/ModulePropertyAdmin.html -text
 core/resources/views/ModulePropertyAdmin.view.xml -text
 core/resources/views/_footer.html -text

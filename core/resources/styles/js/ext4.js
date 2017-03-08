@@ -6,4 +6,5 @@
 require('../scss/labkey/_variables.scss');
 
 // Ext 4
+require('../scss/lib/ext4/_grayVariables.scss');
 require('../scss/lib/ext4/_ext4.scss');
