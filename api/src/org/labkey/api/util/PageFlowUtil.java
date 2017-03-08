@@ -1683,7 +1683,11 @@ public class PageFlowUtil
                     if (!ext4Included && paths.startsWith("ext-4.2.1/ext-all"))
                     {
                         ext4Included = true;
-                        String cssPath = ext4ThemeRoot() + "/" + resolveThemeName(c) + "/ext-all.css";
+                        String cssPath;
+                        if (useExperimentalCoreUI())
+                            cssPath = "/core/css/ext4.css";
+                        else
+                            cssPath = ext4ThemeRoot() + "/" + resolveThemeName(c) + "/ext-all.css";
 
                         preIncludedCss.add(cssPath);
                         F.format(link, staticResourceUrl(cssPath));

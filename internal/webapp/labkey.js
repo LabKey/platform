@@ -472,7 +472,12 @@ if (typeof LABKEY == "undefined")
             }
             else
             {
-                requiresCss(configs.extThemeRoot_42 + "/" + configs.extThemeName_42 + "/ext-all.css");
+                var cssRoot = configs.extThemeRoot_42 + "/" + configs.extThemeName_42 + "/ext-all.css";
+                if (LABKEY.experimental && LABKEY.experimental.useExperimentalCoreUI === true)
+                {
+                    cssRoot = 'core/css/ext4.css';
+                }
+                requiresCss(cssRoot);
                 requiresLib('Ext4', callback, scope);
             }
         };
