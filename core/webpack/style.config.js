@@ -14,7 +14,8 @@ module.exports = {
     entry: {
         core: './resources/styles/js/style.js',
         ext3: './resources/styles/js/ext3.js',
-        guide: './resources/styles/js/guide.js'
+        guide: './resources/styles/js/guide.js',
+        ext4: './resources/styles/js/ext4.js'
     },
 
     output: {

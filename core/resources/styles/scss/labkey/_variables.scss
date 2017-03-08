@@ -7,7 +7,9 @@
 $api-webapp-dir: '../..';
 $internal-webapp-dir: '../..';
 $ext3-images-dir: '#{$api-webapp-dir}/ext-3.4.1/resources/images';
-$ext4-images-dir: '#{$api-webapp-dir}/ext-4.2.1/resources/ext-theme-classic-sandbox/images';
+$ext4-images-gray-dir: '#{$api-webapp-dir}/ext-4.2.1/resources/themes/images/gray';
+$ext4-images-classic-dir: '#{$api-webapp-dir}/ext-4.2.1/resources/ext-theme-classic-sandbox/images';
+$ext4-images-dir: $ext4-images-gray-dir;
 $api-images-dir: '#{$api-webapp-dir}/_images';
 $internal-images-dir: '#{$internal-webapp-dir}/_images';
 

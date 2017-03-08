@@ -303,6 +303,7 @@ core/resources/scripts/labkey/adapter/bridge.js -text
 core/resources/scripts/labkey/adapter/ext4Bridge.js -text
 core/resources/scripts/labkey/init.js -text
 core/resources/styles/js/ext3.js -text
+core/resources/styles/js/ext4.js -text
 core/resources/styles/js/guide.js -text
 core/resources/styles/js/style.js -text
 core/resources/styles/scss/labkey/_core.scss -text
@@ -316,6 +317,7 @@ core/resources/styles/scss/labkey/components/_customView.scss -text
 core/resources/styles/scss/labkey/components/_tabStrip.scss -text
 core/resources/styles/scss/lib/bootstrap/_bootstrap.scss -text
 core/resources/styles/scss/lib/ext3/_all.scss -text
+core/resources/styles/scss/lib/ext4/_ext4.scss -text
 core/resources/views/ModulePropertyAdmin.html -text
 core/resources/views/ModulePropertyAdmin.view.xml -text
 core/resources/views/_footer.html -text
