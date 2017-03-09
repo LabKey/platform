@@ -231,6 +231,5 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
 
     public abstract JOB createPipelineJob(ViewBackgroundInfo info,
                                           PipeRoot root, List<File> filesInput,
-                                          File fileParameters
-    ) throws IOException;
+                                          File fileParameters, Map<String, String> variableMap) throws IOException;
 }

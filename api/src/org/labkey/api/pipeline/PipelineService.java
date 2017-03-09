@@ -128,6 +128,9 @@ abstract public class PipelineService
     @NotNull
     public abstract String startFileAnalysis(AnalyzeForm form, ViewContext viewContext) throws IOException, PipelineValidationException;
 
+    @NotNull
+    public abstract String startFileAnalysis(AnalyzeForm form, Map<String, String> variableMap, ViewContext viewContext) throws IOException, PipelineValidationException;
+
     /** Configurations for the pipeline job webpart ButtonBar */
     public enum PipelineButtonOption { Minimal, Assay, Standard }
 
