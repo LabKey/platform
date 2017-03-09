@@ -18,6 +18,7 @@ package org.labkey.mothership.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -315,6 +316,7 @@ public class MothershipSchema extends UserSchema
     public FilteredTable createExceptionStackTraceTable()
     {
         FilteredTable<MothershipSchema> result = new MothershipTable(MothershipManager.get().getTableInfoExceptionStackTrace(), this);
+        result.setUpdateURL(AbstractTableInfo.LINK_DISABLER);
         result.wrapAllColumns(true);
         result.getColumn("StackTrace").setDisplayColumnFactory(new DisplayColumnFactory()
         {
@@ -417,6 +419,7 @@ public class MothershipSchema extends UserSchema
     public FilteredTable createExceptionReportTable()
     {
         FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoExceptionReport(), this);
+        result.setDetailsURL(AbstractTableInfo.LINK_DISABLER);
         result.wrapAllColumns(true);
         result.getColumn("URL").setDisplayColumnFactory(new DisplayColumnFactory()
         {

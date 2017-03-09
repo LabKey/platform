@@ -74,7 +74,7 @@ public class SurveyModule extends DefaultModule
     @Override
     public double getVersion()
     {
-        return 16.30;
+        return 17.10;
     }
 
     @Override

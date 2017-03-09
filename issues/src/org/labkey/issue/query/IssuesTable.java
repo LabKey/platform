@@ -123,6 +123,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
     {
         super(IssuesSchema.getInstance().getTableInfoIssues(), schema);
         setName(issueDef.getName());
+        setTitle(issueDef.getLabel());
         setTitleColumn("Title");
 
         _issueDef = issueDef;

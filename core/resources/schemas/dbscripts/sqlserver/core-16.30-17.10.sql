@@ -1,3 +1,11 @@
+/* core-16.30-16.31.sql */
+
+ALTER TABLE core.UsersData ADD ExpirationDate DATETIME;
+
+GO
+
+/* core-16.31-16.32.sql */
+
 -- Add ability to drop columns
 ALTER PROCEDURE [core].[fn_dropifexists] (@objname VARCHAR(250), @objschema VARCHAR(50), @objtype VARCHAR(50), @subobjname VARCHAR(250) = NULL, @printCmds BIT = 0)
 AS
