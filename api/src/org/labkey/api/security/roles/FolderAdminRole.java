@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security.roles;
 
+import org.labkey.api.admin.FolderExportPermission;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
@@ -39,7 +40,8 @@ public class FolderAdminRole extends AbstractRole
                 AdminPermission.class,
                 EditSharedViewPermission.class,
                 SeeUserEmailAddressesPermission.class,
-                CanSeeAuditLogPermission.class);
+                CanSeeAuditLogPermission.class,
+                FolderExportPermission.class);
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
