@@ -27,6 +27,8 @@ import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,6 +38,7 @@ import java.util.Map;
 public class FileAnalysisJob extends AbstractFileAnalysisJob
 {
     private TaskId _taskPipelineId;
+    private Map<String, String> _variableMap;
 
     private static final Logger LOG = Logger.getLogger(FileAnalysisJob.class);
 
@@ -47,12 +50,14 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
                            String protocolName,
                            File fileParameters,
                            List<File> filesInput,
+                           Map<String, String> variableMap,
                            boolean splittable,
                            boolean writeJobInfoFile) throws IOException
     {
         super(protocol, providerName, info, root, protocolName, fileParameters, filesInput, splittable, writeJobInfoFile);
 
         _taskPipelineId = taskPipelineId;
+        _variableMap = variableMap;
     }
 
     public FileAnalysisJob(FileAnalysisJob job, File fileInput)
@@ -60,6 +65,17 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
         super(job, fileInput);
 
         _taskPipelineId = job._taskPipelineId;
+        _variableMap = job._variableMap;
+    }
+
+    @Override
+    public Map<String, String> getParameters()
+    {
+        Map<String, String> parameters = new HashMap<>(super.getParameters());
+        if (_variableMap != null && !_variableMap.isEmpty())
+            parameters.putAll(_variableMap);
+
+        return Collections.unmodifiableMap(parameters);
     }
 
     public TaskId getTaskPipelineId()

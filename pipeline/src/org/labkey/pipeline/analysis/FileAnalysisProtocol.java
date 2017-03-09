@@ -26,6 +26,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <code>FileAnalysisProtocol</code>
@@ -56,8 +57,7 @@ public class FileAnalysisProtocol extends AbstractFileAnalysisProtocol<AbstractF
     }
 
     public AbstractFileAnalysisJob createPipelineJob(ViewBackgroundInfo info, PipeRoot root, List<File> filesInput,
-                                                     File fileParameters)
-            throws IOException
+                                                     File fileParameters, Map<String, String> variableMap) throws IOException
     {
         TaskId id = _factory.getPipeline().getId();
 
@@ -65,6 +65,6 @@ public class FileAnalysisProtocol extends AbstractFileAnalysisProtocol<AbstractF
         boolean writeJobInfoFile = _factory.getPipeline().isWriteJobInfoFile();
 
         return new FileAnalysisJob(this, FileAnalysisPipelineProvider.name, info, root,
-                id, getName(), fileParameters, filesInput, splittable, writeJobInfoFile);
+                id, getName(), fileParameters, filesInput, variableMap, splittable, writeJobInfoFile);
     }
 }

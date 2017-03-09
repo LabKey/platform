@@ -612,6 +612,13 @@ public class PipelineServiceImpl extends PipelineService
     @NotNull
     public String startFileAnalysis(AnalyzeForm form, ViewContext context) throws IOException, PipelineValidationException
     {
+        return startFileAnalysis(form, Collections.emptyMap(), context);
+    }
+
+    @Override
+    @NotNull
+    public String startFileAnalysis(AnalyzeForm form, Map<String, String> variableMap, ViewContext context) throws IOException, PipelineValidationException
+    {
         if (form.getProtocolName() == null)
         {
             throw new IllegalArgumentException("Must specify a protocol name");
@@ -715,8 +722,9 @@ public class PipelineServiceImpl extends PipelineService
             }
         }
 
-        AbstractFileAnalysisJob job =
-                protocol.createPipelineJob(new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL()), root, filesInputList, fileParameters);
+        ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
+
+        AbstractFileAnalysisJob job = protocol.createPipelineJob(info, root, filesInputList, fileParameters, variableMap);
 
         PipelineService.get().queueJob(job);
 
