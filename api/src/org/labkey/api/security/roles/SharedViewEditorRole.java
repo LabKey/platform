@@ -1,7 +1,6 @@
 package org.labkey.api.security.roles;
 
 import org.labkey.api.security.permissions.EditSharedViewPermission;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 
 /**
