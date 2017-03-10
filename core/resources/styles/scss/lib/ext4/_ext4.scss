@@ -1,5 +1,5 @@
 @import "../../labkey/variables";
-@import "grayVariables";
+@import "variables";
 
 /* including package ext-theme-base */
 /**
@@ -9306,23 +9306,23 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 /* line 432, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-header-default {
   background-image: none;
-  background-color: $panel-background-color;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $panel-background-start), color-stop(100%, #d7d7d7));
-  background-image: -webkit-linear-gradient(top, $panel-background-start, #d7d7d7);
-  background-image: -moz-linear-gradient(top, $panel-background-start, #d7d7d7);
-  background-image: -o-linear-gradient(top, $panel-background-start, #d7d7d7);
-  background-image: linear-gradient(top, $panel-background-start, #d7d7d7);
+  background-color: $panel-header-background-color;
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $panel-background-gradient-start), color-stop(100%, $panel-background-gradient-end));
+  background-image: -webkit-linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -moz-linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -o-linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
 }
 
 /* line 436, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-header-default-vertical {
   background-image: none;
-  background-color: $panel-background-color;
-  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, $panel-background-start), color-stop(100%, #d7d7d7));
-  background-image: -webkit-linear-gradient(right, $panel-background-start, #d7d7d7);
-  background-image: -moz-linear-gradient(right, $panel-background-start, #d7d7d7);
-  background-image: -o-linear-gradient(right, $panel-background-start, #d7d7d7);
-  background-image: linear-gradient(right, $panel-background-start, #d7d7d7);
+  background-color: $panel-header-background-color;
+  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, $panel-background-gradient-start), color-stop(100%, $panel-background-gradient-end));
+  background-image: -webkit-linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -moz-linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -o-linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
 }
 
 /* line 454, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
@@ -9408,8 +9408,8 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 }
 /* line 36, ../../../ext-theme-base/sass/etc/mixins/rotate-element.scss */
 .x4-ie9m .x4-panel-header-default-vertical .x4-panel-header-text-container {
-  background-color: $panel-background-color;
-  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1), progid:DXImageTransform.Microsoft.Chroma(color=$panel-background-color);
+  background-color: $panel-header-background-color;
+  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1), progid:DXImageTransform.Microsoft.Chroma(color=$panel-header-background-color);
 }
 
 /* line 533, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
@@ -9713,19 +9713,19 @@ body.x4-nbr .x4-panel-default-framed-frameInfo {
   border-width: 1px 1px 0 1px;
   border-style: solid;
   background-image: none;
-  background-color: $panel-background-color;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $panel-background-start), color-stop(100%, $panel-background-end));
-  background-image: -webkit-linear-gradient(top, $panel-background-start, $panel-background-end);
-  background-image: -moz-linear-gradient(top, $panel-background-start, $panel-background-end);
-  background-image: -o-linear-gradient(top, $panel-background-start, $panel-background-end);
-  background-image: linear-gradient(top, $panel-background-start, $panel-background-end);
+  background-color: $panel-header-background-color;
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $panel-background-gradient-start), color-stop(100%, $panel-background-gradient-end));
+  background-image: -webkit-linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -moz-linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -o-linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-header-default-framed-top-mc {
   background-image: url('#{$ext4-images-dir}/panel-header/panel-header-default-framed-top-fbg.gif');
   background-position: 0 top;
-  background-color: $panel-background-color;
+  background-color: $panel-header-background-color;
 }
 
 /* line 212, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -9875,19 +9875,19 @@ body.x4-nbr .x4-panel-header-default-framed-top-frameInfo {
   border-width: 1px 1px 1px 0;
   border-style: solid;
   background-image: none;
-  background-color: $panel-background-color;
-  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, $panel-background-start), color-stop(100%, $panel-background-end));
-  background-image: -webkit-linear-gradient(right, $panel-background-start, $panel-background-end);
-  background-image: -moz-linear-gradient(right, $panel-background-start, $panel-background-end);
-  background-image: -o-linear-gradient(right, $panel-background-start, $panel-background-end);
-  background-image: linear-gradient(right, $panel-background-start, $panel-background-end);
+  background-color: $panel-header-background-color;
+  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, $panel-background-gradient-start), color-stop(100%, $panel-background-gradient-end));
+  background-image: -webkit-linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -moz-linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -o-linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-header-default-framed-right-mc {
   background-image: url('#{$ext4-images-dir}/panel-header/panel-header-default-framed-right-fbg.gif');
   background-position: right 0;
-  background-color: $panel-background-color;
+  background-color: $panel-header-background-color;
 }
 
 /* line 212, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -10038,19 +10038,19 @@ body.x4-nbr .x4-panel-header-default-framed-right-frameInfo {
   border-width: 0 1px 1px 1px;
   border-style: solid;
   background-image: none;
-  background-color: $panel-background-color;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $panel-background-start), color-stop(100%, $panel-background-end));
-  background-image: -webkit-linear-gradient(top, $panel-background-start, $panel-background-end);
-  background-image: -moz-linear-gradient(top, $panel-background-start, $panel-background-end);
-  background-image: -o-linear-gradient(top, $panel-background-start, $panel-background-end);
-  background-image: linear-gradient(top, $panel-background-start, $panel-background-end);
+  background-color: $panel-header-background-color;
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $panel-background-gradient-start), color-stop(100%, $panel-background-gradient-end));
+  background-image: -webkit-linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -moz-linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -o-linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-header-default-framed-bottom-mc {
   background-image: url('#{$ext4-images-dir}/panel-header/panel-header-default-framed-bottom-fbg.gif');
   background-position: 0 bottom;
-  background-color: $panel-background-color;
+  background-color: $panel-header-background-color;
 }
 
 /* line 212, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -10200,19 +10200,19 @@ body.x4-nbr .x4-panel-header-default-framed-bottom-frameInfo {
   border-width: 1px 0 1px 1px;
   border-style: solid;
   background-image: none;
-  background-color: $panel-background-color;
-  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, $panel-background-start), color-stop(100%, $panel-background-end));
-  background-image: -webkit-linear-gradient(right, $panel-background-start, $panel-background-end);
-  background-image: -moz-linear-gradient(right, $panel-background-start, $panel-background-end);
-  background-image: -o-linear-gradient(right, $panel-background-start, $panel-background-end);
-  background-image: linear-gradient(right, $panel-background-start, $panel-background-end);
+  background-color: $panel-header-background-color;
+  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, $panel-background-gradient-start), color-stop(100%, $panel-background-gradient-end));
+  background-image: -webkit-linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -moz-linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -o-linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-header-default-framed-left-mc {
   background-image: url('#{$ext4-images-dir}/panel-header/panel-header-default-framed-left-fbg.gif');
   background-position: left 0;
-  background-color: $panel-background-color;
+  background-color: $panel-header-background-color;
 }
 
 /* line 212, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -10363,19 +10363,19 @@ body.x4-nbr .x4-panel-header-default-framed-left-frameInfo {
   border-width: 1px;
   border-style: solid;
   background-image: none;
-  background-color: $panel-background-color;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $panel-background-start), color-stop(100%, $panel-background-end));
-  background-image: -webkit-linear-gradient(top, $panel-background-start, $panel-background-end);
-  background-image: -moz-linear-gradient(top, $panel-background-start, $panel-background-end);
-  background-image: -o-linear-gradient(top, $panel-background-start, $panel-background-end);
-  background-image: linear-gradient(top, $panel-background-start, $panel-background-end);
+  background-color: $panel-header-background-color;
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $panel-background-gradient-start), color-stop(100%, $panel-background-gradient-end));
+  background-image: -webkit-linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -moz-linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -o-linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-header-default-framed-collapsed-top-mc {
   background-image: url('#{$ext4-images-dir}/panel-header/panel-header-default-framed-collapsed-top-fbg.gif');
   background-position: 0 top;
-  background-color: $panel-background-color;
+  background-color: $panel-header-background-color;
 }
 
 /* line 212, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -10525,19 +10525,19 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-top-frameInfo {
   border-width: 1px;
   border-style: solid;
   background-image: none;
-  background-color: $panel-background-color;
-  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, $panel-background-start), color-stop(100%, $panel-background-end));
-  background-image: -webkit-linear-gradient(right, $panel-background-start, $panel-background-end);
-  background-image: -moz-linear-gradient(right, $panel-background-start, $panel-background-end);
-  background-image: -o-linear-gradient(right, $panel-background-start, $panel-background-end);
-  background-image: linear-gradient(right, $panel-background-start, $panel-background-end);
+  background-color: $panel-header-background-color;
+  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, $panel-background-gradient-start), color-stop(100%, $panel-background-gradient-end));
+  background-image: -webkit-linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -moz-linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -o-linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-header-default-framed-collapsed-right-mc {
   background-image: url('#{$ext4-images-dir}/panel-header/panel-header-default-framed-collapsed-right-fbg.gif');
   background-position: right 0;
-  background-color: $panel-background-color;
+  background-color: $panel-header-background-color;
 }
 
 /* line 212, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -10688,19 +10688,19 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-right-frameInfo {
   border-width: 1px;
   border-style: solid;
   background-image: none;
-  background-color: $panel-background-color;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $panel-background-start), color-stop(100%, $panel-background-end));
-  background-image: -webkit-linear-gradient(top, $panel-background-start, $panel-background-end);
-  background-image: -moz-linear-gradient(top, $panel-background-start, $panel-background-end);
-  background-image: -o-linear-gradient(top, $panel-background-start, $panel-background-end);
-  background-image: linear-gradient(top, $panel-background-start, $panel-background-end);
+  background-color: $panel-header-background-color;
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $panel-background-gradient-start), color-stop(100%, $panel-background-gradient-end));
+  background-image: -webkit-linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -moz-linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -o-linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-header-default-framed-collapsed-bottom-mc {
   background-image: url('#{$ext4-images-dir}/panel-header/panel-header-default-framed-collapsed-bottom-fbg.gif');
   background-position: 0 bottom;
-  background-color: $panel-background-color;
+  background-color: $panel-header-background-color;
 }
 
 /* line 212, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -10850,19 +10850,19 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-bottom-frameInfo {
   border-width: 1px;
   border-style: solid;
   background-image: none;
-  background-color: $panel-background-color;
-  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, $panel-background-start), color-stop(100%, $panel-background-end));
-  background-image: -webkit-linear-gradient(right, $panel-background-start, $panel-background-end);
-  background-image: -moz-linear-gradient(right, $panel-background-start, $panel-background-end);
-  background-image: -o-linear-gradient(right, $panel-background-start, $panel-background-end);
-  background-image: linear-gradient(right, $panel-background-start, $panel-background-end);
+  background-color: $panel-header-background-color;
+  background-image: -webkit-gradient(linear, 100% 50%, 0% 50%, color-stop(0%, $panel-background-gradient-start), color-stop(100%, $panel-background-gradient-end));
+  background-image: -webkit-linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -moz-linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: -o-linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
+  background-image: linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-header-default-framed-collapsed-left-mc {
   background-image: url('#{$ext4-images-dir}/panel-header/panel-header-default-framed-collapsed-left-fbg.gif');
   background-position: left 0;
-  background-color: $panel-background-color;
+  background-color: $panel-header-background-color;
 }
 
 /* line 212, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -11042,8 +11042,8 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-left-frameInfo {
 }
 /* line 36, ../../../ext-theme-base/sass/etc/mixins/rotate-element.scss */
 .x4-ie9m .x4-panel-header-default-framed-vertical .x4-panel-header-text-container {
-  background-color: $panel-background-color;
-  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1), progid:DXImageTransform.Microsoft.Chroma(color=$panel-background-color);
+  background-color: $panel-header-background-color;
+  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1), progid:DXImageTransform.Microsoft.Chroma(color=$panel-header-background-color);
 }
 
 /* line 533, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
@@ -11269,12 +11269,12 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-left-frameInfo {
   padding: 2px 2px 2px 2px;
   border-width: 1px;
   border-style: solid;
-  background-color: $tooltip-background-color;
+  background-color: $tip-background-color;
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-tip-default-mc {
-  background-color: $tooltip-background-color;
+  background-color: $tip-background-color;
 }
 
 /* line 235, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -11402,11 +11402,11 @@ body.x4-nbr .x4-tip-default-frameInfo {
 /* */
 /* line 100, ../../../ext-theme-neutral/sass/src/tip/Tip.scss */
 .x4-tip-default {
-  border-color: $tooltip-border-color;
+  border-color: $tip-border-color;
 }
 /* line 109, ../../../ext-theme-neutral/sass/src/tip/Tip.scss */
 .x4-tip-default .x4-tool-img {
-  background-color: $tooltip-background-color;
+  background-color: $tip-background-color;
 }
 
 /* line 124, ../../../ext-theme-neutral/sass/src/tip/Tip.scss */
@@ -12341,11 +12341,10 @@ body.x4-nbr .x4-window-default-frameInfo {
 /* */
 /* line 195, ../../../ext-theme-neutral/sass/src/window/Window.scss */
 .x4-window-body-default {
-  border-color: $window-header-border-color;
+  border-color: $window-body-border-color;
   border-width: 1px;
   border-style: solid;
-  //background: $window-header-background-color;
-  background: white;
+  background: $window-body-background-color;
   color: black;
 }
 
@@ -12354,11 +12353,11 @@ body.x4-nbr .x4-window-default-frameInfo {
   font-size: 11px;
   border-color: $window-border-color;
   zoom: 1;
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 /* line 212, ../../../ext-theme-neutral/sass/src/window/Window.scss */
 .x4-window-header-default .x4-tool-img {
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 
 /* line 223, ../../../ext-theme-neutral/sass/src/window/Window.scss */
@@ -12374,8 +12373,8 @@ body.x4-nbr .x4-window-default-frameInfo {
 }
 /* line 36, ../../../ext-theme-base/sass/etc/mixins/rotate-element.scss */
 .x4-ie9m .x4-window-header-default-vertical .x4-window-header-text-container {
-  background-color: $window-background-color;
-  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1), progid:DXImageTransform.Microsoft.Chroma(color=$window-background-color);
+  background-color: $window-header-background-color;
+  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1), progid:DXImageTransform.Microsoft.Chroma(color=$window-header-background-color);
 }
 
 /* line 233, ../../../ext-theme-neutral/sass/src/window/Window.scss */
@@ -12406,12 +12405,12 @@ body.x4-nbr .x4-window-default-frameInfo {
   padding: 4px 5px 0 5px;
   border-width: 1px 1px 0 1px;
   border-style: solid;
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-window-header-default-top-mc {
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 
 /* line 235, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -12554,12 +12553,12 @@ body.x4-nbr .x4-window-header-default-top-frameInfo {
   padding: 5px 4px 5px 0;
   border-width: 1px 1px 1px 0;
   border-style: solid;
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-window-header-default-right-mc {
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 
 /* line 235, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -12702,12 +12701,12 @@ body.x4-nbr .x4-window-header-default-right-frameInfo {
   padding: 0 5px 4px 5px;
   border-width: 0 1px 1px 1px;
   border-style: solid;
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-window-header-default-bottom-mc {
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 
 /* line 235, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -12850,12 +12849,12 @@ body.x4-nbr .x4-window-header-default-bottom-frameInfo {
   padding: 5px 0 5px 4px;
   border-width: 1px 0 1px 1px;
   border-style: solid;
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-window-header-default-left-mc {
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 
 /* line 235, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -12991,12 +12990,12 @@ body.x4-nbr .x4-window-header-default-left-frameInfo {
   padding: 4px 5px 4px 5px;
   border-width: 1px;
   border-style: solid;
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-window-header-default-collapsed-top-mc {
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 
 /* line 235, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -13132,12 +13131,12 @@ body.x4-nbr .x4-window-header-default-collapsed-top-frameInfo {
   padding: 5px 4px 5px 4px;
   border-width: 1px;
   border-style: solid;
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-window-header-default-collapsed-right-mc {
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 
 /* line 235, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -13273,12 +13272,12 @@ body.x4-nbr .x4-window-header-default-collapsed-right-frameInfo {
   padding: 4px 5px 4px 5px;
   border-width: 1px;
   border-style: solid;
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-window-header-default-collapsed-bottom-mc {
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 
 /* line 235, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -13414,12 +13413,12 @@ body.x4-nbr .x4-window-header-default-collapsed-bottom-frameInfo {
   padding: 5px 4px 5px 4px;
   border-width: 1px;
   border-style: solid;
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-window-header-default-collapsed-left-mc {
-  background-color: $window-background-color;
+  background-color: $window-header-background-color;
 }
 
 /* line 235, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -13761,7 +13760,7 @@ div.x4-lbl-top-err-icon {
 
 /* line 34, ../../../ext-theme-neutral/sass/src/form/field/Text.scss */
 .x4-form-focus {
-  border-color: $form-focus-border-color;
+  border-color: $form-field-focus-border-color;
 }
 
 /* line 39, ../../../ext-theme-neutral/sass/src/form/field/Text.scss */
@@ -13807,7 +13806,7 @@ textarea.x4-form-empty-field {
 
 /* line 1, ../../../ext-theme-neutral/sass/src/window/MessageBox.scss */
 .x4-message-box .x4-window-body {
-  background-color: $window-background-color;
+  background-color: $window-body-background-color;
   border-width: 0;
 }
 
@@ -14123,7 +14122,7 @@ textarea.x4-form-empty-field {
   background: url('#{$ext4-images-dir}/form/trigger.gif');
   width: 17px;
   border-width: 0 0 1px;
-  border-color: $form-trigger-border-color;
+  border-color: $form-field-focus-border-color;
   border-style: solid;
 }
 
@@ -14136,13 +14135,13 @@ textarea.x4-form-empty-field {
 /* line 23, ../../../ext-theme-neutral/sass/src/form/field/Trigger.scss */
 .x4-form-trigger-over {
   background-position: -17px 0;
-  border-color: $form-focus-border-color;
+  border-color: $form-field-focus-border-color;
 }
 
 /* line 30, ../../../ext-theme-neutral/sass/src/form/field/Trigger.scss */
 .x4-form-trigger-wrap-focus .x4-form-trigger {
   background-position: -51px 0;
-  border-color: $form-focus-border-color;
+  border-color: $form-field-focus-border-color;
 }
 
 /* line 37, ../../../ext-theme-neutral/sass/src/form/field/Trigger.scss */
