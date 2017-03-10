@@ -7168,6 +7168,8 @@ internal/webapp/_images/icons.css -text
 internal/webapp/_images/info.png -text
 internal/webapp/_images/labkey.png -text
 internal/webapp/_images/leaf.gif -text
+internal/webapp/_images/lk_logo_white.png -text
+internal/webapp/_images/lk_logo_white_m.png -text
 internal/webapp/_images/lockoverlay.png -text
 internal/webapp/_images/message.png -text
 internal/webapp/_images/milestone_no.png -text

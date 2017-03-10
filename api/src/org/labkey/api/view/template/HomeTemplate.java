@@ -91,15 +91,17 @@ public class HomeTemplate extends PrintTemplate
         else
             setView("header", getHeaderView(page));
 
-        setView("topmenu", new MenuBarView(context, page));
+        AppBar model = generateAppBarModel(context, page);
+
+        setView("navigation", getNavigationView(context, page, model));
 
         setBody(body);
-        setView("appbar", getAppBarView(context, page));
+        setView("appbar", getAppBarView(context, page, model));
         setView("footer", getFooterView());
     }
 
 
-    protected HttpView getAppBarView(ViewContext context, PageConfig page)
+    private AppBar generateAppBarModel(ViewContext context, PageConfig page)
     {
         AppBar appBar;
         if (context.getContainer().isWorkbookOrTab())
@@ -131,9 +133,14 @@ public class HomeTemplate extends PrintTemplate
         if(getBody() instanceof WebPartView && ((WebPartView) getBody()).isHidePageTitle()){
             appBar.setPageTitle(null);
         }
-        return new AppBarView(appBar);
+
+        return appBar;
     }
 
+    protected HttpView getAppBarView(ViewContext context, PageConfig page, AppBar model)
+    {
+        return new AppBarView(model);
+    }
 
     protected HttpView getHeaderView(PageConfig page)
     {
@@ -170,6 +177,11 @@ public class HomeTemplate extends PrintTemplate
             }
         }
         return view;
+    }
+
+    protected HttpView getNavigationView(ViewContext context, PageConfig page, AppBar model)
+    {
+        return new MenuBarView(context, page);
     }
 
     @Override

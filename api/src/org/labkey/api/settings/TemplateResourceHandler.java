@@ -22,6 +22,7 @@ import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.ContainerParent;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.NotFoundException;
 
@@ -48,7 +49,7 @@ public enum TemplateResourceHandler
 
         protected String getDefaultLink()
         {
-            return "/_images/defaultlogo.png";
+            return PageFlowUtil.useExperimentalCoreUI() ? "/_images/lk_logo_white.png" : "/_images/defaultlogo.png";
         }
 
         protected CacheableWriter getWriterForContainer(Container c) throws IOException, ServletException

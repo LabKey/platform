@@ -111,15 +111,15 @@
     <%
         if (bean.showHeader() != PageConfig.TrueFalse.False)
         {
-            out.println("<div class='header-block'>");
+            %><div class="header-block"><%
             me.include(me.getView("header"),out);
 
-            if (null != me.getView("topmenu"))
-                me.include(me.getView("topmenu"),out);
+            if (null != me.getView("navigation"))
+                me.include(me.getView("navigation"),out);
 
             if (null != me.getView("appbar"))
                 me.include(me.getView("appbar"), out);
-            out.println("</div>");
+            %></div><%
         }
     %>
      <!--content area-->
