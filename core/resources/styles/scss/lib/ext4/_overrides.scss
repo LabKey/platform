@@ -1,0 +1,191 @@
+@import "../../labkey/variables";
+
+// TODO: The following were taken from stylesheet.css, we may be able to integrate some of these
+// directly with the ExtJS 4 variables and remove the selector overrides here
+
+.x4-btn {
+  font-family: $lk-font-family-sans-serif-bold;
+  font-size: 12px;
+  letter-spacing: .5px;
+}
+
+.labkey-checkbox-mv .x4-form-cb-label {
+  color: #606060;
+}
+
+.x4-btn-inner {
+  text-transform: uppercase;
+}
+
+.x4-btn-default-small-disabled
+{
+  background-color: #e4e4e4;
+}
+
+.x4-boundlist-list-ct ul
+{
+  margin: 0;
+  padding: 0;
+}
+
+.x4-boundlist-list-ct li
+{
+  list-style: none;
+}
+
+/* NOTE: This selector is Firefox only */
+.x4-gecko .x4-menu-item-active .x4-menu-item-icon
+{
+  top: 4px !important; /* was 3px, adjusted to be the same as the non-active state */
+  left: 3px !important; /* was 2px, adjusted to be the same as the non-active state */
+}
+
+/* account for adding of highlight border */
+.x4-gecko .x4-menu-item-active .x4-menu-item-arrow
+{
+  top: 4px;
+  right: 3px;
+}
+
+.x4-menu-item-text
+{
+  zoom: normal;
+}
+
+.x4-menu-item-arrow
+{
+  top: 4px;
+  right: 3px;
+  height: 14px;
+  background-image: url('#{$internal-images-dir}/arrow_right.png') !important;
+}
+
+.x4-menu-item-icon
+{
+  background-size: 16px 16px;
+}
+
+.x4-menu-item-icon.fa
+{
+  margin: 2px;
+}
+
+/* dont allow the up down arrows to show as disabled until bug 24434 has been fixed */
+.x4-menu-item-icon.fa.x4-btn-default-toolbar-small-disabled
+{
+  opacity: 1;
+}
+
+.x4-column-header
+{
+  border-bottom: 1px solid #AAAAAA !important;
+  border-right: 1px solid #DDDDDD !important;
+}
+
+.x4-column-header-over
+{
+  background-image: none !important;
+  cursor: pointer !important;
+}
+
+.x4-grid-checkheader
+{
+  height: 14px;
+  background: transparent url('#{$ext4-images-dir}/menu/unchecked.gif') no-repeat 50% -2px;
+}
+
+.x4-grid-checkheader-checked
+{
+  background-image: url('#{$ext4-images-dir}/menu/unchecked.gif');
+}
+
+.x4-grid-checkheader-editor .x4-form-cb-wrap
+{
+  text-align: center;
+}
+
+.labkey-data-region-facet div.x4-panel-body
+{
+  border-color: #DDDDDD;
+}
+
+div.facet_header .x4-panel-header-text-container
+{
+  margin-top: 2px !important;
+}
+
+div.facet_header .x4-panel-header-text
+{
+  color: $lk-link-color;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.study-schedule-container .x4-grid-header-ct
+{
+  background: $lk-grid-color none;
+}
+
+.x4-message-box .x4-window-body,
+.x4-toolbar-footer {
+  background-color: #ffffff;
+  margin-top: 0;
+}
+
+.x4-form-checkbox,
+.x4-form-radio
+{
+  float : left;
+}
+
+.x4-action-col-icon
+{
+  cursor: pointer;
+}
+
+.x4-item-disabled td.x4-trigger-cell
+{
+  opacity: 0.3;
+}
+
+.x4-mask-msg
+{
+  padding: 0 !important;
+}
+
+.x4-mask-msg-inner
+{
+  background-color: #ffffff !important;
+  border-width: 0 !important;
+}
+
+.x4-progress-default
+{
+  background-color: #ffffff;
+}
+
+a.x4-menu-item-link {
+  width: 100%;
+}
+
+.x4-menu-body .iconbtn-label{
+  text-transform: uppercase;
+  font-family: $font-family-sans-serif-bold;
+  color: black;
+  font-size: 11px;
+  margin-left: 1em;
+}
+
+.x4-menu-body .labkey-fa-stacked-wrapper {
+  font-size: 8px;
+  margin-left: -0.5em;
+}
+
+/* dont show the box around disabled toolbar button icons */
+.x4-box-target .x4-btn-default-toolbar-small-disabled {
+  border-color: transparent;
+}
+
+a div.x4-menu-item-icon.fa-users {
+  background-image: none;
+}

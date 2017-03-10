@@ -6,42 +6,21 @@ html, body
   height: 100%;
 }
 
-// This is specified in bootstrap/_scaffolding.scss -- can remove this and comment
-// once we're satisfied
-//body
-//{
-//  font-family: $font-family-sans-serif;
-//  font-size: $lk-font-size-base;
-//  color: $text-color;
-//  line-height: $line-height-base;
-//}
-
 h1, h2, h3, h4, h5, h6
 {
   font-weight: normal;
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
 }
 
 th
 {
   font-weight: normal;
-  font-family: $font-family-sans-serif;
-  font-size: 14px;
+  font-family: $lk-font-family-sans-serif;
+  font-size: $lk-font-size-base;
   margin: 0;
   color: #000000;
   letter-spacing: .3px;
   line-height: 1.25;
-}
-
-.x4-btn {
-  font-family: $font-family-sans-serif-bold;
-  font-size: 12px;
-  letter-spacing: .5px;
-}
-
-img
-{
-  border: 0 none;
 }
 
 .labkey-fullscreen-wizard-background
@@ -69,7 +48,7 @@ li.labkey-fullscreen-wizard-active-step,
 li.labkey-ancillary-wizard-active-step
 {
   background-color: white;
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
 }
 
 .labkey-fullscreen-wizard-body
@@ -126,15 +105,6 @@ table#header
   width: 100%;
   background-color: $lk-primary-bg-color;
 }
-
-/* Quick options (admin, help, my account, signout) table */
-#headerDiv
-{
-  position: absolute;
-  top: 0; right: 0;
-  padding: 8px 10px;
-}
-
 
 /* General */
 
@@ -208,11 +178,11 @@ pre.labkey-log-file
   padding: 1px 4px 1px 1px;
   font-size: 10pt;
   font-weight:bold;
-}
 
-.labkey-header-large:hover {
-  background-color: $lk-grid-color;
-  cursor: pointer;
+  &:hover {
+    background-color: $lk-grid-color;
+    cursor: pointer;
+  }
 }
 
 /* Used for the titles in announcement threads and elsewhere for
@@ -223,7 +193,7 @@ pre.labkey-log-file
   padding-bottom: 5px;
 
   a, span {
-    font-family: $font-family-sans-serif-bold;
+    font-family: $lk-font-family-sans-serif-bold;
     color: #000000;
   }
 
@@ -272,21 +242,21 @@ table.labkey-no-spacing
 /* Used for the error messages across the site */
 .labkey-error, .error
 {
-  color: #FF0000;
+  color: $lk-danger-color;
 }
 
 /* Used for messages across the site */
 .labkey-message
 {
-  color: #008000;
+  color: $lk-success-color;
 }
 
 /* Used for bold messages across the site */
 .labkey-message-strong
 {
   font-size: 8pt;
-  font-family: $font-family-sans-serif-bold;
-  color: #008000;
+  font-family: $lk-font-family-sans-serif-bold;
+  color: $lk-success-color;
 }
 
 .labkey-dataregion-msgbox
@@ -340,13 +310,14 @@ div.labkey-status-info, .labkey-status-info
 
 /* Used for the status box that pops up on some forms, such as the wiki editor, which tells the user
  that there has been an error */
+// TODO: Replace usages with "alert alert-danger"
 .labkey-status-error
 {
   text-align: center;
   background-color: #CC0000;
   border: 1px solid #990000;
   color: #FFFFFF;
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
   padding: 2px;
 }
 
@@ -379,7 +350,7 @@ table.labkey-button-bar
 .labkey-disabled-menu-button,
 .labkey-wp-text-buttons a
 {
-  font-family:  $font-family-sans-serif-bold !important;
+  font-family:  $lk-font-family-sans-serif-bold !important;
   font-size: 12px;
   letter-spacing: .5px;
 }
@@ -696,7 +667,7 @@ regions on mouseover */
 
 .labkey-disabled-text-link
 {
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
   padding: .3em 14px 2px 0;
   text-transform: uppercase;
   border: none;
@@ -707,7 +678,7 @@ regions on mouseover */
 }
 
 /* This lightens the text to make it look "grayed out", but still readable, unlike labkey-disabled, above. */
-.labkey-mv, .labkey-checkbox-mv .x4-form-cb-label
+.labkey-mv
 {
   color: #606060;
 }
@@ -715,7 +686,7 @@ regions on mouseover */
 /* This is used for bold text in a couple places. */
 .labkey-strong
 {
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
 }
 
 .labkey-emphasis
@@ -732,21 +703,19 @@ regions on mouseover */
 
 /* "Pagination" is used with data views that don't display all the data on one page.  This
  class is for the area with the links to change between the pages*/
-div.labkey-pagination
-{
+div.labkey-pagination {
   white-space: nowrap;
   margin: 10px 5px 0 5px;
   font-size: 13px;
-}
 
-.labkey-pagination em
-{
-  font-weight: normal;
-  font-style: normal;
-}
+  a {
+    padding-left: 5px;
+  }
 
-.labkey-pagination a {
-  padding-left: 5px;
+  em {
+    font-weight: normal;
+    font-style: normal;
+  }
 }
 
 /* Used for checkboxes in Data Regions */
@@ -822,7 +791,7 @@ table.labkey-completion-text
 span.labkey-help-pop-up
 {
   cursor: help;
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
   font-size: xx-small;
   text-decoration: none;
   padding-left: 2pt;
@@ -1023,16 +992,6 @@ table.labkey-show-borders
   border-left: solid 1px #DDDDDD;
 }
 
-.labkey-has-row-totals td
-{
-  *border-right: 0 none;
-}
-
-.labkey-has-col-totals td
-{
-  *border-bottom: 0 none;
-}
-
 /* Used for the normal rows in data regions, sometimes these rows are not given a class */
 .labkey-row td, .labkey-row th, tr.labkey-row, div.labkey-row
 {
@@ -1085,13 +1044,13 @@ table.labkey-show-borders
 .labkey-data-region .labkey-col-total, .labkey-data-region .labkey-row-total,
 .labkey-data-region .labkey-col-total td, .labkey-data-region .labkey-col-header th
 {
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
   background-color: #EEEEEE;
 }
 
 .labkey-data-region .labkey-col-total span.summary-stat-label
 {
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
 }
 
 .labkey-data-region .labkey-col-total td
@@ -1106,7 +1065,7 @@ table.labkey-show-borders
   border: 0;
   border-top: hidden;
   border-left: hidden;
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
 }
 
 .labkey-data-region-header-container
@@ -1228,11 +1187,6 @@ img.labkey-grid-filter-icon
 
 @import "components/customView";
 
-.labkey-fieldmeta-tree .x4-grid-body
-{
-  border-top-width: 0;
-}
-
 /** Ext.ux.dd.GridDragDropRowOrder.js */
 
 .grid-row-insertion {
@@ -1247,17 +1201,6 @@ img.labkey-grid-filter-icon
   background: gray;
 }
 
-/* Home Template */
-
-/* The body tag for the page */
-#bodyElement
-{
-  height: 100%;
-  margin-top:0;
-  margin-left:0;
-  margin-right:0;
-}
-
 /* Help pop ups */
 #helpDiv
 {
@@ -1270,16 +1213,6 @@ img.labkey-grid-filter-icon
 {
   width: 100%;
   border-spacing: 0; *border-collapse: collapse;
-}
-
-/* The table that is the entire page */
-.labkey-main
-{
-  width: 100%;
-  padding: 0;
-  background-color: $lk-primary-bg-color;
-  display: table;
-  height: 100%;
 }
 
 .header-block
@@ -1424,25 +1357,6 @@ table.labkey-main-search img:hover {
   width: 200px;
 }
 
-
-/* The project area (the rest of the page besides the side and top panels) */
-table.labkey-proj
-{
-  width: 100%;
-  vertical-align: top;
-  border-spacing: 0;
-  padding: 0 20px 20px;
-  *border-collapse: collapse;
-  *width: 97%;
-  *margin: 0 20px 20px;
-}
-
-td.labkey-proj
-{
-  vertical-align: top;
-  height: 100%;
-}
-
 /* search results page */
 .labkey-search-filter
 {
@@ -1539,14 +1453,6 @@ table.labkey-expandable-nav
   width: 180px;
 }
 
-/* The top of the project area where there are tabs, the crumb trail, and the project title */
-.labkey-proj-nav-panel
-{
-  width: 100%;
-  vertical-align: top;
-  padding: 10px 0 0 0;
-}
-
 /* The rest of the project area besides the project nav panel */
 .labkey-body-panel
 {
@@ -1567,24 +1473,21 @@ table.labkey-expandable-nav
 
 /* The cell that contains the expand/collapse image */
 /* are we sure about this - side nav and study seem to be using labkey-nav-tree-node et al below */
-td.labkey-expand-collapse-area
-{
-  /*border-bottom: 1px solid #e5e5e5;*/
-}
+td.labkey-expand-collapse-area {
 
-td.labkey-expand-collapse-area a
-{
-  font-weight: normal;
-  padding: 2px 0;
-  text-align: left;
-  white-space: nowrap;
-  color: #000000;
-  text-transform: uppercase;
-  width: 12px;
-}
+  a {
+    font-weight: normal;
+    padding: 2px 0;
+    text-align: left;
+    white-space: nowrap;
+    color: #000000;
+    text-transform: uppercase;
+    width: 12px;
+  }
 
-td.labkey-expand-collapse-area img {
-  margin-right: 3px;
+  img {
+    margin-right: 3px;
+  }
 }
 
 /* The table that contains all the expandable nodes in the expandable menus */
@@ -1642,7 +1545,7 @@ td.labkey-nav-tree-text a {
 
 a.nav-tree-selected
 {
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
   font-style: italic;
 }
 
@@ -1734,7 +1637,7 @@ tr.labkey-wp-header
 
 .labkey-wp-header th.labkey-wp-title-left, .labkey-wp-header td.labkey-wp-title-left
 {
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
   font-weight: normal;
   letter-spacing: .5px;
   padding: 0 0 4px 4px;
@@ -1854,7 +1757,7 @@ a.no-arrow {
 
 .labkey-text-link, a.labkey-text-link-noarrow, .labkey-disabled-text-link
 {
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
   font-size: 11px;
   letter-spacing: .5px;
 }
@@ -1998,7 +1901,7 @@ table.labkey-manage-default-reqs
 
 .labkey-data-region .labkey-participant-view-header
 {
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
   border: solid 1px #808080;
 }
 
@@ -2053,7 +1956,7 @@ div.labkey-wiki h1
 {
   font-size: 1.2em;
   margin: 0.83em 0;
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
   font-weight: normal;
 }
 
@@ -2061,7 +1964,7 @@ div.labkey-wiki h1
 {
   font-size: 1.0em;
   margin: 0.83em 0;
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
   font-weight: normal;
 }
 
@@ -2070,7 +1973,7 @@ div.labkey-wiki h1
   text-transform: uppercase;
   font-size: 0.8em;
   margin: 0.83em 0 0.0px 0;
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
   font-weight: normal;
 }
 
@@ -2122,14 +2025,14 @@ div.labkey-knitr h1
 {
   font-size: 1.2em;
   margin: 0.83em 0;
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
 }
 
 .labkey-knitr .heading-1-1, div.labkey-knitr h3
 {
   font-size: 1.0em;
   margin: 0.83em 0;
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
 }
 
 .labkey-knitr .heading-1-1-1, div.labkey-knitr h4
@@ -2137,7 +2040,7 @@ div.labkey-knitr h1
   text-transform: uppercase;
   font-size: 0.8em;
   margin: 0.83em 0 0.0px 0;
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
 }
 
 .labkey-knitr .code
@@ -2294,7 +2197,7 @@ div.note {
 
 .tool-icon a,
 .tool-icon a:visited {
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
   text-transform: uppercase;
   text-decoration: none;
   color: $lk-link-color;
@@ -2425,7 +2328,7 @@ input[type="checkbox"], input[type="radio"] {
 }
 
 .labkey-app-bar ul li a {
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
   letter-spacing: .5px;
 }
 
@@ -2629,11 +2532,6 @@ a.labkey-main-menu-link:visited
   color: #000000;
 }
 
-li.labkey-main-menu-project-link
-{
-  /* Do we want to differentiate the project link? */
-}
-
 span.button-icon {
   background-color: $lk-link-color;
   opacity: 0.5;
@@ -2674,34 +2572,33 @@ span.button-icon {
   overflow-x: hidden;
   -ms-overflow-y: auto;
   -ms-overflow-x: hidden;
-}
 
-.project-nav ul {
-  list-style: none;
-  padding: 5px 10px 10px 10px;
-}
+  ul {
+    list-style: none;
+    padding: 5px 10px 10px 10px;
 
-/* themestylesheet */
-.project-nav ul li {
-  list-style: none;
-  float: left;
-  width: 11em;
-  height: 15px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  margin-left: 5px;
-  margin-right: 30px;
-  padding: 5px;
-  display: inline-block;
-}
+    li {
+      list-style: none;
+      float: left;
+      width: 11em;
+      height: 15px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      margin-left: 5px;
+      margin-right: 30px;
+      padding: 5px;
+      display: inline-block;
 
-.project-nav ul li a {
-  padding: 4px;
-}
+      a {
+        padding: 4px;
 
-.project-nav ul li a:hover {
-  background-color: $lk-webpart-color;
+        &:hover {
+          background-color: $lk-webpart-color;
+        }
+      }
+    }
+  }
 }
 
 .project-menu-buttons {
@@ -2865,162 +2762,6 @@ div.wizard-headermenu {
   font-size: 8pt;
 }
 
-/* Ext 4 */
-.x4-btn-inner {
-  text-transform: uppercase;
-}
-
-.x4-btn-default-small-disabled
-{
-  background-color: #e4e4e4;
-}
-
-.x4-boundlist-list-ct ul
-{
-  margin: 0;
-  padding: 0;
-}
-
-.x4-boundlist-list-ct li
-{
-  list-style: none;
-}
-
-/* NOTE: This selector is Firefox only */
-.x4-gecko .x4-menu-item-active .x4-menu-item-icon
-{
-  top: 4px !important; /* was 3px, adjusted to be the same as the non-active state */
-  left: 3px !important; /* was 2px, adjusted to be the same as the non-active state */
-}
-
-/* account for adding of highlight border */
-.x4-gecko .x4-menu-item-active .x4-menu-item-arrow
-{
-  top: 4px;
-  right: 3px;
-}
-
-.x4-menu-item-text
-{
-  zoom: normal;
-}
-
-.x4-menu-item-arrow
-{
-  top: 4px;
-  right: 3px;
-  height: 14px;
-  background-image: url('#{$internal-images-dir}/arrow_right.png') !important;
-}
-
-.x4-menu-item-icon
-{
-  background-size: 16px 16px;
-}
-
-.x4-menu-item-icon.fa
-{
-  margin: 2px;
-}
-
-/* dont allow the up down arrows to show as disabled until bug 24434 has been fixed */
-.x4-menu-item-icon.fa.x4-btn-default-toolbar-small-disabled
-{
-  opacity: 1;
-}
-
-.x4-column-header
-{
-  border-bottom: 1px solid #AAAAAA !important;
-  border-right: 1px solid #DDDDDD !important;
-}
-
-.x4-column-header-over
-{
-  background-image: none !important;
-  cursor: pointer !important;
-}
-
-.x4-grid-checkheader
-{
-  height: 14px;
-  background: transparent url('#{$ext4-images-dir}/menu/unchecked.gif') no-repeat 50% -2px;
-}
-
-.x4-grid-checkheader-checked
-{
-  background-image: url('#{$ext4-images-dir}/menu/unchecked.gif');
-}
-
-.x4-grid-checkheader-editor .x4-form-cb-wrap
-{
-  text-align: center;
-}
-
-.labkey-data-region-facet div.x4-panel-body
-{
-  border-color: #DDDDDD;
-}
-
-div.facet_header .x4-panel-header-text-container
-{
-  margin-top: 2px !important;
-}
-
-div.facet_header .x4-panel-header-text
-{
-  color: $lk-link-color;
-  text-transform: uppercase;
-  font-size: 10px;
-}
-
-.study-schedule-container .x4-grid-header-ct
-{
-  background: $lk-grid-color none;
-}
-
-.x4-message-box .x4-window-body,
-.x4-toolbar-footer {
-  background-color: #ffffff;
-  margin-top: 0;
-}
-
-.x4-form-checkbox,
-.x4-form-radio
-{
-  float : left;
-}
-
-.x4-action-col-icon
-{
-  cursor: pointer;
-}
-
-.x4-item-disabled td.x4-trigger-cell
-{
-  opacity: 0.3;
-}
-
-.x4-mask-msg
-{
-  padding: 0 !important;
-}
-
-.x4-mask-msg-inner
-{
-  background-color: #ffffff !important;
-  border-width: 0 !important;
-}
-
-.x4-progress-default
-{
-  background-color: #ffffff;
-}
-
-a.x4-menu-item-link {
-  width: 100%;
-}
-
 /* Visualization Library */
 .vis-bin-hexagon {
   fill: none;
@@ -3039,18 +2780,10 @@ a.x4-menu-item-link {
 .fbrowser .iconbtn-label,
 .schemabrowser .iconbtn-label {
   text-transform: uppercase;
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
   color: black;
   font-size: 10px;
   letter-spacing: .5px;
-}
-
-.x4-menu-body .iconbtn-label{
-  text-transform: uppercase;
-  font-family: $font-family-sans-serif-bold;
-  color: black;
-  font-size: 11px;
-  margin-left: 1em;
 }
 
 .labkey-fa-plus-folder {
@@ -3077,11 +2810,6 @@ a.x4-menu-item-link {
 
 .folder-menu-buttons .labkey-fa-stacked-wrapper {
   height: 2.4em;
-}
-
-.x4-menu-body .labkey-fa-stacked-wrapper {
-  font-size: 8px;
-  margin-left: -0.5em;
 }
 
 div span.labkey-main-menu-icon {
@@ -3113,17 +2841,6 @@ div span.labkey-main-menu-icon {
 {
   color: #000000;
   font-size: 0.8em;
-}
-
-/* dont show the box around disabled toolbar button icons */
-.x4-box-target .x4-btn-default-toolbar-small-disabled
-{
-  border-color: transparent;
-}
-
-a div.x4-menu-item-icon.fa-users
-{
-  background-image: none;
 }
 
 @import "ribbon";
