@@ -1,0 +1,42 @@
+@import "../variables";
+
+.labkey-page-nav {
+  background-color: $lk-page-nav-bg-color;
+  height: $lk-page-nav-height;
+
+  li a {
+    color: $lk-page-nav-color;
+    padding: 8px 15px;
+    font-family: $lk-page-nav-font-family;
+    font-weight: $lk-page-nav-font-weight;
+  }
+
+  .navbar-right {
+    display: inline-block;
+    float: right !important;
+    margin-top: 5px;
+    width: 40%;
+  }
+
+  .nav-link {
+    color: $lk-page-nav-color;
+    font-family: $lk-page-nav-font-family;
+    font-weight: $lk-page-nav-font-weight;
+  }
+
+  .navbar-header {
+    .navbar-toggle {
+      color: $lk-page-nav-color;
+      float: left;
+      margin: 0;
+      padding: 7px 0 0 0;
+    }
+  }
+}
+
+.labkey-page-nav li a:hover, .labkey-page-nav li a:focus, .labkey-page-nav .nav-pills a:hover,
+.labkey-page-nav li a:focus, .labkey-page-nav .nav-pills li.active a, .labkey-page-nav .nav-pills .open a:focus {
+  color: $lk-page-nav-bg-color;
+  background-color: $lk-primary-bg-color;
+  text-decoration: none;
+}

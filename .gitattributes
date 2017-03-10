@@ -318,6 +318,8 @@ core/resources/styles/scss/labkey/_labkey.scss -text
 core/resources/styles/scss/labkey/_ribbon.scss -text
 core/resources/styles/scss/labkey/_variables.scss -text
 core/resources/styles/scss/labkey/components/_customView.scss -text
+core/resources/styles/scss/labkey/components/_header.scss -text
+core/resources/styles/scss/labkey/components/_navigation.scss -text
 core/resources/styles/scss/labkey/components/_tabStrip.scss -text
 core/resources/styles/scss/lib/bootstrap/_bootstrap.scss -text
 core/resources/styles/scss/lib/ext3/_all.scss -text
@@ -556,10 +558,13 @@ core/src/org/labkey/core/user/toggleShowAll.jsp -text
 core/src/org/labkey/core/user/userAccess.jsp -text
 core/src/org/labkey/core/view/ShortURLFilter.java -text
 core/src/org/labkey/core/view/ShortURLServiceImpl.java -text
+core/src/org/labkey/core/view/template/bootstrap/BootstrapHeader.java -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapTemplate.jsp -text
 core/src/org/labkey/core/view/template/bootstrap/factory/FrameFactoryBootstrap.java -text
 core/src/org/labkey/core/view/template/bootstrap/factory/TemplateFactoryBootstrap.java -text
+core/src/org/labkey/core/view/template/bootstrap/header.jsp -text
+core/src/org/labkey/core/view/template/bootstrap/navigation.jsp -text
 core/src/org/labkey/core/webdav/DavController.java -text
 core/src/org/labkey/core/webdav/WebdavServlet.java -text
 core/src/org/labkey/core/webdav/apache/XMLWriter.java -text

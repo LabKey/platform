@@ -66,15 +66,12 @@
     {
         me.include(me.getView("header"), out);
 
-        if (null != me.getView("topmenu"))
-            me.include(me.getView("topmenu"),out);
-
-        if (null != me.getView("appbar"))
-            me.include(me.getView("appbar"), out);
+        if (null != me.getView("navigation"))
+            me.include(me.getView("navigation"),out);
     }
 %>
 <div class="container">
-    <div class="alert alert-warning" role="alert">
+    <div class="alert alert-warning" role="alert" style="margin-top: 20px;">
         <strong>Under construction!</strong>
         This layout is under development. <a href="admin-experimentalFeatures.view" class="alert-link">Turn it off here</a> by disabling the "Core UI Migration" feature.
     </div>

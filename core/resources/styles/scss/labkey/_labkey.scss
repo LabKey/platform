@@ -3160,3 +3160,6 @@ a div.x4-menu-item-icon.fa-users
   background-image:url('#{$ext3-images-dir}/default/grid/sort_desc.gif');
   display: inline;
 }
+
+@import "components/header";
+@import "components/navigation";

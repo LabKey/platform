@@ -17,17 +17,31 @@ $internal-images-dir: '#{$internal-webapp-dir}/_images';
 //
 // # Imported "labkey-theme" colors
 // TODO: Integrate these with bootstrap
-$lk-base-color: #226495; // TODO: Suspicious that this was intended to be #126495
+$black: #000;
+$white: #FFF;
+
+$lk-brand-color: #116596;
+$lk-secondary-brand-color: #3495D2;
+$lk-accent-color: #E86030;
+$lk-success-color: #5CB85C;
+$lk-info-color: #5BC0DE;
+$lk-warning-color: #F0AD4E;
+$lk-danger-color: #B82025;
+
 $lk-panel-base-color: #DFE8F6;
-$lk-text-color: #000000;
-$lk-link-color: #126495 !default;
+$lk-text-color: $black;
+$lk-link-color: $lk-brand-color !default;
 $lk-link-hover-color: darken($lk-link-color, 15%) !default;
 $lk-link-hover-decoration: none;
 $lk-grid-color: #E7EFF4;
 $lk-primary-bg-color: #F8F8F8;
-$lk-secondary-bg-color: #FFFFFF;
+$lk-secondary-bg-color: $white;
 $lk-border-title-color: #676767;
 $lk-webpart-color: #E0E6EA;
+
+//== Body
+//
+$lk-body-bg-color: $lk-primary-bg-color;
 
 //== Fonts
 //
@@ -35,10 +49,29 @@ $lk-font-size-base: 14px !default;
 $lk-font-size-large: 16px !default;
 $lk-font-size-small: 12px !default;
 
-$bootstrap-sass-asset-helper: false !default;
+$lk-font-family-sans-serif: 'Roboto', Arial, Helvetica, sans-serif;
+$lk-font-family-sans-serif-bold: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
+
+//== Header
+//
+$lk-page-header-bg-color: $lk-brand-color;
+$lk-page-header-color: $white;
+$lk-page-header-height: 50px;
+
+//== Navigation
+//
+$lk-page-nav-bg-color: $lk-secondary-brand-color;
+$lk-page-nav-color: $white;
+$lk-page-nav-font-family: $lk-font-family-sans-serif-bold;
+$lk-page-nav-font-weight: 'normal';
+$lk-page-nav-height: 36px;
+
+// --------------------------------------------------
 //
 // Bootstrap Variables
+//
 // --------------------------------------------------
+$bootstrap-sass-asset-helper: false !default;
 
 //== Colors
 //
@@ -51,11 +84,11 @@ $gray:                   lighten($gray-base, 33.5%) !default; // #555
 $gray-light:             lighten($gray-base, 46.7%) !default; // #777
 $gray-lighter:           lighten($gray-base, 93.5%) !default; // #eee
 
-$brand-primary:         darken(#428bca, 6.5%) !default; // #337ab7
-$brand-success:         #5cb85c !default;
-$brand-info:            #5bc0de !default;
-$brand-warning:         #f0ad4e !default;
-$brand-danger:          #d9534f !default;
+$brand-primary:         $lk-brand-color;
+$brand-success:         $lk-success-color;
+$brand-info:            $lk-info-color;
+$brand-warning:         $lk-warning-color;
+$brand-danger:          $lk-danger-color;
 
 
 //== Scaffolding
@@ -63,24 +96,24 @@ $brand-danger:          #d9534f !default;
 //## Settings for some of the most global styles.
 
 //** Background color for `<body>`.
-$body-bg:               #fff !default;
+$body-bg:               $lk-body-bg-color;
 //** Global text color on `<body>`.
-$text-color:            $lk-text-color; //$gray-dark !default;
+$text-color:            $lk-text-color;
 
 //** Global textual link color.
-$link-color:            $lk-link-color; //$brand-primary !default;
+$link-color:            $lk-link-color;
 //** Link hover color set via `darken()` function.
-$link-hover-color:      $lk-link-hover-color; //darken($link-color, 15%) !default;
+$link-hover-color:      $lk-link-hover-color;
 //** Link hover decoration.
-$link-hover-decoration: $lk-link-hover-decoration; //underline !default;
+$link-hover-decoration: $lk-link-hover-decoration;
 
 
 //== Typography
 //
 //## Font, line-height, and color for body text, headings, and more.
 
-$font-family-sans-serif:  'Roboto', Arial, Helvetica, sans-serif; // "Helvetica Neue", Helvetica, Arial, sans-serif !default;
-$font-family-sans-serif-bold:  'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
+$font-family-sans-serif: $lk-font-family-sans-serif;
+$font-family-sans-serif-bold: $lk-font-family-sans-serif-bold;
 
 $font-family-serif:       Georgia, "Times New Roman", Times, serif !default;
 //** Default monospace fonts for `<code>`, `<kbd>`, and `<pre>`.
