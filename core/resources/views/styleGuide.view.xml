@@ -6,5 +6,6 @@
         <dependency path="core/css/core.js"/>
         <dependency path="clientapi"/>
         <dependency path="Ext3"/>
+        <dependency path="Ext4"/>
     </dependencies>
 </view>

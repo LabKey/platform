@@ -2680,7 +2680,7 @@ a.x-grid3-hd-btn:hover {
   text-overflow: ellipsis;
   font-size: 11px;
   line-height: 13px;
-  font-family: $font-family-sans-serif;
+  font-family: $lk-font-family-sans-serif;
 }
 
 .x-pivotgrid .x-grid3-row-headers {
@@ -3173,7 +3173,7 @@ table.x-date-inner {
 
 .x-date-mp td {
   padding:2px;
-  font:normal 11px 'Roboto', arial, helvetica,tahoma,sans-serif;
+  font:normal 11px $lk-font-family-sans-serif;
 }
 
 td.x-date-mp-month,td.x-date-mp-year,td.x-date-mp-ybtn {
@@ -5231,7 +5231,7 @@ td.x-date-mp-sep {
   background-color: #eee;
   border-color:#a3bad9;
   color:#222;
-  font:normal 11px 'Roboto', arial, helvetica, sans-serif;
+  font:normal 11px $lk-font-family-sans-serif;
 }
 
 .x-mask-loading div {
@@ -5324,7 +5324,7 @@ ul.x-tab-strip-bottom{
 }
 
 .x-tab-strip span.x-tab-strip-text {
-  font: normal $lk-font-size-base $font-family-sans-serif;
+  font: normal $lk-font-size-base $lk-font-family-sans-serif;
   color:#416aa3;
 }
 
@@ -5417,7 +5417,7 @@ ul.x-tab-strip-bottom{
 }
 
 .x-form-field {
-  font: normal $lk-font-size-base $font-family-sans-serif;
+  font: normal $lk-font-size-base $lk-font-family-sans-serif;
 }
 
 .x-form-text, textarea.x-form-field {
@@ -5488,16 +5488,16 @@ ul.x-tab-strip-bottom{
 }
 
 .x-form-grow-sizer {
-  font:normal 12px 'Roboto', arial, helvetica, sans-serif;
+  font: normal 12px $lk-font-family-sans-serif;
 }
 
 .x-form-item {
-  font:normal 12px 'Roboto', arial, helvetica, sans-serif;
+  font: normal 12px $lk-font-family-sans-serif;
 }
 
 .x-form-invalid-msg {
   color:#c0272b;
-  font:normal 11px 'Roboto', arial, helvetica, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
   background-image:url('#{$ext3-images-dir}/default/shared/warning.gif');
 }
 
@@ -5506,11 +5506,11 @@ ul.x-tab-strip-bottom{
 }
 
 .x-small-editor .x-form-field {
-  font:normal 11px 'Roboto', arial, tahoma, helvetica, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
 }
 
 .ext-webkit .x-small-editor .x-form-field {
-  font:normal 11px 'Roboto', arial, tahoma, helvetica, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
 }
 
 .x-form-invalid-icon {
@@ -5522,7 +5522,7 @@ ul.x-tab-strip-bottom{
 }
 
 .x-fieldset legend {
-  font:bold 11px $font-family-sans-serif;
+  font:11px $lk-font-family-sans-serif-bold;
   color:#15428b;
 }
 
@@ -5606,7 +5606,7 @@ ul.x-tab-strip-bottom{
  }
 
 .x-toolbar td,.x-toolbar span,.x-toolbar input,.x-toolbar div,.x-toolbar select,.x-toolbar label{
-  font:normal 11px 'Roboto', arial,tahoma, helvetica, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
 }
 
 .x-toolbar .x-item-disabled {
@@ -5736,7 +5736,7 @@ ul.x-tab-strip-bottom{
 .x-grid3-hd-row,
 .x-grid3-summary-row {
   td {
-    font: normal $lk-font-size-base $font-family-sans-serif;
+    font: normal $lk-font-size-base $lk-font-family-sans-serif;
   }
 }
 
@@ -5868,7 +5868,7 @@ td.grid-hd-group-cell {
 }
 
 .x-grid3-topbar, .x-grid3-bottombar{
-  font:normal 11px 'Roboto', arial, tahoma, helvetica, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
 }
 
 .x-grid3-bottombar .x-toolbar{
@@ -5958,7 +5958,7 @@ td.grid-hd-group-cell {
 .x-grid-group-hd div.x-grid-group-title {
   background-image:url('#{$ext3-images-dir}/default/grid/group-collapse.gif');
   color:#3764a0;
-  font:bold 11px 'Roboto', arial, helvetica, sans-serif;
+  font:11px $lk-font-family-sans-serif-bold;
 }
 
 .x-grid-group-collapsed .x-grid-group-hd div.x-grid-group-title {
@@ -5979,7 +5979,7 @@ td.grid-hd-group-cell {
 
 .x-grid-empty {
   color:gray;
-  font:normal 11px 'Roboto', arial, helvetica, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
 }
 
 .x-grid-with-col-lines .x-grid3-row td.x-grid3-cell {
@@ -6012,7 +6012,7 @@ td.grid-hd-group-cell {
 }
 .x-dd-drag-ghost{
   color:#000;
-  font: normal 11px 'Roboto', arial, helvetica, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
   border-color: #ddd #bbb #bbb #ddd;
   background-color:#fff;
 }
@@ -6119,7 +6119,7 @@ td.grid-hd-group-cell {
 
 .x-tree-node{
   color:#000;
-  font: normal 11px 'Roboto', arial, tahoma, helvetica, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
 }
 
 .x-tree-node a, .x-dd-drag-ghost a{
@@ -6208,7 +6208,7 @@ td.grid-hd-group-cell {
   background-color:#dfecfb;
   background-image:url('#{$ext3-images-dir}/default/shared/glass-bg.gif');
   border-bottom-color:#a3bad9;
-  font:normal 10px 'Roboto', arial, helvetica,tahoma,sans-serif;
+  font: normal 10px $lk-font-family-sans-serif;
   color:#233d6d;
 }
 
@@ -6217,7 +6217,7 @@ td.grid-hd-group-cell {
 }
 
 .x-date-inner a {
-  font:normal 11px 'Roboto', arial, helvetica,tahoma,sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
   color:#000;
 }
 
@@ -6273,14 +6273,14 @@ td.grid-hd-group-cell {
 }
 
 .x-date-mp td {
-  font:normal 11px 'Roboto', arial, helvetica,tahoma,sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
 }
 
 .x-date-mp-btns button {
   background-color:#083772;
   color:#fff;
   border-color: #3366cc #000055 #000055 #3366cc;
-  font:normal 11px 'Roboto', arial, helvetica,tahoma,sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
 }
 
 .x-date-mp-btns {
@@ -6322,19 +6322,19 @@ td.x-date-mp-sep {
 }
 
 .x-tip .x-tip-mc {
-  font: normal 11px 'Roboto',arial,helvetica,sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
 }
 .x-tip .x-tip-ml {
   background-color: #fff;
 }
 
 .x-tip .x-tip-header-text {
-  font: bold 11px 'Roboto',arial,helvetica,sans-serif;
+  font: 11px $lk-font-family-sans-serif-bold;
   color:#444;
 }
 
 .x-tip .x-tip-body {
-  font: normal 11px 'Roboto',arial,helvetica,sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
   color:#444;
 }
 
@@ -6364,7 +6364,7 @@ td.x-date-mp-sep {
 }
 
 .x-menu-list-item{
-  font:normal 11px 'Roboto', arial,tahoma,sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
 }
 
 .x-menu-sep {
@@ -6446,7 +6446,7 @@ td.x-date-mp-sep {
 .x-box-mc {
   background-color: #eee;
   background-image: url('#{$ext3-images-dir}/default/box/tb.gif');
-  font-family: "Myriad Pro","Myriad Web","Tahoma","Helvetica","Arial",sans-serif;
+  font-family: $lk-font-family-sans-serif;
   color: #393939;
   font-size: 12px;
 }
@@ -6499,7 +6499,7 @@ td.x-date-mp-sep {
 .x-combo-list {
    border-color:#98c0f4;
    background-color:#ddecfe;
-   font: normal $lk-font-size-base $font-family-sans-serif;
+   font: normal $lk-font-size-base $lk-font-family-sans-serif;
  }
 
 .x-combo-list-inner {
@@ -6507,7 +6507,7 @@ td.x-date-mp-sep {
 }
 
 .x-combo-list-hd {
-  font:bold 11px 'Roboto', arial, helvetica, sans-serif;
+  font:11px $lk-font-family-sans-serif-bold;
   color:#15428b;
   background-image: url('#{$ext3-images-dir}/default/layout/panel-title-light-bg.gif');
   border-bottom-color:#98c0f4;
@@ -6527,16 +6527,15 @@ td.x-date-mp-sep {
 }
 
 .x-combo-list-small {
-  font:normal 11px 'Roboto', arial, helvetica, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
 }.x-panel {
    border-color: #99bbe8;
  }
 
 .x-panel-header {
   color:#15428b;
-  font-weight:bold;
   font-size: 11px;
-  font-family: 'Roboto',arial,verdana,sans-serif;
+  font-family: $lk-font-family-sans-serif-bold;
   border-color:#99bbe8;
   background-image: url('#{$ext3-images-dir}/default/panel/white-top-bottom.gif');
 }
@@ -6560,7 +6559,7 @@ td.x-date-mp-sep {
 
 .x-panel-tl .x-panel-header {
   color:#15428b;
-  font:bold 11px 'Roboto',arial,verdana,sans-serif;
+  font:11px $lk-font-family-sans-serif-bold;
 }
 
 .x-panel-tc {
@@ -6577,7 +6576,7 @@ td.x-date-mp-sep {
 }
 
 .x-panel-mc {
-  font: normal 11px 'Roboto',arial,helvetica,sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
   background-color:#dfe8f6;
 }
 
@@ -6607,7 +6606,7 @@ td.x-date-mp-sep {
 }
 
 .x-panel-fbar td,.x-panel-fbar span,.x-panel-fbar input,.x-panel-fbar div,.x-panel-fbar select,.x-panel-fbar label{
-  font:normal 11px 'Roboto', arial, helvetica, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
 }
 .x-window-proxy {
   background-color:#c7dffc;
@@ -6615,7 +6614,7 @@ td.x-date-mp-sep {
 }
 
 .x-window-tl .x-window-header {
-  font: normal $lk-font-size-small $font-family-sans-serif;
+  font: normal $lk-font-size-small $lk-font-family-sans-serif;
   letter-spacing: .5px;
   padding: 5px 0 4px 0;
 }
@@ -6646,7 +6645,7 @@ td.x-date-mp-sep {
 
 .x-window-mc {
   border-color:#99bbe8;
-  font: normal $lk-font-size-small $font-family-sans-serif;
+  font: normal $lk-font-size-small $lk-font-family-sans-serif;
   background-color:#dfe8f6;
 }
 
@@ -6786,11 +6785,11 @@ body.x-body-masked .x-window-plain .x-window-mc {
 
 .x-list-header-inner div em {
   border-left-color:#ddd;
-  font:normal 11px 'Roboto', arial, tahoma, helvetica, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
 }
 
 .x-list-body dt em {
-  font:normal 11px 'Roboto', arial, tahoma, helvetica, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
 }
 
 .x-list-over {
@@ -6829,7 +6828,7 @@ body.x-body-masked .x-window-plain .x-window-mc {
  }
 
 .x-window-dlg .ext-mb-textarea {
-  font:normal 12px 'Roboto',arial,helvetica,sans-serif;
+  font: normal 12px $lk-font-family-sans-serif;
 }
 
 .x-window-dlg .x-msg-box-wait {
@@ -7097,7 +7096,7 @@ li.x-menu-item-active a.x-menu-item {
 
 /* Buttons */
 .x-btn {
-  font: normal $lk-font-size-small $font-family-sans-serif-bold;
+  font: normal $lk-font-size-small $lk-font-family-sans-serif-bold;
   letter-spacing: .5px;
   cursor: pointer;
   white-space: nowrap;
@@ -7107,7 +7106,7 @@ li.x-menu-item-active a.x-menu-item {
     border: 0 none;
     color: $lk-link-color;
     cursor: pointer;
-    font: normal $lk-font-size-small $font-family-sans-serif-bold;
+    font: normal $lk-font-size-small $lk-font-family-sans-serif-bold;
     margin: 0;
     -moz-outline: 0 none;
     outline: 0 none;
@@ -7155,7 +7154,7 @@ li.x-menu-item-active a.x-menu-item {
 
 .x-btn-text {
   font-size: $lk-font-size-small;
-  font-family: $font-family-sans-serif-bold;
+  font-family: $lk-font-family-sans-serif-bold;
   letter-spacing: .5px;
 }
 

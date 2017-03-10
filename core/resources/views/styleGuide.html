@@ -117,4 +117,130 @@
             </script>
         </div>
     </div>
+    <div class="lk-sg-section">
+        <h2 class="page-header">ExtJS 4.2.0</h2>
+        <div class="lk-sg-example">
+            <div class="lk-sg-example-ext3">
+                <div id="ext4-panel"></div>
+                <div id="ext4-button"></div>
+                <div id="ext4-dialog"></div>
+                <div id="ext4-form"></div>
+            </div>
+            <script type="application/javascript">
+                if (typeof Ext4 !== 'undefined') {
+                    Ext4.onReady(function() {
+                        var panel = new Ext4.Panel({
+                            renderTo: 'ext4-panel',
+                            title: 'Ext 4 Panel',
+                            html: 'Body',
+                            bbar: [{
+                                text: 'Button One'
+                            },{
+                                text: 'Button Two'
+                            },{
+                                text: 'Button Three'
+                            }]
+                        });
+
+                        var btn = new Ext4.Button({
+                            renderTo: 'ext4-button',
+                            text: 'Ext 4 Button'
+                        });
+
+                        var dialog = new Ext4.Button({
+                            renderTo: 'ext4-dialog',
+                            text: 'See Modal Window',
+                            handler: function() {
+                                var win = new Ext4.Window({
+                                    title: 'Ext 4 Window',
+                                    height: 300,
+                                    width: 400,
+                                    modal: true,
+                                    html: 'Content'
+                                }).show();
+                            }
+                        });
+
+                        var form = new Ext4.Panel({
+                            width: 500,
+                            height: 300,
+                            title: "Ext4 Form",
+                            layout: 'form',
+                            renderTo: 'ext4-form',
+                            bodyPadding: 20,
+                            defaultType: 'textfield',
+                            dockedItems: [{
+                                xtype: 'toolbar',
+                                dock: 'bottom',
+                                items: [{
+                                    text: 'Save'
+                                },{
+                                    text: 'Cancel'
+                                }]
+                            }],
+                            items: [{
+                                fieldLabel: 'First Name',
+                                name: 'first',
+                                allowBlank:false
+                            }, {
+                                fieldLabel: 'Last Name',
+                                name: 'last'
+                            }, {
+                                fieldLabel: 'Gendar',
+                                xtype: 'radiogroup',
+                                allowBlank: false,
+                                name: 'gender',
+                                layout: 'hbox',
+                                items: [{
+                                        boxLabel: 'male',
+                                        checked: true
+                                    },
+                                    {
+                                        boxLabel: 'female'
+                                    }]
+                            }, {
+                                fieldLabel: 'Order Date',
+                                name: 'date',
+                                xtype: 'datefield'
+                            }, {
+                                fieldLabel: 'Quantity',
+                                name: 'quantity',
+                                xtype: 'numberfield'
+                            }, {
+                                xtype: 'timefield',
+                                fieldLabel: 'Order Time',
+                                name: 'time',
+                                minValue: '8:00am',
+                                maxValue: '6:00pm'
+                            }, {
+                                xtype: 'checkboxgroup',
+                                fieldLabel: 'Toppings',
+                                name: 'order',
+                                items: [
+                                    {
+                                        boxLabel  : 'Anchovies',
+                                        name      : 'topping',
+                                        inputValue: '1'
+                                    }, {
+                                        boxLabel  : 'Artichoke Hearts',
+                                        name      : 'topping',
+                                        inputValue: '2',
+                                        checked   : true
+                                    }, {
+                                        boxLabel  : 'Bacon',
+                                        name      : 'topping',
+                                        inputValue: '3'
+                                    }
+                                ]
+                            }]
+                        });
+
+                    });
+                }
+                else {
+                    document.getElementById('ext4-panel').innerHTML = 'Ext 4 is not available.'
+                }
+            </script>
+        </div>
+    </div>
 </div>

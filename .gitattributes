@@ -322,6 +322,7 @@ core/resources/styles/scss/labkey/components/_header.scss -text
 core/resources/styles/scss/labkey/components/_navigation.scss -text
 core/resources/styles/scss/labkey/components/_tabStrip.scss -text
 core/resources/styles/scss/lib/bootstrap/_bootstrap.scss -text
+core/resources/styles/scss/lib/bootstrap/_variables.scss -text
 core/resources/styles/scss/lib/ext3/_all.scss -text
 core/resources/styles/scss/lib/ext4/_ext4.scss -text
 core/resources/styles/scss/lib/ext4/_overrides.scss -text

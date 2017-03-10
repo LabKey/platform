@@ -588,7 +588,7 @@ div.x4-editor {
   padding-left: 20px;
   white-space: nowrap;
   color: #000;
-  font: normal 11px tahoma, arial, verdana, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
   border: 1px solid;
   border-color: #ddd #bbb #bbb #ddd;
   background-color: #fff;
@@ -1777,7 +1777,7 @@ svg, vml {
   border-color: #a3bad9;
   background-color: #eeeeee;
   color: #222222;
-  font: normal 11px tahoma, arial, verdana, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
 }
 
 /* line 41, ../../../ext-theme-neutral/sass/src/LoadMask.scss */
@@ -1788,53 +1788,6 @@ svg, vml {
   background-position: 0 center;
 }
 
-/**
- * Creates a visual theme for an Ext.ProgressBar
- *
- * @param {string} $ui-label
- * The name of the UI being created. Can not included spaces or special punctuation
- * (used in CSS class names).
- *
- * @param {color} [$ui-border-color=$progress-border-color]
- * The border-color of the ProgressBar
- *
- * @param {color} [$ui-background-color=$progress-background-color]
- * The background-color of the ProgressBar
- *
- * @param {color} [$ui-bar-background-color=$progress-bar-background-color]
- * The background-color of the ProgressBar's moving element
- *
- * @param {string/list} [$ui-bar-background-gradient=$progress-bar-background-gradient]
- * The background-gradient of the ProgressBar's moving element. Can be either the name of
- * a predefined gradient or a list of color stops. Used as the `$type` parameter for
- * {@link Global_CSS#background-gradient}.
- *
- * @param {color} [$ui-color-front=$progress-text-color-front]
- * The color of the ProgressBar's text when in front of the ProgressBar's moving element
- *
- * @param {color} [$ui-color-back=$progress-text-color-back]
- * The color of the ProgressBar's text when the ProgressBar's 'moving element is not under it
- *
- * @param {number} [$ui-height=$progress-height]
- * The height of the ProgressBar
- *
- * @param {number} [$ui-border-width=$progress-border-width]
- * The border-width of the ProgressBar
- *
- * @param {number} [$ui-border-radius=$progress-border-radius]
- * The border-radius of the ProgressBar
- *
- * @param {string} [$ui-text-text-align=$progress-text-text-align]
- * The text-align of the ProgressBar's text
- *
- * @param {number} [$ui-text-font-size=$progress-text-font-size]
- * The font-size of the ProgressBar's text
- *
- * @param {string} [$ui-text-font-weight=$progress-text-font-weight]
- * The font-weight of the ProgressBar's text
- *
- * @member Ext.ProgressBar
- */
 /* line 67, ../../../ext-theme-neutral/sass/src/ProgressBar.scss */
 .x4-progress-default {
   background-color: #e0e8f3;
@@ -1883,185 +1836,6 @@ svg, vml {
   content: "x-slicer:bg:url('#{$ext4-images-dir}/progress/progress-default-bg.gif')";
 }
 
-/**
- * Creates a visual theme for a Button
- *
- * @param {string} $ui
- * The name of the UI being created. Can not included spaces or special punctuation
- * (used in CSS class names).
- *
- * @param {number} [$border-radius=0px]
- * The border-radius of the button
- *
- * @param {number} [$border-width=0px]
- * The border-width of the button
- *
- * @param {color} $border-color
- * The border-color of the button
- *
- * @param {color} $border-color-over
- * The border-color of the button when the cursor is over the button
- *
- * @param {color} $border-color-focus
- * The border-color of the button when focused
- *
- * @param {color} $border-color-pressed
- * The border-color of the button when pressed
- *
- * @param {color} $border-color-disabled
- * The border-color of the button when disabled
- *
- * @param {number} $padding
- * The amount of padding inside the border of the button on all sides
- *
- * @param {number} $text-padding
- * The amount of horizontal space to add to the left and right of the button text
- *
- * @param {color} $background-color
- * The background-color of the button
- *
- * @param {color} $background-color-over
- * The background-color of the button when the cursor is over the button
- *
- * @param {color} $background-color-focus
- * The background-color of the button when focused
- *
- * @param {color} $background-color-pressed
- * The background-color of the button when pressed
- *
- * @param {color} $background-color-disabled
- * The background-color of the button when disabled
- *
- * @param {string/list} $background-gradient
- * The background-gradient for the button.  Can be either the name of a predefined gradient
- * or a list of color stops. Used as the `$type` parameter for {@link Global_CSS#background-gradient}.
- *
- * @param {string} $background-gradient-over
- * The background-gradient to use when the cursor is over the button. Can be either the
- * name of a predefined gradient or a list of color stops. Used as the `$type` parameter
- * for {@link Global_CSS#background-gradient}.
- *
- * @param {string} $background-gradient-focus
- * The background-gradient to use when the the button is focused. Can be either the name
- * of a predefined gradient or a list of color stops. Used as the `$type` parameter for
- * {@link Global_CSS#background-gradient}.
- *
- * @param {string} $background-gradient-pressed
- * The background-gradient to use when the the button is pressed. Can be either the name
- * of a predefined gradient or a list of color stops. Used as the `$type` parameter for
- * {@link Global_CSS#background-gradient}.
- *
- * @param {string} $background-gradient-disabled
- * The background-gradient to use when the the button is disabled. Can be either the name
- * of a predefined gradient or a list of color stops. Used as the `$type` parameter for
- * {@link Global_CSS#background-gradient}.
- *
- * @param {color} $color
- * The text color of the button
- *
- * @param {color} $color-over
- * The text color of the button when the cursor is over the button
- *
- * @param {color} $color-focus
- * The text color of the button when the button is focused
- *
- * @param {color} $color-pressed
- * The text color of the button when the button is pressed
- *
- * @param {color} $color-disabled
- * The text color of the button when the button is disabled
- *
- * @param {number} $font-size
- * The font-size of the button
- *
- * @param {number} $font-size-over
- * The font-size of the button when the cursor is over the button
- *
- * @param {number} $font-size-focus
- * The font-size of the button when the button is focused
- *
- * @param {number} $font-size-pressed
- * The font-size of the button when the button is pressed
- *
- * @param {number} $font-size-disabled
- * The font-size of the button when the button is disabled
- *
- * @param {string} $font-weight
- * The font-weight of the button
- *
- * @param {string} $font-weight-over
- * The font-weight of the button when the cursor is over the button
- *
- * @param {string} $font-weight-focus
- * The font-weight of the button when the button is focused
- *
- * @param {string} $font-weight-pressed
- * The font-weight of the button when the button is pressed
- *
- * @param {string} $font-weight-disabled
- * The font-weight of the button when the button is disabled
- *
- * @param {string} $font-family
- * The font-family of the button
- *
- * @param {string} $font-family-over
- * The font-family of the button when the cursor is over the button
- *
- * @param {string} $font-family-focus
- * The font-family of the button when the button is focused
- *
- * @param {string} $font-family-pressed
- * The font-family of the button when the button is pressed
- *
- * @param {string} $font-family-disabled
- * The font-family of the button when the button is disabled
- *
- * @param {number} $icon-size
- * The size of the button icon
- *
- * @param {color} $glyph-color
- * The color of the button's {@link #glyph} icon
- *
- * @param {number} [$glyph-opacity=1]
- * The opacity of the button's {@link #glyph} icon
- *
- * @param {number} $arrow-width
- * The width of the button's {@link #cfg-menu} arrow
- *
- * @param {number} $arrow-height
- * The height of the button's {@link #cfg-menu} arrow
- *
- * @param {number} $split-width
- * The width of a {@link Ext.button.Split Split Button}'s arrow
- *
- * @param {number} $split-height
- * The height of a {@link Ext.button.Split Split Button}'s arrow
- *
- * @param {boolean} [$include-ui-menu-arrows=$button-include-ui-menu-arrows]
- * True to include the UI name in the file name of the {@link #cfg-menu}
- * arrow icon. Set this to false to share the same arrow bewteen multiple UIs.
- *
- * @param {boolean} [$include-ui-split-arrows=$button-include-ui-split-arrows]
- * True to include the UI name in the file name of the {@link Ext.button.Split Split Button}'s
- * arrow icon. Set this to false to share the same arrow bewteen multiple UIs.
- *
- * @param {boolean} [$include-split-noline-arrows=false]
- * True to add a "-noline" suffix to the file name of the {@link Ext.button.Split Split Button}'s
- * arrow icon.  Used for hiding the split line when toolbar buttons are in their default
- * state.
- *
- * @param {boolean} [$include-split-over-arrows=$button-include-split-over-arrows]
- * True to use a separate icon for {@link Ext.button.Split Split Button}s when the cursor
- * is over the button.  The over icon file name will have a "-o" suffix
- *
- * @param {number} [$opacity-disabled=1]
- * The opacity of the button when it is disabled
- *
- * @param {number} [$inner-opacity-disabled=1]
- * The opacity of the button's text and icon elements when when the button is disabled
- *
- * @member Ext.button.Button
- */
 /* line 246, ../../../ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-small {
   border-color: #d1d1d1;
@@ -2226,7 +2000,7 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
 .x4-btn-default-small .x4-btn-inner {
   font-size: 11px;
   font-weight: normal;
-  font-family: tahoma, arial, verdana, sans-serif;
+  font-family: $lk-font-family-sans-serif;
   color: #333333;
   padding: 0 4px;
 }
@@ -2751,7 +2525,7 @@ body.x4-nbr .x4-btn-default-medium-frameInfo {
 .x4-btn-default-medium .x4-btn-inner {
   font-size: 11px;
   font-weight: normal;
-  font-family: tahoma, arial, verdana, sans-serif;
+  font-family: $lk-font-family-sans-serif;
   color: #333333;
   padding: 0 3px;
 }
@@ -3228,7 +3002,7 @@ body.x4-nbr .x4-btn-default-large-frameInfo {
 .x4-btn-default-large .x4-btn-inner {
   font-size: 11px;
   font-weight: normal;
-  font-family: tahoma, arial, verdana, sans-serif;
+  font-family: $lk-font-family-sans-serif;
   color: #333333;
   padding: 0 3px;
 }
@@ -3679,7 +3453,7 @@ body.x4-nbr .x4-btn-default-toolbar-small-frameInfo {
 .x4-btn-default-toolbar-small .x4-btn-inner {
   font-size: 11px;
   font-weight: normal;
-  font-family: tahoma, arial, verdana, sans-serif;
+  font-family: $lk-font-family-sans-serif;
   color: #333333;
   padding: 0 4px;
 }
@@ -4122,7 +3896,7 @@ body.x4-nbr .x4-btn-default-toolbar-medium-frameInfo {
 .x4-btn-default-toolbar-medium .x4-btn-inner {
   font-size: 11px;
   font-weight: normal;
-  font-family: tahoma, arial, verdana, sans-serif;
+  font-family: $lk-font-family-sans-serif;
   color: #333333;
   padding: 0 3px;
 }
@@ -4565,7 +4339,7 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 .x4-btn-default-toolbar-large .x4-btn-inner {
   font-size: 11px;
   font-weight: normal;
-  font-family: tahoma, arial, verdana, sans-serif;
+  font-family: $lk-font-family-sans-serif;
   color: #333333;
   padding: 0 3px;
 }
@@ -4926,37 +4700,6 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
   text-align: inherit;
 }
 
-/**
- * Creates a visual theme for a Toolbar.
- * @param {String} $ui
- * The name of the UI
- *
- * @param {color} [$background-color=$toolbar-background-color]
- * The background color of the toolbar
- *
- * @param {string/list} [$background-gradient=$toolbar-background-gradient]
- * The background gradient of the toolbar
- *
- * @param {color} [$border-color=$toolbar-border-color]
- * The border color of the toolbar
- *
- * @param {number} [$border-width=$toolbar-border-width]
- * The border-width of the toolbar
- *
- * @param {string} [$scroller-cursor=$toolbar-scroller-cursor]
- * The cursor of Toolbar scrollers
- *
- * @param {string} [$scroller-cursor-disabled=$toolbar-scroller-cursor-disabled]
- * The cursor of disabled Toolbar scrollers
- *
- * @param {number} [$scroller-opacity-disabled=$toolbar-scroller-opacity-disabled]
- * The opacity of disabled Toolbar scrollers
- *
- * @param {string} [$tool-background-image=$toolbar-tool-background-image]
- * The sprite to use for {@link Ext.panel.Tool Tools} on a Toolbar
- *
- * @member Ext.toolbar.Toolbar
- */
 /* line 94, ../../../ext-theme-neutral/sass/src/toolbar/Toolbar.scss */
 .x4-toolbar {
   font-size: 11px;
@@ -4974,7 +4717,7 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
   margin: 0 6px 0 4px;
   color: #4c4c4c;
   line-height: 16px;
-  font-family: tahoma, arial, verdana, sans-serif;
+  font-family: $lk-font-family-sans-serif;
   font-size: 11px;
   font-weight: normal;
 }
@@ -5128,149 +4871,6 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
   white-space: nowrap;
 }
 
-/**
- * Creates a visual theme for a Panel
- *
- * @param {string} $ui-label
- * The name of the UI being created. Can not included spaces or special punctuation
- * (used in CSS class names).
- *
- * @param {color} [$ui-border-color=$panel-border-color]
- * The border-color of the Panel
- *
- * @param {number} [$ui-border-radius=$panel-border-radius]
- * The border-radius of the Panel
- *
- * @param {number} [$ui-border-width=$panel-border-width]
- * The border-width of the Panel
- *
- * @param {number} [$ui-padding=$panel-padding]
- * The padding of the Panel
- *
- * @param {color} [$ui-header-color=$panel-header-color]
- * The text color of the Header
- *
- * @param {string} [$ui-header-font-family=$panel-header-font-family]
- * The font-family of the Header
- *
- * @param {number} [$ui-header-font-size=$panel-header-font-size]
- * The font-size of the Header
- *
- * @param {string} [$ui-header-font-weight=$panel-header-font-weight]
- * The font-weight of the Header
- *
- * @param {number} [$ui-header-line-height=$panel-header-line-height]
- * The line-height of the Header
- *
- * @param {color} [$ui-header-border-color=$panel-header-border-color]
- * The border-color of the Header
- *
- * @param {number} [$ui-header-border-width=$panel-header-border-width]
- * The border-width of the Header
- *
- * @param {string} [$ui-header-border-style=$panel-header-border-style]
- * The border-style of the Header
- *
- * @param {color} [$ui-header-background-color=$panel-header-background-color]
- * The background-color of the Header
- *
- * @param {string/list} [$ui-header-background-gradient=$panel-header-background-gradient]
- * The background-gradient of the Header. Can be either the name of a predefined gradient
- * or a list of color stops. Used as the `$type` parameter for {@link Global_CSS#background-gradient}.
- *
- * @param {color} [$ui-header-inner-border-color=$panel-header-inner-border-color]
- * The inner border-color of the Header
- *
- * @param {number} [$ui-header-inner-border-width=$panel-header-inner-border-width]
- * The inner border-width of the Header
- *
- * @param {number/list} [$ui-header-text-padding=$panel-header-text-padding]
- * The padding of the Header's text element
- *
- * @param {string} [$ui-header-text-transform=$panel-header-text-transform]
- * The text-transform of the Header
- *
- * @param {number/list} [$ui-header-padding=$panel-header-padding]
- * The padding of the Header
- *
- * @param {number} [$ui-header-icon-width=$panel-header-icon-width]
- * The width of the Header icon
- *
- * @param {number} [$ui-header-icon-height=$panel-header-icon-height]
- * The height of the Header icon
- *
- * @param {number} [$ui-header-icon-spacing=$panel-header-icon-spacing]
- * The space between the Header icon and text
- *
- * @param {list} [$ui-header-icon-background-position=$panel-header-icon-background-position]
- * The background-position of the Header icon
- *
- * @param {color} [$ui-header-glyph-color=$panel-header-glyph-color]
- * The color of the Header glyph icon
- *
- * @param {number} [$ui-header-glyph-opacity=$panel-header-glyph-opacity]
- * The opacity of the Header glyph icon
- *
- * @param {number} [$ui-tool-spacing=$panel-tool-spacing]
- * The space between the Panel {@link Ext.panel.Tool Tools}
- *
- * @param {string} [$ui-tool-background-image=$panel-tool-background-image]
- * The background sprite to use for Panel {@link Ext.panel.Tool Tools}
- *
- * @param {color} [$ui-body-color=$panel-body-color]
- * The color of text inside the Panel body
- *
- * @param {color} [$ui-body-border-color=$panel-body-border-color]
- * The border-color of the Panel body
- *
- * @param {number} [$ui-body-border-width=$panel-body-border-width]
- * The border-width of the Panel body
- *
- * @param {string} [$ui-body-border-style=$panel-body-border-style]
- * The border-style of the Panel body
- *
- * @param {color} [$ui-body-background-color=$panel-body-background-color]
- * The background-color of the Panel body
- *
- * @param {number} [$ui-body-font-size=$panel-body-font-size]
- * The font-size of the Panel body
- *
- * @param {string} [$ui-body-font-weight=$panel-body-font-weight]
- * The font-weight of the Panel body
- *
- * @param {string} [$ui-background-stretch-top=$panel-background-stretch-top]
- * The direction to strech the background-gradient of top docked Headers when slicing images
- * for IE using Sencha Cmd
- *
- * @param {string} [$ui-background-stretch-bottom=$panel-background-stretch-bottom]
- * The direction to strech the background-gradient of bottom docked Headers when slicing images
- * for IE using Sencha Cmd
- *
- * @param {string} [$ui-background-stretch-right=$panel-background-stretch-right]
- * The direction to strech the background-gradient of right docked Headers when slicing images
- * for IE using Sencha Cmd
- *
- * @param {string} [$ui-background-stretch-left=$panel-background-stretch-left]
- * The direction to strech the background-gradient of left docked Headers when slicing images
- * for IE using Sencha Cmd
- *
- * @param {boolean} [$ui-include-border-management-rules=$panel-include-border-management-rules]
- * True to include neptune style border management rules.
- *
- * @param {color} [$ui-wrap-border-color=$panel-wrap-border-color]
- * The color to apply to the border that wraps the body and docked items in a framed
- * panel. The presence of the wrap border in a framed panel is controlled by the
- * {@link #border} config. Only applicable when `$ui-include-border-management-rules` is
- * `true`.
- *
- * @param {color} [$ui-wrap-border-width=$panel-wrap-border-width]
- * The width to apply to the border that wraps the body and docked items in a framed
- * panel. The presence of the wrap border in a framed panel is controlled by the
- * {@link #border} config. Only applicable when `$ui-include-border-management-rules` is
- * `true`.
- *
- * @member Ext.panel.Panel
- */
 /* line 736, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-ghost {
   filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=65);
@@ -5313,8 +4913,7 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 .x4-panel-header-text-container-default {
   color: $panel-header-color;
   font-size: 11px;
-  font-weight: bold;
-  font-family: tahoma, arial, verdana, sans-serif;
+  font-family: $lk-font-family-sans-serif-bold;
   line-height: 15px;
   padding: 0 2px 1px;
   text-transform: none;
@@ -5564,8 +5163,7 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 .x4-panel-header-text-container-default-framed {
   color: $panel-header-color;
   font-size: 11px;
-  font-weight: bold;
-  font-family: tahoma, arial, verdana, sans-serif;
+  font-family: $lk-font-family-sans-serif-bold;
   line-height: 15px;
   padding: 0 2px 1px;
   text-transform: none;
@@ -7162,70 +6760,6 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-left-frameInfo {
   opacity: 0;
 }
 
-/**
- * Creates a visual theme for a Ext.tip.Tip
- *
- * @param {string} $ui-label
- * The name of the UI being created. Can not included spaces or special punctuation
- * (used in CSS class names).
- *
- * @param {color} [$ui-border-color=$tip-border-color]
- * The border-color of the Tip
- *
- * @param {number} [$ui-border-width=$tip-border-width]
- * The border-width of the Tip
- *
- * @param {number} [$ui-border-radius=$tip-border-radius]
- * The border-radius of the Tip
- *
- * @param {color} [$ui-background-color=$tip-background-color]
- * The background-color of the Tip
- *
- * @param {string/list} [$ui-background-gradient=$tip-background-gradient]
- * The background-gradient of the Tip. Can be either the name of a predefined gradient or a
- * list of color stops. Used as the `$type` parameter for {@link Global_CSS#background-gradient}.
- *
- * @param {number} [$ui-tool-spacing=$tip-tool-spacing]
- * The space between {@link Ext.panel.Tool Tools} in the header
- *
- * @param {string} [$ui-tool-background-image=$tip-tool-background-image]
- * The sprite to use for the header {@link Ext.panel.Tool Tools}
- *
- * @param {number/list} [$ui-header-body-padding=$tip-header-body-padding]
- * The padding of the Tip header's body element
- *
- * @param {color} [$ui-header-color=$tip-header-color]
- * The text color of the Tip header
- *
- * @param {number} [$ui-header-font-size=$tip-header-font-size]
- * The font-size of the Tip header
- *
- * @param {string} [$ui-header-font-weight=$tip-header-font-weight]
- * The font-weight of the Tip header
- *
- * @param {number/list} [$ui-body-padding=$tip-body-padding]
- * The padding of the Tip body
- *
- * @param {color} [$ui-body-color=$tip-body-color]
- * The text color of the Tip body
- *
- * @param {number} [$ui-body-font-size=$tip-body-font-size]
- * The font-size of the Tip body
- *
- * @param {string} [$ui-body-font-weight=$tip-body-font-weight]
- * The font-weight of the Tip body
- *
- * @param {color} [$ui-body-link-color=$tip-body-link-color]
- * The text color of any anchor tags inside the Tip body
- *
- * @param {number} [$ui-inner-border-width=0]
- * The inner border-width of the Tip
- *
- * @param {color} [$ui-inner-border-color=#fff]
- * The inner border-color of the Tip
- *
- * @member Ext.tip.Tip
- */
 /* line 167, ../../../ext-theme-neutral/sass/src/tip/Tip.scss */
 .x4-tip-anchor {
   position: absolute;
@@ -7670,51 +7204,6 @@ body.x4-nbr .x4-tip-form-invalid-frameInfo {
   margin-bottom: 0;
 }
 
-/**
- * Creates a visual theme for a ButtonGroup.
- *
- * @param {string} $ui-label
- * The name of the UI being created. Can not included spaces or special punctuation
- * (used in CSS class names).
- *
- * @param {color} [$ui-background-color=$btn-group-background-color]
- * The background-color of the button group
- *
- * @param {color} [$ui-border-color=$btn-group-border-color]
- * The border-color of the button group
- *
- * @param {number} [$ui-border-width=$btn-group-border-width]
- * The border-width of the button group
- *
- * @param {number} [$ui-border-radius=$btn-group-border-radius]
- * The border-radius of the button group
- *
- * @param {color} [$ui-inner-border-color=$btn-group-inner-border-color]
- * The inner border-color of the button group
- *
- * @param {color} [$ui-header-background-color=$btn-group-header-background-color]
- * The background-color of the header
- *
- * @param {string} [$ui-header-font=$btn-group-header-font]
- * The font of the header
- *
- * @param {color} [$ui-header-color=$btn-group-header-color]
- * The text color of the header
- *
- * @param {number} [$ui-header-line-height=$btn-group-header-line-height]
- * The line-height of the header
- *
- * @param {number} [$ui-header-padding=$btn-group-header-padding]
- * The padding of the header
- *
- * @param {number} [$ui-body-padding=$btn-group-padding]
- * The padding of the body element
- *
- * @param {string} [$ui-tool-background-image=$btn-group-tool-background-image]
- * Sprite image to use for header {@link Ext.panel.Tool Tools}
- *
- * @member Ext.container.ButtonGroup
- */
 /* line 89, ../../../ext-theme-neutral/sass/src/container/ButtonGroup.scss */
 .x4-btn-group-default {
   border-color: #b7c8d7;
@@ -7743,7 +7232,7 @@ body.x4-nbr .x4-tip-form-invalid-frameInfo {
 
 /* line 120, ../../../ext-theme-neutral/sass/src/container/ButtonGroup.scss */
 .x4-btn-group-header-text-container-default {
-  font: normal 11px tahoma, arial, verdana, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
   line-height: 15px;
   color: #3e6aaa;
 }
@@ -8067,7 +7556,7 @@ body.x4-nbr .x4-btn-group-default-framed-notitle-frameInfo {
 
 /* line 120, ../../../ext-theme-neutral/sass/src/container/ButtonGroup.scss */
 .x4-btn-group-header-text-container-default-framed {
-  font: normal 11px tahoma, arial, verdana, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
   line-height: 15px;
   color: #3e6aaa;
 }
@@ -8081,132 +7570,6 @@ body.x4-nbr .x4-btn-group-default-framed-notitle-frameInfo {
   border-spacing: 0;
 }
 
-/**
- * Creates a visual theme for a Window
- *
- * @param {string} $ui-label
- * The name of the UI being created. Can not included spaces or special punctuation
- * (used in CSS class names).
- *
- * @param {number} [$ui-padding=$window-padding]
- * The padding of the Window
- *
- * @param {number} [$ui-border-radius=$window-border-radius]
- * The border-radius of the Window
- *
- * @param {color} [$ui-border-color=$window-border-color]
- * The border-color of the Window
- *
- * @param {number} [$ui-border-width=$window-border-width]
- * The border-width of the Window
- *
- * @param {color} [$ui-inner-border-color=$window-inner-border-color]
- * The inner border-color of the Window
- *
- * @param {number} [$ui-inner-border-width=$window-inner-border-width]
- * The inner border-width of the Window
- *
- * @param {color} [$ui-header-color=$window-header-color]
- * The text color of the Header
- *
- * @param {color} [$ui-header-background-color=$window-header-background-color]
- * The background-color of the Header
- *
- * @param {number/list} [$ui-header-padding=$window-header-padding]
- * The padding of the Header
- *
- * @param {string} [$ui-header-font-family=$window-header-font-family]
- * The font-family of the Header
- *
- * @param {number} [$ui-header-font-size=$window-header-font-size]
- * The font-size of the Header
- *
- * @param {string} [$ui-header-font-weight=$window-header-font-weight]
- * The font-weight of the Header
- *
- * @param {number} [$ui-header-line-height=$window-header-line-height]
- * The line-height of the Header
- *
- * @param {number/list} [$ui-header-text-padding=$window-header-text-padding]
- * The padding of the Header's text element
- *
- * @param {string} [$ui-header-text-transform=$window-header-text-transform]
- * The text-transform of the Header
- *
- * @param {color} [$ui-header-border-color=$ui-border-color]
- * The border-color of the Header
- *
- * @param {number} [$ui-header-border-width=$window-header-border-width]
- * The border-width of the Header
- *
- * @param {color} [$ui-header-inner-border-color=$window-header-inner-border-color]
- * The inner border-color of the Header
- *
- * @param {number} [$ui-header-inner-border-width=$window-header-inner-border-width]
- * The inner border-width of the Header
- *
- * @param {number} [$ui-header-icon-width=$window-header-icon-width]
- * The width of the Header icon
- *
- * @param {number} [$ui-header-icon-height=$window-header-icon-height]
- * The height of the Header icon
- *
- * @param {number} [$ui-header-icon-spacing=$window-header-icon-spacing]
- * The space between the Header icon and text
- *
- * @param {list} [$ui-header-icon-background-position=$window-header-icon-background-position]
- * The background-position of the Header icon
- *
- * @param {color} [$ui-header-glyph-color=$window-header-glyph-color]
- * The color of the Header glyph icon
- *
- * @param {number} [$ui-header-glyph-opacity=$window-header-glyph-opacity]
- * The opacity of the Header glyph icon
- *
- * @param {number} [$ui-tool-spacing=$window-tool-spacing]
- * The space between the {@link Ext.panel.Tool Tools}
- *
- * @param {string} [$ui-tool-background-image=$window-tool-background-image]
- * The background sprite to use for {@link Ext.panel.Tool Tools}
- *
- * @param {color} [$ui-body-border-color=$window-body-border-color]
- * The border-color of the Window body
- *
- * @param {color} [$ui-body-background-color=$window-body-background-color]
- * The background-color of the Window body
- *
- * @param {number} [$ui-body-border-width=$window-body-border-width]
- * The border-width of the Window body
- *
- * @param {string} [$ui-body-border-style=$window-body-border-style]
- * The border-style of the Window body
- *
- * @param {color} [$ui-body-color=$window-body-color]
- * The color of text inside the Window body
- *
- * @param {color} [$ui-background-color=$window-background-color]
- * The background-color of the Window
- *
- * @param {boolean} [$ui-force-header-border=$window-force-header-border]
- * True to force the window header to have a border on the side facing
- * the window body.  Overrides dock layout's border management border
- * removal rules.
- *
- * @param {boolean} [$ui-include-border-management-rules=$window-include-border-management-rules]
- * True to include neptune style border management rules.
- *
- * @param {color} [$ui-wrap-border-color=$window-wrap-border-color]
- * The color to apply to the border that wraps the body and docked items. The presence of
- * the wrap border is controlled by the {@link #border} config. Only applicable when
- * `$ui-include-border-management-rules` is `true`.
- *
- * @param {color} [$ui-wrap-border-width=$window-wrap-border-width]
- * The width to apply to the border that wraps the body and docked items. The presence of
- * the wrap border is controlled by the {@link #border} config. Only applicable when
- * `$ui-include-border-management-rules` is `true`.
- *
- * @member Ext.window.Window
- */
 /* line 545, ../../../ext-theme-neutral/sass/src/window/Window.scss */
 .x4-window-ghost {
   filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=65);
@@ -8408,9 +7771,8 @@ body.x4-nbr .x4-window-default-frameInfo {
 /* line 233, ../../../ext-theme-neutral/sass/src/window/Window.scss */
 .x4-window-header-text-container-default {
   color: $window-base-color;
-  font-weight: bold;
   line-height: 15px;
-  font-family: tahoma, arial, verdana, sans-serif;
+  font-family: $lk-font-family-sans-serif-bold;
   font-size: 11px;
   padding: 0 2px 1px;
   text-transform: none;
@@ -9671,7 +9033,7 @@ body.x4-nbr .x4-window-header-default-collapsed-left-frameInfo {
 .x4-form-invalid-under {
   padding: 2px 2px 2px 20px;
   color: #c0272b;
-  font: normal 11px tahoma, arial, verdana, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
   line-height: 16px;
   background: no-repeat 0 2px;
   background-image: url('#{$ext4-images-dir}/form/exclamation.gif');
@@ -9694,12 +9056,12 @@ div.x4-lbl-top-err-icon {
 /* line 26, ../../../ext-theme-neutral/sass/src/form/Labelable.scss */
 .x4-form-item-label {
   color: black;
-  font: normal 12px/14px tahoma, arial, verdana, sans-serif;
+  font: normal 12px/14px $lk-font-family-sans-serif;
   margin-top: 4px;
 }
 /* line 31, ../../../ext-theme-neutral/sass/src/form/Labelable.scss */
 .x4-toolbar-item .x4-form-item-label {
-  font: normal 11px/13px tahoma, arial, verdana, sans-serif;
+  font: normal 11px/13px $lk-font-family-sans-serif;
   margin-top: 4px;
 }
 
@@ -9719,7 +9081,7 @@ div.x4-lbl-top-err-icon {
 /* line 6, ../../../ext-theme-neutral/sass/src/form/field/Base.scss */
 .x4-form-item,
 .x4-form-field {
-  font: normal 12px tahoma, arial, verdana, sans-serif;
+  font: normal $lk-font-size-small $lk-font-family-sans-serif;
 }
 
 /* line 21, ../../../ext-theme-neutral/sass/src/form/field/Base.scss */
@@ -9813,14 +9175,14 @@ textarea.x4-form-empty-field {
 
 /* line 11, ../../../ext-theme-neutral/sass/src/form/field/Display.scss */
 .x4-form-display-field {
-  font: normal 12px/14px tahoma, arial, verdana, sans-serif;
+  font: normal 12px/14px $lk-font-family-sans-serif;
   color: black;
   margin-top: 4px;
 }
 /* line 17, ../../../ext-theme-neutral/sass/src/form/field/Display.scss */
 .x4-toolbar-item .x4-form-display-field {
   margin-top: 4px;
-  font: normal 11px/13px tahoma, arial, verdana, sans-serif;
+  font: normal 11px/13px $lk-font-family-sans-serif;
 }
 
 /* line 1, ../../../ext-theme-neutral/sass/src/window/MessageBox.scss */
@@ -9903,11 +9265,11 @@ textarea.x4-form-empty-field {
 /* line 40, ../../../ext-theme-neutral/sass/src/form/field/Checkbox.scss */
 .x4-form-cb-label {
   margin-top: 4px;
-  font: normal 12px/14px tahoma, arial, verdana, sans-serif;
+  font: normal 12px/14px $lk-font-family-sans-serif;
 }
 /* line 43, ../../../ext-theme-neutral/sass/src/form/field/Checkbox.scss */
 .x4-toolbar-item .x4-form-cb-label {
-  font: normal 11px/13px tahoma, arial, verdana, sans-serif;
+  font: normal 11px/13px $lk-font-family-sans-serif;
   margin-top: 4px;
 }
 
@@ -9991,7 +9353,7 @@ textarea.x4-form-empty-field {
 
 /* line 39, ../../../ext-theme-neutral/sass/src/form/FieldSet.scss */
 .x4-fieldset-header-text {
-  font: 11px/14px bold tahoma, arial, verdana, sans-serif;
+  font: 11px/14px $lk-font-family-sans-serif-bold;
   color: #15428b;
   padding: 1px 0;
 }
@@ -10426,7 +9788,7 @@ a.x4-datepicker-arrow:hover {
 .x4-datepicker-column-header {
   width: 25px;
   color: #233d6d;
-  font: normal 10px tahoma, arial, verdana, sans-serif;
+  font: normal 10px $lk-font-family-sans-serif;
   text-align: right;
   border-width: 0 0 1px;
   border-style: solid;
@@ -10457,7 +9819,7 @@ a.x4-datepicker-arrow:hover {
 /* line 128, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
 .x4-datepicker-date {
   padding: 0 4px 0 0;
-  font: normal 11px tahoma, arial, verdana, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
   color: black;
   cursor: pointer;
   line-height: 18px;
@@ -10559,7 +9921,7 @@ a.x4-datepicker-date:hover {
 /* line 233, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
 .x4-monthpicker-item {
   margin: 5px 0 4px;
-  font: normal 11px tahoma, arial, verdana, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
   text-align: center;
 }
 
@@ -10851,7 +10213,7 @@ a.x4-color-picker-item:hover {
 
 /* line 100, ../../../ext-theme-neutral/sass/src/form/field/HtmlEditor.scss */
 .x4-html-editor-wrap textarea {
-  font: normal 12px tahoma, arial, verdana, sans-serif;
+  font: normal 12px $lk-font-family-sans-serif;
   background-color: white;
   resize: none;
 }
@@ -10869,13 +10231,13 @@ a.x4-color-picker-item:hover {
   padding: 10px;
   color: gray;
   background-color: white;
-  font: normal 11px tahoma, arial, verdana, sans-serif;
+  font: normal 11px $lk-font-family-sans-serif;
 }
 
 /* line 15, ../../../ext-theme-neutral/sass/src/panel/Table.scss */
 .x4-grid-cell {
   color: null;
-  font: normal 11px/13px tahoma, arial, verdana, sans-serif;
+  font: normal 11px/13px $lk-font-family-sans-serif;
   background-color: white;
   border-color: #ededed #d0d0d0 #ededed #d0d0d0;
   border-style: solid;
@@ -11144,7 +10506,7 @@ a.x4-color-picker-item:hover {
 .x4-column-header {
   border-right: 1px solid #c5c5c5;
   color: black;
-  font: normal 11px/13px tahoma, arial, verdana, sans-serif;
+  font: normal 11px/13px $lk-font-family-sans-serif;
   background-image: none;
   background-color: #c5c5c5;
   background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #f9f9f9), color-stop(100%, #e3e4e6));
@@ -11334,7 +10696,7 @@ a.x4-color-picker-item:hover {
 /* line 30, ../../../ext-theme-neutral/sass/src/grid/feature/Grouping.scss */
 .x4-grid-group-title {
   color: #3764a0;
-  font: bold 11px/13px tahoma, arial, verdana, sans-serif;
+  font: 11px/13px $lk-font-family-sans-serif-bold;
 }
 
 /* line 36, ../../../ext-theme-neutral/sass/src/grid/feature/Grouping.scss */
@@ -11359,7 +10721,7 @@ a.x4-color-picker-item:hover {
 
 /* line 1, ../../../ext-theme-neutral/sass/src/grid/feature/RowBody.scss */
 .x4-grid-rowbody {
-  font: normal 11px/13px tahoma, arial, verdana, sans-serif;
+  font: normal 11px/13px $lk-font-family-sans-serif;
   padding: 5px 6px 5px 6px;
 }
 /* line 6, ../../../ext-theme-neutral/sass/src/grid/feature/RowBody.scss */
@@ -11397,7 +10759,7 @@ a.x4-color-picker-item:hover {
   border-color: #ededed #d0d0d0 #ededed #d0d0d0;
   background-color: transparent !important;
   border-top-width: 0;
-  font: normal 11px/13px tahoma, arial, verdana, sans-serif;
+  font: normal 11px/13px $lk-font-family-sans-serif;
 }
 
 /* line 26, ../../../ext-theme-neutral/sass/src/grid/feature/Summary.scss */
@@ -11429,7 +10791,7 @@ a.x4-color-picker-item:hover {
 
 /* line 4, ../../../ext-theme-neutral/sass/src/grid/plugin/Editing.scss */
 .x4-grid-editor .x4-form-text {
-  font: normal 11px/15px tahoma, arial, verdana, sans-serif;
+  font: normal 11px/15px $lk-font-family-sans-serif;
   padding: 1px 5px 2px 5px;
   height: 20px;
 }
@@ -11464,7 +10826,7 @@ a.x4-color-picker-item:hover {
 }
 /* line 62, ../../../ext-theme-neutral/sass/src/grid/plugin/Editing.scss */
 .x4-grid-editor .x4-form-display-field {
-  font: normal 11px/15px tahoma, arial, verdana, sans-serif;
+  font: normal 11px/15px $lk-font-family-sans-serif;
   padding: 2px 6px 3px 6px;
   text-overflow: ellipsis;
 }
@@ -11889,7 +11251,7 @@ body.x4-nbr .x4-grid-row-editor-buttons-default-top-frameInfo {
 .x4-accordion-hd .x4-panel-header-text-container {
   color: black;
   font-weight: normal;
-  font-family: tahoma, arial, verdana, sans-serif;
+  font-family: $lk-font-family-sans-serif;
   text-transform: none;
 }
 
@@ -12815,499 +12177,6 @@ body.x4-nbr .x4-grid-row-editor-buttons-default-top-frameInfo {
   background-image: url('#{$ext4-images-dir}//slider/slider-v-bg.png');
 }
 
-/**
- * Creates a visual theme for a Tab
- *
- * @param {string} $ui
- * The name of the UI being created. Can not included spaces or special punctuation
- * (used in CSS class names).
- *
- * @param {color} [$ui-background-color=$tab-base-color]
- * The background-color of Tabs
- *
- * @param {color} [$ui-background-color-over=$tab-base-color-over]
- * The background-color of hovered Tabs
- *
- * @param {color} [$ui-background-color-active=$tab-base-color-active]
- * The background-color of the active Tab
- *
- * @param {color} [$ui-background-color-disabled=$tab-base-color-disabled]
- * The background-color of disabled Tabs
- *
- * @param {list} [$ui-border-radius=$tab-border-radius]
- * The border-radius of Tabs
- *
- * @param {number} [$ui-border-width=$tab-border-width]
- * The border-width of Tabs
- *
- * @param {number/list} [$ui-margin=$tab-margin]
- * The border-width of Tabs
- *
- * @param {number/list} [$ui-padding=$tab-padding]
- * The padding of Tabs
- *
- * @param {number/list} [$ui-text-padding=$tab-text-padding]
- * The padding of the Tab's text element
- *
- * @param {color} [$ui-border-color=$tab-border-color]
- * The border-color of Tabs
- *
- * @param {color} [$ui-border-color-over=$tab-border-color-over]
- * The border-color of hovered Tabs
- *
- * @param {color} [$ui-border-color-active=$tab-border-color-active]
- * The border-color of the active Tab
- *
- * @param {color} [$ui-border-color-disabled=$tab-border-color-disabled]
- * The border-color of disabled Tabs
- *
- * @param {string} [$ui-cursor=$tab-cursor]
- * The Tab cursor
- *
- * @param {string} [$ui-cursor-disabled=$tab-cursor-disabled]
- * The cursor of disabled Tabs
- *
- * @param {number} [$ui-font-size=$tab-font-size]
- * The font-size of Tabs
- *
- * @param {number} [$ui-font-size-over=$tab-font-size-over]
- * The font-size of hovered Tabs
- *
- * @param {number} [$ui-font-size-active=$tab-font-size-active]
- * The font-size of the active Tab
- *
- * @param {number} [$ui-font-size-disabled=$tab-font-size-disabled]
- * The font-size of disabled Tabs
- *
- * @param {string} [$ui-font-weight=$tab-font-weight]
- * The font-weight of Tabs
- *
- * @param {string} [$ui-font-weight-over=$tab-font-weight-over]
- * The font-weight of hovered Tabs
- *
- * @param {string} [$ui-font-weight-active=$tab-font-weight-active]
- * The font-weight of the active Tab
- *
- * @param {string} [$ui-font-weight-disabled=$tab-font-weight-disabled]
- * The font-weight of disabled Tabs
- *
- * @param {string} [$ui-font-family=$tab-font-family]
- * The font-family of Tabs
- *
- * @param {string} [$ui-font-family-over=$tab-font-family-over]
- * The font-family of hovered Tabs
- *
- * @param {string} [$ui-font-family-active=$tab-font-family-active]
- * The font-family of the active Tab
- *
- * @param {string} [$ui-font-family-disabled=$tab-font-family-disabled]
- * The font-family of disabled Tabs
- *
- * @param {number} [$ui-line-height=$tab-line-height]
- * The line-height of Tabs
- *
- * @param {color} [$ui-color=$tab-color]
- * The text color of Tabs
- *
- * @param {color} [$ui-color-over=$tab-color-over]
- * The text color of hovered Tabs
- *
- * @param {color} [$ui-color-active=$tab-color-active]
- * The text color of the active Tab
- *
- * @param {color} [$ui-color-disabled=$tab-color-disabled]
- * The text color of disabled Tabs
- *
- * @param {string/list} [$ui-background-gradient=$tab-background-gradient]
- * The background-gradient for Tabs. Can be either the name of a predefined gradient
- * or a list of color stops. Used as the `$type` parameter for
- * {@link Global_CSS#background-gradient}.
- *
- * @param {string/list} [$ui-background-gradient-over=$tab-background-gradient-over]
- * The background-gradient for hovered Tabs. Can be either the name of a predefined gradient
- * or a list of color stops. Used as the `$type` parameter for
- * {@link Global_CSS#background-gradient}.
- *
- * @param {string/list} [$ui-background-gradient-active=$tab-background-gradient-active]
- * The background-gradient for the active Tab. Can be either the name of a predefined gradient
- * or a list of color stops. Used as the `$type` parameter for
- * {@link Global_CSS#background-gradient}.
- *
- * @param {string/list} [$ui-background-gradient-disabled=$tab-background-gradient-disabled]
- * The background-gradient for disabled Tabs. Can be either the name of a predefined gradient
- * or a list of color stops. Used as the `$type` parameter for
- * {@link Global_CSS#background-gradient}.
- *
- * @param {number} [$ui-inner-border-width=$tab-inner-border-width]
- * The inner border-width of Tabs
- *
- * @param {color} [$ui-inner-border-color=$tab-inner-border-color]
- * The inner border-color of Tabs
- *
- * @param {number} [$ui-icon-width=$tab-icon-width]
- * The width of the Tab close icon
- *
- * @param {number} [$ui-icon-height=$tab-icon-height]
- * The height of the Tab close icon
- *
- * @param {number} [$ui-icon-spacing=$tab-icon-spacing]
- * the space in between the text and the close button
- *
- * @param {list} [$ui-icon-background-position=$tab-icon-background-position]
- * The background-position of Tab icons
- *
- * @param {color} [$ui-glyph-color=$tab-glyph-color]
- * The color of Tab glyph icons
- *
- * @param {color} [$ui-glyph-color-over=$tab-glyph-color-over]
- * The color of a Tab glyph icon when the Tab is hovered
- *
- * @param {color} [$ui-glyph-color-active=$tab-glyph-color-active]
- * The color of a Tab glyph icon when the Tab is active
- *
- * @param {color} [$ui-glyph-color-disabled=$tab-glyph-color-disabled]
- * The color of a Tab glyph icon when the Tab is disabled
- *
- * @param {number} [$ui-glyph-opacity=$tab-glyph-opacity]
- * The opacity of a Tab glyph icon
- *
- * @param {number} [$ui-glyph-opacity-disabled=$tab-glyph-opacity-disabled]
- * The opacity of a Tab glyph icon when the Tab is disabled
- *
- * @param {number} [$ui-opacity-disabled=$tab-opacity-disabled]
- * opacity to apply to the tab's main element when the tab is disabled
- *
- * @param {number} [$ui-text-opacity-disabled=$tab-text-opacity-disabled]
- * opacity to apply to the tab's text element when the tab is disabled
- *
- * @param {number} [$ui-icon-opacity-disabled=$tab-icon-opacity-disabled]
- * opacity to apply to the tab's icon element when the tab is disabled
- *
- * @param {number} [$ui-closable-icon-width=$tab-closable-icon-width]
- * The width of the Tab close icon
- *
- * @param {number} [$ui-closable-icon-height=$tab-closable-icon-height]
- * The height of the Tab close icon
- *
- * @param {number} [$ui-closable-icon-top=$tab-closable-icon-top]
- * The distance to offset the Tab close icon from the top of the tab
- *
- * @param {number} [$ui-closable-icon-right=$tab-closable-icon-right]
- * The distance to offset the Tab close icon from the right of the tab
- *
- * @param {number} [$ui-closable-icon-spacing=$tab-closable-icon-spacing]
- * The space in between the text and the close button
- *
- * @param {color} [$ui-border-bottom-color=$tabbar-strip-border-color]
- * The bottom border color of inactive tabs.
- *
- * @member Ext.tab.Tab
- */
-/**
- * Creates a visual theme for a Tab Bar
- *
- * @param {string} $ui
- * The name of the UI being created. Can not included spaces or special punctuation
- * (used in CSS class names).
- *
- * @param {number} [$ui-strip-height=$tabbar-strip-height]
- * The height of the Tab Bar strip
- *
- * @param {number/list} [$ui-strip-border-width=$tabbar-strip-border-width]
- * The border-width of the Tab Bar strip
- *
- * @param {number/list} [$ui-strip-plain-border-width=$tabbar-strip-plain-border-width]
- * The border-width of the {@link Ext.tab.Panel#plain plain} Tab Bar strip
- *
- * @param {color} [$ui-strip-border-color=$tabbar-strip-border-color]
- * The border-color of the Tab Bar strip
- *
- * @param {color} [$ui-strip-background-color=$tabbar-strip-background-color]
- * The background-color of the Tab Bar strip
- *
- * @param {number/list} [$ui-border-width=$tabbar-border-width]
- * The border-width of the Tab Bar
- *
- * @param {color} [$ui-border-color=$tabbar-border-color]
- * The border-color of the Tab Bar
- *
- * @param {number/list} [$ui-padding=$tabbar-padding]
- * The padding of the Tab Bar
- *
- * @param {color} [$ui-background-color=$tabbar-background-color]
- * The background color of the  Tab Bar
- *
- * @param {string/list} [$ui-background-gradient=$tabbar-background-gradient]
- * The background-gradient of the Tab Bar. Can be either the name of a predefined gradient
- * or a list of color stops. Used as the `$type` parameter for
- * {@link Global_CSS#background-gradient}.
- *
- * @param {number} [$ui-scroller-width=$tabbar-scroller-width]
- * The width of the Tab Bar scrollers
- *
- * @param {string} [$ui-scroller-cursor=$tabbar-scroller-cursor]
- * The cursor of the Tab Bar scrollers
- *
- * @param {string} [$ui-scroller-cursor-disabled=$tabbar-scroller-cursor-disabled]
- * The cursor of disabled Tab Bar scrollers
- *
- * @param {number} [$ui-scroller-opacity=$tabbar-scroller-opacity]
- * The opacity of Tab Bar scrollers
- *
- * @param {number} [$ui-scroller-opacity-over=$tabbar-scroller-opacity-over]
- * The opacity of hovered Tab Bar scrollers
- *
- * @param {number} [$ui-scroller-opacity-pressed=$tabbar-scroller-opacity-pressed]
- * The opacity of pressed Tab Bar scrollers
- *
- * @param {number} [$ui-scroller-opacity-disabled=$tabbar-scroller-opacity-disabled]
- * The opacity of disabled Tab Bar scrollers
- *
- * @param {number} [$ui-tab-height]
- * The height of tabs that will be used in this tabbar UI. The tabbar body is given
- * a fixed height to leave room for the tabs, and so that the tabbar does not collapse
- * when it does not contain any tabs.
- *
- * @member Ext.tab.Bar
- */
-/**
- * Creates a visual theme for a Tab Panel
- *
- * @param {string} $ui
- * The name of the UI being created. Can not included spaces or special punctuation
- * (used in CSS class names).
- *
- * @param {color} [$ui-tab-background-color=$tab-base-color]
- * The background-color of Tabs
- *
- * @param {color} [$ui-tab-background-color-over=$tab-base-color-over]
- * The background-color of hovered Tabs
- *
- * @param {color} [$ui-tab-background-color-active=$tab-base-color-active]
- * The background-color of the active Tab
- *
- * @param {color} [$ui-tab-background-color-disabled=$tab-base-color-disabled]
- * The background-color of disabled Tabs
- *
- * @param {list} [$ui-tab-border-radius=$tab-border-radius]
- * The border-radius of Tabs
- *
- * @param {number} [$ui-tab-border-width=$tab-border-width]
- * The border-width of Tabs
- *
- * @param {number/list} [$ui-tab-margin=$tab-margin]
- * The border-width of Tabs
- *
- * @param {number/list} [$ui-tab-padding=$tab-padding]
- * The padding of Tabs
- *
- * @param {number/list} [$ui-tab-text-padding=$tab-text-padding]
- * The padding of the Tab's text element
- *
- * @param {color} [$ui-tab-border-color=$tab-border-color]
- * The border-color of Tabs
- *
- * @param {color} [$ui-tab-border-color-over=$tab-border-color-over]
- * The border-color of hovered Tabs
- *
- * @param {color} [$ui-tab-border-color-active=$tab-border-color-active]
- * The border-color of the active Tab
- *
- * @param {color} [$ui-tab-border-color-disabled=$tab-border-color-disabled]
- * The border-color of disabled Tabs
- *
- * @param {string} [$ui-tab-cursor=$tab-cursor]
- * The Tab cursor
- *
- * @param {string} [$ui-tab-cursor-disabled=$tab-cursor-disabled]
- * The cursor of disabled Tabs
- *
- * @param {number} [$ui-tab-font-size=$tab-font-size]
- * The font-size of Tabs
- *
- * @param {number} [$ui-tab-font-size-over=$tab-font-size-over]
- * The font-size of hovered Tabs
- *
- * @param {number} [$ui-tab-font-size-active=$tab-font-size-active]
- * The font-size of the active Tab
- *
- * @param {number} [$ui-tab-font-size-disabled=$tab-font-size-disabled]
- * The font-size of disabled Tabs
- *
- * @param {string} [$ui-tab-font-weight=$tab-font-weight]
- * The font-weight of Tabs
- *
- * @param {string} [$ui-tab-font-weight-over=$tab-font-weight-over]
- * The font-weight of hovered Tabs
- *
- * @param {string} [$ui-tab-font-weight-active=$tab-font-weight-active]
- * The font-weight of the active Tab
- *
- * @param {string} [$ui-tab-font-weight-disabled=$tab-font-weight-disabled]
- * The font-weight of disabled Tabs
- *
- * @param {string} [$ui-tab-font-family=$tab-font-family]
- * The font-family of Tabs
- *
- * @param {string} [$ui-tab-font-family-over=$tab-font-family-over]
- * The font-family of hovered Tabs
- *
- * @param {string} [$ui-tab-font-family-active=$tab-font-family-active]
- * The font-family of the active Tab
- *
- * @param {string} [$ui-tab-font-family-disabled=$tab-font-family-disabled]
- * The font-family of disabled Tabs
- *
- * @param {number} [$ui-tab-line-height=$tab-line-height]
- * The line-height of Tabs
- *
- * @param {color} [$ui-tab-color=$tab-color]
- * The text color of Tabs
- *
- * @param {color} [$ui-tab-color-over=$tab-color-over]
- * The text color of hovered Tabs
- *
- * @param {color} [$ui-tab-color-active=$tab-color-active]
- * The text color of the active Tab
- *
- * @param {color} [$ui-tab-color-disabled=$tab-color-disabled]
- * The text color of disabled Tabs
- *
- * @param {string/list} [$ui-tab-background-gradient=$tab-background-gradient]
- * The background-gradient for Tabs. Can be either the name of a predefined gradient
- * or a list of color stops. Used as the `$type` parameter for
- * {@link Global_CSS#background-gradient}.
- *
- * @param {string/list} [$ui-tab-background-gradient-over=$tab-background-gradient-over]
- * The background-gradient for hovered Tabs. Can be either the name of a predefined gradient
- * or a list of color stops. Used as the `$type` parameter for
- * {@link Global_CSS#background-gradient}.
- *
- * @param {string/list} [$ui-tab-background-gradient-active=$tab-background-gradient-active]
- * The background-gradient for the active Tab. Can be either the name of a predefined gradient
- * or a list of color stops. Used as the `$type` parameter for
- * {@link Global_CSS#background-gradient}.
- *
- * @param {string/list} [$ui-tab-background-gradient-disabled=$tab-background-gradient-disabled]
- * The background-gradient for disabled Tabs. Can be either the name of a predefined gradient
- * or a list of color stops. Used as the `$type` parameter for
- * {@link Global_CSS#background-gradient}.
- *
- * @param {number} [$ui-tab-inner-border-width=$tab-inner-border-width]
- * The inner border-width of Tabs
- *
- * @param {color} [$ui-tab-inner-border-color=$tab-inner-border-color]
- * The inner border-color of Tabs
- *
- * @param {number} [$ui-tab-icon-width=$tab-icon-width]
- * The width of the Tab close icon
- *
- * @param {number} [$ui-tab-icon-height=$tab-icon-height]
- * The height of the Tab close icon
- *
- * @param {number} [$ui-tab-icon-spacing=$tab-icon-spacing]
- * the space in between the text and the close button
- *
- * @param {list} [$ui-tab-icon-background-position=$tab-icon-background-position]
- * The background-position of Tab icons
- *
- * @param {color} [$ui-tab-glyph-color=$tab-glyph-color]
- * The color of Tab glyph icons
- *
- * @param {color} [$ui-tab-glyph-color-over=$tab-glyph-color-over]
- * The color of a Tab glyph icon when the Tab is hovered
- *
- * @param {color} [$ui-tab-glyph-color-active=$tab-glyph-color-active]
- * The color of a Tab glyph icon when the Tab is active
- *
- * @param {color} [$ui-tab-glyph-color-disabled=$tab-glyph-color-disabled]
- * The color of a Tab glyph icon when the Tab is disabled
- *
- * @param {number} [$ui-tab-glyph-opacity=$tab-glyph-opacity]
- * The opacity of a Tab glyph icon
- *
- * @param {number} [$ui-tab-glyph-opacity-disabled=$tab-glyph-opacity-disabled]
- * The opacity of a Tab glyph icon when the Tab is disabled
- *
- * @param {number} [$ui-tab-opacity-disabled=$tab-opacity-disabled]
- * opacity to apply to the tab's main element when the tab is disabled
- *
- * @param {number} [$ui-tab-text-opacity-disabled=$tab-text-opacity-disabled]
- * opacity to apply to the tab's text element when the tab is disabled
- *
- * @param {number} [$ui-tab-icon-opacity-disabled=$tab-icon-opacity-disabled]
- * opacity to apply to the tab's icon element when the tab is disabled
- *
- * @param {number} [$ui-strip-height=$tabbar-strip-height]
- * The height of the Tab Bar strip
- *
- * @param {number/list} [$ui-strip-border-width=$tabbar-strip-border-width]
- * The border-width of the Tab Bar strip
- *
- * @param {number/list} [$ui-strip-plain-border-width=$tabbar-strip-plain-border-width]
- * The border-width of the {@link Ext.tab.Panel#plain plain} Tab Bar strip
- *
- * @param {color} [$ui-strip-border-color=$tabbar-strip-border-color]
- * The border-color of the Tab Bar strip
- *
- * @param {color} [$ui-strip-background-color=$tabbar-strip-background-color]
- * The background-color of the Tab Bar strip
- *
- * @param {number/list} [$ui-bar-border-width=$tabbar-border-width]
- * The border-width of the Tab Bar
- *
- * @param {color} [$ui-bar-border-color=$tabbar-border-color]
- * The border-color of the Tab Bar
- *
- * @param {number/list} [$ui-bar-padding=$tabbar-padding]
- * The padding of the Tab Bar
- *
- * @param {color} [$ui-bar-background-color=$tabbar-background-color]
- * The background color of the  Tab Bar
- *
- * @param {string/list} [$ui-bar-background-gradient=$tabbar-background-gradient]
- * The background-gradient of the Tab Bar. Can be either the name of a predefined gradient
- * or a list of color stops. Used as the `$type` parameter for
- * {@link Global_CSS#background-gradient}.
- *
- * @param {number} [$ui-bar-scroller-width=$tabbar-scroller-width]
- * The width of the Tab Bar scrollers
- *
- * @param {string} [$ui-bar-scroller-cursor=$tabbar-scroller-cursor]
- * The cursor of the Tab Bar scrollers
- *
- * @param {string} [$ui-bar-scroller-cursor-disabled=$tabbar-scroller-cursor-disabled]
- * The cursor of disabled Tab Bar scrollers
- *
- * @param {number} [$ui-bar-scroller-opacity=$tabbar-scroller-opacity]
- * The opacity of Tab Bar scrollers
- *
- * @param {number} [$ui-bar-scroller-opacity-over=$tabbar-scroller-opacity-over]
- * The opacity of hovered Tab Bar scrollers
- *
- * @param {number} [$ui-bar-scroller-opacity-pressed=$tabbar-scroller-opacity-pressed]
- * The opacity of pressed Tab Bar scrollers
- *
- * @param {number} [$ui-bar-scroller-opacity-disabled=$tabbar-scroller-opacity-disabled]
- * The opacity of disabled Tab Bar scrollers
- *
- * @param {number} [$ui-tab-closable-icon-width=$tab-closable-icon-width]
- * The width of the Tab close icon
- *
- * @param {number} [$ui-tab-closable-icon-height=$tab-closable-icon-height]
- * The height of the Tab close icon
- *
- * @param {number} [$ui-tab-closable-icon-top=$tab-closable-icon-top]
- * The distance to offset the Tab close icon from the top of the tab
- *
- * @param {number} [$ui-tab-closable-icon-right=$tab-closable-icon-right]
- * The distance to offset the Tab close icon from the right of the tab
- *
- * @param {number} [$ui-tab-closable-icon-spacing=$tab-closable-icon-spacing]
- * the space in between the text and the close button
- *
- * @member Ext.tab.Panel
- */
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-tab-default-top {
   -moz-border-radius-topleft: 4px;
@@ -13965,8 +12834,7 @@ body.x4-nbr .x4-tab-default-right-frameInfo {
 /* line 312, ../../../ext-theme-neutral/sass/src/tab/Tab.scss */
 .x4-tab-default .x4-tab-inner {
   font-size: 11px;
-  font-weight: bold;
-  font-family: tahoma, arial, verdana, sans-serif;
+  font-family: $lk-font-family-sans-serif-bold;
   color: #416da3;
   line-height: 13px;
 }
@@ -15150,7 +14018,7 @@ body.x4-nbr .x4-tab-default-right-frameInfo {
 .x4-box-mc {
   background-color: #eee;
   background-image: url('#{$ext4-images-dir}/box/tb.gif');
-  font-family: "Myriad Pro","Myriad Web","Tahoma","Helvetica","Arial",sans-serif;
+  font-family: $lk-font-family-sans-serif;
   color: #393939;
   font-size: 15px;
 }
