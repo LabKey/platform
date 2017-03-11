@@ -1853,11 +1853,11 @@ svg, vml {
   border-style: solid;
   background-image: none;
   background-color: white;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #ffffff), color-stop(48%, #f9f9f9), color-stop(52%, #e2e2e2), color-stop(100%, #e7e7e7));
-  background-image: -webkit-linear-gradient(top, #ffffff, #f9f9f9 48%, #e2e2e2 52%, #e7e7e7);
-  background-image: -moz-linear-gradient(top, #ffffff, #f9f9f9 48%, #e2e2e2 52%, #e7e7e7);
-  background-image: -o-linear-gradient(top, #ffffff, #f9f9f9 48%, #e2e2e2 52%, #e7e7e7);
-  background-image: linear-gradient(top, #ffffff, #f9f9f9 48%, #e2e2e2 52%, #e7e7e7);
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $btn-background-gradient-start), color-stop(100%, $btn-background-gradient-end));
+  background-image: -webkit-linear-gradient(top, $btn-background-gradient-start, $btn-background-gradient-end);
+  background-image: -moz-linear-gradient(top, $btn-background-gradient-start, $btn-background-gradient-end);
+  background-image: -o-linear-gradient(top, $btn-background-gradient-start, $btn-background-gradient-end);
+  background-image: linear-gradient(top, $btn-background-gradient-start, $btn-background-gradient-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -2001,7 +2001,7 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
   font-size: 11px;
   font-weight: normal;
   font-family: $lk-font-family-sans-serif;
-  color: #333333;
+  color: $button-default-color;
   padding: 0 4px;
 }
 /* line 261, ../../../ext-theme-neutral/sass/src/button/Button.scss */
@@ -2133,6 +2133,13 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
 /* line 485, ../../../ext-theme-neutral/sass/src/button/Button.scss */
 .x4-quirks .x4-ie .x4-btn-default-small-icon-text-bottom .x4-btn-icon-el {
   width: 100%;
+}
+
+/*</if slicer>*/
+/* */
+/* line 246, ../../../ext-theme-neutral/sass/src/button/Button.scss */
+.x4-btn-default-toolbar-small,  .x4-btn-default-toolbar-medium, .x4-btn-default-toolbar-large {
+  border-color: transparent;
 }
 
 /* line 492, ../../../ext-theme-neutral/sass/src/button/Button.scss */
@@ -2378,11 +2385,11 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
   border-style: solid;
   background-image: none;
   background-color: white;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #ffffff), color-stop(48%, #f9f9f9), color-stop(52%, #e2e2e2), color-stop(100%, #e7e7e7));
-  background-image: -webkit-linear-gradient(top, #ffffff, #f9f9f9 48%, #e2e2e2 52%, #e7e7e7);
-  background-image: -moz-linear-gradient(top, #ffffff, #f9f9f9 48%, #e2e2e2 52%, #e7e7e7);
-  background-image: -o-linear-gradient(top, #ffffff, #f9f9f9 48%, #e2e2e2 52%, #e7e7e7);
-  background-image: linear-gradient(top, #ffffff, #f9f9f9 48%, #e2e2e2 52%, #e7e7e7);
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $btn-background-gradient-start), color-stop(100%, $btn-background-gradient-end));
+  background-image: -webkit-linear-gradient(top, $btn-background-gradient-start, $btn-background-gradient-end);
+  background-image: -moz-linear-gradient(top, $btn-background-gradient-start, $btn-background-gradient-end);
+  background-image: -o-linear-gradient(top, $btn-background-gradient-start, $btn-background-gradient-end);
+  background-image: linear-gradient(top, $btn-background-gradient-start, $btn-background-gradient-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -2526,7 +2533,7 @@ body.x4-nbr .x4-btn-default-medium-frameInfo {
   font-size: 11px;
   font-weight: normal;
   font-family: $lk-font-family-sans-serif;
-  color: #333333;
+  color: $button-default-color;
   padding: 0 3px;
 }
 /* line 261, ../../../ext-theme-neutral/sass/src/button/Button.scss */
@@ -2855,11 +2862,11 @@ body.x4-nbr .x4-btn-default-medium-frameInfo {
   border-style: solid;
   background-image: none;
   background-color: white;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #ffffff), color-stop(48%, #f9f9f9), color-stop(52%, #e2e2e2), color-stop(100%, #e7e7e7));
-  background-image: -webkit-linear-gradient(top, #ffffff, #f9f9f9 48%, #e2e2e2 52%, #e7e7e7);
-  background-image: -moz-linear-gradient(top, #ffffff, #f9f9f9 48%, #e2e2e2 52%, #e7e7e7);
-  background-image: -o-linear-gradient(top, #ffffff, #f9f9f9 48%, #e2e2e2 52%, #e7e7e7);
-  background-image: linear-gradient(top, #ffffff, #f9f9f9 48%, #e2e2e2 52%, #e7e7e7);
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $btn-background-gradient-start), color-stop(100%, $btn-background-gradient-end));
+  background-image: -webkit-linear-gradient(top, $btn-background-gradient-start, $btn-background-gradient-end);
+  background-image: -moz-linear-gradient(top, $btn-background-gradient-start, $btn-background-gradient-end);
+  background-image: -o-linear-gradient(top, $btn-background-gradient-start, $btn-background-gradient-end);
+  background-image: linear-gradient(top, $btn-background-gradient-start, $btn-background-gradient-end);
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -3003,7 +3010,7 @@ body.x4-nbr .x4-btn-default-large-frameInfo {
   font-size: 11px;
   font-weight: normal;
   font-family: $lk-font-family-sans-serif;
-  color: #333333;
+  color: $button-default-color;
   padding: 0 3px;
 }
 /* line 261, ../../../ext-theme-neutral/sass/src/button/Button.scss */
@@ -3313,13 +3320,6 @@ body.x4-nbr .x4-btn-default-large-frameInfo {
   content: "x-slicer:stretch:bottom, corners:url('#{$ext4-images-dir}/btn/btn-default-large-disabled-corners.gif'), sides:url('#{$ext4-images-dir}/btn/btn-default-large-disabled-sides.gif'), frame-bg:url('#{$ext4-images-dir}/btn/btn-default-large-disabled-fbg.gif'), bg:url('#{$ext4-images-dir}/btn/btn-default-large-disabled-bg.gif')";
 }
 
-/*</if slicer>*/
-/* */
-/* line 246, ../../../ext-theme-neutral/sass/src/button/Button.scss */
-.x4-btn-default-toolbar-small {
-  border-color: transparent;
-}
-
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-btn-default-toolbar-small {
   -webkit-border-radius: 3px;
@@ -3452,8 +3452,7 @@ body.x4-nbr .x4-btn-default-toolbar-small-frameInfo {
 /* line 253, ../../../ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-toolbar-small .x4-btn-inner {
   font-size: 11px;
-  font-weight: normal;
-  font-family: $lk-font-family-sans-serif;
+  font-family: $lk-font-family-sans-serif-bold;
   color: #333333;
   padding: 0 4px;
 }
@@ -3754,13 +3753,6 @@ body.x4-nbr .x4-btn-default-toolbar-small-frameInfo {
 .x4-btn-default-toolbar-small-disabled:after {
   display: none;
   content: "x-slicer:stretch:bottom, corners:url('#{$ext4-images-dir}/btn/btn-default-toolbar-small-disabled-corners.gif'), sides:url('#{$ext4-images-dir}/btn/btn-default-toolbar-small-disabled-sides.gif')";
-}
-
-/*</if slicer>*/
-/* */
-/* line 246, ../../../ext-theme-neutral/sass/src/button/Button.scss */
-.x4-btn-default-toolbar-medium {
-  border-color: transparent;
 }
 
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -4197,13 +4189,6 @@ body.x4-nbr .x4-btn-default-toolbar-medium-frameInfo {
 .x4-btn-default-toolbar-medium-disabled:after {
   display: none;
   content: "x-slicer:stretch:bottom, corners:url('#{$ext4-images-dir}/btn/btn-default-toolbar-medium-disabled-corners.gif'), sides:url('#{$ext4-images-dir}/btn/btn-default-toolbar-medium-disabled-sides.gif')";
-}
-
-/*</if slicer>*/
-/* */
-/* line 246, ../../../ext-theme-neutral/sass/src/button/Button.scss */
-.x4-btn-default-toolbar-large {
-  border-color: transparent;
 }
 
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -7770,7 +7755,7 @@ body.x4-nbr .x4-window-default-frameInfo {
 
 /* line 233, ../../../ext-theme-neutral/sass/src/window/Window.scss */
 .x4-window-header-text-container-default {
-  color: $window-base-color;
+  color: $window-header-color;
   line-height: 15px;
   font-family: $lk-font-family-sans-serif-bold;
   font-size: 11px;
@@ -9688,13 +9673,13 @@ div.x4-form-spinner-down {
 
 /* line 33, ../../../ext-theme-neutral/sass/src/view/BoundList.scss */
 .x4-boundlist-selected {
-  background: $border-layout-ct-background-color;
+  background: $boundlist-item-over-background-color;
   border-color: $grid-row-cell-selected-border-color;
 }
 
 /* line 38, ../../../ext-theme-neutral/sass/src/view/BoundList.scss */
 .x4-boundlist-item-over {
-  background: $border-layout-ct-background-color;
+  background: $boundlist-item-over-background-color;
   border-color: $grid-row-cell-selected-border-color;
 }
 

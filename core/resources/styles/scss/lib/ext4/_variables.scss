@@ -1,31 +1,46 @@
-$base-color: #C0D4ED !default;
-$neutral-color: #eeeeee !default;
+$base-color: #226495;
+$panel-base-color: #DFE8F6;
 
-$panel-base-color: adjust-color($base-color, $hue: 0deg, $saturation: 0.542%, $lightness: 7.843%) !default;
-$panel-border-color: adjust-color($base-color, $hue: 0deg, $saturation: 7.644%, $lightness: -8.627%) !default;
-$panel-header-color: adjust-color($panel-base-color, $hue: 0deg, $saturation: 38.347%, $lightness: -63.725%) !default;
-$panel-header-background-gradient: 'panel-header' !default;
-$panel-header-background-color: $panel-base-color !default;
+$text-color: #000000;
+$link-color: #126495;
+$grid-color: #E7EFF4;
+$primary-bg-color: #F8F8F8;
+$secondary-bg-color: #FFFFFF;
+$border-title-color: #676767;
+$webpart-color: #E0E6EA;
+
+//layout
+$accordion-header-background-color: $webpart-color;
+
+
+//panel
+$panel-base-color: $panel-base-color;
+$panel-header-background-color: $base-color;
+$panel-header-color: #ffffff;
+$panel-body-background-color: #ffffff;
+$panel-border-color: #B4B4B4 !default;
+$panel-header-inner-border: false;
+$panel-header-background-gradient: color-stops($base-color, $base-color);
+
 $panel-header-inner-border-color: adjust-color($panel-base-color, $hue: 0deg, $saturation: -6.098%, $lightness: 4.902%) !default;
-$panel-header-background-color: adjust-color($panel-base-color, $hue: 0deg, $saturation: 6.402%, $lightness: -4.51%) !default;
 $panel-frame-header-inner-border-color: $panel-header-inner-border-color;
-//$panel-ghost-opacity: 0.65 !default;
 $panel-frame-base-color: $panel-base-color !default;
 $panel-frame-background-color: $panel-frame-base-color !default;
 $panel-body-border-color: $panel-border-color;
-$panel-background-gradient-start: #cbddf3;
-$panel-background-gradient-end: #dae7f6;
+$panel-background-gradient-start: $panel-header-background-color; ///
+$panel-background-gradient-end: $panel-header-background-color; ///
 
 
-$toolbar-background-color: adjust-color($base-color, $hue: -1.333deg, $saturation: -3.831%, $lightness: 4.51%) !default;
-// this should be the same as panel border color, but it can't reuse the $panel-border-color
-// var because toolbar cannot depend on panel
+///$base-color: #C0D4ED !default;
+$neutral-color: #eeeeee !default;
+
+
+//toolbars
+$toolbar-background-color: #eeeeee;
 $toolbar-border-color: adjust-color($base-color, $hue: 0deg, $saturation: 7.644%, $lightness: -8.627%) !default;
 $toolbar-separator-color: adjust-color($base-color, $hue: -1deg, $saturation: 100%, $lightness: -4.3%) !default;
-//$toolbar-text-color: mix(desaturate(lighten($base-color, 37), 5), #000, 30) !default;
-//$toolbar-background-gradient: color_stops(lighten($toolbar-background-color, 3), $toolbar-background-color) !default;
-$toolbar-background-gradient-start: #dfe9f5;
-$toolbar-background-gradient-end: #d3e1f1;
+$toolbar-background-gradient-start: #eeeeee;
+$toolbar-background-gradient-end: #eeeeee;
 
 $border-layout-ct-background-color: adjust-color($base-color, $hue: 3.188deg, $saturation: 0.542%, $lightness: 7.843%) !default;
 
@@ -45,42 +60,78 @@ $grid-row-cell-selected-border-color: adjust-color($base-color, $hue: 6.952deg, 
 //$grid-row-cell-focus-border-color: adjust-color($neutral-color, $hue: 0deg, $saturation: 0%, $lightness: -66%) !default;
 //$grid-row-cell-focus-background-color: adjust-color($neutral-color, $hue: 0deg, $saturation: 0%, $lightness: 0.392%) !default;
 
+$button-default-color: $base-color;
+$button-default-color-over: #000;
+$button-default-color-focus: #000;
+$button-default-color-pressed: #000;
+$button-default-color-disabled: #808080;
 
-$btn-background-gradient-start: #e4f3ff;
-$btn-background-gradient-end: #c6dcf6;
-$btn-pressed-gradient-start: #b6cbe4;
-$btn-pressed-gradient-end: #98c5f5;
-$button-default-base-color: adjust-color($neutral-color, $hue: 0deg, $saturation: -55.556%, $lightness: 12.745%) !default; //F7F7F7
-$button-default-base-color-over: adjust-color($base-color, $hue: -6.667deg, $saturation: 44.444%, $lightness: 10.588%) !default; //E4F3FF
-$button-default-base-color-pressed: adjust-color($base-color, $hue: -0.725deg, $saturation: -9.556%, $lightness: -3.725%) !default; //B6CBE4
-$button-default-base-color-disabled: adjust-color($base-color, $hue: 0deg, $saturation: -55.556%, $lightness: 12.745%) !default; //F7F7F7
-$button-default-border-color: adjust-color($button-default-base-color, $hue: 0deg, $saturation: 0%, $lightness: -18.039%) !default;
-$button-default-border-color-over: adjust-color($button-default-base-color-over, $hue: 8.177deg, $saturation: -28.283%, $lightness: -12.745%) !default;
-$button-default-border-color-focus: $button-default-border-color-over !default;
-$button-default-border-color-pressed: adjust-color($button-default-base-color-pressed, $hue: 2.317deg, $saturation: 6.756%, $lightness: -5.294%) !default;
-$button-default-border-color-disabled: adjust-color($button-default-base-color-disabled, $hue: 0deg, $saturation: 0%, $lightness: -8.627%) !default;
-//$button-default-color: #333 !default;
-//$button-default-background-color-disabled: $button-default-base-color-disabled !default;
-//$button-toolbar-border-color: transparent !default;
-//$button-toolbar-border-color-over: adjust-color($base-color, $hue: 0.084deg, $saturation: -9.891%, $lightness: -18.039%) !default;
-//$button-toolbar-border-color-focus: $button-toolbar-border-color-over !default;
-//$button-toolbar-border-color-pressed: adjust-color($base-color, $hue: 0.721deg, $saturation: -17.014%, $lightness: -21.765%) !default;
-//$button-toolbar-border-color-disabled: $button-default-border-color-disabled !default;
-//$button-toolbar-background-color: transparent !default;
-//$button-toolbar-background-color-over: adjust-color($base-color, $hue: -5deg, $saturation: 44.444%, $lightness: 8.824%) !default;
-//$button-toolbar-background-color-focus: $button-toolbar-background-color-over !default;
-//$button-toolbar-background-color-pressed: adjust-color($base-color, $hue: -1.138deg, $saturation: -11.47%, $lightness: -2.353%) !default;
-//$button-toolbar-background-color-disabled: transparent !default;
-//$button-toolbar-background-gradient: null !default;
-//$button-toolbar-background-gradient-disabled: null !default;
-//$button-toolbar-color: #333 !default;
-//$button-toolbar-color-disabled: lighten($button-toolbar-color, 35) !default;
+$button-small-font-weight: bold;
+$button-small-border-radius: 3px;
+
+$button-default-base-color: #fff;
+$button-default-base-color-over: #fff;
+$button-default-base-color-focus: $button-default-base-color-over;
+$button-default-base-color-pressed: #c0c0c0;
+$button-default-base-color-disabled: adjust-color($base-color, $hue: 0deg, $saturation: -55.556%, $lightness: 12.745%) !default;
+
+$button-default-border-color: #b4b4b4;
+$button-default-border-color-over: #676767;
+$button-default-border-color-focus: #676767;
+$button-default-border-color-pressed: #b4b4b4;
+$button-default-border-color-disabled: #DDDDDD;
+
+$button-default-background-gradient: color-stops(#fff, #e4e4e4);
+$button-default-background-gradient-over: color-stops(#fff, #e4e4e4);
+$button-default-background-gradient-focus: color-stops(#fff, #e4e4e4);
+$button-default-background-gradient-pressed: color-stops(#c0c0c0, #ddd);
+$button-default-background-gradient-disabled: color-stops(#fff, #e4e4e4);
+
+$button-default-background-gradient-color-stops: null;
+$button-default-background-gradient-color-stops-over: null;
+$button-default-background-gradient-color-stops-focus: null;
+$button-default-background-gradient-color-stops-pressed: null;
+$button-default-background-gradient-color-stops-disabled: null;
+
+$button-toolbar-base-color: $button-default-base-color;
+
+$button-toolbar-border-color: transparent !default;
+$button-toolbar-border-color-over: $button-default-border-color-over;
+$button-toolbar-border-color-focus: $button-default-border-color-focus;
+$button-toolbar-border-color-pressed: $button-default-border-color-pressed;
+$button-toolbar-border-color-disabled: $button-default-border-color-disabled;
+
+$button-toolbar-background-color: transparent !default;
+$button-toolbar-background-color-over: $button-default-base-color-over;
+$button-toolbar-background-color-focus: $button-default-base-color-focus;
+$button-toolbar-background-color-pressed: $button-default-base-color-pressed;
+$button-toolbar-background-color-disabled: transparent;
+
+$button-toolbar-background-gradient: null;
+$button-toolbar-background-gradient-over: color-stops(#fff, #e4e4e4);
+$button-toolbar-background-gradient-focus: color-stops(#fff, #e4e4e4);
+$button-toolbar-background-gradient-pressed: null;
+$button-toolbar-background-gradient-disabled: null;
+
+$button-toolbar-background-gradient-color-stops: null;
+$button-toolbar-background-gradient-color-stops-over: null;
+$button-toolbar-background-gradient-color-stops-focus: null;
+$button-toolbar-background-gradient-color-stops-pressed: null;
+$button-toolbar-background-gradient-color-stops-disabled: null;
 
 
-$menu-item-active-background-color: $base-color !default;
-$menu-item-active-border-color: adjust-color($base-color, $saturation: 23%, $lightness: -3%) !default;
-$menu-item-active-background-gradient-start: #e7f0fc;
-$menu-item-active-background-gradient-end: #c7ddf9;
+$btn-background-gradient-start: #fff;
+$btn-background-gradient-end: #e4e4e4;
+$btn-pressed-gradient-start: #c0c0c0;
+$btn-pressed-gradient-end: #ddd;
+
+
+
+$menu-background-color: #fff !default;
+$menu-item-active-background-color: #EAEAEA !default;
+$menu-item-active-border-color: #B4B4B4 !default;
+$menu-item-active-background-gradient-start: #EAEAEA;
+$menu-item-active-background-gradient-end: #EAEAEA;
 
 
 $btn-group-inner-border-color: adjust-color($base-color, $saturation: -9%, $lightness: 8.5%) !default;
@@ -90,34 +141,25 @@ $btn-group-inner-border-color: adjust-color($base-color, $saturation: -9%, $ligh
 //$btn-group-header-background-color: adjust-color($base-color, $hue: -2deg, $saturation: 5%, $lightness: 1%) !default;
 
 
-$tip-base-color: adjust-color($base-color, $hue: 2.121deg, $saturation: 44.444%, $lightness: 11.569%) !default;
-$tip-background-color: $tip-base-color !default;
-$tip-body-color: adjust-color($neutral-color, $hue: 0deg, $saturation: 0%, $lightness: -66.667%) !default;
+$tip-base-color: #eeeeee;
+$tip-background-color: #ffffff;
+$tip-body-color: adjust-color($tip-background-color, $hue: 0deg, $saturation: 0%, $lightness: -66.667%) !default;
 $tip-body-link-color: darken($tip-body-color, 10%) !default;
 $tip-border-color: adjust-color($tip-base-color, $hue: -1.705deg, $saturation: -60.494%, $lightness: -27.451%) !default;
-//$tip-error-background-color: #fff !default;
-//$tip-error-inner-border-color: #d87166 !default;
-//$tip-error-inner-border-width: 1px !default;
-//$tip-error-border-color: #a1311f !default;
-//$tip-error-border-radius: 5px !default;
-//$tip-error-border-width: 1px !default;
-//$tip-error-background-color: #fff !default;
-//$tip-error-body-padding: 3px 3px 3px 22px !default;
 
-
+$window-background-color: $base-color;
+$window-header-color: #ffffff;
+$window-body-background-color: #ffffff;
 $window-base-color: $base-color !default;
 $window-border-color: adjust-color($window-base-color, $hue: 0.952deg, $saturation: -32.377%, $lightness: -13.725%) !default;
 $window-inner-border-color: adjust-color($window-base-color, $hue: 2.667deg, $saturation: 9.662%, $lightness: 11.373%) !default;
-$window-header-color: adjust-color($window-base-color, $hue: -2.451deg, $saturation: 38.889%, $lightness: -55.882%) !default;
-$window-background-color: adjust-color($window-base-color, $hue: 0.267deg, $saturation: -21.309%, $lightness: 1.569%) !default;
 $window-header-background-color: $window-background-color !default;
-$window-body-background-color: adjust-color($window-base-color, $hue: 3.188deg, $saturation: 0.542%, $lightness: 7.843%) !default;
 $window-body-border-color: adjust-color($window-base-color, $hue: 0.844deg, $saturation: 7.644%, $lightness: -8.627%) !default;
 $window-header-inner-border-color: $window-inner-border-color !default;
-$window-shadow-color: #ecf2fb;
+$window-shadow-color: $window-background-color;
 
 $form-field-focus-border-color: adjust-color($base-color, $hue: -4.322deg, $saturation: -1.065%, $lightness: -16.863%) !default;
 $form-trigger-border-color-focus: $form-field-focus-border-color !default;
 $form-trigger-border-color-over: $form-trigger-border-color-focus !default;
 
-$accordion-header-background-color: adjust-color($base-color, $saturation: 13%, $lightness: 7%) !default;
+$boundlist-item-over-background-color: #e0e0e0;
