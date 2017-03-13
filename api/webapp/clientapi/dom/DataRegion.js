@@ -3102,6 +3102,14 @@ if (!LABKEY.DataRegions) {
                 throw 'unable to find a good target element. Perhaps this region is not using the standard renderer?'
             }
         }
+        var timerId = setTimeout(function() {
+            timerId = 0;
+            if (target) {
+                target.html("<div class=\"labkey-data-region-loading-mask-panel\">" +
+                        "<div class=\"labkey-data-region-loading-mask-icon\"><i class=\"fa fa-spinner fa-pulse\"></i> loading...</div>" +
+                        "</div>");
+            }
+        }, 500);
 
         LABKEY.Ajax.request({
             timeout: (region.timeout == undefined) ? DEFAULT_TIMEOUT : region.timeout,
@@ -3110,7 +3118,9 @@ if (!LABKEY.DataRegions) {
             params: params,
             jsonData: jsonData,
             success: function(response) {
-
+                if (timerId > 0) {
+                    clearTimeout(timerId);//load mask task no longer needed
+                }
                 this.hidePanel(function() {
                     if (target.length) {
 
