@@ -1240,6 +1240,26 @@ th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-
     border: 0;
 }
 
+.labkey-data-region-loading-mask-panel
+{
+    min-height: 100px;
+    min-width: 100px;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background-color: #eeeeee;
+    opacity: 0.5;
+}
+
+.labkey-data-region-loading-mask-icon
+{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-right: -50%;
+    transform: translate(-50%, -50%);
+}
+
 /* Used to highlight cells with a darker color, limited use right now */
 td.labkey-highlight-cell, th.labkey-highlight-cell
 {
