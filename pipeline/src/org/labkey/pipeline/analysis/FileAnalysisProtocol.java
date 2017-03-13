@@ -16,6 +16,7 @@
 package org.labkey.pipeline.analysis;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
@@ -57,7 +58,8 @@ public class FileAnalysisProtocol extends AbstractFileAnalysisProtocol<AbstractF
     }
 
     public AbstractFileAnalysisJob createPipelineJob(ViewBackgroundInfo info, PipeRoot root, List<File> filesInput,
-                                                     File fileParameters, Map<String, String> variableMap) throws IOException
+                                                     File fileParameters, @Nullable Map<String, String> variableMap
+    ) throws IOException
     {
         TaskId id = _factory.getPipeline().getId();
 

@@ -610,14 +610,7 @@ public class PipelineServiceImpl extends PipelineService
 
     @Override
     @NotNull
-    public String startFileAnalysis(AnalyzeForm form, ViewContext context) throws IOException, PipelineValidationException
-    {
-        return startFileAnalysis(form, Collections.emptyMap(), context);
-    }
-
-    @Override
-    @NotNull
-    public String startFileAnalysis(AnalyzeForm form, Map<String, String> variableMap, ViewContext context) throws IOException, PipelineValidationException
+    public String startFileAnalysis(AnalyzeForm form, @Nullable Map<String, String> variableMap, ViewContext context) throws IOException, PipelineValidationException
     {
         if (form.getProtocolName() == null)
         {

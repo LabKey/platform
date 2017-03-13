@@ -16,6 +16,7 @@
 package org.labkey.pipeline.analysis;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
@@ -50,7 +51,7 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
                            String protocolName,
                            File fileParameters,
                            List<File> filesInput,
-                           Map<String, String> variableMap,
+                           @Nullable Map<String, String> variableMap,
                            boolean splittable,
                            boolean writeJobInfoFile) throws IOException
     {

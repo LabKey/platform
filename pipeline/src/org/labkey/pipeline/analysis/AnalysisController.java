@@ -152,7 +152,7 @@ public class AnalysisController extends SpringActionController
         {
             try
             {
-                String jobGUID = PipelineService.get().startFileAnalysis(form, getViewContext());
+                String jobGUID = PipelineService.get().startFileAnalysis(form, null, getViewContext());
                 Map<String, Object> resultProperties = new HashMap<>();
                 resultProperties.put("status", "success");
                 resultProperties.put("jobGUID", jobGUID);
