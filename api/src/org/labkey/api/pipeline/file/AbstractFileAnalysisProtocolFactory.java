@@ -345,12 +345,17 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
             }
             else
             {
+                protocolFile = getProtocolFile(root, protocolName, archived);
+                if (protocolFile == null || !protocolFile.exists())
+                    return null;
+
                 result = load(root, protocolName, archived);
             }
             return result;
         }
         catch (IOException e)
         {
+            _log.warn("Error loading protocol file.", e);
             return null;
         }
     }

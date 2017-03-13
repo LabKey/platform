@@ -17,6 +17,7 @@ package org.labkey.api.pipeline.file;
 
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipeRoot;
@@ -231,5 +232,5 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
 
     public abstract JOB createPipelineJob(ViewBackgroundInfo info,
                                           PipeRoot root, List<File> filesInput,
-                                          File fileParameters, Map<String, String> variableMap) throws IOException;
+                                          File fileParameters, @Nullable Map<String, String> variableMap) throws IOException;
 }

@@ -126,10 +126,7 @@ abstract public class PipelineService
     abstract public String getPipelineProperty(Container container, String name);
 
     @NotNull
-    public abstract String startFileAnalysis(AnalyzeForm form, ViewContext viewContext) throws IOException, PipelineValidationException;
-
-    @NotNull
-    public abstract String startFileAnalysis(AnalyzeForm form, Map<String, String> variableMap, ViewContext viewContext) throws IOException, PipelineValidationException;
+    public abstract String startFileAnalysis(AnalyzeForm form, @Nullable Map<String, String> variableMap, ViewContext viewContext) throws IOException, PipelineValidationException;
 
     /** Configurations for the pipeline job webpart ButtonBar */
     public enum PipelineButtonOption { Minimal, Assay, Standard }

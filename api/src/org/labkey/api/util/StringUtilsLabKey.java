@@ -166,10 +166,12 @@ public class StringUtilsLabKey
     {
         if (null == value)
             return 0;
-        if (String.class.isInstance(value))
+        else if (String.class.isInstance(value))
             return Integer.valueOf((String) value);
-        else
-            return (Integer) value;
+        else if (Number.class.isInstance(value))
+            return ((Number) value).intValue();
+
+        throw new IllegalArgumentException("Unable to get int value for value parameter");
     }
 
     public static class TestCase extends Assert

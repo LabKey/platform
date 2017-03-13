@@ -45,6 +45,8 @@ public class AnalyzeForm extends PipelinePathForm
         fileInputStatus = new String[len + 1];
         for (int i = 0; i < len; i++)
             fileInputStatus[i] = initStatusFile(protocol, dirData, dirAnalysis, getFile()[i], true);
+
+        // TODO comment why this special status is added at the end (or make this a separate variable)
         fileInputStatus[len] = initStatusFile(protocol, dirData, dirAnalysis, null, false);
     }
 
