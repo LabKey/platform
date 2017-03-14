@@ -20,28 +20,28 @@ $internal-images-dir: '#{$internal-webapp-dir}/_images';
 $black: #000;
 $white: #FFF;
 
-$lk-brand-color: #116596;
-$lk-secondary-brand-color: #3495D2;
-$lk-accent-color: #E86030;
-$lk-success-color: #5CB85C;
-$lk-info-color: #5BC0DE;
-$lk-warning-color: #F0AD4E;
-$lk-danger-color: #B82025;
+$lk-brand-color: #116596 !default;
+$lk-secondary-brand-color: #3495D2 !default;
+$lk-accent-color: #E86030 !default;
+$lk-success-color: #5CB85C !default;
+$lk-info-color: #5BC0DE !default;
+$lk-warning-color: #F0AD4E !default;
+$lk-danger-color: #B82025 !default;
 
-$lk-panel-base-color: #DFE8F6;
-$lk-text-color: $black;
+$lk-panel-base-color: #DFE8F6 !default;
+$lk-text-color: $black !default;
 $lk-link-color: $lk-brand-color !default;
 $lk-link-hover-color: darken($lk-link-color, 15%) !default;
-$lk-link-hover-decoration: none;
-$lk-grid-color: #E7EFF4;
-$lk-primary-bg-color: #F8F8F8;
-$lk-secondary-bg-color: $white;
-$lk-border-title-color: #676767;
-$lk-webpart-color: #E0E6EA;
+$lk-link-hover-decoration: none !default;
+$lk-grid-color: #E7EFF4 !default;
+$lk-primary-bg-color: #F8F8F8 !default;
+$lk-secondary-bg-color: $white !default;
+$lk-border-title-color: #676767 !default;
+$lk-webpart-color: #E0E6EA !default;
 
 //== Body
 //
-$lk-body-bg-color: $lk-primary-bg-color;
+$lk-body-bg-color: $lk-primary-bg-color !default;
 
 //== Fonts
 //
@@ -49,19 +49,19 @@ $lk-font-size-base: 14px !default;
 $lk-font-size-large: 16px !default;
 $lk-font-size-small: 12px !default;
 
-$lk-font-family-sans-serif: 'Roboto', Arial, Helvetica, sans-serif;
-$lk-font-family-sans-serif-bold: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
+$lk-font-family-sans-serif: 'Roboto', Arial, Helvetica, sans-serif !default;
+$lk-font-family-sans-serif-bold: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif !default;
 
 //== Header
 //
-$lk-page-header-bg-color: $lk-brand-color;
-$lk-page-header-color: $white;
-$lk-page-header-height: 50px;
+$lk-page-header-bg-color: $lk-brand-color !default;
+$lk-page-header-color: $white !default;
+$lk-page-header-height: 50px !default;
 
 //== Navigation
 //
-$lk-page-nav-bg-color: $lk-secondary-brand-color;
-$lk-page-nav-color: $white;
-$lk-page-nav-font-family: $lk-font-family-sans-serif-bold;
-$lk-page-nav-font-weight: 'normal';
-$lk-page-nav-height: 36px;
+$lk-page-nav-bg-color: $lk-secondary-brand-color !default;
+$lk-page-nav-color: $white !default;
+$lk-page-nav-font-family: $lk-font-family-sans-serif-bold !default;
+$lk-page-nav-font-weight: 'normal' !default;
+$lk-page-nav-height: 36px !default;
