@@ -165,7 +165,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
 
         // test the reload without first removing the overlapping visits
         importFolderArchiveWithFailureFlag(archive, true, 3, true);
-        click(Locator.linkWithText("ERROR"));
+        clickAndWait(Locator.linkWithText("ERROR"));
         assertElementPresent(Locator.tagContainingText("pre", "ERROR: New visit 2 week Post-V#1 overlaps existing visit 2 week Post-V#1"));
 
         // delete some visits so that the reload will have the failure case
