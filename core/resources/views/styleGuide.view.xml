@@ -1,9 +1,9 @@
 <view xmlns="http://labkey.org/data/xml/view" template="app" frame="none" title="LabKey Style Guide">
     <dependencies>
-        <dependency path="core/css/core.css"/>
-        <dependency path="core/css/guide.css"/>
+        <dependency path="core/css/seattle.css"/>
+        <dependency path="core/css/guide_seattle.css"/>
         <dependency path="internal/jQuery"/>
-        <dependency path="core/css/core.js"/>
+        <dependency path="core/css/seattle.js"/>
         <dependency path="clientapi"/>
         <dependency path="Ext3"/>
         <dependency path="Ext4"/>

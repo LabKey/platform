@@ -6,94 +6,111 @@ const path = require('path');
 const webpack = require('webpack');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
-module.exports = {
-    context: path.resolve(__dirname, '..'),
+module.exports = function makeWebpackConfig (env) {
+    var entry = {};
+    var baseJsDir = './resources/styles/js/';
+    var styleJs = baseJsDir + 'style.js';
+    var ext4Js = baseJsDir + 'ext4.js';
+    var ext3Js = baseJsDir + 'ext3.js';
+    var guideJs = baseJsDir + 'guide.js';
+    if (env && env.theme) {
+        var themeName = env.theme;
+        entry[themeName] = styleJs;
+        entry['ext4_' + themeName] = ext4Js;
+        entry['ext3_' + themeName] = ext3Js;
+        entry['guide_' + themeName] = guideJs;
+    }
+    else {
+        entry.seattle = styleJs;
+        entry.ext4 = ext4Js;
+        entry.ext3 = ext3Js;
+        entry.guide = guideJs;
+    }
 
-    devtool: 'source-map',
+    return {
+        context: path.resolve(__dirname, '..'),
 
-    entry: {
-        core: './resources/styles/js/style.js',
-        ext3: './resources/styles/js/ext3.js',
-        guide: './resources/styles/js/guide.js',
-        ext4: './resources/styles/js/ext4.js'
-    },
+        devtool: 'source-map',
 
-    output: {
-        path: path.resolve(__dirname, '../resources/web/core/css'),
-        publicPath: '/labkey/core/css/',
-        filename: '[name].js'
-    },
+        entry: entry,
 
-    plugins: [
-        new ExtractTextPlugin({
-            allChunks: true,
-            filename: '[name].css'
-        })
-    ],
+        output: {
+            path: path.resolve(__dirname, '../resources/web/core/css'),
+            publicPath: '/labkey/core/css/',
+            filename: '[name].js'
+        },
 
-    module: {
-        rules: [
-            {
-                // labkey scss
-                test: /\.scss$/,
-                loader: ExtractTextPlugin.extract({
-                    use: [{
-                        loader: 'css-loader',
-                        options: {
-                            sourceMap: true,
-                            url: false
-                        }
-                    },{
-                        loader: 'postcss-loader',
-                        options: {
-                            sourceMap: 'inline'
-                        }
-                    },{
-                        loader: 'sass-loader',
-                        options: {
-                            debug: true,
-                            sourceMap: true
-                        }
-                    }],
-                    fallback: 'style-loader'
-                }),
-                exclude: [/node_modules/]
-            },
-            {
-                // TODO: Need to figure out a way to get ~scss imports to resolve via the webpack loader.
-                // That way we can have specific libraries run through the resolve-url-loader.
-                // For now, font-awesome is included directly in style.js
-                // node modules scss
-                test: /\.scss$/,
-                loader: ExtractTextPlugin.extract({
-                    use: [{
-                        loader: 'css-loader',
-                        options: {
-                            sourceMap: true
-                        }
-                    },{
-                        loader: 'postcss-loader'
-                    },{
-                        loader: 'resolve-url-loader'
-                    },{
-                        loader: 'sass-loader',
-                        options: {
-                            sourceMap: true
-                        }
-                    }],
-                    fallback: 'style-loader'
-                }),
-                include: [/node_modules/]
-            },
-            {
-                test: /\.(png|jpg|gif)$/,
-                loader: 'url-loader?limit=25000'
-            },
-            { test: /\.woff(\?v=\d+\.\d+\.\d+)?$/, loader: "url-loader?limit=10000&mimetype=application/font-woff" },
-            { test: /\.woff2(\?v=\d+\.\d+\.\d+)?$/, loader: "url-loader?limit=10000&mimetype=application/font-woff" },
-            { test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/, loader: "url-loader?limit=10000&mimetype=application/octet-stream" },
-            { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: "file-loader" },
-            { test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, loader: "url-loader?limit=10000&mimetype=image/svg+xml" }
-        ]
+        plugins: [
+            new ExtractTextPlugin({
+                allChunks: true,
+                filename: '[name].css'
+            })
+        ],
+
+        module: {
+            rules: [
+                {
+                    // labkey scss
+                    test: /\.scss$/,
+                    loader: ExtractTextPlugin.extract({
+                        use: [{
+                            loader: 'css-loader',
+                            options: {
+                                sourceMap: true,
+                                url: false
+                            }
+                        },{
+                            loader: 'postcss-loader',
+                            options: {
+                                sourceMap: 'inline'
+                            }
+                        },{
+                            loader: 'sass-loader',
+                            options: {
+                                debug: true,
+                                sourceMap: true
+                            }
+                        }],
+                        fallback: 'style-loader'
+                    }),
+                    exclude: [/node_modules/]
+                },
+                {
+                    // TODO: Need to figure out a way to get ~scss imports to resolve via the webpack loader.
+                    // That way we can have specific libraries run through the resolve-url-loader.
+                    // For now, font-awesome is included directly in style.js
+                    // node modules scss
+                    test: /\.scss$/,
+                    loader: ExtractTextPlugin.extract({
+                        use: [{
+                            loader: 'css-loader',
+                            options: {
+                                sourceMap: true
+                            }
+                        },{
+                            loader: 'postcss-loader'
+                        },{
+                            loader: 'resolve-url-loader'
+                        },{
+                            loader: 'sass-loader',
+                            options: {
+                                sourceMap: true
+                            }
+                        }],
+                        fallback: 'style-loader'
+                    }),
+                    include: [/node_modules/]
+                },
+                {
+                    test: /\.(png|jpg|gif)$/,
+                    loader: 'url-loader?limit=25000'
+                },
+                { test: /\.woff(\?v=\d+\.\d+\.\d+)?$/, loader: "url-loader?limit=10000&mimetype=application/font-woff" },
+                { test: /\.woff2(\?v=\d+\.\d+\.\d+)?$/, loader: "url-loader?limit=10000&mimetype=application/font-woff" },
+                { test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/, loader: "url-loader?limit=10000&mimetype=application/octet-stream" },
+                { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: "file-loader" },
+                { test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, loader: "url-loader?limit=10000&mimetype=image/svg+xml" }
+            ]
+        }
     }
 };

@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "clean": "bnr clean",
-    "build": "bnr build:style",
+    "build": "npm run clean && bnr build:themes",
     "build-prod": "npm run build",
     "prebuild": "npm run clean",
     "setup": "npm install"
@@ -12,8 +12,8 @@
     "clean": {
       "command": "rimraf resources/web/core/css"
     },
-    "build:style": {
-      "command": "webpack --config webpack/style.config.js --progress",
+    "build:themes": {
+      "command": "node webpack/buildThemes.js",
       "env": {
         "NODE_ENV": "development"
       }
