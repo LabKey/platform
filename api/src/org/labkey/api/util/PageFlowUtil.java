@@ -1616,7 +1616,7 @@ public class PageFlowUtil
             {
                 // TODO: Turn this into a lib.xml
                 resources.add(ClientDependency.fromPath("internal/jQuery"));
-                resources.add(ClientDependency.fromPath("core/css/core.js"));
+                resources.add(ClientDependency.fromPath("core/css/seattle.js"));
             }
 
             // Always include clientapi and internal
@@ -1672,7 +1672,7 @@ public class PageFlowUtil
                         ext3Included = true;
                         String cssPath;
                         if (useExperimentalCoreUI())
-                            cssPath = "/core/css/ext3.css";
+                            cssPath = "/core/css/ext3_seattle.css";
                         else
                             cssPath = extJsRoot() + "/resources/css/ext-all.css";
 
@@ -1685,7 +1685,7 @@ public class PageFlowUtil
                         ext4Included = true;
                         String cssPath;
                         if (useExperimentalCoreUI())
-                            cssPath = "/core/css/ext4.css";
+                            cssPath = "/core/css/ext4_seattle.css";
                         else
                             cssPath = ext4ThemeRoot() + "/" + resolveThemeName(c) + "/ext-all.css";
 
@@ -1703,7 +1703,7 @@ public class PageFlowUtil
         {
             if (useExperimentalCoreUI())
             {
-                F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/core.css")));
+                F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/seattle.css")));
             }
             else
             {

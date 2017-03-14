@@ -420,7 +420,7 @@ if (typeof LABKEY == "undefined")
                 var cssRoot = configs.extJsRoot + '/resources/css/ext-all.css';
                 if (LABKEY.experimental && LABKEY.experimental.useExperimentalCoreUI === true)
                 {
-                    cssRoot = 'core/css/ext3.css';
+                    cssRoot = 'core/css/ext3_seattle.css';
                 }
                 requiresCss(cssRoot);
                 requiresLib('Ext3', callback, scope);
@@ -475,7 +475,7 @@ if (typeof LABKEY == "undefined")
                 var cssRoot = configs.extThemeRoot_42 + "/" + configs.extThemeName_42 + "/ext-all.css";
                 if (LABKEY.experimental && LABKEY.experimental.useExperimentalCoreUI === true)
                 {
-                    cssRoot = 'core/css/ext4.css';
+                    cssRoot = 'core/css/ext4_seattle.css';
                 }
                 requiresCss(cssRoot);
                 requiresLib('Ext4', callback, scope);
