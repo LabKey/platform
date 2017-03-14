@@ -1,7 +1,13 @@
 .lk-sg-example {
+  background: #FFFFFF;
   border: 1px solid #ddd;
   border-radius: 4px 4px 0 0;
   box-shadow: none;
+  padding: 15px;
+
+  p {
+    margin: 10px 0;
+  }
 
   .table {
     td {

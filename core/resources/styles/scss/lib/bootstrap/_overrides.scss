@@ -1,0 +1,49 @@
+.btn {
+  font-family: $lk-font-family-sans-serif-bold;
+  font-size: $lk-font-size-small;
+  font-weight: normal;
+  text-transform: $lk-button-text-transform;
+}
+
+.btn-default {
+  color: $lk-accent-color;
+  background-color: $white;
+  border-color: $lk-accent-color;
+
+  // Maintain same color when disabled
+  &.disabled {
+    &:active, &:focus, &:hover {
+      background-color: $white;
+      border-color: $lk-accent-color;
+    }
+  }
+
+  &:active,
+  &:focus,
+  &:hover {
+    color: $white;
+    background-color: $lk-accent-color;
+    border-color: darken($lk-accent-color, 5%);
+  }
+}
+
+.btn-primary {
+  color: $white;
+  background-color: $lk-accent-color;
+  border-color: darken($lk-accent-color, 5%);
+
+  // Maintain same color when disabled
+  &.disabled {
+    &:active, &:focus, &:hover {
+      background-color: $lk-accent-color;
+      border-color: darken($lk-accent-color, 5%);
+    }
+  }
+
+  &:active,
+  &:focus,
+  &:hover {
+    background-color: $lk-brand-color;
+    border-color: darken($lk-brand-color, 5%);
+  }
+}

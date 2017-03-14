@@ -1,5 +1,6 @@
 // If you just want to include everything comment this in and comment out everything else
 //@import "~bootstrap-sass/assets/stylesheets/_bootstrap";
+@import "variables";
 
 // Core variables and mixins
 //@import "~bootstrap-sass/assets/stylesheets/bootstrap/variables";
@@ -51,3 +52,5 @@
 // Utility classes
 @import "~bootstrap-sass/assets/stylesheets/bootstrap/utilities";
 @import "~bootstrap-sass/assets/stylesheets/bootstrap/responsive-utilities";
+
+@import "overrides";

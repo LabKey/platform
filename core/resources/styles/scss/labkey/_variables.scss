@@ -43,6 +43,17 @@ $lk-webpart-color: #E0E6EA !default;
 //
 $lk-body-bg-color: $lk-primary-bg-color !default;
 
+//== Borders
+//
+$lk-border-radius-base: 2px !default;
+$lk-border-radius-large: 3px !default;
+$lk-border-radius-small: 1px !default;
+
+//== Buttons
+//
+$lk-button-border-radius: 0 !default;
+$lk-button-text-transform: uppercase !default;
+
 //== Fonts
 //
 $lk-font-size-base: 14px !default;
@@ -65,3 +76,8 @@ $lk-page-nav-color: $white !default;
 $lk-page-nav-font-family: $lk-font-family-sans-serif-bold !default;
 $lk-page-nav-font-weight: 'normal' !default;
 $lk-page-nav-height: 36px !default;
+
+//== Padding
+//
+$lk-padding-base-vertical: 6px !default;
+$lk-padding-base-horizontal: 12px !default;
