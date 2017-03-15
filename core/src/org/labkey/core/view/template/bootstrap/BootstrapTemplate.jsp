@@ -23,11 +23,11 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.core.view.template.bootstrap.BootstrapTemplate" %>
+<%@ page import="org.labkey.api.view.template.PrintTemplate" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    BootstrapTemplate me = (BootstrapTemplate) HttpView.currentView();
+    PrintTemplate me = (PrintTemplate) HttpView.currentView();
     PageConfig model = me.getModelBean();
     ActionURL url = getActionURL();
     Container c = getContainer();
