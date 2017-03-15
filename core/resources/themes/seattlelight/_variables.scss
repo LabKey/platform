@@ -3,9 +3,14 @@
 // --------------------------------------------------
 
 //== Colors
-//
-$lk-brand-color: #FFFFFF;
+$white: #FFF;
+$lk-brand-color: #116596;
 
 //== Header
 //
-$lk-page-header-color: #116596; //$white;
+$lk-page-header-bg-color: $white;
+$lk-page-header-color: $lk-brand-color;
+
+//== Navigation
+//
+$lk-page-nav-bg-color: $lk-brand-color;

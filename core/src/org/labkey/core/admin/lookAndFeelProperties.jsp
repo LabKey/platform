@@ -80,6 +80,17 @@
     <td class="labkey-form-label">Header short name (appears in every page header and in emails)</td>
     <td><input type="text" name="systemShortName" size="50" value="<%= h(laf.getShortName()) %>"></td>
 </tr>
+<% if (PageFlowUtil.useExperimentalCoreUI()) { %>
+<tr>
+    <td class="labkey-form-label">Theme (new experimental themes)</td>
+    <td>
+        <select name="themeName">
+            <option value="Seattle" <%=selected("Seattle".equalsIgnoreCase(LookAndFeelProperties.getInstance(c).getThemeName()))%>>Seattle</option>
+            <option value="SeattleLight" <%=selected("SeattleLight".equalsIgnoreCase(LookAndFeelProperties.getInstance(c).getThemeName()))%>>Seattle (Light)</option>
+        </select>
+    </td>
+</tr>
+<% } else { %>
 <tr>
     <td class="labkey-form-label">Web theme (color scheme)</td>
     <td>
@@ -108,6 +119,7 @@
         %>
     </td>
 </tr>
+<% } %>
 <tr>
     <td class="labkey-form-label">Font size</td>
     <td>
