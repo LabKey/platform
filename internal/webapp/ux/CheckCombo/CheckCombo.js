@@ -41,7 +41,7 @@ Ext4.define('Ext.ux.CheckCombo', {
                         if (typeof values === "string") {
                             text = values;
                         } else {
-                            if (values[displayField])
+                            if (Ext4.isDefined(values[displayField]) && values[displayField] != null)
                                 text = values[displayField];
                             else
                                 text = nullCaption;
