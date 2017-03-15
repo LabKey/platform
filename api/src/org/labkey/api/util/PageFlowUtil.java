@@ -1616,7 +1616,7 @@ public class PageFlowUtil
             {
                 // TODO: Turn this into a lib.xml
                 resources.add(ClientDependency.fromPath("internal/jQuery"));
-                resources.add(ClientDependency.fromPath("core/css/seattle.js"));
+                resources.add(ClientDependency.fromPath("core/css/core.js"));
             }
 
             // Always include clientapi and internal
