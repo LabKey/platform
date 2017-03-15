@@ -1656,6 +1656,7 @@ public class PageFlowUtil
 
         boolean devMode = AppProps.getInstance().isDevMode();
         Set<String> preIncludedCss = new HashSet<>();
+        String newThemeName = useExperimentalCoreUI() ? LookAndFeelProperties.getInstance(c).getThemeName() : theme.getFriendlyName();
 
         /* Stylesheets for Ext 3.x, 4.x -- order matters as overrides are in stylesheet.css and themeStylesheet.view */
         if (null != resources)
@@ -1672,7 +1673,7 @@ public class PageFlowUtil
                         ext3Included = true;
                         String cssPath;
                         if (useExperimentalCoreUI())
-                            cssPath = "/core/css/ext3_seattle.css";
+                            cssPath = "/core/css/ext3_" + newThemeName + ".css";
                         else
                             cssPath = extJsRoot() + "/resources/css/ext-all.css";
 
@@ -1685,7 +1686,7 @@ public class PageFlowUtil
                         ext4Included = true;
                         String cssPath;
                         if (useExperimentalCoreUI())
-                            cssPath = "/core/css/ext4_seattle.css";
+                            cssPath = "/core/css/ext4_" + newThemeName + ".css";
                         else
                             cssPath = ext4ThemeRoot() + "/" + resolveThemeName(c) + "/ext-all.css";
 
@@ -1703,7 +1704,7 @@ public class PageFlowUtil
         {
             if (useExperimentalCoreUI())
             {
-                F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/seattle.css")));
+                F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/" + newThemeName + ".css")));
             }
             else
             {
@@ -1885,9 +1886,6 @@ public class PageFlowUtil
 
     private static String getJavaScriptIncludes(Container c, LinkedHashSet<ClientDependency> resources)
     {
-        String contextPath = AppProps.getInstance().getContextPath();
-        String serverHash = getServerSessionHash();
-
         /**
           * scripts: the scripts that should be explicitly included
           * included: the scripts that are implicitly included, which will include the component scripts on a minified library.

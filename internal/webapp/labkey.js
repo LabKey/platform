@@ -420,7 +420,8 @@ if (typeof LABKEY == "undefined")
                 var cssRoot = configs.extJsRoot + '/resources/css/ext-all.css';
                 if (LABKEY.experimental && LABKEY.experimental.useExperimentalCoreUI === true)
                 {
-                    cssRoot = 'core/css/ext3_seattle.css';
+                    // TODO: replace extThemeName_42 with themeName
+                    cssRoot = 'core/css/ext3_' + LABKEY.extThemeName_42 + '.css';
                 }
                 requiresCss(cssRoot);
                 requiresLib('Ext3', callback, scope);
