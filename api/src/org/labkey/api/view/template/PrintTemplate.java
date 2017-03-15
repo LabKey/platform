@@ -19,8 +19,11 @@ package org.labkey.api.view.template;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.GWTView;
 import org.labkey.api.view.JspView;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.util.Set;
 
 public class PrintTemplate extends JspView<PageConfig>
 {
@@ -89,5 +92,17 @@ public class PrintTemplate extends JspView<PageConfig>
             title = PrintTemplate.getDefaultTitle(getRootContext().getActionURL());
             page.setTitle(title);
         }
+    }
+
+    public ActionURL getPermaLink()
+    {
+        ActionURL url = getViewContext().cloneActionURL();
+        return url.setExtraPath("__r" + Integer.toString(getViewContext().getContainer().getRowId()));
+    }
+
+    public boolean includeGWT()
+    {
+        Set<String> modules = GWTView.getModulesForRootContext();
+        return null != modules && modules.size() > 0;
     }
 }

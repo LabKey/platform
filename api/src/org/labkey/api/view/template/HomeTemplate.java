@@ -26,8 +26,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.FooterProperties;
 import org.labkey.api.util.UsageReportingLevel;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -40,7 +38,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Set;
 
 
 public class HomeTemplate extends PrintTemplate
@@ -200,17 +197,5 @@ public class HomeTemplate extends PrintTemplate
 
         if (null == getView("header"))
             setView("header", getHeaderView(page));
-    }
-
-    public ActionURL getPermaLink()
-    {
-        ActionURL url = getViewContext().cloneActionURL();
-        return url.setExtraPath("__r" + Integer.toString(getViewContext().getContainer().getRowId()));
-    }
-
-    public boolean includeGWT()
-    {
-        Set<String> modules = GWTView.getModulesForRootContext();
-        return null != modules && modules.size() > 0;
     }
 }

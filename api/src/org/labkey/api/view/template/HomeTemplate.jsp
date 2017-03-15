@@ -26,12 +26,12 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page import="org.labkey.api.view.WebPartFactory" %>
-<%@ page import="org.labkey.api.view.template.HomeTemplate" %>
+<%@ page import="org.labkey.api.view.template.PrintTemplate" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ page session="true" %>
 <%
-    HomeTemplate me = (HomeTemplate) HttpView.currentView();
+    PrintTemplate me = (PrintTemplate) HttpView.currentView();
     PageConfig bean = me.getModelBean();
     ActionURL url = getActionURL();
     Container c = getContainer();
