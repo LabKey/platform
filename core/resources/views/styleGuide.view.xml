@@ -3,7 +3,7 @@
         <dependency path="core/css/seattle.css"/>
         <dependency path="core/css/guide_seattle.css"/>
         <dependency path="internal/jQuery"/>
-        <dependency path="core/css/seattle.js"/>
+        <dependency path="core/css/core.js"/>
         <dependency path="clientapi"/>
         <dependency path="Ext3"/>
         <dependency path="Ext4"/>

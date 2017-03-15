@@ -7,5 +7,4 @@
 require('../scss/labkey/_core.scss');
 
 // Dependencies
-require('bootstrap-sass'); // javascript
 require('font-awesome/scss/font-awesome.scss');

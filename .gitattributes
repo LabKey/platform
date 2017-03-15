@@ -309,6 +309,7 @@ core/resources/scripts/labkey/init.js -text
 core/resources/styles/js/ext3.js -text
 core/resources/styles/js/ext4.js -text
 core/resources/styles/js/guide.js -text
+core/resources/styles/js/resources.js -text
 core/resources/styles/js/style.js -text
 core/resources/styles/scss/labkey/_core.scss -text
 core/resources/styles/scss/labkey/_fonts.scss -text

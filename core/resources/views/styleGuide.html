@@ -292,19 +292,6 @@
                                 fieldLabel: 'Last Name',
                                 name: 'last'
                             }, {
-                                fieldLabel: 'Gendar',
-                                xtype: 'radiogroup',
-                                allowBlank: false,
-                                name: 'gender',
-                                layout: 'hbox',
-                                items: [{
-                                        boxLabel: 'male',
-                                        checked: true
-                                    },
-                                    {
-                                        boxLabel: 'female'
-                                    }]
-                            }, {
                                 fieldLabel: 'Order Date',
                                 name: 'date',
                                 xtype: 'datefield'
@@ -338,6 +325,19 @@
                                         inputValue: '3'
                                     }
                                 ]
+                            }, {
+                                fieldLabel: 'Spicy',
+                                xtype: 'radiogroup',
+                                allowBlank: false,
+                                name: 'spicy',
+                                layout: 'hbox',
+                                items: [{
+                                    boxLabel: 'yes',
+                                    checked: true
+                                },
+                                    {
+                                        boxLabel: 'no'
+                                    }]
                             }]
                         });
 

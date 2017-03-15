@@ -13,7 +13,10 @@ module.exports = function makeWebpackConfig (env) {
     var ext4Js = baseJsDir + 'ext4.js';
     var ext3Js = baseJsDir + 'ext3.js';
     var guideJs = baseJsDir + 'guide.js';
-    if (env && env.theme) {
+    if (env && env.builddependency) {
+        entry.core = baseJsDir + 'resources.js';
+    }
+    else if (env && env.theme) {
         var themeName = env.theme;
         entry[themeName] = styleJs;
         entry['ext4_' + themeName] = ext4Js;
