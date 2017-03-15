@@ -130,6 +130,7 @@ public class StudyTreatmentSchedule implements CustomApiForm
             mapProperties.put("RowId", cohort.getRowId());
             mapProperties.put("Label", cohort.getLabel());
             mapProperties.put("SubjectCount", cohort.getSubjectCount());
+            mapProperties.put("CanDelete", !cohort.isInUse());
 
             List<Map<String, Integer>> treatmentVisitMap = new ArrayList<>();
             for (TreatmentVisitMapImpl mapping : TreatmentManager.getInstance().getStudyTreatmentVisitMap(_container, cohort.getRowId()))

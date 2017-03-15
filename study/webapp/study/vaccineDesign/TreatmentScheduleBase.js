@@ -344,6 +344,22 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleGridBase', {
     },
 
     //Override
+    removeOuterRecord : function(title, record) {
+        if (!record.get('CanDelete')) {
+            Ext4.Msg.show({
+                title: 'Unable to Remove Cohort',
+                msg: 'The selected cohort can not be removed because it is in-use in the study.<br/><b>'
+                    + Ext4.String.htmlEncode(record.get('Label')) + '</b>',
+                buttons: Ext4.Msg.OK,
+                icon: Ext4.Msg.INFO
+            });
+        }
+        else {
+            this.callParent([title, record]);
+        }
+    },
+
+    //Override
     getDeleteConfirmationMsg : function()
     {
         return 'Are you sure you want to delete the selected group / cohort and its associated treatment / visit mapping records?';

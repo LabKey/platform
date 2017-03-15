@@ -37,6 +37,7 @@ Ext4.define('LABKEY.VaccineDesign.Cohort', {
         {name : 'Label', type : 'string'},
         // the DataView XTemplate gets mad if this is defined as type 'int'
         {name : 'SubjectCount', type : 'string'},
+        {name : 'CanDelete', type : 'boolean'},
         {name : 'VisitMap', defaultValue: []}
     ]
 });
