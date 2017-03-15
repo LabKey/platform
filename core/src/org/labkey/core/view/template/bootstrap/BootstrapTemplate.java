@@ -2,8 +2,6 @@ package org.labkey.core.view.template.bootstrap;
 
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.UsageReportingLevel;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
@@ -13,7 +11,6 @@ import org.labkey.api.view.template.PageConfig;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.Map;
-import java.util.Set;
 
 public class BootstrapTemplate extends HomeTemplate
 {
@@ -36,21 +33,9 @@ public class BootstrapTemplate extends HomeTemplate
         return new BootstrapHeader(upgradeMessage, moduleFailures, page);
     }
 
-    public ActionURL getPermaLink()
-    {
-        ActionURL url = getViewContext().cloneActionURL();
-        return url.setExtraPath("__r" + Integer.toString(getViewContext().getContainer().getRowId()));
-    }
-
     @Override
     protected HttpView getNavigationView(ViewContext context, PageConfig page, AppBar model)
     {
         return new JspView<>("/org/labkey/core/view/template/bootstrap/navigation.jsp", model);
-    }
-
-    public boolean includeGWT()
-    {
-        Set<String> modules = GWTView.getModulesForRootContext();
-        return null != modules && modules.size() > 0;
     }
 }
