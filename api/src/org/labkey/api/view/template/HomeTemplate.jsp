@@ -23,20 +23,17 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.GWTView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page import="org.labkey.api.view.WebPartFactory" %>
+<%@ page import="org.labkey.api.view.template.HomeTemplate" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
-<%@ page import="org.labkey.api.view.template.PrintTemplate" %>
-<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ page session="true" %>
 <%
-    PrintTemplate me = (PrintTemplate) HttpView.currentView();
+    HomeTemplate me = (HomeTemplate) HttpView.currentView();
     PageConfig bean = me.getModelBean();
     ActionURL url = getActionURL();
-    Set<String> gwtModules = GWTView.getModulesForRootContext();
     Container c = getContainer();
     User user = getUser();
     ThemeFont themeFont = ThemeFont.getThemeFont(c);
@@ -100,7 +97,7 @@
 
 <body id="bodyElement" onload="<%=h(onLoad)%>" class="labkey-main <%= text(themeClass) %>">
 <%
-    if (null != gwtModules && gwtModules.size() > 0)
+    if (me.includeGWT())
     {   //Only include first js file??
 %>
 <iframe id="__gwt_historyFrame" style="width:0;height:0;border:0"></iframe>
@@ -187,10 +184,6 @@
 <script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
 <!--
 <%= h(request.getHeader("User-Agent")) %>-->
-<%
-    ActionURL permaLink = getViewContext().cloneActionURL();
-    permaLink.setExtraPath("__r" + Integer.toString(c.getRowId()));
-%>
-<a href="<%=permaLink%>" id="permalink" style="display: none;"></a>
+<a href="<%= me.getPermaLink() %>" id="permalink" style="display: none;"></a>
 </body>
 </html>
