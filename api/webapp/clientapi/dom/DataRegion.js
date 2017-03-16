@@ -3581,12 +3581,16 @@ if (!LABKEY.DataRegions) {
                     chrStyle.position = 'fixed';
                     chrStyle['z-index'] = 9000; // 13229
 
-                    me.headerSpacer.show();
+                    if (me.includeHeader) {
+                        me.headerSpacer.show();
+                    }
                     me.colHeaderRowSpacer.show();
                     me.hdrLocked = true;
                 }
 
-                me.headerRow.css(hrStyle);
+                if (me.includeHeader) {
+                    me.headerRow.css(hrStyle);
+                }
                 me.colHeaderRow.css(chrStyle);
                 me.headerRowContent.css('min-width', tWidth - 3);
             }
@@ -3594,7 +3598,9 @@ if (!LABKEY.DataRegions) {
                 // The bottom of the Data Region is near the top of the window and the locked header
                 // needs to start 'sliding' out of view.
                 var top = me.hdrCoord[2] - window.pageYOffset;
-                me.headerRow.css({ top: top });
+                if (me.includeHeader) {
+                    me.headerRow.css({ top: top });
+                }
                 me.colHeaderRow.css({ top: (top + me.hdrCoord[3]) });
             }
             else if (me.hdrLocked && window.pageYOffset < me.hdrCoord[1]) {
@@ -3608,12 +3614,14 @@ if (!LABKEY.DataRegions) {
          */
         var reset = function() {
             me.hdrLocked = false;
-            me.headerRow.removeAttr('style');
+            if (me.includeHeader) {
+                me.headerRow.removeAttr('style');
+                me.headerSpacer.hide();
+                me.headerSpacer.height(me.headerRow.height());
+            }
             me.headerRowContent.css('min-width', '');
             me.colHeaderRow.removeAttr('style');
-            me.headerSpacer.hide();
             me.colHeaderRowSpacer.hide();
-            me.headerSpacer.height(me.headerRow.height());
             calculateHeaderPosition();
         };
 

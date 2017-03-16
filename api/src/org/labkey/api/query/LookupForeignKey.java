@@ -142,18 +142,6 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
         return result;
     }
 
-    public static void propagateContainerFilter(ColumnInfo parent, TableInfo table)
-    {
-        if (table.supportsContainerFilter() && parent.getParentTable().getContainerFilter() != null)
-        {
-            ContainerFilterable newTable = (ContainerFilterable)table;
-
-            // Only override if the new table doesn't already have some special filter
-            if (newTable.hasDefaultContainerFilter())
-                newTable.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable(), true));
-        }
-    }
-
     /**
      * Override this method if the primary key of the lookup table does not really exist.
      */

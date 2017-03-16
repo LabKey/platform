@@ -185,7 +185,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         runColumn.setFk(new QueryForeignKey(_userSchema, null, AssayProtocolSchema.RUNS_TABLE_NAME, null, null)
         {
             @Override
-            protected void propagateContainerFilter(ColumnInfo foreignKey, TableInfo lookupTable)
+            public void propagateContainerFilter(ColumnInfo foreignKey, TableInfo lookupTable)
             {
                 // Can't rely on normal container filter propagation since assay-backed datasets will have different
                 // container filters on the dataset table compared with the assay result table from which they are

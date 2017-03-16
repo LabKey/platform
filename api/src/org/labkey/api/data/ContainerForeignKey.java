@@ -70,7 +70,7 @@ public class ContainerForeignKey extends QueryForeignKey
     }
 
     @Override
-    protected void propagateContainerFilter(ColumnInfo foreignKey, TableInfo lookupTable)
+    public void propagateContainerFilter(ColumnInfo foreignKey, TableInfo lookupTable)
     {
         /* let's not propagate */
     }

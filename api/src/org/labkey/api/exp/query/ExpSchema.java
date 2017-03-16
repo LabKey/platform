@@ -397,6 +397,17 @@ public class ExpSchema extends AbstractExpSchema
                     result.setContainerFilter(new ContainerFilter.SimpleContainerFilter(getSearchContainers(getContainer(), targetSampleSet, domainProperty, getUser())));
                     return result;
                 }
+
+                @Override
+                public void propagateContainerFilter(ColumnInfo parent, TableInfo table)
+                {
+                    if (parent.getParentTable().getContainerFilter() != null)
+                    {
+                        ContainerFilterable t = (ContainerFilterable)table;
+                        // Merge the special container filter set above with whatever else might have been requested in the parent table's
+                        t.setContainerFilter(new UnionContainerFilter(t.getContainerFilter(), parent.getParentTable().getContainerFilter()));
+                    }
+                }
             };
         }
         return getSamplesSchema().materialIdForeignKey(targetSampleSet, domainProperty);

@@ -47,7 +47,8 @@ public abstract class MutatingApiAction<FORM> extends ApiAction<FORM>
         int status = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
         String message = "You must use the POST method when calling this action.";
 
-        if (getViewContext().getRequest().getContentType().contains(ApiJsonWriter.CONTENT_TYPE_JSON))
+        final String contentType = getViewContext().getRequest().getContentType();
+        if (contentType != null && contentType.contains(ApiJsonWriter.CONTENT_TYPE_JSON))
             createResponseWriter().writeAndCloseError(status, message);
         else
             getViewContext().getResponse().sendError(status, message);
