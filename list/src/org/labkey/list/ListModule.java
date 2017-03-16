@@ -22,6 +22,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
@@ -48,7 +49,6 @@ import org.labkey.list.model.ListQuerySchema;
 import org.labkey.list.model.ListSchema;
 import org.labkey.list.model.ListServiceImpl;
 import org.labkey.list.model.VarcharListDomainKind;
-import org.labkey.list.security.ListDesignerRole;
 import org.labkey.list.view.ListsWebPart;
 import org.labkey.list.view.SingleListWebPartFactory;
 
@@ -97,7 +97,7 @@ public class ListModule extends DefaultModule
         PropertyService.get().registerDomainKind(new IntegerListDomainKind());
         PropertyService.get().registerDomainKind(new VarcharListDomainKind());
 
-        RoleManager.registerRole(new ListDesignerRole());
+        RoleManager.registerPermission(new DesignListPermission());
     }
 
     public void doStartup(ModuleContext moduleContext)

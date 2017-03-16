@@ -2310,12 +2310,18 @@ public class QueryServiceImpl extends QueryService
         assert Table.checkAllColumns(table, selectColumns, "getSelectSQL() selectColumns", true);
 
         // Create a default sort before ensuring required columns
-        if ((sort == null || sort.getSortList().size() == 0) &&
-                (maxRows > 0 || offset > 0 || Table.NO_ROWS == maxRows || forceSort) &&
-                // Don't add a sort if we're running a custom query and it has its own ORDER BY clause
-                (!(table instanceof QueryTableInfo) || !((QueryTableInfo)table).hasSort()))
+        // Don't add a sort if we're running a custom query and it has its own ORDER BY clause
+        boolean viewHasSort = sort != null && !sort.getSortList().isEmpty();
+        boolean viewHasLimit = maxRows > 0 || offset > 0 || Table.NO_ROWS == maxRows;
+        boolean queryHasSort = table instanceof QueryTableInfo && ((QueryTableInfo)table).hasSort();
+
+
+        if (!viewHasSort)
         {
-            sort = createDefaultSort(selectColumns);
+            if (viewHasLimit || (forceSort && !queryHasSort))
+            {
+                sort = createDefaultSort(selectColumns);
+            }
         }
 
         SqlDialect dialect = table.getSqlDialect();

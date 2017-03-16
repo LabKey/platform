@@ -378,7 +378,7 @@ public class ChangeSummary
                 ExceptionUtil.logExceptionToMothership(null, e);
             }
         }
-        emailer.run();
+        emailer.start();
     }
 
     /**

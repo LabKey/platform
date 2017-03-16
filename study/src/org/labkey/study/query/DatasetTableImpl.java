@@ -308,7 +308,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                             }
                         });
                     }
-                    }
+                }
                 if (isVisibleByDefault(col))
                     defaultVisibleCols.add(FieldKey.fromParts(col.getName()));
 

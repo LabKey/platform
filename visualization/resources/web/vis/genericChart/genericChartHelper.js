@@ -858,6 +858,11 @@ LABKEY.vis.GenericChartHelper = new function(){
             );
         }
 
+        var margins = _getPlotMargins(renderType, aes, data, plotConfig);
+        if (Ext4.isObject(margins)) {
+            plotConfig.margins = margins;
+        }
+
         if (chartConfig.measures.color)
         {
             scales.color = {
@@ -883,6 +888,27 @@ LABKEY.vis.GenericChartHelper = new function(){
         });
 
         return plotConfig;
+    };
+
+    var _getPlotMargins = function(renderType, aes, data, plotConfig) {
+        // issue 29690: for bar and box plots, set default bottom margin based on the number of labels and the max label length
+        if (Ext4.isArray(data) && ((renderType == 'bar_chart' && !Ext4.isDefined(aes.xSub)) || renderType == 'box_plot')) {
+            var maxLen = 0;
+            Ext4.each(data, function(d) {
+                var val = Ext4.isFunction(aes.x) ? aes.x(d) : d[aes.x];
+                if (Ext4.isString(val)) {
+                    maxLen = Math.max(maxLen, val.length);
+                }
+            });
+
+            if (data.length * maxLen*5 > plotConfig.width) {
+                // min bottom margin: 50, max bottom margin: 275
+                var bottomMargin = Math.min(Math.max(50, maxLen*5), 275);
+                return {bottom: bottomMargin};
+            }
+        }
+
+        return null;
     };
 
     var _generatePieChartConfig = function(baseConfig, chartConfig, labels, data)

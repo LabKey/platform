@@ -2511,7 +2511,7 @@ public class AdminController extends SpringActionController
     {
         private String _maintenanceTime;
         private Set<String> _enable = Collections.emptySet();
-        private boolean _enableSystemMaintenance;
+        private boolean _enableSystemMaintenance = true;
 
         public String getMaintenanceTime()
         {

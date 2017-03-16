@@ -289,14 +289,20 @@ public class ListManager implements SearchService.DocumentProvider
     // Index a single list
     public void indexList(final ListDef def)
     {
-        final IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
+        SearchService ss = ServiceRegistry.get(SearchService.class);
 
-        Runnable r = () -> {
-            ListDefinition list = ListDefinitionImpl.of(def);
-            indexList(task, list);
-        };
+        if (null != ss)
+        {
+            final IndexTask task = ss.defaultTask();
 
-        task.addRunnable(r, SearchService.PRIORITY.item);
+            Runnable r = () ->
+            {
+                ListDefinition list = ListDefinitionImpl.of(def);
+                indexList(task, list);
+            };
+
+            task.addRunnable(r, SearchService.PRIORITY.item);
+        }
     }
 
 
@@ -343,15 +349,20 @@ public class ListManager implements SearchService.DocumentProvider
 
     private void _addIndexTask(final Runnable r, final SearchService.PRIORITY p)
     {
-        final IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
+        SearchService ss = ServiceRegistry.get(SearchService.class);
 
-        if (getListMetadataSchema().getScope().isTransactionActive())
+        if (null != ss)
         {
-            getListMetadataSchema().getScope().addCommitTask(() -> task.addRunnable(r, p), DbScope.CommitTaskOption.POSTCOMMIT);
-        }
-        else
-        {
-            task.addRunnable(r, p);
+            final IndexTask task = ss.defaultTask();
+
+            if (getListMetadataSchema().getScope().isTransactionActive())
+            {
+                getListMetadataSchema().getScope().addCommitTask(() -> task.addRunnable(r, p), DbScope.CommitTaskOption.POSTCOMMIT);
+            }
+            else
+            {
+                task.addRunnable(r, p);
+            }
         }
     }
 
@@ -642,14 +653,20 @@ public class ListManager implements SearchService.DocumentProvider
     // Un-index the entire list doc alone, but leave the list items alone
     private void deleteIndexedEntireListDoc(ListDefinition list)
     {
-        ServiceRegistry.get(SearchService.class).deleteResource(getDocumentId(list));
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+
+        if (null != ss)
+            ss.deleteResource(getDocumentId(list));
     }
 
 
     // Un-index all list items, but leave the entire list doc alone
     private void deleteIndexedItems(ListDefinition list)
     {
-        ServiceRegistry.get(SearchService.class).deleteResourcesForPrefix(getDocumentId(list, null));
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+
+        if (null != ss)
+            ss.deleteResourcesForPrefix(getDocumentId(list, null));
     }
 
 

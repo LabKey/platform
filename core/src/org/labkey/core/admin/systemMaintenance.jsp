@@ -96,10 +96,9 @@
         <%
             if (AppProps.getInstance().isDevMode())
             {
-        %><tr><td colspan="2"><table><tr><td><input name="enableSystemMaintenance" type="checkbox"<%=checked(!SystemMaintenance.isTimerDisabled())%>/>Enable daily system maintenance (dev mode only; system maintenance is re-enabled after every server restart)</td></tr></table></td></tr><%
-        }
-
-    %>
+        %><tr><td colspan="2"><table><tr><td><labkey:checkbox id="enableSystemMaintenance" name="enableSystemMaintenance" value="true" checked="<%=!SystemMaintenance.isTimerDisabled()%>"/>Enable daily system maintenance (dev mode only; system maintenance is re-enabled after every server restart)</td></tr></table></td></tr><%
+            }
+        %>
         <tr>
             <td style="padding-top: 10px;"><%= button("Save").submit(true).onClick("return validateForm();") %><%= button("Cancel").href(new AdminController.AdminUrlsImpl().getAdminConsoleURL()) %></td>
         </tr>
