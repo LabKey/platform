@@ -49,7 +49,7 @@
     <%
         boolean needSeparator = false;
 
-        if (currentContext.hasPermission(AdminPermission.class) || ContainerManager.getRoot().hasPermission("header.jsp popupadminview", user, AdminReadPermission.class))
+        if (PopupAdminView.hasPermission(currentContext))
         {
             include(new PopupAdminView(currentContext), out);
             needSeparator = true;

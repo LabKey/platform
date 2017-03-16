@@ -16,6 +16,7 @@
 
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
@@ -60,18 +61,51 @@ public class PopupAdminView extends PopupMenuView
             context.setContainer(c);
         }
 
-        User user = context.getUser();
+        NavTree tree = createNavTree(context);
 
-        boolean isAdminInThisFolder = context.hasPermission("PopupAdminView", AdminPermission.class);
-        boolean hasAdminReadInRoot = ContainerManager.getRoot().hasPermission(user, AdminReadPermission.class);
-
-        visible = isAdminInThisFolder || hasAdminReadInRoot;
+        visible = tree != null;
         if (!visible)
             return;
-        
+
+        setNavTree(tree);
+        setAlign(PopupMenu.Align.RIGHT);
+        setButtonStyle(PopupMenu.ButtonStyle.TEXT);
+
+        getModelBean().setIsSingletonMenu(true);
+    }
+
+    private static void addModulesToMenu(ViewContext context, SortedSet<Module> modules, Module defaultModule, NavTree menu)
+    {
+        for (Module module : modules)
+        {
+            if (null == module || module.equals(defaultModule))
+                continue;
+
+            ActionURL tabUrl = module.getTabURL(context.getContainer(), context.getUser());
+
+            if (null != tabUrl)
+                menu.addChild(module.getTabName(context), tabUrl);
+        }
+    }
+
+    @Nullable
+    public static NavTree createNavTree(final ViewContext context)
+    {
+        Container c = context.getContainer();
+        // If current context is a container tab, use the parent container to build this menu
+        if (c.isContainerTab())
+        {
+            c = c.getParent();
+            context.setContainer(c);
+        }
+
+        if (!hasPermission(context))
+            return null;
+
+        User user = context.getUser();
         NavTree navTree = new NavTree("Admin");
 
-        if (hasAdminReadInRoot)
+        if (isRootAdminReader(context))
         {
             NavTree siteAdmin = new NavTree("Site");
             siteAdmin.setId("__lk-adminmenu-site");
@@ -84,7 +118,7 @@ public class PopupAdminView extends PopupMenuView
             Container project = c.getProject();
             assert project != null;
 
-            if (isAdminInThisFolder && !c.isWorkbook())
+            if (isFolderAdmin(context) && !c.isWorkbook())
             {
                 NavTree folderAdmin = new NavTree("Folder");
                 folderAdmin.setId("__lk-adminmenu-folder");
@@ -108,16 +142,13 @@ public class PopupAdminView extends PopupMenuView
             navTree.addSeparator();
             c.getFolderType().addManageLinks(navTree, c, user);
 
-            Comparator<Module> moduleComparator = new Comparator<Module>()
+            Comparator<Module> moduleComparator = (o1, o2) ->
             {
-                public int compare(Module o1, Module o2)
-                {
-                    if (null == o1 && null == o2)
-                        return 0;
-                    if (null == o1 || null == o2)
-                        return null == o1 ? -1 : 1;
-                    return o1.getTabName(context).compareToIgnoreCase(o2.getTabName(context));
-                }
+                if (null == o1 && null == o2)
+                    return 0;
+                if (null == o1 || null == o2)
+                    return null == o1 ? -1 : 1;
+                return o1.getTabName(context).compareToIgnoreCase(o2.getTabName(context));
             };
 
             SortedSet<Module> activeModules = new TreeSet<>(moduleComparator);
@@ -156,24 +187,21 @@ public class PopupAdminView extends PopupMenuView
         }
 
         navTree.setId("adminMenu");
-        setNavTree(navTree);
-        setAlign(PopupMenu.Align.RIGHT);
-        setButtonStyle(PopupMenu.ButtonStyle.TEXT);
-
-        getModelBean().setIsSingletonMenu(true);
+        return navTree;
     }
 
-    private void addModulesToMenu(ViewContext context, SortedSet<Module> modules, Module defaultModule, NavTree menu)
+    public static boolean hasPermission(ViewContext context)
     {
-        for (Module module : modules)
-        {
-            if (null == module || module.equals(defaultModule))
-                continue;
+        return isFolderAdmin(context) || isRootAdminReader(context);
+    }
 
-            ActionURL tabUrl = module.getTabURL(context.getContainer(), context.getUser());
+    private static boolean isFolderAdmin(ViewContext context)
+    {
+        return context.hasPermission("PopupAdminView", AdminPermission.class);
+    }
 
-            if (null != tabUrl)
-                menu.addChild(module.getTabName(context), tabUrl);
-        }
+    private static boolean isRootAdminReader(ViewContext context)
+    {
+        return ContainerManager.getRoot().hasPermission(context.getUser(), AdminReadPermission.class);
     }
 }

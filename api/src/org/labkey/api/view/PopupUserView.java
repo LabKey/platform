@@ -35,6 +35,15 @@ public class PopupUserView extends PopupMenuView
 {
     public PopupUserView(ViewContext context)
     {
+        setNavTree(createNavTree(context));
+        setAlign(PopupMenu.Align.RIGHT);
+        setButtonStyle(PopupMenu.ButtonStyle.TEXT);
+
+        getModelBean().setIsSingletonMenu(true);
+    }
+
+    public static NavTree createNavTree(ViewContext context)
+    {
         User user = context.getUser();
         Container c = context.getContainer();
         ActionURL currentURL = context.getActionURL();
@@ -82,11 +91,6 @@ public class PopupUserView extends PopupMenuView
         }
 
         tree.setId("userMenu");
-
-        setNavTree(tree);
-        setAlign(PopupMenu.Align.RIGHT);
-        setButtonStyle(PopupMenu.ButtonStyle.TEXT);
-
-        getModelBean().setIsSingletonMenu(true);
+        return tree;
     }
 }
