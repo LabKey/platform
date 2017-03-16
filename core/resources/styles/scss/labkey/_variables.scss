@@ -18,6 +18,7 @@ $internal-images-dir: '#{$internal-webapp-dir}/_images';
 // # Imported "labkey-theme" colors
 // TODO: Integrate these with bootstrap
 $black: #000;
+$gray-dark: #333;
 $white: #FFF;
 
 $lk-brand-color: #116596 !default;
@@ -53,6 +54,12 @@ $lk-border-radius-small: 1px !default;
 //
 $lk-button-border-radius: 0 !default;
 $lk-button-text-transform: uppercase !default;
+
+//== Dropdowns
+//
+$lk-dropdown-link-color: $gray-dark !default;
+$lk-dropdown-link-hover-color: $white !default;
+$lk-dropdown-link-hover-bg: $lk-secondary-brand-color !default;
 
 //== Fonts
 //

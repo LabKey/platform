@@ -1,32 +1,104 @@
 .labkey-page-header {
-  div, a {
-    color: $lk-page-header-color;
+  color: $lk-page-header-color;
+  background-color: $lk-page-header-bg-color;
+  padding-top: 12px;
+  padding-bottom: 12px;
+
+  .container {
+    position: relative;
   }
 
-  nav {
+  .fa {
+    font-size: 20px; // set to variable
+  }
+
+  .nav > li > a:hover, .nav > li > a:focus {
+    color: #ADD4ED;
     background-color: $lk-page-header-bg-color;
+  }
 
-    .navbar-header {
-      width: 100%;
-      height: $lk-page-header-height;
+  .navbar-header {
+    float: left;
 
-      i:hover, i:focus {
-        color: $lk-page-header-bg-color;
-        background-color: $lk-page-header-color;
-      }
-
-      .brand-logo {
-        padding-top: 10px;
-        padding-bottom: 10px;
-      }
+    i:hover, i:focus {
+      color: $lk-webpart-color;
     }
 
-    .navbar-right {
-      display: inline-block;
-      float: right !important;
-      margin-top: 15px;
+    .brand-logo {
+      margin: 0 15px;
     }
   }
+
+  .navbar-nav-lk {
+    list-style: none;
+    margin-bottom: 0;
+    position: absolute;
+    right: 0;
+
+    & > li {
+      float: left;
+
+      & > a {
+        height: 30px;
+        display: block;
+        color: $lk-page-header-color;
+        padding: 5px 8px;
+
+        &:hover {
+          color: #EEEEEE;
+        }
+      }
+    }
+  }
+
+  .navbar-search {
+
+    .global-search {
+      position: absolute;
+      top: 0;
+      width: 0;
+      right: 100px;
+      overflow: hidden;
+      transition: width .25s ease;
+
+      .search-box {
+        border: 0;
+        display: block;
+        height: 32px;
+        margin: 0;
+        padding: 0 45px 0 5px;
+        width: 300px;
+        color: black;
+      }
+
+      .btn-search {
+        background-color: transparent;
+        height: 32px;
+        border: 0;
+        margin: 0;
+        top: 6px;
+        display: block;
+        position: absolute;
+        width: 24px;
+        cursor: pointer;
+        right: 0;
+      }
+    }
+
+    &.active {
+      .global-search {
+        width: 300px;
+      }
+
+      & > .fa-search::before {
+        content: "\F00D";
+      }
+    }
+  }
+}
+
+.lk-dropdown-accent {
+  border: 1px solid $lk-accent-color;
 }
 
 .labkey-accent {

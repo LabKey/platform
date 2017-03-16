@@ -1,0 +1,268 @@
+//== Standalone Buttons
+//
+
+a.labkey-button,
+a.labkey-button:visited,
+td .labkey-menu-button,
+span.labkey-button {
+  padding: 3px 5px;
+  margin-right: 5px;
+  border: 1px solid #b4b4b4;
+  color: $lk-link-color;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  border-radius: 5px;
+
+  /* For WebKit (Safari, Google Chrome etc) */
+  background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5));
+  /* For Mozilla/Gecko (Firefox etc) */
+  background: -moz-linear-gradient(top, #fff, #e5e5e5);
+  /* For IE */
+  filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5) !important;
+  -ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5)" !important;
+}
+
+a.labkey-button:hover,
+span.labkey-button:hover
+{
+  padding: 3px 5px;
+  margin-right: 5px;
+  border: 1px solid $lk-border-title-color !important;
+  color: #000000;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  border-radius: 5px;
+
+  /* For WebKit (Safari, Google Chrome etc) */
+  background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5));
+  /* For Mozilla/Gecko (Firefox etc) */
+  background: -moz-linear-gradient(top, #fff, #e5e5e5);
+}
+
+.labkey-disabled-button,
+.labkey-disabled-button:visited,
+.labkey-disabled-button:active,
+a.labkey-disabled-button {
+  padding: 3px 5px;
+  border: 1px solid #b4b4b4;
+  margin-right: 5px;
+  color: #808080 !important;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: default;
+
+  border-radius: 5px;
+
+  /* For WebKit (Safari, Google Chrome etc) */
+  background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5));
+  /* For Mozilla/Gecko (Firefox etc) */
+  background: -moz-linear-gradient(top, #fff, #e5e5e5);
+}
+
+a.labkey-button:active,
+span.labkey-button:active
+{
+  padding: 3px 5px;
+  margin-right: 5px;
+  border: 1px solid #b4b4b4 !important;
+  color: #000000;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  border-radius: 5px;
+  white-space: nowrap;
+
+  /* For WebKit (Safari, Google Chrome etc) */
+  background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5));
+  /* For Mozilla/Gecko (Firefox etc) */
+  background: -moz-linear-gradient(top, #fff, #e5e5e5);
+}
+
+//== Button Bars
+//
+
+div.labkey-button-bar,
+table.labkey-button-bar
+{
+  white-space: nowrap;
+  background-color: $lk-grid-color;
+  padding: 4px;
+}
+
+.labkey-button,
+.labkey-menu-button,
+.labkey-disabled-button,
+.labkey-disabled-menu-button,
+.labkey-wp-text-buttons a
+{
+  font-family:  $lk-font-family-sans-serif-bold !important;
+  font-size: 12px;
+  letter-spacing: .5px;
+}
+
+/* Used for the new css menu buttons, which consist of a link (<a>)
+    or a span wrapped around an input for submit buttons */
+.labkey-button-bar .labkey-button,
+.labkey-button-bar .labkey-menu-button,
+.labkey-button-bar .labkey-button:visited,
+.labkey-button-bar .labkey-menu-button:visited {
+  background: none;
+  border: 1px solid $lk-grid-color;
+
+  margin: 0.1em 0.8em 0.5em 0;
+  padding: 4px;
+  position: relative;
+  vertical-align: middle;
+  white-space: nowrap;
+
+  color: $lk-link-color;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  line-height: 2.3;
+}
+
+td .labkey-menu-button,
+td .labkey-menu-button:visited,
+.labkey-button-bar .labkey-menu-button,
+.labkey-button-bar .labkey-menu-button:visited {
+  background: url('#{$internal-images-dir}/arrow_down.png') right no-repeat !important;
+}
+
+.labkey-button-bar .labkey-button:hover,
+.labkey-button-bar .labkey-menu-button:hover {
+  background-color: #FFFFFF;
+  border: 1px solid $lk-border-title-color !important;
+
+  margin: 0.1em 0.8em 0.5em 0;
+  padding: 4px;
+  position: relative;
+  vertical-align: middle;
+  white-space: nowrap;
+
+  color: #000000;
+  cursor:pointer;
+
+  border-radius: 5px;
+
+  /* For WebKit (Safari, Google Chrome etc) */
+  background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5));
+  /* For Mozilla/Gecko (Firefox etc) */
+  background: -moz-linear-gradient(top, #fff, #e5e5e5);
+  /* For IE */
+  filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5);
+  -ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5)";
+}
+
+td .labkey-menu-button,
+td .labkey-menu-button:hover,
+.labkey-button-bar .labkey-menu-button:hover {
+  background: #fff url('#{$internal-images-dir}/arrow_down.png') right no-repeat !important;
+  /* For WebKit (Safari, Google Chrome etc) */
+  background: url('#{$internal-images-dir}/arrow_down.png') right no-repeat, -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5)) !important;
+  /* For Mozilla/Gecko (Firefox etc) */
+  background: url('#{$internal-images-dir}/arrow_down.png') right no-repeat, -moz-linear-gradient(top, #fff, #e5e5e5) !important;
+  /* For IE */
+  filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5) !important;
+  -ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5)" !important;
+}
+
+/*Darker background when it's being clicked on, or it's the parent of an expanded menu or panel on the ribbon.*/
+.labkey-button-bar .labkey-menu-button-active,
+.labkey-button-bar .labkey-menu-button:active {
+  background-color: #FFFFFF;
+  border: 1px solid $lk-border-title-color !important;
+
+  margin: 0.1em 0.8em 0.5em 0;
+  padding: 4px;
+  position: relative;
+  vertical-align: middle;
+  white-space: nowrap;
+
+  color: #000000;
+  cursor:pointer;
+
+  border-radius: 5px;
+
+  background: #fff url('#{$internal-images-dir}/arrow_down.png') right no-repeat !important;
+  /* For WebKit (Safari, Google Chrome etc) */
+  background: url('#{$internal-images-dir}/arrow_down.png') right no-repeat, -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5)) !important;
+  /* For Mozilla/Gecko (Firefox etc) */
+  background: url('#{$internal-images-dir}/arrow_down.png') right no-repeat, -moz-linear-gradient(top, #fff, #e5e5e5) !important;
+  /* For IE */
+  filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5) !important;
+  -ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5)" !important;
+}
+
+.labkey-button-bar .labkey-disabled-button,
+.labkey-button-bar .labkey-disabled-button:visited,
+.labkey-button-bar .labkey-disabled-button:hover,
+.labkey-menu-button .labkey-disabled-button,
+.labkey-menu-button .labkey-disabled-button:visited,
+.labkey-menu-button .labkey-disabled-button:hover,
+.labkey-disabled-menu-button,
+.labkey-disabled-menu-button:visited,
+.labkey-disabled-menu-button:hover {
+  background: none !important;
+  background-color: $lk-grid-color;
+  border: 1px solid transparent !important;
+
+  margin: 0.1em 0.8em 0.5em 0;
+  padding: 4px;
+  position: relative;
+  vertical-align: middle;
+  white-space: nowrap;
+
+  color: #808080 !important;
+  text-transform: uppercase;
+  cursor: default;
+
+  line-height: 2.3;
+}
+
+/* this keeps the space between text and menu down arrows */
+a.labkey-menu-button span,
+a.labkey-disabled-menu-button span
+{
+  padding-right: 1.0em;
+}
+
+/* this keeps the enabled button text blue */
+a.labkey-menu-button
+{
+  color: $lk-link-color;
+}
+
+/* this keeps disabled button hover bg invisible and no hand cursor */
+.labkey-button-bar .labkey-disabled-button:hover
+{
+  border: 1px solid $lk-grid-color;
+  background-color: $lk-grid-color;
+  cursor: default;
+}
+
+/* this keeps the hover state style for enabled buttons */
+a.labkey-menu-button:hover
+a.labkey-menu-button:hover span
+{
+  border: 1px solid $lk-border-title-color;
+  background-color: #FFFFFF;
+  cursor: pointer;
+  color: #000000;
+}
+
+/* classes to toggle the display state of buttons displayed in the dataregion message area
+   on hover.
+*/
+.labkey-dataregion-msg .labkey-button
+{
+  visibility: hidden;
+}
+
+.labkey-dataregion-msg:hover .labkey-button
+{
+  visibility: visible;
+}
+
+// removed img.labkey-button-arrow

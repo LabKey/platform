@@ -15,59 +15,117 @@
  * limitations under the License.
  */
 --%>
-<%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
-<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.LoginUrls" %>
+<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
+<%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.BootstrapHeader" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.view.PopupAdminView" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.PopupUserView" %>
+<%@ page import="org.labkey.api.search.SearchUrls" %>
+<%@ page import="java.io.Writer" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("internal/jQuery");
+    }
+%>
+<%!
+    private void toHTML(NavTree tree, Writer out) throws Exception
+    {
+        if (tree == null)
+            return;
+
+        for (NavTree child : tree.getChildren())
+        {
+            if ("-".equals(child.getText()))
+                out.write("<li class=\"divider\"></li>");
+            else
+            {
+                out.write("<li>");
+                out.write("<a href=\"" + child.getHref() + "\">");
+                out.write(PageFlowUtil.filter(child.getText()));
+                out.write("</a>");
+                out.write("</li>");
+            }
+        }
+    }
+%>
 <%
+    BootstrapHeader me = (BootstrapHeader) HttpView.currentView();
+    BootstrapHeader.BootstrapHeaderBean model = me.getModelBean();
     Container c = getContainer();
+    User user = getUser();
+    boolean isRealUser = null != user && !user.isGuest();
+    ViewContext context = getViewContext();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
+    boolean showSearch = hasUrlProvider(SearchUrls.class);
 %>
 <div class="labkey-page-header">
-    <nav>
-        <div class="container">
-            <div class="navbar-header">
-                <a class="navbar-brand hidden-xs brand-logo" href="<%=h(laf.getLogoHref())%>">
-                    <img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>" height="30">
-                </a>
-                <a class="navbar-brand hidden-sm hidden-md hidden-lg brand-logo" href="<%=h(laf.getLogoHref())%>">
-                    <img src="<%=h(PageFlowUtil.staticResourceUrl("/_images/lk_logo_white_m.png"))%>" alt="<%=h(laf.getShortName())%>" height="30">
-                </a>
-                <form class="navbar-right">
-                    <div class="row">
-                        <div class="labkey-nav-icon">
-                            <a href="#"><i class="fa fa-search"></i></a>
-                        </div>
-                        <div id="search-form" class="form-group hidden-sm hidden-xs labkey-nav-search">
-                            <div class="input-group">
-                                <input type="text" placeholder="Search LabKey Server">
-                            </div>
-                        </div>
-                        <div class="nav labkey-nav-icon">
-                            <div class="dropdown">
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-user"></i></a>
-                                <ul class="dropdown-menu">
-                                    <li><a href="#">My Account</a></li>
-                                    <li class="divider"></li>
-                                    <li><a href="#">Sign Out</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="nav labkey-nav-icon">
-                            <div class="dropdown">
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-cog"></i></a>
-                                <ul class="dropdown-menu">
-                                    <li><a href="#">Help <span class="glyphicon glyphicon-cog pull-right"></span></a></li>
-                                    <li class="divider"></li>
-                                    <li><a href="#">Admin <span class="glyphicon glyphicon-stats pull-right"></span></a></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
+    <div class="container clearfix">
+        <div class="navbar-header">
+            <a class="hidden-xs brand-logo" href="<%=h(laf.getLogoHref())%>">
+                <img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>" height="30">
+            </a>
+            <a class="hidden-sm hidden-md hidden-lg brand-logo" href="<%=h(laf.getLogoHref())%>">
+                <img src="<%=h(PageFlowUtil.staticResourceUrl("/_images/lk_logo_white_m.png"))%>" alt="<%=h(laf.getShortName())%>" height="30">
+            </a>
         </div>
-    </nav>
+        <ul class="navbar-nav-lk">
+<% if (showSearch) { %>
+            <li class="navbar-search">
+                <a href="#" class="fa fa-search" id="global-search-trigger"></a>
+                <div id="global-search" class="global-search">
+                    <labkey:form id="global-search-form" action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" method="GET">
+                        <input type="text" class="search-box" name="q" placeholder="Search LabKey Server" value="">
+                        <input type="submit" hidden>
+                        <a href="#" onclick="document.getElementById('global-search-form').submit(); return false;" class="btn-search fa fa-search"></a>
+                    </labkey:form>
+                </div>
+            </li>
+<% } %>
+<% if (isRealUser) { %>
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                    <i class="fa fa-user"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-right">
+                    <% toHTML(PopupUserView.createNavTree(context), out); %>
+                </ul>
+            </li>
+<% } %>
+<% if (PopupAdminView.hasPermission(context)) { %>
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                    <i class="fa fa-cog"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-right">
+                    <% toHTML(PopupAdminView.createNavTree(context), out); %>
+                </ul>
+            </li>
+<% } %>
+<% if (!isRealUser && model.pageConfig.shouldIncludeLoginLink()) { %>
+            <li>
+                <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign In</a>
+            </li>
+<% } %>
+        </ul>
+    </div>
 </div>
+<script type="application/javascript">
+    (function($) {
+        $('#global-search-trigger').click(function(evt) {
+            $(this).parent().toggleClass('active');
+            $('input.search-box').focus();
+        });
+    })(jQuery);
+</script>
