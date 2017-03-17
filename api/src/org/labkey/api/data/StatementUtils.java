@@ -223,11 +223,12 @@ public class StatementUtils
     }
 
 
-    public static Parameter.ParameterMap mergeStatement(Connection conn, TableInfo table, @Nullable Set<String> keyNames, @Nullable Set<String> skipColumnNames, @Nullable Set<String> dontUpdate, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
+    public static Parameter.ParameterMap mergeStatement(Connection conn, TableInfo table, @Nullable Set<String> keyNames, @Nullable Set<String> skipColumnNames, @Nullable Set<String> dontUpdate, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns, boolean supportsAutoIncrementKey) throws SQLException
     {
         return new StatementUtils(Operation.merge, table)
                 .keys(keyNames)
                 .skip(skipColumnNames)
+                .allowSetAutoIncrement(supportsAutoIncrementKey)
                 .noupdate(dontUpdate)
                 .updateBuiltinColumns(autoFillDefaultColumns)
                 .selectIds(selectIds)
@@ -900,6 +901,9 @@ public class StatementUtils
                 fn.append(makePgRowTypeName(ph.variableName));
                 fn.append(" ");
                 fn.append(type);
+                // For PG (29687) we need the length for CHAR type
+                if (_dialect.isPostgreSQL() && JdbcType.CHAR.equals(ph.p.getType()))
+                    fn.append("(").append(ph.length).append(")");
                 call.append(comma).append("?");
                 call.add(ph.p);
                 comma = ",";

@@ -190,7 +190,11 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
 
             Parameter.ParameterMap stmt;
             if (_insertOption == QueryUpdateService.InsertOption.MERGE)
-                stmt = StatementUtils.mergeStatement(_conn, _table, _keyColumns, _skipColumnNames, _dontUpdate, _c, null, _selectIds, false);
+            {
+                if (_context.supportsAutoIncrementKey())
+                    setAutoIncrement(INSERT.ON);
+                stmt = StatementUtils.mergeStatement(_conn, _table, _keyColumns, _skipColumnNames, _dontUpdate, _c, null, _selectIds, false, _context.supportsAutoIncrementKey());
+            }
             else
             {
                 if (_insertOption == QueryUpdateService.InsertOption.IMPORT_IDENTITY)
@@ -246,8 +250,11 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         super.close();
         if (null != _scope && null != _conn)
         {
-            if (_insertOption == QueryUpdateService.InsertOption.IMPORT_IDENTITY)
+            if (_insertOption == QueryUpdateService.InsertOption.IMPORT_IDENTITY ||
+                (_insertOption == QueryUpdateService.InsertOption.MERGE && _context.supportsAutoIncrementKey()))
+            {
                 setAutoIncrement(INSERT.OFF);
+            }
             _scope.releaseConnection(_conn);
         }
     }

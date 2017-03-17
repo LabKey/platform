@@ -30,6 +30,7 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderService;
@@ -292,6 +293,20 @@ public class DataIteratorUtil
     {
         DataIteratorBuilder builder = new DataIteratorBuilder.Wrapper(from);
         return copy(context, builder, to, c, user);
+    }
+
+    // NOTE: first consider if using QueryUpdateService is better
+    // this is just a point-to-point copy _without_ triggers
+    public static int merge(DataIteratorBuilder from, TableInfo to, Container c, User user) throws IOException, BatchValidationException
+    {
+        BatchValidationException errors = new BatchValidationException();
+        DataIteratorContext context = new DataIteratorContext(errors);
+        context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
+        context.setSupportAutoIncrementKey(true);
+        int count = copy(context, from, to, c, user);
+        if (errors.hasErrors())
+            throw errors;
+        return count;
     }
 
 
