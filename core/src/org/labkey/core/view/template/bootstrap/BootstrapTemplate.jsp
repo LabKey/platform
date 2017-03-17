@@ -16,22 +16,18 @@
  */
 --%>
 <%@ page buffer="none" %>
-<%@ page import="org.labkey.api.view.WebPartFactory" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.template.PageConfig" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.view.template.PrintTemplate" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.WebPartFactory" %>
+<%@ page import="org.labkey.api.view.template.PageConfig" %>
+<%@ page import="org.labkey.api.view.template.PrintTemplate" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     PrintTemplate me = (PrintTemplate) HttpView.currentView();
     PageConfig model = me.getModelBean();
     ActionURL url = getActionURL();
-    Container c = getContainer();
-    User user = getUser();
     boolean showRight = me.getView(WebPartFactory.LOCATION_RIGHT) instanceof HttpView && ((HttpView) me.getView(WebPartFactory.LOCATION_RIGHT)).isVisible();
 
     if (model.getFrameOption() != PageConfig.FrameOption.ALLOW)
@@ -75,7 +71,7 @@
         <strong>Under construction!</strong>
         This layout is under development. <a href="admin-experimentalFeatures.view" class="alert-link">Turn it off here</a> by disabling the "Core UI Migration" feature.
     </div>
-    <div class="row">
+    <div>
         <div class="<%= h(showRight ? "col-md-9" : "col-md-*" ) %>">
             <!-- BODY -->
             <% me.include(me.getBody(), out); %>

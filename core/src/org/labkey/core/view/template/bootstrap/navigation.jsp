@@ -15,94 +15,176 @@
  * limitations under the License.
  */
 --%>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.template.AppBar" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.BootstrapTemplate.NavigationModel" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.api.view.WebPartFactory" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%
-    AppBar bean = (AppBar) HttpView.currentView().getModelBean();
-    if (null == bean)
-        return;
-
-    Container c = getContainer();
-    Container p = c.getProject();
-    String projectTitle = "";
-    if (null != p)
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        projectTitle = p.getTitle();
-        if (null != projectTitle && projectTitle.equalsIgnoreCase("home"))
-            projectTitle = "Home";
+        dependencies.add("internal/jQuery");
     }
 
-    NavTree[] tabs = bean.getButtons();
+    private String getSafeName(Portal.WebPart menu)
+    {
+        return (menu.getName() + menu.getIndex()).replaceAll("\\s+", "");
+    }
+%>
+<%
+    NavigationModel model = (NavigationModel) HttpView.currentView().getModelBean();
+    ViewContext context = getViewContext();
+    List<NavTree> tabs = model.getTabs();
 %>
 <nav class="labkey-page-nav">
     <div class="container">
-        <div style="width: 60%; display: inline-block;">
-            <div class="navbar-header" style="float: left; margin: 0;">
-                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#collapsemenu" aria-expanded="false">
-                    <i class="fa fa-bars"></i>
-                </button>
+        <div class="navbar-header">
+            <%--<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#collapsemenu" aria-expanded="false">--%>
+                <%--<i class="fa fa-bars"></i>--%>
+            <%--</button>--%>
 
-                <ul class="nav" style="display: inline-block">
-                    <li id="selected-folder" class="selected-folder">
-                        <a href="#" onclick="return false;">
-                            <i class="fa fa-folder-open"></i>&nbsp;<%=h(projectTitle)%>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-            <div id="collapsemenu" class="collapse navbar-collapse">
-                <ul class="nav navbar-nav">
-                    <li><a href="">EHR</a></li>
-                    <li class="hidden-sm"><a href="">Colonies</a></li>
-                    <li class="hidden-sm"><a href="">Animals</a></li>
-                    <li class="hidden-sm"><a href="">Gene Panels</a></li>
+            <ul class="nav">
+                <li class="dropdown visible-xs">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        <i class="fa fa-bars"></i>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>Custom menu 1</li>
+                        <li>Custom menu 2</li>
+                        <li>Custom menu 3</li>
+                        <li>Custom menu 4</li>
+                    </ul>
+                </li>
+                <li class="dropdown lk-project-nav-ct" data-webpart="projectnav" data-name="projectnav">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        <i class="fa fa-folder-open"></i>&nbsp;<%=h(model.getProjectTitle())%>
+                    </a>
+                    <ul class="dropdown-menu"></ul>
+                </li>
 
-                    <li class="dropdown hidden-xs hidden-lg">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">More <b class="caret"></b></a>
-                        <ul class="dropdown-menu">
-                            <li class="hidden-lg hidden-md"><a href="">Colonies</a></li>
-                            <li class="hidden-lg hidden-md"><a href="">Animals</a></li>
-                            <li class="hidden-lg hidden-md"><a href="">Gene Panels</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
+<%
+    for (Portal.WebPart menu : model.getCustomMenus())
+    {
+        String caption = menu.getName();
+
+        try
+        {
+            WebPartFactory factory = Portal.getPortalPart(menu.getName());
+            if (null == factory)
+                continue;
+            WebPartView view = factory.getWebPartView(context, menu);
+            if (view.isEmpty())
+                continue;
+            if (null != view.getTitle())
+                caption = view.getTitle();
+        }
+        catch (Exception e)
+        {
+            // Use the part name...
+        }
+%>
+                <li class="dropdown hidden-xs" data-webpart="<%=text(getSafeName(menu))%>" data-name="<%=text(menu.getName())%>">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"><%=h(caption)%></a>
+                    <ul class="dropdown-menu"></ul>
+                </li>
+                <% } %>
+            </ul>
         </div>
-
-        <div class="navbar-right">
-            <ul class="nav nav-pills hidden-sm hidden-xs pull-right" role="tablist">
+        <div class="lk-nav-tabs-ct">
+            <ul class="nav lk-nav-tabs hidden-sm hidden-xs pull-right">
                 <%
                     for (NavTree tab : tabs)
                     {
                         if (null != tab.getText() && tab.getText().length() > 0)
                         {
                 %>
-                <li role="presentation">
-                    <a role="tab" data-toggle="tab" href="<%=h(tab.getHref())%>" style="border-radius: 1px; padding-top: 5px;"><%=h(tab.getText())%></a>
+                <li role="presentation" class="<%= text(tab.isSelected() ? "active" : "") %>">
+                    <a href="<%=h(tab.getHref())%>"><%=h(tab.getText())%></a>
                 </li>
                 <%
                         }
                     }
                 %>
             </ul>
-            <div class="nav nav-pills hidden-md hidden-lg" style="float: right; margin-top: 3px;">
-                <div class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
-                        Tabs
-                        <span class="caret"></span>
+            <ul class="nav lk-nav-tabs hidden-md hidden-lg pull-right">
+                <%
+                    for (NavTree tab : tabs)
+                    {
+                        if (null != tab.getText() && tab.getText().length() > 0)
+                        {
+                            if (tab.isSelected())
+                            {
+                %>
+                <li role="presentation" class="dropdown active">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        <%=h(tab.getText())%>&nbsp;
+                        <% if (tabs.size() > 1) { %>
+                        <i class="fa fa-chevron-down" style="font-size: 12px;"></i>
+                        <% } %>
                     </a>
-                    <div class="dropdown-menu" style="background-color: #3495D2; right: 0; left: auto; margin-top: 7px;">
-                        <ul class="nav nav-pills nav-stacked">
-                            <li class="hidden-lg hidden-md"><a href="">Tab 2</a></li>
-                            <li class="hidden-lg hidden-md"><a href="">Tab 3</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+                </li>
+                <%
+                            }
+                        }
+                    }
+                %>
+            </ul>
         </div>
     </div>
 </nav>
+<script type="application/javascript">
+    (function($) {
+
+        var menus = {};
+        <%
+            for (Portal.WebPart menu : model.getCustomMenus())
+            {
+                String safeName = getSafeName(menu);
+                %>menus[<%=PageFlowUtil.jsString(safeName)%>] = {};<%
+                for (Map.Entry<String,String> entry : menu.getPropertyMap().entrySet())
+                {
+                    %>menus[<%=PageFlowUtil.jsString(safeName)%>][<%=PageFlowUtil.jsString(entry.getKey())%>] = <%=PageFlowUtil.jsString(entry.getValue())%>;<%
+                }
+            }
+        %>
+
+        $(function() {
+            $('[data-webpart]').click(function() {
+                var partName = $(this).data('name');
+                var safeName = $(this).data('webpart');
+                var target = $(this).find('.dropdown-menu');
+
+                if (partName && safeName && target) {
+                    var id = target.attr('id');
+                    if (!id) {
+                        id = LABKEY.Utils.id();
+                        target.attr('id', id);
+                    }
+
+                    var config = {
+                        renderTo: id,
+                        partName: partName,
+                        frame: 'none'
+                    };
+
+                    if (menus[safeName]) {
+                        config.partConfig = menus[safeName];
+                    }
+
+                    var wp = new LABKEY.WebPart(config);
+                    wp.render();
+                    $(this).unbind('click');
+                }
+            })
+        });
+    })(jQuery);
+</script>
