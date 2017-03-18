@@ -980,12 +980,13 @@ public class DataRegion extends AbstractDataRegion
 
     protected void renderRegionStart(RenderContext ctx, Writer out, boolean renderButtons, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
     {
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         if (renderButtons)
             renderFormHeader(ctx, out, MODE_GRID);
-        out.write("\n<div class=\"labkey-data-region-wrap\"><table class=\"labkey-data-region");
+        out.write("\n<div class=\"" + (newUI ? " table-responsive " : "") + " labkey-data-region-wrap\"><table class=\"" + (newUI ? " table " : "") + " labkey-data-region");
 
         if (isShowBorders())
-            out.write(" labkey-show-borders");
+            out.write(newUI ? " table-bordered" : " labkey-show-borders");
         else if (isShowSurroundingBorder())
             out.write(" labkey-show-surrounding-border");
 
