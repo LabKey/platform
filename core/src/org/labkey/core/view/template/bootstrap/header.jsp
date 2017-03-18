@@ -95,10 +95,10 @@
 <% } %>
 <% if (isRealUser) { %>
             <li class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" data-toggleremote="lk-user-drop">
                     <i class="fa fa-user"></i>
                 </a>
-                <ul class="dropdown-menu dropdown-menu-right">
+                <ul class="hidden-xs hidden-sm dropdown-menu dropdown-menu-right">
                     <% toHTML(PopupUserView.createNavTree(context), out); %>
                 </ul>
             </li>
@@ -120,12 +120,23 @@
 <% } %>
         </ul>
     </div>
+    <% if (isRealUser) { %>
+    <div class="visible-xs visible-sm lk-user-drop">
+        <ul><% toHTML(PopupUserView.createNavTree(context), out); %></ul>
+    </div>
+    <% } %>
 </div>
 <script type="application/javascript">
     (function($) {
-        $('#global-search-trigger').click(function(evt) {
+        $('#global-search-trigger').click(function() {
             $(this).parent().toggleClass('active');
-            $('input.search-box').focus();
+            var input = $('input.search-box');
+            input.is(':focus') ? input.blur() : input.focus();
+        });
+
+        $('[data-toggleremote]').parent().click(function() {
+            var cls = $(this).find('[data-toggleremote]').data('toggleremote');
+            if (cls) { $('.' + cls).toggleClass('open'); }
         });
     })(jQuery);
 </script>
