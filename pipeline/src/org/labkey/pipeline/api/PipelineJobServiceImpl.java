@@ -139,8 +139,6 @@ public class PipelineJobServiceImpl extends PipelineJobService
     private final ModuleResourceCache<Map<TaskId, TaskPipeline>> TASK_PIPELINE_CACHE = ModuleResourceCaches.create(
         new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskPipelineCacheHandler.MODULE_PIPELINES_DIR), new TaskPipelineCacheHandler(), "TaskPipeline cache");
 
-    private final Set<Module> _pipelineModules = new CopyOnWriteArraySet<>();
-
     private String _defaultExecutionLocation = TaskFactory.WEBSERVER;
     private int _defaultAutoRetry = 0;
 
@@ -193,13 +191,6 @@ public class PipelineJobServiceImpl extends PipelineJobService
         {
             setInstance(this);
         }
-    }
-
-    // At startup, we record all modules with "pipeline/tasks" or "pipeline/pipelines" directories and register a file listener to monitor for changes.
-    // Loading the list of configurations in each module and the descriptors themselves happens lazily.
-    public void registerModule(Module module)
-    {
-        _pipelineModules.add(module);
     }
 
     /**
@@ -257,9 +248,6 @@ public class PipelineJobServiceImpl extends PipelineJobService
         {
             // Remove a cached 'miss' entry if it is present
             _taskPipelineStore.put(pipeline.getId(), pipeline);
-            Module module = pipeline.getDeclaringModule();
-            assert module != null;
-            _pipelineModules.add(module);
         }
     }
 
@@ -324,9 +312,6 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
         for (Module module : activeModules)
         {
-            if (!_pipelineModules.contains(module))
-                continue;
-
             Collection<TaskPipeline> pipelines = getTaskPipelines(module);
             for (TaskPipeline tp : pipelines)
             {
@@ -369,9 +354,6 @@ public class PipelineJobServiceImpl extends PipelineJobService
         {
             // Remove a cached 'miss' entry if present
             _taskFactoryStore.put(factory.getId(), factory);
-            Module module = factory.getDeclaringModule();
-            assert module != null;
-            _pipelineModules.add(module);
         }
     }
 
@@ -424,9 +406,6 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
         for (Module module : activeModules)
         {
-            if (!_pipelineModules.contains(module))
-                continue;
-
             Collection<TaskFactory> factories = getTaskFactories(module);
             pipelineList.addAll(factories);
         }

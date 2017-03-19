@@ -47,6 +47,5 @@ public class PipelineModuleResourceLoader implements ModuleResourceLoader
     @Override
     public void registerResources(Module module) throws IOException, ModuleResourceLoadException
     {
-        PipelineJobService.get().registerModule(module);
     }
 }
