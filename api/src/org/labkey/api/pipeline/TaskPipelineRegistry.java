@@ -33,17 +33,7 @@ import java.util.Collection;
 */
 public interface TaskPipelineRegistry
 {
-    public static final String LOCAL_TASK_PREFIX = "#";
-
-    /**
-     * Registers all tasks and pipelines found in the module under the module's "pipeline/tasks" and "pipeline/pipelines"
-     * directories. The directories will be watched for file changes and tasks will be added or removed as they appear or disappear.
-     * TaskFactory or TaskPipeline objects created by Spring bean config xml files are added to the registry via
-     * the {@link TaskPipelineRegistrar} on startup.
-     *
-     * @param module Module delcaring tasks or pipelines.
-     */
-    void registerModule(Module module);
+    String LOCAL_TASK_PREFIX = "#";
 
     @Nullable
     TaskPipeline getTaskPipeline(TaskId id);
