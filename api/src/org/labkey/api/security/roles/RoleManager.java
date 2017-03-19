@@ -15,7 +15,9 @@
  */
 package org.labkey.api.security.roles;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.view.ViewContext;
@@ -115,24 +117,24 @@ public class RoleManager
 
     public static void registerRole(Role role)
     {
+        registerRole(role, true);
+    }
+
+    public static void registerRole(Role role, boolean addPermissionsToAdminRoles)
+    {
         _nameToRoleMap.put(role.getUniqueName(), role);
         _classToRoleMap.put(role.getClass(), role);
         _roles.add(role);
 
-        boolean adminRole = role instanceof SiteAdminRole || role instanceof ProjectAdminRole || role instanceof FolderAdminRole;
+        boolean addToAdminRoles = addPermissionsToAdminRoles && !(role instanceof SiteAdminRole || role instanceof ProjectAdminRole || role instanceof FolderAdminRole);
 
         //register all exposed permissions in the name and class maps
         for(Class<? extends Permission> permClass : role.getPermissions())
         {
-            //add all permissions to the admin roles
-            if(!adminRole)
-                addPermissionToAdminRoles(permClass);
-
             try
             {
                 Permission perm = permClass.newInstance();
-                _nameToRoleMap.put(perm.getUniqueName(), perm);
-                _classToRoleMap.put(perm.getClass(), perm);
+                registerPermission(perm, addToAdminRoles);
             }
             catch(InstantiationException | IllegalAccessException e)
             {
@@ -195,6 +197,7 @@ public class RoleManager
      * @return A set of Role objects corresponding to the role classes
      */
     @NotNull
+    @SafeVarargs
     public static Set<Role> roleSet(Class<? extends Role>... roleClasses)
     {
         Set<Role> roles = new HashSet<>();
@@ -207,6 +210,22 @@ public class RoleManager
             }
         }
         return roles;
+    }
+
+    /**
+     * Helper method for tests to verify whether the given permissions are present in the administrator roles.
+     *
+     * @param permissionsToTest Permission classes to test
+     */
+    @SafeVarargs
+    public static void testPermissionsInAdminRoles(Class<? extends Permission>... permissionsToTest)
+    {
+        Collection<Class<? extends Permission>> permCollection = Arrays.asList(permissionsToTest);
+
+        RoleManager.roleSet(SiteAdminRole.class, ProjectAdminRole.class, FolderAdminRole.class).forEach(role->{
+            Collection<Class<? extends Permission>> permissions = CollectionUtils.intersection(role.getPermissions(), permCollection);
+            Assert.assertTrue(role.getName() + " should not have been granted these permissions: " + permissions, permissions.isEmpty());
+        });
     }
 
     /**
