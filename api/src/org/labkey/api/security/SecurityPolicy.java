@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
@@ -265,6 +266,7 @@ public class SecurityPolicy implements HasPermission
 
     public boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission, @Nullable Set<Role> contextualRoles)
     {
+        testPermissionIsRegistered(permission);
         boolean ret = getPermissions(principal, contextualRoles).contains(permission);
         SecurityLogger.log("SecurityPolicy.hasPermission " + permission.getSimpleName(), principal, this, ret);
         return ret;
@@ -287,6 +289,7 @@ public class SecurityPolicy implements HasPermission
 
     public boolean hasPermissions(@NotNull UserPrincipal principal, @NotNull Set<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
     {
+        permissions.forEach(this::testPermissionIsRegistered);
         boolean ret = getPermissions(principal, contextualRoles).containsAll(permissions);
         SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions.toString(), principal, this, ret);
         return ret;
@@ -301,6 +304,7 @@ public class SecurityPolicy implements HasPermission
      */
     public boolean hasOneOf(@NotNull UserPrincipal principal, @NotNull Collection<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
     {
+        permissions.forEach(this::testPermissionIsRegistered);
         boolean ret = false;
         Set<Class<? extends Permission>> grantedPerms = getPermissions(principal, contextualRoles);
         for (Class<? extends Permission> requiredPerm : permissions)
@@ -315,6 +319,11 @@ public class SecurityPolicy implements HasPermission
         return ret;
     }
 
+    private void testPermissionIsRegistered(Class<? extends Permission> permission)
+    {
+        if (null == RoleManager.getPermission(permission))
+            Logger.getLogger(SecurityPolicy.class).warn(permission + " is not registered!");
+    }
 
     protected Set<Class<? extends Permission>> getPermissions(@NotNull int[] principals, @Nullable Set<Role> contextualRoles)
     {
