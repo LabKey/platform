@@ -21,6 +21,7 @@ import org.labkey.api.query.CustomViewInfo.ColumnProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
 
 import java.util.Date;
 import java.util.List;
@@ -44,11 +45,13 @@ public class ModuleCustomViewDef
 {
     private final CustomViewXmlReader _customView;
     private final long _lastModified;
+    private final Path _path;
 
     public ModuleCustomViewDef(Resource r)
     {
         _lastModified = r.getLastModified();
         _customView = CustomViewXmlReader.loadDefinition(r);
+        _path = r.getPath();
 
         String fileName = r.getName();
         assert fileName.length() >= CustomViewXmlReader.XML_FILE_EXTENSION.length();
@@ -150,4 +153,8 @@ public class ModuleCustomViewDef
         return _customView.getLabel() != null ? _customView.getLabel() : _customView.getName();
     }
 
+    public Path getPath()
+    {
+        return _path;
+    }
 }

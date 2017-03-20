@@ -621,6 +621,8 @@ public class QueryServiceImpl extends QueryService
            boolean inheritable, boolean sharedOnly, boolean alwaysUseTitlesForLoadingCustomViews)
     {
         Map<String, CustomView> views = new CaseInsensitiveHashMap<>();
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(CustomView.EXPERIMENTAL_DISABLE_TITLE_LOADED_CUSTOM_VIEWS))
+            alwaysUseTitlesForLoadingCustomViews = false;
 
         // module query views have lower precedence, so add them first
         for (CustomView view : qd.getSchema().getModuleCustomViews(container, qd, alwaysUseTitlesForLoadingCustomViews))
@@ -658,6 +660,8 @@ public class QueryServiceImpl extends QueryService
     private Collection<CustomView> getCustomViewsForContainer(@NotNull User user, Container container, @Nullable User owner, boolean inheritable, boolean sharedOnly, boolean alwaysUseTitlesForLoadingCustomViews)
     {
         Map<String, CustomView> views = new CaseInsensitiveHashMap<>();
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(CustomView.EXPERIMENTAL_DISABLE_TITLE_LOADED_CUSTOM_VIEWS))
+            alwaysUseTitlesForLoadingCustomViews = false;
 
         // module query views have lower precedence, so add them first
         Collection<Module> modules = container.getActiveModules();

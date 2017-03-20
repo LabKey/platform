@@ -860,6 +860,10 @@ public class QueryManager
             List<CustomView> views = QueryService.get().getCustomViews(user, container, null, schema.getSchemaName(), queryName, true);
             for (CustomView v : views)
             {
+                if (v.isLoadedFromTableTitle())
+                {
+                    errors.add(new QueryParseException(v.getName() + ": " + CustomView.TITLE_BOUND_CUSTOM_VIEW_WARNING, null, 0, 0));
+                }
                 validateViewColumns(user, container, v, "columns", v.getColumns(), table, errors, warnings);
 
                 if (!StringUtils.isEmpty(v.getFilterAndSort()))

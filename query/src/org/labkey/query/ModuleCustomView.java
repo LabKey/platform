@@ -25,7 +25,9 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.query.persist.QueryManager;
@@ -46,11 +48,26 @@ import java.util.Map;
 public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView, EditableCustomView
 {
     private final QueryDefinition _queryDef;
+    private boolean _isCustomViewFromTitle;
 
     public ModuleCustomView(QueryDefinition queryDef, ModuleCustomViewDef customViewDef)
     {
         super(customViewDef);
         _queryDef = queryDef;
+
+        if (!AppProps.getInstance().isExperimentalFeatureEnabled(CustomView.EXPERIMENTAL_DISABLE_TITLE_LOADED_CUSTOM_VIEWS))
+        {
+            Path resourcePath = customViewDef.getPath();
+            String queryName = resourcePath.get(resourcePath.size()-2);
+            if (queryName != null)
+                _isCustomViewFromTitle = !queryDef.getName().equals(queryDef.getTitle()) && queryName.equals(queryDef.getTitle());
+        }
+    }
+
+    @Override
+    public boolean isLoadedFromTableTitle()
+    {
+        return _isCustomViewFromTitle;
     }
 
     public QueryDefinition getQueryDefinition()

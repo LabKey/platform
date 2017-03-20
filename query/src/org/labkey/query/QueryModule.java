@@ -18,6 +18,7 @@ package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.audit.AuditLogService;
@@ -210,6 +211,9 @@ public class QueryModule extends DefaultModule
 
         AdminConsole.addExperimentalFeatureFlag(QueryView.EXPERIMENTAL_GENERIC_DETAILS_URL, "Generic [details] link in grids/queries",
                 "This feature will turn on generating a generic [details] URL link in most grids.", false);
+
+        AdminConsole.addExperimentalFeatureFlag(CustomView.EXPERIMENTAL_DISABLE_TITLE_LOADED_CUSTOM_VIEWS, "Remove support for loading of Custom Views by Table Title",
+                "This feature is a performance enhancement and will disable the legacy loading of module custom views by matching the table title.", false);
     }
 
 
