@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
@@ -230,6 +229,4 @@ public interface WebdavResource extends Resource
     Map<String, String> getCustomProperties(User user);
 
     void notify(ContainerUser context, String message);
-
-    StackTraceElement[] getCreationStackTrace();
 }

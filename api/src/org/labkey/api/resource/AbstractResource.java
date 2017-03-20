@@ -31,13 +31,11 @@ abstract public class AbstractResource implements Resource
 {
     private final Path _path;
     final Resolver _resolver;
-    protected final StackTraceElement[] _creationStackTrace;
 
     protected AbstractResource(Path path, @Nullable Resolver resolver)
     {
         _path = path;
         _resolver = resolver;
-        _creationStackTrace = Thread.currentThread().getStackTrace();
     }
 
     protected AbstractResource(Path folder, String name, Resolver resolver)

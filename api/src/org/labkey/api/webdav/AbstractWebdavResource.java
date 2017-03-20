@@ -569,10 +569,4 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     {
         setSearchProperty(SearchService.PROPERTY.categories,category.toString());
     }
-
-    @Override
-    public StackTraceElement[] getCreationStackTrace()
-    {
-        return _creationStackTrace;
-    }
 }

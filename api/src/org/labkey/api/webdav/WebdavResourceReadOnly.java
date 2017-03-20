@@ -336,12 +336,6 @@ public class WebdavResourceReadOnly implements WebdavResource
     }
 
     @Override
-    public StackTraceElement[] getCreationStackTrace()
-    {
-        return getDelegate().getCreationStackTrace();
-    }
-
-    @Override
     public Resolver getResolver()
     {
         return getDelegate().getResolver();
