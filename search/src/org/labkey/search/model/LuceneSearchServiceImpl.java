@@ -861,8 +861,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private void logBadDocument(String problem, WebdavResource r)
     {
-        String message = problem + ". Document creation stack trace:" + ExceptionUtil.renderStackTrace(r.getCreationStackTrace());
-        _log.error(message);
+        _log.error(problem);
         throw new IllegalStateException(problem);
     }
 
