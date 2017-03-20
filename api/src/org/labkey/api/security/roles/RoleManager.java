@@ -264,12 +264,9 @@ public class RoleManager
                 throw new RuntimeException(e);
             }
 
-            if (factory != null)
-            {
-                Set<Role> roles = factory.getContextualRoles(context);
-                if (roles != null)
-                    allContextualRoles.addAll(roles);
-            }
+            Set<Role> roles = factory.getContextualRoles(context);
+            if (roles != null)
+                allContextualRoles.addAll(roles);
         }
 
         return allContextualRoles;

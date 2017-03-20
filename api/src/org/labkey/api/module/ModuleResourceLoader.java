@@ -35,7 +35,7 @@ import java.util.Set;
  */
 public interface ModuleResourceLoader
 {
-    public @NotNull Set<String> getModuleDependencies(Module module, File explodedModuleDir);
+    @NotNull Set<String> getModuleDependencies(Module module, File explodedModuleDir);
 
-    public void registerResources(Module module) throws IOException, ModuleResourceLoadException;
+    void registerResources(Module module) throws IOException, ModuleResourceLoadException;
 }
