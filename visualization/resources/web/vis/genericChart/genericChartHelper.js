@@ -901,7 +901,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 }
             });
 
-            if (data.length * maxLen*5 > plotConfig.width) {
+            if (data.length * maxLen*5 > plotConfig.width - 150) {
                 // min bottom margin: 50, max bottom margin: 275
                 var bottomMargin = Math.min(Math.max(50, maxLen*5), 275);
                 return {bottom: bottomMargin};

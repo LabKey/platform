@@ -242,10 +242,10 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
                 }
 
                 // add the container filters to the updated FilterAndSort URL
-                for (String containerFilerName : fas.getContainerFilterNames())
+                for (String containerFilterName : fas.getContainerFilterNames())
                 {
-                    if (containerFilerName != null)
-                        updatedFilterAndSortUrl.addParameter(CustomViewInfo.FILTER_PARAM_PREFIX + "." + CustomViewInfo.CONTAINER_FILTER_NAME, containerFilerName);
+                    if (containerFilterName != null)
+                        updatedFilterAndSortUrl.addParameter(CustomViewInfo.FILTER_PARAM_PREFIX + "." + CustomViewInfo.CONTAINER_FILTER_NAME, containerFilterName);
                 }
 
                 if (filtersUpdated || sortsUpdated || analyticsProvidersUpdated)
