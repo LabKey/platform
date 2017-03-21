@@ -40,12 +40,15 @@ public class ModuleProperty
 {
     private Module _module;
     private String _name;
+    private String _label;
     //private boolean _required = false;
     private boolean _canSetPerContainer = false;
     private boolean _canSetPerUser = false;
     private boolean _excludeFromClientContext = false;
     private String _defaultValue = null;
     private String _description = null;
+    private boolean _showDescriptionInline = false;
+    private int _inputFieldWidth = 300;
 
     private List<Class<? extends Permission>> _editPermissions;
 
@@ -72,6 +75,16 @@ public class ModuleProperty
     public String getName()
     {
         return _name;
+    }
+
+    public String getLabel()
+    {
+        return _label != null ? _label : getName();
+    }
+
+    public void setLabel(String label)
+    {
+        _label = label;
     }
 
 //    public boolean isRequired()
@@ -135,6 +148,26 @@ public class ModuleProperty
         _description = description;
     }
 
+    public boolean isShowDescriptionInline()
+    {
+        return _showDescriptionInline;
+    }
+
+    public void setShowDescriptionInline(boolean showDescriptionInline)
+    {
+        _showDescriptionInline = showDescriptionInline;
+    }
+
+    public int getInputFieldWidth()
+    {
+        return _inputFieldWidth;
+    }
+
+    public void setInputFieldWidth(int inputFieldWidth)
+    {
+        _inputFieldWidth = inputFieldWidth;
+    }
+
     public boolean isExcludeFromClientContext()
     {
         return _excludeFromClientContext;
@@ -150,6 +183,7 @@ public class ModuleProperty
         JSONObject ret = new JSONObject();
 
         ret.put("name", getName());
+        ret.put("label", getLabel());
         ret.put("module", getModule().getName());
         //ret.put("required", isRequired());
         ret.put("canSetPerContainer", isCanSetPerContainer());
@@ -157,6 +191,8 @@ public class ModuleProperty
         ret.put("defaultValue", getDefaultValue());
         ret.put("editPermissions", getEditPermissions());
         ret.put("description", getDescription());
+        ret.put("showDescriptionInline", isShowDescriptionInline());
+        ret.put("inputFieldWidth", getInputFieldWidth());
         return ret;
     }
 
