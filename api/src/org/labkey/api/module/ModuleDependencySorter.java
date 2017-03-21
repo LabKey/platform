@@ -26,7 +26,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -269,10 +268,6 @@ public class ModuleDependencySorter
                     if (module.getName().equals("b"))
                         return Collections.singleton("c");
                     return Collections.emptySet();
-                }
-
-                public void registerResources(Module module) throws IOException, ModuleResourceLoadException
-                {
                 }
             };
 

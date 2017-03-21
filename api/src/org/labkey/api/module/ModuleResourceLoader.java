@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.File;
+import java.util.Collections;
 import java.util.Set;
 
 /*
@@ -33,9 +34,16 @@ import java.util.Set;
  * resources from a module at initialization time. These resources
  * might include reports, queries, assay definitions, etc.
  */
+@Deprecated
+// TODO: Delete... proactively registering resources and detecting dependencies at startup time is unnecessary and leads to inconsistencies
 public interface ModuleResourceLoader
 {
-    @NotNull Set<String> getModuleDependencies(Module module, File explodedModuleDir);
+    default @NotNull Set<String> getModuleDependencies(Module module, File explodedModuleDir)
+    {
+        return Collections.emptySet();
+    }
 
-    void registerResources(Module module) throws IOException, ModuleResourceLoadException;
+    default void registerResources(Module module) throws IOException, ModuleResourceLoadException
+    {
+    }
 }
