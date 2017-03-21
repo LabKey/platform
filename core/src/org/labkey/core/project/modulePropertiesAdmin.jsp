@@ -16,20 +16,24 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.Module" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("Ext4");
+    }
+%>
 <%
     //int webPartId = me.getModelBean().getRowId();
     String renderTarget = "project-";// + me.getModelBean().getIndex();
 
-    Container target = getContainer();
-//    boolean hasPermission = target.hasPermission(getUser(), ReadPermission.class);
-
     List<String> modules = new ArrayList<>();
-    for (Module m : target.getActiveModules(getUser()))
+    for (Module m : getContainer().getActiveModules(getUser()))
     {
         if(m.getModuleProperties().size() > 0)
         {
@@ -40,18 +44,16 @@
 %>
 <script type="text/javascript">
 
-    LABKEY.requiresExt4ClientAPI();
-    LABKEY.requiresScript("ModulePropertiesAdminPanel.js");
-
-</script>
-<script type="text/javascript">
-
 Ext4.onReady(function(){
-    Ext4.onReady(function(){
+
+    LABKEY.requiresScript("ModulePropertiesAdminPanel.js", function() {
+
         Ext4.create('LABKEY.ext.ModulePropertiesAdminPanel', {
             modules: ['<%=StringUtils.join(modules, "','")%>']
         }).render('<%=renderTarget%>');
+
     });
+
 });
 
 </script>

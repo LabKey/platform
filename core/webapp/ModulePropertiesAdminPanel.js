@@ -14,9 +14,8 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
         });
 
         Ext4.apply(this, {
-            bodyStyle: 'padding: 5px;',
+            padding: 5,
             border: false,
-            width: 800,
             items:  [{
                 html: this.modules.length > 0 ? 'Loading...' : 'No modules provided',
                 border: false
@@ -68,9 +67,14 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
 
     renderForm: function(){
         var toAdd = [{
-            html: 'This page allows you to view and set module properties.  Below are the properties that can be set.  If the property can have a separate value per folder, there will be a field for the current folder and each parent folder.  If the property can only be set site-wide, there will only be a single field.  If you do not have permission to edit this property in any of those folders, the property will appear read-only.  To see more detail about each property, hover over the question mark next to the property name.',
+            html: 'This page allows you to view and set module properties. Below are the properties that can be set. '
+                + 'If the property can have a separate value per folder, there will be a field for the current folder '
+                + 'and each parent folder. If the property can only be set site-wide, there will only be a single '
+                + 'field. If you do not have permission to edit this property in any of those folders, the property '
+                + 'will appear read-only. To see more detail about each property, hover over the question mark next '
+                + 'to the property name.',
             border: false,
-            style: 'padding-bottom: 10px;'
+            padding: '0 0 15px 0'
         }];
 
         for(var module in this.propertyMap){
@@ -82,8 +86,8 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
             toAdd.push({
                 title: '<b>Module: ' + module + '</b>',
                 border: true,
+                padding: '0 0 15px 0',
                 bodyStyle: 'padding: 5px;',
-                style: 'padding-bottom: 10px;',
                 items: childItems
             });
         }
@@ -103,33 +107,40 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
         if(!Ext4.isEmpty(pd.defaultValue))
             tooltip.push('Default Value: ' + pd.defaultValue);
 
-        if(!Ext4.isEmpty(pd.description))
+        if(!pd.showDescriptionInline && !Ext4.isEmpty(pd.description))
             tooltip.push('Description: ' + pd.description);
 
         tooltip = tooltip.join('<br>');
 
         var cfg = {
-            border: false,
+            padding: 5,
             items: [{
                 name: pd.name,
-                html: '<b>Property: ' + pd.name + '</b><a data-qtip="' + tooltip + '"><span class="labkey-help-pop-up">?</span></a>',
+                html: '<b>Property: ' + Ext4.String.htmlEncode(pd.label) + '</b>'
+                    + '<a data-qtip="' + tooltip + '"><span class="labkey-help-pop-up">?</span></a>',
                 border: false,
-                bodyStyle: 'padding-bottom: 10px;'
+                style: 'background-color: #eeeeee; border-bottom: solid 1px #b4b4b4;',
+                bodyStyle: 'background-color: #eeeeee',
+                padding: '4px 10px'
             },{
                 xtype: 'container',
-                style: 'padding-left: 5px;padding-bottom: 10px;',
+                padding: 8,
                 defaults: {
-                    labelWidth: 150
+                    labelWidth: 200,
+                    width: 200 + Math.max(300, pd.inputFieldWidth),
+                    padding: 3
                 },
                 items: [{
+                    html: Ext4.String.htmlEncode(pd.description),
+                    border: false,
+                    width: '100%',
+                    padding: '0 0 10px 2px',
+                    hidden: !pd.showDescriptionInline || Ext4.isEmpty(pd.description)
+                },{
                     xtype: 'displayfield',
                     fieldLabel: '<b>Folder</b>',
                     labelSeparator: '',
                     value: '<b>Value</b>'
-                },{
-                    width: '90%',
-                    style: 'border-top: solid 1px;padding-bottom: 5px;',
-                    border: false
                 }]
             }]
         };
