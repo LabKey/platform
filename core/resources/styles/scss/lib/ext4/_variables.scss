@@ -1,15 +1,5 @@
 $base-color: $lk-secondary-brand-color;
 $panel-base-color: $base-color;
-//$base-color: #226495;
-//$panel-base-color: #DFE8F6;
-
-$text-color: #000000;
-$link-color: $lk-link-color;
-$grid-color: #E7EFF4;
-$primary-bg-color: #F8F8F8;
-$secondary-bg-color: #FFFFFF;
-$border-title-color: #676767;
-$webpart-color: $lk-webpart-color;
 
 //layout
 $accordion-header-background-color: $lk-webpart-color;
@@ -61,14 +51,14 @@ $grid-row-cell-selected-border-color: adjust-color($base-color, $hue: 6.952deg, 
 //$grid-row-cell-focus-border-color: adjust-color($neutral-color, $hue: 0deg, $saturation: 0%, $lightness: -66%) !default;
 //$grid-row-cell-focus-background-color: adjust-color($neutral-color, $hue: 0deg, $saturation: 0%, $lightness: 0.392%) !default;
 
-$button-default-color: $base-color;
+$button-default-color: $lk-button-color;
 $button-default-color-over: #000;
 $button-default-color-focus: #000;
 $button-default-color-pressed: #000;
 $button-default-color-disabled: #808080;
 
 $button-small-font-weight: bold;
-$button-small-border-radius: 3px;
+$button-small-border-radius: $lk-button-border-radius;
 
 $button-default-base-color: #fff;
 $button-default-base-color-over: #fff;

@@ -1989,73 +1989,6 @@ input[type="checkbox"], input[type="radio"] {
   width: 50px;
 }
 
-/* Used for the "App Bar" containing the main title and the application button bar */
-
-.labkey-app-bar {
-  background-color: $lk-webpart-color;
-}
-
-.labkey-app-bar-replicate
-{
-  padding-left: 0;
-  padding-right: 0;
-  position: absolute;
-  top: 75px;
-  z-index: -1;
-  height: 26px;
-}
-
-.labkey-app-bar div.labkey-folder-title { /* this should map to the link and top border color in theme */
-  float: left;
-  font-size: 14pt;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-.labkey-app-bar div.labkey-folder-title a:hover { /* this is new, should be same across themes */
-  color: #fff;
-}
-
-/* tabs */
-.labkey-app-bar ul {
-  float: right;
-  padding: 0;
-  margin: 0;
-  border-bottom: none;
-  list-style-type: none;
-}
-
-.labkey-app-bar ul li {
-  display: inline-block;
-
-  padding:  8px 8px 8px 20px;
-  line-height : 1;
-  text-decoration : none;
-  background-color: #efefef;
-
-  border-radius: 5px 5px 0 0;
-
-  -moz-box-shadow: 0 -2px 2px #ddd;
-  -webkit-box-shadow: 0 -2px 2px #ddd;
-  box-shadow: 0 -2px 2px #ddd;
-}
-
-.labkey-app-bar ul li a {
-  font-family: $lk-font-family-sans-serif-bold;
-  letter-spacing: .5px;
-}
-
-.labkey-app-bar ul:hover.labkey-tab-strip { /* map bottom border and background color to Primary background color */
-  background-color: $lk-primary-bg-color;
-  opacity: 1.0;
-  color: #000;
-  border-bottom: 1px solid $lk-primary-bg-color;
-}
-
-.labkey-app-bar ul li.tab-nav-no-menu {
-  padding:  8px;
-}
-
 li.tab-nav-active {
   border:  1px solid transparent;
   background-color: $lk-primary-bg-color;
@@ -2063,44 +1996,6 @@ li.tab-nav-active {
 
 li.tab-nav-active a {
   color: #000000;
-}
-
-.labkey-app-bar ul li.tab-nav-edit {
-  padding: 8px 6px 8px 0;
-  font-size: 14px;
-}
-
-.labkey-app-bar ul li .tab-nav-edit-img {
-  vertical-align: bottom;
-  display: inline-block;
-  background: url('#{$internal-images-dir}/pencil2.png') no-repeat;
-  width: 23px;
-  height: 18px;
-}
-
-.labkey-app-bar ul li:hover .tab-nav-edit-img {
-  background-position: -25px 0;
-}
-
-.tab-edit-mode-enabled ul li.tab-nav-hidden {
-  display: inline-block;
-  background: #efefef url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAAFUlEQVQYlWNgoAY4ffp0A2UKhoUVAN5jEUdaMwH1AAAAAElFTkSuQmCC) repeat;
-}
-
-.tab-edit-mode-enabled ul li.tab-nav-hidden a {
-  font-weight: normal;
-  font-size: 104%;
-}
-
-.tab-edit-mode-enabled ul li.tab-nav-add {
-  display: inline-block;
-  padding: 8px;
-}
-
-.tab-edit-mode-disabled ul li.tab-nav-hidden,
-.tab-edit-mode-disabled ul li.tab-nav-add
-{
-  display: none;
 }
 
 li.tab-nav-inactive a {

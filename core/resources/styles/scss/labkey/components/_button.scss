@@ -1,91 +1,45 @@
 //== Standalone Buttons
 //
 
-a.labkey-button,
-a.labkey-button:visited,
-td .labkey-menu-button,
-span.labkey-button {
-  padding: 3px 5px;
+.labkey-button {
+  background-color: $lk-button-bg-color;
+  border: 1px solid $lk-button-border-color;
+  border-radius: $lk-button-border-radius;
+  color: $lk-button-color;
   margin-right: 5px;
-  border: 1px solid #b4b4b4;
-  color: $lk-link-color;
-  text-transform: uppercase;
+  padding: $lk-button-padding;
+  text-transform: $lk-button-text-transform;
   white-space: nowrap;
 
-  border-radius: 5px;
-
-  /* For WebKit (Safari, Google Chrome etc) */
-  background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5));
-  /* For Mozilla/Gecko (Firefox etc) */
-  background: -moz-linear-gradient(top, #fff, #e5e5e5);
-  /* For IE */
-  filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5) !important;
-  -ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5)" !important;
-}
-
-a.labkey-button:hover,
-span.labkey-button:hover
-{
-  padding: 3px 5px;
-  margin-right: 5px;
-  border: 1px solid $lk-border-title-color !important;
-  color: #000000;
-  text-transform: uppercase;
-  cursor: pointer;
-
-  border-radius: 5px;
-
-  /* For WebKit (Safari, Google Chrome etc) */
-  background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5));
-  /* For Mozilla/Gecko (Firefox etc) */
-  background: -moz-linear-gradient(top, #fff, #e5e5e5);
+  &:active,
+  &:hover,
+  &:focus {
+    background-color: $lk-button-bg-color-hover;
+    border: 1px solid $lk-button-border-color-hover;
+    color: $lk-button-color-hover;
+    cursor: pointer;
+  }
 }
 
 .labkey-disabled-button,
 .labkey-disabled-button:visited,
 .labkey-disabled-button:active,
 a.labkey-disabled-button {
-  padding: 3px 5px;
+  padding: $lk-button-padding;
   border: 1px solid #b4b4b4;
   margin-right: 5px;
   color: #808080 !important;
-  text-transform: uppercase;
+  text-transform: $lk-button-text-transform;
   white-space: nowrap;
   cursor: default;
-
-  border-radius: 5px;
-
-  /* For WebKit (Safari, Google Chrome etc) */
-  background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5));
-  /* For Mozilla/Gecko (Firefox etc) */
-  background: -moz-linear-gradient(top, #fff, #e5e5e5);
-}
-
-a.labkey-button:active,
-span.labkey-button:active
-{
-  padding: 3px 5px;
-  margin-right: 5px;
-  border: 1px solid #b4b4b4 !important;
-  color: #000000;
-  text-transform: uppercase;
-  cursor: pointer;
-
-  border-radius: 5px;
-  white-space: nowrap;
-
-  /* For WebKit (Safari, Google Chrome etc) */
-  background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5));
-  /* For Mozilla/Gecko (Firefox etc) */
-  background: -moz-linear-gradient(top, #fff, #e5e5e5);
+  border-radius: $lk-button-border-radius;
 }
 
 //== Button Bars
 //
 
 div.labkey-button-bar,
-table.labkey-button-bar
-{
+table.labkey-button-bar {
   white-space: nowrap;
   background-color: $lk-grid-color;
   padding: 4px;
@@ -97,9 +51,9 @@ table.labkey-button-bar
 .labkey-disabled-menu-button,
 .labkey-wp-text-buttons a
 {
-  font-family:  $lk-font-family-sans-serif-bold !important;
-  font-size: 12px;
-  letter-spacing: .5px;
+  font-family: $lk-font-family-sans-serif-bold;
+  font-size: $lk-font-size-small;
+  letter-spacing: $lk-button-letter-spacing;
 }
 
 /* Used for the new css menu buttons, which consist of a link (<a>)

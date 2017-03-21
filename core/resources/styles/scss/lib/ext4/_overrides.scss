@@ -1,18 +1,8 @@
 // TODO: The following were taken from stylesheet.css, we may be able to integrate some of these
 // directly with the ExtJS 4 variables and remove the selector overrides here
 
-.x4-btn {
-  font-family: $lk-font-family-sans-serif-bold;
-  font-size: 12px;
-  letter-spacing: .5px;
-}
-
 .labkey-checkbox-mv .x4-form-cb-label {
   color: #606060;
-}
-
-.x4-btn-inner {
-  text-transform: uppercase;
 }
 
 .x4-btn-default-small-disabled

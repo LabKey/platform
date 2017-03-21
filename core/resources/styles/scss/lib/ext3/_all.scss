@@ -6976,7 +6976,7 @@ div.x-tree-node-leaf IMG.x-tree-node-icon.labkey-tree-error-icon
 
 .x-grid3-hd-inner {
   font-weight:normal;
-  color: #126495;
+  color: #$lk-brand-color;
 }
 
 td.x-grid3-hd-menu-open {
@@ -7103,7 +7103,7 @@ li.x-menu-item-active a.x-menu-item {
   button {
     background-color: transparent;
     border: 0 none;
-    color: $lk-link-color;
+    color: $lk-button-color;
     cursor: pointer;
     font: normal $lk-font-size-small $lk-font-family-sans-serif-bold;
     margin: 0;
@@ -7111,7 +7111,7 @@ li.x-menu-item-active a.x-menu-item {
     outline: 0 none;
     overflow: visible;
     padding: 2px 3px 3px 3px;
-    text-transform: uppercase;
+    text-transform: $lk-button-text-transform;
     width: auto;
   }
 
@@ -7154,7 +7154,7 @@ li.x-menu-item-active a.x-menu-item {
 .x-btn-text {
   font-size: $lk-font-size-small;
   font-family: $lk-font-family-sans-serif-bold;
-  letter-spacing: .5px;
+  letter-spacing: $lk-button-letter-spacing;
 }
 
 
@@ -7259,25 +7259,25 @@ body .x-window .x-window-header-text, body .x-panel-ghost .x-window-header-text 
 
 /*********** X-window ******/
 .x-window-tc {
-  background: #126495;
+  background: $lk-brand-color;
 }
 .x-window-tl {
-  background: #126495;
+  background: $lk-brand-color;
   padding-left: 4px !important;
 }
 .x-window-tr {
-  background: #126495;
+  background: $lk-brand-color;
   padding-right: 4px !important;
 }
 .x-window-bc{
   background: #FFFFFF;
 }
 .x-window-bl {
-  background: #126495;
+  background: $lk-brand-color;
   padding-left:4px !important;
 }
 .x-window-br {
-  background: #126495;
+  background: $lk-brand-color;
   padding-right:4px !important;
 }
 .x-window-mc {
@@ -7286,17 +7286,17 @@ body .x-window .x-window-header-text, body .x-panel-ghost .x-window-header-text 
 }
 
 .x-window-footer {
-  border-bottom-color: #126495;
+  border-bottom-color: $lk-brand-color;
   border-bottom-style: solid;
   border-bottom-width: 4px !important;
 }
 
 .x-window-ml {
-  background: #126495;
+  background: $lk-brand-color;
   padding-left:4px !important;
 }
 .x-window-mr {
-  background: #126495;
+  background: $lk-brand-color;
   padding-right:4px !important;
 }
 
@@ -7329,13 +7329,13 @@ body.x-body-masked .x-window-mc, body.x-body-masked .x-window-plain .x-window-mc
 }
 
 .x-window-maximized .x-window-tc {
-  background: #126495;
+  background: $lk-brand-color;
 }
 
 
 .x-panel-nofooter .x-panel-bc, .x-panel-nofooter .x-window-bc {
   height:4px;
-  background: #126495;
+  background: $lk-brand-color;
 }
 
 body .x-window .x-window-tl .x-window-header {
@@ -7387,7 +7387,7 @@ body .x-grid3 .x-grid3-row {
 
 body .x-grid3 .x-grid3-row-selected {
   padding:0;
-  border: 1px solid #126495;
+  border: 1px solid $lk-brand-color;
   background: #eeeeee !important;
 }
 
@@ -7487,7 +7487,7 @@ ul.x-tab-strip-top li {
 }
 
 .x-tab-strip span.x-tab-strip-text {
-  color: #126495;
+  color: $lk-brand-color;
   font-weight: bold;
 }
 
@@ -7556,7 +7556,7 @@ ul.x-tab-strip-top li {
 }
 
 .x-grid3-hd-inner {
-  color: #126495;
+  color: $lk-brand-color;
 }
 
 //== FilterDialog

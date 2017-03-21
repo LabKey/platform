@@ -2,19 +2,20 @@
   font-family: $lk-font-family-sans-serif-bold;
   font-size: $lk-font-size-small;
   font-weight: normal;
+  letter-spacing: $lk-button-letter-spacing;
   text-transform: $lk-button-text-transform;
 }
 
 .btn-default {
-  color: $lk-accent-color;
-  background-color: $white;
-  border-color: $lk-accent-color;
+  color: $lk-button-color;
+  background-color: $lk-button-bg-color;
+  border-color: $lk-button-border-color;
 
   // Maintain same color when disabled
   &.disabled {
     &:active, &:focus, &:hover {
       background-color: $white;
-      border-color: $lk-accent-color;
+      border-color: $lk-button-border-color;
     }
   }
 
@@ -23,7 +24,7 @@
   &:hover {
     color: $white;
     background-color: $lk-accent-color;
-    border-color: darken($lk-accent-color, 5%);
+    border-color: darken($lk-button-border-color, 5%);
   }
 }
 

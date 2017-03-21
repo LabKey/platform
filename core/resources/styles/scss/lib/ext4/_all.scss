@@ -1,15 +1,11 @@
 // Remove ExtJS style support for IE6 .x4-ie6
 
-/* line 1, ../../../ext-theme-base/sass/src/Component.scss */
-.x4-body {
-  // remove ExtJs styles applied at body tag scope
-  //margin: 0;
-}
-
-/* line 5, ../../../ext-theme-base/sass/src/Component.scss */
-img {
-  // remove ExtJS styles applied to general img
-  //border: 0;
+@mixin border-radius($radius) {
+  -webkit-border-radius: $radius;
+  -moz-border-radius: $radius;
+  -ms-border-radius: $radius;
+  -o-border-radius: $radius;
+  border-radius: $radius;
 }
 
 /* line 10, ../../../ext-theme-base/sass/src/Component.scss */
@@ -38,12 +34,6 @@ img {
   font-size: 0;
   line-height: 0;
   display: table;
-}
-
-/* line 33, ../../../ext-theme-base/sass/src/Component.scss */
-.x4-strict .x4-ie7 .x4-clear {
-  height: 0;
-  width: 0;
 }
 
 /* line 41, ../../../ext-theme-base/sass/src/Component.scss */
@@ -184,11 +174,7 @@ img {
 /* line 178, ../../../ext-theme-base/sass/src/Component.scss */
 .x4-css-shadow {
   position: absolute;
-  -webkit-border-radius: 5px;
-  -moz-border-radius: 5px;
-  -ms-border-radius: 5px;
-  -o-border-radius: 5px;
-  border-radius: 5px;
+  @include border-radius(5px);
 }
 
 /* line 184, ../../../ext-theme-base/sass/src/Component.scss */
@@ -260,7 +246,6 @@ div.x4-editor {
   display: inline-block;
   position: relative;
   zoom: 1;
-  *display: inline;
   outline: 0;
   cursor: pointer;
   white-space: nowrap;
@@ -289,6 +274,8 @@ div.x4-editor {
   white-space: nowrap;
   overflow: hidden;
   zoom: 1;
+  letter-spacing: $lk-button-letter-spacing;
+  text-transform: $lk-button-text-transform;
 }
 
 /* line 35, ../../../ext-theme-base/sass/src/button/Button.scss */
@@ -1604,19 +1591,12 @@ a.x4-tab {
   overflow: hidden;
 }
 
-/* line 31, ../../../ext-theme-base/sass/src/tree/Panel.scss */
-.x4-tree-node-text {
-  zoom: 1;
-}
-
 /* line 1, ../../../ext-theme-base/sass/src/draw/Component.scss */
 .x4-surface {
   display: -moz-inline-stack;
   display: inline-block;
   vertical-align: middle;
-  *vertical-align: auto;
   zoom: 1;
-  *display: inline;
   overflow: hidden;
 }
 
@@ -1681,19 +1661,7 @@ a.x4-tab {
   display: inline-block;
 }
 
-/* line 55, ../../../ext-theme-base/sass/src/draw/Component.scss */
-svg, vml {
-  overflow: hidden;
-}
-
 /* including package ext-theme-neutral */
-/* line 1, ../../../ext-theme-neutral/sass/src/Component.scss */
-.x4-body {
-  // remove ExtJs styles applied at body tag scope
-  //color: black;
-  //font-size: 12px;
-  //font-family: tahoma, arial, verdana, sans-serif;
-}
 
 /* line 13, ../../../ext-theme-neutral/sass/src/Component.scss */
 .x4-animating-size,
@@ -1791,9 +1759,6 @@ svg, vml {
   border-width: 1px;
   height: 20px;
   border-color: #6594cf;
-  /*<if slicer>*/
-  /*</if slicer>*/
-  /* */
 }
 /* line 72, ../../../ext-theme-neutral/sass/src/ProgressBar.scss */
 .x4-content-box .x4-progress-default {
@@ -1835,26 +1800,10 @@ svg, vml {
 
 /* line 246, ../../../ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-small {
-  border-color: #d1d1d1;
-}
-
-/* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-btn-default-small {
-  -webkit-border-radius: 3px;
-  -moz-border-radius: 3px;
-  -ms-border-radius: 3px;
-  -o-border-radius: 3px;
-  border-radius: 3px;
-  padding: 2px 2px 2px 2px;
-  border-width: 1px;
-  border-style: solid;
-  background-image: none;
-  background-color: white;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $btn-background-gradient-start), color-stop(100%, $btn-background-gradient-end));
-  background-image: -webkit-linear-gradient(top, $btn-background-gradient-start, $btn-background-gradient-end);
-  background-image: -moz-linear-gradient(top, $btn-background-gradient-start, $btn-background-gradient-end);
-  background-image: -o-linear-gradient(top, $btn-background-gradient-start, $btn-background-gradient-end);
-  background-image: linear-gradient(top, $btn-background-gradient-start, $btn-background-gradient-end);
+  @include border-radius($lk-button-border-radius);
+  padding: 2px;
+  border: 1px solid $lk-button-border-color;
+  background: $lk-button-bg-color none;
 }
 
 /* line 189, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -1874,11 +1823,7 @@ svg, vml {
 .x4-nbr .x4-btn-default-small {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
   background-image: none;
 }
@@ -1975,13 +1920,6 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
 /* line 437, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-btn-default-small-mc {
   padding: 0px 0px 0px 0px;
-}
-
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-btn-default-small-tl,
-.x4-strict .x4-ie7 .x4-btn-default-small-bl {
-  position: relative;
-  right: 0;
 }
 
 /*<if slicer>*/
@@ -2371,11 +2309,7 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
 
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-btn-default-medium {
-  -webkit-border-radius: 3px;
-  -moz-border-radius: 3px;
-  -ms-border-radius: 3px;
-  -o-border-radius: 3px;
-  border-radius: 3px;
+  @include border-radius(3px);
   padding: 3px 3px 3px 3px;
   border-width: 1px;
   border-style: solid;
@@ -2405,11 +2339,7 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
 .x4-nbr .x4-btn-default-medium {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
   background-image: none;
 }
@@ -2506,13 +2436,6 @@ body.x4-nbr .x4-btn-default-medium-frameInfo {
 /* line 437, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-btn-default-medium-mc {
   padding: 1px 1px 1px 1px;
-}
-
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-btn-default-medium-tl,
-.x4-strict .x4-ie7 .x4-btn-default-medium-bl {
-  position: relative;
-  right: 0;
 }
 
 /*<if slicer>*/
@@ -2847,11 +2770,7 @@ body.x4-nbr .x4-btn-default-medium-frameInfo {
 
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-btn-default-large {
-  -webkit-border-radius: 3px;
-  -moz-border-radius: 3px;
-  -ms-border-radius: 3px;
-  -o-border-radius: 3px;
-  border-radius: 3px;
+  @include border-radius(3px);
   padding: 3px 3px 3px 3px;
   border-width: 1px;
   border-style: solid;
@@ -2881,11 +2800,7 @@ body.x4-nbr .x4-btn-default-medium-frameInfo {
 .x4-nbr .x4-btn-default-large {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
   background-image: none;
 }
@@ -2982,13 +2897,6 @@ body.x4-nbr .x4-btn-default-large-frameInfo {
 /* line 437, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-btn-default-large-mc {
   padding: 1px 1px 1px 1px;
-}
-
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-btn-default-large-tl,
-.x4-strict .x4-ie7 .x4-btn-default-large-bl {
-  position: relative;
-  right: 0;
 }
 
 /*<if slicer>*/
@@ -3316,11 +3224,7 @@ body.x4-nbr .x4-btn-default-large-frameInfo {
 
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-btn-default-toolbar-small {
-  -webkit-border-radius: 3px;
-  -moz-border-radius: 3px;
-  -ms-border-radius: 3px;
-  -o-border-radius: 3px;
-  border-radius: 3px;
+  @include border-radius(3px);
   padding: 2px 2px 2px 2px;
   border-width: 1px;
   border-style: solid;
@@ -3336,11 +3240,7 @@ body.x4-nbr .x4-btn-default-large-frameInfo {
 .x4-nbr .x4-btn-default-toolbar-small {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -3434,13 +3334,6 @@ body.x4-nbr .x4-btn-default-toolbar-small-frameInfo {
 /* line 437, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-btn-default-toolbar-small-mc {
   padding: 0px 0px 0px 0px;
-}
-
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-btn-default-toolbar-small-tl,
-.x4-strict .x4-ie7 .x4-btn-default-toolbar-small-bl {
-  position: relative;
-  right: 0;
 }
 
 /* line 253, ../../../ext-theme-neutral/sass/src/button/Button.scss */
@@ -3751,11 +3644,7 @@ body.x4-nbr .x4-btn-default-toolbar-small-frameInfo {
 
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-btn-default-toolbar-medium {
-  -webkit-border-radius: 3px;
-  -moz-border-radius: 3px;
-  -ms-border-radius: 3px;
-  -o-border-radius: 3px;
-  border-radius: 3px;
+  @include border-radius(3px);
   padding: 3px 3px 3px 3px;
   border-width: 1px;
   border-style: solid;
@@ -3771,11 +3660,7 @@ body.x4-nbr .x4-btn-default-toolbar-small-frameInfo {
 .x4-nbr .x4-btn-default-toolbar-medium {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -3869,13 +3754,6 @@ body.x4-nbr .x4-btn-default-toolbar-medium-frameInfo {
 /* line 437, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-btn-default-toolbar-medium-mc {
   padding: 1px 1px 1px 1px;
-}
-
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-btn-default-toolbar-medium-tl,
-.x4-strict .x4-ie7 .x4-btn-default-toolbar-medium-bl {
-  position: relative;
-  right: 0;
 }
 
 /* line 253, ../../../ext-theme-neutral/sass/src/button/Button.scss */
@@ -4187,11 +4065,7 @@ body.x4-nbr .x4-btn-default-toolbar-medium-frameInfo {
 
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-btn-default-toolbar-large {
-  -webkit-border-radius: 3px;
-  -moz-border-radius: 3px;
-  -ms-border-radius: 3px;
-  -o-border-radius: 3px;
-  border-radius: 3px;
+  @include border-radius(3px);
   padding: 3px 3px 3px 3px;
   border-width: 1px;
   border-style: solid;
@@ -4207,11 +4081,7 @@ body.x4-nbr .x4-btn-default-toolbar-medium-frameInfo {
 .x4-nbr .x4-btn-default-toolbar-large {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -4305,13 +4175,6 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 /* line 437, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-btn-default-toolbar-large-mc {
   padding: 1px 1px 1px 1px;
-}
-
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-btn-default-toolbar-large-tl,
-.x4-strict .x4-ie7 .x4-btn-default-toolbar-large-bl {
-  position: relative;
-  right: 0;
 }
 
 /* line 253, ../../../ext-theme-neutral/sass/src/button/Button.scss */
@@ -5161,11 +5024,7 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-default-framed {
-  -webkit-border-radius: 4px;
-  -moz-border-radius: 4px;
-  -ms-border-radius: 4px;
-  -o-border-radius: 4px;
-  border-radius: 4px;
+  @include border-radius(4px);
   padding: 4px 4px 4px 4px;
   border-width: 1px;
   border-style: solid;
@@ -5181,11 +5040,7 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 .x4-nbr .x4-panel-default-framed {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -5284,13 +5139,6 @@ body.x4-nbr .x4-panel-default-framed-frameInfo {
   padding: 1px 1px 1px 1px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-panel-default-framed-tl,
-.x4-strict .x4-ie7 .x4-panel-default-framed-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-panel-default-framed:after {
@@ -5343,11 +5191,7 @@ body.x4-nbr .x4-panel-default-framed-frameInfo {
 .x4-nbr .x4-panel-header-default-framed-top {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
   background-image: none;
 }
@@ -5446,13 +5290,6 @@ body.x4-nbr .x4-panel-header-default-framed-top-frameInfo {
   padding: 1px 2px 4px 2px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-panel-header-default-framed-top-tl,
-.x4-strict .x4-ie7 .x4-panel-header-default-framed-top-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-panel-header-default-framed-top:after {
@@ -5505,11 +5342,7 @@ body.x4-nbr .x4-panel-header-default-framed-top-frameInfo {
 .x4-nbr .x4-panel-header-default-framed-right {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
   background-image: none;
 }
@@ -5609,13 +5442,6 @@ body.x4-nbr .x4-panel-header-default-framed-right-frameInfo {
   padding: 2px 1px 2px 4px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-panel-header-default-framed-right-tl,
-.x4-strict .x4-ie7 .x4-panel-header-default-framed-right-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-panel-header-default-framed-right:after {
@@ -5668,11 +5494,7 @@ body.x4-nbr .x4-panel-header-default-framed-right-frameInfo {
 .x4-nbr .x4-panel-header-default-framed-bottom {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
   background-image: none;
 }
@@ -5771,13 +5593,6 @@ body.x4-nbr .x4-panel-header-default-framed-bottom-frameInfo {
   padding: 4px 2px 1px 2px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-panel-header-default-framed-bottom-tl,
-.x4-strict .x4-ie7 .x4-panel-header-default-framed-bottom-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-panel-header-default-framed-bottom:after {
@@ -5830,11 +5645,7 @@ body.x4-nbr .x4-panel-header-default-framed-bottom-frameInfo {
 .x4-nbr .x4-panel-header-default-framed-left {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
   background-image: none;
 }
@@ -5934,13 +5745,6 @@ body.x4-nbr .x4-panel-header-default-framed-left-frameInfo {
   padding: 2px 4px 2px 1px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-panel-header-default-framed-left-tl,
-.x4-strict .x4-ie7 .x4-panel-header-default-framed-left-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-panel-header-default-framed-left:after {
@@ -5993,11 +5797,7 @@ body.x4-nbr .x4-panel-header-default-framed-left-frameInfo {
 .x4-nbr .x4-panel-header-default-framed-collapsed-top {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
   background-image: none;
 }
@@ -6096,13 +5896,6 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-top-frameInfo {
   padding: 1px 2px 1px 2px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-panel-header-default-framed-collapsed-top-tl,
-.x4-strict .x4-ie7 .x4-panel-header-default-framed-collapsed-top-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-panel-header-default-framed-collapsed-top:after {
@@ -6155,11 +5948,7 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-top-frameInfo {
 .x4-nbr .x4-panel-header-default-framed-collapsed-right {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
   background-image: none;
 }
@@ -6259,13 +6048,6 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-right-frameInfo {
   padding: 2px 1px 2px 1px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-panel-header-default-framed-collapsed-right-tl,
-.x4-strict .x4-ie7 .x4-panel-header-default-framed-collapsed-right-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-panel-header-default-framed-collapsed-right:after {
@@ -6318,11 +6100,7 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-right-frameInfo {
 .x4-nbr .x4-panel-header-default-framed-collapsed-bottom {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
   background-image: none;
 }
@@ -6421,13 +6199,6 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-bottom-frameInfo {
   padding: 1px 2px 1px 2px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-panel-header-default-framed-collapsed-bottom-tl,
-.x4-strict .x4-ie7 .x4-panel-header-default-framed-collapsed-bottom-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-panel-header-default-framed-collapsed-bottom:after {
@@ -6480,11 +6251,7 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-bottom-frameInfo {
 .x4-nbr .x4-panel-header-default-framed-collapsed-left {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
   background-image: none;
 }
@@ -6582,13 +6349,6 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-left-frameInfo {
 /* line 437, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-panel-header-default-framed-collapsed-left-mc {
   padding: 2px 1px 2px 1px;
-}
-
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-panel-header-default-framed-collapsed-left-tl,
-.x4-strict .x4-ie7 .x4-panel-header-default-framed-collapsed-left-bl {
-  position: relative;
-  right: 0;
 }
 
 /*<if slicer>*/
@@ -6802,11 +6562,7 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-left-frameInfo {
 
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-tip-default {
-  -webkit-border-radius: 3px;
-  -moz-border-radius: 3px;
-  -ms-border-radius: 3px;
-  -o-border-radius: 3px;
-  border-radius: 3px;
+  @include border-radius(3px);
   padding: 2px 2px 2px 2px;
   border-width: 1px;
   border-style: solid;
@@ -6822,11 +6578,7 @@ body.x4-nbr .x4-panel-header-default-framed-collapsed-left-frameInfo {
 .x4-nbr .x4-tip-default {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -6925,13 +6677,6 @@ body.x4-nbr .x4-tip-default-frameInfo {
   padding: 0px 0px 0px 0px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-tip-default-tl,
-.x4-strict .x4-ie7 .x4-tip-default-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-tip-default:after {
@@ -6985,11 +6730,7 @@ body.x4-nbr .x4-tip-default-frameInfo {
 
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-tip-form-invalid {
-  -webkit-border-radius: 5px;
-  -moz-border-radius: 5px;
-  -ms-border-radius: 5px;
-  -o-border-radius: 5px;
-  border-radius: 5px;
+  @include border-radius(5px);
   padding: 4px 4px 4px 4px;
   border-width: 1px;
   border-style: solid;
@@ -7005,11 +6746,7 @@ body.x4-nbr .x4-tip-default-frameInfo {
 .x4-nbr .x4-tip-form-invalid {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -7106,13 +6843,6 @@ body.x4-nbr .x4-tip-form-invalid-frameInfo {
 /* line 437, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-tip-form-invalid-mc {
   padding: 0px 0px 0px 0px;
-}
-
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-tip-form-invalid-tl,
-.x4-strict .x4-ie7 .x4-tip-form-invalid-bl {
-  position: relative;
-  right: 0;
 }
 
 /*<if slicer>*/
@@ -7227,11 +6957,7 @@ body.x4-nbr .x4-tip-form-invalid-frameInfo {
 
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-btn-group-default-framed {
-  -webkit-border-radius: 2px;
-  -moz-border-radius: 2px;
-  -ms-border-radius: 2px;
-  -o-border-radius: 2px;
-  border-radius: 2px;
+  @include border-radius(2px);
   padding: 1px 1px 1px 1px;
   border-width: 1px;
   border-style: solid;
@@ -7247,11 +6973,7 @@ body.x4-nbr .x4-tip-form-invalid-frameInfo {
 .x4-nbr .x4-btn-group-default-framed {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -7350,13 +7072,6 @@ body.x4-nbr .x4-btn-group-default-framed-frameInfo {
   padding: 0px 0px 0px 0px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-btn-group-default-framed-tl,
-.x4-strict .x4-ie7 .x4-btn-group-default-framed-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-btn-group-default-framed:after {
@@ -7368,11 +7083,7 @@ body.x4-nbr .x4-btn-group-default-framed-frameInfo {
 /* */
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-btn-group-default-framed-notitle {
-  -webkit-border-radius: 2px;
-  -moz-border-radius: 2px;
-  -ms-border-radius: 2px;
-  -o-border-radius: 2px;
-  border-radius: 2px;
+  @include border-radius(2px);
   padding: 1px 1px 1px 1px;
   border-width: 1px;
   border-style: solid;
@@ -7388,11 +7099,7 @@ body.x4-nbr .x4-btn-group-default-framed-frameInfo {
 .x4-nbr .x4-btn-group-default-framed-notitle {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -7491,13 +7198,6 @@ body.x4-nbr .x4-btn-group-default-framed-notitle-frameInfo {
   padding: 0px 0px 0px 0px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-btn-group-default-framed-notitle-tl,
-.x4-strict .x4-ie7 .x4-btn-group-default-framed-notitle-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-btn-group-default-framed-notitle:after {
@@ -7558,11 +7258,7 @@ body.x4-nbr .x4-btn-group-default-framed-notitle-frameInfo {
 /* line 174, ../../../ext-theme-neutral/sass/src/window/Window.scss */
 .x4-window-default {
   border-color: $window-border-color;
-  -webkit-border-radius: 5px;
-  -moz-border-radius: 5px;
-  -ms-border-radius: 5px;
-  -o-border-radius: 5px;
-  border-radius: 5px;
+  @include border-radius(5px);
   -webkit-box-shadow: $window-shadow-color 0 1px 0px 0 inset, $window-shadow-color 0 -1px 0px 0 inset, $window-shadow-color -1px 0 0px 0 inset, $window-shadow-color 1px 0 0px 0 inset;
   -moz-box-shadow: $window-shadow-color 0 1px 0px 0 inset, $window-shadow-color 0 -1px 0px 0 inset, $window-shadow-color -1px 0 0px 0 inset, $window-shadow-color 1px 0 0px 0 inset;
   box-shadow: $window-shadow-color 0 1px 0px 0 inset, $window-shadow-color 0 -1px 0px 0 inset, $window-shadow-color -1px 0 0px 0 inset, $window-shadow-color 1px 0 0px 0 inset;
@@ -7570,11 +7266,7 @@ body.x4-nbr .x4-btn-group-default-framed-notitle-frameInfo {
 
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-window-default {
-  -webkit-border-radius: 5px;
-  -moz-border-radius: 5px;
-  -ms-border-radius: 5px;
-  -o-border-radius: 5px;
-  border-radius: 5px;
+  @include border-radius(5px);
   padding: 4px 4px 4px 4px;
   border-width: 1px;
   border-style: solid;
@@ -7590,11 +7282,7 @@ body.x4-nbr .x4-btn-group-default-framed-notitle-frameInfo {
 .x4-nbr .x4-window-default {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -7693,13 +7381,6 @@ body.x4-nbr .x4-window-default-frameInfo {
   padding: 0px 0px 0px 0px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-window-default-tl,
-.x4-strict .x4-ie7 .x4-window-default-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-window-default:after {
@@ -7786,11 +7467,7 @@ body.x4-nbr .x4-window-default-frameInfo {
 .x4-nbr .x4-window-header-default-top {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -7889,13 +7566,6 @@ body.x4-nbr .x4-window-header-default-top-frameInfo {
   padding: 0px 1px 0 1px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-window-header-default-top-tl,
-.x4-strict .x4-ie7 .x4-window-header-default-top-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-window-header-default-top:after {
@@ -7934,11 +7604,7 @@ body.x4-nbr .x4-window-header-default-top-frameInfo {
 .x4-nbr .x4-window-header-default-right {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -8037,13 +7703,6 @@ body.x4-nbr .x4-window-header-default-right-frameInfo {
   padding: 1px 0px 1px 0;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-window-header-default-right-tl,
-.x4-strict .x4-ie7 .x4-window-header-default-right-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-window-header-default-right:after {
@@ -8082,11 +7741,7 @@ body.x4-nbr .x4-window-header-default-right-frameInfo {
 .x4-nbr .x4-window-header-default-bottom {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -8185,22 +7840,12 @@ body.x4-nbr .x4-window-header-default-bottom-frameInfo {
   padding: 0 1px 0px 1px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-window-header-default-bottom-tl,
-.x4-strict .x4-ie7 .x4-window-header-default-bottom-bl {
-  position: relative;
-  right: 0;
-}
-
-/*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-window-header-default-bottom:after {
   display: none;
   content: "x-slicer:corners:url('#{$ext4-images-dir}/window-header/window-header-default-bottom-corners.gif'), sides:url('#{$ext4-images-dir}/window-header/window-header-default-bottom-sides.gif')";
 }
 
-/*</if slicer>*/
-/* */
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-window-header-default-left {
   -moz-border-radius-topleft: 5px;
@@ -8230,11 +7875,7 @@ body.x4-nbr .x4-window-header-default-bottom-frameInfo {
 .x4-nbr .x4-window-header-default-left {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -8333,29 +7974,15 @@ body.x4-nbr .x4-window-header-default-left-frameInfo {
   padding: 1px 0 1px 0px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-window-header-default-left-tl,
-.x4-strict .x4-ie7 .x4-window-header-default-left-bl {
-  position: relative;
-  right: 0;
-}
-
-/*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-window-header-default-left:after {
   display: none;
   content: "x-slicer:corners:url('#{$ext4-images-dir}/window-header/window-header-default-left-corners.gif'), sides:url('#{$ext4-images-dir}/window-header/window-header-default-left-sides.gif')";
 }
 
-/*</if slicer>*/
-/* */
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-window-header-default-collapsed-top {
-  -webkit-border-radius: 5px;
-  -moz-border-radius: 5px;
-  -ms-border-radius: 5px;
-  -o-border-radius: 5px;
-  border-radius: 5px;
+  @include border-radius(5px);
   padding: 4px 5px 4px 5px;
   border-width: 1px;
   border-style: solid;
@@ -8371,11 +7998,7 @@ body.x4-nbr .x4-window-header-default-left-frameInfo {
 .x4-nbr .x4-window-header-default-collapsed-top {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -8474,13 +8097,6 @@ body.x4-nbr .x4-window-header-default-collapsed-top-frameInfo {
   padding: 0px 1px 0px 1px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-window-header-default-collapsed-top-tl,
-.x4-strict .x4-ie7 .x4-window-header-default-collapsed-top-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-window-header-default-collapsed-top:after {
@@ -8492,11 +8108,7 @@ body.x4-nbr .x4-window-header-default-collapsed-top-frameInfo {
 /* */
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-window-header-default-collapsed-right {
-  -webkit-border-radius: 5px;
-  -moz-border-radius: 5px;
-  -ms-border-radius: 5px;
-  -o-border-radius: 5px;
-  border-radius: 5px;
+  @include border-radius(5px);
   padding: 5px 4px 5px 4px;
   border-width: 1px;
   border-style: solid;
@@ -8512,11 +8124,7 @@ body.x4-nbr .x4-window-header-default-collapsed-top-frameInfo {
 .x4-nbr .x4-window-header-default-collapsed-right {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -8615,13 +8223,6 @@ body.x4-nbr .x4-window-header-default-collapsed-right-frameInfo {
   padding: 1px 0px 1px 0px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-window-header-default-collapsed-right-tl,
-.x4-strict .x4-ie7 .x4-window-header-default-collapsed-right-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-window-header-default-collapsed-right:after {
@@ -8633,11 +8234,7 @@ body.x4-nbr .x4-window-header-default-collapsed-right-frameInfo {
 /* */
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-window-header-default-collapsed-bottom {
-  -webkit-border-radius: 5px;
-  -moz-border-radius: 5px;
-  -ms-border-radius: 5px;
-  -o-border-radius: 5px;
-  border-radius: 5px;
+  @include border-radius(5px);
   padding: 4px 5px 4px 5px;
   border-width: 1px;
   border-style: solid;
@@ -8653,11 +8250,7 @@ body.x4-nbr .x4-window-header-default-collapsed-right-frameInfo {
 .x4-nbr .x4-window-header-default-collapsed-bottom {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -8756,13 +8349,6 @@ body.x4-nbr .x4-window-header-default-collapsed-bottom-frameInfo {
   padding: 0px 1px 0px 1px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-window-header-default-collapsed-bottom-tl,
-.x4-strict .x4-ie7 .x4-window-header-default-collapsed-bottom-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-window-header-default-collapsed-bottom:after {
@@ -8774,11 +8360,7 @@ body.x4-nbr .x4-window-header-default-collapsed-bottom-frameInfo {
 /* */
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-window-header-default-collapsed-left {
-  -webkit-border-radius: 5px;
-  -moz-border-radius: 5px;
-  -ms-border-radius: 5px;
-  -o-border-radius: 5px;
-  border-radius: 5px;
+  @include border-radius(5px);
   padding: 5px 4px 5px 4px;
   border-width: 1px;
   border-style: solid;
@@ -8794,11 +8376,7 @@ body.x4-nbr .x4-window-header-default-collapsed-bottom-frameInfo {
 .x4-nbr .x4-window-header-default-collapsed-left {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -8895,13 +8473,6 @@ body.x4-nbr .x4-window-header-default-collapsed-left-frameInfo {
 /* line 437, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-window-header-default-collapsed-left-mc {
   padding: 1px 0px 1px 0px;
-}
-
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-window-header-default-collapsed-left-tl,
-.x4-strict .x4-ie7 .x4-window-header-default-collapsed-left-bl {
-  position: relative;
-  right: 0;
 }
 
 /*<if slicer>*/
@@ -9131,8 +8702,7 @@ textarea.x4-form-empty-field {
 }
 
 /* line 48, ../../../ext-theme-neutral/sass/src/form/field/Text.scss */
-.x4-quirks .x4-ie .x4-form-text,
-.x4-ie7m .x4-form-text {
+.x4-quirks .x4-ie .x4-form-text {
   margin-top: -1px;
   margin-bottom: -1px;
 }
@@ -9645,11 +9215,6 @@ div.x4-form-spinner-down {
   border-style: solid;
   border-color: $border-layout-ct-background-color;
   background: white;
-}
-
-/* line 10, ../../../ext-theme-neutral/sass/src/view/BoundList.scss */
-.x4-strict .x4-ie7m .x4-boundlist-list-ct {
-  position: relative;
 }
 
 /* line 15, ../../../ext-theme-neutral/sass/src/view/BoundList.scss */
@@ -10889,11 +10454,7 @@ a.x4-color-picker-item:hover {
 .x4-nbr .x4-grid-row-editor-buttons-default-bottom {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -10992,13 +10553,6 @@ body.x4-nbr .x4-grid-row-editor-buttons-default-bottom-frameInfo {
   padding: 4px 0px 0px 0px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-grid-row-editor-buttons-default-bottom-tl,
-.x4-strict .x4-ie7 .x4-grid-row-editor-buttons-default-bottom-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-grid-row-editor-buttons-default-bottom:after {
@@ -11037,11 +10591,7 @@ body.x4-nbr .x4-grid-row-editor-buttons-default-bottom-frameInfo {
 .x4-nbr .x4-grid-row-editor-buttons-default-top {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
 }
 
@@ -11138,13 +10688,6 @@ body.x4-nbr .x4-grid-row-editor-buttons-default-top-frameInfo {
 /* line 437, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-grid-row-editor-buttons-default-top-mc {
   padding: 0px 0px 4px 0px;
-}
-
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-grid-row-editor-buttons-default-top-tl,
-.x4-strict .x4-ie7 .x4-grid-row-editor-buttons-default-top-bl {
-  position: relative;
-  right: 0;
 }
 
 /*<if slicer>*/
@@ -11396,11 +10939,7 @@ body.x4-nbr .x4-grid-row-editor-buttons-default-top-frameInfo {
   background-image: -o-linear-gradient(top, $menu-item-active-background-gradient-start, $menu-item-active-background-gradient-end);
   background-image: linear-gradient(top, $menu-item-active-background-gradient-start, $menu-item-active-background-gradient-end);
   border-color: $menu-item-active-border-color;
-  -webkit-border-radius: 3px;
-  -moz-border-radius: 3px;
-  -ms-border-radius: 3px;
-  -o-border-radius: 3px;
-  border-radius: 3px;
+  @include border-radius(3px);
   border-width: 1px;
   border-style: solid;
   padding: 0;
@@ -12201,11 +11740,7 @@ body.x4-nbr .x4-grid-row-editor-buttons-default-top-frameInfo {
 .x4-nbr .x4-tab-default-top {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
   background-image: none;
 }
@@ -12304,13 +11839,6 @@ body.x4-nbr .x4-tab-default-top-frameInfo {
   padding: 0px 6px 3px 6px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-tab-default-top-tl,
-.x4-strict .x4-ie7 .x4-tab-default-top-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-tab-default-top:after {
@@ -12363,11 +11891,7 @@ body.x4-nbr .x4-tab-default-top-frameInfo {
 .x4-nbr .x4-tab-default-bottom {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
   background-image: none;
 }
@@ -12466,13 +11990,6 @@ body.x4-nbr .x4-tab-default-bottom-frameInfo {
   padding: 3px 6px 0px 6px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-tab-default-bottom-tl,
-.x4-strict .x4-ie7 .x4-tab-default-bottom-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-tab-default-bottom:after {
@@ -12525,11 +12042,7 @@ body.x4-nbr .x4-tab-default-bottom-frameInfo {
 .x4-nbr .x4-tab-default-left {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
   background-image: none;
 }
@@ -12628,13 +12141,6 @@ body.x4-nbr .x4-tab-default-left-frameInfo {
   padding: 0px 6px 3px 6px;
 }
 
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-tab-default-left-tl,
-.x4-strict .x4-ie7 .x4-tab-default-left-bl {
-  position: relative;
-  right: 0;
-}
-
 /*<if slicer>*/
 /* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-tab-default-left:after {
@@ -12687,11 +12193,7 @@ body.x4-nbr .x4-tab-default-left-frameInfo {
 .x4-nbr .x4-tab-default-right {
   padding: 0 !important;
   border-width: 0 !important;
-  -webkit-border-radius: 0px;
-  -moz-border-radius: 0px;
-  -ms-border-radius: 0px;
-  -o-border-radius: 0px;
-  border-radius: 0px;
+  @include border-radius(0);
   background-color: transparent;
   background-image: none;
 }
@@ -12788,13 +12290,6 @@ body.x4-nbr .x4-tab-default-right-frameInfo {
 /* line 437, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-tab-default-right-mc {
   padding: 0px 6px 3px 6px;
-}
-
-/* line 446, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-strict .x4-ie7 .x4-tab-default-right-tl,
-.x4-strict .x4-ie7 .x4-tab-default-right-bl {
-  position: relative;
-  right: 0;
 }
 
 /*<if slicer>*/
@@ -13861,7 +13356,8 @@ body.x4-nbr .x4-tab-default-right-frameInfo {
 
 /* line 221, ../../../ext-theme-neutral/sass/src/tree/Panel.scss */
 .x4-tree-node-text {
-  font-size: 11px;
+  zoom: 1;
+  font-size: $lk-font-size-base;
   line-height: 13px;
   padding-left: 3px;
 }
