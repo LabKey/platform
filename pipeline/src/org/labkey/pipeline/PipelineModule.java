@@ -129,14 +129,6 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     }
 
     @NotNull
-    @Override
-    public Set<? extends ModuleResourceLoader> getResourceLoaders()
-    {
-        return Collections.singleton(new PipelineModuleResourceLoader());
-    }
-
-
-    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return new ArrayList<>(Arrays.asList(

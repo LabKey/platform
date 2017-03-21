@@ -15,7 +15,6 @@
  */
 package org.labkey.study.view;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceLoadException;
 import org.labkey.api.module.ModuleResourceLoader;
@@ -23,10 +22,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.model.StudyManager;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Set;
 
 /**
  * User: brittp
@@ -35,14 +31,6 @@ import java.util.Set;
 public class StudyViewLoader implements ModuleResourceLoader
 {
     /*package*/ static final String VIEWS_DIR_NAME = "views";
-
-    @NotNull
-    @Override
-    public Set<String> getModuleDependencies(Module module, File explodedModuleDir)
-    {
-        // We used to return any module with a "views" directory... but that made 41 modules study dependencies
-        return Collections.emptySet();
-    }
 
     @Override
     public void registerResources(Module module) throws IOException, ModuleResourceLoadException
