@@ -167,6 +167,7 @@ public class StudyUnionTableInfo extends VirtualTable
                             case Types.TIMESTAMP:
                             case Types.TIME:
                             case Types.DATE:
+                            case Types.BOOLEAN:
                                 empty = "CAST(NULL AS " + getSqlDialect().sqlTypeNameFromSqlType(pd.getSqlTypeInt()) + ")";
                                 break;
                             default:
