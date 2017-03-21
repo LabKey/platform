@@ -18,6 +18,7 @@ package org.labkey.study.visitmanager;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exceptions.TableNotFoundException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.study.model.StudyImpl;
@@ -71,6 +72,7 @@ public class PurgeParticipantsTask extends TimerTask
                 StudyImpl study = StudyManager.getInstance().getStudy(container);
                 if (study != null)
                 {
+                    boolean retry = false;
                     try
                     {
                         int deleted = VisitManager.performParticipantPurge(study, potentiallyDeletedParticipants);
@@ -86,18 +88,28 @@ public class PurgeParticipantsTask extends TimerTask
                         {
                             // A dataset or specimen table might have been deleted out from under us, so retry
                             _logger.warn(tnfe.getFullName() + " no longer exists. Requeuing another participant purge attempt.");
-                            // throw them back on the queue
-                            VisitManager vm = StudyManager.getInstance().getVisitManager(study);
-                            vm.scheduleParticipantPurge(potentiallyDeletedParticipants);
+                            retry = true;
                         }
                     }
                     catch (Exception e)
                     {
                         if (ContainerManager.exists(container))
                         {
+                            if (SqlDialect.isObjectNotFoundException(e))
+                            {
+                                _logger.warn("Object not found exception (" + e.getMessage() + "). Requeuing another participant purge attempt.");
+                                retry = true;
+                            }
                             // Unexpected problem... log it and continue on
                             _logger.error("Failed to purge participants for " + container.getPath(), e);
                         }
+                    }
+
+                    if (retry)
+                    {
+                        // throw them back on the queue
+                        VisitManager vm = StudyManager.getInstance().getVisitManager(study);
+                        vm.scheduleParticipantPurge(potentiallyDeletedParticipants);
                     }
                 }
             }
