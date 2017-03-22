@@ -60,7 +60,7 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
             Path resourcePath = customViewDef.getPath();
             String queryName = resourcePath.get(resourcePath.size()-2);
             if (queryName != null)
-                _isCustomViewFromTitle = !queryDef.getName().equals(queryDef.getTitle()) && queryName.equals(queryDef.getTitle());
+                _isCustomViewFromTitle = !queryDef.getName().equalsIgnoreCase(queryDef.getTitle()) && queryName.equalsIgnoreCase(queryDef.getTitle());
         }
     }
 
