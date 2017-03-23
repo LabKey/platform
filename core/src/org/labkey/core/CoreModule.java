@@ -346,6 +346,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
+        // TODO This special code will not be required once we have fully converted to Gradle (where Internal and API become first-class modules)
         String projectRoot = AppProps.getInstance().getProjectRoot();
         if (projectRoot != null)
         {
