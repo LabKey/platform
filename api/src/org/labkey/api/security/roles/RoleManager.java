@@ -215,16 +215,21 @@ public class RoleManager
     /**
      * Helper method for tests to verify whether the given permissions are present in the administrator roles.
      *
+     * @param shouldBePresent True to verify that the permissions are all present in the admin roles; false to verify that they're not
      * @param permissionsToTest Permission classes to test
      */
     @SafeVarargs
-    public static void testPermissionsInAdminRoles(Class<? extends Permission>... permissionsToTest)
+    public static void testPermissionsInAdminRoles(boolean shouldBePresent, Class<? extends Permission>... permissionsToTest)
     {
         Collection<Class<? extends Permission>> permCollection = Arrays.asList(permissionsToTest);
 
         RoleManager.roleSet(SiteAdminRole.class, ProjectAdminRole.class, FolderAdminRole.class).forEach(role->{
             Collection<Class<? extends Permission>> permissions = CollectionUtils.intersection(role.getPermissions(), permCollection);
-            Assert.assertTrue(role.getName() + " should not have been granted these permissions: " + permissions, permissions.isEmpty());
+
+            if (shouldBePresent)
+                Assert.assertTrue(role.getName() + " should have been granted these permissions: " + permCollection, permissions.equals(permCollection));
+            else
+                Assert.assertTrue(role.getName() + " should not have been granted these permissions: " + permissions, permissions.isEmpty());
         });
     }
 
