@@ -153,8 +153,25 @@ dependencies {
   BuildUtils.addLabKeyDependency(project: project, config: "webappCompile", depProjectPath: ":server:internal")
 }
 
-// We need to copy resource files into the staging webapp directory so they can be copied to
-// the jsptmp directory for use in compiling JSPs
+// We copy the resource files to a separate directory so they can be copied to jsptmp directory
+// for use in compiling JSPs.  Copying directly from the project.sourceSets.webapp.output for the JSP
+// tasks does not work when modules may be evaluated before the api module is evaluated.  Attempts to
+// declare evaluationDependsOn(:server:api) for each of these projects did not work.
+project.task("copyTagLibsBase",
+        type: Copy,
+        {CopySpec copy ->
+          copy.from project.sourceSets.webapp.output
+          copy.into "${project.rootProject.buildDir}/webapp"
+          copy.include 'WEB-INF/web.xml'
+          copy.include 'WEB-INF/*.tld'
+          copy.include 'WEB-INF/tags/**'
+        }
+)
+project.tasks.copyTagLibs.dependsOn(project.tasks.copyTagLibsBase)
+
+// TODO remove this after publishing 9.1+ of Gradle plugins
+//// We need to copy resource files into the staging webapp directory so they can be copied to
+//// the jsptmp directory for use in compiling JSPs
 project.task("stageApiWebapp",
         type: Copy,
         {CopySpec copy ->
