@@ -85,6 +85,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
         String sourcePath = getCompleteSourcePath(finder.getSourcePath(), relativePath);
         File sourceFile = new File(sourcePath);
 
+        Collection<ResourceFinder> apiResourceFinders = ModuleLoader.getInstance().getResourceFindersForPath("/org/labkey/api/");
         try
         {
             String className = getJspClassName(packageName, jspFileName);
@@ -108,6 +109,10 @@ public class RecompilingJspClassLoader extends JspClassLoader
                     ClassPath cp = new ClassPath();
                     cp.addDirectory(new File(finder.getBuildPath(), "/explodedModule/lib"));
                     cp.addDirectory(getTomcatLib());
+                    // With the Gradle build, api and internal are first-class modules and their libraries are no longer put into WEB-INF/lib
+                    // so we include their individual lib directories in the classpath for the JSPs.
+                    for (ResourceFinder apiFinder : apiResourceFinders)
+                        cp.addDirectory(new File(apiFinder.getBuildPath(), "/explodedModule/lib"));
                     cp.addDirectory(getWebInfLib());
                     cp.addDirectory(getWebInfClasses());
                     cp.addDirectory(getModulesApiLib());
