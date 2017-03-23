@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.WebPartFactory" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.PrintTemplate" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -28,7 +27,6 @@
     PrintTemplate me = (PrintTemplate) HttpView.currentView();
     PageConfig model = me.getModelBean();
     ActionURL url = getActionURL();
-    boolean showRight = me.getView(WebPartFactory.LOCATION_RIGHT) instanceof HttpView && ((HttpView) me.getView(WebPartFactory.LOCATION_RIGHT)).isVisible();
 
     if (model.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", model.getFrameOption().name());
@@ -66,27 +64,7 @@
             me.include(me.getView("navigation"),out);
     }
 %>
-<div class="container">
-    <div class="alert alert-warning" role="alert" style="margin-top: 20px;">
-        <strong>Under construction!</strong>
-        This layout is under development. <a href="admin-experimentalFeatures.view" class="alert-link">Turn it off here</a> by disabling the "Core UI Migration" feature.
-    </div>
-    <div>
-        <div class="<%= h(showRight ? "col-md-9" : "col-md-*" ) %>">
-            <!-- BODY -->
-            <% me.include(me.getBody(), out); %>
-            <!-- /BODY -->
-        </div>
-
-        <% if (showRight) { %>
-        <div class="col-md-3">
-            <!-- RIGHT -->
-            <% me.include(me.getView(WebPartFactory.LOCATION_RIGHT), out); %>
-            <!-- /RIGHT -->
-        </div>
-        <% } %>
-    </div>
-</div>
+<% me.include(me.getView("bodyTemplate"), out); %>
 <script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
 <!-- <%= h(request.getHeader("User-Agent")) %> -->
 <a href="<%= me.getPermaLink() %>" id="permalink" style="display: none;"></a>

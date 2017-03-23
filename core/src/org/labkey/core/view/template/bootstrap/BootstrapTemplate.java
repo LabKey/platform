@@ -30,12 +30,21 @@ public class BootstrapTemplate extends HomeTemplate
     public BootstrapTemplate(ViewContext context, ModelAndView body, PageConfig page)
     {
         super("/org/labkey/core/view/template/bootstrap/BootstrapTemplate.jsp", context, context.getContainer(), body, page);
+
+        setView("bodyTemplate", getBodyTemplate(page));
     }
 
     @Override
     protected HttpView getAppBarView(ViewContext context, PageConfig page, AppBar model)
     {
         return null;
+    }
+
+    protected HttpView getBodyTemplate(PageConfig page)
+    {
+        HttpView view = new JspView<>("/org/labkey/core/view/template/bootstrap/body.jsp", page);
+        view.setBody(getBody());
+        return view;
     }
 
     @Override

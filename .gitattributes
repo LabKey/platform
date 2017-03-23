@@ -570,6 +570,9 @@ core/src/org/labkey/core/view/ShortURLServiceImpl.java -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapHeader.java -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapTemplate.jsp -text
+core/src/org/labkey/core/view/template/bootstrap/DialogTemplate.java -text
+core/src/org/labkey/core/view/template/bootstrap/body.jsp -text
+core/src/org/labkey/core/view/template/bootstrap/dialog.jsp -text
 core/src/org/labkey/core/view/template/bootstrap/factory/FrameFactoryBootstrap.java -text
 core/src/org/labkey/core/view/template/bootstrap/factory/TemplateFactoryBootstrap.java -text
 core/src/org/labkey/core/view/template/bootstrap/header.jsp -text

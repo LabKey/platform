@@ -49,6 +49,13 @@ $lk-font-size-small: 12px !default;
 $lk-font-family-sans-serif: 'Roboto', Arial, Helvetica, sans-serif !default;
 $lk-font-family-sans-serif-bold: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif !default;
 
+//== Media query breakpoints
+//
+$lk-screen-xs-min: 480px !default;
+$lk-screen-sm-min: 768px !default;
+$lk-screen-md-min: 992px !default;
+$lk-screen-lg-min: 1200px !default;
+
 //== Padding
 //
 $lk-padding-base-vertical: 6px !default;
@@ -96,3 +103,8 @@ $lk-page-nav-color: $white !default;
 $lk-page-nav-font-family: $lk-font-family-sans-serif-bold !default;
 $lk-page-nav-font-weight: 'normal' !default;
 $lk-page-nav-height: 36px !default;
+
+//== Wells
+//
+$lk-well-bg-color: $white !default;
+$lk-well-border-color: darken($lk-well-bg-color, 15%) !default;

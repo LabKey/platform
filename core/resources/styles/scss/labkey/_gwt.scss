@@ -118,37 +118,33 @@
 
 .gwt-TabBar {
   font-weight: bold;
-}
 
-.gwt-TabBar .gwt-TabBarFirst {
-  padding-left: 3px;
-}
+  .gwt-TabBarFirst {
+    padding-left: 3px;
+  }
 
-.gwt-TabBar .gwt-TabBarRest {
-  padding-right: 3px;
-}
+  .gwt-TabBarRest {
+    padding-right: 3px;
+  }
 
-.gwt-TabBar .gwt-TabBarItem {
-  border-top: 1px solid #b4b4b4;
-  border-left: 1px solid #b4b4b4;
-  border-right: 1px solid #b4b4b4;
-  margin-right: 6px;
-  padding: 4px 7px;
-  cursor: pointer;
-  background-color: #f4f4f4;
-}
+  .gwt-TabBarItem {
+    border-top: 1px solid #b4b4b4;
+    border-left: 1px solid #b4b4b4;
+    border-right: 1px solid #b4b4b4;
+    margin-right: 6px;
+    padding: 4px 7px;
+    cursor: pointer;
+    background-color: #f4f4f4;
+  }
 
-.gwt-TabBar .gwt-TabBarItem-selected {
-  padding: 4px 7px;
-  margin-right: 6px;
-  cursor: default;
-  background: transparent;
-}
+  .gwt-TabBarItem-selected {
+    padding: 4px 7px;
+    margin-right: 6px;
+    cursor: default;
+    background: transparent;
 
-.gwt-TabBar .gwt-TabBarItem-selected div {
-  font-weight: bold;
-}
-
-.gwt-TabBar .gwt-TabBarItem {
-  padding: 4px 7px;
+    div {
+      font-weight: bold;
+    }
+  }
 }

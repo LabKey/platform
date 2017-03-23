@@ -48,10 +48,6 @@
 <nav class="labkey-page-nav">
     <div class="container">
         <div class="navbar-header">
-            <%--<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#collapsemenu" aria-expanded="false">--%>
-                <%--<i class="fa fa-bars"></i>--%>
-            <%--</button>--%>
-
             <ul class="nav">
                 <li class="dropdown visible-xs">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
