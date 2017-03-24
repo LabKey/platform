@@ -69,6 +69,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -4359,21 +4360,15 @@ public class StudyManager
         if (study == null)
             return null;
 
-        Set<Module> activeModules = study.getContainer().getActiveModules();
-        Set<String> activeModuleNames = new HashSet<>();
-        for (Module module : activeModules)
-            activeModuleNames.add(module.getName());
-        for (Map.Entry<String, Resource> entry : _moduleParticipantViews.entrySet())
-        {
-            if (activeModuleNames.contains(entry.getKey()) && entry.getValue().exists())
-            {
-                CustomParticipantView view = CustomParticipantView.createFromResource(entry.getValue());
-                if (view == null)
-                {
-                    throw new RuntimeException("Unable to load participant view from " + entry.getValue().getPath());
-                }
+        Path path = new Path(ModuleHtmlView.VIEWS_DIR, "participant.html");
 
-                return view;
+        for (Module module : study.getContainer().getActiveModules())
+        {
+            ModuleHtmlView moduleView = ModuleHtmlView.get(module, path, null);
+
+            if (null != moduleView)
+            {
+                return CustomParticipantView.create(moduleView);
             }
         }
 

@@ -17,14 +17,8 @@ package org.labkey.study.model;
 
 import org.labkey.api.data.Entity;
 import org.labkey.api.module.ModuleHtmlView;
-import org.labkey.api.resource.Resource;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.template.ClientDependency;
 import org.springframework.web.servlet.ModelAndView;
-
-import java.util.LinkedHashSet;
 
 /**
  * User: brittp
@@ -38,21 +32,16 @@ public class CustomParticipantView extends Entity
     private boolean _active;
     private ModelAndView _view = null;
     
-    public static CustomParticipantView createFromResource(Resource r)
+    public static CustomParticipantView create(ModuleHtmlView moduleView)
     {
-        if (r.isFile())
-        {
-            CustomParticipantView view = new CustomParticipantView();
-            view.setRowId(MODULE_PTID_VIEW_ID);
-            view.setActive(true);
-            view._view = new ModuleHtmlView(r);
+        CustomParticipantView view = new CustomParticipantView();
+        view.setRowId(MODULE_PTID_VIEW_ID);
+        view.setActive(true);
+        view._view = moduleView;
 
-            return view;
-        }
-
-        throw new RuntimeException("Invalid resource for custom participant view: " + r.getPath());
+        return view;
     }
-    
+
     public String getBody()
     {
         return _body;

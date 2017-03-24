@@ -2602,7 +2602,6 @@ study/src/org/labkey/study/view/StudyListWebPartFactory.java -text
 study/src/org/labkey/study/view/StudySummaryWebPartFactory.java -text
 study/src/org/labkey/study/view/StudyToolsWebPart.java -text
 study/src/org/labkey/study/view/StudyToolsWebPartFactory.java -text
-study/src/org/labkey/study/view/StudyViewLoader.java -text
 study/src/org/labkey/study/view/SubjectDetailsWebPartFactory.java -text
 study/src/org/labkey/study/view/SubjectsWebPart.java -text
 study/src/org/labkey/study/view/VaccineStudyWebPart.java -text

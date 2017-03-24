@@ -130,7 +130,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
@@ -538,21 +537,8 @@ public class AssayController extends SpringActionController
             List<AssayProvider> providers = new ArrayList<>(AssayManager.get().getAssayProviders());
 
             // Remove AssayProviders without a designer action
-            ListIterator<AssayProvider> iter = providers.listIterator();
-            while (iter.hasNext())
-            {
-                AssayProvider provider = iter.next();
-                if (provider.getDesignerAction() == null)
-                    iter.remove();
-            }
-
-            Collections.sort(providers, new Comparator<AssayProvider>()
-            {
-                public int compare(AssayProvider o1, AssayProvider o2)
-                {
-                    return o1.getName().compareTo(o2.getName());
-                }
-            });
+            providers.removeIf(provider -> provider.getDesignerAction() == null);
+            providers.sort(Comparator.comparing(AssayProvider::getName));
             return providers;
         }
 

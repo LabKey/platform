@@ -166,7 +166,6 @@ import org.labkey.study.view.DatasetsWebPartView;
 import org.labkey.study.view.StudyListWebPartFactory;
 import org.labkey.study.view.StudySummaryWebPartFactory;
 import org.labkey.study.view.StudyToolsWebPartFactory;
-import org.labkey.study.view.StudyViewLoader;
 import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate;
@@ -303,7 +302,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Set<ModuleResourceLoader> getResourceLoaders()
     {
-        return PageFlowUtil.set(new ModuleAssayLoader(), new StudyViewLoader());
+        return PageFlowUtil.set(new ModuleAssayLoader());
     }
 
     public boolean hasScripts()

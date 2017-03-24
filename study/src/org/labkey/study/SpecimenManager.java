@@ -53,6 +53,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -60,25 +61,7 @@ import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.SpecimenImporter.VialSpecimenRollup;
-import org.labkey.study.model.AdditiveType;
-import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.DerivativeType;
-import org.labkey.study.model.ExtendedSpecimenRequestView;
-import org.labkey.study.model.LocationImpl;
-import org.labkey.study.model.PrimaryType;
-import org.labkey.study.model.SpecimenComment;
-import org.labkey.study.model.SpecimenEvent;
-import org.labkey.study.model.SpecimenRequest;
-import org.labkey.study.model.SpecimenRequestActor;
-import org.labkey.study.model.SpecimenRequestEvent;
-import org.labkey.study.model.SpecimenRequestRequirement;
-import org.labkey.study.model.SpecimenRequestStatus;
-import org.labkey.study.model.SpecimenTypeSummary;
-import org.labkey.study.model.SpecimenTypeSummaryRow;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Vial;
-import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.*;
 import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.requirements.RequirementProvider;
@@ -3348,23 +3331,17 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         if (context == null || context.getContainer() == null)
             return null;
 
-        Set<String> activeModuleNames = new HashSet<>();
+        Path path = new Path(ModuleHtmlView.VIEWS_DIR, "extendedrequest.html");
+
         for (Module module : context.getContainer().getActiveModules())
-            activeModuleNames.add(module.getName());
-        for (Map.Entry<String, Resource> entry : _moduleExtendedSpecimenRequestViews.entrySet())
         {
-            if (activeModuleNames.contains(entry.getKey()) && entry.getValue().exists())
+            ModuleHtmlView moduleView = ModuleHtmlView.get(module, path, null);
+
+            if (null != moduleView)
             {
-                try (InputStream is = entry.getValue().getInputStream())
-                {
-                    String body = PageFlowUtil.getStreamContentsAsString(is);
-                    body = ModuleHtmlView.replaceTokens(body, context);
-                    return ExtendedSpecimenRequestView.createView(body);
-                }
-                catch (IOException e)
-                {
-                    throw new RuntimeException("Unable to load extended specimen request view from " + entry.getValue().getPath(), e);
-                }
+                String html = moduleView.getHtml();
+                html = ModuleHtmlView.replaceTokens(html, context);
+                return ExtendedSpecimenRequestView.createView(html);
             }
         }
 
