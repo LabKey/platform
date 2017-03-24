@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view.template;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
@@ -55,7 +56,7 @@ import java.util.Set;
  */
 public class ClientDependency
 {
-    private static Logger _log = Logger.getLogger(ClientDependency.class);
+    private static final Logger _log = Logger.getLogger(ClientDependency.class);
 
     public enum TYPE {
         js(".js"),
@@ -95,12 +96,12 @@ public class ClientDependency
         private FileType _fileType;
     }
 
-    private LinkedHashSet<ClientDependency> _children = new LinkedHashSet<>();
+    private final LinkedHashSet<ClientDependency> _children = new LinkedHashSet<>();
+
     private Module _module;
     private String _prodModePath;
     private String _devModePath;
     private boolean _compileInProductionMode = true;
-
     private String _uri;
     private Path _filePath;
     private Resource _resource;
@@ -120,6 +121,9 @@ public class ClientDependency
 
         _module = null; // not related to a module
     }
+
+    // TODO: Delete this once css theme work is complete, #29864
+    private static final Set<Path> errorsToIgnore = Sets.newHashSet(Path.parse("core/css/seattle.css"), Path.parse("core/css/guide_seattle.css"), Path.parse("core/css/core.js"));
 
     private ClientDependency(Path filePath, ModeTypeEnum.Enum mode)
     {
@@ -157,7 +161,9 @@ public class ClientDependency
                 // Allows you to run in dev mode without having the concatenated scripts built
                 if (!AppProps.getInstance().isDevMode() || !_mode.equals(ModeTypeEnum.PRODUCTION))
                 {
-                    logError("Script file \"" + filePath + "\" not found, skipping.");
+                    // Suppress known css theme errors. TODO: Delete this once css theme work is complete, #29864
+                    if (!errorsToIgnore.contains(filePath))
+                        logError("Script file \"" + filePath + "\" not found, skipping.");
                 }
             }
             else
