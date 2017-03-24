@@ -15,6 +15,7 @@
  */
 package org.labkey.api.module;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.NavTrailAction;
 import org.labkey.api.data.Container;
@@ -27,6 +28,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ForbiddenProjectException;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -50,10 +52,9 @@ import java.util.Set;
  */
 public class SimpleAction extends BaseViewAction implements NavTrailAction
 {
-    public static WebPartView getModuleHtmlView(Module module, String viewName, Portal.WebPart webpart)
+    public static WebPartView getModuleHtmlView(Module module, String viewName, @Nullable Portal.WebPart webpart)
     {
-        Resource r = module.getModuleResource(SimpleController.VIEWS_DIRECTORY + "/" + viewName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
-        return r != null && r.isFile() ? new ModuleHtmlView(r, webpart) : null;
+        return ModuleHtmlView.get(module, new Path(SimpleController.VIEWS_DIRECTORY, viewName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION), webpart);
     }
 
     public enum PermissionEnum

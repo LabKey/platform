@@ -15,14 +15,20 @@
  */
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlViewDefinition;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCacheHandlerOld;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.labkey.api.module.ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION;
 import static org.labkey.api.module.ModuleHtmlViewDefinition.VIEW_METADATA_EXTENSION;
@@ -70,5 +76,26 @@ public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandlerOld
 
             return new ModuleHtmlViewDefinition(r);
         };
+    }
+
+    public static class ModuleHtmlViewCacheHandler2 implements ModuleResourceCacheHandler<Map<Path, ModuleHtmlViewDefinition>>
+    {
+        @Override
+        public Map<Path, ModuleHtmlViewDefinition> load(@Nullable Resource dir, Module module)
+        {
+            if (null == dir)
+                return Collections.emptyMap();
+
+            Map<Path, ModuleHtmlViewDefinition> map = new HashMap<>();
+
+            dir.list().stream()
+                .filter(resource -> resource.isFile() && resource.getName().endsWith(HTML_VIEW_EXTENSION))
+                .forEach(resource -> {
+                    ModuleHtmlViewDefinition def = new ModuleHtmlViewDefinition(resource);
+                    map.put(resource.getPath(), def);
+                });
+
+            return Collections.unmodifiableMap(map);
+        }
     }
 }

@@ -18,9 +18,9 @@ package org.labkey.api.module;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.ModuleHtmlViewCacheHandler;
@@ -44,28 +44,35 @@ import java.util.regex.Matcher;
  */
 public class ModuleHtmlView extends HtmlView
 {
-    public static final PathBasedModuleResourceCache<ModuleHtmlViewDefinition> MODULE_HTML_VIEW_DEFINITION_CACHE = ModuleResourceCaches.create("HTML view definitions", new ModuleHtmlViewCacheHandler());
+    public static final String VIEWS_DIR = "views";
+
+    private static final PathBasedModuleResourceCache<ModuleHtmlViewDefinition> MODULE_HTML_VIEW_DEFINITION_CACHE = ModuleResourceCaches.create("HTML view definitions", new ModuleHtmlViewCacheHandler());
+    private static final ModuleResourceCache<Map<Path, ModuleHtmlViewDefinition>> MODULE_HTML_VIEW_DEFINITION_CACHE2 = ModuleResourceCaches.create(new Path(VIEWS_DIR), new ModuleHtmlViewCacheHandler.ModuleHtmlViewCacheHandler2(), "HTML view definitions");
 
     private final ModuleHtmlViewDefinition _viewdef;
 
-    public ModuleHtmlView(@NotNull Resource r)
+    public static @Nullable ModuleHtmlView get(@NotNull Module module, @NotNull Path path, @Nullable Portal.WebPart webpart)
     {
-        this(r, null);
+        ModuleHtmlViewDefinition viewDefinition = MODULE_HTML_VIEW_DEFINITION_CACHE2.getResourceMap(module).get(path);
+
+        if (null == viewDefinition)
+            return null;
+
+        return new ModuleHtmlView(viewDefinition, module, webpart);
     }
 
+    @Deprecated
+    public ModuleHtmlView(@NotNull Resource r)
+    {
+        this(MODULE_HTML_VIEW_DEFINITION_CACHE.getResource(((ModuleResourceResolver) r.getResolver()).getModule(), r.getPath()), ((ModuleResourceResolver) r.getResolver()).getModule(), null);
+    }
 
-    public ModuleHtmlView(@NotNull Resource r, @Nullable Portal.WebPart webpart)
+    private ModuleHtmlView(ModuleHtmlViewDefinition viewdef, @NotNull Module module, @Nullable Portal.WebPart webpart)
     {
         super(null);
-        _debugViewDescription = this.getClass().getSimpleName() + ": " + r.getPath().toString();
+        _debugViewDescription = getClass().getSimpleName() + ": " + module.getName() + "/" + viewdef.getName();
 
-        // This is hackery, but at least we're now explicit about it
-        Resolver resolver = r.getResolver();
-        assert resolver instanceof ModuleResourceResolver;
-        Module module = ((ModuleResourceResolver) resolver).getModule();
-
-        _viewdef = MODULE_HTML_VIEW_DEFINITION_CACHE.getResource(module, r.getPath());
-        assert null != _viewdef;
+        _viewdef = viewdef;
 
         setTitle(_viewdef.getTitle());
         setClientDependencies(_viewdef.getClientDependencies());
@@ -138,5 +145,10 @@ public class ModuleHtmlView extends HtmlView
     public Set<Class<? extends Permission>> getRequiredPermissionClasses()
     {
         return _viewdef.getRequiredPermissionClasses();
+    }
+
+    public String getHtml()
+    {
+        return _viewdef.getHtml();
     }
 }
