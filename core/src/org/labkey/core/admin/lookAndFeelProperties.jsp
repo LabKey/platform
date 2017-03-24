@@ -164,7 +164,7 @@
 
 <tr>
     <td class="labkey-form-label">Logo link (specifies page that header logo links to)</td>
-    <td><input type="text" name="logoHref" size="50" value="<%= h(laf.getLogoHref()) %>"></td>
+    <td><input type="text" name="logoHref" size="50" value="<%= h(laf.getUnsubstitutedLogoHref()) %>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Support link (specifies page where users can request support)</td>
