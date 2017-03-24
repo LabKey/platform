@@ -27,11 +27,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -193,7 +195,21 @@ public class DebugInfoDumper
         Class<?> hotspotClass = Class.forName("com.sun.management.HotSpotDiagnosticMXBean");
         Object bean = ManagementFactory.newPlatformMXBeanProxy(ManagementFactory.getPlatformMBeanServer(), HOTSPOT_BEAN_NAME, hotspotClass);
         Method method = hotspotClass.getMethod("dumpHeap", String.class, boolean.class);
-        File destination = new File(ModuleLoader.getInstance().getWebappDir().getParentFile(), "HeapDump_" + DateUtil.formatDateTime(new Date(), "yyyy-MM-dd_HH-mm-ss-SSS") + ".hprof");
+
+        File destDir = ModuleLoader.getInstance().getWebappDir().getParentFile();
+
+        //defer to -XX:HeapDumpPath
+        String prefix = "-XX:HeapDumpPath=";
+        for (final String jvmArg : ManagementFactory.getRuntimeMXBean().getInputArguments())
+        {
+            if (jvmArg.startsWith(prefix))
+            {
+                destDir = new File(jvmArg.substring(prefix.length()));
+                break;
+            }
+        }
+
+        File destination = new File(destDir, "HeapDump_" + DateUtil.formatDateTime(new Date(), "yyyy-MM-dd_HH-mm-ss-SSS") + ".hprof");
         try
         {
             method.invoke(bean, destination.getAbsolutePath(), false);

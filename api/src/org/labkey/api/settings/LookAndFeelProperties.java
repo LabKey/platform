@@ -132,9 +132,14 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         return lookupStringValue(NAVIGATION_BAR_WIDTH, "146"); // TODO: Remove this property? There's no way to set it...
     }
 
+    public String getUnsubstitutedLogoHref()
+    {
+        return lookupStringValue(LOGO_HREF_PROP, AppProps.getInstance().getHomePageUrl().replaceAll("^" + AppProps.getInstance().getContextPath(), "\\${contextPath}"));
+    }
+
     public String getLogoHref()
     {
-        return lookupStringValue(LOGO_HREF_PROP, AppProps.getInstance().getHomePageUrl());
+        return substituteContextPath(getUnsubstitutedLogoHref());
     }
 
     public String getCompanyName()
@@ -180,6 +185,11 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
             writeable.save();
         }
 
+        return substituteContextPath(path);
+    }
+
+    private String substituteContextPath(String path)
+    {
         return path.replace("${contextPath}", AppProps.getInstance().getContextPath());
     }
 
