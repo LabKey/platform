@@ -176,7 +176,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
 
     public void setModule(Module module)
     {
-        if (_module != null)
+        if (_module != null && !_module.equals(module))
             throw new IllegalStateException("WebPart " + getClass().getName() + " (" + getName() + "): Module has already been set to " + _module.getName() + "; attempt to set to " + module.getName() + " failed.");
         _module = module;
     }
