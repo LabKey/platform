@@ -17,7 +17,6 @@
 package org.labkey.api.module;
 
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -249,34 +248,6 @@ public class ModuleDependencySorter
             assertEquals(sortedModules.get(5).getName(), "c");
             assertEquals(sortedModules.get(6).getName(), "b");
             assertEquals(sortedModules.get(7).getName(), "a");
-        }
-
-        @Test
-        public void testResourceLoaderDependencies()
-        {
-            List<Module> testModules = new ArrayList<>();
-            testModules.add(new MockModule("a"));
-            testModules.add(new MockModule("b"));
-            testModules.add(new MockModule("c"));
-
-            ModuleResourceLoader loader = new ModuleResourceLoader() {
-                @NotNull
-                public Set<String> getModuleDependencies(Module module, File explodedModuleDir)
-                {
-                    if (module.getName().equals("a"))
-                        return Collections.singleton("b");
-                    if (module.getName().equals("b"))
-                        return Collections.singleton("c");
-                    return Collections.emptySet();
-                }
-            };
-
-            ModuleDependencySorter sorter = new ModuleDependencySorter();
-            List<Module> sortedModules = sorter.sortModulesByDependencies(testModules, Collections.singleton(loader));
-
-            assertEquals(sortedModules.get(0).getName(), "c");
-            assertEquals(sortedModules.get(1).getName(), "b");
-            assertEquals(sortedModules.get(2).getName(), "a");
         }
     }
 }
