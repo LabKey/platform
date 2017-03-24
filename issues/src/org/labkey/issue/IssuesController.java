@@ -1787,6 +1787,7 @@ public class IssuesController extends SpringActionController
             props.put("issueListUrl", new ActionURL(ListAction.class, getContainer()).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName).getLocalURIString());
             props.put("customizeEmailUrl", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), IssueUpdateEmailTemplate.class, getViewContext().getActionURL()).getLocalURIString());
             props.put("instructions", domain.getDomainKind().getDomainEditorInstructions());
+            props.put("canEditDomain", String.valueOf(domain.getDomainKind().canEditDefinition(getUser(), domain)));
 
             return new GWTView("org.labkey.issues.Designer", props);
         }

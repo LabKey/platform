@@ -76,6 +76,7 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
     private IssueDomain _domainPanel;
     private DirtySetter _dirtySetter = new DirtySetter();
     private boolean _dirty;
+    private boolean _canEditDomain;
 
     private SubmitButton _saveButton;
 
@@ -85,6 +86,7 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
         String defName = PropertyUtil.getServerProperty("defName");
         _issueListUrl = PropertyUtil.getServerProperty("issueListUrl");
         _customizeEmailUrl = PropertyUtil.getServerProperty("customizeEmailUrl");
+        _canEditDomain = Boolean.parseBoolean(PropertyUtil.getServerProperty("canEditDomain"));
 
         _typeURI = PropertyUtil.getServerProperty("typeURI");
 
@@ -261,7 +263,10 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
             if (pd.getPropertyId() < 0)
                 pd.setPropertyId(0);
 
-        getService().updateIssueDefinition(_issueDef, _domain, _propTable.getUpdates(), callback);
+        if (_canEditDomain)
+            getService().updateIssueDefinition(_issueDef, _domain, _propTable.getUpdates(), callback);
+        else
+            getService().updateIssueDefinition(_issueDef, _domain, null, callback);
     }
 
     @Override
@@ -562,9 +567,12 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
             setWidget(0, 1, createDefaultAssignedToConfiguration());
 
             // domain editor
-            Widget propTable = _propEdit.getWidget();
-            setWidget(1, 0, new WebPartPanel("", propTable));
-            cellFormatter.setColSpan(1, 0, 2);
+            if (_canEditDomain)
+            {
+                Widget propTable = _propEdit.getWidget();
+                setWidget(1, 0, new WebPartPanel("", propTable));
+                cellFormatter.setColSpan(1, 0, 2);
+            }
         }
 
         public void validate(List<String> errors)

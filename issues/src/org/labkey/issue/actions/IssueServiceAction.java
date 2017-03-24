@@ -121,7 +121,9 @@ public class IssueServiceAction extends GWTServiceAction
                     user = UserManager.getUser(def.getAssignedToUser());
                 IssueManager.saveDefaultAssignedToUser(getContainer(), def.getIssueDefName(), user);
 
-                List<String> errors = super.updateDomainDescriptor(orig, dd);
+                List<String> errors = new ArrayList<>();
+                if (orig != null && dd != null)
+                    errors = super.updateDomainDescriptor(orig, dd);
                 if (errors.isEmpty())
                     transaction.commit();
 
