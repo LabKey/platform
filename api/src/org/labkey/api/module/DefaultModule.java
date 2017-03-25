@@ -1124,13 +1124,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         }
     }
 
-    @NotNull
-    @Override
-    public Set<? extends ModuleResourceLoader> getResourceLoaders()
-    {
-        return Collections.emptySet();
-    }
-
     @Override
     public final Resolver getModuleResolver()
     {

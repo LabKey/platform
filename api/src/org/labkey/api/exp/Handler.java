@@ -30,7 +30,7 @@ import java.util.Collection;
  */
 public interface Handler<HandledType>
 {
-    public enum Priority
+    enum Priority
     {
         LOW, MEDIUM, HIGH, HIGHEST;
 
@@ -61,5 +61,5 @@ public interface Handler<HandledType>
 
     /** @return null if this handler cannot handle the object */
     @Nullable
-    public Priority getPriority(HandledType object);
+    Priority getPriority(HandledType object);
 }

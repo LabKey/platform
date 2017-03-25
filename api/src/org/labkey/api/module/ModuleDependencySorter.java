@@ -37,15 +37,13 @@ import java.util.Set;
  */
 public class ModuleDependencySorter
 {
-    public List<Module> sortModulesByDependencies(List<Module> modules, Collection<ModuleResourceLoader> loaders)
+    public List<Module> sortModulesByDependencies(List<Module> modules)
     {
         List<Pair<Module, Set<String>>> dependencies = new ArrayList<>();
         Set<String> moduleNames = new CaseInsensitiveHashSet();
         for (Module module : modules)
         {
             Pair<Module, Set<String>> dependencyInfo = new Pair<>(module, new CaseInsensitiveHashSet(module.getModuleDependenciesAsSet()));
-            for (ModuleResourceLoader loader : loaders)
-                dependencyInfo.second.addAll(loader.getModuleDependencies(module, module.getExplodedPath()));
             dependencies.add(dependencyInfo);
             moduleNames.add(module.getName());
         }
@@ -188,7 +186,7 @@ public class ModuleDependencySorter
                 testModules.add(new MockModule("a", "b"));
                 testModules.add(new MockModule("b", "a"));
                 ModuleDependencySorter sorter = new ModuleDependencySorter();
-                sorter.sortModulesByDependencies(testModules, Collections.emptySet());
+                sorter.sortModulesByDependencies(testModules);
                 fail("Should have detected a problem");
             }
             catch (IllegalArgumentException e) { /* Expected failure */ }
@@ -202,7 +200,7 @@ public class ModuleDependencySorter
                 List<Module> testModules = new ArrayList<>();
                 testModules.add(new MockModule("a", "a"));
                 ModuleDependencySorter sorter = new ModuleDependencySorter();
-                sorter.sortModulesByDependencies(testModules, Collections.emptySet());
+                sorter.sortModulesByDependencies(testModules);
                 fail("Should have detected a problem");
             }
             catch (IllegalArgumentException e) { /* Expected failure */ }
@@ -219,7 +217,7 @@ public class ModuleDependencySorter
                 testModules.add(new MockModule("d", "e"));
                 testModules.add(new MockModule("e"));
                 ModuleDependencySorter sorter = new ModuleDependencySorter();
-                sorter.sortModulesByDependencies(testModules, Collections.emptySet());
+                sorter.sortModulesByDependencies(testModules);
                 fail("Should have detected a problem");
             }
             catch (IllegalArgumentException e) { /* Expected failure */ }
@@ -238,7 +236,7 @@ public class ModuleDependencySorter
             testModules.add(new MockModule("g"));
             testModules.add(new MockModule("h"));
             ModuleDependencySorter sorter = new ModuleDependencySorter();
-            List<Module> sortedModules = sorter.sortModulesByDependencies(testModules, Collections.emptySet());
+            List<Module> sortedModules = sorter.sortModulesByDependencies(testModules);
             assertEquals(sortedModules.size(), testModules.size());
             assertEquals(sortedModules.get(0).getName(), "e");
             assertEquals(sortedModules.get(1).getName(), "d");

@@ -370,13 +370,6 @@ public class MockModule implements Module
     }
 
     @Override
-    @NotNull
-    public Set<ModuleResourceLoader> getResourceLoaders()
-    {
-        return Collections.emptySet();
-    }
-
-    @Override
     public File getExplodedPath()
     {
         return null;

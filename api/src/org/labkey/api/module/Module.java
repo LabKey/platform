@@ -299,14 +299,6 @@ public interface Module extends Comparable<Module>
     String getSqlScriptsPath(@NotNull SqlDialect dialect);
 
     /**
-     * Modules can provide a set of ModuleResourceLoaders which will be used
-     * to add modules dependencies between modules and load resources during initialization.
-     * @return The set of ModuleResourceLoaders this module provides.
-     */
-    @NotNull
-    Set<? extends ModuleResourceLoader> getResourceLoaders();
-
-    /**
      * handle a http request
      *
      * @param request as provided by Servlet.service

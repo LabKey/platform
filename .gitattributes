@@ -758,7 +758,6 @@ api/src/org/labkey/api/module/ModuleResourceCacheHandler.java -text
 api/src/org/labkey/api/module/ModuleResourceCacheHandlerOld.java -text
 api/src/org/labkey/api/module/ModuleResourceCaches.java -text
 api/src/org/labkey/api/module/ModuleResourceLoadException.java -text
-api/src/org/labkey/api/module/ModuleResourceLoader.java -text
 api/src/org/labkey/api/module/ModuleResourceResolver.java -text
 api/src/org/labkey/api/module/ModuleUpgrader.java -text
 api/src/org/labkey/api/module/MultiPortalFolderType.java -text

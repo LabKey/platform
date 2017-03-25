@@ -36,6 +36,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -63,23 +64,23 @@ public class AssayService
 
     public interface Interface
     {
-        public void registerAssayProvider(AssayProvider provider);
+        void registerAssayProvider(AssayProvider provider);
         @Nullable
-        public AssayProvider getProvider(String providerName);
+        AssayProvider getProvider(String providerName);
         @Nullable
-        public AssayProvider getProvider(ExpProtocol protocol);
+        AssayProvider getProvider(ExpProtocol protocol);
         @Nullable
-        public AssayProvider getProvider(ExpRun run);
+        AssayProvider getProvider(ExpRun run);
         @NotNull
-        public List<AssayProvider> getAssayProviders();
-        public WebPartView createAssayListView(ViewContext context, boolean portalView, BindException errors);
+        Collection<AssayProvider> getAssayProviders();
+        WebPartView createAssayListView(ViewContext context, boolean portalView, BindException errors);
 
         ModelAndView createAssayDesignerView(Map<String, String> properties);
         ModelAndView createAssayImportView(Map<String, String> properties);
 
         ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container);
 
-        public AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy);
+        AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy);
 
         /** @return all of the assay protocols that are in scope in the given container */
         List<ExpProtocol> getAssayProtocols(Container container);
@@ -95,36 +96,36 @@ public class AssayService
          * @param isStudyView true if this view is from a study, and thus should exclude the current container
          * unless it already has assay data in it
          */
-        public List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView);
+        List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView);
 
         /**
          * Creates a batch object but does not save it to the database
          * @param container location for this batch to live
          * @param name preferred name for the batch. If null, a default name will be assigned. If the name is already in
          */
-        public ExpExperiment createStandardBatch(Container container, @Nullable String name, ExpProtocol protocol);
+        ExpExperiment createStandardBatch(Container container, @Nullable String name, ExpProtocol protocol);
 
         /** Ensures that the batch name is unique within the container. Will add unique numeric suffix until it is. */
-        public ExpExperiment ensureUniqueBatchName(ExpExperiment batch, ExpProtocol protocol, User user);
+        ExpExperiment ensureUniqueBatchName(ExpExperiment batch, ExpProtocol protocol, User user);
 
         /**
          * @return the batch object for the assay run, if it has one.
          */
         @Nullable
-        public ExpExperiment findBatch(ExpRun run);
+        ExpExperiment findBatch(ExpRun run);
 
-        public void indexAssays(SearchService.IndexTask task, Container c);
+        void indexAssays(SearchService.IndexTask task, Container c);
 
         /**
          * Creates a run, but does not persist it to the database. Creates the run only, no protocol applications, etc.
          */
-        public ExpRun createExperimentRun(@Nullable String name, Container container, ExpProtocol protocol, @Nullable File file);
+        ExpRun createExperimentRun(@Nullable String name, Container container, ExpProtocol protocol, @Nullable File file);
 
         /**
          * Returns the list of valid locations an assay design can be created in.
          * @return the list of containers as pairs of container objects and corresponding label.
          */
-        public List<Pair<Container, String>> getLocationOptions(Container container, User user);
+        List<Pair<Container, String>> getLocationOptions(Container container, User user);
 
         /**
          * Searches the ExpRun and ExpBatch for the configured participant visit resolver type.  If none is found,
@@ -138,10 +139,10 @@ public class AssayService
          * @return The resolver.
          * @throws ExperimentException
          */
-        public ParticipantVisitResolver createResolver(User user, ExpRun run, @Nullable ExpProtocol protocol, @Nullable AssayProvider provider, @Nullable Container targetStudyContainer)
+        ParticipantVisitResolver createResolver(User user, ExpRun run, @Nullable ExpProtocol protocol, @Nullable AssayProvider provider, @Nullable Container targetStudyContainer)
                 throws IOException, ExperimentException;
 
-        public void clearProtocolCache();
+        void clearProtocolCache();
 
         /**
          * Register a provider that will add text links to the assay header link display.

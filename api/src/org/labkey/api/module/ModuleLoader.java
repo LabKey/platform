@@ -162,8 +162,6 @@ public class ModuleLoader implements Filter
     private StartupState _startupState = StartupState.StartupIncomplete;
     private String _startingUpMessage = null;
 
-    private final List<ModuleResourceLoader> _resourceLoaders = new ArrayList<>();
-
     private enum UpgradeState {UpgradeRequired, UpgradeInProgress, UpgradeComplete}
 
     private enum StartupState {StartupIncomplete, StartupInProgress, StartupComplete}
@@ -268,14 +266,9 @@ public class ModuleLoader implements Filter
         //load module instances using Spring
         _modules = loadModules(explodedModuleDirs);
 
-        for (Module module : _modules)
-        {
-            registerResourceLoaders(module.getResourceLoaders());
-        }
-
         //sort the modules by dependencies
         ModuleDependencySorter sorter = new ModuleDependencySorter();
-        _modules = sorter.sortModulesByDependencies(_modules, _resourceLoaders);
+        _modules = sorter.sortModulesByDependencies(_modules);
 
         for (Module module : _modules)
         {
@@ -1343,19 +1336,6 @@ public class ModuleLoader implements Filter
                 setStartupFailure(x);
                 _log.error("Failure starting module: " + m.getName(), x);
             }
-
-            //call the module resource loaders
-            for (ModuleResourceLoader resLoader : _resourceLoaders)
-            {
-                try
-                {
-                    resLoader.registerResources(m);
-                }
-                catch(Throwable t)
-                {
-                    _log.error("Unable to load resources from module " + m.getName() + " using the resource loader " + resLoader.getClass().getName(), t);
-                }
-            }
         }
 
         // Run any deferred upgrades, after all of the modules are in the Running state so that we
@@ -1881,14 +1861,6 @@ public class ModuleLoader implements Filter
     public Module getCurrentModule()
     {
         return ModuleLoader.getInstance().getModuleForController(HttpView.getRootContext().getActionURL().getController());
-    }
-
-    public void registerResourceLoaders(Set<? extends ModuleResourceLoader> loaders)
-    {
-        synchronized (_resourceLoaders)
-        {
-            _resourceLoaders.addAll(loaders);
-        }
     }
 
 
