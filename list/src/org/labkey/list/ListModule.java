@@ -123,15 +123,11 @@ public class ListModule extends DefaultModule
             ServiceRegistry.get(SearchService.class).addSearchCategory(ListManager.listCategory);
         }
 
-        AdminLinkManager.getInstance().addListener(new AdminLinkManager.Listener()
+        AdminLinkManager.getInstance().addListener((adminNavTree, container, user) ->
         {
-            @Override
-            public void addAdminLinks(NavTree adminNavTree, Container container, User user)
-            {
-                // Only need read permissions to view manage lists page
-                if (container.hasPermission(user, ReadPermission.class))
-                    adminNavTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(container)));
-            }
+            // Only need read permissions to view manage lists page
+            if (container.hasPermission(user, ReadPermission.class))
+                adminNavTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(container)));
         });
     }
 

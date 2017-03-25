@@ -1564,7 +1564,7 @@ public class Query
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
 			Container qtest = getSubfolder();
-            ListService.Interface s = ListService.get();
+            ListService s = ListService.get();
             QueryUpdateService qus;
 
             ListDefinition R = s.createList(c, "R", ListDefinition.KeyType.AutoIncrementInteger);
@@ -1623,7 +1623,7 @@ public class Query
                 }
             }
 
-			ListService.Interface s = ListService.get();
+			ListService s = ListService.get();
 
 			Container c = JunitUtil.getTestContainer();
 			{

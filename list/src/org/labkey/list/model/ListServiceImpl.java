@@ -32,7 +32,7 @@ import org.labkey.list.controllers.ListController;
 import java.util.Collection;
 import java.util.Map;
 
-public class ListServiceImpl implements ListService.Interface
+public class ListServiceImpl implements ListService
 {
     public Map<String, ListDefinition> getLists(Container container)
     {

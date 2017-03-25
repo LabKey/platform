@@ -67,7 +67,6 @@ import static org.labkey.api.util.GUID.makeGUID;
 
 public class ListDefinitionImpl implements ListDefinition
 {
-    protected static final String NAMESPACE_PREFIX = "List";
     private static final Logger LOG = Logger.getLogger(ListDefinitionImpl.class);
 
     static public ListDefinitionImpl of(ListDef def)
@@ -452,7 +451,7 @@ public class ListDefinitionImpl implements ListDefinition
 
         try
         {
-            row = new TableSelector(tbl, filter, null).getObject(Map.class);
+            row = new TableSelector(tbl, filter, null).getMap();
         }
         catch (IllegalStateException e)
         {

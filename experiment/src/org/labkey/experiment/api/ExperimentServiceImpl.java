@@ -3163,7 +3163,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 deleteExperimentRunsByRowIds(c, user, runId);
             }
-            ListService.Interface ls = ListService.get();
+            ListService ls = ListService.get();
             if (ls != null)
             {
                 for (ListDefinition list : ListService.get().getLists(c).values())
