@@ -43,7 +43,6 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.ReportService.UIProvider;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryListener;
@@ -101,7 +100,7 @@ import java.util.stream.Collectors;
  * User: Karl Lum
  * Date: Dec 21, 2007
  */
-public class ReportServiceImpl extends AbstractContainerListener implements ReportService.I
+public class ReportServiceImpl extends AbstractContainerListener implements ReportService
 {
     private static final Logger _log = Logger.getLogger(ReportService.class);
     private static final List<UIProvider> _uiProviders = new CopyOnWriteArrayList<>();
