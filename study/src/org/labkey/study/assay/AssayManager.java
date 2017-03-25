@@ -185,8 +185,6 @@ public class AssayManager implements AssayService.Interface
     @Override @NotNull
     public Collection<AssayProvider> getAssayProviders()
     {
-        assert ModuleLoader.getInstance().isStartupComplete();
-
         synchronized (PROVIDER_LOCK)
         {
             if (!_addedFileBasedAssays)
