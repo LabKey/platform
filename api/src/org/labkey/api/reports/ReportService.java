@@ -29,6 +29,7 @@ import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
@@ -45,131 +46,130 @@ import java.util.List;
  * User: Karl Lum
  * Date: Dec 21, 2007
  */
-public class ReportService
+public interface ReportService
 {
-    private static I _instance;
+    String LINK_REPORT_TYPE = "ReportService.linkReport";
 
-    public static synchronized ReportService.I get()
+    static ReportService get()
     {
-        return _instance;
-    }
-    public static String LINK_REPORT_TYPE = "ReportService.linkReport";
-
-    private ReportService(){}
-
-    static public synchronized void registerProvider(I provider)
-    {
-        // only one provider for now
-        if (_instance != null)
-            throw new IllegalStateException("A report service provider :" + _instance.getClass().getName() + " has already been registered");
-
-        _instance = provider;
+        return ServiceRegistry.get(ReportService.class);
     }
 
-    public interface I
+    static void registerProvider(ReportService provider)
     {
-        /**
-         * Registers a report type, reports must be registered in order to be created.
-         */
-        void registerReport(Report report);
-
-        /**
-         * A descriptor class must be registered with the service in order to be valid.
-         */
-        void registerDescriptor(ReportDescriptor descriptor);
-
-        /**
-         * creates new descriptor or report instances.
-         */
-        ReportDescriptor createDescriptorInstance(String typeName);
-
-        /**
-         * Returns a ReportDescriptor defined in the specified module at the specified path.
-         * @param module Module to search for the ReportDescriptor
-         * @param path Full path to a specific report, for example "reports/schemas/lists/People/Super Cool R Report.r". Note that
-         *             inconsistency with getModuleReportDescriptors() below. Plus, this parameter should probably be a Path.
-         * @return The ReportDescriptor matching the requested parameters or null, if no matching ReportDescriptor is found.
-         */
-        ReportDescriptor getModuleReportDescriptor(Module module, String path);
-
-        /**
-         * Returns a list of ReportDescriptors defined in the specified module, either those associated with the specified query path or all of them.
-         * @param module Module to search for ReportDescriptors
-         * @param path Path to a specific query, meaning return reports associated with that query, or null, meaning return all reports
-         *             in this module. Unlike getModuleReportDescriptor() above, this path is relative to reports/schemas... for
-         *             example, "list/People". Wouldn't a QueryKey be better here?
-         * @return A list of ReportDescriptors matching the requested parameters.
-         */
-        List<ReportDescriptor> getModuleReportDescriptors(Module module, @Nullable String path);
-
-        @Nullable
-        Report createReportInstance(String typeName);
-        @Nullable
-        Report createReportInstance(ReportDescriptor descriptor);
-
-        void deleteReport(ContainerUser context, Report report);
-
-        /**
-         * Note: almost all cases of saveReport will want to use the version that does not skip validation.
-         *       One example of where we skip validation is in the StudyUpgradeCode which has a method to fix report properties
-         *       across all reports in the database (regardless of user)
-         */
-        int saveReport(ContainerUser context, String key, Report report, boolean skipValidation);
-        int saveReport(ContainerUser context, String key, Report report);
-
-        Report getReport(Container c, int reportId);
-        Report getReportByEntityId(Container c, String entityId);
-
-        /**
-         * Returns ONLY reports stored in the database (not module reports)
-         */
-        Collection<Report> getReports(@Nullable User user, @NotNull Container c);
-        /**
-         * Returns both database reports and module reports
-         */
-        Collection<Report> getReports(@Nullable User user, @NotNull Container c, @Nullable String key);
-
-        // update the data views display order for this report
-        void setReportDisplayOrder(ContainerUser context, Report report, int displayOrder);
-
-        // TODO: This is only used by ReportUtils... remove from interface?
-        Collection<Report> getInheritableReports(User user, Container c, String reportKey);
-
-        @Nullable
-        Report getReport(ReportDB reportDB);
-
-        ReportIdentifier getReportIdentifier(String reportId);
-
-        void addUIProvider(UIProvider provider);
-        List<UIProvider> getUIProviders();
-
-        Report createFromQueryString(String queryString) throws Exception;
-
-        @NotNull String getIconPath(Report report);
-        @Nullable String getIconCls(Report report);
-
-        /**
-         * Imports a serialized report into the database using the specified user and container
-         * parameters. Imported reports are always treated as new reports even if they were exported from
-         * the same container.
-         */
-        Report importReport(ImportContext ctx, XmlObject reportXml, VirtualFile root) throws IOException, SQLException, XmlValidationException;
-
-        /**
-         * Runs maintenance on the report service.
-         */
-        void maintenance(Logger log);
-
-        /**
-         * Validates whether a user has the appropriate permissions to save the report with the changed
-         * settings. Use tryValidateReportPermissions if you don't want to throw a runtime exception
-         * on permissions failure
-         */
-        void validateReportPermissions(ContainerUser context, Report report);
-        boolean tryValidateReportPermissions(ContainerUser context, Report report, List<ValidationError> errors);
+        ServiceRegistry.get().registerService(ReportService.class, provider);
     }
 
-    public interface DesignerInfo
+    /**
+     * Registers a report type, reports must be registered in order to be created.
+     */
+    void registerReport(Report report);
+
+    /**
+     * A descriptor class must be registered with the service in order to be valid.
+     */
+    void registerDescriptor(ReportDescriptor descriptor);
+
+    /**
+     * creates new descriptor or report instances.
+     */
+    ReportDescriptor createDescriptorInstance(String typeName);
+
+    /**
+     * Returns a ReportDescriptor defined in the specified module at the specified path.
+     * @param module Module to search for the ReportDescriptor
+     * @param path Full path to a specific report, for example "reports/schemas/lists/People/Super Cool R Report.r". Note that
+     *             inconsistency with getModuleReportDescriptors() below. Plus, this parameter should probably be a Path.
+     * @return The ReportDescriptor matching the requested parameters or null, if no matching ReportDescriptor is found.
+     */
+    ReportDescriptor getModuleReportDescriptor(Module module, String path);
+
+    /**
+     * Returns a list of ReportDescriptors defined in the specified module, either those associated with the specified query path or all of them.
+     * @param module Module to search for ReportDescriptors
+     * @param path Path to a specific query, meaning return reports associated with that query, or null, meaning return all reports
+     *             in this module. Unlike getModuleReportDescriptor() above, this path is relative to reports/schemas... for
+     *             example, "list/People". Wouldn't a QueryKey be better here?
+     * @return A list of ReportDescriptors matching the requested parameters.
+     */
+    List<ReportDescriptor> getModuleReportDescriptors(Module module, @Nullable String path);
+
+    @Nullable
+    Report createReportInstance(String typeName);
+
+    @Nullable
+    Report createReportInstance(ReportDescriptor descriptor);
+
+    void deleteReport(ContainerUser context, Report report);
+
+    /**
+     * Note: almost all cases of saveReport will want to use the version that does not skip validation.
+     *       One example of where we skip validation is in the StudyUpgradeCode which has a method to fix report properties
+     *       across all reports in the database (regardless of user)
+     */
+    int saveReport(ContainerUser context, String key, Report report, boolean skipValidation);
+
+    int saveReport(ContainerUser context, String key, Report report);
+
+    Report getReport(Container c, int reportId);
+
+    Report getReportByEntityId(Container c, String entityId);
+
+    /**
+     * Returns ONLY reports stored in the database (not module reports)
+     */
+    Collection<Report> getReports(@Nullable User user, @NotNull Container c);
+
+    /**
+     * Returns both database reports and module reports
+     */
+    Collection<Report> getReports(@Nullable User user, @NotNull Container c, @Nullable String key);
+
+    // update the data views display order for this report
+    void setReportDisplayOrder(ContainerUser context, Report report, int displayOrder);
+
+    // TODO: This is only used by ReportUtils... remove from interface?
+    Collection<Report> getInheritableReports(User user, Container c, String reportKey);
+
+    @Nullable
+    Report getReport(ReportDB reportDB);
+
+    ReportIdentifier getReportIdentifier(String reportId);
+
+    void addUIProvider(UIProvider provider);
+
+    List<UIProvider> getUIProviders();
+
+    Report createFromQueryString(String queryString) throws Exception;
+
+    @NotNull
+    String getIconPath(Report report);
+
+    @Nullable
+    String getIconCls(Report report);
+
+    /**
+     * Imports a serialized report into the database using the specified user and container
+     * parameters. Imported reports are always treated as new reports even if they were exported from
+     * the same container.
+     */
+    Report importReport(ImportContext ctx, XmlObject reportXml, VirtualFile root) throws IOException, SQLException, XmlValidationException;
+
+    /**
+     * Runs maintenance on the report service.
+     */
+    void maintenance(Logger log);
+
+    /**
+     * Validates whether a user has the appropriate permissions to save the report with the changed
+     * settings. Use tryValidateReportPermissions if you don't want to throw a runtime exception
+     * on permissions failure
+     */
+    void validateReportPermissions(ContainerUser context, Report report);
+
+    boolean tryValidateReportPermissions(ContainerUser context, Report report, List<ValidationError> errors);
+
+    interface DesignerInfo
     {
         /** the report type this builder is associated with */
         String getReportType();
@@ -193,12 +193,12 @@ public class ReportService
         DesignerType getType();
     }
 
-    public enum DesignerType
+    enum DesignerType
     {
         DEFAULT, VISUALIZATION
     }
 
-    public interface UIProvider
+    interface UIProvider
     {
         /**
          * Allows providers to add UI for creating reports not associated with a query
@@ -225,10 +225,10 @@ public class ReportService
         @Nullable String getIconCls(Report report);
     }
 
-    public interface ItemFilter
+    interface ItemFilter
     {
         boolean accept(String type, String label);
     }
 
-    public static ItemFilter EMPTY_ITEM_LIST = (type, label) -> false;
+    ItemFilter EMPTY_ITEM_LIST = (type, label) -> false;
 }

@@ -105,7 +105,7 @@ public class ModuleReportIdentifier extends AbstractReportIdentifier
     {
         if (null != getModule())
         {
-            ReportService.I service = ReportService.get();
+            ReportService service = ReportService.get();
             ReportDescriptor d = service.getModuleReportDescriptor(
                     getModule(), getReportPath().toString("","")
             );
