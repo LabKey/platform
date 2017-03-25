@@ -20,33 +20,29 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Map;
 
-public class ListService
+public interface ListService
 {
-    private static Interface instance;
-
-    public static Interface get()
+    static ListService get()
     {
-        return instance;
+        return ServiceRegistry.get(ListService.class);
     }
 
-    public static void setInstance(Interface i)
+    static void setInstance(ListService ls)
     {
-        instance = i;
+        ServiceRegistry.get().registerService(ListService.class, ls);
     }
 
-    public interface Interface
-    {
-        Map<String, ListDefinition> getLists(Container container);
-        boolean hasLists(Container container);
-        ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType);
-        ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType, @Nullable TemplateInfo templateInfo);
-        ListDefinition getList(Container container, int listId);
-        @Nullable ListDefinition getList(Container container, String name);
-        ListDefinition getList(Domain domain);
-        ActionURL getManageListsURL(Container container);
-    }
+    Map<String, ListDefinition> getLists(Container container);
+    boolean hasLists(Container container);
+    ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType);
+    ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType, @Nullable TemplateInfo templateInfo);
+    ListDefinition getList(Container container, int listId);
+    @Nullable ListDefinition getList(Container container, String name);
+    ListDefinition getList(Domain domain);
+    ActionURL getManageListsURL(Container container);
 }
