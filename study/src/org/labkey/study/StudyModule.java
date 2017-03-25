@@ -43,7 +43,6 @@ import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
@@ -92,7 +91,6 @@ import org.labkey.pipeline.xml.AssayImportRunTaskType;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.FileBasedModuleDataHandler;
-import org.labkey.study.assay.ModuleAssayLoader;
 import org.labkey.study.assay.TsvAssayProvider;
 import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.assay.query.AssaySchemaImpl;
@@ -296,13 +294,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         RoleManager.registerRole(new SpecimenCoordinatorRole());
         RoleManager.registerRole(new SpecimenRequesterRole());
         RoleManager.registerRole(new AssayDesignerRole());
-    }
-
-    @NotNull
-    @Override
-    public Set<ModuleResourceLoader> getResourceLoaders()
-    {
-        return PageFlowUtil.set(new ModuleAssayLoader());
     }
 
     public boolean hasScripts()

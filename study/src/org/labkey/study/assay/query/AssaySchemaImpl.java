@@ -44,11 +44,11 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -61,7 +61,7 @@ import java.util.TreeSet;
 public class AssaySchemaImpl extends AssaySchema
 {
     private Map<ExpProtocol, AssayProvider> _protocols;
-    private List<AssayProvider> _allProviders;
+    private Collection<AssayProvider> _allProviders;
 
     /** Cache the "child" schemas so that we don't have to recreate them over and over within this schema's lifecycle */
     private Map<ExpProtocol, AssayProtocolSchema> _protocolSchemas = new HashMap<>();
@@ -162,7 +162,7 @@ public class AssaySchemaImpl extends AssaySchema
         return names;
     }
 
-    private List<AssayProvider> getAllProviders()
+    private Collection<AssayProvider> getAllProviders()
     {
         if (_allProviders == null)
         {

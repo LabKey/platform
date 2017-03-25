@@ -20,9 +20,9 @@ import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceLoadException;
-import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.study.StudyModule;
 import org.labkey.study.assay.xml.ProviderDocument;
 import org.labkey.study.assay.xml.ProviderType;
@@ -36,7 +36,9 @@ import java.util.Set;
  * User: kevink
  * Date: Dec 10, 2008 1:34:33 PM
  */
-public class ModuleAssayLoader implements ModuleResourceLoader
+
+// TODO: Temporary: switch to a ModuleResourceCache
+public class ModuleAssayLoader
 {
     public static final String DOMAINS_DIR_NAME = "domains";
 
@@ -50,7 +52,7 @@ public class ModuleAssayLoader implements ModuleResourceLoader
         return Collections.emptySet();
     }
 
-    public void registerResources(Module module) throws IOException, ModuleResourceLoadException
+    public void registerResources(Module module)
     {
         Resource assayDir = module.getModuleResource(AssayService.ASSAY_DIR_NAME);
         if (assayDir != null && assayDir.exists() && assayDir.isCollection())
@@ -60,12 +62,19 @@ public class ModuleAssayLoader implements ModuleResourceLoader
                 if (!assayProviderDir.isCollection())
                     continue;
 
-                // As of 11.1, a config.xml file is required to define the file-based module assay.
+                // A config.xml file is required to define the file-based module assay.
                 Resource configFile = assayProviderDir.find("config.xml");
                 if (configFile == null || !configFile.isFile())
                     continue;
 
-                loadAssayProvider(module, assayProviderDir, configFile);
+                try
+                {
+                    loadAssayProvider(module, assayProviderDir, configFile);
+                }
+                catch (Exception e)
+                {
+                    ExceptionUtil.logExceptionToMothership(null, e);
+                }
             }
         }
     }

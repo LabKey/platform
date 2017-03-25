@@ -38,6 +38,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
@@ -49,8 +50,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.assay.AbstractAssayProvider;
-import org.labkey.api.study.assay.AssayHeaderLinkProvider;
 import org.labkey.api.study.assay.AssayColumnInfoRenderer;
+import org.labkey.api.study.assay.AssayHeaderLinkProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
@@ -94,6 +95,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -105,7 +107,10 @@ public class AssayManager implements AssayService.Interface
 {
     private static Cache<GUID, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
 
-    private List<AssayProvider> _providers = new ArrayList<>();
+    private boolean _addedFileBasedAssays = false;
+    private static final Object PROVIDER_LOCK = new Object();
+
+    private Map<String, AssayProvider> _providers = new ConcurrentSkipListMap<>();
     private List<AssayHeaderLinkProvider> _headerLinkProviders = new ArrayList<>();
     private List<AssayColumnInfoRenderer> _assayColumnInfoRenderers = new ArrayList<>();
 
@@ -135,11 +140,10 @@ public class AssayManager implements AssayService.Interface
         {
             throw new IllegalArgumentException("'" + AssaySchema.ASSAY_LIST_TABLE_NAME + "' is not allowed as an AssayProvider name because it conflicts with the built-in query");
         }
-        if (getProvider(provider.getName()) != null)
+        if (null != _providers.putIfAbsent(provider.getName(), provider))
         {
             throw new IllegalArgumentException("A provider with the name " + provider.getName() + " has already been registered");
         }
-        _providers.add(provider);
         PipelineProvider pipelineProvider = provider.getPipelineProvider();
         if (pipelineProvider != null)
         {
@@ -151,7 +155,7 @@ public class AssayManager implements AssayService.Interface
     @Override @Nullable
     public AssayProvider getProvider(String providerName)
     {
-        for (AssayProvider potential : _providers)
+        for (AssayProvider potential : getAssayProviders())
         {
             if (potential.getName().equals(providerName) || potential.getResourceName().equals(providerName))
             {
@@ -164,7 +168,7 @@ public class AssayManager implements AssayService.Interface
     @Override @Nullable
     public AssayProvider getProvider(ExpProtocol protocol)
     {
-        return Handler.Priority.findBestHandler(_providers, protocol);
+        return Handler.Priority.findBestHandler(getAssayProviders(), protocol);
     }
 
     @Override @Nullable
@@ -179,9 +183,22 @@ public class AssayManager implements AssayService.Interface
     }
 
     @Override @NotNull
-    public List<AssayProvider> getAssayProviders()
+    public Collection<AssayProvider> getAssayProviders()
     {
-        return Collections.unmodifiableList(_providers);
+        assert ModuleLoader.getInstance().isStartupComplete();
+
+        synchronized (PROVIDER_LOCK)
+        {
+            if (!_addedFileBasedAssays)
+            {
+                // TODO: This is temporary... switch to a ModuleResourceCache
+                ModuleLoader.getInstance().getModules()
+                    .forEach(module -> new ModuleAssayLoader().registerResources(module));
+                _addedFileBasedAssays = true;
+            }
+        }
+
+        return Collections.unmodifiableCollection(_providers.values());
     }
 
     @Override

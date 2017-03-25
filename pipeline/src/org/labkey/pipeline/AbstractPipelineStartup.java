@@ -20,7 +20,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
@@ -40,7 +39,6 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -64,7 +62,7 @@ public abstract class AbstractPipelineStartup
         List<Module> modules = moduleLoader.doInit(moduleFiles);
         moduleLoader.setWebappDir(webappDir);
         ModuleDependencySorter sorter = new ModuleDependencySorter();
-        modules = sorter.sortModulesByDependencies(modules, Collections.emptySet());
+        modules = sorter.sortModulesByDependencies(modules);
 
         // Horrible hack to work around failure to respect module dependencies in non-built file based modules
         Module pipelineModule = null;
