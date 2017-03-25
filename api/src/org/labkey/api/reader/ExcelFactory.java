@@ -725,7 +725,7 @@ public class ExcelFactory
 
         private JSONArray startImportFile (String filename) throws Exception
         {
-            AppProps.Interface props = AppProps.getInstance();
+            AppProps props = AppProps.getInstance();
             if (!props.isDevMode()) // We can only run the excel tests if we're in dev mode and have access to our samples
                 return null;
 

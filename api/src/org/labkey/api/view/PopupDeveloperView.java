@@ -17,16 +17,11 @@ package org.labkey.api.view;
 
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.rstudio.RStudioService;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.writer.ZipUtil;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 

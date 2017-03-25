@@ -68,7 +68,7 @@ public abstract class ExportScriptModel
 
     public String getBaseUrl()
     {
-        AppProps.Interface props = AppProps.getInstance();
+        AppProps props = AppProps.getInstance();
         return props.getBaseServerUrl() + props.getContextPath();
     }
 

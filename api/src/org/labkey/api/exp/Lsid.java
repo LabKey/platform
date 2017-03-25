@@ -358,7 +358,7 @@ public class Lsid
             this(namespace, objectId, AppProps.getInstance());
         }
 
-        private LsidBuilder(String namespace, String objectId, AppProps.Interface appProps)
+        private LsidBuilder(String namespace, String objectId, AppProps appProps)
         {
             valid = true;
             this.authority = appProps.getDefaultLsidAuthority();
@@ -375,7 +375,7 @@ public class Lsid
             this(namespacePrefix, namespaceSuffix, objectId, AppProps.getInstance());
         }
 
-        private LsidBuilder(String namespacePrefix, String namespaceSuffix, String objectId, AppProps.Interface appProps)
+        private LsidBuilder(String namespacePrefix, String namespaceSuffix, String objectId, AppProps appProps)
         {
             valid = true;
             this.authority = appProps.getDefaultLsidAuthority();
@@ -520,13 +520,13 @@ public class Lsid
     {
         private static final String DEFAULT_LSID_AUTHORITY = "server.test";
 
-        private static AppProps.Interface _mockAppProps;
+        private static AppProps _mockAppProps;
 
         @BeforeClass
         public static void setUp()
         {
             Mockery context = new Mockery();
-            _mockAppProps = context.mock(AppProps.Interface.class);
+            _mockAppProps = context.mock(AppProps.class);
             context.checking(new Expectations()
             {{
                 allowing(_mockAppProps).getDefaultLsidAuthority();

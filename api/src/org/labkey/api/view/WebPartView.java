@@ -68,7 +68,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
     private Throwable _prepareException = null;
     private boolean _isPrepared = false;
-    private final boolean _devMode =AppProps.getInstance().isDevMode();
+    private final boolean _devMode = AppProps.getInstance().isDevMode();
     protected String _debugViewDescription = null;
 
     private static final Logger LOG = Logger.getLogger(WebPartView.class);

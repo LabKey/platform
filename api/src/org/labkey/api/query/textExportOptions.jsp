@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.data.ColumnHeaderType" %>
 <%@ page import="org.labkey.api.data.TSVWriter" %>
 <%@ page import="org.labkey.api.query.QueryView" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>

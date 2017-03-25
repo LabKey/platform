@@ -450,7 +450,7 @@ public class ViewServlet extends HttpServlet
         MockRequest request = new MockRequest(getViewServletContext(), method, url);
         UniqueID.initializeRequestScopedUID(request);
 
-        AppProps.Interface props = AppProps.getInstance();
+        AppProps props = AppProps.getInstance();
         request.setContextPath(props.getContextPath());
         request.setServerPort(props.getServerPort());
         request.setServerName(props.getServerName());

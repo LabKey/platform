@@ -18,9 +18,9 @@ package org.labkey.api.study.query;
 
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.settings.AppProps;
 
 import java.io.IOException;
 import java.io.Writer;

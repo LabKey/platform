@@ -48,7 +48,7 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
  * User: jeckels
  * Date: Jun 21, 2012
  */
-class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.Interface
+class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
 {
     private volatile String _contextPathStr;
     private volatile Path _contextPath = null;

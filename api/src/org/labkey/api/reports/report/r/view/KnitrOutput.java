@@ -32,8 +32,6 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.util.regex.Pattern;
 
-import static org.apache.commons.lang3.StringUtils.startsWith;
-
 /**
  * User: dax
  * Date: May 7, 2008

@@ -2015,7 +2015,7 @@ public class PageFlowUtil
 
     public static JSONObject jsInitObject(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
     {
-        AppProps.Interface appProps = AppProps.getInstance();
+        AppProps appProps = AppProps.getInstance();
         String contextPath = appProps.getContextPath();
         JSONObject json = new JSONObject();
 

@@ -20,8 +20,6 @@ import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.tika.detect.AutoDetectReader;
-import org.apache.tika.exception.TikaException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -38,7 +36,6 @@ import org.labkey.api.writer.PrintWriters;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
