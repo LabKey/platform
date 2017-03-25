@@ -30,7 +30,7 @@
     Container c = getContainer();
     User user = getUser();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
-    AppProps.Interface app = AppProps.getInstance();
+    AppProps app = AppProps.getInstance();
 
     getViewContext().getResponse().setContentType("text/xml");
 

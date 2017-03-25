@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.core.admin.AdminController.NewInstallSiteSettingsForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
 <%
-    org.labkey.core.admin.AdminController.NewInstallSiteSettingsForm bean = ((JspView<org.labkey.core.admin.AdminController.NewInstallSiteSettingsForm>) HttpView.currentView()).getModelBean();
+    NewInstallSiteSettingsForm bean = ((JspView<NewInstallSiteSettingsForm>) HttpView.currentView()).getModelBean();
 %>
 
 <labkey:errors/>

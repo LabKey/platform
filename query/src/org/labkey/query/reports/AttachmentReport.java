@@ -513,7 +513,7 @@ public class AttachmentReport extends BaseRedirectReport
         public void test() throws IOException
         {
             AttachmentReport report = new AttachmentReport();
-            AppProps.Interface props = AppProps.getInstance();
+            AppProps props = AppProps.getInstance();
             String projectRootPath = props.getProjectRoot();
 
             //String root = System.getProperty("labkey.root", "..");

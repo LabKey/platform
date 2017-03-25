@@ -487,7 +487,7 @@ public class EmailServiceImpl implements EmailService.I
 
         private File getAttachment(String fileName)
         {
-            AppProps.Interface props = AppProps.getInstance();
+            AppProps props = AppProps.getInstance();
             if (!props.isDevMode()) // We can only run the test if we're in dev mode and have access to sampledata
                 return null;
 

@@ -15,8 +15,8 @@
  */
 package org.labkey.pipeline.api.properties;
 
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.settings.AppProps;
 
 /**
  * <code>ApplicationPropertiesSite</code> overrides <code>ApplicationPropertiesImpl</code>

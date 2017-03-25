@@ -18,15 +18,10 @@ package org.labkey.query.reports.view;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.RReport;
-import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.view.RenderBackgroundRReportView;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -34,8 +29,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.*;
 
 import java.io.PrintWriter;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 /**

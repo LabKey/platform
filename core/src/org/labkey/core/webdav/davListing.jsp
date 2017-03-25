@@ -32,7 +32,7 @@
 <%
     DavController.ListPage listpage = (DavController.ListPage) HttpView.currentModel();
     WebdavResource resource = listpage.resource;
-    AppProps.Interface app = AppProps.getInstance();
+    AppProps app = AppProps.getInstance();
 %>
 <script type="text/javascript">
 
