@@ -109,9 +109,11 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     @NotNull List<ColumnInfo> getPkColumns();
 
+    /** Gets all of the constraints that guarantee uniqueness in the underlying table. This includes both PRIMARY KEY and UNIQUE constraints */
     @NotNull
     Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices();
 
+    /** Gets all of the indices from the underlying table. This includes PRIMARY KEY and UNIQUE constraints, as well as non-unique INDEX */
     @NotNull
     Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices();
 
