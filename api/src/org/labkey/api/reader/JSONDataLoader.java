@@ -66,7 +66,7 @@ import static org.labkey.api.util.JsonUtil.skipValue;
 /**
  * Reads data from an JSON table that matches the selectRows 8.3, 9.1, and 13.2 response formats.
  * The Jackson parser is used to stream the results one row at a time to handle large datasets.
- * If available, the name and type information will be read from the mataData fields array, otherwise
+ * If available, the name and type information will be read from the metaData fields array, otherwise
  * all the values will be converted into Strings.
  *
  * Example:
