@@ -801,7 +801,7 @@ public class StatusController extends SpringActionController
             getContainerCheckAdmin();
             try
             {
-                deleteStatus(getViewBackgroundInfo(), form.isDeleteRuns(), DataRegionSelection.getSelectedIntegers(getViewContext(), true));
+                deleteStatus(getViewBackgroundInfo().getContainer(), getViewBackgroundInfo().getUser(), form.isDeleteRuns(), DataRegionSelection.getSelectedIntegers(getViewContext(), true));
             }
             catch (PipelineProvider.HandlerException e)
             {

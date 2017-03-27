@@ -555,7 +555,7 @@ public class PipelineStatusManager
         }
     }
 
-    public static void deleteStatus(ViewBackgroundInfo info, boolean deleteExpRuns, Collection<Integer> rowIds) throws PipelineProvider.HandlerException
+    public static void deleteStatus(Container c, User u, boolean deleteExpRuns, Collection<Integer> rowIds) throws PipelineProvider.HandlerException
     {
         // Make entire transaction use the PipelineStatus connection, since Exp.Data/Exp.ExperimentRun are tied to Pipeline.StatusFiles
         try (DbScope.Transaction transaction = _schema.getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
@@ -565,7 +565,7 @@ public class PipelineStatusManager
             {
                 ids.add(rowId);
             }
-            deleteStatus(info, deleteExpRuns, ids);
+            deleteStatus(c, u, deleteExpRuns, ids);
             if (!ids.isEmpty())
             {
                 throw new PipelineProvider.HandlerException("Failed to delete " + ids.size() + " job" + (ids.size() > 1 ? "s" : ""));
@@ -574,7 +574,7 @@ public class PipelineStatusManager
         }
     }
 
-    private static void deleteStatus(ViewBackgroundInfo info, boolean deleteExpRuns, Set<Integer> rowIds)
+    private static void deleteStatus(Container container, User user, boolean deleteExpRuns, Set<Integer> rowIds)
     {
         assert _schema.getSchema().getScope().isTransactionActive() : "Should only be invoked inside of a transaction";
         if (rowIds.isEmpty())
@@ -592,8 +592,8 @@ public class PipelineStatusManager
             // First check that it still exists in the database and that it isn't running anymore
             if (sf != null && !sf.isActive())
             {
-                Container c = sf.lookupContainer();
-                if (!c.hasPermission(info.getUser(), DeletePermission.class))
+                Container targetContainer = sf.lookupContainer();
+                if (!targetContainer.hasPermission(user, DeletePermission.class))
                 {
                     throw new UnauthorizedException();
                 }
@@ -625,9 +625,8 @@ public class PipelineStatusManager
             // Delete the associated ExpRuns.
             // The runs must be deleted before the provider's preDeleteStatusFile is called
             if (deleteExpRuns)
-                deleteAssocatedRuns(info, deleteable);
+                deleteAssocatedRuns(container, user, deleteable);
 
-            Container c = info.getContainer();
             SQLFragment sql = new SQLFragment();
             sql.append("DELETE FROM ").append(_schema.getTableInfoStatusFiles())
                     .append(" ").append("WHERE RowId ");
@@ -641,17 +640,17 @@ public class PipelineStatusManager
             List<Object> statusFileIds = new ArrayList<>();
             for (PipelineStatusFile pipelineStatusFile : deleteable)
             {
-                Container container = pipelineStatusFile.lookupContainer();
-                if (container == null || !container.hasPermission(info.getUser(), DeletePermission.class))
+                Container targetContainer = pipelineStatusFile.lookupContainer();
+                if (targetContainer == null || !targetContainer.hasPermission(user, DeletePermission.class))
                 {
-                    throw new UnauthorizedException("No permission to delete job from " + container);
+                    throw new UnauthorizedException("No permission to delete job from " + targetContainer);
                 }
                 // Allow the provider to do any necessary clean-up
                 PipelineProvider provider = PipelineService.get().getPipelineProvider(pipelineStatusFile.getProvider());
                 if (provider != null)
                     provider.preDeleteStatusFile(pipelineStatusFile);
 
-                LOG.info("Job " + pipelineStatusFile.getFilePath() + " was deleted by " + info.getUser());
+                LOG.info("Job " + pipelineStatusFile.getFilePath() + " was deleted by " + user);
                 statusFileIds.add(pipelineStatusFile.getRowId());
             }
             _schema.getSqlDialect().appendInClauseSql(sql, statusFileIds);
@@ -660,10 +659,10 @@ public class PipelineStatusManager
             // Remember that we deleted these rows
             rowIds.removeAll(statusFileIds);
 
-            if (!c.isRoot())
+            if (!container.isRoot())
             {
                 // Use a ContainerFilter to generate the SQL so that we include workbooks - see issue 22236
-                SQLFragment containerSQL = ContainerFilter.CURRENT.getSQLFragment(PipelineSchema.getInstance().getSchema(), new SQLFragment("Container"), c);
+                SQLFragment containerSQL = ContainerFilter.CURRENT.getSQLFragment(PipelineSchema.getInstance().getSchema(), new SQLFragment("Container"), container);
                 sql.append(" AND ");
                 sql.append(containerSQL);
                 expSql.append(" AND ");
@@ -682,12 +681,12 @@ public class PipelineStatusManager
             // allow a parent job to be deleted
             if (rowCount > 0 && !rowIds.isEmpty())
             {
-                deleteStatus(info, deleteExpRuns, rowIds);
+                deleteStatus(container, user, deleteExpRuns, rowIds);
             }
         }
     }
 
-    private static void deleteAssocatedRuns(ViewBackgroundInfo info, Set<PipelineStatusFile> deleteable)
+    private static void deleteAssocatedRuns(Container container, User user, Set<PipelineStatusFile> deleteable)
     {
         for (PipelineStatusFile pipelineStatusFile : deleteable)
         {
@@ -701,7 +700,7 @@ public class PipelineStatusManager
             int i = 0;
             for (Integer runId : runIds)
                 ints[i++] = runId;
-            ExperimentService.get().deleteExperimentRunsByRowIds(info.getContainer(), info.getUser(), ints);
+            ExperimentService.get().deleteExperimentRunsByRowIds(container, user, ints);
         }
     }
 

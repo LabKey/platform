@@ -730,4 +730,10 @@ public class PipelineServiceImpl extends PipelineService
     {
         return expRun.getInputDatas(ANALYSIS_PARAMETERS_ROLE_NAME, null).get(0).getFile();
     }
+
+    @Override
+    public void deleteStatusFile(Container c, User u, boolean deleteExpRuns, Collection<Integer> rowIds) throws PipelineProvider.HandlerException
+    {
+        PipelineStatusManager.deleteStatus(c, u, deleteExpRuns, rowIds);
+    }
 }

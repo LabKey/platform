@@ -870,7 +870,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 assertEquals("Job was never cancelled", 1, dummyEngine.getCancelCount());
 
                 // Will fail if job didn't get moved from Cancelling to Cancelled
-                PipelineStatusManager.deleteStatus(job.getInfo(), true, Collections.singleton(file.getRowId()));
+                PipelineStatusManager.deleteStatus(job.getContainer(), job.getUser(), true, Collections.singleton(file.getRowId()));
 
                 job.getLogFile().delete();
             }
