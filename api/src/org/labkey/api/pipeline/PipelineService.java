@@ -34,6 +34,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -195,4 +196,6 @@ abstract public class PipelineService
 
     @Nullable
     public abstract File getProtocolParametersFile(ExpRun expRun);
+
+    abstract public void deleteStatusFile(Container c, User u, boolean deleteExpRuns, Collection<Integer> rowIds) throws PipelineProvider.HandlerException;
 }
