@@ -86,7 +86,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
         public void write(Container c, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
         {
             XarExportSelection selection = new XarExportSelection();
-            ExperimentService.Interface expService = ExperimentService.get();
+            ExperimentService expService = ExperimentService.get();
 
 
             // Get all the experiments in the container.

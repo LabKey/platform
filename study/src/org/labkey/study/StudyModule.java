@@ -247,7 +247,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         PlateService.register(new PlateManager());
         AssayService.setInstance(new AssayManager());
-        ServiceRegistry.get().registerService(StudyService.Service.class, StudyServiceImpl.INSTANCE);
+        ServiceRegistry.get().registerService(StudyService.class, StudyServiceImpl.INSTANCE);
         DefaultSchema.registerProvider(StudyQuerySchema.SCHEMA_NAME, new StudySchemaProvider(this));
         DefaultSchema.registerProvider(PlateSchema.SCHEMA_NAME, new PlateSchema.Provider(this));
         DefaultSchema.registerProvider(AssaySchemaImpl.NAME, new AssaySchemaImpl.Provider(this));
@@ -375,10 +375,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             }
             return result;
         });
-        AuditLogService.registerAuditType(new AssayAuditProvider());
-        AuditLogService.registerAuditType(new DatasetAuditProvider());
-        AuditLogService.registerAuditType(new StudyAuditProvider());
-        AuditLogService.registerAuditType(new SpecimenCommentAuditProvider());
+        AuditLogService.get().registerAuditType(new AssayAuditProvider());
+        AuditLogService.get().registerAuditType(new DatasetAuditProvider());
+        AuditLogService.get().registerAuditType(new StudyAuditProvider());
+        AuditLogService.get().registerAuditType(new SpecimenCommentAuditProvider());
 
         ReportService.get().registerReport(new StudyController.StudyChartReport());
         ReportService.get().registerReport(new EnrollmentReport());
@@ -749,7 +749,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         Container c = context.getContainer();
         Map<String, String> moduleProperties = getDefaultPageContextJson(c);
         Study study = StudyManager.getInstance().getStudy(c);
-        StudyService.Service studyService = StudyService.get();
+        StudyService studyService = StudyService.get();
         JSONObject ret = new JSONObject(moduleProperties);
 
         if (study != null)

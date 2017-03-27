@@ -1700,7 +1700,7 @@ public class AnnouncementsController extends SpringActionController
 
         public MessageConfigService.ConfigTypeProvider getProvider()
         {
-            return MessageConfigService.getInstance().getConfigType(getType());
+            return MessageConfigService.get().getConfigType(getType());
         }
     }
 

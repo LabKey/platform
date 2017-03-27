@@ -102,7 +102,7 @@ public class ListModule extends DefaultModule
 
     public void doStartup(ModuleContext moduleContext)
     {
-        AuditLogService.registerAuditType(new ListAuditProvider());
+        AuditLogService.get().registerAuditType(new ListAuditProvider());
 
         FolderSerializationRegistry folderRegistry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
         if (null != folderRegistry)

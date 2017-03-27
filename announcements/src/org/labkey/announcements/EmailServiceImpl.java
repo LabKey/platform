@@ -67,7 +67,7 @@ import java.util.Map;
  * Date: Apr 22, 2010
  * Time: 11:37:19 AM
  */
-public class EmailServiceImpl implements EmailService.I
+public class EmailServiceImpl implements EmailService
 {
     private static final Logger _log = Logger.getLogger(EmailService.class);
 

@@ -162,13 +162,10 @@ public class QueryModule extends DefaultModule
             }
         });
 
-
         addController("query", QueryController.class);
         addController("sql", SqlController.class);
         addController("reports", ReportsController.class);
         addController("olap", OlapController.class);
-
-        ServiceRegistry.get().registerService(QueryService.class, QueryService.get());
 
         ExternalSchema.register();
         LinkedSchema.register();
@@ -266,8 +263,8 @@ public class QueryModule extends DefaultModule
         }
         PropertyService.get().registerDomainKind(new SimpleTableDomainKind());
 
-        AuditLogService.registerAuditType(new QueryAuditProvider());
-        AuditLogService.registerAuditType(new QueryUpdateAuditProvider());
+        AuditLogService.get().registerAuditType(new QueryAuditProvider());
+        AuditLogService.get().registerAuditType(new QueryUpdateAuditProvider());
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new ReportNotificationInfoProvider());
         DailyMessageDigest.getInstance().addProvider(ReportAndDatasetChangeDigestProvider.get());

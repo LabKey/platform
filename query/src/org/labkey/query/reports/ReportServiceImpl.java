@@ -755,7 +755,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             if (ctx.getArchiveVersion() != null && ctx.getArchiveVersion() < 13.11)
             {
                 String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
-                StudyService.Service svc = StudyService.get();
+                StudyService svc = StudyService.get();
                 Study study = svc != null ? svc.getStudy(ctx.getContainer()) : null;
                 if (study != null && schema != null && schema.equals("study"))
                 {

@@ -124,7 +124,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * User: jgarms
  */
-public class StudyServiceImpl implements StudyService.Service
+public class StudyServiceImpl implements StudyService
 {
     public static final StudyServiceImpl INSTANCE = new StudyServiceImpl();
     private final Map<String, StudyReloadSource> _reloadSourceMap = new ConcurrentHashMap<>();
@@ -804,7 +804,7 @@ public class StudyServiceImpl implements StudyService.Service
         for (TableInfo t : terms)
         {
             final StudyQuerySchema studyQuerySchema = (StudyQuerySchema)t.getUserSchema();
-            final StudyService.Service studyService = StudyService.get();
+            final StudyService studyService = StudyService.get();
             assert null != studyQuerySchema && null != studyService;        // All tables must be in StudyQuerySchema
             String subjectColumnName = studyQuerySchema.getSubjectColumnName();
             for (ColumnInfo c : t.getColumns())
@@ -946,7 +946,7 @@ public class StudyServiceImpl implements StudyService.Service
         if (null == terms || terms.isEmpty())
             return null;
 
-        final StudyService.Service studyService = StudyService.get();
+        final StudyService studyService = StudyService.get();
         assert null != studyService;
 
         // For these tables, all columns must be the same

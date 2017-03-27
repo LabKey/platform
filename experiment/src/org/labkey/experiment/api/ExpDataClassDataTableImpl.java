@@ -557,7 +557,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 return null;           // Can happen if context has errors
 
             final Container c = getContainer();
-            final ExperimentService.Interface svc = ExperimentService.get();
+            final ExperimentService svc = ExperimentService.get();
 
             SimpleTranslator step0 = new SimpleTranslator(input, context);
             step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId"));
@@ -832,7 +832,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
                 if (!hasNext)
                 {
-                    final ExperimentService.Interface svc = ExperimentService.get();
+                    final ExperimentService svc = ExperimentService.get();
 
                     try (DbScope.Transaction transaction = svc.getTinfoDataClass().getSchema().getScope().ensureTransaction())
                     {

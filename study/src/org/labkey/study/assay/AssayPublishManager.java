@@ -110,7 +110,7 @@ import java.util.TreeSet;
  * Date: Aug 16, 2006
  * Time: 1:11:27 PM
  */
-public class AssayPublishManager implements AssayPublishService.Service
+public class AssayPublishManager implements AssayPublishService
 {
     private TableInfo tinfoUpdateLog;
     private static final int MIN_ASSAY_ID = 5000;

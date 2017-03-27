@@ -979,7 +979,7 @@ public class StudyController extends BaseStudyController
             else
             {
                 // add discussions
-                DiscussionService.Service service = DiscussionService.get();
+                DiscussionService service = DiscussionService.get();
 
                 if (report != null)
                 {
@@ -5293,7 +5293,7 @@ public class StudyController extends BaseStudyController
                 form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName()), getUser());
 
             VBox box = new VBox();
-            QuerySnapshotService.I provider = QuerySnapshotService.get(form.getSchemaName());
+            QuerySnapshotService.Provider provider = QuerySnapshotService.get(form.getSchemaName());
 
             if (provider != null)
             {

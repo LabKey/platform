@@ -233,7 +233,7 @@ public class NotificationController extends SpringActionController
         @Override
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
-            NotificationService.Service service = NotificationService.get();
+            NotificationService service = NotificationService.get();
 
             List<Map<String, Object>> notificationList = new ArrayList<>();
             for (Notification notification : service.getNotificationsByUser(null, getUser().getUserId(), false))

@@ -61,7 +61,6 @@ import org.labkey.api.files.FileContentEmailPref;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileUrls;
 import org.labkey.api.files.FilesAdminOptions;
-import org.labkey.api.files.FilesTbarBtnOption;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.files.view.FilesWebPart;
@@ -70,7 +69,6 @@ import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.FieldKey;
@@ -1402,7 +1400,7 @@ public class FileContentController extends SpringActionController
         {
             ApiSimpleResponse response =  new ApiSimpleResponse();
 
-            MessageConfigService.ConfigTypeProvider provider = MessageConfigService.getInstance().getConfigType(FileEmailConfig.TYPE);
+            MessageConfigService.ConfigTypeProvider provider = MessageConfigService.get().getConfigType(FileEmailConfig.TYPE);
             MessageConfigService.UserPreference pref = provider.getPreference(getContainer(), getUser(), getContainer().getId());
 
             String prefWithDefault = EmailService.get().getEmailPref(getUser(), getContainer(),
@@ -1470,7 +1468,7 @@ public class FileContentController extends SpringActionController
         {
             ApiSimpleResponse response =  new ApiSimpleResponse();
 
-            MessageConfigService.ConfigTypeProvider provider = MessageConfigService.getInstance().getConfigType(FileEmailConfig.TYPE);
+            MessageConfigService.ConfigTypeProvider provider = MessageConfigService.get().getConfigType(FileEmailConfig.TYPE);
             provider.savePreference(getUser(), getContainer(), getUser(), form.getEmailPref(), getContainer().getId());
             response.put("success", true);
 
@@ -1490,7 +1488,7 @@ public class FileContentController extends SpringActionController
             //save the default settings
             EmailService.get().setDefaultEmailPref(getContainer(), new FileContentDefaultEmailPref(), String.valueOf(form.getDefaultEmailOption()));
 
-            for (MessageConfigService.NotificationOption option : MessageConfigService.getInstance().getConfigType(FileEmailConfig.TYPE).getOptions())
+            for (MessageConfigService.NotificationOption option : MessageConfigService.get().getConfigType(FileEmailConfig.TYPE).getOptions())
             {
                 if (option.getEmailOptionId() == form.getDefaultEmailOption())
                 {

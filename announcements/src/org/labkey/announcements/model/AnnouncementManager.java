@@ -173,7 +173,7 @@ public class AnnouncementManager
     {
         if (_configProvider == null)
         {
-            _configProvider = MessageConfigService.getInstance().getConfigType(AnnouncementEmailConfig.TYPE);
+            _configProvider = MessageConfigService.get().getConfigType(AnnouncementEmailConfig.TYPE);
             assert(_configProvider != null);
         }
         return _configProvider;

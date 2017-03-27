@@ -5798,7 +5798,7 @@ public class ExperimentController extends SpringActionController
         public void validateForm(ExpLineageOptions options, Errors errors)
         {
             // TODO: Type and RowId -- OR -- LSID are the only valid way of resolving an _output
-            ExperimentService.Interface service = ExperimentService.get();
+            ExperimentService service = ExperimentService.get();
 
             if (options.getRowId() > 0)
             {

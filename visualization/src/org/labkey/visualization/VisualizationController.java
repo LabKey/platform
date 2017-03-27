@@ -1185,7 +1185,7 @@ public class VisualizationController extends SpringActionController
                 if (report.getDescriptor().isShared() || (report.getDescriptor().getOwner() == getUser().getUserId()))
                 {
                     String title = "Discuss report - " + report.getDescriptor().getReportName();
-                    DiscussionService.Service service = DiscussionService.get();
+                    DiscussionService service = DiscussionService.get();
                     HttpView discussion = service.getDiscussionArea(getViewContext(), report.getEntityId(), getViewContext().getActionURL(), title, true, false);
                     boxView.addView(discussion);
                 }

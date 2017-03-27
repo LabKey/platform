@@ -29,7 +29,7 @@ import org.labkey.survey.SurveyManager;
  * User: cnathe
  * Date: 1/11/13
  */
-public class SurveyServiceImpl implements SurveyService.Interface
+public class SurveyServiceImpl implements SurveyService
 {
     @Override
     public Survey[] getSurveys(Container container, User user)

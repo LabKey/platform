@@ -242,7 +242,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
     protected Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMatchingColumns(Map<QueryDefinition, TableInfo> queries, ColumnMatchType type)
     {
         Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> matches = super.getMatchingColumns(queries, type);
-        StudyService.Service studyService = StudyService.get();
+        StudyService studyService = StudyService.get();
         final Container schemaContainer = getSchema().getContainer();
 
         if (type == ColumnMatchType.DATETIME_COLS)

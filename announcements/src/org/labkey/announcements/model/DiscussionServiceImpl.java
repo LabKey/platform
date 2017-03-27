@@ -57,7 +57,7 @@ import java.util.Map;
  * Date: Feb 6, 2007
  * Time: 12:37:45 PM
  */
-public class DiscussionServiceImpl implements DiscussionService.Service
+public class DiscussionServiceImpl implements DiscussionService
 {
     public WebPartView startDiscussion(Container c, User user, String identifier, ActionURL pageURL, URLHelper cancelURL, String title, String summary, boolean allowMultipleDiscussions)
     {

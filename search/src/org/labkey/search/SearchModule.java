@@ -167,7 +167,7 @@ public class SearchModule extends DefaultModule
             });
         }
 
-        AuditLogService.registerAuditType(new SearchAuditProvider());
+        AuditLogService.get().registerAuditType(new SearchAuditProvider());
 
         // add a container listener so we'll know when containers are deleted
         ContainerManager.addContainerListener(new SearchContainerListener());

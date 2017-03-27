@@ -139,7 +139,7 @@ import java.util.stream.Collectors;
  * User: jeckels
  * Date: 2/20/13
  */
-public class TransformManager implements DataIntegrationService.Interface
+public class TransformManager implements DataIntegrationService
 {
     private static final TransformManager INSTANCE = new TransformManager();
     private static final Logger LOG = Logger.getLogger(TransformManager.class);

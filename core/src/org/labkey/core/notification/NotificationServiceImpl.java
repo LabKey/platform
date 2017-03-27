@@ -59,7 +59,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * User: cnathe
  * Date: 9/14/2015
  */
-public class NotificationServiceImpl extends AbstractContainerListener implements NotificationService.Service
+public class NotificationServiceImpl extends AbstractContainerListener implements NotificationService
 {
     private final static NotificationServiceImpl INSTANCE = new NotificationServiceImpl();
     private final Map<String, String> _typeLabelMap = new ConcurrentHashMap<>();
@@ -330,7 +330,7 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     public static class TestCase extends Assert
     {
         private static final String _testDirName = "/_jUnitNotifications";
-        private static final NotificationService.Service _service = NotificationService.get();
+        private static final NotificationService _service = NotificationService.get();
         private static User _user;
         private static Container _container;
         private static Notification _notif1;

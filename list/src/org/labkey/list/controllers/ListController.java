@@ -670,7 +670,7 @@ public class ListController extends SpringActionController
                 String discussionTitle = (null != title ? title.toString() : "Item " + tableForm.getPkVal());
 
                 ActionURL linkBackURL = _list.urlFor(ResolveAction.class).addParameter("entityId", entityId);
-                DiscussionService.Service service = DiscussionService.get();
+                DiscussionService service = DiscussionService.get();
                 boolean multiple = _list.getDiscussionSetting() == ListDefinition.DiscussionSetting.ManyPerItem;
 
                 // Display discussion by default in single-discussion case, #4529

@@ -1275,7 +1275,7 @@ public class WikiController extends SpringActionController
 
     private HttpView getDiscussionView(String objectId, ActionURL pageURL, String title) throws ServletException
     {
-        DiscussionService.Service service = DiscussionService.get();
+        DiscussionService service = DiscussionService.get();
         return service.getDiscussionArea(getViewContext(), objectId, pageURL, title, true, false);
     }
 

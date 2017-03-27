@@ -1395,7 +1395,7 @@ public class SearchController extends SpringActionController
         if (user.isSearchUser() || StringUtils.isEmpty(query))
             return;
 
-        AuditLogService.I audit = AuditLogService.get();
+        AuditLogService audit = AuditLogService.get();
         if (null == audit)
             return;
 

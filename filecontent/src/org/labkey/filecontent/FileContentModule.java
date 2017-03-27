@@ -146,7 +146,7 @@ public class FileContentModule extends DefaultModule
         DailyMessageDigest.getInstance().addProvider(new FileContentDigestProvider(FileEmailConfig.DAILY_DIGEST));
 
         // initialize message config provider
-        MessageConfigService.getInstance().registerConfigType(new FileEmailConfig());
+        MessageConfigService.get().registerConfigType(new FileEmailConfig());
         ContainerManager.addContainerListener(new FileContentContainerListener());
         ContainerManager.addContainerListener(FileContentServiceImpl.getInstance());
 

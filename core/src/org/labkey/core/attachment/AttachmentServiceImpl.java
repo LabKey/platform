@@ -125,7 +125,7 @@ import java.util.TreeSet;
  * Date: Jan 3, 2007
  * Time: 7:13:28 PM
  */
-public class AttachmentServiceImpl implements AttachmentService.Service, ContainerManager.ContainerListener
+public class AttachmentServiceImpl implements AttachmentService, ContainerManager.ContainerListener
 {
     private static final MimeMap _mimeMap = new MimeMap();
     private static final String UPLOAD_LOG = ".upload.log";
@@ -1451,7 +1451,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             Container folder = ContainerManager.ensureContainer(_testDirName + "/Test");
 
             FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
-            AttachmentService.Service svc = AttachmentService.get();
+            AttachmentService svc = AttachmentService.get();
 
             File curRoot = fileService.getFileRoot(proj);
             assertTrue(curRoot.isDirectory());
@@ -1540,7 +1540,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
             Container proj = ContainerManager.ensureContainer(_testDirName);
             Container container = ContainerManager.ensureContainer(_testDirName + "/Test");
-            AttachmentService.Service service = AttachmentService.get();
+            AttachmentService service = AttachmentService.get();
 
             String entityId = GUID.makeGUID();
             SecureDocumentParent secureDocumentParent = new SecureDocumentParent(entityId, container, ModuleLoader.getInstance().getModule(CoreModule.CORE_MODULE_NAME));
@@ -1619,7 +1619,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             AttachmentFile aFile1 = new FileAttachmentFile(file1);
             AttachmentFile aFile2 = new FileAttachmentFile(file2);
 
-            AttachmentService.Service service = AttachmentService.get();
+            AttachmentService service = AttachmentService.get();
             AttachmentParent root = ContainerManager.RootContainer.get();
 			service.deleteAttachment(root, file1.getName(), user);
             service.deleteAttachment(root, file2.getName(), user);

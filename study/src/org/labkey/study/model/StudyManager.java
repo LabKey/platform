@@ -4808,7 +4808,7 @@ public class StudyManager
         ActionURL begin = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(study.getContainer());
         String nav = NavTree.toJS(Collections.singleton(new NavTree("study", begin)), null, false).toString();
         ActionURL download = new ActionURL(StudyController.ProtocolDocumentDownloadAction.class, study.getContainer());
-        AttachmentService.Service serv = AttachmentService.get();
+        AttachmentService serv = AttachmentService.get();
         Path p = study.getContainer().getParsedPath().append("@study");
 
         for (Attachment att : serv.getAttachments(parent))

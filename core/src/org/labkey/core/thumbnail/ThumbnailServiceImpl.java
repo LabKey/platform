@@ -101,7 +101,7 @@ public class ThumbnailServiceImpl implements ThumbnailService
     @Override
     public void deleteThumbnail(ThumbnailProvider provider, ImageType type)
     {
-        AttachmentService.Service svc = AttachmentService.get();
+        AttachmentService svc = AttachmentService.get();
         svc.deleteAttachment(provider, type.getFilename(), null);
         provider.afterThumbnailDelete(type);
         ThumbnailCache.remove(provider, type);
@@ -120,7 +120,7 @@ public class ThumbnailServiceImpl implements ThumbnailService
 
         if (null != thumbnail)
         {
-            AttachmentService.Service svc = AttachmentService.get();
+            AttachmentService svc = AttachmentService.get();
             AttachmentFile thumbnailFile = new InputStreamAttachmentFile(thumbnail.getInputStream(), imageType.getFilename(), thumbnail.getContentType());
 
             try

@@ -118,9 +118,9 @@ public class WikiManager implements WikiService
         LOG.debug("WikiManager instantiated");
     }
 
-    AttachmentService.Service getAttachmentService()
+    AttachmentService getAttachmentService()
     {
-        return ServiceRegistry.get(AttachmentService.Service.class);
+        return AttachmentService.get();
     }
 
     @Nullable
@@ -129,9 +129,9 @@ public class WikiManager implements WikiService
         return ServiceRegistry.get(SearchService.class);
     }
 
-    DiscussionService.Service getDiscussionService()
+    DiscussionService getDiscussionService()
     {
-        return ServiceRegistry.get(DiscussionService.Service.class);
+        return DiscussionService.get();
     }
 
     ContainerService getContainerService()
@@ -516,7 +516,7 @@ public class WikiManager implements WikiService
     public String updateAttachments(User user, Wiki wiki, List<String> deleteNames, List<AttachmentFile> files)
             throws IOException
     {
-        AttachmentService.Service attsvc = getAttachmentService();
+        AttachmentService attsvc = getAttachmentService();
         boolean changes = false;
         String message = null;
 

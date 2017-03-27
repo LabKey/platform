@@ -204,7 +204,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             svc.registerProvider(getName(), new PipelineSetupValidator());
         }
 
-        AuditLogService.registerAuditType(new ProtocolManagementAuditProvider());
+        AuditLogService.get().registerAuditType(new ProtocolManagementAuditProvider());
     }
 
 

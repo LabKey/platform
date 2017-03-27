@@ -36,7 +36,7 @@
     {
         if (project.hasPermission(getViewContext().getUser(), AdminPermission.class))
         {
-            StudyService.Service svc = StudyService.get();
+            StudyService svc = StudyService.get();
             if (svc != null)
             {
                 Study studyProject = svc.getStudy(project);

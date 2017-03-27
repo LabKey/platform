@@ -149,8 +149,8 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         ContainerManager.addContainerListener(listener);
         UserManager.addUserListener(listener);
         SecurityManager.addGroupListener(listener);
-        AuditLogService.registerAuditType(new MessageAuditProvider());
-        ServiceRegistry.get().registerService(EmailService.I.class, new EmailServiceImpl());
+        AuditLogService.get().registerAuditType(new MessageAuditProvider());
+        ServiceRegistry.get().registerService(EmailService.class, new EmailServiceImpl());
 
         TourListener tourListener = new TourListener();
         ContainerManager.addContainerListener(tourListener);
@@ -169,8 +169,8 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         DailyMessageDigest.getInstance().addProvider(new AnnouncementDigestProvider());
 
         // initialize message config service and add a config provider for announcements
-        ServiceRegistry.get().registerService(MessageConfigService.I.class, new MessageConfigServiceImpl());
-        MessageConfigService.getInstance().registerConfigType(new AnnouncementEmailConfig());
+        ServiceRegistry.get().registerService(MessageConfigService.class, new MessageConfigServiceImpl());
+        MessageConfigService.get().registerConfigType(new AnnouncementEmailConfig());
         
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 

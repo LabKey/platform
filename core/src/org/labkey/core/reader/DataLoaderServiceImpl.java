@@ -51,7 +51,7 @@ import java.util.Map;
  * User: kevink
  * Date: 9/30/12
  */
-public class DataLoaderServiceImpl implements DataLoaderService.I
+public class DataLoaderServiceImpl implements DataLoaderService
 {
     private static final Logger _log = Logger.getLogger(DataLoaderService.class);
 
@@ -61,7 +61,7 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
 
     public static DataLoaderServiceImpl get()
     {
-        return (DataLoaderServiceImpl) ServiceRegistry.get(DataLoaderService.I.class);
+        return (DataLoaderServiceImpl) ServiceRegistry.get(DataLoaderService.class);
     }
 
     public DataLoaderServiceImpl()

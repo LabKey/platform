@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * Date: Jan 19, 2011
  * Time: 4:36:05 PM
  */
-public class MessageConfigServiceImpl implements MessageConfigService.I
+public class MessageConfigServiceImpl implements MessageConfigService
 {
     private final Map<String, MessageConfigService.ConfigTypeProvider> _providers = new ConcurrentSkipListMap<>();
 
@@ -65,11 +65,10 @@ public class MessageConfigServiceImpl implements MessageConfigService.I
     public void registerConfigType(MessageConfigService.ConfigTypeProvider provider)
     {
         String key = provider.getType();
+        ConfigTypeProvider previous = _providers.putIfAbsent(key, provider);
 
-        if (_providers.containsKey(key))
+        if (null != previous)
             throw new IllegalArgumentException("ConfigService provider " + key + " has already been registered");
-
-        _providers.put(key, provider);
     }
 
     public MessageConfigService.ConfigTypeProvider[] getConfigTypes()

@@ -103,7 +103,7 @@ import java.util.concurrent.TimeUnit;
  * Date: Jun 22, 2007
  * Time: 4:21:59 PM
  */
-public class AssayManager implements AssayService.Interface
+public class AssayManager implements AssayService
 {
     private static Cache<GUID, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
 

@@ -1267,7 +1267,7 @@ public class ReportsController extends SpringActionController
             if (!isPrint() && !(ret instanceof HttpRedirectView))
             {
                 VBox box = new VBox(ret);
-                DiscussionService.Service service = DiscussionService.get();
+                DiscussionService service = DiscussionService.get();
                 String title = "Discuss report - " + _report.getDescriptor().getReportName();
                 box.addView(service.getDiscussionArea(getViewContext(), _report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
                 ret = box;
@@ -1294,7 +1294,7 @@ public class ReportsController extends SpringActionController
             {
                 VBox box = new VBox(new JspView<>("/org/labkey/query/reports/view/reportDetails.jsp", form));
 
-                DiscussionService.Service service = DiscussionService.get();
+                DiscussionService service = DiscussionService.get();
                 String title = "Discuss report - " + report.getDescriptor().getReportName();
                 box.addView(service.getDiscussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
 
@@ -2676,7 +2676,7 @@ public class ReportsController extends SpringActionController
 
                     if (!isPrint())
                     {
-                        DiscussionService.Service service = DiscussionService.get();
+                        DiscussionService service = DiscussionService.get();
                         String title = "Discuss report - " + _reportName;
                         view.addView(service.getDiscussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
                     }

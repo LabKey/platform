@@ -72,7 +72,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Date: Oct 2, 2007
  * Time: 3:38:28 PM
  */
-public class SpecimenServiceImpl implements SpecimenService.Service
+public class SpecimenServiceImpl implements SpecimenService
 {
     private final List<SpecimenImportStrategyFactory> _importStrategyFactories = new CopyOnWriteArrayList<>();
     private final Map<String, SpecimenTransform> _specimenTransformMap = new ConcurrentHashMap<>();

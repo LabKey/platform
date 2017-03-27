@@ -281,9 +281,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         });
         ExperimentService.get().registerDataType(new LogDataType());
 
-        AuditLogService.registerAuditType(new DomainAuditProvider());
-        AuditLogService.registerAuditType(new ExperimentAuditProvider());
-        AuditLogService.registerAuditType(new SampleSetAuditProvider());
+        AuditLogService.get().registerAuditType(new DomainAuditProvider());
+        AuditLogService.get().registerAuditType(new ExperimentAuditProvider());
+        AuditLogService.get().registerAuditType(new SampleSetAuditProvider());
 
         ServiceRegistry.get(FileContentService.class).addFileListener(new ExpDataFileListener());
         ServiceRegistry.get(FileContentService.class).addFileListener(new TableUpdaterFileListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileListener.Type.filePath, "RowId"));

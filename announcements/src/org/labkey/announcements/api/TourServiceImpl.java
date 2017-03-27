@@ -29,7 +29,7 @@ import java.util.List;
 /**
  * Created by Marty on 1/19/2015.
  */
-public class TourServiceImpl implements TourService.Interface
+public class TourServiceImpl implements TourService
 {
     public ActionURL getManageListsURL(Container container)
     {

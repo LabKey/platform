@@ -85,7 +85,7 @@ import java.util.Set;
  * Date: Oct 20, 2006
  * Time: 10:13:08 AM
  */
-public class PlateManager implements PlateService.Service
+public class PlateManager implements PlateService
 {
     private List<PlateService.PlateDetailsResolver> _detailsLinkResolvers = new ArrayList<>();
     private final Object TEMPLATE_NAME_SYNC_OBJ = new Object();

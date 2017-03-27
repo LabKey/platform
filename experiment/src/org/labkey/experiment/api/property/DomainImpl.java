@@ -296,7 +296,7 @@ public class DomainImpl implements Domain
 
     public void delete(@Nullable User user) throws DomainNotFoundException
     {
-        ExperimentService.Interface exp = ExperimentService.get();
+        ExperimentService exp = ExperimentService.get();
         Lock domainLock =  getLock(_dd);
         try (DbScope.Transaction transaction = exp.getSchema().getScope().ensureTransaction(domainLock))
         {
@@ -336,7 +336,7 @@ public class DomainImpl implements Domain
 
     public void save(User user, boolean allowAddBaseProperty) throws ChangePropertyDescriptorException
     {
-        ExperimentService.Interface exp = ExperimentService.get();
+        ExperimentService exp = ExperimentService.get();
 
         // NOTE: the synchronization here does not remove the need to add better synchronization in StorageProvisioner, but it helps
         Lock domainLock = getLock(_dd);

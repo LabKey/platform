@@ -40,7 +40,7 @@ import java.util.List;
  * Date: Jun 30, 2010
  * Time: 5:39:12 PM
  */
-public class AnnouncementServiceImpl implements AnnouncementService.Interface
+public class AnnouncementServiceImpl implements AnnouncementService
 {
     @Override
     public Announcement insertAnnouncement(Container c, User u, String title, String body)

@@ -65,7 +65,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class PropertyServiceImpl implements PropertyService.Interface
+public class PropertyServiceImpl implements PropertyService
 {
     List<DomainKind> _domainTypes = new ArrayList<>();
     Map<String, ValidatorKind> _validatorTypes = new HashMap<>();

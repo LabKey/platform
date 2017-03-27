@@ -304,7 +304,7 @@ public class StudyQuerySchema extends UserSchema
 
             if (_study != null)
             {
-                StudyService.Service studyService = StudyService.get();
+                StudyService studyService = StudyService.get();
                 if (null == studyService)
                     throw new IllegalStateException("No StudyService!");
 
@@ -445,7 +445,7 @@ public class StudyQuerySchema extends UserSchema
     @Override
     public TableInfo createTable(String name)
     {
-        StudyService.Service studyService = StudyService.get();
+        StudyService studyService = StudyService.get();
         if (null == studyService)
             throw new IllegalStateException("No study service!");
 
@@ -830,7 +830,7 @@ public class StudyQuerySchema extends UserSchema
     @Override
     public TableInfo getUnionTable(TableInfo tableInfo, Set<Container> containers)
     {
-        StudyService.Service studyService = StudyService.get();
+        StudyService studyService = StudyService.get();
         assert null != studyService;
 
         if (1 == containers.size() && getContainer() == containers.toArray()[0])
@@ -1237,7 +1237,7 @@ public class StudyQuerySchema extends UserSchema
                 Set<String> names = new LinkedHashSet<>();
                 if (_study != null)
                 {
-                    StudyService.Service studyService = StudyService.get();
+                    StudyService studyService = StudyService.get();
                     if (null == studyService)
                         throw new IllegalStateException("No StudyService!");
 
@@ -1297,7 +1297,7 @@ public class StudyQuerySchema extends UserSchema
 
                 if (_study != null)
                 {
-                    StudyService.Service studyService = StudyService.get();
+                    StudyService studyService = StudyService.get();
                     if (null == studyService)
                         throw new IllegalStateException("No StudyService!");
 
@@ -1379,7 +1379,7 @@ public class StudyQuerySchema extends UserSchema
 
                 if (_study != null)
                 {
-                    StudyService.Service studyService = StudyService.get();
+                    StudyService studyService = StudyService.get();
                     if (null == studyService)
                         throw new IllegalStateException("No StudyService!");
 

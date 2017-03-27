@@ -131,7 +131,7 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
 
             if (isAdmin)
             {
-                StudyService.Service svc = StudyService.get();
+                StudyService svc = StudyService.get();
                 StudyUrls urls = PageFlowUtil.urlProvider(StudyUrls.class);
                 if (svc != null && svc.getStudy(c) != null && urls != null)
                     menu.addChild("Manage Datasets", urls.getManageDatasetsURL(c));

@@ -132,7 +132,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 
-public class QueryServiceImpl extends QueryService
+public class QueryServiceImpl implements QueryService
 {
     private static final Logger _log = Logger.getLogger(QueryServiceImpl.class);
 

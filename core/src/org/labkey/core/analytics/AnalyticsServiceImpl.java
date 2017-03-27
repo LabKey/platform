@@ -28,7 +28,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.util.Map;
 
-public class AnalyticsServiceImpl implements AnalyticsService.Interface
+public class AnalyticsServiceImpl implements AnalyticsService
 {
     static public AnalyticsServiceImpl get()
     {

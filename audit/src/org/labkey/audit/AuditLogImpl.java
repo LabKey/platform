@@ -50,7 +50,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * User: Karl Lum
  * Date: Oct 4, 2007
  */
-public class AuditLogImpl implements AuditLogService.I, StartupListener
+public class AuditLogImpl implements AuditLogService, StartupListener
 {
     private static final AuditLogImpl _instance = new AuditLogImpl();
 
@@ -194,25 +194,6 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort)
     {
         return LogManager.get().getAuditEvents(container, user, eventType, filter, sort);
-    }
-
-    @Override
-    public void registerAuditType(AuditTypeProvider provider)
-    {
-        assert ModuleLoader.getInstance().isStartupInProgress() : "Audit types must be registered in Module.doStartup()";
-        AuditLogService.registerAuditType(provider);
-    }
-
-    @Override
-    public List<AuditTypeProvider> getAuditProviders()
-    {
-        return AuditLogService.getAuditProviders();
-    }
-
-    @Override
-    public AuditTypeProvider getAuditProvider(String eventType)
-    {
-        return AuditLogService.getAuditProvider(eventType);
     }
 
     @Override

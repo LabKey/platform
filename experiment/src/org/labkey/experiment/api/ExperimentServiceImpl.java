@@ -200,7 +200,7 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
-public class ExperimentServiceImpl implements ExperimentService.Interface
+public class ExperimentServiceImpl implements ExperimentService
 {
     private DatabaseCache<MaterialSource> materialSourceCache;
     private StringKeyCache<Protocol> protocolCache;
@@ -5581,7 +5581,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
      */
     public Collection<Integer> ensureAliases(User user, Set<String> aliasNames)
     {
-        final ExperimentService.Interface svc = ExperimentService.get();
+        final ExperimentService svc = ExperimentService.get();
         Set<Integer> rowIds = new HashSet<>();
 
         TableInfo aliasTable = svc.getTinfoAlias();

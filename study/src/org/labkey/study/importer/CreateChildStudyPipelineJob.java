@@ -487,7 +487,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
             importParticipantGroups(vf, errors, importContext);
 
-            QuerySnapshotService.I svc = QuerySnapshotService.get(StudySchema.getInstance().getSchemaName());
+            QuerySnapshotService.Provider svc = QuerySnapshotService.get(StudySchema.getInstance().getSchemaName());
 
             List<Integer> participantGroupIds = new ArrayList<>();
             if (!participantGroups.isEmpty())

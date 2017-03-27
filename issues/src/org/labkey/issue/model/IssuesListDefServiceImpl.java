@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class IssuesListDefServiceImpl implements IssuesListDefService.Service
+public class IssuesListDefServiceImpl implements IssuesListDefService
 {
     private Map<String, IssuesListDefProvider> _issuesListDefProviders = new ConcurrentHashMap<>();
     private List<IssueDetailHeaderLinkProvider> _headerLinkProviders = new ArrayList<>();

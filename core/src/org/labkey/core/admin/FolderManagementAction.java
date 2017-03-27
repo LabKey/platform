@@ -144,7 +144,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         }
         else if (form.isMessagesTab())
         {
-            MessageConfigService.ConfigTypeProvider provider = MessageConfigService.getInstance().getConfigType(form.getProvider());
+            MessageConfigService.ConfigTypeProvider provider = MessageConfigService.get().getConfigType(form.getProvider());
 
             if (provider != null)
                 provider.validateCommand(getViewContext(), errors);
@@ -439,7 +439,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
     private boolean handleMessagesPost(FolderManagementForm form, BindException errors) throws Exception
     {
-        MessageConfigService.ConfigTypeProvider provider = MessageConfigService.getInstance().getConfigType(form.getProvider());
+        MessageConfigService.ConfigTypeProvider provider = MessageConfigService.get().getConfigType(form.getProvider());
 
         if (provider != null)
         {
@@ -1453,7 +1453,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                         // add the provider configuration menu items to the admin panel button
                         MenuButton adminButton = new MenuButton("Update User Settings");
                         adminButton.setRequiresSelection(true);
-                        for (MessageConfigService.ConfigTypeProvider provider : MessageConfigService.getInstance().getConfigTypes())
+                        for (MessageConfigService.ConfigTypeProvider provider : MessageConfigService.get().getConfigTypes())
                             adminButton.addMenuItem("For " + StringUtils.capitalize(provider.getName()), null, "userSettings_"+provider.getName()+"(LABKEY.DataRegions.Users.getSelectionCount())" );
 
                         bar.add(adminButton);
@@ -1483,7 +1483,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                     "You can change this folder's default settings for email notifications here.")
             );
             PanelConfig config = new PanelConfig(getViewContext().getActionURL().clone(), key);
-            for (MessageConfigService.ConfigTypeProvider provider : MessageConfigService.getInstance().getConfigTypes())
+            for (MessageConfigService.ConfigTypeProvider provider : MessageConfigService.get().getConfigTypes())
             {
                 defaultsView.addView(new JspView<>("/org/labkey/core/admin/view/notifySettings.jsp", provider.createConfigForm(getViewContext(), config)));
             }

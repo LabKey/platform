@@ -60,7 +60,7 @@ public class NotificationSettingsWriterFactory implements FolderWriterFactory
             NotificationsType notifications = folderXml.addNewNotifications();
             NotificationsType.MessagesDefault messages = notifications.addNewMessagesDefault();
             messages.setId(messagesDefault);
-            MessageConfigService.NotificationOption messagesOption = MessageConfigService.getInstance().getOption(messagesDefault);
+            MessageConfigService.NotificationOption messagesOption = MessageConfigService.get().getOption(messagesDefault);
             if (messagesOption != null)
             {
                 messages.setLabel(messagesOption.getEmailOption());
@@ -71,7 +71,7 @@ public class NotificationSettingsWriterFactory implements FolderWriterFactory
             int filesDefault = NumberUtils.toInt(pref);
             NotificationsType.FilesDefault files = notifications.addNewFilesDefault();
             files.setId(filesDefault);
-            MessageConfigService.NotificationOption filesOption = MessageConfigService.getInstance().getOption(filesDefault);
+            MessageConfigService.NotificationOption filesOption = MessageConfigService.get().getOption(filesDefault);
             if (filesOption != null)
             {
                 files.setLabel(filesOption.getEmailOption());

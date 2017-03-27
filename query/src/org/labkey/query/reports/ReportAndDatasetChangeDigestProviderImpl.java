@@ -116,7 +116,7 @@ public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDat
             Map<Integer, SortedSet<Integer>> categoriesByUser = ReportContentEmailManager.getUserCategoryMap(container);
             if (!categoriesByUser.isEmpty())
             {
-                EmailService.I emailService = EmailService.get();
+                EmailService emailService = EmailService.get();
                 List<EmailMessage> messages = new ArrayList<>();
 
                 SortedSet<Integer> allCategories = ViewCategoryManager.getInstance().getAllCategories(container)
@@ -162,7 +162,7 @@ public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDat
         }
     }
 
-    private EmailMessage createDigestMessage(EmailService.I ems, ReportAndDatasetDigestBean form) throws Exception
+    private EmailMessage createDigestMessage(EmailService ems, ReportAndDatasetDigestBean form) throws Exception
     {
         ReportAndDatasetChangeDigestEmailTemplate template = EmailTemplateService.get().getEmailTemplate(ReportAndDatasetChangeDigestEmailTemplate.class);
         template.init(form.getContainer(), form.getReports());

@@ -294,7 +294,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         dls.registerFactory(new HTMLDataLoader.Factory());
         dls.registerFactory(new JSONDataLoader.Factory());
         dls.registerFactory(new FastaDataLoader.Factory());
-        ServiceRegistry.get().registerService(DataLoaderService.I.class, dls);
+        ServiceRegistry.get().registerService(DataLoaderService.class, dls);
 
         addController("admin", AdminController.class);
         addController("admin-sql", SqlScriptController.class);
@@ -323,7 +323,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ServiceRegistry.get().registerService(ThumbnailService.class, new ThumbnailServiceImpl());
         ServiceRegistry.get().registerService(ShortURLService.class, new ShortURLServiceImpl());
         ServiceRegistry.get().registerService(StatsService.class, new StatsServiceImpl());
-        AnalyticsServiceImpl.register();
         ServiceRegistry.get().registerService(SiteValidationService.class, new SiteValidationServiceImpl());
         ServiceRegistry.get().registerService(AnalyticsProviderRegistry.class, new AnalyticsProviderRegistryImpl());
         ServiceRegistry.get().registerService(SummaryStatisticRegistry.class, new SummaryStatisticRegistryImpl());
@@ -695,7 +694,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AuditLogService.get().registerAuditType(new FileSystemAuditProvider());
         AuditLogService.get().registerAuditType(new FileSystemBatchAuditProvider());
         AuditLogService.get().registerAuditType(new ClientApiAuditProvider());
-        AuditLogService.registerAuditType(new AuthenticationProviderConfigAuditTypeProvider());
+        AuditLogService.get().registerAuditType(new AuthenticationProviderConfigAuditTypeProvider());
 
         if (null != ServiceRegistry.get(SearchService.class))
             ServiceRegistry.get(SearchService.class).addDocumentParser(new TabLoader.CsvFactoryNoConversions());
@@ -1092,7 +1091,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             String body;
 
             // UNDONE: generalize to other folder types
-            StudyService.Service svc = StudyService.get();
+            StudyService svc = StudyService.get();
             Study study = svc != null ? svc.getStudy(c) : null;
 
             if (null != study)

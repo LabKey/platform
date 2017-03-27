@@ -165,7 +165,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
                 HttpServletRequest request = ViewServlet.mockRequest("GET", new ActionURL(), null, null, null);
                 String subject = "File Management Notification";
                 List<EmailMessage> messages = new ArrayList<>();
-                EmailService.I svc = EmailService.get();
+                EmailService svc = EmailService.get();
 
                 for (User user : users)
                 {
@@ -202,7 +202,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
         String pref = EmailService.get().getDefaultEmailPref(c, new FileContentDefaultEmailPref());
         int folderDefault = NumberUtils.toInt(pref);
 
-        MessageConfigService.ConfigTypeProvider provider = MessageConfigService.getInstance().getConfigType(FileEmailConfig.TYPE);
+        MessageConfigService.ConfigTypeProvider provider = MessageConfigService.get().getConfigType(FileEmailConfig.TYPE);
 
         // get all users who have read access to this container
         for (MessageConfigService.UserPreference ep : provider.getPreferences(c))

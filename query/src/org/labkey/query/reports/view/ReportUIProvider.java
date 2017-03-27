@@ -143,7 +143,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
             returnUrl = context.getActionURL();
         chartBean.setRedirectUrl(returnUrl.getLocalURIString());
 
-        StudyService.Service svc = StudyService.get();
+        StudyService svc = StudyService.get();
         Study study = null;
         if (svc != null)
         {
@@ -197,7 +197,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         // query snapshot
         if (context.hasPermission(AdminPermission.class))
         {
-            QuerySnapshotService.I provider = QuerySnapshotService.get(settings.getSchemaName());
+            QuerySnapshotService.Provider provider = QuerySnapshotService.get(settings.getSchemaName());
             if (provider != null && !QueryService.get().isQuerySnapshot(context.getContainer(), settings.getSchemaName(), settings.getQueryName()))
                 designers.add(new DesignerInfoImpl(QuerySnapshotService.TYPE, "Query Snapshot", null,
                         provider.getCreateWizardURL(settings, context), _getIconPath(QuerySnapshotService.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(QuerySnapshotService.TYPE)));

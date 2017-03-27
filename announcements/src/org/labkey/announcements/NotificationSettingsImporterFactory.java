@@ -72,7 +72,7 @@ public class NotificationSettingsImporterFactory extends AbstractFolderImportFac
                 if (notifications.isSetMessagesDefault())
                 {
                     int messagesDefault = notifications.getMessagesDefault().getId();
-                    MessageConfigService.NotificationOption messagesOption = MessageConfigService.getInstance().getOption(messagesDefault);
+                    MessageConfigService.NotificationOption messagesOption = MessageConfigService.get().getOption(messagesDefault);
                     if (messagesOption != null)
                         AnnouncementManager.saveDefaultEmailOption(ctx.getContainer(), messagesDefault);
                     else
@@ -81,7 +81,7 @@ public class NotificationSettingsImporterFactory extends AbstractFolderImportFac
                 if (notifications.isSetFilesDefault())
                 {
                     int filesDefault = notifications.getFilesDefault().getId();
-                    MessageConfigService.NotificationOption filesOption = MessageConfigService.getInstance().getOption(filesDefault);
+                    MessageConfigService.NotificationOption filesOption = MessageConfigService.get().getOption(filesDefault);
                     if (filesOption != null)
                         EmailService.get().setDefaultEmailPref(ctx.getContainer(), new FileContentDefaultEmailPref(), String.valueOf(filesDefault));
                     else
