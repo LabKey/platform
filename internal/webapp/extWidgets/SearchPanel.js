@@ -147,6 +147,33 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
 
         var toAdd = [];
 
+        // loop through metadata to find input-only parameters on search panel
+
+        for (var metadataField in store.metadata) {
+            if(!store.metadata.hasOwnProperty(metadataField))
+                continue;
+
+            var metadataObj = store.metadata[metadataField];
+
+            if(metadataObj.searchOnly && (metadataObj.searchOnly === true)) {
+                var dummyMeta = {};
+                dummyMeta.hidden = false;
+                dummyMeta.selectable = true;
+                dummyMeta.caption = metadataObj.caption;
+                dummyMeta.defaultValue = metadataObj.defaultValue;
+                if(metadataObj.type) {
+                    if (metadataObj.type === 'date') // only supporting date types for now
+                        dummyMeta.jsonType = 'date';
+                }
+                if(metadataObj.queryParameter && (metadataObj.queryParameter === true)) {
+                    dummyMeta.queryParameter = true;
+                    dummyMeta.parameterName = metadataObj.parameterName;
+                }
+
+                toAdd = toAdd.concat(this.addRow(dummyMeta));
+            }
+        }
+
         store.getFields().each(function(f){
             toAdd = toAdd.concat(this.addRow(f));
         }, this);
@@ -329,14 +356,16 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         }
         else {
             theField.opField = id;
-            row.push({
-                xtype: 'labkey-operatorcombo',
-                cls: 'search-panel-row-operator',
-                jsonType: meta.jsonType,
-                mvEnabled: meta.mvEnabled,
-                itemId: id,
-                width: this.OP_FIELD_WIDTH
-            });
+            if(!meta.queryParameter) {
+                row.push({
+                    xtype: 'labkey-operatorcombo',
+                    cls: 'search-panel-row-operator',
+                    jsonType: meta.jsonType,
+                    mvEnabled: meta.mvEnabled,
+                    itemId: id,
+                    width: this.OP_FIELD_WIDTH
+                });
+            }
         }
 
         //the field itself
@@ -363,7 +392,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             params['query.viewName'] = vf.getValue();
         }
 
-        Ext4.apply(params, this.getFilterParams());
+        Ext4.apply(params, this.getParams());
 
         window.location = LABKEY.ActionURL.buildURL(
             'query',
@@ -373,13 +402,20 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         );
     },
 
-    getFilterParams: function(dataRegionName){
+    getParams: function(dataRegionName){
         dataRegionName = dataRegionName || 'query';
         var params = {};
 
         this.cascade(function(item){
             if (!item.isSearchField)
                 return;
+            if (item.originalConfig.queryParameter && (item.originalConfig.queryParameter === true)) {
+                if(item.rawValue)
+                    params[('query.param.' + item.originalConfig.parameterName)] = item.rawValue;
+                else if (item.originalConfig.defaultValue)
+                    params[('query.param.' + item.originalConfig.parameterName)] = item.originalConfig.defaultValue;
+                return;
+            }
 
             var op;
             if (item.opField){
