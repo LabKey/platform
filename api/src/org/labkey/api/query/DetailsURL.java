@@ -186,7 +186,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
     protected DetailsURL(@NotNull String str, @Nullable ContainerContext cc, @Nullable NullValueBehavior nullBehavior)
     {
         super("", true, nullBehavior);
-        _urlSource = str;
+        _urlSource = str.trim();
         _containerContext = cc;
     }
 
