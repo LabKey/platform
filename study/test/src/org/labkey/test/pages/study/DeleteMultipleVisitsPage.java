@@ -32,8 +32,11 @@ public class DeleteMultipleVisitsPage extends LabKeyPage<DeleteMultipleVisitsPag
 
     public ManageVisitPage clickDeleteSelected()
     {
-        click(elementCache().deleteSelectedBtn);
-        assertAlert("Are you sure you want to delete the selected visit and all related dataset/specimen data? This action cannot be undone.");
+        doAndWaitForPageToLoad(() ->
+        {
+            click(elementCache().deleteSelectedBtn);
+            assertAlert("Are you sure you want to delete the selected visit and all related dataset/specimen data? This action cannot be undone.");
+        });
         return new ManageVisitPage(getDriver());
     }
 
