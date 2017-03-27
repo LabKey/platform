@@ -1888,6 +1888,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 });
     };
 
+    var setLegendData = function(legendData) {
+        plot.legendData = legendData;
+    };
+
     var renderLegend = function() {
         var legendData = plot.legendData || plot.getLegendData(), legendGroup, legendItems;
         if (legendData.length > 0) {
@@ -3336,6 +3340,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         renderBinGeom: renderBinGeom,
         renderBarPlotGeom: renderBarPlotGeom,
         renderTimelinePlotGeom: renderTimelinePlotGeom,
-        renderControlRangeGeom: renderControlRangeGeom
+        renderControlRangeGeom: renderControlRangeGeom,
+        setLegendData: setLegendData
     };
 };

@@ -1140,6 +1140,16 @@ boxPlot.render();
         };
 
         /**
+         * Replaces an existing layer with a new layer. Does not render the plot. Returns the new layer.
+         * @param {@link LABKEY.vis.Layer} oldLayer
+         * @param {@link LABKEY.vis.Layer} newLayer
+         */
+        this.replaceLayer = function(oldLayer, newLayer){
+            this.layers.splice(this.layers.indexOf(oldLayer), 1, newLayer);
+            return newLayer;
+        };
+
+        /**
          * Clears the grid.
          */
         this.clearGrid = function(){
@@ -1172,6 +1182,15 @@ boxPlot.render();
             // To delete an aesthetic set it to null i.e. plot.setAes({color: null});
             LABKEY.vis.mergeAes(this.aes, newAes);
             this.render();
+        };
+
+        /**
+         * Sets and updates the legend with new legend data.
+         * @param (Array) Legend data
+         */
+        this.setLegend = function(newLegend){
+            this.renderer.setLegendData(newLegend);
+            this.renderer.renderLegend();
         };
 
         this.setBrushing = function(configBrushing) {
