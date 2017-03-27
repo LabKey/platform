@@ -341,6 +341,8 @@ if (!LABKEY.DataRegions) {
 
                 showExportButtons: undefined,
 
+                showImportDataButton: undefined,
+
                 showInsertNewButton: undefined,
 
                 showPagination: undefined,
@@ -3288,6 +3290,7 @@ if (!LABKEY.DataRegions) {
                 'showDeleteButton',
                 'showDetailsColumn',
                 'showExportButtons',
+                'showImportDataButton',
                 'showInsertNewButton',
                 'showPagination',
                 'showReports',
@@ -4150,6 +4153,7 @@ if (!LABKEY.DataRegions) {
      * @param {String} [config.deleteURL] Specify or override the default delete URL for the table with one of the form
      * "/controller/action.view" or "org.labkey.package.MyController$ActionAction.class". The keys for the selected rows
      * will be included in the POST.
+     * @param {boolean} [config.showImportDataButton] If the underlying table has an import URL, show an "Import Bulk Data" button in the button bar (default true).
      * @param {boolean} [config.showInsertNewButton] If the underlying table has an insert URL, show an "Insert New" button in the button bar (default true).
      * @param {boolean} [config.showDeleteButton] Show a "Delete" button in the button bar (default true).
      * @param {boolean} [config.showReports] If true, show reports on the Views menu (default true).
