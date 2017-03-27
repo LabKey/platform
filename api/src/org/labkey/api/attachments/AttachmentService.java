@@ -49,69 +49,76 @@ import java.util.List;
  * Date: Jan 3, 2007
  * Time: 7:03:21 PM
  */
-public class AttachmentService
+public interface AttachmentService
 {
-    public static final String ATTACHMENT_AUDIT_EVENT = "AttachmentAuditEvent";
+    String ATTACHMENT_AUDIT_EVENT = "AttachmentAuditEvent";
 
-    private static Service _serviceImpl = null;
-
-    public interface Service
+    static void register(AttachmentService serviceImpl)
     {
-        void download(HttpServletResponse response, AttachmentParent parent, String name) throws ServletException, IOException;
-
-        // Use the void-returning methods addAttachments and deleteAttachments instead
-        @Deprecated
-        HttpView add(AttachmentParent parent, List<AttachmentFile> files, User auditUser);
-        @Deprecated
-        HttpView delete(AttachmentParent parent, String name, User auditUser) throws SQLException;
-
-        HttpView getAddAttachmentView(Container container, AttachmentParent parent, BindException errors);
-        HttpView getHistoryView(ViewContext context, AttachmentParent parent);
-        HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnUrl);
-
-        void addAttachments(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException;
-        void deleteAttachments(AttachmentParent parent);
-        void deleteAttachments(Collection<AttachmentParent> parents);
-
-        /**
-         * @param auditUser set to null to skip audit
-         */
-        void deleteAttachment(AttachmentParent parent, String name, @Nullable User auditUser);
-        void renameAttachment(AttachmentParent parent, String oldName, String newName, User auditUser) throws IOException;
-        void copyAttachment(AttachmentParent parent, Attachment a, String newName, User auditUser) throws IOException;
-
-        void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException;
-
-        @NotNull List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException;
-        // Returns an unmodifiable list of attachments for this parent
-        @NotNull List<Attachment> getAttachments(AttachmentParent parent);
-        List<Pair<String, String>> listAttachmentsForIndexing(Collection<String> parents, Date modifiedSince);
-
-        WebdavResource getAttachmentResource(Path path, AttachmentParent parent);
-        WebdavResource getDocumentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat);
-        @Nullable Attachment getAttachment(AttachmentParent parent, String name);
-        void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException;
-        @NotNull InputStream getInputStream(AttachmentParent parent, String name) throws FileNotFoundException;
-
-        void addAuditEvent(User user, AttachmentParent parent, String filename, String comment);
+        ServiceRegistry.get().registerService(AttachmentService.class, serviceImpl);
     }
 
-    public static void register(Service serviceImpl)
+    static AttachmentService get()
     {
-        if (_serviceImpl != null)
-            throw new IllegalStateException("Service has already been set.");
-        _serviceImpl = serviceImpl;
-        ServiceRegistry.get().registerService(AttachmentService.Service.class, serviceImpl);
+        return ServiceRegistry.get(AttachmentService.class);
     }
 
-    public static Service get()
-    {
-        if (_serviceImpl == null)
-            throw new IllegalStateException("Service has not been set.");
-        return _serviceImpl;
-    }
+    void download(HttpServletResponse response, AttachmentParent parent, String name) throws ServletException, IOException;
 
-    public static class DuplicateFilenameException extends IOException
+    // Use the void-returning methods addAttachments and deleteAttachments instead
+    @Deprecated
+    HttpView add(AttachmentParent parent, List<AttachmentFile> files, User auditUser);
+
+    @Deprecated
+    HttpView delete(AttachmentParent parent, String name, User auditUser) throws SQLException;
+
+    HttpView getAddAttachmentView(Container container, AttachmentParent parent, BindException errors);
+
+    HttpView getHistoryView(ViewContext context, AttachmentParent parent);
+
+    HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnUrl);
+
+    void addAttachments(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException;
+
+    void deleteAttachments(AttachmentParent parent);
+
+    void deleteAttachments(Collection<AttachmentParent> parents);
+
+    /**
+     * @param auditUser set to null to skip audit
+     */
+    void deleteAttachment(AttachmentParent parent, String name, @Nullable User auditUser);
+
+    void renameAttachment(AttachmentParent parent, String oldName, String newName, User auditUser) throws IOException;
+
+    void copyAttachment(AttachmentParent parent, Attachment a, String newName, User auditUser) throws IOException;
+
+    void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException;
+
+    @NotNull
+    List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException;
+
+    // Returns an unmodifiable list of attachments for this parent
+    @NotNull
+    List<Attachment> getAttachments(AttachmentParent parent);
+
+    List<Pair<String, String>> listAttachmentsForIndexing(Collection<String> parents, Date modifiedSince);
+
+    WebdavResource getAttachmentResource(Path path, AttachmentParent parent);
+
+    WebdavResource getDocumentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat);
+
+    @Nullable
+    Attachment getAttachment(AttachmentParent parent, String name);
+
+    void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException;
+
+    @NotNull
+    InputStream getInputStream(AttachmentParent parent, String name) throws FileNotFoundException;
+
+    void addAuditEvent(User user, AttachmentParent parent, String filename, String comment);
+
+    class DuplicateFilenameException extends IOException
     {
         private List<String> _errors = new ArrayList<>();
 
@@ -143,7 +150,7 @@ public class AttachmentService
         }
     }
 
-    public static class FileTooLargeException extends IOException
+    class FileTooLargeException extends IOException
     {
         private List<String> _errors = new ArrayList<>();
 

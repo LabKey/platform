@@ -28,70 +28,69 @@ import org.springframework.validation.Errors;
  * Date: Jan 18, 2011
  * Time: 2:51:40 PM
  */
-public class MessageConfigService
+public interface MessageConfigService
 {
-    public static MessageConfigService.I getInstance()
+    static MessageConfigService get()
     {
-        MessageConfigService.I impl = ServiceRegistry.get().getService(MessageConfigService.I.class);
+        MessageConfigService impl = ServiceRegistry.get().getService(MessageConfigService.class);
         assert (impl != null);
 
         return impl;
     }
 
-    public interface I
-    {
-        public void savePreference(User currentUser, Container c, User projectUser, ConfigTypeProvider provider, int preference, String srcIdentifier);
+    void savePreference(User currentUser, Container c, User projectUser, ConfigTypeProvider provider, int preference, String srcIdentifier);
 
-        public UserPreference getPreference(Container c, User user, ConfigTypeProvider provider, String srcIdentifier);
+    UserPreference getPreference(Container c, User user, ConfigTypeProvider provider, String srcIdentifier);
 
-        /**
-         * Returns preference settings for all users who have read access to the specified container
-         * for the config type requested.
-         */
-        public UserPreference[] getPreferences(Container c, ConfigTypeProvider provider);
+    /**
+     * Returns preference settings for all users who have read access to the specified container
+     * for the config type requested.
+     */
+    UserPreference[] getPreferences(Container c, ConfigTypeProvider provider);
 
-        public NotificationOption getOption(int optionId);
-        public NotificationOption[] getOptions(ConfigTypeProvider provider);
+    NotificationOption getOption(int optionId);
 
-        public void registerConfigType(ConfigTypeProvider provider);
-        public ConfigTypeProvider[] getConfigTypes();
+    NotificationOption[] getOptions(ConfigTypeProvider provider);
 
-        /**
-         * returns a type provider by its unique type identifier
-         */
-        public ConfigTypeProvider getConfigType(String type);
-    }
+    void registerConfigType(ConfigTypeProvider provider);
+
+    ConfigTypeProvider[] getConfigTypes();
+
+    /**
+     * returns a type provider by its unique type identifier
+     */
+    ConfigTypeProvider getConfigType(String type);
 
     /**
      * Defines an interface that various notification types (announcements, files, issues) can implement
      * to allow centralized configuration of settings.
      */
-    public interface ConfigTypeProvider
+    interface ConfigTypeProvider
     {
-        public void savePreference(User currentUser, Container c, User projectUser, int preference, String srcIdentifier);
-        public UserPreference getPreference(Container c, User user, String srcIdentifier);
+        void savePreference(User currentUser, Container c, User projectUser, int preference, String srcIdentifier);
+        UserPreference getPreference(Container c, User user, String srcIdentifier);
 
         /**
          * Returns preference settings for all users who have read access to the specified container.
          */
-        public UserPreference[] getPreferences(Container c);
+        UserPreference[] getPreferences(Container c);
 
-        public NotificationOption getOption(int optionId);
-        public NotificationOption[] getOptions();
+        NotificationOption getOption(int optionId);
+        NotificationOption[] getOptions();
 
         /**
          * Uniquely identifies the provider type
          */
-        public String getType();
+        String getType();
 
         /**
          * Specifies a name that can be displayed in the UI
          */
-        public String getName();
+        String getName();
 
-        public EmailConfigForm createConfigForm(ViewContext context, PanelInfo info) throws Exception;
+        EmailConfigForm createConfigForm(ViewContext context, PanelInfo info) throws Exception;
 
-        public void validateCommand(ViewContext context, Errors errors);
+        void validateCommand(ViewContext context, Errors errors);
 
         /**
          *
@@ -100,13 +99,13 @@ public class MessageConfigService
          * @return
          * @throws Exception
          */
-        public boolean handlePost(ViewContext context, BindException errors) throws Exception;
+        boolean handlePost(ViewContext context, BindException errors) throws Exception;
     }
 
     /**
      * Define interface for folder administration of default and bulk user settings
      */
-    public interface EmailConfigForm
+    interface EmailConfigForm
     {
         int getDefaultEmailOption();
 
@@ -140,27 +139,27 @@ public class MessageConfigService
     /**
      * Defines a preference setting for a user
      */
-    public interface UserPreference
+    interface UserPreference
     {
-        public User getUser();
-        public Integer getEmailOptionId();
-        public void setEmailOptionId(Integer id);
-        public String getSrcIdentifier();
+        User getUser();
+        Integer getEmailOptionId();
+        void setEmailOptionId(Integer id);
+        String getSrcIdentifier();
     }
 
     /**
      * Defines an option
      */
-    public interface NotificationOption
+    interface NotificationOption
     {
-        public String getEmailOption();
-        public int getEmailOptionId();
-        public String getType();
+        String getEmailOption();
+        int getEmailOptionId();
+        String getType();
     }
 
-    public interface PanelInfo
+    interface PanelInfo
     {
-        public ActionURL getReturnUrl();
-        public String getDataRegionSelectionKey();
+        ActionURL getReturnUrl();
+        String getDataRegionSelectionKey();
     }
 }

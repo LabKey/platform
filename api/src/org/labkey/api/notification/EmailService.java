@@ -30,60 +30,61 @@ import java.util.List;
  * Date: Apr 21, 2010
  * Time: 12:04:33 PM
  */
-public class EmailService
+public interface EmailService
 {
-    public static final String EMAIL_PREF_CATEGORY = "EmailService.emailPrefs";
+    String EMAIL_PREF_CATEGORY = "EmailService.emailPrefs";
 
-    static public synchronized I get()
+    static EmailService get()
     {
-        return ServiceRegistry.get().getService(EmailService.I.class);
+        return ServiceRegistry.get().getService(EmailService.class);
     }
 
-    public interface I
-    {
-        EmailMessage createMessage(String from, String[] to, String subject);
-        EmailMessage createMessage(String from, String[] to, String subject, String message);
-        EmailMessage createMessage(String from, String[] to, String[] cc, String subject, String message);
-        EmailMessage createMessage(String from, String[] to, String[] cc, String subject, String message, List<File> attachments);
+    EmailMessage createMessage(String from, String[] to, String subject);
 
-        /**
-         * Send the email message synchronously from the caller thread
-         * @param msg message to send
-         * @param user for auditing purposes, the user who is considered to have originated the message
-         * @param c for auditing purposes, the container that is considered to have originated the message
-         */
-        void sendMessage(EmailMessage msg, User user, Container c) throws MessagingException, ConfigurationException;
+    EmailMessage createMessage(String from, String[] to, String subject, String message);
 
-        /**
-         * Send the email message asynchronously in a background thread
-         * @param msgs messages to send
-         * @param user for auditing purposes, the user who is considered to have originated the message
-         * @param c for auditing purposes, the container that is considered to have originated the message
-         */
-        void sendMessage(Collection<EmailMessage> msgs, User user, Container c);
+    EmailMessage createMessage(String from, String[] to, String[] cc, String subject, String message);
 
-        /**
-         * Returns the email configuration for the user/container combination as described by
-         * the EmailPref object.
-         */
-        String getEmailPref(User user, Container container, EmailPref pref);
+    EmailMessage createMessage(String from, String[] to, String[] cc, String subject, String message, List<File> attachments);
 
-        /**
-         * Returns the email configuration for the user/container combination, a separate EmailPref
-         * object can be passed in to describe a configurable default preference for the container.
-         */
-        String getEmailPref(User user, Container container, EmailPref pref, EmailPref defaultPref);
+    /**
+     * Send the email message synchronously from the caller thread
+     * @param msg message to send
+     * @param user for auditing purposes, the user who is considered to have originated the message
+     * @param c for auditing purposes, the container that is considered to have originated the message
+     */
+    void sendMessage(EmailMessage msg, User user, Container c) throws MessagingException, ConfigurationException;
 
-        void setEmailPref(User user, Container container, EmailPref pref, String value);
+    /**
+     * Send the email message asynchronously in a background thread
+     * @param msgs messages to send
+     * @param user for auditing purposes, the user who is considered to have originated the message
+     * @param c for auditing purposes, the container that is considered to have originated the message
+     */
+    void sendMessage(Collection<EmailMessage> msgs, User user, Container c);
 
-        String getDefaultEmailPref(Container container, EmailPref pref);
-        void setDefaultEmailPref(Container container, EmailPref pref, String value);
+    /**
+     * Returns the email configuration for the user/container combination as described by
+     * the EmailPref object.
+     */
+    String getEmailPref(User user, Container container, EmailPref pref);
 
-        /**
-         * Returns the array of users that match the criteria in the EmailPrefFilter. The
-         * filter handles creating the initial list of users to be considered as well as
-         * whether a users preference setting matches the filter criteria.
-         */
-        User[] getUsersWithEmailPref(Container container, EmailPrefFilter filter);
-    }
+    /**
+     * Returns the email configuration for the user/container combination, a separate EmailPref
+     * object can be passed in to describe a configurable default preference for the container.
+     */
+    String getEmailPref(User user, Container container, EmailPref pref, EmailPref defaultPref);
+
+    void setEmailPref(User user, Container container, EmailPref pref, String value);
+
+    String getDefaultEmailPref(Container container, EmailPref pref);
+
+    void setDefaultEmailPref(Container container, EmailPref pref, String value);
+
+    /**
+     * Returns an array of users that match the criteria in the EmailPrefFilter. The
+     * filter handles creating the initial list of users to be considered as well as
+     * whether a users preference setting matches the filter criteria.
+     */
+    User[] getUsersWithEmailPref(Container container, EmailPrefFilter filter);
 }

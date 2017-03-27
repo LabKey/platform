@@ -31,28 +31,29 @@ import java.io.InputStream;
  * User: kevink
  * Date: 9/30/12
  */
-public class DataLoaderService
+public interface DataLoaderService
 {
-    public static I get()
+    static DataLoaderService get()
     {
-        return ServiceRegistry.get(DataLoaderService.I.class);
+        return ServiceRegistry.get(DataLoaderService.class);
     }
 
-    public interface I
-    {
-        public void registerFactory(@NotNull DataLoaderFactory factory);
+    void registerFactory(@NotNull DataLoaderFactory factory);
 
-        @Nullable public DataLoaderFactory findFactory(File file, @Nullable FileType guessFormat);
-        @Nullable public DataLoaderFactory findFactory(File file, String contentType, @Nullable FileType guessFormat);
-        @Nullable public DataLoaderFactory findFactory(String filename, String contentType, InputStream is, @Nullable FileType guessFormat);
+    @Nullable
+    DataLoaderFactory findFactory(File file, @Nullable FileType guessFormat);
 
-        public DataLoader createLoader(String filename, String contentType, InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException;
+    @Nullable
+    DataLoaderFactory findFactory(File file, String contentType, @Nullable FileType guessFormat);
 
-        public DataLoader createLoader(MultipartFile file, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException;
+    @Nullable
+    DataLoaderFactory findFactory(String filename, String contentType, InputStream is, @Nullable FileType guessFormat);
 
-        public DataLoader createLoader(Resource r, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException;
+    DataLoader createLoader(String filename, String contentType, InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException;
 
-        public DataLoader createLoader(File file, String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException;
+    DataLoader createLoader(MultipartFile file, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException;
 
-    }
+    DataLoader createLoader(Resource r, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException;
+
+    DataLoader createLoader(File file, String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException;
 }

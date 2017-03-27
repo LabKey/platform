@@ -39,48 +39,10 @@ import java.util.Collection;
  * Date: Feb 1, 2007
  * Time: 2:33:22 PM
  */
-public class DiscussionService
+public interface DiscussionService
 {
-    private static Service _serviceImpl = null;
-    public static String ACTIVE = "Active";
-    public static String CLOSED = "Closed";
-
-    public interface Service
-    {
-        /**
-         * @param c
-         * @param user
-         * @param identifier
-         * @param pageURL      persistent URL to link back to original page, additional parameter discussionId will automatically be added
-         * @param title
-         * @param summary
-         * @param allowMultipleDiscussions
-         * @return WebPartView with a form to start a new discussion, will post directly to Announcements controller
-         */
-        public WebPartView startDiscussion(Container c, User user, String identifier, ActionURL pageURL, URLHelper cancelURL, String title, String summary, boolean allowMultipleDiscussions);
-
-        /** show links, and forms, do it all (wrapper for other methods)
-         * @param displayFirstDiscussionByDefault   if true and no discussion parameters are present, display the first
-         *                                          discussion associated with this object.
-         * @return DiscussionView if EnableDiscussion flag in LookAndFeelProperties is true. If false, null.
-         */
-        @Nullable
-        public DiscussionView getDiscussionArea(ViewContext context, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault);
-
-        @Nullable
-        public DiscussionView getDiscussionArea(Container c, User user, URLHelper currentURL, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault);
-
-        public void deleteDiscussions(Container container, User user, String... identifier);
-        public void deleteDiscussions(Container container, User user, Collection<String> identifiers);
-
-        public boolean hasDiscussions(Container container, String identifier);
-
-        public void unlinkDiscussions(Container container, String identifier, User user);
-
-        public Settings getSettings(Container container);
-
-        public void setSettings(Container container, Settings settings);
-    }
+    String ACTIVE = "Active";
+    String CLOSED = "Closed";
 
     /* CONSIDER: provide for resolvers rather than (or in addition to) hardcoded url back links
     public interface Resolver
@@ -90,22 +52,52 @@ public class DiscussionService
     registerResolver(String name, Resolver resolver);
     */
 
-    public static void register(Service serviceImpl)
+    static void register(DiscussionService serviceImpl)
     {
-        if (_serviceImpl != null)
-            throw new IllegalStateException("Service has already been set.");
-        ServiceRegistry.get().registerService(Service.class, serviceImpl);
-        _serviceImpl = serviceImpl;
+        ServiceRegistry.get().registerService(DiscussionService.class, serviceImpl);
     }
 
-    public static Service get()
+    static DiscussionService get()
     {
-        if (_serviceImpl == null)
-            throw new IllegalStateException("Service has not been set.");
-        return _serviceImpl;
+        return ServiceRegistry.get(DiscussionService.class);
     }
 
-    public static class DiscussionView extends VBox
+    /**
+     * @param c
+     * @param user
+     * @param identifier
+     * @param pageURL      persistent URL to link back to original page, additional parameter discussionId will automatically be added
+     * @param title
+     * @param summary
+     * @param allowMultipleDiscussions
+     * @return WebPartView with a form to start a new discussion, will post directly to Announcements controller
+     */
+    WebPartView startDiscussion(Container c, User user, String identifier, ActionURL pageURL, URLHelper cancelURL, String title, String summary, boolean allowMultipleDiscussions);
+
+    /** show links, and forms, do it all (wrapper for other methods)
+     * @param displayFirstDiscussionByDefault   if true and no discussion parameters are present, display the first
+     *                                          discussion associated with this object.
+     * @return DiscussionView if EnableDiscussion flag in LookAndFeelProperties is true. If false, null.
+     */
+    @Nullable
+    DiscussionView getDiscussionArea(ViewContext context, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault);
+
+    @Nullable
+    DiscussionView getDiscussionArea(Container c, User user, URLHelper currentURL, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault);
+
+    void deleteDiscussions(Container container, User user, String... identifier);
+
+    void deleteDiscussions(Container container, User user, Collection<String> identifiers);
+
+    boolean hasDiscussions(Container container, String identifier);
+
+    void unlinkDiscussions(Container container, String identifier, User user);
+
+    Settings getSettings(Container container);
+
+    void setSettings(Container container, Settings settings);
+
+    class DiscussionView extends VBox
     {
         private String _focusId;
 
@@ -125,7 +117,7 @@ public class DiscussionService
         }
     }
 
-    public static class Settings extends ReturnUrlForm
+    class Settings extends ReturnUrlForm
     {
         String _boardName = "Messages";
         String _conversationName = "Message";

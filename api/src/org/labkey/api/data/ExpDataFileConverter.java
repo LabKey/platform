@@ -49,7 +49,7 @@ public class ExpDataFileConverter implements Converter
 
     public static ExpData resolveExpData(JSONObject dataObject, Container container, User user)
     {
-        ExperimentService.Interface expSvc = ExperimentService.get();
+        ExperimentService expSvc = ExperimentService.get();
 
         PipeRoot pipelineRoot = container == null ? null : PipelineService.get().getPipelineRootSetting(container);
 

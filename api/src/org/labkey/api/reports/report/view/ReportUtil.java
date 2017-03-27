@@ -454,7 +454,7 @@ public class ReportUtil
         ViewCategory vc;
         if ("study".equalsIgnoreCase(schema) && !StringUtils.isEmpty(query))
         {
-            StudyService.Service svc = StudyService.get();
+            StudyService svc = StudyService.get();
             if (svc != null)
             {
                 Dataset ds = svc.resolveDataset(c, query);

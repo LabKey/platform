@@ -22,7 +22,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -38,7 +37,7 @@ import java.util.List;
 /**
  * A no-op implementation of an audit log service
  */
-public class DefaultAuditProvider implements AuditLogService.I, AuditLogService.Replaceable
+public class DefaultAuditProvider implements AuditLogService, AuditLogService.Replaceable
 {
     public boolean isViewable()
     {
@@ -77,24 +76,6 @@ public class DefaultAuditProvider implements AuditLogService.I, AuditLogService.
     public UserSchema createSchema(User user, Container container)
     {
         return new DefaultAuditSchema(user, container);
-    }
-
-    @Override
-    public void registerAuditType(AuditTypeProvider provider)
-    {
-        AuditLogService.registerAuditType(provider);
-    }
-
-    @Override
-    public List<AuditTypeProvider> getAuditProviders()
-    {
-        return AuditLogService.getAuditProviders();
-    }
-
-    @Override
-    public AuditTypeProvider getAuditProvider(String eventType)
-    {
-        return AuditLogService.getAuditProvider(eventType);
     }
 
     @Override

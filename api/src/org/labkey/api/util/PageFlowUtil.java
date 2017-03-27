@@ -2110,7 +2110,7 @@ public class PageFlowUtil
     private static JSONObject getTourJson(Container container)
     {
         JSONObject tourProps = new JSONObject();
-        TourService.Interface service = TourService.get();
+        TourService service = TourService.get();
 
         if (null != service && null != container)
         {
@@ -2130,7 +2130,7 @@ public class PageFlowUtil
         int unreadCount = 0;
         boolean hasRead = false;
 
-        NotificationService.Service service = NotificationService.get();
+        NotificationService service = NotificationService.get();
         if (service != null && user != null && !user.isGuest())
         {
             userNotifications = service.getNotificationsByUser(null, user.getUserId(), false);

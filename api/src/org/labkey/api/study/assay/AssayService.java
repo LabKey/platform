@@ -28,6 +28,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
@@ -44,128 +45,128 @@ import java.util.Map;
  * User: jeckels
  * Date: Jul 13, 2007
  */
-public class AssayService
+public interface AssayService
 {
-    static private Interface INSTANCE;
+    String BATCH_COLUMN_NAME = "Batch";
+    String ASSAY_DIR_NAME = "assay";
 
-    public static final String BATCH_COLUMN_NAME = "Batch";
-
-    public static final String ASSAY_DIR_NAME = "assay";
-
-    static public synchronized Interface get()
+    static AssayService get()
     {
-        return INSTANCE;
+        return ServiceRegistry.get(AssayService.class);
     }
 
-    static public synchronized void setInstance(Interface impl)
+    static void setInstance(AssayService impl)
     {
-        INSTANCE = impl;
+        ServiceRegistry.get().registerService(AssayService.class, impl);
     }
 
-    public interface Interface
-    {
-        void registerAssayProvider(AssayProvider provider);
-        @Nullable
-        AssayProvider getProvider(String providerName);
-        @Nullable
-        AssayProvider getProvider(ExpProtocol protocol);
-        @Nullable
-        AssayProvider getProvider(ExpRun run);
-        @NotNull
-        Collection<AssayProvider> getAssayProviders();
-        WebPartView createAssayListView(ViewContext context, boolean portalView, BindException errors);
+    void registerAssayProvider(AssayProvider provider);
 
-        ModelAndView createAssayDesignerView(Map<String, String> properties);
-        ModelAndView createAssayImportView(Map<String, String> properties);
+    @Nullable
+    AssayProvider getProvider(String providerName);
 
-        ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container);
+    @Nullable
+    AssayProvider getProvider(ExpProtocol protocol);
 
-        AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy);
+    @Nullable
+    AssayProvider getProvider(ExpRun run);
 
-        /** @return all of the assay protocols that are in scope in the given container */
-        List<ExpProtocol> getAssayProtocols(Container container);
+    @NotNull
+    Collection<AssayProvider> getAssayProviders();
 
-        /** @return all of the assay protocols that are in scope in the given container, filtered to only include those that are owned by the given provider */
-        List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider);
+    WebPartView createAssayListView(ViewContext context, boolean portalView, BindException errors);
 
-        /** @return an assay protocol that matches the given name for the assay protocols that are in scope in the given container */
-        ExpProtocol getAssayProtocolByName(Container container, String name);
+    ModelAndView createAssayDesignerView(Map<String, String> properties);
 
-        /**
-         * Populates the import button with possible containers
-         * @param isStudyView true if this view is from a study, and thus should exclude the current container
-         * unless it already has assay data in it
-         */
-        List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView);
+    ModelAndView createAssayImportView(Map<String, String> properties);
 
-        /**
-         * Creates a batch object but does not save it to the database
-         * @param container location for this batch to live
-         * @param name preferred name for the batch. If null, a default name will be assigned. If the name is already in
-         */
-        ExpExperiment createStandardBatch(Container container, @Nullable String name, ExpProtocol protocol);
+    ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container);
 
-        /** Ensures that the batch name is unique within the container. Will add unique numeric suffix until it is. */
-        ExpExperiment ensureUniqueBatchName(ExpExperiment batch, ExpProtocol protocol, User user);
+    AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy);
 
-        /**
-         * @return the batch object for the assay run, if it has one.
-         */
-        @Nullable
-        ExpExperiment findBatch(ExpRun run);
+    /** @return all of the assay protocols that are in scope in the given container */
+    List<ExpProtocol> getAssayProtocols(Container container);
 
-        void indexAssays(SearchService.IndexTask task, Container c);
+    /** @return all of the assay protocols that are in scope in the given container, filtered to only include those that are owned by the given provider */
+    List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider);
 
-        /**
-         * Creates a run, but does not persist it to the database. Creates the run only, no protocol applications, etc.
-         */
-        ExpRun createExperimentRun(@Nullable String name, Container container, ExpProtocol protocol, @Nullable File file);
+    /** @return an assay protocol that matches the given name for the assay protocols that are in scope in the given container */
+    ExpProtocol getAssayProtocolByName(Container container, String name);
 
-        /**
-         * Returns the list of valid locations an assay design can be created in.
-         * @return the list of containers as pairs of container objects and corresponding label.
-         */
-        List<Pair<Container, String>> getLocationOptions(Container container, User user);
+    /**
+     * Populates the import button with possible containers
+     * @param isStudyView true if this view is from a study, and thus should exclude the current container
+     * unless it already has assay data in it
+     */
+    List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView);
 
-        /**
-         * Searches the ExpRun and ExpBatch for the configured participant visit resolver type.  If none is found,
-         * the StudyParticipantVisitResolverType will be used.  If targetStudyContainer is null, the ExpRun
-         * and ExpBatch will be searched for the configured TargetStudy.
-         *
-         * @param run experiment run
-         * @param protocol The run's protocol.  If null, the ExpRun.getProcotol() will be used.
-         * @param provider The assay provider.  If null, the provider will be found from the protocol.
-         * @param targetStudyContainer  The target study.  If null, the ExpRun and ExpBatch properties will be searched.
-         * @return The resolver.
-         * @throws ExperimentException
-         */
-        ParticipantVisitResolver createResolver(User user, ExpRun run, @Nullable ExpProtocol protocol, @Nullable AssayProvider provider, @Nullable Container targetStudyContainer)
-                throws IOException, ExperimentException;
+    /**
+     * Creates a batch object but does not save it to the database
+     * @param container location for this batch to live
+     * @param name preferred name for the batch. If null, a default name will be assigned. If the name is already in
+     */
+    ExpExperiment createStandardBatch(Container container, @Nullable String name, ExpProtocol protocol);
 
-        void clearProtocolCache();
+    /** Ensures that the batch name is unique within the container. Will add unique numeric suffix until it is. */
+    ExpExperiment ensureUniqueBatchName(ExpExperiment batch, ExpProtocol protocol, User user);
 
-        /**
-         * Register a provider that will add text links to the assay header link display.
-         * @param provider the provider that will determine which links to add based on a given ExpProtocol
-         */
-        void registerAssayHeaderLinkProvider(AssayHeaderLinkProvider provider);
+    /**
+     * @return the batch object for the assay run, if it has one.
+     */
+    @Nullable
+    ExpExperiment findBatch(ExpRun run);
 
-        /**
-         * Returns the list of registered providers which can add links to the assay header link listing.
-         * @return the list of registered providers
-         */
-        List<AssayHeaderLinkProvider> getAssayHeaderLinkProviders();
+    void indexAssays(SearchService.IndexTask task, Container c);
 
-        /**
-         * Register a renderer to be used on the assay insert form to customize the input field.
-         * @param renderer the renderer that will determine the display of the input field based on the column info.
-         */
-        void registerAssayColumnInfoRenderer(AssayColumnInfoRenderer renderer);
+    /**
+     * Creates a run, but does not persist it to the database. Creates the run only, no protocol applications, etc.
+     */
+    ExpRun createExperimentRun(@Nullable String name, Container container, ExpProtocol protocol, @Nullable File file);
 
-        /**
-         * Return the first applicable renderer for the provided parameters.
-         * @return AssayColumnInfoRenderer
-         */
-        AssayColumnInfoRenderer getAssayColumnInfoRenderer(ExpProtocol protocol, ColumnInfo columnInfo, Container container, User user);
-    }
+    /**
+     * Returns the list of valid locations an assay design can be created in.
+     * @return the list of containers as pairs of container objects and corresponding label.
+     */
+    List<Pair<Container, String>> getLocationOptions(Container container, User user);
+
+    /**
+     * Searches the ExpRun and ExpBatch for the configured participant visit resolver type.  If none is found,
+     * the StudyParticipantVisitResolverType will be used.  If targetStudyContainer is null, the ExpRun
+     * and ExpBatch will be searched for the configured TargetStudy.
+     *
+     * @param run experiment run
+     * @param protocol The run's protocol.  If null, the ExpRun.getProcotol() will be used.
+     * @param provider The assay provider.  If null, the provider will be found from the protocol.
+     * @param targetStudyContainer  The target study.  If null, the ExpRun and ExpBatch properties will be searched.
+     * @return The resolver.
+     * @throws ExperimentException
+     */
+    ParticipantVisitResolver createResolver(User user, ExpRun run, @Nullable ExpProtocol protocol, @Nullable AssayProvider provider, @Nullable Container targetStudyContainer)
+            throws IOException, ExperimentException;
+
+    void clearProtocolCache();
+
+    /**
+     * Register a provider that will add text links to the assay header link display.
+     * @param provider the provider that will determine which links to add based on a given ExpProtocol
+     */
+    void registerAssayHeaderLinkProvider(AssayHeaderLinkProvider provider);
+
+    /**
+     * Returns the list of registered providers which can add links to the assay header link listing.
+     * @return the list of registered providers
+     */
+    List<AssayHeaderLinkProvider> getAssayHeaderLinkProviders();
+
+    /**
+     * Register a renderer to be used on the assay insert form to customize the input field.
+     * @param renderer the renderer that will determine the display of the input field based on the column info.
+     */
+    void registerAssayColumnInfoRenderer(AssayColumnInfoRenderer renderer);
+
+    /**
+     * Return the first applicable renderer for the provided parameters.
+     * @return AssayColumnInfoRenderer
+     */
+    AssayColumnInfoRenderer getAssayColumnInfoRenderer(ExpProtocol protocol, ColumnInfo columnInfo, Container container, User user);
 }

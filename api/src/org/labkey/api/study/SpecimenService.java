@@ -25,6 +25,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
@@ -41,88 +42,79 @@ import java.util.Set;
  * Date: Oct 2, 2007
  * Time: 3:35:45 PM
  */
-public class SpecimenService
+public interface SpecimenService
 {
-    private static SpecimenService.Service _serviceImpl;
+    static void register(SpecimenService serviceImpl)
+    {
+        ServiceRegistry.get().registerService(SpecimenService.class, serviceImpl);
+    }
 
-    public interface SampleInfo
+    static SpecimenService get()
+    {
+        return ServiceRegistry.get(SpecimenService.class);
+    }
+
+    /** Does a search for matching GlobalUniqueIds  */
+    ParticipantVisit getSampleInfo(Container studyContainer, User user, String globalUniqueId) throws SQLException;
+
+    Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Date date) throws SQLException;
+
+    Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Double visit) throws SQLException;
+
+    String getCompletionURLBase(Container studyContainer, CompletionType type);
+
+    Set<Pair<String, Date>> getSampleInfo(Container studyContainer, User user, boolean truncateTime) throws SQLException;
+
+    Set<Pair<String, Double>> getSampleInfo(Container studyContainer, User user) throws SQLException;
+
+    Lsid getSpecimenMaterialLsid(@NotNull Container studyContainer, @NotNull String id);
+
+    void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException;
+
+    void registerSpecimenImportStrategyFactory(SpecimenImportStrategyFactory factory);
+
+    Collection<SpecimenImportStrategyFactory> getSpecimenImportStrategyFactories();
+
+    void registerSpecimenTransform(SpecimenTransform transform);
+
+    Collection<SpecimenTransform> getSpecimenTransforms(Container container);
+
+    @Nullable
+    SpecimenTransform getSpecimenTransform(String name);
+
+    PipelineJob createSpecimenReloadJob(Container container, User user, SpecimenTransform transform, @Nullable ActionURL url) throws SQLException, IOException, ValidationException;
+
+    void registerSpecimenChangeListener(SpecimenChangeListener listener);
+
+    @Nullable
+    TableInfo getTableInfoVial(Container container);
+
+    @Nullable
+    TableInfo getTableInfoSpecimen(Container container);
+
+    @Nullable
+    TableInfo getTableInfoSpecimenEvent(Container container);
+
+    SpecimenTablesTemplate getSpecimenTablesTemplate();
+
+    Domain getSpecimenVialDomain(Container container, User user);
+
+    Domain getSpecimenEventDomain(Container container, User user);
+
+    Map<String, String> getSpecimenImporterTsvColumnMap();
+
+    interface SampleInfo
     {
         String getParticipantId();
         Double getSequenceNum();
         String getSampleId();
     }
 
-    public enum CompletionType
+    enum CompletionType
     {
         SpecimenGlobalUniqueId,
         ParticipantId,
         VisitId,
         LabId
-    }
-
-    public interface Service
-    {
-        /** Does a search for matching GlobalUniqueIds  */
-        ParticipantVisit getSampleInfo(Container studyContainer, User user, String globalUniqueId) throws SQLException;
-
-        Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Date date) throws SQLException;
-
-        Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Double visit) throws SQLException;
-
-        String getCompletionURLBase(Container studyContainer, CompletionType type);
-
-        Set<Pair<String, Date>> getSampleInfo(Container studyContainer, User user, boolean truncateTime) throws SQLException;
-
-        Set<Pair<String, Double>> getSampleInfo(Container studyContainer, User user) throws SQLException;
-
-        Lsid getSpecimenMaterialLsid(@NotNull Container studyContainer, @NotNull String id);
-
-        void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException;
-
-        void registerSpecimenImportStrategyFactory(SpecimenImportStrategyFactory factory);
-
-        Collection<SpecimenImportStrategyFactory> getSpecimenImportStrategyFactories();
-
-        void registerSpecimenTransform(SpecimenTransform transform);
-
-        Collection<SpecimenTransform> getSpecimenTransforms(Container container);
-
-        @Nullable
-        SpecimenTransform getSpecimenTransform(String name);
-
-        PipelineJob createSpecimenReloadJob(Container container, User user, SpecimenTransform transform, @Nullable ActionURL url) throws SQLException, IOException, ValidationException;
-
-        void registerSpecimenChangeListener(SpecimenChangeListener listener);
-
-        @Nullable
-        TableInfo getTableInfoVial(Container container);
-
-        @Nullable
-        TableInfo getTableInfoSpecimen(Container container);
-
-        @Nullable
-        TableInfo getTableInfoSpecimenEvent(Container container);
-
-        SpecimenTablesTemplate getSpecimenTablesTemplate();
-
-        Domain getSpecimenVialDomain(Container container, User user);
-
-        Domain getSpecimenEventDomain(Container container, User user);
-
-        Map<String, String> getSpecimenImporterTsvColumnMap();
-    }
-
-    public static void register(Service serviceImpl)
-    {
-        if (_serviceImpl != null)
-            throw new IllegalStateException("Service has already been set.");
-        _serviceImpl = serviceImpl;
-    }
-
-    public static Service get()
-    {
-        if (_serviceImpl == null)
-            throw new IllegalStateException("Service has not been set.");
-        return _serviceImpl;
     }
 }

@@ -732,7 +732,7 @@ public class FileSystemResource extends AbstractWebdavResource
                     List<ExpData> f = fs.getExpDataByURL(fileURL, getContainer());
                     list.addAll(f);
                 }
-                ExperimentService.Interface es = ExperimentService.get();
+                ExperimentService es = ExperimentService.get();
                 if (null != es)
                 {
                     ExpData d = es.getExpDataByURL(fileURL, null);

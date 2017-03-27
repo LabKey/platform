@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.NotFoundException;
 
 /**
@@ -26,26 +27,20 @@ import org.labkey.api.view.NotFoundException;
  * Date: 2013-04-03
  * Time: 11:34 AM
  */
-public class DataIntegrationService
+public interface DataIntegrationService
 {
-    static private Interface instance;
+    String MODULE_NAME = "DataIntegration";
 
-    public static final String MODULE_NAME = "DataIntegration";
-
-    static public Interface get()
+    static DataIntegrationService get()
     {
-        return instance;
+        return ServiceRegistry.get(DataIntegrationService.class);
     }
 
-    static public void setInstance(Interface impl)
+    static void setInstance(DataIntegrationService impl)
     {
-        instance = impl;
+        ServiceRegistry.get().registerService(DataIntegrationService.class, impl);
     }
 
-    public interface Interface
-    {
-        public void registerStepProviders();
-        @Nullable
-        public Integer runTransformNow(Container c, User u, String transformId) throws PipelineJobException, NotFoundException;
-    }
+    void registerStepProviders();
+    @Nullable Integer runTransformNow(Container c, User u, String transformId) throws PipelineJobException, NotFoundException;
 }

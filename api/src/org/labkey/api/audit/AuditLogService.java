@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -39,16 +40,33 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * User: Karl Lum
  * Date: Sep 19, 2007
  */
-public class AuditLogService
+public interface AuditLogService
 {
-    private static final I _defaultProvider = new DefaultAuditProvider();
-    private static final Map<String, AuditTypeProvider> _auditTypeProviders = new ConcurrentHashMap<>();
-    private static final List<AuditFailureHandlerProvider> auditFailureHandlerProviders = new CopyOnWriteArrayList<>();
+    AuditLogService _defaultProvider = new DefaultAuditProvider();
+    Map<String, AuditTypeProvider> _auditTypeProviders = new ConcurrentHashMap<>();
+    List<AuditFailureHandlerProvider> auditFailureHandlerProviders = new CopyOnWriteArrayList<>();
 
-    private static I _instance;
-
-    public static void registerAuditType(AuditTypeProvider provider)
+    static AuditLogService get()
     {
+        AuditLogService svc = ServiceRegistry.get(AuditLogService.class);
+        return svc != null ? svc : _defaultProvider;
+    }
+
+    static void registerProvider(AuditLogService provider)
+    {
+        ServiceRegistry.get().registerService(AuditLogService.class, provider);
+    }
+
+    @Nullable
+    static UserSchema getAuditLogSchema(User user, Container container)
+    {
+        return QueryService.get().getUserSchema(user, container, AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
+    }
+
+    default void registerAuditType(AuditTypeProvider provider)
+    {
+        assert ModuleLoader.getInstance().isStartupInProgress() : "Audit types must be registered in Module.doStartup()";
+
         if (!_auditTypeProviders.containsKey(provider.getEventName().toLowerCase()))
         {
             _auditTypeProviders.put(provider.getEventName().toLowerCase(), provider);
@@ -57,86 +75,61 @@ public class AuditLogService
             throw new IllegalArgumentException("AuditTypeProvider '" + provider.getEventName() + "' is already registered");
     }
 
-    public static List<AuditTypeProvider> getAuditProviders()
+    default List<AuditTypeProvider> getAuditProviders()
     {
         List<AuditTypeProvider> providers = new ArrayList<>(_auditTypeProviders.values());
 
-        Collections.sort(providers, (o1, o2) -> (o1.getLabel().compareToIgnoreCase(o2.getLabel())));
+        providers.sort((o1, o2) -> (o1.getLabel().compareToIgnoreCase(o2.getLabel())));
         return Collections.unmodifiableList(providers);
     }
 
-    public static AuditTypeProvider getAuditProvider(String eventType)
+    default AuditTypeProvider getAuditProvider(String eventType)
     {
         if (eventType == null)
             return null;
         return _auditTypeProviders.get(eventType.toLowerCase());
     }
 
-    static public synchronized I get()
-    {
-        return _instance != null ? _instance : _defaultProvider;
-    }
+    /**
+     * Specifies whether the provider produces displayable views.
+     */
+    boolean isViewable();
 
-    static public synchronized void registerProvider(I provider)
-    {
-        // only one provider for now
-        if (_instance != null && !(_instance instanceof AuditLogService.Replaceable))
-            throw new IllegalStateException("An audit log provider :" + _instance.getClass().getName() + " has already been registered");
-
-        _instance = provider;
-        ServiceRegistry.get().registerService(AuditLogService.I.class, provider);
-    }
+    <K extends AuditTypeEvent> K addEvent(User user, K event);
 
     @Nullable
-    static public UserSchema getAuditLogSchema(User user, Container container)
-    {
-        return QueryService.get().getUserSchema(user, container, AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
-    }
+    <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId);
 
-    public interface I
-    {
-        /**
-         * Specifies whether the provider produces displayable views.
-         */
-        boolean isViewable();
+    <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort);
 
-        <K extends AuditTypeEvent> K addEvent(User user, K event);
+    String getTableName();
 
-        @Nullable
-        <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId);
-        <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort);
+    TableInfo getTable(ViewContext context, String name);
 
-        String getTableName();
-        TableInfo getTable(ViewContext context, String name);
-        UserSchema createSchema(User user, Container container);
+    UserSchema createSchema(User user, Container container);
 
-        void registerAuditType(AuditTypeProvider provider);
-        List<AuditTypeProvider> getAuditProviders();
-        AuditTypeProvider getAuditProvider(String eventType);
+    ActionURL getAuditUrl();
 
-        ActionURL getAuditUrl();
-    }
-
-    public interface AuditFailureHandlerProvider
+    interface AuditFailureHandlerProvider
     {
         void handleAuditFailure(User user, Throwable e);
     }
 
-    public static void addAuditFailureHandlerProvider(AuditFailureHandlerProvider provider)
+    static void addAuditFailureHandlerProvider(AuditFailureHandlerProvider provider)
     {
         auditFailureHandlerProviders.add(provider);
     }
 
-    public static List<AuditFailureHandlerProvider> getAuditFailureHandlerProviders()
+    static List<AuditFailureHandlerProvider> getAuditFailureHandlerProviders()
     {
         return auditFailureHandlerProviders;
     }
 
-    public static void handleAuditFailure(User user, Throwable e)
+    static void handleAuditFailure(User user, Throwable e)
     {
         for (AuditFailureHandlerProvider provider : getAuditFailureHandlerProviders())
             provider.handleAuditFailure(user, e);
     }
 
-    public interface Replaceable{}
+    interface Replaceable{}
 }

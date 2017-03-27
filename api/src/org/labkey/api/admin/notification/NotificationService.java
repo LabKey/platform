@@ -34,97 +34,88 @@ import java.util.List;
  * Service for adding/getting/removing user notifications attached to specific objects.
  *
  */
-public class NotificationService
+public interface NotificationService
 {
-    private static Service _serviceImpl = null;
-
-    public interface Service
+    static void register(NotificationService serviceImpl)
     {
-        /*
-         * Insert a new notification in the specified container.
-         */
-        Notification addNotification(Container container, User user, @NotNull Notification notification) throws ValidationException;
-
-        /* backward compatible version of addNotification(), send e-mail as well */
-        Notification sendMessage(Container c, User createdByUser, User notifyUser, MailHelper.MultipartMessage m,
-                                        String linkText, String linkURL, String id, String type, boolean useSubjectAsContent
-                ) throws IOException, MessagingException, ValidationException;
-
-        /*
-         * Returns a list of notifications for a specific user. Sorted descending by created date.
-         */
-        List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly);
-
-        /*
-         * Returns a list of notifications for a specific user based on the specified type.
-         */
-        List<Notification> getNotificationsByType(Container container, @NotNull String type, int notifyUserId, boolean unreadOnly);
-
-        /*
-         * Returns a notification based on the notification's RowId.
-         */
-        Notification getNotification(int rowId);
-
-        /*
-         * Returns a notification (used for checking if a record already exists for the given user, objectId, and type).
-         */
-        Notification getNotification(Container container, @NotNull Notification notification);
-
-        /*
-         * Returns a notification for a specific user based on the specified objectId and type.
-         */
-        Notification getNotification(Container container, @NotNull String objectId, @NotNull String type, int notifyUserId);
-
-        /*
-         * Mark a single notification, if it exists, as read for a specific user based on the specified objectId and types,
-         * or if no objectId provided, mark all notifications as read for a specific user based on the specified types.
-         * Return a count of the number of notification records updated.
-         */
-        int markAsRead(Container container, User user, @Nullable String objectId, @NotNull List<String> types, int notifyUserId);
-        int markAsRead(@NotNull User user, int rowid);
-
-        /*
-         * Remove a single notification, if it exists, for a specific user based on the specified objectId and types,
-         * or if no objectId provided, removes all notifications for a specific user based on the specified types.
-         * Return a count of the number of notification records removed.
-         */
-        int removeNotifications(Container container, @Nullable String objectId, @NotNull List<String> types, int notifyUserId);
-
-        /*
-         * Remove all notifications for the specific objectId and types
-         * or if no objectId provided, removes all notifications for a specific types.
-         * Return a count of the number of notification records removed.
-         */
-        int removeNotificationsByType(Container container, @Nullable String objectId, @NotNull List<String> types);
-
-        /*
-         * Register a mapping from a String notification type to a display label and font-awesome icon for that type.
-         */
-        void registerNotificationType(@NotNull String type, String label, @Nullable String iconCls);
-
-        /*
-         * Get the registered display label for a given notification type String. Default "Other".
-         */
-        String getNotificationTypeLabel(@NotNull String type);
-
-        /*
-         * Get the registered font-awesome icon class for a given notification type String. Default "fa-bell".
-         */
-        String getNotificationTypeIconCls(@NotNull String type);
+        ServiceRegistry.get().registerService(NotificationService.class, serviceImpl);
     }
 
-    public static void register(Service serviceImpl)
+    static NotificationService get()
     {
-        if (_serviceImpl != null)
-            throw new IllegalStateException("Service has already been set.");
-        _serviceImpl = serviceImpl;
-        ServiceRegistry.get().registerService(NotificationService.Service.class, serviceImpl);
+        return ServiceRegistry.get(NotificationService.class);
     }
 
-    public static Service get()
-    {
-        if (_serviceImpl == null)
-            throw new IllegalStateException("Service has not been set.");
-        return _serviceImpl;
-    }
+    /*
+     * Insert a new notification in the specified container.
+     */
+    Notification addNotification(Container container, User user, @NotNull Notification notification) throws ValidationException;
+
+    /* backward compatible version of addNotification(), send e-mail as well */
+    Notification sendMessage(Container c, User createdByUser, User notifyUser, MailHelper.MultipartMessage m,
+                             String linkText, String linkURL, String id, String type, boolean useSubjectAsContent)
+        throws IOException, MessagingException, ValidationException;
+
+    /*
+     * Returns a list of notifications for a specific user. Sorted descending by created date.
+     */
+    List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly);
+
+    /*
+     * Returns a list of notifications for a specific user based on the specified type.
+     */
+    List<Notification> getNotificationsByType(Container container, @NotNull String type, int notifyUserId, boolean unreadOnly);
+
+    /*
+     * Returns a notification based on the notification's RowId.
+     */
+    Notification getNotification(int rowId);
+
+    /*
+     * Returns a notification (used for checking if a record already exists for the given user, objectId, and type).
+     */
+    Notification getNotification(Container container, @NotNull Notification notification);
+
+    /*
+     * Returns a notification for a specific user based on the specified objectId and type.
+     */
+    Notification getNotification(Container container, @NotNull String objectId, @NotNull String type, int notifyUserId);
+
+    /*
+     * Mark a single notification, if it exists, as read for a specific user based on the specified objectId and types,
+     * or if no objectId provided, mark all notifications as read for a specific user based on the specified types.
+     * Return a count of the number of notification records updated.
+     */
+    int markAsRead(Container container, User user, @Nullable String objectId, @NotNull List<String> types, int notifyUserId);
+
+    int markAsRead(@NotNull User user, int rowid);
+
+    /*
+     * Remove a single notification, if it exists, for a specific user based on the specified objectId and types,
+     * or if no objectId provided, removes all notifications for a specific user based on the specified types.
+     * Return a count of the number of notification records removed.
+     */
+    int removeNotifications(Container container, @Nullable String objectId, @NotNull List<String> types, int notifyUserId);
+
+    /*
+     * Remove all notifications for the specific objectId and types
+     * or if no objectId provided, removes all notifications for a specific types.
+     * Return a count of the number of notification records removed.
+     */
+    int removeNotificationsByType(Container container, @Nullable String objectId, @NotNull List<String> types);
+
+    /*
+     * Register a mapping from a String notification type to a display label and font-awesome icon for that type.
+     */
+    void registerNotificationType(@NotNull String type, String label, @Nullable String iconCls);
+
+    /*
+     * Get the registered display label for a given notification type String. Default "Other".
+     */
+    String getNotificationTypeLabel(@NotNull String type);
+
+    /*
+     * Get the registered font-awesome icon class for a given notification type String. Default "fa-bell".
+     */
+    String getNotificationTypeIconCls(@NotNull String type);
 }

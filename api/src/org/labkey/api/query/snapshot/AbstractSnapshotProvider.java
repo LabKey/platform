@@ -43,12 +43,12 @@ import java.util.Map;
  * Time: 2:23:17 PM
  */
 
-public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
+public abstract class AbstractSnapshotProvider implements QuerySnapshotService.Provider
 {
     private static final Map<String, Class> propertyClassMap = new HashMap<>();
 
-    static {
-
+    static
+    {
         propertyClassMap.put(boolean.class.getName(), Boolean.class);
         propertyClassMap.put(int.class.getName(), Integer.class);
         propertyClassMap.put(short.class.getName(), Integer.class);
@@ -128,7 +128,7 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
         DomainProperty prop;
         String name = column.getName();
         // 14750 replace '/' with '.' so columns can be mapped correctly on import from the exported file
-        if (name.indexOf("/") != -1)
+        if (name.contains("/"))
             name = name.replace('/', '.');
 
         if (pd != null)

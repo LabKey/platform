@@ -117,7 +117,7 @@ public class PipelinePathForm extends ViewForm
             result.add(f);
         }
 
-        ExperimentService.Interface es = ExperimentService.get();
+        ExperimentService es = ExperimentService.get();
         if (_fileIds != null)
         {
             for (int fileId : _fileIds)

@@ -31,31 +31,31 @@ public abstract class AbstractConfigTypeProvider implements MessageConfigService
     @Override
     public void savePreference(User currentUser, Container c, User projectUser, int preference, String srcIdentifier)
     {
-        MessageConfigService.getInstance().savePreference(currentUser, c, projectUser, this, preference, srcIdentifier);
+        MessageConfigService.get().savePreference(currentUser, c, projectUser, this, preference, srcIdentifier);
     }
 
     @Override
     public MessageConfigService.UserPreference getPreference(Container c, User user, String srcIdentifier)
     {
-        return MessageConfigService.getInstance().getPreference(c, user, this, srcIdentifier);
+        return MessageConfigService.get().getPreference(c, user, this, srcIdentifier);
     }
 
     @Override
     public MessageConfigService.UserPreference[] getPreferences(Container c)
     {
-        return MessageConfigService.getInstance().getPreferences(c, this);
+        return MessageConfigService.get().getPreferences(c, this);
     }
 
     @Override
     public MessageConfigService.NotificationOption getOption(int optionId)
     {
-        return MessageConfigService.getInstance().getOption(optionId);
+        return MessageConfigService.get().getOption(optionId);
     }
 
     @Override
     public MessageConfigService.NotificationOption[] getOptions()
     {
-        return MessageConfigService.getInstance().getOptions(this);
+        return MessageConfigService.get().getOptions(this);
     }
 
     @Override
@@ -150,7 +150,7 @@ public abstract class AbstractConfigTypeProvider implements MessageConfigService
         @Override
         public MessageConfigService.ConfigTypeProvider getProvider()
         {
-            return MessageConfigService.getInstance().getConfigType(_type);
+            return MessageConfigService.get().getConfigType(_type);
         }
     }
 }

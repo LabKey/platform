@@ -17,6 +17,7 @@ package org.labkey.api.announcements.api;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 
 import java.util.List;
 
@@ -25,37 +26,30 @@ import java.util.List;
  * Date: Jun 30, 2010
  * Time: 5:50:52 PM
  */
-public class AnnouncementService
+public interface AnnouncementService
 {
-    static private Interface instance;
-    
-    public static final String MODULE_NAME = "Announcement";
-    
-    static public Interface get()
+    static AnnouncementService get()
     {
-        return instance;
+        return ServiceRegistry.get(AnnouncementService.class);
     }
 
-    static public void setInstance(Interface impl)
+    static void setInstance(AnnouncementService impl)
     {
-        instance = impl;
+        ServiceRegistry.get().registerService(AnnouncementService.class, impl);
     }
 
-    public interface Interface
-    {
-        // IRUD (Insert, Read, Update, Delete)
-        Announcement insertAnnouncement(Container container, User u, String title, String body);
+    // IRUD (Insert, Read, Update, Delete)
+    Announcement insertAnnouncement(Container container, User u, String title, String body);
 
-        // Get One
-        Announcement getAnnouncement(Container container, User user, int RowId);
-        
-        // Get Many
-        List<Announcement> getAnnouncements(Container... containers);
+    // Get One
+    Announcement getAnnouncement(Container container, User user, int RowId);
 
-        // Update
-        Announcement updateAnnouncement(int RowId, Container c, User u, String title, String body);
+    // Get Many
+    List<Announcement> getAnnouncements(Container... containers);
 
-        // Delete
-        void deleteAnnouncement(Announcement announcement);
-    }
+    // Update
+    Announcement updateAnnouncement(int RowId, Container c, User u, String title, String body);
+
+    // Delete
+    void deleteAnnouncement(Announcement announcement);
 }

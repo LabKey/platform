@@ -307,7 +307,7 @@ public class RenderAssayBean extends RenderAssayForm
         pageUrl.replaceParameter("rowId", "" + run.getRowId());
         String discussionTitle = "Discuss Run " + run.getRowId() + ": " + run.getName();
         String entityId = run.getLSID();
-        DiscussionService.Service service = DiscussionService.get();
+        DiscussionService service = DiscussionService.get();
         return service.getDiscussionArea(context,
                 entityId, pageUrl, discussionTitle, true, false);
     }

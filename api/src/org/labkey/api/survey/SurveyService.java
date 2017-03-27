@@ -19,44 +19,35 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.survey.model.Survey;
 import org.labkey.api.survey.model.SurveyDesign;
 import org.labkey.api.survey.model.SurveyListener;
-
-import java.util.Map;
 
 /**
  * User: cnathe
  * Date: 1/11/13
  */
-public class SurveyService
+public interface SurveyService
 {
-    private static Interface instance;
-
-    public static Interface get()
+    static SurveyService get()
     {
-        return instance;
+        return ServiceRegistry.get(SurveyService.class);
     }
 
-    public static void setInstance(Interface i)
+    static void setInstance(SurveyService impl)
     {
-        instance = i;
+        ServiceRegistry.get().registerService(SurveyService.class, impl);
     }
 
-    public interface Interface
-    {
-        Survey[] getSurveys(Container container, User user);
-        Survey getSurvey(Container container, User user, int surveyId);
-        Survey getSurvey(Container container, User user, String schema, String query, String responsePk);
-        Survey saveSurvey(Container container, User user, Survey survey);
-
-        SurveyDesign[] getSurveyDesigns(Container container, ContainerFilter filter);
-        SurveyDesign[] getSurveyDesigns(SimpleFilter filter);
-        SurveyDesign getSurveyDesign(Container container, User user, int surveyDesignId);
-
-        SurveyDesign saveSurveyDesign(Container container, User user, SurveyDesign surveyDesign);
-        void deleteSurveyDesign(Container c, User user, int surveyDesignId, boolean deleteSurveyInstances);
-
-        void addSurveyListener(SurveyListener listener);
-    }
+    Survey[] getSurveys(Container container, User user);
+    Survey getSurvey(Container container, User user, int surveyId);
+    Survey getSurvey(Container container, User user, String schema, String query, String responsePk);
+    Survey saveSurvey(Container container, User user, Survey survey);
+    SurveyDesign[] getSurveyDesigns(Container container, ContainerFilter filter);
+    SurveyDesign[] getSurveyDesigns(SimpleFilter filter);
+    SurveyDesign getSurveyDesign(Container container, User user, int surveyDesignId);
+    SurveyDesign saveSurveyDesign(Container container, User user, SurveyDesign surveyDesign);
+    void deleteSurveyDesign(Container c, User user, int surveyDesignId, boolean deleteSurveyInstances);
+    void addSurveyListener(SurveyListener listener);
 }

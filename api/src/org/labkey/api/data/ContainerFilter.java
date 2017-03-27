@@ -794,7 +794,7 @@ public abstract class ContainerFilter
             }
 
             Study study = null;
-            StudyService.Service svc = StudyService.get();
+            StudyService svc = StudyService.get();
             if (svc != null)
                 study = svc.getStudy(currentContainer);
 

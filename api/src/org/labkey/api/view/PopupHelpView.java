@@ -50,7 +50,7 @@ public class PopupHelpView extends PopupMenuView
 
         if (c.hasPermission(user, ReadPermission.class))
         {
-            TourService.Interface service = TourService.get();
+            TourService service = TourService.get();
 
             if (null != service)
             {

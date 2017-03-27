@@ -38,6 +38,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -56,72 +57,69 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-abstract public class QueryService
+public interface QueryService
 {
-    static private QueryService instance;
+    String MODULE_QUERIES_DIRECTORY = "queries";
+    String MODULE_SCHEMAS_DIRECTORY = "schemas";
 
-    public static final String MODULE_QUERIES_DIRECTORY = "queries";
-    public static final String MODULE_SCHEMAS_DIRECTORY = "schemas";
+    String SCHEMA_TEMPLATE_EXTENSION = ".template.xml";
 
-    public static final String SCHEMA_TEMPLATE_EXTENSION = ".template.xml";
-
-    static public QueryService get()
+    static QueryService get()
     {
-        return instance;
+        return ServiceRegistry.get(QueryService.class);
     }
 
-    static public void set(QueryService impl)
+    static void set(QueryService impl)
     {
-        instance = impl;
+        ServiceRegistry.get().registerService(QueryService.class, impl);
     }
 
     /**
      * Most usages should call UserSchema.getQueryDefs() instead, which allows the schema to include other queries that
      * may be stored in schema-specific places, such as queries associated with an assay provider.
      */
-    abstract public Map<String, QueryDefinition> getQueryDefs(User user, Container container, String schema);
-    abstract public List<QueryDefinition> getQueryDefs(User user, Container container);
+    Map<String, QueryDefinition> getQueryDefs(User user, Container container, String schema);
+    List<QueryDefinition> getQueryDefs(User user, Container container);
 
-    abstract public QueryDefinition getQueryDef(User user, Container container, String schema, String name);
+    QueryDefinition getQueryDef(User user, Container container, String schema, String name);
 
-    @Deprecated /** Use SchemaKey form instead. */
-    abstract public QueryDefinition createQueryDef(User user, Container container, String schema, String name);
-    abstract public QueryDefinition createQueryDef(User user, Container container, SchemaKey schema, String name);
-    abstract public QueryDefinition createQueryDef(User user, Container container, UserSchema schema, String name);
-    abstract public QueryDefinition createQueryDefForTable(UserSchema schema, String tableName);
+    @Deprecated /** Use SchemaKey form instead. */ QueryDefinition createQueryDef(User user, Container container, String schema, String name);
+    QueryDefinition createQueryDef(User user, Container container, SchemaKey schema, String name);
+    QueryDefinition createQueryDef(User user, Container container, UserSchema schema, String name);
+    QueryDefinition createQueryDefForTable(UserSchema schema, String tableName);
 
-    abstract public @Nullable QuerySnapshotDefinition getSnapshotDef(Container container, String schema, String snapshotName);
-    abstract public QuerySnapshotDefinition createQuerySnapshotDef(QueryDefinition queryDef, String name);
-    abstract public QuerySnapshotDefinition createQuerySnapshotDef(Container container, QueryDefinition queryDef, String name);
-    abstract public boolean isQuerySnapshot(Container container, String schema, String name);
-    abstract public List<QuerySnapshotDefinition> getQuerySnapshotDefs(@Nullable Container container, @Nullable String schema);
-    abstract public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schema, String sql);
-    abstract public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schema, String sql, String metadataXml);
-    abstract public QueryDefinition saveSessionQuery(HttpSession session, Container container, User user, String schema, String sql, @Nullable String xml);
-    abstract public QueryDefinition getSessionQuery(ViewContext context, Container container, String schema, String queryName);
+    @Nullable QuerySnapshotDefinition getSnapshotDef(Container container, String schema, String snapshotName);
+    QuerySnapshotDefinition createQuerySnapshotDef(QueryDefinition queryDef, String name);
+    QuerySnapshotDefinition createQuerySnapshotDef(Container container, QueryDefinition queryDef, String name);
+    boolean isQuerySnapshot(Container container, String schema, String name);
+    List<QuerySnapshotDefinition> getQuerySnapshotDefs(@Nullable Container container, @Nullable String schema);
+    QueryDefinition saveSessionQuery(ViewContext context, Container container, String schema, String sql);
+    QueryDefinition saveSessionQuery(ViewContext context, Container container, String schema, String sql, String metadataXml);
+    QueryDefinition saveSessionQuery(HttpSession session, Container container, User user, String schema, String sql, @Nullable String xml);
+    QueryDefinition getSessionQuery(ViewContext context, Container container, String schema, String queryName);
 
-    abstract public ActionURL urlQueryDesigner(User user, Container container, String schema);
-    abstract public ActionURL urlFor(User user, Container container, QueryAction action, String schema, String queryName);
+    ActionURL urlQueryDesigner(User user, Container container, String schema);
+    ActionURL urlFor(User user, Container container, QueryAction action, String schema, String queryName);
     /** Generate a generic query URL for the QueryAction. */
-    abstract public ActionURL urlDefault(Container container, QueryAction action, @Nullable String schema, @Nullable String query);
+    ActionURL urlDefault(Container container, QueryAction action, @Nullable String schema, @Nullable String query);
     /** Generate a generic query URL for the QueryAction with a parameter for each primary key column. */
-    abstract public DetailsURL urlDefault(Container container, QueryAction action, String schema, String query, Map<String, ?> params);
+    DetailsURL urlDefault(Container container, QueryAction action, String schema, String query, Map<String, ?> params);
     /** Generate a generic query URL for the QueryAction with a parameter for each primary key column. */
-    abstract public DetailsURL urlDefault(Container container, QueryAction action, TableInfo table);
+    DetailsURL urlDefault(Container container, QueryAction action, TableInfo table);
 
     // TODO: These probably need to change to support data source qualified schema names
 
     /** Get schema for SchemaKey encoded path. */
-    abstract public UserSchema getUserSchema(User user, Container container, String schemaPath);
+    UserSchema getUserSchema(User user, Container container, String schemaPath);
     /** Get schema for SchemaKey path. */
-    abstract public UserSchema getUserSchema(User user, Container container, SchemaKey schemaPath);
+    UserSchema getUserSchema(User user, Container container, SchemaKey schemaPath);
 
-    abstract public UserSchema getLinkedSchema(User user, Container container, String name);
-    abstract public UserSchema createLinkedSchema(User user, Container container, String name, String sourceContainerId, String sourceSchemaName,
-                                                  String metadata, String tables, String template);
-    abstract public void deleteLinkedSchema(User user, Container container, String name);
+    UserSchema getLinkedSchema(User user, Container container, String name);
+    UserSchema createLinkedSchema(User user, Container container, String name, String sourceContainerId, String sourceSchemaName,
+                                  String metadata, String tables, String template);
+    void deleteLinkedSchema(User user, Container container, String name);
 
-    abstract public void writeTables(Container c, User user, VirtualFile dir, Map<String, List<Map<String, Object>>> schemas, ColumnHeaderType header) throws IOException;
+    void writeTables(Container c, User user, VirtualFile dir, Map<String, List<Map<String, Object>>> schemas, ColumnHeaderType header) throws IOException;
 
     /**
      * Get the list of custom views.
@@ -129,25 +127,25 @@ abstract public class QueryService
      * To get only shared custom views, use {@link QueryService#getSharedCustomViews(User, Container, String, String, boolean)}.
      * NOTE: user is not the owner of the custom views, but is used for container and schema permission checks.
      */
-    abstract public List<CustomView> getCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
-    abstract public List<CustomView> getCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited, boolean alwaysUseTitlesForLoadingCustomViews);
-    abstract public CustomView getCustomView(@NotNull User user, Container container, @Nullable User owner, String schema, String query, String name);
+    List<CustomView> getCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
+    List<CustomView> getCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited, boolean alwaysUseTitlesForLoadingCustomViews);
+    CustomView getCustomView(@NotNull User user, Container container, @Nullable User owner, String schema, String query, String name);
 
     /**
      * Get the list of shared custom views.
      * If schema, query is null, return custom views for all schemas/queries.
      * NOTE: user is not the owner of the custom views, but is used for container and schema permission checks.
      */
-    abstract public List<CustomView> getSharedCustomViews(@NotNull User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
-    abstract public CustomView getSharedCustomView(@NotNull User user, Container container, String schema, String query, String name);
+    List<CustomView> getSharedCustomViews(@NotNull User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
+    CustomView getSharedCustomView(@NotNull User user, Container container, String schema, String query, String name);
 
     /**
      * Returns custom views stored in the database (not module custom views) that meet the criteria. This is not appropriate
      * for UI operations (see getCustomViews() for that), but it's important for query change listeners. See #21641 and #21862.
      */
-    abstract public List<CustomView> getDatabaseCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited, boolean sharedOnly);
+    List<CustomView> getDatabaseCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited, boolean sharedOnly);
 
-    abstract public int importCustomViews(User user, Container container, VirtualFile viewDir) throws IOException;
+    int importCustomViews(User user, Container container, VirtualFile viewDir) throws IOException;
 
     /**
      * Get CustomView properties as a JSON map.
@@ -155,19 +153,19 @@ abstract public class QueryService
      * @param user The current user or null. For user display name rendering.
      * @return null if view is null otherwise a map of the CustomView properties.
      */
-    abstract public Map<String, Object> getCustomViewProperties(@Nullable CustomView view, @Nullable User user);
+    Map<String, Object> getCustomViewProperties(@Nullable CustomView view, @Nullable User user);
 
-    abstract public String getCustomViewNameFromEntityId(Container container, String entityId) throws SQLException;
+    String getCustomViewNameFromEntityId(Container container, String entityId) throws SQLException;
 
     /**
      * Loops through the field keys and turns them into ColumnInfos based on the base table
      */
     @NotNull
-    abstract public Map<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, @NotNull Collection<FieldKey> fields);
+    Map<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, @NotNull Collection<FieldKey> fields);
     @NotNull
-    abstract public LinkedHashMap<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, @NotNull Collection<FieldKey> fields, @NotNull Collection<ColumnInfo> existingColumns);
+    LinkedHashMap<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, @NotNull Collection<FieldKey> fields, @NotNull Collection<ColumnInfo> existingColumns);
 
-    abstract public List<DisplayColumn> getDisplayColumns(@NotNull TableInfo table, Collection<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> fields);
+    List<DisplayColumn> getDisplayColumns(@NotNull TableInfo table, Collection<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> fields);
 
     /**
      * Ensure that <code>columns</code> contains all of the columns necessary for <code>filter</code> and <code>sort</code>.
@@ -176,12 +174,12 @@ abstract public class QueryService
      *
      * NOTE: shouldn't need to call this anymore unless you really care about the unresolvedColumns
      */
-    abstract public Collection<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Set<FieldKey> unresolvedColumns);
+    Collection<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Set<FieldKey> unresolvedColumns);
 
-    abstract public UserSchema createSimpleUserSchema(String name, @Nullable String description, User user, Container container, DbSchema schema);
+    UserSchema createSimpleUserSchema(String name, @Nullable String description, User user, Container container, DbSchema schema);
 
-    abstract public List<ColumnInfo> getDefaultVisibleColumnInfos(List<ColumnInfo> columns);
-    abstract public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns);
+    List<ColumnInfo> getDefaultVisibleColumnInfos(List<ColumnInfo> columns);
+    List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns);
 
     /**
      * Finds metadata overrides for the given schema and table and returns them in application order.
@@ -198,9 +196,9 @@ abstract public class QueryService
      * @param dir An alternate location to search for file-based query metadata (defaults to "<code>queries/&lt;schemaName&gt;</code>").  Be careful to only use valid file names.
      * @return A set of metadata xml in application order.
      */
-    abstract public Collection<TableType> findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @NotNull Collection<QueryException> errors, @Nullable Path dir);
+    Collection<TableType> findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @NotNull Collection<QueryException> errors, @Nullable Path dir);
 
-    abstract public TableType parseMetadata(String metadataXML, Collection<QueryException> errors);
+    TableType parseMetadata(String metadataXML, Collection<QueryException> errors);
 
     /**
      * Create a TableSelector for a LabKey sql query string.
@@ -209,39 +207,39 @@ abstract public class QueryService
      * @return a TableSelector
      */
     @NotNull
-    abstract public TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql);
+    TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql);
 
     @NotNull
-    abstract public TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort);
+    TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort);
 
-	public ResultSet select(QuerySchema schema, String sql) throws SQLException
+	default ResultSet select(QuerySchema schema, String sql) throws SQLException
     {
         return select(schema, sql, null, false, true);
     }
 
     /* strictColumnList requires that query not add any addition columns to the query result */
-    abstract public ResultSet select(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached);
+    ResultSet select(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached);
 
-    abstract public Results selectResults(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, Map<String,Object> parameters, boolean strictColumnList, boolean cached) throws SQLException;
+    Results selectResults(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, Map<String, Object> parameters, boolean strictColumnList, boolean cached) throws SQLException;
 
-    public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
+    default Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
         return select(table, columns, filter, sort, Collections.emptyMap(), true);
     }
 
-    abstract public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters, boolean cached);
+    Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters, boolean cached);
 
     /**
      * @param forceSort always add a sort, even if the Sort parameter is null or empty. Do not pass true if the SQL will
      * be used as a subselect, as some databases don't allow you to do ORDER BY on a subselect if there is no LIMIT/TOP
      * clause 
      */
-    abstract public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort);
-    abstract public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging);
+    SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort);
+    SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging);
 
-    public abstract void addCompareType(CompareType type);
+    void addCompareType(CompareType type);
 
-    public abstract Collection<CompareType> getCompareTypes();
+    Collection<CompareType> getCompareTypes();
 
     /**
      * Gets all of the custom views from the given relative path defined in the set of active modules for the
@@ -251,20 +249,20 @@ abstract public class QueryService
      * @param path the relative path within the module to check for custom views
      * @param extraModules any extra modules that may need to be searched for Custom Views but are not explicitly enabled
      */
-    public abstract List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query, Module... extraModules);
+    List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query, Module... extraModules);
 
     /*
      * Normally we look at all active modules within a container for query file paths, however sometimes
      * (i.e. in the Luminex module) the module is disabled but we still want to look in that directory for additional QueryDefs.
      * In such cases, one may pass additional modules as 'extraModules'.
      */
-    public abstract List<QueryDefinition> getFileBasedQueryDefs(User user, Container container, String schemaName, Path path, Module... extraModules);
+    List<QueryDefinition> getFileBasedQueryDefs(User user, Container container, String schemaName, Path path, Module... extraModules);
 
-    abstract public void addQueryListener(QueryChangeListener listener);
-    abstract public void removeQueryListener(QueryChangeListener listener);
+    void addQueryListener(QueryChangeListener listener);
+    void removeQueryListener(QueryChangeListener listener);
 
-    abstract public void addCustomViewListener(CustomViewChangeListener listener);
-    abstract public void removeCustomViewListener(CustomViewChangeListener listener);
+    void addCustomViewListener(CustomViewChangeListener listener);
+    void removeCustomViewListener(CustomViewChangeListener listener);
 
     /**
      * Register an action that can be used for generating links to be displayed in schema browser
@@ -272,14 +270,14 @@ abstract public class QueryService
      * @param module Module in which the actionClass resides
      * @param linkLabel Label for displaying the action link
      */
-    abstract public void registerSchemaLinkAction(@NotNull Class<? extends Controller> actionClass, @NotNull Module module, @NotNull String linkLabel);
+    void registerSchemaLinkAction(@NotNull Class<? extends Controller> actionClass, @NotNull Module module, @NotNull String linkLabel);
 
     /**
      * Get the set of registered schema links for the active modules in the given container.
      * @param c container
      * @return a map of ActionURLs and their labels
      */
-    abstract public Map<ActionURL, String> getSchemaLinks(@NotNull Container c);
+    Map<ActionURL, String> getSchemaLinks(@NotNull Container c);
 
     //
     // Thread local environment for executing a query
@@ -289,7 +287,7 @@ abstract public class QueryService
     // - CONTAINER for
     // - ACTION so query schemas can exclude certain types of actions (e.g., disallow export)
     //
-    public enum Environment
+    enum Environment
     {
         USER(JdbcType.OTHER),
         CONTAINER(JdbcType.OTHER),
@@ -304,20 +302,20 @@ abstract public class QueryService
         }
     }
 
-    abstract public void setEnvironment(Environment e, Object value);
-    abstract public void clearEnvironment();
-    abstract public Object cloneEnvironment();
-    abstract public void copyEnvironment(Object o);
-    abstract public Object getEnvironment(QueryService.Environment e);
+    void setEnvironment(Environment e, Object value);
+    void clearEnvironment();
+    Object cloneEnvironment();
+    void copyEnvironment(Object o);
+    Object getEnvironment(QueryService.Environment e);
 
 
-    public interface ParameterDecl extends ParameterDescription
+    interface ParameterDecl extends ParameterDescription
     {
         Object getDefault();
         boolean isRequired();
     }
 
-    public static class ParameterDeclaration extends ParameterDescriptionImpl implements ParameterDecl
+    class ParameterDeclaration extends ParameterDescriptionImpl implements ParameterDecl
     {
         protected final Object _defaultValue;
         protected final boolean _required;
@@ -353,7 +351,7 @@ abstract public class QueryService
     }
 
 
-    public static class NamedParameterNotProvided extends RuntimeException
+    class NamedParameterNotProvided extends RuntimeException
     {
         public NamedParameterNotProvided(String name)
         {
@@ -361,10 +359,10 @@ abstract public class QueryService
         }
     }
 
-    abstract public void bindNamedParameters(SQLFragment frag, Map<String, Object> in);
-    abstract public void validateNamedParameters(SQLFragment frag);
+    void bindNamedParameters(SQLFragment frag, Map<String, Object> in);
+    void validateNamedParameters(SQLFragment frag);
 
-    public enum AuditAction
+    enum AuditAction
     {
         INSERT("A row was inserted.",
                 "%s row(s) were inserted."),
@@ -401,36 +399,35 @@ abstract public class QueryService
      *
      * @param comment Comment to log.
      */
-    abstract public void addAuditEvent(QueryView queryView, String comment, @Nullable Integer dataRowCount);
-    abstract public void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment, @Nullable Integer dataRowCount);
-    abstract public void addAuditEvent(User user, Container c, TableInfo table, AuditAction action, List<Map<String, Object>> ... params);
+    void addAuditEvent(QueryView queryView, String comment, @Nullable Integer dataRowCount);
+    void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment, @Nullable Integer dataRowCount);
+    void addAuditEvent(User user, Container c, TableInfo table, AuditAction action, List<Map<String, Object>>... params);
 
     /**
      * Returns a URL for the audit history for the table.
      */
-    abstract public @Nullable ActionURL getAuditHistoryURL(User user, Container c, TableInfo table);
+    @Nullable ActionURL getAuditHistoryURL(User user, Container c, TableInfo table);
 
     /**
      * Returns a DetailsURL that can be used for the row audit history for the table.
      */
-    abstract public @Nullable DetailsURL getAuditDetailsURL(User user, Container c, TableInfo table);
+    @Nullable DetailsURL getAuditDetailsURL(User user, Container c, TableInfo table);
 
-    abstract public Collection<String> getQueryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
-    abstract public void fireQueryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
-    abstract public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes);
-    abstract public void fireQueryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
-
+    Collection<String> getQueryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
+    void fireQueryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
+    void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes);
+    void fireQueryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
 
 
     /** OLAP **/
     // could make this a separate service
-    abstract public void cubeDataChanged(Container c);    // TODO could be more specific than "something in this container"
-    abstract public String warmCube(User user, Container container, String schemaName, String configId, String cubeName);
-    abstract public void cubeDataChanged(Set<Container> containers);
-    abstract public String warmCube(User user, Set<Container> containers, String schemaName, String configId, String cubeName);
-    abstract public String cubeDataChangedAndRewarmCube(User user, Set<Container> containers, String schemaName, String configId, String cubeName);
+    void cubeDataChanged(Container c);    // TODO could be more specific than "something in this container"
+    String warmCube(User user, Container container, String schemaName, String configId, String cubeName);
+    void cubeDataChanged(Set<Container> containers);
+    String warmCube(User user, Set<Container> containers, String schemaName, String configId, String cubeName);
+    String cubeDataChangedAndRewarmCube(User user, Set<Container> containers, String schemaName, String configId, String cubeName);
 
-    abstract public void saveNamedSet(String setName, List<String> setList);
-    abstract public void deleteNamedSet(String setName);
-    abstract public List<String> getNamedSet(String setName);
+    void saveNamedSet(String setName, List<String> setList);
+    void deleteNamedSet(String setName);
+    List<String> getNamedSet(String setName);
 }

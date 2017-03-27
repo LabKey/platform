@@ -59,6 +59,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -74,393 +75,387 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 
-public class ExperimentService
+public interface ExperimentService extends ExperimentRunTypeSource
 {
-    static private Interface instance;
+    String MODULE_NAME = "Experiment";
+    String SCHEMA_LOCATION = "http://cpas.fhcrc.org/exp/xml http://www.labkey.org/download/XarSchema/V2.3/expTypes.xsd";
 
-    public static final String MODULE_NAME = "Experiment";
+    String SAMPLE_DERIVATION_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:SampleDerivationProtocol";
 
-    public static final String SCHEMA_LOCATION = "http://cpas.fhcrc.org/exp/xml http://www.labkey.org/download/XarSchema/V2.3/expTypes.xsd";
+    int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
+    int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
+    int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
+    int SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE = 20;
 
-    static public Interface get()
+    static ExperimentService get()
     {
-        return instance;
+        return ServiceRegistry.get(ExperimentService.class);
     }
 
-    static public void setInstance(Interface impl)
+    static void setInstance(ExperimentService impl)
     {
-        instance = impl;
+        ServiceRegistry.get().registerService(ExperimentService.class, impl);
     }
 
-    public interface Interface extends ExperimentRunTypeSource
-    {
-        String SAMPLE_DERIVATION_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:SampleDerivationProtocol";
+    @Nullable
+    ExpObject findObjectFromLSID(String lsid);
 
-        int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
-        int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
-        int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
-        int SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE = 20;
+    ExpRun getExpRun(int rowid);
+    ExpRun getExpRun(String lsid);
+    List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);
+    List<? extends ExpRun> getExpRunsForJobId(int jobId);
+    List<? extends ExpRun> getExpRunsForFilePathRoot(File filePathRoot);
+    ExpRun createExperimentRun(Container container, String name);
 
-        @Nullable
-        ExpObject findObjectFromLSID(String lsid);
+    ExpData getExpData(int rowid);
+    ExpData getExpData(String lsid);
+    List<? extends ExpData> getExpDatas(int... rowid);
+    List<? extends ExpData> getExpDatasByLSID(Collection<String> lsids);
+    List<? extends ExpData> getExpDatas(Collection<Integer> rowid);
+    List<? extends ExpData> getExpDatas(Container container, @Nullable DataType type, @Nullable String name);
+    @NotNull
+    List<? extends ExpData> getExpDatasUnderPath(@NotNull File path, @Nullable Container c);
 
-        ExpRun getExpRun(int rowid);
-        ExpRun getExpRun(String lsid);
-        List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);
-        List<? extends ExpRun> getExpRunsForJobId(int jobId);
-        List<? extends ExpRun> getExpRunsForFilePathRoot(File filePathRoot);
-        ExpRun createExperimentRun(Container container, String name);
+    /** Get all ExpData that are members of the ExpDataClass. */
+    List<? extends ExpData> getExpDatas(ExpDataClass dataClass);
+    ExpData getExpData(ExpDataClass dataClass, String name);
+    ExpData getExpData(ExpDataClass dataClass, int rowId);
 
-        ExpData getExpData(int rowid);
-        ExpData getExpData(String lsid);
-        List<? extends ExpData> getExpDatas(int... rowid);
-        List<? extends ExpData> getExpDatasByLSID(Collection<String> lsids);
-        List<? extends ExpData> getExpDatas(Collection<Integer> rowid);
-        List<? extends ExpData> getExpDatas(Container container, @Nullable DataType type, @Nullable String name);
-        @NotNull
-        List<? extends ExpData> getExpDatasUnderPath(@NotNull File path, @Nullable Container c);
+    /**
+     * Create a data object.  The object will be unsaved, and will have a name which is a GUID.
+     */
+    ExpData createData(Container container, @NotNull DataType type);
+    ExpData createData(Container container, @NotNull DataType type, @NotNull String name);
+    ExpData createData(Container container, @NotNull DataType type, @NotNull String name, boolean generated);
+    ExpData createData(Container container, String name, String lsid);
+    ExpData createData(URI uri, XarSource source) throws XarFormatException;
 
-        /** Get all ExpData that are members of the ExpDataClass. */
-        List<? extends ExpData> getExpDatas(ExpDataClass dataClass);
-        ExpData getExpData(ExpDataClass dataClass, String name);
-        ExpData getExpData(ExpDataClass dataClass, int rowId);
+    /**
+     * Create a new DataClass with the provided properties.
+     */
+    ExpDataClass createDataClass(Container c, User u, String name, String description,
+             List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleSetId, String nameExpression,
+             @Nullable TemplateInfo templateInfo)
+        throws ExperimentException, SQLException;
 
-        /**
-         * Create a data object.  The object will be unsaved, and will have a name which is a GUID.
-         */
-        ExpData createData(Container container, @NotNull DataType type);
-        ExpData createData(Container container, @NotNull DataType type, @NotNull String name);
-        ExpData createData(Container container, @NotNull DataType type, @NotNull String name, boolean generated);
-        ExpData createData(Container container, String name, String lsid);
-        ExpData createData(URI uri, XarSource source) throws XarFormatException;
+    List<? extends ExpDataClass> getDataClasses(Container container, User user, boolean includeOtherContainers);
 
-        /**
-         * Create a new DataClass with the provided properties.
-         */
-        ExpDataClass createDataClass(Container c, User u, String name, String description,
-                 List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleSetId, String nameExpression,
-                 @Nullable TemplateInfo templateInfo)
+    /** Get a DataClass by name within the definition container. */
+    ExpDataClass getDataClass(Container definitionContainer, String dataClassName);
+
+    /**
+     * Get a DataClass by name within scope -- current, project, and shared.
+     * Requires a user to check for container read permission.
+     */
+    ExpDataClass getDataClass(Container scope, User user, String dataClassName);
+
+    ExpDataClass getDataClass(int rowId);
+    ExpDataClass getDataClass(String lsid);
+
+    /**
+     * Get materials with the given names, optionally within the provided sample set.
+     * If the materials don't exist, throw an exception if <code>throwIfMissing</code> is true
+     * or create new materials if <code>createIfMissing</code> is true, otherwise missing samples
+     * will be ignored.
+     *
+     * @param container Samples will be found within this container, project, or shared container.
+     * @param user Samples will only be resolved within containers that the user has ReadPermission.
+     * @param sampleNames The set of samples to be resolved by name.
+     * @param sampleSet Optional sample set that the samples must live in.
+     * @param throwIfMissing Throw ExperimentException if any of the sampleNames do not exist.
+     * @param createIfMissing Create missing samples in the given <code>sampleSet</code> or the active sample set.
+     * @return Resolved samples
+     * @throws ExperimentException
+     */
+    @NotNull List<? extends ExpMaterial> getExpMaterials(Container container, @Nullable User user, Set<String> sampleNames, @Nullable ExpSampleSet sampleSet, boolean throwIfMissing, boolean createIfMissing) throws ExperimentException;
+
+    /* This version of createExpMaterial() takes name from lsid.getObjectId() */
+    ExpMaterial createExpMaterial(Container container, Lsid lsid);
+    ExpMaterial createExpMaterial(Container container, String lsid, String name);
+    ExpMaterial getExpMaterial(int rowid);
+    @NotNull List<? extends ExpMaterial> getExpMaterials(Collection<Integer> rowids);
+    ExpMaterial getExpMaterial(String lsid);
+
+    /**
+     * Looks in all the sample sets visible from the given container for a single match with the specified name
+     */
+    @NotNull List<? extends ExpMaterial> getExpMaterialsByName(String name, Container container, User user);
+
+    Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type);
+
+    /**
+     * Create a new SampleSet with the provided properties.
+     * If a 'Name' property exists in the list, it will be used as the 'id' property of the SampleSet.
+     * Either a 'Name' property must exist or at least one idCol index must be provided.
+     * A name expression may be provided instead of idCols and will be used to generate the sample names.
+     */
+    @NotNull
+    ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol, String nameExpression)
+        throws ExperimentException, SQLException;
+
+    /** (MAB) todo need a builder interface, or at least  parameter bean */
+    @NotNull
+    ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
+                                 String nameExpression, @Nullable TemplateInfo templateInfo)
             throws ExperimentException, SQLException;
 
-        List<? extends ExpDataClass> getDataClasses(Container container, User user, boolean includeOtherContainers);
+    @NotNull
+    ExpSampleSet createSampleSet();
+    @Nullable
+    ExpSampleSet getSampleSet(int rowId);
+    @Nullable
+    ExpSampleSet getSampleSet(String lsid);
 
-        /** Get a DataClass by name within the definition container. */
-        ExpDataClass getDataClass(Container definitionContainer, String dataClassName);
+    /**
+     * @param includeOtherContainers whether sample sets from the shared container or the container's project should be included
+     */
+    List<? extends ExpSampleSet> getSampleSets(Container container, User user, boolean includeOtherContainers);
+    ExpSampleSet getSampleSet(Container container, String name);
 
-        /**
-         * Get a DataClass by name within scope -- current, project, and shared.
-         * Requires a user to check for container read permission.
-         */
-        ExpDataClass getDataClass(Container scope, User user, String dataClassName);
+    /**
+     * @param includeOtherContainers If true, try getting sample set from project and shared containers.
+     */
+    ExpSampleSet getSampleSet(Container container, String name, boolean includeOtherContainers);
+    ExpSampleSet lookupActiveSampleSet(Container container);
+    void setActiveSampleSet(Container container, ExpSampleSet sampleSet);
 
-        ExpDataClass getDataClass(int rowId);
-        ExpDataClass getDataClass(String lsid);
+    ExpExperiment createHiddenRunGroup(Container container, User user, ExpRun... runs);
 
-        /**
-         * Get materials with the given names, optionally within the provided sample set.
-         * If the materials don't exist, throw an exception if <code>throwIfMissing</code> is true
-         * or create new materials if <code>createIfMissing</code> is true, otherwise missing samples
-         * will be ignored.
-         *
-         * @param container Samples will be found within this container, project, or shared container.
-         * @param user Samples will only be resolved within containers that the user has ReadPermission.
-         * @param sampleNames The set of samples to be resolved by name.
-         * @param sampleSet Optional sample set that the samples must live in.
-         * @param throwIfMissing Throw ExperimentException if any of the sampleNames do not exist.
-         * @param createIfMissing Create missing samples in the given <code>sampleSet</code> or the active sample set.
-         * @return Resolved samples
-         * @throws ExperimentException
-         */
-        @NotNull List<? extends ExpMaterial> getExpMaterials(Container container, @Nullable User user, Set<String> sampleNames, @Nullable ExpSampleSet sampleSet, boolean throwIfMissing, boolean createIfMissing) throws ExperimentException;
+    ExpExperiment createExpExperiment(Container container, String name);
+    ExpExperiment getExpExperiment(int rowid);
+    ExpExperiment getExpExperiment(String lsid);
+    List<? extends ExpExperiment> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches);
 
-        /* This version of createExpMaterial() takes name from lsid.getObjectId() */
-        ExpMaterial createExpMaterial(Container container, Lsid lsid);
-        ExpMaterial createExpMaterial(Container container, String lsid, String name);
-        ExpMaterial getExpMaterial(int rowid);
-        @NotNull List<? extends ExpMaterial> getExpMaterials(Collection<Integer> rowids);
-        ExpMaterial getExpMaterial(String lsid);
+    ExpProtocol getExpProtocol(int rowid);
+    ExpProtocol getExpProtocol(String lsid);
+    ExpProtocol getExpProtocol(Container container, String name);
+    ExpProtocol createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name);
+    ExpProtocol createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name, String lsid);
 
-        /**
-         * Looks in all the sample sets visible from the given container for a single match with the specified name 
-         */
-        @NotNull List<? extends ExpMaterial> getExpMaterialsByName(String name, Container container, User user);
+    /**
+     * @param type may be null. If non-null, only return roles that are used for that type of application (input, output, or intermediate)
+     */
+    Set<String> getDataInputRoles(Container container, ContainerFilter containerFilter, ExpProtocol.ApplicationType... type);
+    /**
+     * @param type may be null. If non-null, only return roles that are used for that type of application (input, output, or intermediate)
+     */
+    Set<String> getMaterialInputRoles(Container container, ExpProtocol.ApplicationType... type);
 
-        Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type);
+    Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpProtocolOutput start);
+    Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpProtocolOutput start);
 
-        /**
-         * Create a new SampleSet with the provided properties.
-         * If a 'Name' property exists in the list, it will be used as the 'id' property of the SampleSet.
-         * Either a 'Name' property must exist or at least one idCol index must be provided.
-         * A name expression may be provided instead of idCols and will be used to generate the sample names.
-         */
-        @NotNull
-        ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol, String nameExpression)
-            throws ExperimentException, SQLException;
+    /**
+     * Find all child and grandchild samples Samples that are direct descendants of <code>start</code> ExpData,
+     * ignoring any sample children derived from ExpData children.
+     */
+    Set<ExpMaterial> getRelatedChildSamples(ExpData start);
 
-        /** (MAB) todo need a builder interface, or at least  parameter bean */
-        @NotNull
-        ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                     String nameExpression, @Nullable TemplateInfo templateInfo)
-                throws ExperimentException, SQLException;
+    /**
+     * Find all parent ExpData that are parents of the <code>start</code> ExpMaterial,
+     * stopping at the first parent generation (no grandparents.)
+     */
+    Set<ExpData> getNearestParentDatas(ExpMaterial start);
 
-        @NotNull
-        ExpSampleSet createSampleSet();
-        @Nullable
-        ExpSampleSet getSampleSet(int rowId);
-        @Nullable
-        ExpSampleSet getSampleSet(String lsid);
+    ExpLineage getLineage(ExpProtocolOutput start, ExpLineageOptions options);
 
-        /**
-         * @param includeOtherContainers whether sample sets from the shared container or the container's project should be included
-         */
-        List<? extends ExpSampleSet> getSampleSets(Container container, User user, boolean includeOtherContainers);
-        ExpSampleSet getSampleSet(Container container, String name);
+    /**
+     * The following methods return TableInfo's suitable for using in queries.
+     * These TableInfo's initially have no columns, but have methods to
+     * add particular columns as needed by the client.
+     */
+    ExpRunTable createRunTable(String name, UserSchema schema);
+    /** Create a RunGroupMap junction table joining Runs and RunGroups. */
+    ExpRunGroupMapTable createRunGroupMapTable(String name, UserSchema schema);
+    ExpDataTable createDataTable(String name, UserSchema schema);
+    ExpDataInputTable createDataInputTable(String name, ExpSchema expSchema);
+    ExpSampleSetTable createSampleSetTable(String name, UserSchema schema);
+    ExpDataClassTable createDataClassTable(String name, UserSchema schema);
+    ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, ExpDataClass dataClass);
+    ExpProtocolTable createProtocolTable(String name, UserSchema schema);
+    ExpExperimentTable createExperimentTable(String name, UserSchema schema);
+    ExpMaterialTable createMaterialTable(String name, UserSchema schema);
+    ExpMaterialInputTable createMaterialInputTable(String name, ExpSchema expSchema);
+    ExpProtocolApplicationTable createProtocolApplicationTable(String name, UserSchema schema);
+    ExpQCFlagTable createQCFlagsTable(String name, UserSchema schema);
 
-        /**
-         * @param includeOtherContainers If true, try getting sample set from project and shared containers.
-         */
-        ExpSampleSet getSampleSet(Container container, String name, boolean includeOtherContainers);
-        ExpSampleSet lookupActiveSampleSet(Container container);
-        void setActiveSampleSet(Container container, ExpSampleSet sampleSet);
+    String generateLSID(Container container, Class<? extends ExpObject> clazz, String name);
+    String generateGuidLSID(Container container, Class<? extends ExpObject> clazz);
+    String generateLSID(@NotNull Container container, @NotNull DataType type, @NotNull String name);
+    String generateGuidLSID(Container container, DataType type);
 
-        ExpExperiment createHiddenRunGroup(Container container, User user, ExpRun... runs);
+    DataType getDataType(String namespacePrefix);
 
-        ExpExperiment createExpExperiment(Container container, String name);
-        ExpExperiment getExpExperiment(int rowid);
-        ExpExperiment getExpExperiment(String lsid);
-        List<? extends ExpExperiment> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches);
+    DbScope.Transaction ensureTransaction();
 
-        ExpProtocol getExpProtocol(int rowid);
-        ExpProtocol getExpProtocol(String lsid);
-        ExpProtocol getExpProtocol(Container container, String name);
-        ExpProtocol createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name);
-        ExpProtocol createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name, String lsid);
+    ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type);
 
-        /**
-         * @param type may be null. If non-null, only return roles that are used for that type of application (input, output, or intermediate)
-         */
-        Set<String> getDataInputRoles(Container container, ContainerFilter containerFilter, ExpProtocol.ApplicationType... type);
-        /**
-         * @param type may be null. If non-null, only return roles that are used for that type of application (input, output, or intermediate) 
-         */
-        Set<String> getMaterialInputRoles(Container container, ExpProtocol.ApplicationType... type);
+    DbSchema getSchema();
 
-        Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpProtocolOutput start);
-        Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpProtocolOutput start);
+    ExpProtocolApplication getExpProtocolApplication(String lsid);
+    List<? extends ExpProtocolApplication> getExpProtocolApplicationsForProtocolLSID(String protocolLSID);
 
-        /**
-         * Find all child and grandchild samples Samples that are direct descendants of <code>start</code> ExpData,
-         * ignoring any sample children derived from ExpData children.
-         */
-        Set<ExpMaterial> getRelatedChildSamples(ExpData start);
+    List<? extends ExpData> getExpData(Container c);
+    ExpData getExpDataByURL(String canonicalURL, @Nullable Container container);
+    ExpData getExpDataByURL(File f, @Nullable Container c);
+    List<? extends ExpData> getAllExpDataByURL(String canonicalURL);
 
-        /**
-         * Find all parent ExpData that are parents of the <code>start</code> ExpMaterial,
-         * stopping at the first parent generation (no grandparents.)
-         */
-        Set<ExpData> getNearestParentDatas(ExpMaterial start);
+    TableInfo getTinfoMaterial();
+    TableInfo getTinfoMaterialSource();
+    TableInfo getTinfoProtocol();
+    TableInfo getTinfoProtocolApplication();
+    TableInfo getTinfoExperiment();
+    TableInfo getTinfoExperimentRun();
+    TableInfo getTinfoRunList();
+    TableInfo getTinfoData();
+    TableInfo getTinfoDataClass();
+    TableInfo getTinfoDataInput();
+    TableInfo getTinfoPropertyDescriptor();
+    TableInfo getTinfoAssayQCFlag();
+    TableInfo getTinfoAlias();
+    TableInfo getTinfoDataAliasMap();
+    TableInfo getTinfoMaterialAliasMap();
+    ExpSampleSet ensureDefaultSampleSet();
+    ExpSampleSet ensureActiveSampleSet(Container container);
+    String getDefaultSampleSetLsid();
 
-        ExpLineage getLineage(ExpProtocolOutput start, ExpLineageOptions options);
+    List<? extends ExpRun> getRunsUsingMaterials(List<ExpMaterial> materials);
+    List<? extends ExpRun> getRunsUsingMaterials(int... materialIds);
+    List<? extends ExpRun> getRunsUsingDatas(List<ExpData> datas);
 
-        /**
-         * The following methods return TableInfo's suitable for using in queries.
-         * These TableInfo's initially have no columns, but have methods to
-         * add particular columns as needed by the client.
-         */
-        ExpRunTable createRunTable(String name, UserSchema schema);
-        /** Create a RunGroupMap junction table joining Runs and RunGroups. */
-        ExpRunGroupMapTable createRunGroupMapTable(String name, UserSchema schema);
-        ExpDataTable createDataTable(String name, UserSchema schema);
-        ExpDataInputTable createDataInputTable(String name, ExpSchema expSchema);
-        ExpSampleSetTable createSampleSetTable(String name, UserSchema schema);
-        ExpDataClassTable createDataClassTable(String name, UserSchema schema);
-        ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, ExpDataClass dataClass);
-        ExpProtocolTable createProtocolTable(String name, UserSchema schema);
-        ExpExperimentTable createExperimentTable(String name, UserSchema schema);
-        ExpMaterialTable createMaterialTable(String name, UserSchema schema);
-        ExpMaterialInputTable createMaterialInputTable(String name, ExpSchema expSchema);
-        ExpProtocolApplicationTable createProtocolApplicationTable(String name, UserSchema schema);
-        ExpQCFlagTable createQCFlagsTable(String name, UserSchema schema);
+    ExpRun getCreatingRun(File file, Container c);
+    List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, int... rowIds);
+    List<? extends ExpRun> getRunsUsingSampleSets(ExpSampleSet... sampleSets);
+    List<? extends ExpRun> getRunsUsingDataClasses(Collection<ExpDataClass> dataClasses);
 
-        String generateLSID(Container container, Class<? extends ExpObject> clazz, String name);
-        String generateGuidLSID(Container container, Class<? extends ExpObject> clazz);
-        String generateLSID(@NotNull Container container, @NotNull DataType type, @NotNull String name);
-        String generateGuidLSID(Container container, DataType type);
+    /**
+     * @return the subset of these runs which are supposed to be deleted when one of their inputs is deleted.
+     */
+    List<? extends ExpRun> runsDeletedWithInput(List<? extends ExpRun> runs);
 
-        DataType getDataType(String namespacePrefix);
+    void deleteAllExpObjInContainer(Container container, User user) throws ExperimentException;
 
-        DbScope.Transaction ensureTransaction();
+    Lsid getSampleSetLsid(String name, Container container);
 
-        ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type);
+    void deleteExperimentRunsByRowIds(Container container, final User user, int... selectedRunIds);
 
-        DbSchema getSchema();
+    void deleteExpExperimentByRowId(Container container, User user, int experimentId);
 
-        ExpProtocolApplication getExpProtocolApplication(String lsid);
-        List<? extends ExpProtocolApplication> getExpProtocolApplicationsForProtocolLSID(String protocolLSID);
+    void addExperimentListener(ExperimentListener listener);
 
-        List<? extends ExpData> getExpData(Container c);
-        ExpData getExpDataByURL(String canonicalURL, @Nullable Container container);
-        ExpData getExpDataByURL(File f, @Nullable Container c);
-        List<? extends ExpData> getAllExpDataByURL(String canonicalURL);
+    void clearCaches();
 
-        TableInfo getTinfoMaterial();
-        TableInfo getTinfoMaterialSource();
-        TableInfo getTinfoProtocol();
-        TableInfo getTinfoProtocolApplication();
-        TableInfo getTinfoExperiment();
-        TableInfo getTinfoExperimentRun();
-        TableInfo getTinfoRunList();
-        TableInfo getTinfoData();
-        TableInfo getTinfoDataClass();
-        TableInfo getTinfoDataInput();
-        TableInfo getTinfoPropertyDescriptor();
-        TableInfo getTinfoAssayQCFlag();
-        TableInfo getTinfoAlias();
-        TableInfo getTinfoDataAliasMap();
-        TableInfo getTinfoMaterialAliasMap();
-        ExpSampleSet ensureDefaultSampleSet();
-        ExpSampleSet ensureActiveSampleSet(Container container);
-        String getDefaultSampleSetLsid();
+    List<ProtocolApplicationParameter> getProtocolApplicationParameters(int rowId);
 
-        List<? extends ExpRun> getRunsUsingMaterials(List<ExpMaterial> materials);
-        List<? extends ExpRun> getRunsUsingMaterials(int... materialIds);
-        List<? extends ExpRun> getRunsUsingDatas(List<ExpData> datas);
+    void moveContainer(Container c, Container cOldParent, Container cNewParent) throws ExperimentException;
 
-        ExpRun getCreatingRun(File file, Container c);
-        List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, int... rowIds);
-        List<? extends ExpRun> getRunsUsingSampleSets(ExpSampleSet... sampleSets);
-        List<? extends ExpRun> getRunsUsingDataClasses(Collection<ExpDataClass> dataClasses);
+    LsidType findType(Lsid lsid);
 
-        /**
-         * @return the subset of these runs which are supposed to be deleted when one of their inputs is deleted.
-         */
-        List<? extends ExpRun> runsDeletedWithInput(List<? extends ExpRun> runs);
+    Identifiable getObject(Lsid lsid);
 
-        void deleteAllExpObjInContainer(Container container, User user) throws ExperimentException;
+    List<? extends ExpData> deleteExperimentRunForMove(int runId, User user);
 
-        Lsid getSampleSetLsid(String name, Container container);
+    /** Kicks off an asynchronous move - a PipelineJob is submitted to the queue to perform the move */
+    void moveRuns(ViewBackgroundInfo targetInfo, Container sourceContainer, List<ExpRun> runs) throws IOException;
 
-        void deleteExperimentRunsByRowIds(Container container, final User user, int... selectedRunIds);
+    /**
+     * Insert a protocol with optional steps and predecessor configurations.
+     * @param baseProtocol the base/top-level protocol to create. Expected to have an ApplicationType and a
+     *                     ProtocolParameter value for XarConstants.APPLICATION_LSID_TEMPLATE_URI.
+     * @param steps the protocol steps. Expected to have an ApplicationType and a ProtocolParameter value
+     *              for XarConstants.APPLICATION_LSID_TEMPLATE_URI.
+     * @param predecessors Map of Protocol LSIDs to a List of Protocol LSIDs where each entry represents a
+     *                     node in the Experiment Protocol graph. If this is not provided the baseProtocol and
+     *                     subsequent steps will be organized sequentially.
+     * @param user user with insert permissions
+     * @return the saved ExpProtocol
+     * @throws ExperimentException
+     */
+    ExpProtocol insertProtocol(@NotNull ExpProtocol baseProtocol, @Nullable List<ExpProtocol> steps, @Nullable Map<String, List<String>> predecessors, User user) throws ExperimentException;
 
-        void deleteExpExperimentByRowId(Container container, User user, int experimentId);
+    ExpProtocol insertSimpleProtocol(ExpProtocol baseProtocol, User user) throws ExperimentException;
 
-        void addExperimentListener(ExperimentListener listener);
+    /**
+     * The run must be a instance of a protocol created with insertSimpleProtocol().
+     * The run must have at least one input and one output.
+     * @param run ExperimentRun, populated with protocol, name, etc
+     * @param inputMaterials map from input role name to input material
+     * @param inputDatas map from input role name to input data
+     * @param outputMaterials map from output role name to output material
+     * @param outputDatas map from output role name to output data
+     * @param info context information, including the user
+     * @param log output log target
+     */
+    ExpRun saveSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException;
 
-        void clearCaches();
+    /**
+     * Adds an extra protocol application to a run created by saveSimpleExperimentRun() to track more complex
+     * workflows.
+     * @param expRun run to which the extra should be added
+     * @param name name of the protocol application
+     * @return a fully populated but not yet saved ExpProtocolApplication. It will have no inputs and outputs.
+     */
+    ExpProtocolApplication createSimpleRunExtraProtocolApplication(ExpRun expRun, String name);
+    ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException;
+    ExpRun derive(Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas,
+                  Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas,
+                  ViewBackgroundInfo info, Logger log)
+        throws ExperimentException;
+    void deriveSamplesBulk(List<SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException;
 
-        List<ProtocolApplicationParameter> getProtocolApplicationParameters(int rowId);
+    void registerExperimentMaterialListener(ExperimentMaterialListener listener);
+    void registerExperimentDataHandler(ExperimentDataHandler handler);
+    void registerExperimentRunTypeSource(ExperimentRunTypeSource source);
+    void registerDataType(DataType type);
+    void registerProtocolImplementation(ProtocolImplementation impl);
 
-        void moveContainer(Container c, Container cOldParent, Container cNewParent) throws ExperimentException;
+    ProtocolImplementation getProtocolImplementation(String name);
 
-        LsidType findType(Lsid lsid);
+    ExpProtocolApplication getExpProtocolApplication(int rowId);
+    List<? extends ExpProtocolApplication> getExpProtocolApplicationsForRun(int runId);
 
-        Identifiable getObject(Lsid lsid);
+    List<? extends ExpProtocol> getExpProtocols(Container... containers);
+    List<? extends ExpProtocol> getAllExpProtocols();
 
-        List<? extends ExpData> deleteExperimentRunForMove(int runId, User user);
+    /**
+     * Kicks off a pipeline job to asynchronously load the XAR from disk
+     * @return the job responsible for doing the work
+     */
+    PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description, PipeRoot root) throws IOException;
 
-        /** Kicks off an asynchronous move - a PipelineJob is submitted to the queue to perform the move */
-        void moveRuns(ViewBackgroundInfo targetInfo, Container sourceContainer, List<ExpRun> runs) throws IOException;
+    /**
+     * Loads the xar synchronously, in the context of the pipelineJob
+     * @return the runs loaded from the XAR
+     */
+    List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, boolean reloadExistingRuns) throws ExperimentException;
 
-        /**
-         * Insert a protocol with optional steps and predecessor configurations.
-         * @param baseProtocol the base/top-level protocol to create. Expected to have an ApplicationType and a
-         *                     ProtocolParameter value for XarConstants.APPLICATION_LSID_TEMPLATE_URI.
-         * @param steps the protocol steps. Expected to have an ApplicationType and a ProtocolParameter value
-         *              for XarConstants.APPLICATION_LSID_TEMPLATE_URI.
-         * @param predecessors Map of Protocol LSIDs to a List of Protocol LSIDs where each entry represents a
-         *                     node in the Experiment Protocol graph. If this is not provided the baseProtocol and
-         *                     subsequent steps will be organized sequentially.
-         * @param user user with insert permissions
-         * @return the saved ExpProtocol
-         * @throws ExperimentException
-         */
-        ExpProtocol insertProtocol(@NotNull ExpProtocol baseProtocol, @Nullable List<ExpProtocol> steps, @Nullable Map<String, List<String>> predecessors, User user) throws ExperimentException;
+    /**
+     * Create an experiment run to represent the work that the task's job has done so far.
+     * The job's recorded actions will be marked as completed after creating the ExpRun so subsequent
+     * runs created by the job won't duplicate the previous actions.
+     * @param job Pipeline job.
+     * @return the run created from the job's actions.
+     */
+    ExpRun importRun(PipelineJob job, XarSource source) throws SQLException, PipelineJobException, ValidationException;
 
-        ExpProtocol insertSimpleProtocol(ExpProtocol baseProtocol, User user) throws ExperimentException;
+    /**
+     * Provides access to an object that should be locked before inserting protocols. Locking when doing
+     * experiment run insertion has turned out to be problematic and deadlock prone. It's more pragmatic to have
+     * the occasional import fail with a SQLException due to duplicate insertions compared with deadlocking the
+     * whole server.
+     *
+     * @return lock object on which to synchronize
+     */
+    Lock getProtocolImportLock();
 
-        /**
-         * The run must be a instance of a protocol created with insertSimpleProtocol().
-         * The run must have at least one input and one output.
-         * @param run ExperimentRun, populated with protocol, name, etc
-         * @param inputMaterials map from input role name to input material
-         * @param inputDatas map from input role name to input data
-         * @param outputMaterials map from output role name to output material
-         * @param outputDatas map from output role name to output data
-         * @param info context information, including the user
-         * @param log output log target
-         */
-        ExpRun saveSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException;
+    HttpView createRunExportView(Container container, String defaultFilenamePrefix);
+    HttpView createFileExportView(Container container, String defaultFilenamePrefix);
 
-        /**
-         * Adds an extra protocol application to a run created by saveSimpleExperimentRun() to track more complex
-         * workflows.
-         * @param expRun run to which the extra should be added
-         * @param name name of the protocol application
-         * @return a fully populated but not yet saved ExpProtocolApplication. It will have no inputs and outputs.
-         */
-        ExpProtocolApplication createSimpleRunExtraProtocolApplication(ExpRun expRun, String name);
-        ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException;
-        ExpRun derive(Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas,
-                      Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas,
-                      ViewBackgroundInfo info, Logger log)
-            throws ExperimentException;
-        void deriveSamplesBulk(List<SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException;
+    void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String message);
 
-        void registerExperimentMaterialListener(ExperimentMaterialListener listener);
-        void registerExperimentDataHandler(ExperimentDataHandler handler);
-        void registerExperimentRunTypeSource(ExperimentRunTypeSource source);
-        void registerDataType(DataType type);
-        void registerProtocolImplementation(ProtocolImplementation impl);
+    List<? extends ExpExperiment> getMatchingBatches(String name, Container container, ExpProtocol protocol);
 
-        ProtocolImplementation getProtocolImplementation(String name);
+    List<? extends ExpProtocol> getExpProtocolsUsedByRuns(Container c, ContainerFilter containerFilter);
 
-        ExpProtocolApplication getExpProtocolApplication(int rowId);
-        List<? extends ExpProtocolApplication> getExpProtocolApplicationsForRun(int runId);
-
-        List<? extends ExpProtocol> getExpProtocols(Container... containers);
-        List<? extends ExpProtocol> getAllExpProtocols();
-
-        /**
-         * Kicks off a pipeline job to asynchronously load the XAR from disk
-         * @return the job responsible for doing the work
-         */
-        PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description, PipeRoot root) throws IOException;
-
-        /**
-         * Loads the xar synchronously, in the context of the pipelineJob
-         * @return the runs loaded from the XAR
-         */
-        List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, boolean reloadExistingRuns) throws ExperimentException;
-
-        /**
-         * Create an experiment run to represent the work that the task's job has done so far.
-         * The job's recorded actions will be marked as completed after creating the ExpRun so subsequent
-         * runs created by the job won't duplicate the previous actions.
-         * @param job Pipeline job.
-         * @return the run created from the job's actions.
-         */
-        ExpRun importRun(PipelineJob job, XarSource source) throws SQLException, PipelineJobException, ValidationException;
-
-        /**
-         * Provides access to an object that should be locked before inserting protocols. Locking when doing
-         * experiment run insertion has turned out to be problematic and deadlock prone. It's more pragmatic to have
-         * the occasional import fail with a SQLException due to duplicate insertions compared with deadlocking the
-         * whole server.
-         *
-         * @return lock object on which to synchronize
-         */
-        Lock getProtocolImportLock();
-
-        HttpView createRunExportView(Container container, String defaultFilenamePrefix);
-        HttpView createFileExportView(Container container, String defaultFilenamePrefix);
-
-        void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String message);
-
-        List<? extends ExpExperiment> getMatchingBatches(String name, Container container, ExpProtocol protocol);
-
-        List<? extends ExpProtocol> getExpProtocolsUsedByRuns(Container c, ContainerFilter containerFilter);
-
-        @Nullable
-        ExperimentRunType getExperimentRunType(@NotNull String description, @Nullable Container container);
-    }
+    @Nullable
+    ExperimentRunType getExperimentRunType(@NotNull String description, @Nullable Container container);
 }

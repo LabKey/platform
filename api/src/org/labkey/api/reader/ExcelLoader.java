@@ -603,7 +603,7 @@ public class ExcelLoader extends DataLoader
             assertTrue(isExcel(new File(_projectRoot, "sampledata/Nab/seaman/MS010407")));
 
             // NOTE: DataLoaderService only available when running junit tests with running server
-            DataLoaderService.I svc = DataLoaderService.get();
+            DataLoaderService svc = DataLoaderService.get();
             if (svc != null)
             {
                 DataLoaderFactory factory = svc.findFactory(new File(_projectRoot, "sampledata/Nab/seaman/MS010407"), null);

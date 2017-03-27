@@ -68,7 +68,7 @@ import java.util.function.Supplier;
 // Abstract class for loading columnar data from file sources: TSVs, Excel files, etc.
 public abstract class DataLoader implements Iterable<Map<String, Object>>, Loader, DataIteratorBuilder, Closeable
 {
-    public static DataLoaderService.I get()
+    public static DataLoaderService get()
     {
         return DataLoaderService.get();
     }

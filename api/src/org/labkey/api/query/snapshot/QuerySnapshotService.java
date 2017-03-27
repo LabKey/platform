@@ -26,9 +26,9 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /*
  * User: Karl Lum
@@ -38,40 +38,41 @@ import java.util.Map;
 
 public class QuerySnapshotService
 {
-    static private Map<String, I> _providers = new HashMap<>();
     public static final String TYPE = "Query Snapshot";
 
-    static public synchronized I get(String schema)
+    private static final Map<String, Provider> _providers = new ConcurrentHashMap<>(5); // Small capacity; currently only one provider
+
+    static public Provider get(String schema)
     {
         // todo: add the default provider
         return _providers.get(schema);
     }
 
-    static public synchronized void registerProvider(String schema, I provider)
+    static public void registerProvider(String schema, Provider provider)
     {
-        if (_providers.containsKey(schema))
-            throw new IllegalStateException("A snapshot provider for schema :" + schema + " has already been registered");
+        Provider previous = _providers.putIfAbsent(schema, provider);
 
-        _providers.put(schema, provider);
+        if (null != previous)
+            throw new IllegalStateException("A snapshot provider for schema :" + schema + " has already been registered");
     }
 
-    public interface I
+    public interface Provider
     {
-        public String getName();
-        public String getDescription();
+        String getName();
+        String getDescription();
 
-        public ActionURL getCreateWizardURL(QuerySettings settings, ViewContext context);
+        ActionURL getCreateWizardURL(QuerySettings settings, ViewContext context);
 
-        public ActionURL getEditSnapshotURL(QuerySettings settings, ViewContext context);
+        ActionURL getEditSnapshotURL(QuerySettings settings, ViewContext context);
 
-        public void createSnapshot(ViewContext context, QuerySnapshotDefinition qsDef, BindException errors) throws Exception;
-        public ActionURL createSnapshot(QuerySnapshotForm form, BindException errors) throws Exception;
+        void createSnapshot(ViewContext context, QuerySnapshotDefinition qsDef, BindException errors) throws Exception;
+        ActionURL createSnapshot(QuerySnapshotForm form, BindException errors) throws Exception;
 
         /**
          * Regenerates the snapshot data, may be invoked either as the result of a manual or
          * automatic update. The implementation is responsible for logging its own audit event.
          */
-        public ActionURL updateSnapshot(QuerySnapshotForm form, BindException errors) throws Exception;
+        ActionURL updateSnapshot(QuerySnapshotForm form, BindException errors) throws Exception;
 
         /**
          * Regenerates the snapshot data, may be invoked either as the result of a manual or
@@ -107,18 +108,19 @@ public class QuerySnapshotService
         /**
          * Returns the audit history view for a snapshot.
          */
-        public HttpView createAuditView(QuerySnapshotForm form) throws Exception;
+        HttpView createAuditView(QuerySnapshotForm form) throws Exception;
 
         /**
          * Returns the list of valid display columns for a specified QueryForm. The list of columns
          * is used during the creation and editing of a snapshot, and in any UI where the list of columns
          * pertaining to a snapshot can be modified.  
          */
-        public List<DisplayColumn> getDisplayColumns(QueryForm queryForm, BindException errors) throws Exception;
+        List<DisplayColumn> getDisplayColumns(QueryForm queryForm, BindException errors) throws Exception;
 
-        public TableInfo getTableInfoQuerySnapshotDef();
+        TableInfo getTableInfoQuerySnapshotDef();
     }
 
-    public interface AutoUpdateable {
+    public interface AutoUpdateable
+    {
     }
 }

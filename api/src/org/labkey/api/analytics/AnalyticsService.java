@@ -16,39 +16,35 @@
 
 package org.labkey.api.analytics;
 
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
 /**
  * Adds analytics tracking code to HTML pages.
  */
-public class AnalyticsService
+public interface AnalyticsService
 {
-    static private Interface instance;
-
-    static public Interface get()
+    static AnalyticsService get()
     {
-        return instance;
+        return ServiceRegistry.get(AnalyticsService.class);
     }
 
-    static public void set(Interface impl)
+    static void set(AnalyticsService impl)
     {
-        instance = impl;
+        ServiceRegistry.get().registerService(AnalyticsService.class, impl);
     }
 
-    static public String getTrackingScript()
+    static String getTrackingScript()
     {
-        Interface i = get();
-        if (i == null)
+        AnalyticsService svc = get();
+        if (svc == null)
         {
             return "";
         }
-        return i.getTrackingScript(HttpView.getRootContext());
+        return svc.getTrackingScript(HttpView.getRootContext());
     }
 
-    public interface Interface
-    {
-        String getTrackingScript(ViewContext viewContext);
-//        String getSanitizedUrl(ViewContext viewContext);
-    }
+    String getTrackingScript(ViewContext viewContext);
+//    String getSanitizedUrl(ViewContext viewContext);
 }
