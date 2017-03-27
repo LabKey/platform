@@ -236,7 +236,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     @Override
     public ActionURL getStartURL(Container c, User user)
     {
-        List<Portal.PortalPage> tabs = Portal.getTabPages(c);
+        List<Portal.PortalPage> pages = Portal.getTabPages(c);
 
 
         // if startURL for this folderType specified in the folderType.xml use that
@@ -248,12 +248,19 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         // otherwise get the startURL from the tab configs
         else
         {
-            for (Portal.PortalPage tab : tabs)
+            for (Portal.PortalPage page : pages)
             {
-                FolderTab folderTab = findTab(tab.getPageId());
-                if (!tab.isHidden() && null != folderTab && folderTab.isVisible(c, user) && hasPermission(folderTab, c, user))
+                FolderTab folderTab = findTab(page.getPageId());
+                if (!page.isHidden())
                 {
-                    return folderTab.getURL(c, user);
+                    if (null != folderTab && folderTab.isVisible(c, user) && hasPermission(folderTab, c, user))
+                    {
+                        return folderTab.getURL(c, user);
+                    }
+                    else
+                    {   // Issue 29604 -- let custom tab be the start tab
+                        return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c, page.getPageId());
+                    }
                 }
             }
             return super.getStartURL(c, user);
