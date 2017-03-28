@@ -969,6 +969,8 @@ api/src/org/labkey/api/query/ReportDataRegion.java -text
 api/src/org/labkey/api/query/RowIdForeignKey.java -text
 api/src/org/labkey/api/query/RowIdQueryUpdateService.java -text
 api/src/org/labkey/api/query/RuntimeValidationException.java -text
+api/src/org/labkey/api/query/SasExportScriptFactory.java -text
+api/src/org/labkey/api/query/SasExportScriptModel.java -text
 api/src/org/labkey/api/query/SchemaKey.java -text
 api/src/org/labkey/api/query/SchemaTreeNode.java -text
 api/src/org/labkey/api/query/SchemaTreeVisitor.java -text

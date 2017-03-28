@@ -53,7 +53,7 @@ public class MultiValuedRenderContext extends RenderContextDecorator
         for (FieldKey fieldKey : requiredFieldKeys)
         {
             Object value = ctx.get(fieldKey);
-            if (value == null)
+            if (value == null || "".equals(value))
             {
                 nullFieldKeys.add(fieldKey);
             }

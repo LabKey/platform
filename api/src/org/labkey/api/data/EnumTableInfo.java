@@ -19,8 +19,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.Pair;
 
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Exposes a Java enum as a virtual query table. Useful for creating lookups when it's really a hard-coded list
@@ -162,5 +167,24 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
     public boolean isPublic()
     {
         return true;
+    }
+
+    @Override
+    public @NotNull Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices()
+    {
+        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = new HashMap<>();
+        indices.put("pk_rowId", Pair.of(IndexType.Primary, Arrays.asList(getColumn("RowId"))));
+        indices.putAll(getUniqueIndices());
+        return indices;
+    }
+
+    @NotNull
+    @Override
+    public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
+    {
+        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = new HashMap<>();
+        indices.put("uq_value", Pair.of(IndexType.Unique, Arrays.asList(getColumn("Value"))));
+        indices.put("uq_oridinal", Pair.of(IndexType.Unique, Arrays.asList(getColumn("Ordinal"))));
+        return indices;
     }
 }
