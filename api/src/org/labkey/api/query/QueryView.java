@@ -515,8 +515,8 @@ public class QueryView extends WebPartView<Object>
         // in any order and the analyticsProviders don't make much sense in the exported xls or tsv files.
         //
         // The correct long term solution is to (a) create proper QueryView subclasses using UserSchema.createView()
-        // and (b) use POST instead of GET for the export actions (or others) to match the QueryWebPart.js config behavior.
-        // Using POST is necessary since the QueryWebPart.js config expresses other options (column lists, grid rendering options, etc) that can't be expressed on URLs.
+        // and (b) use POST instead of GET for the export actions (or others) to match the LABKEY.QueryWebPart config behavior.
+        // Using POST is necessary since the LABKEY.QueryWebPart config expresses other options (column lists, grid rendering options, etc) that can't be expressed on URLs.
         //
         // Issue 17313: Exporting from a grid should respect "Apply View Filter" state
         if (_customView != null)

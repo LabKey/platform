@@ -125,7 +125,7 @@ LABKEY.Query = new function(impl, $) {
                 delete o.filterArray;
                 delete o.sort;
 
-                // Turn the filters array into a filters map similar to QueryWebPart.js
+                // Turn the filters array into a filters map similar to LABKEY.QueryWebPart
                 o.filters = LABKEY.Filter.appendFilterParams(null, querySettings.filters || querySettings.filterArray);
 
                 if (querySettings.sort)
