@@ -985,7 +985,7 @@ var CUSUMPlot = LABKEY.vis.TrendingLinePlot({
     labels: {
         main: {value: 'Example Mean CUSUM Plot'},
         y: {value: 'Value'},
-        x: {value: 'Sampe Date'}
+        x: {value: 'Sample Date'}
     },
     legendData: [
         {"text":"CUSUM Group","separator":true},

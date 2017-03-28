@@ -230,9 +230,9 @@ LABKEY.vis.Geom.Bin.prototype.render = function(renderer, grid, scales, data, la
  * @param {Object} config An object with the following properties:
  * @param {String} [config.color] (Optional) String used to determine the color of all paths. Defaults to black (#000000).
  * @param {Number} [config.size] (Optional) Number used to determine the size of all paths.  Defaults to 3.
- * @param {Number} [config.opacity] (Optional) Number between 0 and 1, used to determine the opacity of all paths. Useful
+ * @param {Number} [config.opacity] (Optional) Number between 0 and 1, used to determine the opacity of all paths.
+ *                                   Useful if there are many overlapping paths. Defaults to 1.
  * @param {boolean} [config.dashed] (Optional) True for dashed path, false for solid path. Defaults to false.
- *      if there are many overlapping paths. Defaults to 1.
  */
 LABKEY.vis.Geom.Path = function(config){
     this.type = "Path";

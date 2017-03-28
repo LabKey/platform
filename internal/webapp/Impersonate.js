@@ -56,7 +56,11 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
             forceSelection: true,
             tpl: Ext4.create('Ext.XTemplate',
                 '<tpl for=".">',
-                    '<div class="x4-boundlist-item">{displayName:htmlEncode}</div>',
+                    '<tpl if="active">',
+                        '<div class="x4-boundlist-item">{displayName:htmlEncode}</div>',
+                    '<tpl else>',
+                        '<div class="x4-boundlist-item" style="color: #999999;">{displayName:htmlEncode} (inactive)</div>',
+                    '</tpl>',
                 '</tpl>')
         });
 
@@ -76,7 +80,8 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
                 extend: 'Ext.data.Model',
                 fields: [
                     {name: 'userId', type: 'integer'},
-                    {name: 'displayName', type: 'string'}
+                    {name: 'displayName', type: 'string'},
+                    {name: 'active', type: 'boolean'}
                 ]
             });
         }
