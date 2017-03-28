@@ -87,7 +87,7 @@ public class PurgeParticipantsTask extends TimerTask
                         if (ContainerManager.exists(container))
                         {
                             // A dataset or specimen table might have been deleted out from under us, so retry
-                            _logger.warn(tnfe.getFullName() + " no longer exists. Requeuing another participant purge attempt.");
+                            _logger.info(tnfe.getFullName() + " no longer exists. Requeuing another participant purge attempt.");
                             retry = true;
                         }
                     }
@@ -97,11 +97,14 @@ public class PurgeParticipantsTask extends TimerTask
                         {
                             if (SqlDialect.isObjectNotFoundException(e))
                             {
-                                _logger.warn("Object not found exception (" + e.getMessage() + "). Requeuing another participant purge attempt.");
+                                _logger.info("Object not found exception (" + e.getMessage() + "). Requeuing another participant purge attempt.");
                                 retry = true;
                             }
-                            // Unexpected problem... log it and continue on
-                            _logger.error("Failed to purge participants for " + container.getPath(), e);
+                            else
+                            {
+                                // Unexpected problem... log it and continue on
+                                _logger.error("Failed to purge participants for " + container.getPath(), e);
+                            }
                         }
                     }
 

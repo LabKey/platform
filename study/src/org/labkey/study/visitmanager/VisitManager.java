@@ -17,6 +17,7 @@
 package org.labkey.study.visitmanager;
 
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -701,7 +702,10 @@ public abstract class VisitManager
         del.append("    (SELECT ParticipantId FROM (").append(ptids).append(") _existing_)\n");
         del.append(")");
 
-        SqlExecutor executor = new SqlExecutor(schema).setExceptionFramework(ExceptionFramework.JDBC);
+        // Our tests often see race conditions (e.g., purge task firing in parallel with container delete) which result in
+        // SQLExceptions. Shut off automatic logging of exceptions in the data access layer; caller will catch the exceptions
+        // and retry if appropriate.
+        SqlExecutor executor = new SqlExecutor(schema).setExceptionFramework(ExceptionFramework.JDBC).setLogLevel(Level.OFF);
         return executor.execute(del);
     }
 
