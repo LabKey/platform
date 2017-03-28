@@ -22,14 +22,12 @@ import org.labkey.api.data.bigiron.ClrAssemblyManager;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.bigiron.mssql.GroupConcatInstallationManager;
 import org.labkey.bigiron.mssql.MicrosoftSqlServerDialectFactory;
 import org.labkey.bigiron.mysql.MySqlDialectFactory;
 import org.labkey.bigiron.oracle.OracleDialectFactory;
 import org.labkey.bigiron.sas.SasDialectFactory;
-import org.labkey.bigiron.sas.SasExportScriptFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -59,7 +57,6 @@ public class BigIronModule extends CodeOnlyModule
 
     protected void init()
     {
-        QueryView.register(new SasExportScriptFactory());
         addController("bigiron", BigIronController.class);
     }
 

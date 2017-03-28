@@ -19,6 +19,7 @@ package org.labkey.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.query.CustomView;
+import org.labkey.api.query.SasExportScriptFactory;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.audit.AuditLogService;
@@ -202,6 +203,7 @@ public class QueryModule extends DefaultModule
         QueryView.register(new JavaExportScriptFactory());
         QueryView.register(new URLExportScriptFactory());
         QueryView.register(new PythonExportScriptFactory());
+        QueryView.register(new SasExportScriptFactory());
 
         DataViewService.get().registerProvider(QueryDataViewProvider.TYPE, new QueryDataViewProvider());
         DataViewService.get().registerProvider(InheritedQueryDataViewProvider.TYPE, new InheritedQueryDataViewProvider());

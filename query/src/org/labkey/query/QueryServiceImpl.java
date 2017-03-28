@@ -659,7 +659,6 @@ public class QueryServiceImpl implements QueryService
      */
     private Collection<CustomView> getCustomViewsForContainer(@NotNull User user, Container container, @Nullable User owner, boolean inheritable, boolean sharedOnly, boolean alwaysUseTitlesForLoadingCustomViews)
     {
-        Map<String, CustomView> views = new CaseInsensitiveHashMap<>();
         if (AppProps.getInstance().isExperimentalFeatureEnabled(CustomView.EXPERIMENTAL_DISABLE_TITLE_LOADED_CUSTOM_VIEWS))
             alwaysUseTitlesForLoadingCustomViews = false;
 
@@ -701,6 +700,8 @@ public class QueryServiceImpl implements QueryService
             }
         }
 
+        Map<Path, CustomView> views = new HashMap<>();
+
         for (String schemaName : moduleViewSchemas)
         {
             UserSchema defaultSchema = DefaultSchema.get(user, container).getUserSchema(schemaName);
@@ -720,10 +721,12 @@ public class QueryServiceImpl implements QueryService
                         if (qd == null)
                             qd = schema.getQueryDefForTable(name);
 
-                        qd.getSchema().getModuleCustomViews(container, qd, alwaysUseTitlesForLoadingCustomViews)
-                                .stream()
-                                .filter(view -> !views.containsKey(view.getName()))
-                                .forEach(view -> views.put(view.getName(), view));
+                        for (CustomView view : qd.getSchema().getModuleCustomViews(container, qd, alwaysUseTitlesForLoadingCustomViews))
+                        {
+                            Path key = new Path(schema.getPath().toString(), view.getQueryDefinition().getName(), StringUtils.defaultString(view.getName(),""));
+                            if (!views.containsKey(key))
+                                views.put(key, view);
+                        }
                     }
                 }
             }
@@ -732,17 +735,18 @@ public class QueryServiceImpl implements QueryService
         // custom views in the database get highest precedence, so let them overwrite the module-defined views in the map
         for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, null, null, owner, inheritable, sharedOnly))
         {
+            Path key = new Path(cstmView.getSchema(), cstmView.getQueryName(), StringUtils.defaultString(cstmView.getName(),""));
             // The database custom views are in priority order so check if the view has already been added
-            if (!views.containsKey(cstmView.getName()))
+            if (!views.containsKey(key))
             {
-                views.put(cstmView.getName(), new CustomViewImpl(getQueryDefinition(user, container, cstmView), cstmView));
+                views.put(key, new CustomViewImpl(getQueryDefinition(user, container, cstmView), cstmView));
             }
-            else if (views.get(cstmView.getName()) instanceof ModuleCustomView && views.get(cstmView.getName()).isOverridable())
+            else if (views.get(key) instanceof ModuleCustomView && views.get(key).isOverridable())
             {
                 //if the module-based view has set overridable=true, we allow the DB view to override it
                 CustomViewImpl view = new CustomViewImpl(getQueryDefinition(user, container, cstmView), cstmView);
                 view.setOverridesModuleView(true);
-                views.put(cstmView.getName(), view);
+                views.put(key, view);
             }
         }
 
