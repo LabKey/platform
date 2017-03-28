@@ -148,10 +148,10 @@ Ext4.define('Study.window.ParticipantGroup', {
             store: demoStore,
             valueField: 'Label',
             displayField: 'Label',
-            fieldLabel: 'Select ' + Ext4.htmlEncode(this.panelConfig.subject.nounSingular) + ' from',
+            fieldLabel: 'Select ' + Ext4.htmlEncode(this.panelConfig.subject.nounPlural) + ' from',
+            labelAlign: 'top',
+            padding: '15px 0 0 0',
             grow: true,
-            labelStyle: 'width: 150px;',
-            labelSeparator : '',
             hidden : this.hideDataRegion,
             listeners: {
                 select: this.onDemographicSelect,
@@ -488,6 +488,7 @@ Ext4.define('Study.window.ParticipantGroup', {
                 border : false,
                 showRecordSelectors : true,
                 showUpdateColumn : false,
+                disableAnalytics: true,
                 buttonBar : {
                     position: (this.canEdit ? 'top' : 'none'),
                     includeStandardButtons : false,

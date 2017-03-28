@@ -2622,6 +2622,7 @@ public class UserController extends SpringActionController
                 Map<String, Object> map = new HashMap<>();
                 map.put("userId", user.getUserId());
                 map.put("displayName", user.getEmail() + " (" + user.getDisplayName(currentUser) + ")");
+                map.put("active", user.isActive());
                 responseUsers.add(map);
             }
 
