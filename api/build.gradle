@@ -168,20 +168,3 @@ project.task("copyTagLibsBase",
         }
 )
 project.tasks.copyTagLibs.dependsOn(project.tasks.copyTagLibsBase)
-
-// TODO remove this after publishing 9.1+ of Gradle plugins
-//// We need to copy resource files into the staging webapp directory so they can be copied to
-//// the jsptmp directory for use in compiling JSPs
-project.task("stageApiWebapp",
-        type: Copy,
-        {CopySpec copy ->
-            copy.from project.sourceSets.webapp.output
-            copy.into project.staging.webappDir
-        }
-)
-project.tasks.copyTagLibs.dependsOn(project.tasks.stageApiWebapp)
-
-if (LabKeyExtension.isDevMode(project) && !Boolean.valueOf((String) project.buildFromSource))
-{
-  project.project(":server").tasks.deployApp.dependsOn project.tasks.stageApiWebapp
-}
