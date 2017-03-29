@@ -122,8 +122,6 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _dirty = queryDef.getQueryDefId() == 0;
         if (_dirty)
             _changes = new ArrayList<>();
-
-        assert MemTracker.getInstance().put(this);
     }
 
     public QueryDefinitionImpl(User user, Container container, UserSchema schema, String name)
@@ -142,8 +140,6 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _queryDef.setContainer(container.getId());
         _dirty = true;
         _changes = new ArrayList<>();
-
-        assert MemTracker.getInstance().put(this);
     }
 
     public boolean canInherit()
