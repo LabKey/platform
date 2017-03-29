@@ -40,7 +40,16 @@
         </attribute>
     </complexType>
 
+    <complexType name="SourceColumnsType">
+        <sequence minOccurs="1" maxOccurs="unbounded">
+            <element name="column" type="string"/>
+        </sequence>
+    </complexType>
+
     <complexType name="SourceObjectType">
+        <all>
+            <element name="sourceColumns" type="etl:SourceColumnsType" minOccurs="0" maxOccurs="1"/>
+        </all>
         <attribute name="schemaName" type="string" use="required"/>
         <attribute name="queryName" type="string" use="required"/>
         <attribute name="timestampColumnName" type="string" use="optional">

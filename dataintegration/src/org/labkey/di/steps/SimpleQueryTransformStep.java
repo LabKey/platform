@@ -215,6 +215,11 @@ public class SimpleQueryTransformStep extends TransformTask
                 ((QueryDataIteratorBuilder)source).setContainerFilter(meta.getSourceContainerFilter());
             }
 
+            if (null != meta.getSourceColumns())
+            {
+                ((QueryDataIteratorBuilder)source).setColumns(meta.getSourceColumns());
+            }
+
             if (_useAsynchrousQuery)
                 source = new AsyncDataIterator.Builder(source);
             return source;

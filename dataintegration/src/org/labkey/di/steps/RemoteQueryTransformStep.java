@@ -17,6 +17,7 @@ package org.labkey.di.steps;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
@@ -43,6 +44,7 @@ import org.labkey.remoteapi.query.SelectRowsCommand;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -105,7 +107,7 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
 
         try
         {
-            return selectFromSource(meta.getSourceSchema().toString(), meta.getSourceQuery(), url, user, password, container);
+            return selectFromSource(meta.getSourceSchema().toString(), meta.getSourceQuery(), url, user, password, container, meta.getSourceColumns());
         }
         catch (IOException | CommandException exception)
         {
@@ -115,24 +117,28 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
     }
 
     // Variant that takes valid, non-null credentials
-    private static DataIteratorBuilder selectFromSource(String schemaName, String queryName, String url, @NotNull String user, @NotNull String password, String container)
+    private static DataIteratorBuilder selectFromSource(String schemaName, String queryName, String url, @NotNull String user, @NotNull String password, String container, @Nullable List<String> columns)
             throws IOException, CommandException
     {
-        return selectFromSource(new Connection(url, user, password), schemaName, queryName, container);
+        return selectFromSource(new Connection(url, user, password), schemaName, queryName, container, columns);
     }
 
     // Version that connects as guest; for testing purposes only
     private static DataIteratorBuilder selectFromSource(String schemaName, String queryName, String url, String container)
             throws IOException, CommandException
     {
-        return selectFromSource(new Connection(url, new GuestCredentialsProvider()), schemaName, queryName, container);
+        return selectFromSource(new Connection(url, new GuestCredentialsProvider()), schemaName, queryName, container, null);
     }
 
-    private static DataIteratorBuilder selectFromSource(Connection cn, String schemaName, String queryName, String container)
+    private static DataIteratorBuilder selectFromSource(Connection cn, String schemaName, String queryName, String container, @Nullable List<String> columns)
             throws IOException, CommandException
     {
         // connect to the remote server and retrieve an input stream
         final SelectRowsCommand cmd = new SelectRowsCommand(schemaName, queryName);
+        if (columns != null)
+        {
+            cmd.setColumns(columns);
+        }
 
         return SelectRowsStreamHack.go(cn, container, cmd);
     }

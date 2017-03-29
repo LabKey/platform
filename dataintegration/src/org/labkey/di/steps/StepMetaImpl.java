@@ -36,6 +36,7 @@ import org.labkey.etl.xml.TargetObjectType;
 import org.labkey.etl.xml.TransformType;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -105,6 +106,11 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
 
             if (null != source.getContainerFilter())
                 setSourceContainerFilter(source.getContainerFilter().toString());
+
+            if (source.isSetSourceColumns())
+            {
+                setSourceColumns(Arrays.asList(source.getSourceColumns().getColumnArray()));
+            }
 
             if (null != source.getTimestampColumnName())
                 setSourceTimestampColumnName(source.getTimestampColumnName());
