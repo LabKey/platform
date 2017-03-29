@@ -7840,8 +7840,8 @@ internal/webapp/internal/font-awesome-4.4.0/scss/_stacked.scss -text
 internal/webapp/internal/font-awesome-4.4.0/scss/_variables.scss -text
 internal/webapp/internal/font-awesome-4.4.0/scss/font-awesome.scss -text
 internal/webapp/internal/jQuery.lib.xml -text
-internal/webapp/internal/jQuery/jquery-1.11.2.js -text
-internal/webapp/internal/jQuery/jquery-1.11.2.min.js -text
+internal/webapp/internal/jQuery/jquery-1.12.4.js -text
+internal/webapp/internal/jQuery/jquery-1.12.4.min.js -text
 internal/webapp/internal/jQuery/jquery-dateFormat.js -text
 internal/webapp/internal/jQuery/jquery-dateFormat.min.js -text
 internal/webapp/internal/jQuery/jquery.menu-aim.js -text

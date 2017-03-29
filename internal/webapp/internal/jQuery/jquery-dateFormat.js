@@ -51,8 +51,6 @@ var DateFormat = {};
             // 10:54:50
             // => hour: 10, minute: 54, second: 50, millis: ''
             var time = value,
-                    values,
-                    subValues,
                     hour,
                     minute,
                     second,
@@ -64,7 +62,7 @@ var DateFormat = {};
                 delimited = time.split('.');
                 // split time and milliseconds
                 time   = delimited[0];
-                millis = delimited[1];
+                millis = delimited[delimited.length - 1];
             }
 
             timeArray = time.split(':');
@@ -106,6 +104,9 @@ var DateFormat = {};
         return {
 
             parseDate: function(value) {
+                var values,
+                        subValues;
+
                 var parsedDate = {
                     date:       null,
                     year:       null,
@@ -160,9 +161,9 @@ var DateFormat = {};
                             parsedDate.time       = parseTime(values[1]);
                             break;
                         case 7:
-                        /* Tue Mar 01 2011 12:01:42 GMT-0800 (PST) */
+                            /* Tue Mar 01 2011 12:01:42 GMT-0800 (PST) */
                         case 9:
-                        /* added by Larry, for Fri Apr 08 2011 00:00:00 GMT+0800 (China Standard Time) */
+                            /* added by Larry, for Fri Apr 08 2011 00:00:00 GMT+0800 (China Standard Time) */
                         case 10:
                             /* added by Larry, for Fri Apr 08 2011 00:00:00 GMT+0200 (W. Europe Daylight Time) */
                             parsedDate.year       = values[3];
@@ -182,8 +183,14 @@ var DateFormat = {};
                             return null;
                     }
                 }
-                parsedDate.date       = new Date(parsedDate.year, parsedDate.month - 1, parsedDate.dayOfMonth);
-                parsedDate.dayOfWeek  = String(parsedDate.date.getDay());
+
+                if(parsedDate.time) {
+                    parsedDate.date = new Date(parsedDate.year, parsedDate.month - 1, parsedDate.dayOfMonth, parsedDate.time.hour, parsedDate.time.minute, parsedDate.time.second, parsedDate.time.millis);
+                } else {
+                    parsedDate.date = new Date(parsedDate.year, parsedDate.month - 1, parsedDate.dayOfMonth);
+                }
+
+                parsedDate.dayOfWeek = String(parsedDate.date.getDay());
 
                 return parsedDate;
             },
@@ -196,12 +203,12 @@ var DateFormat = {};
                         return value;
                     }
 
-                    var date       = parsedDate.date,
-                            year       = parsedDate.year,
+                    var year       = parsedDate.year,
                             month      = parsedDate.month,
                             dayOfMonth = parsedDate.dayOfMonth,
                             dayOfWeek  = parsedDate.dayOfWeek,
                             time       = parsedDate.time;
+                    var hour;
 
                     var pattern      = '',
                             retValue     = '',
@@ -316,7 +323,7 @@ var DateFormat = {};
                             case 'hh':
                                 /* time.hour is '00' as string == is used instead of === */
                                 hour = (parseInt(time.hour, 10) === 0 ? 12 : time.hour < 13 ? time.hour
-                                        : time.hour - 12);
+                                                : time.hour - 12);
                                 retValue += padding(hour, 2);
                                 pattern = '';
                                 break;
@@ -325,7 +332,7 @@ var DateFormat = {};
                                     break;
                                 }
                                 hour = (parseInt(time.hour, 10) === 0 ? 12 : time.hour < 13 ? time.hour
-                                        : time.hour - 12);
+                                                : time.hour - 12);
                                 retValue += parseInt(hour, 10);
                                 // Fixing issue https://github.com/phstc/jquery-dateFormat/issues/21
                                 // retValue = parseInt(retValue, 10);
@@ -363,7 +370,8 @@ var DateFormat = {};
                                 pattern = '';
                                 break;
                             case 'SSS':
-                                retValue += time.millis.substring(0, 3);
+                                var sss = '000' + time.millis.substring(0, 3);
+                                retValue +=  sss.substring(sss.length - 3);
                                 pattern = '';
                                 break;
                             case 'a':
@@ -459,7 +467,7 @@ var DateFormat = {};
         };
     }());
 }(DateFormat));
-// require dateFormat.js
+;// require dateFormat.js
 // please check `dist/jquery.dateFormat.js` for a complete version
 (function($) {
     $.format = DateFormat.format;
