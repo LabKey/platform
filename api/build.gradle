@@ -1,4 +1,3 @@
-import org.labkey.gradle.plugin.LabKeyExtension
 import org.labkey.gradle.util.BuildUtils
 
 apply plugin: 'java'
@@ -152,19 +151,3 @@ dependencies {
   BuildUtils.addLabKeyDependency(project: project, config: "webappCompile", depProjectPath: ":server:modules:core")
   BuildUtils.addLabKeyDependency(project: project, config: "webappCompile", depProjectPath: ":server:internal")
 }
-
-// We copy the resource files to a separate directory so they can be copied to jsptmp directory
-// for use in compiling JSPs.  Copying directly from the project.sourceSets.webapp.output for the JSP
-// tasks does not work when modules may be evaluated before the api module is evaluated.  Attempts to
-// declare evaluationDependsOn(:server:api) for each of these projects did not work.
-project.task("copyTagLibsBase",
-        type: Copy,
-        {CopySpec copy ->
-          copy.from project.sourceSets.webapp.output
-          copy.into "${project.rootProject.buildDir}/webapp"
-          copy.include 'WEB-INF/web.xml'
-          copy.include 'WEB-INF/*.tld'
-          copy.include 'WEB-INF/tags/**'
-        }
-)
-project.tasks.copyTagLibs.dependsOn(project.tasks.copyTagLibsBase)
