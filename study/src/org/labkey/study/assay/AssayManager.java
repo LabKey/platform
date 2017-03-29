@@ -18,6 +18,7 @@ package org.labkey.study.assay;
 
 import gwt.client.org.labkey.study.StudyApplication;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
@@ -192,6 +193,7 @@ public class AssayManager implements AssayService
                 // TODO: This is temporary... switch to a ModuleResourceCache
                 ModuleLoader.getInstance().getModules()
                     .forEach(module -> new ModuleAssayLoader().registerResources(module));
+                Logger.getLogger(AssayManager.class).info("File assay providers have been loaded. All current providers: " + _providers.values());
                 _addedFileBasedAssays = true;
             }
         }
