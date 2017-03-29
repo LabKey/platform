@@ -437,7 +437,7 @@ public class JSONDataLoader extends DataLoader
         ColumnDescriptor col = null;
         if (fieldKey != null)
         {
-            col = new ColumnDescriptor(fieldKey.getName());
+            col = new ColumnDescriptor(fieldKey.toString());
             col.clazz = DisplayColumn.getClassFromJsonTypeName(type);
             if (mvEnabled)
                 col.setMvEnabled(mvIndicatorContainer);
@@ -971,11 +971,11 @@ public class JSONDataLoader extends DataLoader
         {
             JsonParser parser = createParser("{ \"fieldKey\": [\"one\", \"two\"] }");
             ColumnDescriptor col = JSONDataLoader.parseField(parser);
-            assertEquals(col.name, "two");
+            assertEquals(col.name, "one/two");
 
             parser = createParser("{ \"fieldKey\": [\"one\", \"two\"], \"foo\": 3 }");
             col = JSONDataLoader.parseField(parser);
-            assertEquals(col.name, "two");
+            assertEquals(col.name, "one/two");
         }
 
         @Test
@@ -983,7 +983,7 @@ public class JSONDataLoader extends DataLoader
         {
             JsonParser parser = createParser("{ \"fieldKeyArray\": [\"one\", \"two\"] }");
             ColumnDescriptor col = JSONDataLoader.parseField(parser);
-            assertEquals(col.name, "two");
+            assertEquals(col.name, "one/two");
         }
 
         @Test
@@ -991,7 +991,7 @@ public class JSONDataLoader extends DataLoader
         {
             JsonParser parser = createParser("{ \"fieldKey\": [\"one\", \"two\"], \"fieldKeyArray\": [\"three\", \"four\"] }");
             ColumnDescriptor col = JSONDataLoader.parseField(parser);
-            assertEquals(col.name, "two");
+            assertEquals(col.name, "one/two");
         }
 
         @Test
@@ -999,7 +999,7 @@ public class JSONDataLoader extends DataLoader
         {
             JsonParser parser = createParser("{ \"fieldKey\": [\"one\", \"two\"], \"fieldKey\": [\"three\", \"four\"] }");
             ColumnDescriptor col = JSONDataLoader.parseField(parser);
-            assertEquals(col.name, "two");
+            assertEquals(col.name, "one/two");
         }
 
         @Test

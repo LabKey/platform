@@ -16,12 +16,14 @@
 package org.labkey.api.dataiterator;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
@@ -34,6 +36,8 @@ import org.labkey.api.security.User;
 
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,6 +52,7 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
     final SchemaKey _schemaKey;
     final QuerySchema _schema;
     ContainerFilter _containerFilter;
+    List<String> _columns;
 
     final Map<String,Object> _parameters = new CaseInsensitiveHashMap<>();
     final String _queryName;
@@ -97,6 +102,11 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
         _containerFilter = ContainerFilter.getContainerFilterByName(containerFilterName, _user);
     }
 
+    public void setColumns(List<String> columns)
+    {
+        _columns = columns;
+    }
+
     @Override
     public DataIterator getDataIterator(DataIteratorContext context)
     {
@@ -124,6 +134,15 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
         ArrayList<QueryException> qerrors = new ArrayList<>();
         TableInfo t = qd.getTable(qerrors, true);
 
+        Collection<ColumnInfo> selectCols = t.getColumns();
+        if (null != _columns && !_columns.isEmpty())
+        {
+            List<FieldKey> keys = new ArrayList<>();
+            _columns.forEach(x -> keys.add(FieldKey.fromString(x)));
+
+            selectCols = qs.getColumns(t, keys).values();
+        }
+
         if (!qerrors.isEmpty())
         {
             context.getErrors().addRowError(new ValidationException(qerrors.get(0).getMessage()));
@@ -137,7 +156,7 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
 
         try
         {
-            ResultSet rs = qs.select(t, t.getColumns(), _filter, null, _parameters, false);
+            ResultSet rs = qs.select(t, selectCols, _filter, null, _parameters, false);
             return new ResultSetDataIterator(rs, context);
         }
         catch (QueryParseException x)
