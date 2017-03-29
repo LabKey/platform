@@ -5771,11 +5771,16 @@ public class AdminController extends SpringActionController
                 }
                 else
                 {
-                    out.println("\n<table>");
-                    out.println("<tr><td colspan=\"6\">" + _descriptionHtml + "</td></tr>");
-                    out.println("<tr><td colspan=\"6\">&nbsp;</td></tr>");
-                    out.println("<tr><th>Name</th><th>Version</th><th>Class</th><th>Source</th><th>Schemas</th><th></th></tr>");
+                    out.println("<div>" + _descriptionHtml + "</div><br/>");
+                    out.println("\n<table class=\"labkey-data-region labkey-show-borders\">");
+                    out.println("<tr><td class=\"labkey-column-header\">Name</td>");
+                    out.println("<td class=\"labkey-column-header\">Version</td>");
+                    out.println("<td class=\"labkey-column-header\">Class</td>");
+                    out.println("<td class=\"labkey-column-header\">Source</td>");
+                    out.println("<td class=\"labkey-column-header\">Schemas</td>");
+                    out.println("<td class=\"labkey-column-header\"></td></tr>");
 
+                    int rowCount = 0;
                     for (ModuleContext moduleContext : _contexts)
                     {
                         if (_ignoreVersions.contains(moduleContext.getInstalledVersion()))
@@ -5787,7 +5792,10 @@ public class AdminController extends SpringActionController
                             continue;
 
                         List<String> schemas = moduleContext.getSchemaList();
-                        out.println("  <tr>");
+                        if (rowCount % 2 == 0)
+                            out.println("  <tr class=\"labkey-alternate-row\">");
+                        else
+                            out.println("  <tr class=\"labkey-row\">");
 
                         out.print("    <td>");
                         out.print(PageFlowUtil.filter(moduleContext.getName()));
@@ -5814,6 +5822,8 @@ public class AdminController extends SpringActionController
                         out.println("</td>");
 
                         out.println("  </tr>");
+
+                        rowCount++;
                     }
 
                     out.println("</table>");

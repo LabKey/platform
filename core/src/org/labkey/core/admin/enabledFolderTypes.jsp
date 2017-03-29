@@ -31,18 +31,30 @@ AdminController.FolderTypesBean bean = (AdminController.FolderTypesBean) HttpVie
     If a folder type is disabled, it will not be available as a choice when setting the type for a folder or project.
     Any folders that are already using it will be unaffected.
 </div>
+<br/>
 <labkey:form method="post">
-    <table>
-        <tr><th>Enabled</th><th>Name</th><th>Description</th></tr>
-        <% for (FolderType folderType : bean.getAllFolderTypes())
-        { %>
-            <tr>
+    <table class="labkey-data-region labkey-show-borders">
+        <tr>
+            <td class="labkey-column-header">Enabled</td>
+            <td class="labkey-column-header">Name</td>
+            <td class="labkey-column-header">Description</td>
+        </tr>
+        <%
+            int rowCount = 0;
+            for (FolderType folderType : bean.getAllFolderTypes())
+            {
+        %>
+            <tr class="<%=h(rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row")%>">
                 <td><input type="checkbox" name="<%= h(folderType.getName())%>"<%=checked(bean.getEnabledFolderTypes().contains(folderType))%> value="true" /></td>
-                <td><strong><%= h(folderType.getName()) %></strong></td>
+                <td><%= h(folderType.getName()) %></td>
                 <td><%= h(folderType.getDescription()) %></td>
             </tr>
-        <% } %>
+        <%
+                rowCount++;
+            }
+        %>
     </table>
+    <br/>
     <%= button("Save").submit(true) %>
     <%= PageFlowUtil.generateBackButton("Cancel") %>
 </labkey:form>

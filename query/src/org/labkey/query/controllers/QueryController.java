@@ -552,14 +552,24 @@ public class QueryController extends SpringActionController
 
             StringBuilder sb = new StringBuilder();
 
-            sb.append("\n<table>\n");
-            sb.append("  <tr><td colspan=5>This page lists all the data sources defined in your ").append(AppProps.getInstance().getWebappConfigurationFilename()).append(" file that were available at server startup and the external schemas defined in each.</td></tr>\n");
-            sb.append("  <tr><td colspan=5>&nbsp;</td></tr>\n");
-            sb.append("  <tr><th>Data Source</th><th>Current Status</th><th>URL</th><th>Product Name</th><th>Product Version</th></tr>\n");
+            sb.append("\n<div>This page lists all the data sources defined in your ").append(AppProps.getInstance().getWebappConfigurationFilename()).append(" file that were available at server startup and the external schemas defined in each.</div><br/>\n");
+            sb.append("\n<table class=\"labkey-data-region\">\n");
+            sb.append("<tr class=\"labkey-show-borders\">");
+            sb.append("  <td class=\"labkey-column-header\">Data Source</td>");
+            sb.append("  <td class=\"labkey-column-header\">Current Status</td>");
+            sb.append("  <td class=\"labkey-column-header\">URL</td>");
+            sb.append("  <td class=\"labkey-column-header\">Product Name</td>");
+            sb.append("  <td class=\"labkey-column-header\">Product Version</td></tr>\n");
 
+            int rowCount = 0;
             for (DbScope scope : DbScope.getDbScopes())
             {
-                sb.append("  <tr><td>");
+                if (rowCount % 2 == 0)
+                    sb.append("<tr class=\"labkey-alternate-row labkey-show-borders\">");
+                else
+                    sb.append("<tr class=\"labkey-row labkey-show-borders\">");
+
+                sb.append("<td>");
                 sb.append(scope.getDisplayName());
                 sb.append("</td><td>");
 
@@ -592,7 +602,8 @@ public class QueryController extends SpringActionController
 
                 Collection<ExternalSchemaDef> dsDefs = byDataSourceName.get(scope.getDataSourceName());
 
-                sb.append("  <tr><td colspan=5>\n");
+                sb.append("<tr class=\"").append(rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row").append("\">\n");
+                sb.append("  <td colspan=5>\n");
                 sb.append("    <table>\n");
 
                 if (null != dsDefs)
@@ -655,6 +666,8 @@ public class QueryController extends SpringActionController
 
                 sb.append("    </table>\n");
                 sb.append("  </td></tr>\n");
+
+                rowCount++;
             }
 
             sb.append("</table>\n");
