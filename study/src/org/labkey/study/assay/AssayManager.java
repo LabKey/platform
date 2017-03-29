@@ -97,6 +97,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -106,14 +107,14 @@ import java.util.concurrent.TimeUnit;
  */
 public class AssayManager implements AssayService
 {
-    private static Cache<GUID, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
+    private static final Cache<GUID, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
 
     private boolean _addedFileBasedAssays = false;
     private static final Object PROVIDER_LOCK = new Object();
 
     private Map<String, AssayProvider> _providers = new ConcurrentSkipListMap<>();
-    private List<AssayHeaderLinkProvider> _headerLinkProviders = new ArrayList<>();
-    private List<AssayColumnInfoRenderer> _assayColumnInfoRenderers = new ArrayList<>();
+    private List<AssayHeaderLinkProvider> _headerLinkProviders = new CopyOnWriteArrayList<>();
+    private List<AssayColumnInfoRenderer> _assayColumnInfoRenderers = new CopyOnWriteArrayList<>();
 
     /** Synchronization lock object for ensuring that batch names are unique */
     private static final Object BATCH_NAME_LOCK = new Object();
@@ -122,13 +123,12 @@ public class AssayManager implements AssayService
     {
     }
 
-    public static synchronized AssayManager get()
+    public static AssayManager get()
     {
         return (AssayManager) AssayService.get();
     }
 
-    public ExpProtocol createAssayDefinition(User user, Container container, GWTProtocol newProtocol)
-            throws ExperimentException
+    public ExpProtocol createAssayDefinition(User user, Container container, GWTProtocol newProtocol) throws ExperimentException
     {
         return getProvider(newProtocol.getProviderName()).createAssayDefinition(user, container, newProtocol.getName(),
                 newProtocol.getDescription());
