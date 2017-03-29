@@ -213,8 +213,12 @@
             }
 
             for (NavTree headerLink : additionalHeaderLinks)
-            {%>
-                <td><%= textLink(headerLink.getText(), headerLink.getHref()) %></td>
+            {
+                String linkText = headerLink.isDisabled()
+                        ? "<span class='labkey-disabled-text-link'>" + headerLink.getText() + "</span>"
+                        : textLink(headerLink.getText(), headerLink.getHref());
+            %>
+                <td><%= linkText %></td>
             <%}
         %>
         <td>&nbsp;&nbsp;&nbsp;Jump to <%=h(names.singularName)%>: <input type="text" size="5" name="issueId"/></td>
