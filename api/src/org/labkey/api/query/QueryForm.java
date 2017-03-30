@@ -314,12 +314,10 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
             return null;
         if (_queryDef == null)
         {
-            _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), getSchemaName(), getQueryName());
-        }
-        if (_queryDef == null)
-        {
             UserSchema schema = getSchema();
-            if (null != schema && null != schema.getTable(getQueryName()))
+            if (null != schema)
+                _queryDef = schema.getQueryDef(getQueryName());
+            if (null == _queryDef && null != schema && null != schema.getTable(getQueryName()))
                 _queryDef = schema.getQueryDefForTable(getQueryName());
         }
         return _queryDef;
