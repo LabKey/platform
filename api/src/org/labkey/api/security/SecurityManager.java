@@ -26,6 +26,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.action.LabkeyError;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.GroupAuditProvider;
@@ -87,6 +88,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.validation.BindException;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -2928,5 +2930,67 @@ public class SecurityManager
         // check on the current container filter will return true
         //
         return ContainerManager.getRoot().hasPermission(user, CanSeeAuditLogPermission.class);
+    }
+
+    public static void adminRotatePassword(String rawEmail, BindException errors, Container c, User user) throws Exception
+    {
+        try
+        {
+            ValidEmail email = new ValidEmail(rawEmail);
+
+            // We let admins create passwords (i.e., entries in the logins table) if they don't already exist.
+            // This addresses SSO and LDAP scenarios, see #10374.
+            boolean loginExists = SecurityManager.loginExists(email);
+            String pastVerb = loginExists ? "reset" : "created";
+            String infinitiveVerb = loginExists ? "reset" : "create";
+
+            try
+            {
+                String verification;
+
+                if (loginExists)
+                {
+                    // Create a placeholder password that's impossible to guess and a separate email
+                    // verification key that gets emailed.
+                    verification = SecurityManager.createTempPassword();
+                    SecurityManager.setPassword(email, SecurityManager.createTempPassword());
+                    SecurityManager.setVerification(email, verification);
+                }
+                else
+                {
+                    verification = SecurityManager.createLogin(email);
+                }
+
+                try
+                {
+                    ActionURL verificationURL = SecurityManager.createVerificationURL(c, email, verification, null);
+                    SecurityManager.sendEmail(c, user, SecurityManager.getResetMessage(false), email.getEmailAddress(), verificationURL);
+
+                    if (!user.getEmail().equals(email.getEmailAddress()))
+                    {
+                        SecurityMessage msg = SecurityManager.getResetMessage(true);
+                        msg.setTo(email.getEmailAddress());
+                        SecurityManager.sendEmail(c, user, msg, user.getEmail(), verificationURL);
+                    }
+                    UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password.");
+                }
+                catch (ConfigurationException | MessagingException e)
+                {
+                    errors.addError(new LabkeyError(new Exception("Failed to send email due to: " + e.getMessage(), e)));
+                    UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
+                }
+            }
+            catch (SecurityManager.UserManagementException e)
+            {
+
+                errors.addError(new LabkeyError(new Exception("Failed to reset password due to: " + e.getMessage(), e)));
+                UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " attempted to " + infinitiveVerb + " the password, but the " + infinitiveVerb + " failed: " + e.getMessage());
+            }
+        }
+        catch (ValidEmail.InvalidEmailException e)
+        {
+            //Should be caught in api validation
+            errors.addError(new LabkeyError(new Exception("nvalid email address." + e.getMessage(), e)));
+        }
     }
 }
