@@ -138,6 +138,7 @@ public class SecurityController extends SpringActionController
         SecurityApiActions.AddAssignmentAction.class,
         SecurityApiActions.RemoveAssignmentAction.class,
         SecurityApiActions.ClearAssignedRolesAction.class,
+        SecurityApiActions.AdminRotatePasswordAction.class,
         SecurityApiActions.RenameGroupAction.class);
 
     public SecurityController()
@@ -1610,11 +1611,15 @@ public class SecurityController extends SpringActionController
     }
 
 
+    /**
+     * Invalidate existing password and send new password link
+     */
     @RequiresSiteAdmin
     public class AdminResetPasswordAction extends SimpleViewAction<EmailForm>
     {
         public ModelAndView getView(EmailForm form, BindException errors) throws Exception
         {
+            //TODO: should combine this with SecurityApiController.AdminRotatePasswordAction, but need to simplify returned view
             User user = getUser();
             StringBuilder sbReset = new StringBuilder();
 

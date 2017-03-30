@@ -77,8 +77,6 @@ import java.util.Set;
  */
 public class SecurityApiActions
 {
-
-
     public static class GetGroupPermsForm
     {
         private boolean _includeSubfolders = false;
@@ -391,6 +389,7 @@ public class SecurityApiActions
             return new ApiSimpleResponse("groups", groupInfos);
         }
     }
+
 
     @RequiresLogin
     @IgnoresTermsOfUse
@@ -1954,6 +1953,41 @@ public class SecurityApiActions
             response.put("email", user.getEmail());
             if (null != msg)
                 response.put("message", msg);
+
+            return response;
+        }
+    }
+
+    /**
+     * Invalidate existing password and send new password link
+     */
+    @RequiresSiteAdmin
+    @CSRF
+    public static class AdminRotatePasswordAction extends MutatingApiAction<SecurityController.EmailForm>
+    {
+        @Override
+        public void validateForm(SecurityController.EmailForm form, Errors errors)
+        {
+            try
+            {
+                new ValidEmail(form.getEmail());
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                errors.rejectValue("Email", "Invalid user email");
+            }
+        }
+
+        @Override
+        public ApiSimpleResponse execute(SecurityController.EmailForm form, BindException errors) throws Exception
+        {
+            //TODO: should combine this with SecurityController.AdminResetPasswordAction, but need to simplify returned view
+            SecurityManager.adminRotatePassword(form.getEmail(), errors, getContainer(), getUser());
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("success", !errors.hasErrors());
+            if (errors.hasErrors())
+                response.put("message", errors.getMessage());
 
             return response;
         }
