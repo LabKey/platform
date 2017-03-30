@@ -946,7 +946,7 @@ public class ListManager implements SearchService.DocumentProvider
             }
 
             if (!recordChangedMap.isEmpty())
-                itemRecord = ListAuditProvider.encodeForDataMap(recordChangedMap, true);
+                itemRecord = ListAuditProvider.encodeForDataMap(recordChangedMap);
         }
 
         return itemRecord;

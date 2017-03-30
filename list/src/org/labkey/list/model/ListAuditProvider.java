@@ -245,8 +245,8 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
             fields.add(createPropertyDescriptor(COLUMN_NAME_LIST_DOMAIN_URI, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_LIST_ITEM_ENTITY_ID, PropertyType.STRING)); // UNDONE: is needed ? .setEntityId(true));
             fields.add(createPropertyDescriptor(COLUMN_NAME_LIST_NAME, PropertyType.STRING));
-            fields.add(createPropertyDescriptor(OLD_RECORD_PROP_NAME, PropertyType.STRING));
-            fields.add(createPropertyDescriptor(NEW_RECORD_PROP_NAME, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(OLD_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
+            fields.add(createPropertyDescriptor(NEW_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
             _fields = Collections.unmodifiableSet(fields);
         }
 
