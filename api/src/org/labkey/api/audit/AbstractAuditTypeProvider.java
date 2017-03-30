@@ -52,7 +52,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -375,91 +374,16 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         }
     }
 
-    private static int MAX_FIELD_SIZE = 4000;
-
-    public static String encodeForDataMap(Map<String, Object> properties)
+    public static String encodeForDataMap(Map<String, ?> properties)
     {
         if (properties == null) return null;
 
         Map<String,String> stringMap = new HashMap<>();
-        for (Map.Entry<String,Object> entry :  properties.entrySet())
+        for (Map.Entry<String,?> entry :  properties.entrySet())
         {
             Object value = entry.getValue();
             stringMap.put(entry.getKey(), value == null ? null : value.toString());
         }
-        return encodeForDataMap(stringMap, true);
-    }
-
-    // helper to encode map information into a form that can be saved into an ontology column,
-    // if validate size is set, the returned String will be guaranteed to fit into the field.
-    //
-    public static String encodeForDataMap(Map<String, String> properties, boolean validateSize)
-    {
-        try
-        {
-            String data = PageFlowUtil.toQueryString(properties.entrySet());
-            if (data == null)
-                return null;
-
-            int count = 0;
-
-            while (validateSize && data.length() > MAX_FIELD_SIZE)
-            {
-                _truncateEntry(properties, (data.length() - MAX_FIELD_SIZE));
-                data = PageFlowUtil.toQueryString(properties.entrySet());
-                if (count++ > 4)
-                    break;
-            }
-
-            // if the overall size couldn't be reduced by truncating the largest entries, just
-            // start reducing the overall size of the map
-            if (validateSize && data.length() > MAX_FIELD_SIZE)
-            {
-                List<Map.Entry<String, String>> newProps = new ArrayList<>();
-                newProps.addAll(properties.entrySet());
-                int newSize = Math.max(1, newProps.size());
-
-                while (data.length() > MAX_FIELD_SIZE)
-                {
-                    newSize = Math.max(1, newSize - 10);
-                    if (newSize == 1)
-                        break;
-                    List<Map.Entry<String, String>> a = newProps.subList(0, newSize);
-                    data = PageFlowUtil.toQueryString(a);
-                }
-            }
-
-            return data;
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected static void _truncateEntry(Map<String, String> properties, int diff)
-    {
-        diff = diff * 13 / 10;
-        diff = Math.max(diff, 200);
-
-        int max = 0;
-        String largest = null;
-
-        for (Map.Entry<String, String> entry : properties.entrySet())
-        {
-            if (entry.getValue() != null && entry.getValue().length() > max)
-            {
-                max = entry.getValue().length();
-                largest = entry.getKey();
-            }
-        }
-
-        if (largest != null && max > diff)
-        {
-            String newValue = properties.get(largest).substring(0, max - diff) + "...";
-            properties.put(largest, newValue);
-        }
-        else
-            properties.put(largest, "contents too large to display");
+        return PageFlowUtil.toQueryString(stringMap.entrySet());
     }
 }
