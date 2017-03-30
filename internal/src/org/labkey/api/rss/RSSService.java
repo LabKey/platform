@@ -18,6 +18,7 @@ package org.labkey.api.rss;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 
 import java.io.Writer;
 import java.util.List;
@@ -25,22 +26,18 @@ import java.util.List;
 /**
  * Created by Nick Arnold on 5/16/14.
  */
-abstract public class RSSService
+public interface RSSService
 {
-    static private RSSService instance;
-    private static final Logger LOG = Logger.getLogger(RSSService.class);
-
-    static public RSSService get()
+    static RSSService get()
     {
-        return instance;
+        return ServiceRegistry.get().getService(RSSService.class);
     }
 
-    static public void set(RSSService impl)
+    static void set(RSSService impl)
     {
-        instance = impl;
+        ServiceRegistry.get().registerService(RSSService.class, impl);
     }
 
-    abstract public List<RSSFeed> getFeeds(Container container, User user);
-
-    abstract public void aggregateFeeds(List<RSSFeed> feeds, User user, Writer writer);
+    List<RSSFeed> getFeeds(Container container, User user);
+    void aggregateFeeds(List<RSSFeed> feeds, User user, Writer writer);
 }

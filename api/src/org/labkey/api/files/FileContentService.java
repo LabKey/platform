@@ -37,9 +37,9 @@ import java.util.Map;
  */
 public interface FileContentService
 {
-    public static final String FILES_LINK = "@files";
-    public static final String FILE_SETS_LINK = "@filesets";
-    public static final String PIPELINE_LINK = "@pipeline";
+    String FILES_LINK = "@files";
+    String FILE_SETS_LINK = "@filesets";
+    String PIPELINE_LINK = "@pipeline";
 
     /**
      * Returns the file root of the specified container.  It not explicitly defined,
@@ -82,14 +82,14 @@ public interface FileContentService
      * @param relative if true, path is a relative path from the directory mapped from the container
      * @return the created attachment parent
      */
-    public AttachmentDirectory registerDirectory(Container c, String name, String path, boolean relative);
+    AttachmentDirectory registerDirectory(Container c, String name, String path, boolean relative);
 
     /**
      * Forget about a named directory
      * @param c Container for this attachmentParent
      * @param label Name of the parent used in registerDirectory
      */
-    public void unregisterDirectory(Container c, String label);
+    void unregisterDirectory(Container c, String label);
 
     /**
      * Return an AttachmentParent for files in the directory mapped to this container
@@ -97,35 +97,35 @@ public interface FileContentService
      * @param createDir Create the mapped directory if it doesn't exist
      * @return AttachmentParent that can be passed to other methods of this interface
      */
-    public AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException, MissingRootDirectoryException;
+    AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException, MissingRootDirectoryException;
 
     /**
      * Return a named AttachmentParent for files in the directory mapped to this container
      * @param c Container in the file system
      * @return AttachmentParent that can be passed to other methods of this interface
      */
-    public AttachmentDirectory getRegisteredDirectory(Container c, String label);
+    AttachmentDirectory getRegisteredDirectory(Container c, String label);
 
     /**
      * Return a named AttachmentParent for files in the directory mapped to this container
      * @param c Container in the file system
      * @return AttachmentParent that can be passed to other methods of this interface
      */
-    public AttachmentDirectory getRegisteredDirectoryFromEntityId(Container c, String entityId);
+    AttachmentDirectory getRegisteredDirectoryFromEntityId(Container c, String entityId);
 
     /**
      * Return true if the supplied string is a valid project root
      * @param root String to use as the file path
      * @return boolean
      */
-    public boolean isValidProjectRoot(String root);
+    boolean isValidProjectRoot(String root);
 
     /**
      * Return a named AttachmentParent for files in the directory mapped to this container
      * @param c Container in the file system
      * @return Array of attachment directories that have previously been registered
      */
-    public AttachmentDirectory[] getRegisteredDirectories(Container c);
+    AttachmentDirectory[] getRegisteredDirectories(Container c);
 
     enum ContentType {
         files,
@@ -133,35 +133,35 @@ public interface FileContentService
         assay,
     }
 
-    public String getFolderName(ContentType type);
+    String getFolderName(ContentType type);
 
-    public FilesAdminOptions getAdminOptions(Container c);
+    FilesAdminOptions getAdminOptions(Container c);
 
-    public void setAdminOptions(Container c, FilesAdminOptions options);
+    void setAdminOptions(Container c, FilesAdminOptions options);
 
     /**
      * Returns the default file root of the specified container.  This will default to a path
      * relative to the first parent container with an override
      */
-    public File getDefaultRoot(Container c, boolean createDir);
+    File getDefaultRoot(Container c, boolean createDir);
 
-    public String getDomainURI(Container c);
+    String getDomainURI(Container c);
 
-    public String getDomainURI(Container c, FilesAdminOptions.fileConfig config);
+    String getDomainURI(Container c, FilesAdminOptions.fileConfig config);
 
-    public ExpData getDataObject(WebdavResource resource, Container c);
-    public QueryUpdateService getFilePropsUpdateService(TableInfo tinfo, Container container);
+    ExpData getDataObject(WebdavResource resource, Container c);
+    QueryUpdateService getFilePropsUpdateService(TableInfo tinfo, Container container);
 
-    public void moveFileRoot(File prev, File dest, @Nullable User user, @Nullable Container container);
+    void moveFileRoot(File prev, File dest, @Nullable User user, @Nullable Container container);
 
     /** Notifies all registered FileListeners that a file or directory has been created */
-    public void fireFileCreateEvent(@NotNull File created, @Nullable User user, @Nullable Container container);
+    void fireFileCreateEvent(@NotNull File created, @Nullable User user, @Nullable Container container);
     /** Notifies all registered FileListeners that a file or directory has moved */
-    public void fireFileMoveEvent(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container);
+    void fireFileMoveEvent(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container);
     /** Add a listener that will be notified when files are created or are moved */
-    public void addFileListener(FileListener listener);
+    void addFileListener(FileListener listener);
 
-    public Map<String, Collection<File>> listFiles(@NotNull Container container);
+    Map<String, Collection<File>> listFiles(@NotNull Container container);
 
     /**
      * Returns a SQLFragment for file paths that this FileListener is aware of when the user is a site admin, or empty
@@ -178,5 +178,5 @@ public interface FileContentService
      *     <li>SourceName</li>
      * </ul>
      */
-    public SQLFragment listFilesQuery(@NotNull User currentUser);
+    SQLFragment listFilesQuery(@NotNull User currentUser);
 }

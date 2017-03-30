@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -40,26 +41,22 @@ import java.util.Map;
 
 /**
  */
-abstract public class PipelineService
-        implements PipelineStatusFile.StatusReader, PipelineStatusFile.StatusWriter
+public interface PipelineService extends PipelineStatusFile.StatusReader, PipelineStatusFile.StatusWriter
 {
-    public static final String MODULE_NAME = "Pipeline";
+    String MODULE_NAME = "Pipeline";
+    String UNZIP_DIR = "unzip";
 
-    public static final String UNZIP_DIR = "unzip";
-
-    static PipelineService instance;
-
-    public static PipelineService get()
+    static PipelineService get()
     {
-        return instance;
+        return ServiceRegistry.get(PipelineService.class);
     }
 
-    static public void setInstance(PipelineService instance)
+    static void setInstance(PipelineService instance)
     {
-        PipelineService.instance = instance;
+        ServiceRegistry.get().registerService(PipelineService.class, instance);
     }
 
-    abstract public void registerPipelineProvider(PipelineProvider provider, String... aliases);
+    void registerPipelineProvider(PipelineProvider provider, String... aliases);
 
     /**
      * Looks up the container hierarchy until it finds a pipeline root defined which is being
@@ -67,7 +64,7 @@ abstract public class PipelineService
      * @return null if there's no specific pipeline override and the default root is unavailable or misconfigured
      */
     @Nullable
-    abstract public PipeRoot findPipelineRoot(Container container);
+    PipeRoot findPipelineRoot(Container container);
 
     /**
      * Looks up the container hierarchy until it finds a pipeline root defined which is being
@@ -75,17 +72,17 @@ abstract public class PipelineService
      * @return null if there's no specific pipeline override and the default root is unavailable or misconfigured
      */
     @Nullable
-    abstract public PipeRoot findPipelineRoot(Container container, String type);
+    PipeRoot findPipelineRoot(Container container, String type);
 
 
     /** @return true if this container (or an inherited parent container) has a pipeline root that exists on disk */
-    abstract public boolean hasValidPipelineRoot(Container container);
+    boolean hasValidPipelineRoot(Container container);
 
     @NotNull
-    abstract public Map<Container, PipeRoot> getAllPipelineRoots();
+    Map<Container, PipeRoot> getAllPipelineRoots();
 
     @Nullable
-    abstract public PipeRoot getPipelineRootSetting(Container container);
+    PipeRoot getPipelineRootSetting(Container container);
 
     /**
      * Gets the pipeline root that was explicitly configured for this container, or falls back to the default file root.
@@ -93,79 +90,79 @@ abstract public class PipelineService
      * places where not explicitly doing pipeline configuration, use findPipelineRoot() instead.
      */
     @Nullable
-    abstract public PipeRoot getPipelineRootSetting(Container container, String type);
+    PipeRoot getPipelineRootSetting(Container container, String type);
 
-    abstract public void setPipelineRoot(User user, Container container, String type, boolean searchable, URI... roots) throws SQLException;
+    void setPipelineRoot(User user, Container container, String type, boolean searchable, URI... roots) throws SQLException;
 
-    abstract public boolean canModifyPipelineRoot(User user, Container container);
+    boolean canModifyPipelineRoot(User user, Container container);
 
     @NotNull
-    abstract public List<PipelineProvider> getPipelineProviders();
+    List<PipelineProvider> getPipelineProviders();
 
     @Nullable
-    abstract public PipelineProvider getPipelineProvider(String name);
+    PipelineProvider getPipelineProvider(String name);
 
-    abstract public boolean isEnterprisePipeline();
+    boolean isEnterprisePipeline();
 
     @NotNull
-    abstract public PipelineQueue getPipelineQueue();
+    PipelineQueue getPipelineQueue();
 
     /**
      * Add a <code>PipelineJob</code> to this queue to be run.
      *
      * @param job Job to be run
      */
-    abstract public void queueJob(PipelineJob job) throws PipelineValidationException;
+    void queueJob(PipelineJob job) throws PipelineValidationException;
 
     /**
      * This will update the active task status of this job and re-queue that job if the task is complete
      */
-    abstract public void setPipelineJobStatus(PipelineJob job, PipelineJob.TaskStatus status) throws PipelineJobException;
+    void setPipelineJobStatus(PipelineJob job, PipelineJob.TaskStatus status) throws PipelineJobException;
 
-    abstract public void setPipelineProperty(Container container, String name, String value);
+    void setPipelineProperty(Container container, String name, String value);
 
-    abstract public String getPipelineProperty(Container container, String name);
+    String getPipelineProperty(Container container, String name);
 
     @NotNull
-    public abstract String startFileAnalysis(AnalyzeForm form, @Nullable Map<String, String> variableMap, ViewContext viewContext) throws IOException, PipelineValidationException;
+    String startFileAnalysis(AnalyzeForm form, @Nullable Map<String, String> variableMap, ViewContext viewContext) throws IOException, PipelineValidationException;
 
     /** Configurations for the pipeline job webpart ButtonBar */
-    public enum PipelineButtonOption { Minimal, Assay, Standard }
+    enum PipelineButtonOption { Minimal, Assay, Standard }
 
-    abstract public QueryView getPipelineQueryView(ViewContext context, PipelineButtonOption buttonOption);
+    QueryView getPipelineQueryView(ViewContext context, PipelineButtonOption buttonOption);
 
-    abstract public HttpView getSetupView(SetupForm form);
+    HttpView getSetupView(SetupForm form);
 
-    abstract public boolean savePipelineSetup(ViewContext context, SetupForm form, BindException errors) throws Exception;
-
-    // TODO: This should be on PipelineProtocolFactory
-    abstract public String getLastProtocolSetting(PipelineProtocolFactory factory, Container container, User user);
+    boolean savePipelineSetup(ViewContext context, SetupForm form, BindException errors) throws Exception;
 
     // TODO: This should be on PipelineProtocolFactory
-    abstract public void rememberLastProtocolSetting(PipelineProtocolFactory factory, Container container,
-                                                     User user, String protocolName);
+    String getLastProtocolSetting(PipelineProtocolFactory factory, Container container, User user);
 
-    abstract public String getLastSequenceDbSetting(PipelineProtocolFactory factory, Container container, User user);
+    // TODO: This should be on PipelineProtocolFactory
+    void rememberLastProtocolSetting(PipelineProtocolFactory factory, Container container,
+                                     User user, String protocolName);
 
-    abstract public void rememberLastSequenceDbSetting(PipelineProtocolFactory factory, Container container, User user,
-                                                       String sequenceDbPath, String sequenceDb);
+    String getLastSequenceDbSetting(PipelineProtocolFactory factory, Container container, User user);
 
-    abstract public List<String> getLastSequenceDbPathsSetting(PipelineProtocolFactory factory, Container container, User user);
+    void rememberLastSequenceDbSetting(PipelineProtocolFactory factory, Container container, User user,
+                                       String sequenceDbPath, String sequenceDb);
 
-    abstract public void rememberLastSequenceDbPathsSetting(PipelineProtocolFactory factory, Container container,
-                                                            User user, List<String> sequenceDbPaths);
+    List<String> getLastSequenceDbPathsSetting(PipelineProtocolFactory factory, Container container, User user);
 
-    abstract public boolean hasSiteDefaultRoot(Container container);
+    void rememberLastSequenceDbPathsSetting(PipelineProtocolFactory factory, Container container,
+                                            User user, List<String> sequenceDbPaths);
 
-    abstract public TableInfo getJobsTable(User user, Container container);
+    boolean hasSiteDefaultRoot(Container container);
 
-    abstract public boolean runFolderImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
+    TableInfo getJobsTable(User user, Container container);
 
-    abstract public Integer getJobId(User u, Container c, String jobGUID);
+    boolean runFolderImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
 
-    abstract public FileAnalysisProperties getFileAnalysisProperties(Container c, String taskId, String path);
+    Integer getJobId(User u, Container c, String jobGUID);
 
-    public class FileAnalysisProperties
+    FileAnalysisProperties getFileAnalysisProperties(Container c, String taskId, String path);
+
+    class FileAnalysisProperties
     {
         private final PipeRoot _pipeRoot;
         private final File _dirData;
@@ -195,7 +192,7 @@ abstract public class PipelineService
     }
 
     @Nullable
-    public abstract File getProtocolParametersFile(ExpRun expRun);
+    File getProtocolParametersFile(ExpRun expRun);
 
-    abstract public void deleteStatusFile(Container c, User u, boolean deleteExpRuns, Collection<Integer> rowIds) throws PipelineProvider.HandlerException;
+    void deleteStatusFile(Container c, User u, boolean deleteExpRuns, Collection<Integer> rowIds) throws PipelineProvider.HandlerException;
 }

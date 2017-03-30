@@ -21,6 +21,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 
 import java.util.Map;
 import java.util.List;
@@ -31,47 +32,45 @@ import java.util.List;
  * Time: 11:08:04 AM
  */
 
-public abstract class DefaultValueService
+public interface DefaultValueService
 {
-    static private DefaultValueService _instance;
-
-    static public DefaultValueService get()
+    static DefaultValueService get()
     {
-        return _instance;
+        return ServiceRegistry.get().getService(DefaultValueService.class);
     }
 
-    static public void setInstance(DefaultValueService impl)
+    static void setInstance(DefaultValueService impl)
     {
-        _instance = impl;
+        ServiceRegistry.get().registerService(DefaultValueService.class, impl);
     }
 
-    public abstract boolean hasDefaultValues(Container container, Domain domain, boolean inherit);
+    boolean hasDefaultValues(Container container, Domain domain, boolean inherit);
 
-    public abstract boolean hasDefaultValues(Container container, Domain domain, User user, boolean inherit);
+    boolean hasDefaultValues(Container container, Domain domain, User user, boolean inherit);
 
-    public abstract boolean hasDefaultValues(Container container, Domain domain, User user, @Nullable String scope, boolean inherit);
+    boolean hasDefaultValues(Container container, Domain domain, User user, @Nullable String scope, boolean inherit);
 
-    public abstract Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain);
+    Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain);
 
-    public abstract Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user);
+    Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user);
 
-    public abstract Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user, @Nullable String scope);
+    Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user, @Nullable String scope);
 
-    public abstract Map<DomainProperty, Object> getMergedValues(Domain domain, Map<DomainProperty, Object> userValues, Map<DomainProperty, Object> globalValues);
+    Map<DomainProperty, Object> getMergedValues(Domain domain, Map<DomainProperty, Object> userValues, Map<DomainProperty, Object> globalValues);
 
-    public abstract void setDefaultValues(Container container, Map<DomainProperty, Object> values) throws ExperimentException;
+    void setDefaultValues(Container container, Map<DomainProperty, Object> values) throws ExperimentException;
 
-    public abstract void setDefaultValues(Container container, Map<DomainProperty, Object> values, User user) throws ExperimentException;
+    void setDefaultValues(Container container, Map<DomainProperty, Object> values, User user) throws ExperimentException;
 
-    public abstract void setDefaultValues(Container container, Map<DomainProperty, Object> values, User user, @Nullable String scope) throws ExperimentException;
+    void setDefaultValues(Container container, Map<DomainProperty, Object> values, User user, @Nullable String scope) throws ExperimentException;
 
-    public abstract void clearDefaultValues(Container container, Domain domain);
+    void clearDefaultValues(Container container, Domain domain);
 
-    public abstract void clearDefaultValues(Container container, Domain domain, User user);
+    void clearDefaultValues(Container container, Domain domain, User user);
 
-    public abstract void clearDefaultValues(Container container, Domain domain, User user, String scope);
+    void clearDefaultValues(Container container, Domain domain, User user, String scope);
 
-    public abstract List<Container> getDefaultValueOverriders(Container currentContainer, Domain domain);
+    List<Container> getDefaultValueOverriders(Container currentContainer, Domain domain);
 
-    public abstract List<Container> getDefaultValueOverridees(Container currentContainer, Domain domain);
+    List<Container> getDefaultValueOverridees(Container currentContainer, Domain domain);
 }

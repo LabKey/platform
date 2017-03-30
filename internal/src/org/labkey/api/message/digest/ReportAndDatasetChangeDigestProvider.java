@@ -16,24 +16,18 @@
 package org.labkey.api.message.digest;
 
 import org.labkey.api.query.NotificationInfoProvider;
+import org.labkey.api.services.ServiceRegistry;
 
-public abstract class ReportAndDatasetChangeDigestProvider implements MessageDigest.Provider
+public interface ReportAndDatasetChangeDigestProvider extends MessageDigest.Provider
 {
-    static private ReportAndDatasetChangeDigestProvider _instance;
-
-    public abstract void addNotificationInfoProvider(NotificationInfoProvider provider);
-
-    static public ReportAndDatasetChangeDigestProvider get()
+    static ReportAndDatasetChangeDigestProvider get()
     {
-        if (null == _instance)
-            throw new IllegalStateException("Service has not been set.");
-        return _instance;
+        return ServiceRegistry.get().getService(ReportAndDatasetChangeDigestProvider.class);
     }
-    public static void set(ReportAndDatasetChangeDigestProvider serviceImpl)
+    static void set(ReportAndDatasetChangeDigestProvider serviceImpl)
     {
-        if (null != _instance)
-            throw new IllegalStateException("Service has already been set.");
-        _instance = serviceImpl;
+        ServiceRegistry.get().registerService(ReportAndDatasetChangeDigestProvider.class, serviceImpl);
     }
 
+    void addNotificationInfoProvider(NotificationInfoProvider provider);
 }

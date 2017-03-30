@@ -31,6 +31,8 @@ import java.util.List;
  *
  * @author brendanx
  */
+
+// TODO: Convert to an interface once #28535 is resolved
 abstract public class PipelineJobService implements TaskPipelineRegistry
 {
     public static final String VERSION_SUBSTITUTION = "${version}";

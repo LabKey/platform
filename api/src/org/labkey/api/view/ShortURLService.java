@@ -57,11 +57,11 @@ public interface ShortURLService
 
     ShortURLRecord getForEntityId(@NotNull String entityId);
 
-    public void addListener(ShortURLListener listener);
+    void addListener(ShortURLListener listener);
 
-    public void removeListener(ShortURLListener listener);
+    void removeListener(ShortURLListener listener);
 
-    public static interface ShortURLListener
+    interface ShortURLListener
     {
         /**
          * Called prior to deleting a shortURL, to determine if a shortURL can be deleted.

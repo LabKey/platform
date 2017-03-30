@@ -41,12 +41,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class LsidManager
 {
-    private static Map<String, Map<String, LsidHandler>> authorityMap = new ConcurrentHashMap<>();
-    private static LsidManager _instance = new LsidManager();
+    private static final Map<String, Map<String, LsidHandler>> authorityMap = new ConcurrentHashMap<>();
+    private static final LsidManager _instance = new LsidManager();
 
     private LsidManager()
     {
-
     }
 
     public static LsidManager get()
@@ -54,7 +53,7 @@ public class LsidManager
         return _instance;
     }
 
-    public static interface LsidHandler
+    public interface LsidHandler
     {
         Identifiable getObject(Lsid lsid);
 
@@ -110,13 +109,7 @@ public class LsidManager
 
     public void registerHandler(String prefix, LsidHandler handler, String authority)
     {
-        Map<String, LsidHandler> handlerMap = authorityMap.get(authority);
-
-        if (null == handlerMap)
-        {
-            handlerMap = new HashMap<>();
-            authorityMap.put(authority, handlerMap);
-        }
+        Map<String, LsidHandler> handlerMap = authorityMap.computeIfAbsent(authority, k -> new HashMap<>());
 
         handlerMap.put(prefix, handler);
     }

@@ -44,7 +44,7 @@ import java.util.List;
 /**
  * Created by Nick Arnold on 5/16/14.
  */
-public class RSSServiceImpl extends RSSService
+public class RSSServiceImpl implements RSSService
 {
     @Override
     public List<RSSFeed> getFeeds(Container container, User user)

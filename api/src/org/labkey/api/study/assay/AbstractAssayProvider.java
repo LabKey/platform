@@ -1466,6 +1466,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return _declaringModule;
     }
 
+    @NotNull
     public Set<Module> getRequiredModules()
     {
         return Collections.unmodifiableSet(_requiredModules);

@@ -28,8 +28,9 @@ import java.util.Map;
  */
 public class ViewServiceImpl implements ViewService
 {
-    static ViewService instance = new ViewServiceImpl();
-    Map<Enum,TemplateFactory> templates = Collections.synchronizedMap(new HashMap<>());
+    private final static ViewService instance = new ViewServiceImpl();
+
+    private final Map<Enum, TemplateFactory> templates = Collections.synchronizedMap(new HashMap<>());
 
     public static ViewService getInstance()
     {
@@ -51,7 +52,7 @@ public class ViewServiceImpl implements ViewService
         return f.createTemplate(e, context, body, page);
     }
 
-    Map<Enum,FrameFactory> frames = Collections.synchronizedMap(new HashMap<>());
+    Map<Enum, FrameFactory> frames = Collections.synchronizedMap(new HashMap<>());
 
     @Override
     public void registerFrameFactory(Enum frame, FrameFactory f)

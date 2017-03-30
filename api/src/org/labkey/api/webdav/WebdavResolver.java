@@ -30,7 +30,7 @@ import java.util.Date;
  */
 public interface WebdavResolver extends Resolver
 {
-    public static class LookupResult
+    class LookupResult
     {
         public final WebdavResolver resolver;
         public final WebdavResource resource;
@@ -63,7 +63,7 @@ public interface WebdavResolver extends Resolver
         return true;
     }
 
-    public static interface History
+    interface History
     {
         User getUser();
         Date getDate();
@@ -72,5 +72,5 @@ public interface WebdavResolver extends Resolver
     }
 
     // marker interfaces for web folder
-    public static interface WebFolder {}
+    interface WebFolder {}
 }
