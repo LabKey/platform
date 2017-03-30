@@ -32,19 +32,19 @@ import java.util.Map;
 public interface AssayImporterService extends DomainImporterService
 {
     // get the inferred column list of the server side file specified
-    public List<InferencedColumn> getInferenceColumns(String path, String file) throws GWTImportException;
+    List<InferencedColumn> getInferenceColumns(String path, String file) throws GWTImportException;
 
     /**
      * Optional action to perform server side validation on the file, using the specified column
      * descriptors. The entire or part of the file can be checked.
      */
-    public Boolean validateColumns(List<InferencedColumn> columns, String path, String file) throws GWTImportException;
+    Boolean validateColumns(List<InferencedColumn> columns, String path, String file) throws GWTImportException;
     
     /**
      * Create a new assay instance for the specified provider and assay name
      * @throws org.labkey.api.gwt.client.ui.domain.GWTImportException
      */
-    public GWTProtocol createProtocol(String providerName, String assayName, String containerID) throws GWTImportException;
+    GWTProtocol createProtocol(String providerName, String assayName, String containerID) throws GWTImportException;
 
     /**
      * Returns the domain URI to create columns based on the imported file(s)
@@ -52,20 +52,20 @@ public interface AssayImporterService extends DomainImporterService
      * @return
      * @throws org.labkey.api.gwt.client.ui.domain.GWTImportException
      */
-    public String getDomainImportURI(GWTProtocol protocol) throws GWTImportException;
+    String getDomainImportURI(GWTProtocol protocol) throws GWTImportException;
 
     /**
      * Returns the protocol specific import wizard action to import the uploaded file
      */
-    public String getImportURL(GWTProtocol protocol, String directoryPath, String file) throws GWTImportException;
-    public String getDesignerURL(GWTProtocol protocol, String directoryPath, String file) throws GWTImportException;
+    String getImportURL(GWTProtocol protocol, String directoryPath, String file) throws GWTImportException;
+    String getDesignerURL(GWTProtocol protocol, String directoryPath, String file) throws GWTImportException;
 
     /**
      * Returns the base columns from the data domain template. These columns can be used
      * to map columns from the uploaded file.
      * The assay instance does not yet exist when this method is called by the client.
      */
-    public List<GWTPropertyDescriptor> getBaseColumns(String providerName) throws GWTImportException;
+    List<GWTPropertyDescriptor> getBaseColumns(String providerName) throws GWTImportException;
 
-    public List<Map<String, String>> getAssayLocations() throws GWTImportException;
+    List<Map<String, String>> getAssayLocations() throws GWTImportException;
 }

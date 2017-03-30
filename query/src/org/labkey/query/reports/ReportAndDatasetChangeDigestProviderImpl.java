@@ -46,7 +46,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
-public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDatasetChangeDigestProvider
+public final class ReportAndDatasetChangeDigestProviderImpl implements ReportAndDatasetChangeDigestProvider
 {
     final private List<NotificationInfoProvider> _notificationInfoProviders = new CopyOnWriteArrayList<>();
 
@@ -63,7 +63,6 @@ public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDat
     @Override
     public void sendDigestForAllContainers(Date start, Date end) throws Exception
     {
-
         Map<String, Map<Integer, List<NotificationInfo>>> allProvidersInfoMap = null;
         for (NotificationInfoProvider provider : _notificationInfoProviders)
         {

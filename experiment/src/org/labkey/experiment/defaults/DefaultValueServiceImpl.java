@@ -49,9 +49,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * Time: 11:11:14 AM
  */
 
-public class DefaultValueServiceImpl extends DefaultValueService
+public class DefaultValueServiceImpl implements DefaultValueService
 {
-
     private static final String DOMAIN_DEFAULT_VALUE_LSID_PREFIX = "DomainDefaultValue";
     private static final String USER_DEFAULT_VALUE_LSID_PREFIX = "UserDefaultValue";
     private static final String USER_DEFAULT_VALUE_DOMAIN_PARENT = "UserDefaultValueParent";

@@ -96,14 +96,14 @@ import java.util.TreeMap;
 
 import static org.labkey.api.pipeline.file.AbstractFileAnalysisJob.ANALYSIS_PARAMETERS_ROLE_NAME;
 
-public class PipelineServiceImpl extends PipelineService
+public class PipelineServiceImpl implements PipelineService
 {
     public static String PREF_LASTPROTOCOL = "lastprotocol";
     public static String PREF_LASTSEQUENCEDB = "lastsequencedb";
     public static String PREF_LASTSEQUENCEDBPATHS = "lastsequencedbpaths";
     public static String KEY_PREFERENCES = "pipelinePreferences";
 
-    private static Logger _log = Logger.getLogger(PipelineService.class);
+    private static final Logger _log = Logger.getLogger(PipelineService.class);
 
     private Map<String, PipelineProvider> _mapPipelineProviders = new TreeMap<>();
     private PipelineQueue _queue = null;
