@@ -233,6 +233,8 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
                     out.print(PageFlowUtil.filter(title));
                 out.print("\">");
 
+                out.print("<a name=\"" + PageFlowUtil.filter(title) + "\" class=\"labkey-wp-title-anchor\">");
+
                 if (config._isCollapsible)
                 {
                     ActionURL expandCollapseUrl = null;
@@ -271,6 +273,8 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
                     if (null !=  config._titleHref)
                         out.print("</a>");
                 }
+
+                out.print("</a>");
 
                 if (config._helpPopup != null)
                 {
