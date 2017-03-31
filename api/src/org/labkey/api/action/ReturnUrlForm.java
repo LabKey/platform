@@ -26,10 +26,11 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.URLException;
 
 /**
-* User: adam
-* Date: Nov 22, 2007
-* Time: 1:27:34 PM
-*/
+ * Simple form bean that includes a returnUrl property, typically used to send the user back to wherever the intiated an action from.
+ * Often subclassed to add usage-specific additional properties.
+ * User: adam
+ * Date: Nov 22, 2007
+ */
 public class ReturnUrlForm
 {
     private ReturnURLString _returnUrl;

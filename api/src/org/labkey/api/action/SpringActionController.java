@@ -87,12 +87,11 @@ import java.util.Map;
 /**
  * User: matthewb
  * Date: May 17, 2007
- * Time: 10:17:36 AM
  *
  * CONSIDER using DispatchServlet instead of Controller here, or perhaps make the Module expose a DispatchServlet
  *
  * This class acts pretty much as DispatchServlet.  However, it does not follow all the rules/conventions of DispatchServlet.
- * Whenever a discrepency is found that someone cares about, please go ahead and make a change in the direction of better
+ * Whenever a discrepancy is found that someone cares about, please go ahead and make a change in the direction of better
  * compatibility. 
  */
 public abstract class SpringActionController implements Controller, HasViewContext, ViewResolver, ApplicationContextAware
