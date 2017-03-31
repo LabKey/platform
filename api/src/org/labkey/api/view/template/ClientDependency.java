@@ -97,10 +97,9 @@ public class ClientDependency
     }
 
     private final LinkedHashSet<ClientDependency> _children = new LinkedHashSet<>();
-
-    private final boolean _compileInProductionMode = true;
     private final TYPE _primaryType;
 
+    private boolean _compileInProductionMode = true;
     private Module _module;
     private String _prodModePath;
     private String _devModePath;
