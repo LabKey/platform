@@ -92,20 +92,21 @@ public class ClientDependency
             return _extension;
         }
 
-        private String _extension;
-        private FileType _fileType;
+        private final String _extension;
+        private final FileType _fileType;
     }
 
     private final LinkedHashSet<ClientDependency> _children = new LinkedHashSet<>();
 
+    private final boolean _compileInProductionMode = true;
+    private final TYPE _primaryType;
+
     private Module _module;
     private String _prodModePath;
     private String _devModePath;
-    private boolean _compileInProductionMode = true;
     private String _uri;
     private Path _filePath;
     private Resource _resource;
-    private TYPE _primaryType;
     private ModeTypeEnum.Enum _mode = ModeTypeEnum.BOTH;
 
     // Allows for a ClientDependency that exists externally

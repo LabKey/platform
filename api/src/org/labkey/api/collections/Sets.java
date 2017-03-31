@@ -32,12 +32,12 @@ public class Sets
 {
     public static Set<String> newCaseInsensitiveHashSet()
     {
-        return Collections.newSetFromMap(new CaseInsensitiveHashMap<Boolean>());
+        return Collections.newSetFromMap(new CaseInsensitiveHashMap<>());
     }
 
     public static Set<String> newCaseInsensitiveHashSet(int count)
     {
-        return Collections.newSetFromMap(new CaseInsensitiveHashMap<Boolean>(count));
+        return Collections.newSetFromMap(new CaseInsensitiveHashMap<>(count));
     }
 
     public static Set<String> newCaseInsensitiveHashSet(String... values)
