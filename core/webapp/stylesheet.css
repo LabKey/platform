@@ -212,6 +212,11 @@ th.labkey-header a:hover {
     text-transform: uppercase;
 }
 
+a.labkey-wp-title-anchor, a.labkey-wp-title-anchor:hover {
+    color: #000000 !important;
+    cursor: default;
+}
+
 table.labkey-expandable-nav th.labkey-header {
 	border-bottom: 1px solid #e5e5e5;
 }
