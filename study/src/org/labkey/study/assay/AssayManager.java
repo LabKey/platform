@@ -99,6 +99,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -191,8 +192,14 @@ public class AssayManager implements AssayService
             if (!_addedFileBasedAssays)
             {
                 // TODO: This is temporary... switch to a ModuleResourceCache
-                ModuleLoader.getInstance().getModules()
-                    .forEach(module -> new ModuleAssayLoader().registerResources(module));
+                ModuleAssayLoader loader = new ModuleAssayLoader();
+                List<AssayProvider> providers = ModuleLoader.getInstance().getModules().stream()
+                    .map(loader::getAssayProviders)
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toList());
+
+                providers.forEach(provider -> AssayService.get().registerAssayProvider(provider));
+
                 Logger.getLogger(AssayManager.class).info("File assay providers have been loaded. All current providers: " + _providers.values());
                 _addedFileBasedAssays = true;
             }

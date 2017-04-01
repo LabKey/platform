@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceLoadException;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.study.StudyModule;
@@ -29,7 +30,9 @@ import org.labkey.study.assay.xml.ProviderType;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.Set;
 
 /**
@@ -52,8 +55,9 @@ public class ModuleAssayLoader
         return Collections.emptySet();
     }
 
-    public void registerResources(Module module)
+    public Collection<AssayProvider> getAssayProviders(Module module)
     {
+        Collection<AssayProvider> ret = new LinkedList<>();
         Resource assayDir = module.getModuleResource(AssayService.ASSAY_DIR_NAME);
         if (assayDir != null && assayDir.exists() && assayDir.isCollection())
         {
@@ -69,7 +73,7 @@ public class ModuleAssayLoader
 
                 try
                 {
-                    loadAssayProvider(module, assayProviderDir, configFile);
+                    ret.add(loadAssayProvider(module, assayProviderDir, configFile));
                 }
                 catch (Exception e)
                 {
@@ -77,9 +81,10 @@ public class ModuleAssayLoader
                 }
             }
         }
+        return ret;
     }
 
-    private void loadAssayProvider(Module module, Resource assayProviderDir, Resource configFile) throws IOException, ModuleResourceLoadException
+    private AssayProvider loadAssayProvider(Module module, Resource assayProviderDir, Resource configFile) throws IOException, ModuleResourceLoadException
     {
         String assayName = assayProviderDir.getName();
 
@@ -92,9 +97,7 @@ public class ModuleAssayLoader
         else
             providerConfig.setName(assayName);
 
-        ModuleAssayProvider assayProvider = new ModuleAssayProvider(assayName, module, assayProviderDir, providerConfig);
-
-        AssayService.get().registerAssayProvider(assayProvider);
+        return new ModuleAssayProvider(assayName, module, assayProviderDir, providerConfig);
     }
 
     private ProviderType parseProvider(Resource configFile) throws IOException, ModuleResourceLoadException
