@@ -57,6 +57,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -1142,8 +1143,11 @@ public class DbScope
 
             try
             {
-                // Load the JDBC driver
-                Class.forName(props.getDriverClassName());
+                // Load and prepare the JDBC driver
+                @SuppressWarnings("unchecked")
+                Class<Driver> driverClass = (Class<Driver>)Class.forName(props.getDriverClassName());
+                dialect.prepareDriver(driverClass);
+
                 // Create non-pooled connection... don't want to pool a failed connection
                 conn = DriverManager.getConnection(props.getUrl(), props.getUsername(), props.getPassword());
                 LOG.debug("Successful connection to \"" + dsName + "\" at " + props.getUrl());

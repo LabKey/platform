@@ -41,6 +41,7 @@ import java.lang.reflect.Method;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.Driver;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -377,6 +378,12 @@ public abstract class SqlDialect
         if (null == sqlState)
             return false;
         return sqlState.equals("42501"); // Insufficient Privilege // TODO verify SQL Server
+    }
+
+    // JDBC driver has been loaded and first connection is about to be attempted. May be called multiple times on the
+    // same driver.
+    public void prepareDriver(Class<Driver> driverClass)
+    {
     }
 
     // We're bootstrapping a new labkey database; do nothing by default
