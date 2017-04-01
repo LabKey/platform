@@ -40,13 +40,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: 7/21/13
  */
 public class ListAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
-
     public static final String COLUMN_NAME_LIST_ID = "ListId";
     public static final String COLUMN_NAME_LIST_DOMAIN_URI = "ListDomainUri";
     public static final String COLUMN_NAME_LIST_ITEM_ENTITY_ID = "ListItemEntityId";
