@@ -47,6 +47,7 @@ import java.lang.reflect.Field;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.Driver;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -65,6 +66,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -150,7 +154,6 @@ abstract class PostgreSql91Dialect extends SqlDialect
         {
             throw new RuntimeSQLException(e);
         }
-
     }
 
     @Override
@@ -717,13 +720,21 @@ abstract class PostgreSql91Dialect extends SqlDialect
     }
 
 
-    // TODO: Remove this override... all recent PostgreSQL versions ship with PL/pgSQL enabled by default
+    @Override
+    public void prepareDriver(Class<Driver> driverClass)
+    {
+        // PostgreSQL driver 42.0.0 added logging via the Java Logging API (java.util.logging). This caused the driver to
+        // start logging SQLExceptions (such as the initial connection failure on bootstrap) to the console... harmless
+        // but annoying. This code suppresses the driver logging.
+        Logger pgjdbcLogger = LogManager.getLogManager().getLogger("org.postgresql");
 
-    // Make sure that the PL/pgSQL language is enabled in the associated database. If not, throw. It would be nice
-    // to use CREATE LANGUAGE at this point, however, that requires SUPERUSER permissions and takes us down the path of
-    // creating call handlers and other complexities. It looks like PostgreSQL 8.1 has a simpler form of CREATE LANGUAGE...
-    // once we require 8.1 we should consider using it here.
+        if (null != pgjdbcLogger)
+            pgjdbcLogger.setLevel(Level.OFF);
+    }
 
+
+    // Make sure that the PL/pgSQL language is enabled in the associated database. If not, throw. Since 9.0, PostgreSQL has
+    // shipped with PL/pgSQL enabled by default, so the check is no longer critical, but continue to verify just to be safe.
     @Override
     public void prepareNewLabKeyDatabase(DbScope scope)
     {
