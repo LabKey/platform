@@ -601,7 +601,7 @@ public class AnnouncementManager
                             docid,
                             containerId,
                             "text/html",
-                            html.toString().getBytes(),
+                            html.toString(),
                             url,
                             props)
                     {

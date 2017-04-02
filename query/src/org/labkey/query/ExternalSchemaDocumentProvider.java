@@ -69,96 +69,93 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
 
         final SearchService.IndexTask task = null==t ? ss.defaultTask() : t;
 
-        Runnable r = new Runnable()
+        Runnable r = () ->
         {
-            public void run()
+            User user = User.getSearchUser();
+            QueryServiceImpl svc = (QueryServiceImpl)QueryService.get();
+            Map<String, UserSchema> externalSchemas = svc.getExternalSchemas(user, c);
+
+            // First, delete all external schema docs in this container.  This addresses schemas/tables that have
+            // disappeared from the data source plus existing schemas that get changed to not index.
+            SearchService ss1 = ServiceRegistry.get().getService(SearchService.class);
+            ss1.deleteResourcesForPrefix("externalTable:" + c.getId());
+
+            for (UserSchema schema : externalSchemas.values())
             {
-                User user = User.getSearchUser();
-                QueryServiceImpl svc = (QueryServiceImpl)QueryService.get();
-                Map<String, UserSchema> externalSchemas = svc.getExternalSchemas(user, c);
+                // TODO: move shouldIndexMetaData() into UserSchema or higher
+                if (null == schema || !((ExternalSchema)schema).shouldIndexMetaData())
+                    continue;
 
-                // First, delete all external schema docs in this container.  This addresses schemas/tables that have
-                // disappeared from the data source plus existing schemas that get changed to not index.
-                SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-                ss.deleteResourcesForPrefix("externalTable:" + c.getId());
+                String schemaName = schema.getName();
+                Set<String> tableNames = schema.getTableNames();
 
-                for (UserSchema schema : externalSchemas.values())
+                for (String mdName : tableNames)
                 {
-                    // TODO: move shouldIndexMetaData() into UserSchema or higher
-                    if (null == schema || !((ExternalSchema)schema).shouldIndexMetaData())
-                        continue;
+                    TableInfo table;
 
-                    String schemaName = schema.getName();
-                    Set<String> tableNames = schema.getTableNames();
-
-                    for (String mdName : tableNames)
+                    try
                     {
-                        TableInfo table;
+                        table = schema.getTable(mdName);
 
-                        try
-                        {
-                            table = schema.getTable(mdName);
-
-                            // Address likely race condition from exception report #19080
-                            if (null == table)
-                                continue;
-
-                            assert mdName.equalsIgnoreCase(table.getName());
-                        }
-                        catch (UnauthorizedException e)
-                        {
-                            // Shouldn't happen, but if it does, log it and continue
-                            LOG.error("Unauthorized", e);
+                        // Address likely race condition from exception report #19080
+                        if (null == table)
                             continue;
-                        }
-                        catch (Exception e)
-                        {
-                            // Shouldn't happen, but if it does, continue with the next table
-                            ExceptionUtil.logExceptionToMothership(null, e);
-                            continue;
-                        }
 
-                        // Use the canonical name for search display, etc.
-                        String tableName = table.getName();
-                        StringBuilder body = new StringBuilder();
-                        Map<String, Object> props = new HashMap<>();
-
-                        props.put(SearchService.PROPERTY.categories.toString(), externalTableCategory.toString());
-                        props.put(SearchService.PROPERTY.title.toString(), "Table " + schemaName + "." + tableName);
-                        props.put(SearchService.PROPERTY.keywordsMed.toString(), schemaName + " " + tableName);
-
-                        if (!StringUtils.isEmpty(table.getDescription()))
-                            body.append(table.getDescription()).append("\n");
-
-                        String sep = "";
-
-                        for (ColumnInfo column : table.getColumns())
-                        {
-                            String n = StringUtils.trimToEmpty(column.getName());
-                            String l = StringUtils.trimToEmpty(column.getLabel());
-                            if (n.equals(l))
-                                l = "";
-                            String d = StringUtils.trimToEmpty(column.getDescription());
-                            if (n.equals(d) || l.equals(d))
-                                d = "";
-                            String colProps = StringUtilsLabKey.joinNonBlank(" ", n, l, d);
-                            body.append(sep).append(colProps);
-                            sep = ",\n";
-                        }
-
-                        ActionURL url = QueryService.get().urlFor(user, c, QueryAction.executeQuery, schemaName, tableName);
-                        url.setExtraPath(c.getId());
-                        String documentId = "externalTable:" + c.getId() + ":" + schemaName + "." + tableName;
-                        SimpleDocumentResource r = new SimpleDocumentResource(
-                                new Path(documentId),
-                                documentId,
-                                c.getId(),
-                                "text/plain",
-                                body.toString().getBytes(),
-                                url,
-                                props);
-                        task.addResource(r, SearchService.PRIORITY.item);
+                        assert mdName.equalsIgnoreCase(table.getName());
                     }
+                    catch (UnauthorizedException e)
+                    {
+                        // Shouldn't happen, but if it does, log it and continue
+                        LOG.error("Unauthorized", e);
+                        continue;
+                    }
+                    catch (Exception e)
+                    {
+                        // Shouldn't happen, but if it does, continue with the next table
+                        ExceptionUtil.logExceptionToMothership(null, e);
+                        continue;
+                    }
+
+                    // Use the canonical name for search display, etc.
+                    String tableName = table.getName();
+                    StringBuilder body = new StringBuilder();
+                    Map<String, Object> props = new HashMap<>();
+
+                    props.put(SearchService.PROPERTY.categories.toString(), externalTableCategory.toString());
+                    props.put(SearchService.PROPERTY.title.toString(), "Table " + schemaName + "." + tableName);
+                    props.put(SearchService.PROPERTY.keywordsMed.toString(), schemaName + " " + tableName);
+
+                    if (!StringUtils.isEmpty(table.getDescription()))
+                        body.append(table.getDescription()).append("\n");
+
+                    String sep = "";
+
+                    for (ColumnInfo column : table.getColumns())
+                    {
+                        String n = StringUtils.trimToEmpty(column.getName());
+                        String l = StringUtils.trimToEmpty(column.getLabel());
+                        if (n.equals(l))
+                            l = "";
+                        String d = StringUtils.trimToEmpty(column.getDescription());
+                        if (n.equals(d) || l.equals(d))
+                            d = "";
+                        String colProps = StringUtilsLabKey.joinNonBlank(" ", n, l, d);
+                        body.append(sep).append(colProps);
+                        sep = ",\n";
+                    }
+
+                    ActionURL url = QueryService.get().urlFor(user, c, QueryAction.executeQuery, schemaName, tableName);
+                    url.setExtraPath(c.getId());
+                    String documentId = "externalTable:" + c.getId() + ":" + schemaName + "." + tableName;
+                    SimpleDocumentResource r1 = new SimpleDocumentResource(
+                            new Path(documentId),
+                            documentId,
+                            c.getId(),
+                            "text/plain",
+                            body.toString(),
+                            url,
+                            props);
+                    task.addResource(r1, SearchService.PRIORITY.item);
                 }
             }
         };

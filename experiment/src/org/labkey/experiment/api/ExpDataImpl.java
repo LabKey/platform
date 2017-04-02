@@ -560,7 +560,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
                 docId,
                 getContainer().getId(),
                 "text/plain",
-                body.getBytes(),
+                body,
                 view, props);
     }
 
@@ -568,7 +568,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     {
         final int _rowId;
 
-        public ExpDataResource(int rowId, Path path, String documentId, String containerId, String contentType, byte[] body, URLHelper executeUrl, Map<String, Object> properties)
+        public ExpDataResource(int rowId, Path path, String documentId, String containerId, String contentType, String body, URLHelper executeUrl, Map<String, Object> properties)
         {
             super(path, documentId, containerId, contentType, body, executeUrl, properties);
             _rowId = rowId;

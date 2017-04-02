@@ -519,7 +519,7 @@ public class ListManager implements SearchService.DocumentProvider
                     documentId,
                     list.getContainer().getId(),
                     "text/plain",
-                    null == body ? new byte[0] : body.getBytes(),
+                    body,
                     itemURL,
                     props) {
                 @Override
@@ -629,7 +629,7 @@ public class ListManager implements SearchService.DocumentProvider
                 documentId,
                 list.getContainer().getId(),
                 "text/plain",
-                body.toString().getBytes(),
+                body.toString(),
                 url,
                 props) {
             @Override

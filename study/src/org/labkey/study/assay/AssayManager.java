@@ -586,7 +586,7 @@ public class AssayManager implements AssayService
 
             String docId = "assay:" + c.getId() + ":" + protocol.getRowId();
             assayRunsURL.setExtraPath(c.getId());
-            WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body.getBytes(), assayRunsURL, m);
+            WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body, assayRunsURL, m);
             task.addResource(r, SearchService.PRIORITY.item);
         }
     }

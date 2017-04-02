@@ -4629,7 +4629,7 @@ public class StudyManager
         view.setExtraPath(dsd.getContainer().getId());
 
         SimpleDocumentResource r = new SimpleDocumentResource(new Path(docid), docid,
-                "text/plain", body.toString().getBytes(),
+                "text/plain", body.toString(),
                 view, props);
         task.addResource(r, SearchService.PRIORITY.item);
     }
@@ -4720,7 +4720,7 @@ public class StudyManager
                         p, docid,
                         c.getId(),
                         "text/plain",
-                        displayTitle.getBytes(),
+                        displayTitle,
                         execute, props
                 )
                 {

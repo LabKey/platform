@@ -277,7 +277,7 @@ public class RRF_Loader extends Job
                     new Path("CUI", CUI),
                     "umls:" + CUI,
                     shared.getId(),
-                    "text/plain", body.getBytes(),
+                    "text/plain", body,
                     new ActionURL(UmlsController.ConceptAction.class, shared).addParameter("cui", CUI),
                     map
             );

@@ -245,7 +245,7 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
                         append(body, sampleSetName);
                 }
 
-                SimpleDocumentResource sdr = new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(), getContainer().getId(), "text/plain", body.toString().getBytes(), url, props)
+                SimpleDocumentResource sdr = new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(), getContainer().getId(), "text/plain", body.toString(), url, props)
                 {
                     @Override
                     public void setLastIndexed(long ms, long modified)

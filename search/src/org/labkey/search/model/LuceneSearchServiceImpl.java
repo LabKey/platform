@@ -1788,7 +1788,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             LuceneSearchServiceImpl impl = (LuceneSearchServiceImpl)_ss;
             impl.deleteIndexedContainer(_c.getId());
 
-            byte[] body = new byte[0];
+            String body = null;
 
             Map<String, Object> props = new HashMap<>();
             props.put(PROPERTY.keywordsHi.toString(), "kumquat running coding dancing");
@@ -1859,7 +1859,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             }
         }
 
-        private void index(String docId, String title, byte[] body, Map<String, Object> props) throws InterruptedException
+        private void index(String docId, String title, String body, Map<String, Object> props) throws InterruptedException
         {
             props.put(PROPERTY.categories.toString(), _category.getName());
             props.put(PROPERTY.title.toString(), title);
