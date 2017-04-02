@@ -3843,7 +3843,7 @@ public class OntologyManager
                     new Path(propertyURI),
                     "concept:" + propertyURI,
                     _sharedContainer.getId(),
-                    "text/plain", body.getBytes(),
+                    "text/plain", body,
                     url,
                     m
                 );

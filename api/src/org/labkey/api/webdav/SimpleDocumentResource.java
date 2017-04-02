@@ -15,9 +15,11 @@
  */
 package org.labkey.api.webdav;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -35,27 +37,27 @@ import java.util.Map;
  */
 public class SimpleDocumentResource extends AbstractDocumentResource
 {
-    String _documentId;
-    String _contentType = "text/html";
-    byte[] _body;
-    URLHelper _executeUrl;
+    private final String _documentId;
+    private final String _contentType;
+    private final byte[] _body;
+    private final URLHelper _executeUrl;
 
-    public SimpleDocumentResource(Path path, String documentId, String containerId, String contentType, byte[] body, URLHelper executeUrl, Map<String, Object> properties)
+    public SimpleDocumentResource(Path path, String documentId, String containerId, String contentType, @Nullable String body, URLHelper executeUrl, @Nullable Map<String, Object> properties)
     {
         super(path);
         _containerId = containerId;
         _documentId = documentId;
         _contentType = contentType;
-        _body = body;
+        _body = null == body ? new byte[0] : body.getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
         _executeUrl = executeUrl;
         assert !(_executeUrl instanceof ActionURL) || ((ActionURL)executeUrl).getExtraPath().equals(_containerId);
         if (null != properties)
             _properties = new HashMap<>(properties);
     }
 
-    public SimpleDocumentResource(Path path, String documentId, String contentType, byte[] body, ActionURL executeUrl, Map<String,Object> properties)
+    public SimpleDocumentResource(Path path, String documentId, String contentType, @Nullable String body, ActionURL executeUrl, @Nullable Map<String, Object> properties)
     {
-        this(path,documentId,executeUrl.getExtraPath(),contentType,body,executeUrl,properties);
+        this(path, documentId, executeUrl.getExtraPath(), contentType, body, executeUrl, properties);
     }
 
     @Override
