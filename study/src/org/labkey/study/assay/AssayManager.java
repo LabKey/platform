@@ -113,9 +113,9 @@ public class AssayManager implements AssayService
     private boolean _addedFileBasedAssays = false;
     private static final Object PROVIDER_LOCK = new Object();
 
-    private Map<String, AssayProvider> _providers = new ConcurrentSkipListMap<>();
-    private List<AssayHeaderLinkProvider> _headerLinkProviders = new CopyOnWriteArrayList<>();
-    private List<AssayColumnInfoRenderer> _assayColumnInfoRenderers = new CopyOnWriteArrayList<>();
+    private final Map<String, AssayProvider> _providers = new ConcurrentSkipListMap<>();
+    private final List<AssayHeaderLinkProvider> _headerLinkProviders = new CopyOnWriteArrayList<>();
+    private final List<AssayColumnInfoRenderer> _assayColumnInfoRenderers = new CopyOnWriteArrayList<>();
 
     /** Synchronization lock object for ensuring that batch names are unique */
     private static final Object BATCH_NAME_LOCK = new Object();

@@ -283,6 +283,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ServiceRegistry.get().registerService(StudySerializationRegistry.class, StudySerializationRegistryImpl.get());
 
         ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
+        // Register early so file-based assays are available to Java code at upgrade time
+        ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
         DataViewService.get().registerProvider(DatasetViewProvider.TYPE, new DatasetViewProvider());
         DataViewService.get().registerProvider(ReportViewProvider.TYPE, new ReportViewProvider());
 
@@ -290,7 +292,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         NotificationService.get().registerNotificationType(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, "Study", "fa-users");
 
-        //register roles during init so they are available to Java sql upgrade scripts
+        // Register early so these roles are available to Java code at upgrade time
         RoleManager.registerRole(new SpecimenCoordinatorRole());
         RoleManager.registerRole(new SpecimenRequesterRole());
         RoleManager.registerRole(new AssayDesignerRole());
@@ -362,7 +364,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PlateManager.get().registerLsidHandlers();
         registerFolderTypes();
         SecurityManager.addViewFactory(new SecurityController.StudySecurityViewFactory());
-        ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
         AssayService.get().registerAssayProvider(new TsvAssayProvider());
         ExperimentService.get().registerExperimentRunTypeSource(container -> {
             Set<ExperimentRunType> result = new HashSet<>();
