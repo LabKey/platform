@@ -3,12 +3,6 @@ import org.labkey.gradle.util.BuildUtils
 apply plugin: 'java'
 apply plugin: 'org.labkey.simpleModule'
 
-
-clientLibs {
-   workingDir = file(staging.webappDir)
-}
-
-
 dependencies {
    BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: ":server:api")
    compile 'org.apache.tomcat:jsp-api'
