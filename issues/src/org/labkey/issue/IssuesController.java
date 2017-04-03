@@ -330,6 +330,7 @@ public class IssuesController extends SpringActionController
             return new HtmlView(getUndefinedIssueListMessage(getViewContext(), issueDefName));
         }
 
+        @Nullable
         private String getIssueDefName()
         {
             String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
@@ -341,7 +342,8 @@ public class IssuesController extends SpringActionController
                     Issue issue = IssueManager.getIssue(getContainer(), getUser(), NumberUtils.toInt(issueId));
                     if (issue != null)
                     {
-                        issueDefName = IssueManager.getIssueListDef(issue).getName();
+                        IssueListDef def = IssueManager.getIssueListDef(issue);
+                        return def != null ? def.getName() : null;
                     }
                 }
             }
