@@ -118,8 +118,8 @@ class UserCache
             .collect(Collectors.toCollection(LinkedList::new));
     }
 
-    // Returns a deep copy of the active users list including deactivated accounts, allowing callers to interrogate user permissions without affecting
-    // cached users. Collection is ordered by email... maybe it should be ordered by display name?
+    // Returns a deep copy of the users list including deactivated accounts, allowing callers to interrogate user permissions
+    // without affecting cached users. Collection is ordered randomly... maybe it should be ordered by display name?
     static @NotNull Collection<User> getActiveAndInactiveUsers()
     {
         Collection<User> users = getUserCollections().getUserIdMap().values();

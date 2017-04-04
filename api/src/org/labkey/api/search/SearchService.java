@@ -30,6 +30,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -45,6 +46,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -66,7 +68,17 @@ public interface SearchService
     SearchCategory fileCategory = new SearchCategory("file", "Files and Attachments", false);
 
     // marker value for documents with indexing errors
-    java.util.Date failDate = new java.sql.Timestamp(DateUtil.parseISODateTime("1899-12-30"));
+    Date failDate = new Timestamp(DateUtil.parseISODateTime("1899-12-30"));
+
+    static @Nullable SearchService get()
+    {
+        return ServiceRegistry.get(SearchService.class);
+    }
+
+    static void setInstance(SearchService impl)
+    {
+        ServiceRegistry.get().registerService(SearchService.class, impl);
+    }
 
     enum PRIORITY
     {

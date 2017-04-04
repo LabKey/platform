@@ -83,8 +83,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ExceptionUtil
 {
-    private static final JobRunner _jobRunner = new JobRunner("Mothership Reporting", 1);
-    private static final Logger _logStatic = Logger.getLogger(ExceptionUtil.class);
+    private static final JobRunner JOB_RUNNER = new JobRunner("Mothership Reporting", 1);
+    private static final Logger LOG = Logger.getLogger(ExceptionUtil.class);
     // Allow 10 report submissions to mothership per minute
     private static final RateLimiter _reportingRateLimiter = new RateLimiter("exception reporting", 10, TimeUnit.MINUTES);
 
@@ -225,7 +225,7 @@ public class ExceptionUtil
         if (requestURL != null && MothershipReport.isMothershipExceptionReport(requestURL))
             return;
 
-        _logStatic.error("Exception detected and logged to mothership", ex);
+        LOG.error("Exception detected and logged to mothership", ex);
 
         // Once to labkey.org, if so configured
         sendReport(createReportFromThrowable(request, ex, requestURL, false, getExceptionReportingLevel()));
@@ -240,7 +240,7 @@ public class ExceptionUtil
     private static void sendReport(MothershipReport report)
     {
         if (null != report)
-            _jobRunner.execute(report);
+            JOB_RUNNER.execute(report);
     }
 
     /** Figure out exactly what text for the stack trace and other details we should submit */
@@ -328,7 +328,7 @@ public class ExceptionUtil
             String referrerURL,
             String username)
     {
-        _logStatic.error("Client exception detected and logged to mothership:\n" +
+        LOG.error("Client exception detected and logged to mothership:\n" +
             requestURL + "\n" +
             referrerURL + "\n" +
             browser + "\n" +
@@ -359,7 +359,7 @@ public class ExceptionUtil
         }
         else if (local && ModuleLoader.getInstance().isUpgradeInProgress())
         {
-            _logStatic.error("Not logging exception to local mothership because upgrade is in progress");
+            LOG.error("Not logging exception to local mothership because upgrade is in progress");
             send = false;
         }
         // In dev mode, don't report to labkey.org if the Mothership module is installed.
@@ -431,7 +431,7 @@ public class ExceptionUtil
                 null != decorations.get(ExceptionInfo.SkipMothershipLogging) ||
                 ex instanceof SkipMothershipLogging ||
                 isClientAbortException(ex) ||
-                _jobRunner.getJobCount() > 10;
+                JOB_RUNNER.getJobCount() > 10;
     }
 
     static class WebPartErrorView extends WebPartView
@@ -493,9 +493,8 @@ public class ExceptionUtil
     // This is called by SpringActionController (to display unhandled exceptions) and called directly by AuthFilter.doFilter() (to display startup errors and bypass normal request handling)
     public static ActionURL handleException(HttpServletRequest request, HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure)
     {
-        SearchService ss = ServiceRegistry.get(SearchService.class);
-        Logger log = _logStatic;
-        return handleException(request, response, ex, message, startupFailure, ss, log);
+        SearchService ss = SearchService.get();
+        return handleException(request, response, ex, message, startupFailure, ss, LOG);
     }
 
     static ActionURL handleException(HttpServletRequest request, HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure,
@@ -771,7 +770,7 @@ public class ExceptionUtil
         }
         catch (IOException x)
         {
-            _logStatic.error("doErrorRedirect", x);
+            LOG.error("doErrorRedirect", x);
         }
     }
 
@@ -803,7 +802,7 @@ public class ExceptionUtil
                 _exceptionDecorations.put(t, m = new HashMap<>());
             if (overwrite || !m.containsKey(key))
             {
-                _logStatic.debug("add decoration to " + t.getClass() + "@" + System.identityHashCode(t) + " " + key + "=" + value);
+                LOG.debug("add decoration to " + t.getClass() + "@" + System.identityHashCode(t) + " " + key + "=" + value);
                 m.put(key,value);
                 return true;
             }

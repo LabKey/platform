@@ -69,30 +69,30 @@ public interface Result<T> extends Supplier<T>
 
     class Failure<T> implements Result<T>
     {
-        final String message;
-        final Exception exception;
+        private final String _message;
+        private final Exception _exception;
 
         Failure(String s)
         {
-            this.message = s;
-            this.exception = null;
+            _message = s;
+            _exception = null;
         }
 
         Failure(Exception x)
         {
-            this.message = null;
-            this.exception = x;
+            _message = null;
+            _exception = x;
         }
 
         @Override
         public T get()
         {
-            if (null != exception)
-                throw exception instanceof RuntimeException ?
-                        (RuntimeException)exception :
-                        new RuntimeException(exception);
-            if (null != message)
-                throw new NoSuchElementException(message);
+            if (null != _exception)
+                throw _exception instanceof RuntimeException ?
+                        (RuntimeException) _exception :
+                        new RuntimeException(_exception);
+            if (null != _message)
+                throw new NoSuchElementException(_message);
             throw new NoSuchElementException();
         }
 
@@ -109,18 +109,18 @@ public interface Result<T> extends Supplier<T>
         }
     }
 
-    public static <T> Result<T> success(T t)
+    static <T> Result<T> success(T t)
     {
-        return new Success<T>(t);
+        return new Success<>(t);
     }
 
-    public static Result failure(String s)
+    static <T> Result<T> failure(String s)
     {
-        return new Failure(s);
+        return new Failure<T>(s);
     }
 
-    public static Result failure(Exception x)
+    static <T> Result<T> failure(Exception x)
     {
-        return new Failure(x);
+        return new Failure<>(x);
     }
 }
