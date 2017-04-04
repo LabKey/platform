@@ -826,7 +826,7 @@ public class PageFlowUtil
             metaData.add(Metadata.RESOURCE_NAME_KEY, file.getName());
             metaData.add(Metadata.CONTENT_TYPE, PageFlowUtil.getContentTypeFor(file.getName()));
 
-            return detector.detect(TikaInputStream.get(file), new Metadata());
+            return detector.detect(TikaInputStream.get(file), metaData);
         }
         catch (IOException e)
         {

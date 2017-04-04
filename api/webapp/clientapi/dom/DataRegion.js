@@ -2308,7 +2308,7 @@ if (!LABKEY.DataRegions) {
                 {
                     var newAnalyticsProviders = [];
                     $.each(view.analyticsProviders, function(index, existingProvider) {
-                        if (existingProvider.fieldKey !== colFieldKey || !existingProvider.name.startsWith('AGG_'))
+                        if (existingProvider.fieldKey !== colFieldKey || existingProvider.name.indexOf('AGG_') != 0)
                             newAnalyticsProviders.push(existingProvider);
                     });
 
