@@ -50,6 +50,7 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -65,11 +66,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +89,7 @@ public class SqlScriptController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
+    @SuppressWarnings("unused")
     @RequiresSiteAdmin
     @AllowedDuringUpgrade
     public class GetModuleStatusAction extends ApiAction
@@ -250,6 +252,7 @@ public class SqlScriptController extends SpringActionController
 
             ArrayList<SqlScript> allNotRun = new ArrayList<>();
             ArrayList<SqlScript> incrementalNotRun = new ArrayList<>();
+            Set<String> allFilenames = new LinkedHashSet<>();
 
             for (Module module : modules)
             {
@@ -259,20 +262,17 @@ public class SqlScriptController extends SpringActionController
                 {
                     List<SqlScript> scripts = provider.getScripts(schema);
 
-                    allNotRun.addAll(
-                        scripts
-                            .stream()
-                            .filter(script -> !allRun.contains(script))
-                            .collect(Collectors.toList())
-                    );
+                    scripts.stream()
+                        .filter(script -> !allRun.contains(script))
+                        .forEach(allNotRun::add);
+
+                    scripts.forEach(script -> allFilenames.add(script.getDescription()));
                 }
             }
 
-            incrementalNotRun.addAll(allNotRun
-                .stream()
+            allNotRun.stream()
                 .filter(SqlScript::isIncremental)
-                .collect(Collectors.toList())
-            );
+                .forEach(incrementalNotRun::add);
 
             appendScripts(html, allNotRun);
             appendScripts(html, incrementalNotRun);
@@ -283,17 +283,25 @@ public class SqlScriptController extends SpringActionController
             // and might not run during bootstrap.
             if (AppProps.getInstance().isDevMode())
             {
-                List<String> specialScripts = new LinkedList<>();
-                specialScripts.addAll(Arrays.asList("mpower-16.10-16.11.sql", "mpower-16.11-16.12.sql")); /* Leave mpower incremental scripts in place until SCCA deploys 16.3 */
+                SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
+                List<Pair<String, Module>> requiredScripts = new LinkedList<>();
 
-                if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
-                    specialScripts.addAll(Arrays.asList("hdrl-16.11-16.12.sql", "labware.gw_labkey-16.11-16.12.sql"));  /* See #26135 */
-
-                for (String name : specialScripts)
+                for (Module module : modules)
                 {
-                    if (-1 == html.indexOf(name))
-                        html.insert(0, "<span class=\"labkey-error\">Warning: " + PageFlowUtil.filter(name) + " did not appear!</span><br>\n");
+                    new FileSqlScriptProvider(module).getRequiredScripts(dialect)
+                        .forEach(filename -> requiredScripts.add(new Pair<String, Module>(filename, module)));
                 }
+
+                StringBuilder warningHtml = new StringBuilder();
+
+                for (Pair<String, Module> pair : requiredScripts)
+                {
+                    if (!allFilenames.contains(pair.getKey()))
+                        warningHtml.append("<span class=\"labkey-error\">Warning: The script ").append(PageFlowUtil.filter(pair.getKey())).append(" from module ").append(PageFlowUtil.filter(pair.getValue().getName())).append(" was not found!</span><br>\n");
+                }
+
+                if (warningHtml.length() > 0)
+                    html.insert(0, warningHtml);
             }
 
             return new HtmlView(html.toString());
@@ -995,8 +1003,9 @@ public class SqlScriptController extends SpringActionController
                 unclaimedFiles.remove("PremiumStats_uninstall.sql");
             }
 
-            // specifically allow db scripts to have README files
+            // specifically allow db scripts to have README and required_scripts.txt files
             unclaimedFiles.remove("README.txt");
+            unclaimedFiles.remove("required_scripts.txt");
 
             if (!unclaimedFiles.isEmpty())
             {
