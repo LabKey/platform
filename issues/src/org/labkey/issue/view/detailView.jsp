@@ -69,12 +69,12 @@
     // create collections for additional custom columns and distribute them evenly in the form
     List<DomainProperty> column1Props = new ArrayList<>();
     List<DomainProperty> column2Props = new ArrayList<>();
-    List<DomainProperty> extraColumns = new ArrayList<>();          // type, area, priority, milestone
+    List<DomainProperty> extraColumns = new ArrayList<>();          // assigned to, type, area, priority, milestone
     int i=0;
 
     Map<String, DomainProperty> propertyMap = bean.getCustomColumnConfiguration().getPropertyMap();
     // todo: don't include if the lookup is empty (was previously IssuePage.hasKeywords)
-    extraColumns.addAll(Stream.of("type", "area", "priority", "milestone")
+    extraColumns.addAll(Stream.of("assignedto", "type", "area", "priority", "milestone")
             .filter(propertyMap::containsKey)
             .map((Function<String, DomainProperty>) propertyMap::get)
             .collect(Collectors.toList()));
@@ -230,8 +230,7 @@
 <table class="issue-fields" style="width: 60%;">
     <tr>
         <td valign="top"><table>
-            <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr>
-            <tr><td class="labkey-form-label">Assigned&nbsp;To</td><td><%=h(issue.getAssignedToName(user))%></td></tr><%
+            <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr><%
             for (DomainProperty prop : extraColumns)
             {%>
                 <%=text(bean.renderColumn(prop, getViewContext()))%><%

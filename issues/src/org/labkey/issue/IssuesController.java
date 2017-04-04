@@ -1004,7 +1004,9 @@ public class IssuesController extends SpringActionController
 
                 IssueValidation.validateRequiredFields(getIssueListDef(), getCustomColumnConfiguration(), form, getUser(), errors);
                 IssueValidation.validateNotifyList(form, errors);
-                if (!"closed".equals(form.getBean().getStatus()))
+                // don't validate the assigned to field if the issue is either closed or we are in the process
+                // of closing it
+                if (form.getStrings().containsKey("action") && !IssuesController.CloseAction.class.equals(form.getAction()))
                     IssueValidation.validateAssignedTo(form, getContainer(), errors);
                 IssueValidation.validateStringFields(form, getColumnConfiguration(), errors);
             }
@@ -1014,13 +1016,17 @@ public class IssuesController extends SpringActionController
         {
             if (getIssue(form.getIssueId(), false).getStatus().equals("closed"))
             {
-                ActionURL url = new ActionURL(ListAction.class, getContainer()).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
-                IssueListDef issueListDef = getIssueListDef();
+                // redirect to the issue list only when closing an issue, all other updates redirect to the details view
+                if (IssuesController.CloseAction.class.equals(form.getAction()))
+                {
+                    ActionURL url = new ActionURL(ListAction.class, getContainer()).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+                    IssueListDef issueListDef = getIssueListDef();
 
-                if (issueListDef != null)
-                    url.addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueListDef.getName());
+                    if (issueListDef != null)
+                        url.addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueListDef.getName());
 
-                return url;
+                    return url;
+                }
             }
 
             return form.getForwardURL();
@@ -1214,13 +1220,6 @@ public class IssuesController extends SpringActionController
                 {
                     _baseNames.addAll(Arrays.asList("title", "type", "area", "notifylist", "priority", "milestone",
                             "assignedto", "resolution"));
-
-/*
-                        _baseNames.addAll(((AbstractIssuesListDefDomainKind)domain.getDomainKind()).getRequiredProperties()
-                                .stream()
-                                .map(PropertyStorageSpec::getName)
-                                .collect(Collectors.toSet()));
-*/
                 }
 
                 if (domain != null)
