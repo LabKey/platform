@@ -89,7 +89,6 @@ import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurableResource;
@@ -103,7 +102,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Dataset;
@@ -184,7 +182,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import static org.labkey.api.exp.OntologyManager.getSqlDialect;
@@ -206,7 +203,6 @@ public class StudyManager
     private final DatasetHelper _datasetHelper;
     private final QueryHelper<CohortImpl> _cohortHelper;
     private final BlockingCache<Container, Set<PropertyDescriptor>> _sharedProperties;
-    private final Map<String, Resource> _moduleParticipantViews = new ConcurrentHashMap<>();
 
     private static final String LSID_REQUIRED = "LSID_REQUIRED";
 
@@ -214,13 +210,7 @@ public class StudyManager
     protected StudyManager()
     {
         // prevent external construction with a private default constructor
-        _studyHelper = new QueryHelper<StudyImpl>(new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoStudy();
-            }
-        }, StudyImpl.class)
+        _studyHelper = new QueryHelper<StudyImpl>(() -> StudySchema.getInstance().getTableInfoStudy(), StudyImpl.class)
         {
             public List<StudyImpl> get(final Container c, SimpleFilter filterArg, final String sortString)
             {
@@ -4541,7 +4531,7 @@ public class StudyManager
     private void unindexDataset(DatasetDefinition ds)
     {
         String docid = "dataset:" + new Path(ds.getContainer().getId(),String.valueOf(ds.getDatasetId())).toString();
-        SearchService ss = ServiceRegistry.get(SearchService.class);
+        SearchService ss = SearchService.get();
         if (null != ss)
             ss.deleteResource(docid);
     }
@@ -4549,42 +4539,35 @@ public class StudyManager
 
     public static void indexDatasets(SearchService.IndexTask task, Container c, Date modifiedSince)
     {
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-        if (null == ss) return;
-        ResultSet rs = null;
-        try
+        SearchService ss = SearchService.get();
+        if (null == ss)
+            return;
+
+        SQLFragment f = new SQLFragment("SELECT Container, DatasetId FROM " + StudySchema.getInstance().getTableInfoDataset());
+        if (null != c)
         {
-            SQLFragment f = new SQLFragment("SELECT container, datasetid FROM " + StudySchema.getInstance().getTableInfoDataset());
-            if (null != c)
+            f.append(" WHERE Container = ?");
+            f.add(c);
+        }
+
+        new SqlSelector(StudySchema.getInstance().getSchema(), f).forEach(rs ->
+        {
+            String container = rs.getString(1);
+            int id = rs.getInt(2);
+
+            Container c2 = ContainerManager.getForId(container);
+            if (null != c2)
             {
-                f.append(" WHERE container = ?");
-                f.add(c);
+                Study study = StudyManager.getInstance().getStudy(c2);
+
+                if (null != study)
+                {
+                    DatasetDefinition dsd = StudyManager.getInstance().getDatasetDefinition(study, id);
+                    if (null != dsd)
+                        indexDataset(task, dsd);
+                }
             }
-            rs = new SqlSelector(StudySchema.getInstance().getSchema(), f).getResultSet(false, false);
-
-            while (rs.next())
-            {
-                String container = rs.getString(1);
-                int id = rs.getInt(2);
-
-                c = ContainerManager.getForId(container);
-                if (null == c) continue;
-                Study study = StudyManager.getInstance().getStudy(c);
-                if (null == study) continue;
-                DatasetDefinition dsd = StudyManager.getInstance().getDatasetDefinition(study, id);
-                if (null == dsd) continue;
-
-                indexDataset(task, dsd);
-            }
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        });
     }
 
     private static void indexDataset(@Nullable SearchService.IndexTask task, DatasetDefinition dsd)
@@ -4594,7 +4577,7 @@ public class StudyManager
         if (null == dsd.getTypeURI() || null == dsd.getDomain())
             return;
         if (null == task)
-            task = ServiceRegistry.get(SearchService.class).defaultTask();
+            task = SearchService.get().defaultTask();
         String docid = "dataset:" + new Path(dsd.getContainer().getId(), String.valueOf(dsd.getDatasetId())).toString();
 
         StringBuilder body = new StringBuilder();
@@ -4738,11 +4721,6 @@ public class StudyManager
     }
 
     
-    public void registerParticipantView(Module module, Resource ptidView)
-    {
-        _moduleParticipantViews.put(module.getName(), ptidView);
-    }
-
     // make sure we don't over do it with multiple calls to reindex the same study (see reindex())
     // add a level of indirection
     // CONSIDER: add some facility like this to SearchService??
@@ -4755,7 +4733,7 @@ public class StudyManager
         if (null == c)
             return;
 
-        final SearchService.IndexTask defaultTask = ServiceRegistry.get(SearchService.class).defaultTask();
+        final SearchService.IndexTask defaultTask = SearchService.get().defaultTask();
         final SearchService.IndexTask task = null==t ? defaultTask : t;
 
         Runnable runEnumerate = new Runnable()

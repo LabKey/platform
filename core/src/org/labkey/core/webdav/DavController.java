@@ -767,7 +767,7 @@ public class DavController extends SpringActionController
                 setLastError(dex);
                 if (dex.getStatus().equals(WebdavStatus.SC_NOT_FOUND))
                 {
-                    SearchService ss = ServiceRegistry.get(SearchService.class);
+                    SearchService ss = SearchService.get();
                     if (null != ss)
                         ss.notFound((URLHelper)getRequest().getAttribute(ViewServlet.ORIGINAL_URL_URLHELPER));
                 }
@@ -6588,7 +6588,7 @@ public class DavController extends SpringActionController
         if (isTempFile(r))
             return;
         
-        SearchService ss = ServiceRegistry.get(SearchService.class);
+        SearchService ss = SearchService.get();
         if (null != ss)
             ss.defaultTask().addResource(r, SearchService.PRIORITY.item);
     }
@@ -6597,7 +6597,7 @@ public class DavController extends SpringActionController
     private void removeFromIndex(WebdavResource r)
     {
         _log.debug("removeFromIndex: " + r.getPath());
-        SearchService ss = ServiceRegistry.get(SearchService.class);
+        SearchService ss = SearchService.get();
         if (null != ss)
             ss.deleteResource(r.getDocumentId());
     }

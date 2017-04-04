@@ -258,10 +258,12 @@ public class QueryModule extends DefaultModule
             studyRegistry.addImportFactory(new ReportImporter.Factory());
         }
 
-        if (null != ServiceRegistry.get(SearchService.class))
+        SearchService ss = SearchService.get();
+
+        if (null != ss)
         {
-            ServiceRegistry.get(SearchService.class).addDocumentProvider(ExternalSchemaDocumentProvider.getInstance());
-            ServiceRegistry.get(SearchService.class).addSearchCategory(ExternalSchemaDocumentProvider.externalTableCategory);
+            ss.addDocumentProvider(ExternalSchemaDocumentProvider.getInstance());
+            ss.addSearchCategory(ExternalSchemaDocumentProvider.externalTableCategory);
         }
         PropertyService.get().registerDomainKind(new SimpleTableDomainKind());
 

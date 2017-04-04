@@ -267,7 +267,7 @@ public class ListManager implements SearchService.DocumentProvider
     // Index all lists in this container
     public void enumerateDocuments(@Nullable IndexTask t, final @NotNull Container c, @Nullable Date since)   // TODO: Use since?
     {
-        final IndexTask task = null == t ? ServiceRegistry.get(SearchService.class).defaultTask() : t;
+        final IndexTask task = null == t ? SearchService.get().defaultTask() : t;
 
         Runnable r = () -> {
             Map<String, ListDefinition> lists = ListService.get().getLists(c);
@@ -289,7 +289,7 @@ public class ListManager implements SearchService.DocumentProvider
     // Index a single list
     public void indexList(final ListDef def)
     {
-        SearchService ss = ServiceRegistry.get(SearchService.class);
+        SearchService ss = SearchService.get();
 
         if (null != ss)
         {
@@ -326,7 +326,7 @@ public class ListManager implements SearchService.DocumentProvider
     // Index (or delete) a single list item after item save or delete
     public void indexItem(final ListDefinition list, final ListItem item)
     {
-        final IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
+        final IndexTask task = SearchService.get().defaultTask();
 
         if (list.getEachItemIndex())
         {
@@ -349,7 +349,7 @@ public class ListManager implements SearchService.DocumentProvider
 
     private void _addIndexTask(final Runnable r, final SearchService.PRIORITY p)
     {
-        SearchService ss = ServiceRegistry.get(SearchService.class);
+        SearchService ss = SearchService.get();
 
         if (null != ss)
         {
@@ -433,9 +433,9 @@ public class ListManager implements SearchService.DocumentProvider
         if (!list.getEntireListIndex() && !list.getEachItemIndex())
             return;
 
-        final IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
+        final IndexTask task = SearchService.get().defaultTask();
 
-        Runnable r = () -> ServiceRegistry.get(SearchService.class).deleteResource(getDocumentId(list, entityId));
+        Runnable r = () -> SearchService.get().deleteResource(getDocumentId(list, entityId));
 
         task.addRunnable(r, SearchService.PRIORITY.delete);
     }
@@ -653,7 +653,7 @@ public class ListManager implements SearchService.DocumentProvider
     // Un-index the entire list doc alone, but leave the list items alone
     private void deleteIndexedEntireListDoc(ListDefinition list)
     {
-        SearchService ss = ServiceRegistry.get(SearchService.class);
+        SearchService ss = SearchService.get();
 
         if (null != ss)
             ss.deleteResource(getDocumentId(list));
@@ -663,7 +663,7 @@ public class ListManager implements SearchService.DocumentProvider
     // Un-index all list items, but leave the entire list doc alone
     private void deleteIndexedItems(ListDefinition list)
     {
-        SearchService ss = ServiceRegistry.get(SearchService.class);
+        SearchService ss = SearchService.get();
 
         if (null != ss)
             ss.deleteResourcesForPrefix(getDocumentId(list, null));

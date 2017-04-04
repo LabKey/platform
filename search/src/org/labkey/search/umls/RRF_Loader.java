@@ -193,7 +193,7 @@ public class RRF_Loader extends Job
 
     private int loadTextIndex() throws InterruptedException
     {
-        SearchService ss = ServiceRegistry.get(SearchService.class);
+        SearchService ss = SearchService.get();
         Container shared = ContainerManager.getSharedContainer();
 
         Iterator<Definition> defs = _reader.getDefinitions(null); // new Filter<RRF_Reader.Definition>(){ public boolean accept(RRF_Reader.Definition def) { return !"Y".equals(def.SUPPRESS); } });

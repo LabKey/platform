@@ -1695,7 +1695,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         private final TestContext _context = TestContext.get();
         private final ActionURL _url = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(_c).setExtraPath(_c.getId());
         private final SearchCategory _category = new SearchCategory("SearchTest", "Just a test");
-        private final SearchService _ss = ServiceRegistry.get(SearchService.class);
+        private final SearchService _ss = SearchService.get();
         private final CountDownLatch _latch = new CountDownLatch(DOC_COUNT);
 
         /**

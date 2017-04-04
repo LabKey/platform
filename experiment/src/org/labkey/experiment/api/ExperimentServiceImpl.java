@@ -741,7 +741,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public void indexDataClass(ExpDataClass dataClass)
     {
-        SearchService ss = ServiceRegistry.get(SearchService.class);
+        SearchService ss = SearchService.get();
         if (ss == null)
             return;
 
@@ -779,7 +779,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public void indexSampleSet(ExpSampleSet sampleSet)
     {
-        SearchService ss = ServiceRegistry.get(SearchService.class);
+        SearchService ss = SearchService.get();
         if (ss == null)
             return;
 
@@ -2994,7 +2994,7 @@ public class ExperimentServiceImpl implements ExperimentService
             executor.execute(materialSQL);
 
             // Remove from search index
-            SearchService ss = ServiceRegistry.get(SearchService.class);
+            SearchService ss = SearchService.get();
             if (null != ss)
             {
                 for (ExpMaterial material : materials)
@@ -3070,7 +3070,7 @@ public class ExperimentServiceImpl implements ExperimentService
             executor.execute(dataSQL);
 
             // Remove from search index
-            SearchService ss = ServiceRegistry.get(SearchService.class);
+            SearchService ss = SearchService.get();
             if (null != ss)
             {
                 for (ExpDataImpl data : ExpDataImpl.fromDatas(datas))

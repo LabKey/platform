@@ -715,7 +715,7 @@ public class AnnouncementManager
     private static void unindexThread(AnnouncementModel ann)
     {
         String docid = "thread:" + ann.getEntityId();
-        SearchService ss = ServiceRegistry.get(SearchService.class);
+        SearchService ss = SearchService.get();
         if (null != ss)
         {
             ss.deleteResource(docid);

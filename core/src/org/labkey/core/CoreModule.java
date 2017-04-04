@@ -696,9 +696,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AuditLogService.get().registerAuditType(new ClientApiAuditProvider());
         AuditLogService.get().registerAuditType(new AuthenticationProviderConfigAuditTypeProvider());
 
-        if (null != ServiceRegistry.get(SearchService.class))
-            ServiceRegistry.get(SearchService.class).addDocumentParser(new TabLoader.CsvFactoryNoConversions());
-
         TempTableTracker.init();
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
@@ -774,12 +771,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         FolderTypeManager.get().registerFolderType(this, new WorkbookFolderType());
 
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-        if (null != ss)
-        {
-            ss.addDocumentProvider(this);
-        }
-
         SecurityManager.addViewFactory(new SecurityController.GroupDiagramViewFactory());
 
         FolderSerializationRegistry fsr = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
@@ -794,11 +785,18 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             fsr.addImportFactory(new SubfolderImporterFactory());
         }
 
-        // Register indexable DataLoaders with the search service
-        DataLoaderServiceImpl.get().getFactories()
+        SearchService ss = SearchService.get();
+        if (null != ss)
+        {
+            ss.addDocumentParser(new TabLoader.CsvFactoryNoConversions());
+            ss.addDocumentProvider(this);
+
+            // Register indexable DataLoaders with the search service
+            DataLoaderServiceImpl.get().getFactories()
                 .stream()
                 .filter(DataLoaderFactory::indexable)
-                .forEach(dlf -> ServiceRegistry.get(SearchService.class).addDocumentParser(dlf));
+                .forEach(ss::addDocumentParser);
+        }
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP,
                 "Client-side Exception Logging To Mothership",
@@ -1075,7 +1073,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     public void enumerateDocuments(final SearchService.IndexTask task, @NotNull final Container c, Date since)
     {
-        final SearchService ss = ServiceRegistry.get(SearchService.class);
+        final SearchService ss = SearchService.get();
         if (ss == null)
             return;
 

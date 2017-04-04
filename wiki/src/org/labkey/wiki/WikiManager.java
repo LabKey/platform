@@ -126,7 +126,7 @@ public class WikiManager implements WikiService
     @Nullable
     SearchService getSearchService()
     {
-        return ServiceRegistry.get(SearchService.class);
+        return SearchService.get();
     }
 
     DiscussionService getDiscussionService()

@@ -100,6 +100,7 @@ public class SearchModule extends DefaultModule
         addController("search", SearchController.class);
         addController("umls", UmlsController.class);
         LuceneSearchServiceImpl ss = new LuceneSearchServiceImpl();
+        SearchService.setInstance(ss);
         ss.addResourceResolver("dav", new AbstractSearchService.ResourceResolver()
         {
             public WebdavResource resolve(@NotNull String path)
@@ -113,14 +114,13 @@ public class SearchModule extends DefaultModule
                 return null;
             }
         });
-        ServiceRegistry.get().registerService(SearchService.class, ss);
         ServiceRegistry.get().registerService(DocumentConversionService.class, new DocumentConversionServiceImpl());
     }
 
 
     public void doStartup(ModuleContext moduleContext)
     {
-        final SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        final SearchService ss = SearchService.get();
 
         if (null != ss)
         {
@@ -200,8 +200,10 @@ public class SearchModule extends DefaultModule
 
             public void moduleStartupComplete(ServletContext servletContext)
             {
-                SearchService ss = ServiceRegistry.get(SearchService.class);
-                ss.clearLastIndexed();
+                SearchService ss = SearchService.get();
+
+                if (null != ss)
+                    ss.clearLastIndexed();
             }
         };
         ContextListener.addStartupListener(l);

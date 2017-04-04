@@ -117,10 +117,11 @@ public class ListModule extends DefaultModule
             studyRegistry.addImportFactory(new FolderListImporter.Factory());
         }                  
 
-        if (null != ServiceRegistry.get(SearchService.class))
+        SearchService ss = SearchService.get();
+        if (null != ss)
         {
-            ServiceRegistry.get(SearchService.class).addDocumentProvider(ListManager.get());
-            ServiceRegistry.get(SearchService.class).addSearchCategory(ListManager.listCategory);
+            ss.addDocumentProvider(ListManager.get());
+            ss.addSearchCategory(ListManager.listCategory);
         }
 
         AdminLinkManager.getInstance().addListener((adminNavTree, container, user) ->

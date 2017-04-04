@@ -418,7 +418,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     @Override
     public void deleteAttachments(Collection<AttachmentParent> parents)
     {
-        SearchService ss = ServiceRegistry.get(SearchService.class);
+        SearchService ss = SearchService.get();
 
         for (AttachmentParent parent : parents)
         {
@@ -448,7 +448,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         if (null != att)
         {
             checkSecurityPolicy(auditUser, parent);   // Only check policy if there are attachments (a client may delete attachment and policy, but attempt to delete again)
-            SearchService ss = ServiceRegistry.get(SearchService.class);
+            SearchService ss = SearchService.get();
             if (ss != null)
                 ss.deleteResource(makeDocId(parent, att.getName()));
 
@@ -514,7 +514,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     @Override
     public void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException
     {
-        SearchService ss = ServiceRegistry.get(SearchService.class);
+        SearchService ss = SearchService.get();
         for (AttachmentParent parent : parents)
         {
             checkSecurityPolicy(auditUser, parent);

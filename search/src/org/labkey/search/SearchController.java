@@ -911,7 +911,7 @@ public class SearchController extends SpringActionController
 
     public static class InternalSearchConfiguration implements SearchConfiguration
     {
-        private final SearchService _ss = ServiceRegistry.get(SearchService.class);
+        private final SearchService _ss = SearchService.get();
 
         private InternalSearchConfiguration()
         {
@@ -1006,7 +1006,7 @@ public class SearchController extends SpringActionController
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
-            SearchService ss = ServiceRegistry.get(SearchService.class);
+            SearchService ss = SearchService.get();
             final CountDownLatch latch = new CountDownLatch(1);
 
             // TODO: This doesn't seem quite right... don't we need to wait for _itemQueue and _indexQueue as well?
@@ -1054,7 +1054,7 @@ public class SearchController extends SpringActionController
             super.checkPermissions();
 
             // Show results page only if user has permission to see external index results.
-            SearchService ss = ServiceRegistry.get(SearchService.class);
+            SearchService ss = SearchService.get();
 
             if (!ss.hasExternalIndexPermission(getUser()))
             {
@@ -1079,7 +1079,7 @@ public class SearchController extends SpringActionController
 
     public class ExternalSearchConfiguration implements SearchConfiguration
     {
-        private final SearchService _ss = ServiceRegistry.get(SearchService.class);
+        private final SearchService _ss = SearchService.get();
 
         private ExternalSearchConfiguration()
         {

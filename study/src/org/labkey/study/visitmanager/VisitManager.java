@@ -471,7 +471,7 @@ public abstract class VisitManager
         //
         // tell the search service about potential new ptids
         //
-        final SearchService ss = ServiceRegistry.get(SearchService.class);
+        final SearchService ss = SearchService.get();
         if (null != ss)
         {
             if (null != potentiallyInsertedParticipants)
