@@ -225,8 +225,13 @@
     </tr></table>
 </labkey:form><%
     }
+    else
+    {
 %>
-
+<div class="labkey-nav-page-header-container"><span class="labkey-nav-page-header"><%=h(names.singularName + " " + issue.getIssueId() + ": " +issue.getTitle())%></span><p></div>
+<%
+    }
+%>
 <table class="issue-fields" style="width: 60%;">
     <tr>
         <td valign="top"><table>
