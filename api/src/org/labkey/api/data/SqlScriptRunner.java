@@ -101,7 +101,7 @@ public class SqlScriptRunner
 
     public static class SqlScriptException extends Exception
     {
-        private String _filename;
+        private final String _filename;
 
         public SqlScriptException(Throwable cause, String filename)
         {

@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -49,7 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * User: adam
@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
  */
 public class FileSqlScriptProvider implements SqlScriptProvider
 {
-    private static Logger _log = Logger.getLogger(FileSqlScriptProvider.class);
+    private static final Logger _log = Logger.getLogger(FileSqlScriptProvider.class);
 
     private final Module _module;
 
@@ -89,11 +89,9 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             }
         }
 
-        schemas.addAll(_module.getProvisionedSchemaNames()
-            .stream()
+        _module.getProvisionedSchemaNames().stream()
             .map(schemaName -> DbSchema.get(schemaName, DbSchemaType.Provisioned))
-            .collect(Collectors.toList())
-        );
+            .forEach(schemas::add);
 
         return schemas;
     }
@@ -141,9 +139,18 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
         Returned set can be empty (i.e., schemas that have no scripts)
     */
-    protected @NotNull Set<String> getScriptFilenames(@NotNull DbSchema schema) throws SqlScriptException
+    private @NotNull Set<String> getScriptFilenames(@NotNull DbSchema schema) throws SqlScriptException
     {
         return _module.getSqlScripts(schema);
+    }
+
+    // Returns all script file names listed in required_scripts.txt
+    public @NotNull Collection<String> getRequiredScripts(SqlDialect dialect) throws IOException
+    {
+        Path path = Path.parse(_module.getSqlScriptsPath(dialect)).append("required_scripts.txt");
+        Resource r = _module.getModuleResource(path);
+
+        return null != r ? PageFlowUtil.getStreamContentsAsList(r.getInputStream(), true) : Collections.emptyList();
     }
 
     @Nullable
@@ -204,6 +211,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         }
     }
 
+    @Override
     public String getProviderName()
     {
         return _module.getName();
@@ -248,6 +256,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         return scriptsDir;
     }
 
+    @Override
     public UpgradeCode getUpgradeCode()
     {
         return _module.getUpgradeCode();
@@ -330,6 +339,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             _schemaName = schemaName;
         }
 
+        @Override
         public boolean isValidName()
         {
             return _validName;
@@ -350,17 +360,20 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             return _schema;
         }
 
+        @Override
         public double getFromVersion()
         {
             return _fromVersion;
         }
 
+        @Override
         public double getToVersion()
         {
             return _toVersion;
         }
 
         // Optional suffix
+        @Override
         public @Nullable String getSuffix()
         {
             return _suffix;
@@ -371,6 +384,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             return getDescription();
         }
 
+        @Override
         public String getContents()
         {
             _errorMessage = null;
@@ -387,16 +401,19 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             return "";
         }
 
+        @Override
         public String getErrorMessage()
         {
             return _errorMessage;
         }
 
+        @Override
         public String getDescription()
         {
             return _fileName;
         }
 
+        @Override
         public SqlScriptProvider getProvider()
         {
             return _provider;
@@ -424,6 +441,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
         private static final Comparator<String> SUFFIX_COMPARATOR = ComparatorUtils.nullHighComparator(String.CASE_INSENSITIVE_ORDER);
 
+        @Override
         public int compareTo(@NotNull SqlScript script)
         {
             int schemaCompare = getSchema().getDisplayName().compareToIgnoreCase(script.getSchema().getDisplayName());
