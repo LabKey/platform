@@ -36,6 +36,8 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.triggers.ScriptTriggerFactory;
+import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -55,6 +57,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.script.ScriptService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -62,6 +65,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -74,7 +78,9 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.SpecimenForeignKey;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DemoMode;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.TableType;
@@ -86,6 +92,7 @@ import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyManager;
 
+import javax.script.ScriptException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -1185,5 +1192,36 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             }
         }
         return cols;
+    }
+
+    @Override
+    protected ScriptTriggerFactory getScriptTriggerFactory()
+    {
+        return new DatasetTriggerFactory();
+    }
+
+    public static class DatasetTriggerFactory extends ScriptTriggerFactory
+    {
+        @Override
+        @NotNull
+        protected Collection<Trigger> createTriggerScript(Container c, TableInfo table) throws ScriptException
+        {
+            Collection<Trigger> ret = super.createTriggerScript(c, table);
+            if (!ret.isEmpty())
+            {
+                return ret;
+            }
+
+            //only if the dataset lacks other triggers, also look for studyData.js
+            Path path = new Path(QueryService.MODULE_QUERIES_DIRECTORY,
+                    FileUtil.makeLegalName(StudyQuerySchema.SCHEMA_NAME),
+                    FileUtil.makeLegalName(StudyQuerySchema.STUDY_DATA_TABLE_NAME) + ".js");
+
+            ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
+            if (svc == null)
+                return Collections.emptyList();
+
+            return super.checkPaths(c, table, svc, Collections.singleton(path));
+        }
     }
 }
