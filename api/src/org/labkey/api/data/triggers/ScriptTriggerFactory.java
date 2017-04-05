@@ -74,6 +74,11 @@ public class ScriptTriggerFactory implements TriggerFactory
         if (schemaName == null || name == null)
             return Collections.emptyList();
 
+        return checkPaths(c, table, svc, getDefaultPaths(schemaName, name, title));
+    }
+
+    private Set<Path> getDefaultPaths(String schemaName, String name, String title)
+    {
         // Create legal path name
         Path pathNew = new Path(QueryService.MODULE_QUERIES_DIRECTORY,
                 FileUtil.makeLegalName(schemaName),
@@ -96,6 +101,11 @@ public class ScriptTriggerFactory implements TriggerFactory
             paths.add(pathLabel);
         }
 
+        return paths;
+    }
+
+    protected Collection<Trigger> checkPaths(Container c, TableInfo table, @NotNull ScriptService svc, Set<Path> paths) throws ScriptException
+    {
         Collection<Resource> rs = new ArrayList<>(10);
         for (Module m : c.getActiveModules())
         {

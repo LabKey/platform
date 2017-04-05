@@ -185,10 +185,14 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         _schema = schema;
         _columnMap = constructColumnMap();
         setName(name);
-        addTriggerFactory(new ScriptTriggerFactory());
+        addTriggerFactory(getScriptTriggerFactory());
         MemTracker.getInstance().put(this);
     }
 
+    protected ScriptTriggerFactory getScriptTriggerFactory()
+    {
+        return new ScriptTriggerFactory();
+    }
 
     public void afterConstruct()
     {
