@@ -55,20 +55,6 @@ public class SimpleDocumentResource extends AbstractDocumentResource
             _properties = new HashMap<>(properties);
     }
 
-    @Deprecated // TODO: delete after RGLabs/ImmPort has transitioned
-    public SimpleDocumentResource(Path path, String documentId, String containerId, String contentType, byte[] body, URLHelper executeUrl, Map<String, Object> properties)
-    {
-        super(path);
-        _containerId = containerId;
-        _documentId = documentId;
-        _contentType = contentType;
-        _body = body;
-        _executeUrl = executeUrl;
-        assert !(_executeUrl instanceof ActionURL) || ((ActionURL)executeUrl).getExtraPath().equals(_containerId);
-        if (null != properties)
-            _properties = new HashMap<>(properties);
-    }
-
     public SimpleDocumentResource(Path path, String documentId, String contentType, @Nullable String body, ActionURL executeUrl, @Nullable Map<String, Object> properties)
     {
         this(path, documentId, executeUrl.getExtraPath(), contentType, body, executeUrl, properties);
