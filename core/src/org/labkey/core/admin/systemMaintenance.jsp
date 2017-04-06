@@ -43,14 +43,25 @@
     String initialTime = SystemMaintenance.formatSystemMaintenanceTime(props.getSystemMaintenanceTime());
     Set<String> disabled = props.getDisabledTasks();
 %>
+<style>
+    .labkey-enabled-option
+    {
+        color: black;
+    }
+</style>
+
 <labkey:form name="systemMaintenanceSettings" method="post">
     <table width="1000">
         <tr>
-            <td colspan="2">The follow tasks are (typically) run every night to clear unused data, update database statistics, perform nightly data refreshes,
+            <td colspan="2">The following tasks are (typically) run every night to clear unused data, update database statistics, perform nightly data refreshes,
                 and generally keep this server running smoothly and quickly. We recommend leaving all system maintenance tasks enabled, but some
-                of the tasks can be disabled if absolutely necessary. See the LabKey documentation for <%=helpLink("systemMaint", "more info...")%></td>
+                of the tasks can be disabled if absolutely necessary. See the LabKey documentation for <%=helpLink("systemMaint", "more information.")%></td>
         </tr>
 
+        <%
+            if (hasAdminOpsPerms)
+            {
+        %>
         <tr>
             <td style="padding-top: 10px;" colspan="2">You can run all enabled maintenance tasks now: <%=textLink("Run all tasks", "javascript:submitSystemMaintenance()")%></td>
         </tr>
@@ -59,9 +70,11 @@
             <td style="padding-top: 10px;" colspan="2">You can also run individual tasks, disable tasks, and change the maintenance time.
                 Click a task description to invoke that task. Uncheck a checkbox (and save) to disable a task.</td>
         </tr>
+        <%
+            }
+        %>
         <tr>
-            <td style="padding-top: 10px; font-weight: bold;">Tasks That Can Be Disabled</td>
-            <td style="padding-top: 10px; font-weight: bold;">Tasks That Can't Be Disabled</td>
+            <td style="padding-top: 10px; font-weight: bold;">Tasks </td>
         </tr>
 
         <tr><td style="vertical-align: top;">
@@ -69,34 +82,34 @@
                 <%
                     for (MaintenanceTask task : tasks)
                     {
-                        if (task.canDisable() && !task.hideFromAdminPage())
+                        if (!task.hideFromAdminPage())
                         {
-                %><tr><td><input name="enable" value="<%=h(task.getName())%>" type="checkbox"<%=checked(!disabled.contains(task.getName()))%>/><%=textLink(task.getDescription(), "javascript:submitSystemMaintenance(" + q(task.getName()) + ")")%></td></tr><%
-                    }
-                }
-            %>
-            </table>
-        </td>
-            <td style="vertical-align: top;">
-                <table>
-                    <%
-                        for (MaintenanceTask task : tasks)
-                        {
-                            if (!task.canDisable() && !task.hideFromAdminPage())
+                            String description;
+                            if (hasAdminOpsPerms)
+                                description = textLink(task.getDescription(), "javascript:submitSystemMaintenance(" + q(task.getName()) + ")");
+                            else
+                                description = "<span class=\"labkey-disabled-text-link labkey-enabled-option\">" + h(task.getDescription()) + "</span>";
+                            if (!task.canDisable())
                             {
-                    %><tr><td><input type="checkbox" disabled checked/><%=textLink(task.getDescription(), "javascript:submitSystemMaintenance(" + q(task.getName()) + ")")%></td></tr><%
+                %><tr><td><input type="checkbox" disabled checked/><%=text(description)%></td></tr><%
+                            }
+                            else
+                            {
+                                String checkboxDisabled = hasAdminOpsPerms ? "" : "disabled";
+                %><tr><td><input name="enable" <%=text(checkboxDisabled)%> value="<%=h(task.getName())%>" type="checkbox"<%=checked(!disabled.contains(task.getName()))%>/><%=text(description)%></td></tr><%
                             }
                         }
-                    %>
-                </table>
-            </td>
+                    }
+                %>
+            </table>
+        </td>
         </tr>
 
         <tr>
             <td style="padding-top: 7px;" colspan="2"><div style="" id='timePicker'></div></td>
         </tr>
         <%
-            if (AppProps.getInstance().isDevMode())
+            if (AppProps.getInstance().isDevMode() && hasAdminOpsPerms)
             {
         %><tr><td colspan="2"><table><tr><td><labkey:checkbox id="enableSystemMaintenance" name="enableSystemMaintenance" value="true" checked="<%=!SystemMaintenance.isTimerDisabled()%>"/>Enable daily system maintenance (dev mode only; system maintenance is re-enabled after every server restart)</td></tr></table></td></tr><%
             }
@@ -123,6 +136,7 @@
             labelWidth: 280,
             name: 'maintenanceTime',
             submitFormat: 'H:i',
+            disabled: <%=!hasAdminOpsPerms%>,
             value: <%=q(initialTime)%>,
             increment: 15,
             anchor: '100%'
@@ -130,10 +144,12 @@
 
         submitSystemMaintenance = function(taskName)
         {
-            var form = document.forms['systemMaintenance'];
-            form.taskName.value = (taskName ? taskName : null);
-            form.method = 'post';
-            document.forms['systemMaintenance'].submit();
+            if (<%=hasAdminOpsPerms%>) {
+                var form = document.forms['systemMaintenance'];
+                form.taskName.value = (taskName ? taskName : null);
+                form.method = 'post';
+                document.forms['systemMaintenance'].submit();
+            }
         };
 
         validateForm = function() { return !timeField.hasActiveError(); };
