@@ -68,6 +68,7 @@ public final class ModuleResourceCache<V>
     private final ModuleResourceCacheHandler<V> _handler;
     private final FileSystemWatcher _watcher = FileSystemWatchers.get();
     private final Set<String> _pathsWithListeners = new ConcurrentHashSet<>();
+    private final String _description;
 
     ModuleResourceCache(Path root, ModuleResourceCacheHandler<V> handler, String description)
     {
@@ -82,9 +83,16 @@ public final class ModuleResourceCache<V>
 
                 return _handler.load(wrappedDir, module);
             }
+
+            @Override
+            public String toString()
+            {
+                return "CacheLoader for \"" + _description + "\" (" + _handler.getClass().getName() + ")";
+            }
         };
 
-        _cache = CacheManager.getBlockingCache(Constants.getMaxModules(), CacheManager.DAY, description, wrapper);  // Cache is one entry per module
+        _description = description;
+        _cache = CacheManager.getBlockingCache(Constants.getMaxModules(), CacheManager.DAY, _description, wrapper);  // Cache is one entry per module
         _handler = handler;
 //        ensureListeners(root);  // TODO: Enable this to ensure file listeners along the root... except that this seems to deadlock. Maybe push this into CacheLoader.load() above?
     }

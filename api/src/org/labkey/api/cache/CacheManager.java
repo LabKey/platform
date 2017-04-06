@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
 /**
  * User: adam
@@ -133,14 +132,10 @@ public class CacheManager
     // Return a copy of KNOWN_CACHES for reporting statistics
     public static List<TrackingCache> getKnownCaches()
     {
-        List<TrackingCache> copy = new ArrayList<>();
-
         synchronized (KNOWN_CACHES)
         {
-            copy.addAll(KNOWN_CACHES.stream().collect(Collectors.toList()));
+            return new ArrayList<>(KNOWN_CACHES);
         }
-
-        return copy;
     }
 
     private static void fireClearCaches()
@@ -185,7 +180,7 @@ public class CacheManager
         //noinspection ConstantConditions
         if (null != description)
         {
-            LOG.warn(loader.getClass().getName() + " returned " + description + ", which could be mutated by callers!");
+            LOG.warn(loader.toString() + " returned " + description + ", which could be mutated by callers!");
         }
     }
 }
