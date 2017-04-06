@@ -59,6 +59,7 @@ public class RoleManager
     static
     {
         registerRole(siteAdminRole);
+        registerRole(new ApplicationAdminRole());
         registerRole(new ProjectAdminRole());
         registerRole(new FolderAdminRole());
         registerRole(new EditorRole());
@@ -126,7 +127,9 @@ public class RoleManager
         _classToRoleMap.put(role.getClass(), role);
         _roles.add(role);
 
-        boolean addToAdminRoles = addPermissionsToAdminRoles && !(role instanceof SiteAdminRole || role instanceof ProjectAdminRole || role instanceof FolderAdminRole);
+        boolean addToAdminRoles = addPermissionsToAdminRoles && !(role instanceof SiteAdminRole
+                || role instanceof ApplicationAdminRole || role instanceof ProjectAdminRole
+                || role instanceof FolderAdminRole);
 
         //register all exposed permissions in the name and class maps
         for(Class<? extends Permission> permClass : role.getPermissions())
@@ -179,6 +182,7 @@ public class RoleManager
     public static void addPermissionToAdminRoles(Class<? extends Permission> perm)
     {
         siteAdminRole.addPermission(perm);
+        getRole(ApplicationAdminRole.class).addPermission(perm);
         getRole(ProjectAdminRole.class).addPermission(perm);
         getRole(FolderAdminRole.class).addPermission(perm);
     }
@@ -222,8 +226,9 @@ public class RoleManager
     public static void testPermissionsInAdminRoles(boolean shouldBePresent, Class<? extends Permission>... permissionsToTest)
     {
         Collection<Class<? extends Permission>> permCollection = Arrays.asList(permissionsToTest);
+        Set<Role> adminRoleSet = RoleManager.roleSet(SiteAdminRole.class, ApplicationAdminRole.class, ProjectAdminRole.class, FolderAdminRole.class);
 
-        RoleManager.roleSet(SiteAdminRole.class, ProjectAdminRole.class, FolderAdminRole.class).forEach(role->{
+        adminRoleSet.forEach(role->{
             Collection<Class<? extends Permission>> permissions = CollectionUtils.intersection(role.getPermissions(), permCollection);
 
             if (shouldBePresent)

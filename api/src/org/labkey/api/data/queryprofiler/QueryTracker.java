@@ -248,12 +248,12 @@ class QueryTracker
             if (set.shouldDisplay())
                 renderColumnHeader(set.getCaption(), set == currentSet, out, factory);
 
-        out.print("<td>");
+        out.print("<td class=\"labkey-column-header\">");
         out.print("Traces");
-        out.print("</td><td style=\"padding-left:10;\">");
+        out.print("</td><td class=\"labkey-column-header\" style=\"padding-left:10;\">");
         out.print("SQL");
         out.print("</td>");
-//        out.print("<td>");
+//        out.print("<td class="labkey-column-header">");
 //        out.print("SQL&nbsp;With&nbsp;Parameters");
 //        out.print("</td>");
         out.println("</tr>");
@@ -261,7 +261,7 @@ class QueryTracker
 
     private static void renderColumnHeader(String name, boolean highlight, PrintWriter out, QueryProfiler.ActionURLFactory factory)
     {
-        out.print("<td><a href=\"");
+        out.print("<td class=\"labkey-column-header\"><a href=\"");
         out.print(PageFlowUtil.filter(factory.getActionURL(name)));
         out.print("\">");
 

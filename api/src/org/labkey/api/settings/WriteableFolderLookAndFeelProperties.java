@@ -57,7 +57,7 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
         FolderSettingsCache.clear();
     }
 
-    public void clear()
+    public void clear(boolean hasAdminOpsPerm)
     {
         getProperties().clear();
     }

@@ -21,6 +21,8 @@ import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminReadPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -113,6 +115,7 @@ public class CustomFolderType implements FolderType
     {
         List<NavTree> tabs = new ArrayList<>();
 
+        User user = context.getUser();
         Container container = context.getContainer();
         String name = container.getTitle().isEmpty() ? container.getName() : container.getTitle();
         ActionURL url = container.getStartURL(context.getUser());
@@ -144,8 +147,10 @@ public class CustomFolderType implements FolderType
         }
         else
         {
-            tabs.add(new NavTree("Projects", PageFlowUtil.urlProvider(CoreUrls.class).getProjectsURL(context.getContainer())));
-            if (context.getUser().isSiteAdmin())
+            if (container.hasPermission(user, ReadPermission.class))
+                tabs.add(new NavTree("Projects", PageFlowUtil.urlProvider(CoreUrls.class).getProjectsURL(context.getContainer())));
+
+            if (container.hasPermission(user, AdminReadPermission.class))
             {
                 url = PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
                 tabs.add(new NavTree("Admin Console", url));

@@ -31,6 +31,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
@@ -49,6 +50,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
@@ -220,6 +222,13 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
         return isAllowedGlobalRoles() && isInGroup(Group.groupAdministrators);
     }
 
+    public boolean isApplicationAdmin()
+    {
+        // TODO should this also return true for isSiteAdmin()
+        List<Role> rootAssignedRoles = ContainerManager.getRoot().getPolicy().getAssignedRoles(this);
+        return rootAssignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));
+    }
+
     // Note: site administrators are always developers; see GroupManager.computeAllGroups().
     public boolean isDeveloper()
     {
@@ -250,6 +259,8 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
 
         if (isSiteAdmin())
             roles.add(RoleManager.siteAdminRole);
+        if (isApplicationAdmin())
+            roles.add(RoleManager.getRole(ApplicationAdminRole.class));
         if (isDeveloper())
             roles.add(RoleManager.getRole(DeveloperRole.class));
 

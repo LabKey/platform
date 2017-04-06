@@ -60,6 +60,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -2682,6 +2683,7 @@ public class SecurityManager
     {
         Set<Role> adminRoles = new HashSet<>();
         adminRoles.add(RoleManager.getRole(SiteAdminRole.class));
+        adminRoles.add(RoleManager.getRole(ApplicationAdminRole.class));
         adminRoles.add(RoleManager.getRole(ProjectAdminRole.class));
         adminRoles.add(RoleManager.getRole(FolderAdminRole.class));
         SecurityPolicy policy = c.getPolicy();

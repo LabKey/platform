@@ -157,25 +157,20 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             Collections.addAll(permissionsRequired, requiresAllOf.value());
         }
 
-        // Special handling for admin console actions to support TroubleShooter role. Only site admins can POST,
+        // Special handling for admin console actions to support TroubleShooter role.
+        // Only users with the specified permission (AdminPermission.class by default) can POST,
         // but those with AdminReadPermission (i.e., TroubleShooters) can GET.
-        boolean adminConsoleAction = actionClass.isAnnotationPresent(AdminConsoleAction.class);
-        if (adminConsoleAction)
+        AdminConsoleAction adminConsoleAction = actionClass.getAnnotation(AdminConsoleAction.class);
+        boolean isAdminConsoleAction = null != adminConsoleAction;
+        if (isAdminConsoleAction)
         {
             if (!c.isRoot())
                 throw new NotFoundException();
 
             if (isPOST)
-            {
-                if (!user.isSiteAdmin())
-                {
-                    throw new UnauthorizedException();
-                }
-            }
+                permissionsRequired.add(adminConsoleAction.value());
             else
-            {
                 permissionsRequired.add(AdminReadPermission.class);
-            }
         }
 
         ContextualRoles rolesAnnotation = actionClass.getAnnotation(ContextualRoles.class);
@@ -219,7 +214,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
 
         boolean requiresNoPermission = actionClass.isAnnotationPresent(RequiresNoPermission.class);
 
-        if (permissionsRequired.isEmpty() && !requiresSiteAdmin && !requiresLogin && !requiresNoPermission && !adminConsoleAction && permissionsAnyOf.isEmpty())
+        if (permissionsRequired.isEmpty() && !requiresSiteAdmin && !requiresLogin && !requiresNoPermission && !isAdminConsoleAction && permissionsAnyOf.isEmpty())
         {
             throw new ConfigurationException("@RequiresPermission, @RequiresSiteAdmin, @RequiresLogin, @RequiresNoPermission, or @AdminConsoleAction annotation is required on class " + actionClass.getName());
         }

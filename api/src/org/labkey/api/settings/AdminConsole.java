@@ -16,6 +16,10 @@
 package org.labkey.api.settings;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
@@ -73,14 +77,27 @@ public class AdminConsole
 
     public static void addLink(SettingsLinkType type, String text, ActionURL url)
     {
-        addLink(type, new AdminLink(text, url));
+        addLink(type, new AdminLink(text, url, null));
     }
 
-    public static Collection<AdminLink> getLinks(SettingsLinkType type)
+    public static void addLink(SettingsLinkType type, String text, ActionURL url, Class<? extends Permission> requiredPerm)
+    {
+        addLink(type, new AdminLink(text, url, requiredPerm));
+    }
+
+    public static Collection<AdminLink> getLinks(SettingsLinkType type, User user)
     {
         synchronized (_links)
         {
-            return new LinkedList<>(_links.get(type));
+            Container root = ContainerManager.getRoot();
+            List<AdminLink> links = new LinkedList<>();
+            for (AdminLink link : _links.get(type))
+            {
+                if (link.getRequiredPerm() == null || root.hasPermission(user, link.getRequiredPerm()))
+                    links.add(link);
+            }
+
+            return links;
         }
     }
 
@@ -88,11 +105,14 @@ public class AdminConsole
     {
         private final String _text;
         private final ActionURL _url;
+        // defines a permission class the user must have to see this link in the admin console
+        private final Class<? extends Permission> _requiredPerm;
 
-        public AdminLink(String text, ActionURL url)
+        public AdminLink(String text, ActionURL url, Class<? extends Permission> requiredPerm)
         {
             _text = text;
             _url = url;
+            _requiredPerm = requiredPerm;
         }
 
         public String getText()
@@ -103,6 +123,11 @@ public class AdminConsole
         public ActionURL getUrl()
         {
             return _url;
+        }
+
+        public Class<? extends Permission> getRequiredPerm()
+        {
+            return _requiredPerm;
         }
 
         @Override

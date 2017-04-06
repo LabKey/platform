@@ -39,12 +39,18 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
     }
 
     @Override
-    public void clear()
+    public void clear(boolean hasAdminOpsPerm)
     {
         String systemEmailAddress = getProperties().get(SYSTEM_EMAIL_ADDRESS_PROP);
+        String customLogin = getProperties().get(CUSTOM_LOGIN_PROP);
+
         getProperties().clear();
-        if (isRoot)
+
+        // retain the admin ops related properties if the user doesn't have permissions to reset them
+        if (isRoot || !hasAdminOpsPerm)
             getProperties().put(SYSTEM_EMAIL_ADDRESS_PROP, systemEmailAddress);
+        if (!hasAdminOpsPerm)
+            getProperties().put(CUSTOM_LOGIN_PROP, customLogin);
     }
 
     public void setFolderDisplayMode(FolderDisplayMode folderDisplayMode)

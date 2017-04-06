@@ -15,6 +15,9 @@
  */
 package org.labkey.api.security;
 
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.Permission;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -30,9 +33,10 @@ import java.lang.annotation.Target;
 
     - Current container must be the root
     - Requires AdminReadPermissions for GET operations
-    - Requires SiteAdminRole for POST operations 
+    - Requires AdminPermissions (default) for POST operations
  */
 public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 @interface AdminConsoleAction
 {
+    Class<? extends Permission> value() default AdminPermission.class;
 }
