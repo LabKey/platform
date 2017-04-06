@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.settings.DateParsingMode" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
@@ -35,6 +36,7 @@
     ProjectSettingsAction.LookAndFeelPropertiesBean bean = ((JspView<ProjectSettingsAction.LookAndFeelPropertiesBean>)HttpView.currentView()).getModelBean();
     Container c = getContainer();
     boolean folder = !c.isRoot() && !c.isProject();
+    boolean hasAdminOpsPerm = c.hasPermission(getUser(), AdminOperationsPermission.class);
     String clearMessage = folder ? "the default format properties" : "all look & feel properties";
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
 %>
@@ -183,8 +185,11 @@
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label">System email address (<i>from</i> address for system notification emails)</td>
-    <td><input type="text" name="systemEmailAddress" size="50" value="<%= h(laf.getSystemEmailAddress()) %>"></td>
+    <td class="labkey-form-label">
+        System email address (<i>from</i> address for system notification emails)
+        <%=PageFlowUtil.helpPopup("System email address", "Requires AdminOperationsPermission to update.", false)%>
+    </td>
+    <td><input type="text" name="systemEmailAddress" size="50" value="<%= h(laf.getSystemEmailAddress()) %>" <%=h(!hasAdminOpsPerm ? "disabled" : "")%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Organization name (appears in notification emails sent by system)</td>
@@ -291,21 +296,28 @@
 </tr>
 
 <%
+    if (!folder)
+    {
+
     String customLoginHelp = "The custom login page is specified as a string composed of the module name and a page name in" +
             " the format: <module>-<name>.  For example the string 'myModule-customLogin' can be entered to enable a custom login provided as" +
-            " an HTML page called customLogin.html located in the /resources/views directory of myModule.";
+            " an HTML page called customLogin.html located in the /resources/views directory of myModule." +
+            "<br/><br/>Requires AdminOperationsPermission to update.";
 %>
 <tr>
     <td colspan=2>Provide a custom login page (<%=text(bean.helpLink)%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label">Alternative login page<%=PageFlowUtil.helpPopup("Custom Login Page", customLoginHelp, false)%></td>
-    <td><input type="text" name="customLogin" size="50" value="<%= h(laf.getCustomLogin()) %>"></td>
+    <td class="labkey-form-label">Alternative login page<%=PageFlowUtil.helpPopup("Custom Login Page", customLoginHelp, true)%></td>
+    <td><input type="text" name="customLogin" size="50" value="<%= h(laf.getCustomLogin()) %>" <%=h(!hasAdminOpsPerm ? "disabled" : "")%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
 </tr>
+<%
+    }
+%>
 
 <tr>
     <td><%= button("Save").submit(true).onClick("_form.setClean();") %>&nbsp;<%= PageFlowUtil.button("Reset")

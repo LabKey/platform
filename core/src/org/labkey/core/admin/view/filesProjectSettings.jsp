@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.cloud.CloudUrls" %>
 <%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
@@ -31,7 +32,6 @@
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -53,15 +53,16 @@
     }
 
     //b/c setting a custom file root potentially allows access to any files, we only allow
-    //site admins to do this.  however, folder admin can disable sharing on a folder
+    //site admins (i.e. AdminOperationsPermission) to do this.  however, folder admin can disable sharing on a folder
     //if this folder already has a custom file root, only a site admin can make further changes
     User user = getUser();
-    boolean canChangeFileSettings = getContainer().hasPermission(user, AdminPermission.class) || user.isSiteAdmin();
-    if (AdminController.ProjectSettingsForm.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) && !user.isSiteAdmin())
+    boolean hasAdminPerm = getContainer().hasPermission(user, AdminPermission.class);
+    boolean hasAdminOpsPerm = getContainer().hasPermission(user, AdminOperationsPermission.class);
+    boolean canChangeFileSettings = hasAdminPerm || hasAdminOpsPerm;
+    if (AdminController.ProjectSettingsForm.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) && !hasAdminOpsPerm)
     {
         canChangeFileSettings = false;
     }
-    boolean canSetCustomFileRoot = user.isSiteAdmin();
 
     CloudStoreService cloud = ServiceRegistry.get(CloudStoreService.class);
     Collection<String> storeNames = Collections.emptyList();
@@ -104,7 +105,7 @@
                         <td><input type="text" id="rootPath" size="64" disabled="true" value="<%=h(defaultRoot)%>"></td>
                     </tr>
                     <tr>
-                        <td><input <%=h(canChangeFileSettings && canSetCustomFileRoot ? "" : " disabled ")%>type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=AdminController.ProjectSettingsForm.FileRootProp.folderOverride%>"
+                        <td><input <%=h(canChangeFileSettings && hasAdminOpsPerm ? "" : " disabled ")%>type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=AdminController.ProjectSettingsForm.FileRootProp.folderOverride%>"
                                    <%=checked(AdminController.ProjectSettingsForm.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()))%>
                                    onclick="updateSelection();">
                             Use a <%=text(getContainer().getContainerNoun())%>-level file root</td>
@@ -113,12 +114,13 @@
                 </table>
             </td>
         </tr>
+        <% if (hasAdminOpsPerm) { %>
         <tr>
             <td>
-                <br>
                 <a href="<%=h(urlProvider(FileUrls.class).urlShowAdmin(getContainer()))%>">Manage Additional File Roots</a>
             </td>
         </tr>
+        <% } %>
     </table>
 
 

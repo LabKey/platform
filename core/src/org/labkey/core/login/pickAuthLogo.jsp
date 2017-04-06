@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.login.LoginController.AuthLogoBean" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -23,6 +24,7 @@
 <%
     HttpView<AuthLogoBean> me = (HttpView<AuthLogoBean>) HttpView.currentView();
     AuthLogoBean bean = me.getModelBean();
+    boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %><labkey:form enctype="multipart/form-data" method="post">
 <table>
 <%=formatMissedErrorsInTable("form", 3)%>
@@ -42,8 +44,8 @@
 </tr>
 <tr>
     <td colspan="3">
-        <%= button("Save").submit(true) %>
-        <%= button(bean.reshow ? "Done" : "Cancel").href(urlProvider(LoginUrls.class).getConfigureURL()) %>
+        <%= hasAdminOpsPerms ? button("Save").submit(true) : "" %>
+        <%= button(!hasAdminOpsPerms || bean.reshow ? "Done" : "Cancel").href(urlProvider(LoginUrls.class).getConfigureURL()) %>
     </td>
 </tr>
 </table>

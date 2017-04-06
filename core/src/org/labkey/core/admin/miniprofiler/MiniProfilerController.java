@@ -33,7 +33,9 @@ import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -74,8 +76,8 @@ public class MiniProfilerController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
-    @AdminConsoleAction @CSRF
+    @AdminConsoleAction @RequiresPermission(AdminPermission.class)
+    @CSRF
     public class ManageAction extends FormViewAction<MiniProfilerSettingsForm>
     {
         @Override
@@ -148,7 +150,7 @@ public class MiniProfilerController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @AdminConsoleAction @RequiresPermission(AdminPermission.class)
     @CSRF
     public class ResetAction extends SimpleRedirectAction
     {

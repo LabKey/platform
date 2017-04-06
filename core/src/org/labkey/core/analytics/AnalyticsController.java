@@ -21,8 +21,8 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.jsp.FormPage;
-import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.util.PageFlowUtil;
@@ -71,8 +71,7 @@ public class AnalyticsController extends SpringActionController
         }
     }
 
-
-    @RequiresSiteAdmin
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class BeginAction extends FormViewAction<SettingsForm>
     {
         public NavTree appendNavTrail(NavTree root)

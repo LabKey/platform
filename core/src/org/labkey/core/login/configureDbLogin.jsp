@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.security.PasswordExpiration" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -27,6 +28,7 @@
 <%
     JspView<Config> me = (JspView<Config>)HttpView.currentView();
     Config bean = me.getModelBean();
+    boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %>
 <labkey:form action="<%=h(buildURL(LoginController.ConfigureDbLoginAction.class))%>" method="post">
 <table>
@@ -56,8 +58,8 @@
     <tr><td colspan="2">&nbsp;</td></tr>
     <tr>
         <td colspan=2>
-            <%= button("Save").submit(true) %>
-            <%= button(bean.reshow ? "Done" : "Cancel").href(urlProvider(LoginUrls.class).getConfigureURL()) %>
+            <%= hasAdminOpsPerms ? button("Save").submit(true) : "" %>
+            <%= button(!hasAdminOpsPerms || bean.reshow ? "Done" : "Cancel").href(urlProvider(LoginUrls.class).getConfigureURL()) %>
         </td>
     </tr>
     <tr><td colspan="2">&nbsp;</td></tr>

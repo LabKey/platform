@@ -15,16 +15,19 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.core.analytics.AnalyticsController" %>
 <%@ page import="org.labkey.core.analytics.AnalyticsServiceImpl" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
     AnalyticsController.SettingsForm settingsForm = (AnalyticsController.SettingsForm) HttpView.currentModel();
+    boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %>
 <p>Your LabKey Server can be configured to add JavaScript to your HTML pages, so that information about how your users
     use your server will be sent to Google Analytics.</p>
@@ -63,5 +66,15 @@
         </tr>
     </table>
 
-    <labkey:button text="submit"/>
+    <%
+        String doneBtnText = "done";
+        if(hasAdminOpsPerms)
+        {
+            doneBtnText = "cancel";
+    %>
+        <labkey:button text="submit"/>
+    <%
+        }
+    %>
+    <labkey:button text="<%=h(doneBtnText)%>" href="<%=urlProvider(AdminUrls.class).getAdminConsoleURL()%>" />
 </labkey:form>

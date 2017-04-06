@@ -45,7 +45,7 @@
     <table><%
     for (SettingsLinkType type : SettingsLinkType.values())
     {
-        Collection<AdminLink> links = AdminConsole.getLinks(type);
+        Collection<AdminLink> links = AdminConsole.getLinks(type, getUser());
 
         if (!links.isEmpty())
         { %>

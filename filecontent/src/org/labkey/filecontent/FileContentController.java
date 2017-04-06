@@ -83,6 +83,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -642,7 +643,7 @@ public class FileContentController extends SpringActionController
        }
    }
 
-   @RequiresSiteAdmin
+   @RequiresPermission(AdminOperationsPermission.class)
    public class ShowAdminAction extends FormViewAction<FileContentForm>
    {
        public ModelAndView getView(FileContentForm form, boolean reshow, BindException errors) throws Exception

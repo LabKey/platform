@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.HelpTopic;
@@ -56,12 +57,12 @@ public class AuditController extends SpringActionController
 
     public static void registerAdminConsoleLinks()
     {
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "audit log", new ActionURL(ShowAuditLogAction.class, ContainerManager.getRoot()));
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "audit log", new ActionURL(ShowAuditLogAction.class, ContainerManager.getRoot()), AdminPermission.class);
     }
 
 
     @ActionNames("begin, showAuditLog")
-    @RequiresPermission(AdminReadPermission.class)
+    @AdminConsoleAction @RequiresPermission(AdminPermission.class)
     public class ShowAuditLogAction extends QueryViewAction<ShowAuditLogForm, QueryView>
     {
         public ShowAuditLogAction()
@@ -71,11 +72,6 @@ public class AuditController extends SpringActionController
 
         protected ModelAndView getHtmlView(ShowAuditLogForm form, BindException errors) throws Exception
         {
-            if (!getUser().isSiteAdmin())
-            {
-                throw new UnauthorizedException();
-            }
-
             VBox view = new VBox();
 
             JspView<String> jspView = new JspView<>("/org/labkey/audit/auditLog.jsp", form.getView());

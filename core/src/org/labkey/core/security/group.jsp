@@ -274,6 +274,7 @@ if (null != bean.ldapDomain && bean.ldapDomain.length() != 0 && !org.labkey.api.
 <span style="font-weight:bold">Include a message</span> with the new user mail (optional):<br>
     <textarea rows="8" cols="60" name="mailPrefix"></textarea><br>
 <input type="hidden" name="group" value="<%= h(bean.groupName) %>">
+<br>
 <%= button("Update Group Membership").submit(true).onClick("return confirmRemoveUsers();") %>
 </div>
 </labkey:form>

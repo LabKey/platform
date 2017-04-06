@@ -16,6 +16,7 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.settings.AppProps"%>
 <%@ page import="org.labkey.api.util.SystemMaintenance" %>
 <%@ page import="org.labkey.api.util.SystemMaintenance.MaintenanceTask" %>
@@ -36,6 +37,7 @@
 %>
 <%
     SystemMaintenanceProperties props = (SystemMaintenanceProperties)getModelBean();
+    boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
     List<MaintenanceTask> tasks = new ArrayList<>(SystemMaintenance.getTasks());
     tasks.sort(Comparator.comparing(MaintenanceTask::getDescription, String.CASE_INSENSITIVE_ORDER));
     String initialTime = SystemMaintenance.formatSystemMaintenanceTime(props.getSystemMaintenanceTime());
@@ -100,7 +102,10 @@
             }
         %>
         <tr>
-            <td style="padding-top: 10px;"><%= button("Save").submit(true).onClick("return validateForm();") %><%= button("Cancel").href(new AdminController.AdminUrlsImpl().getAdminConsoleURL()) %></td>
+            <td style="padding-top: 10px;">
+                <%= hasAdminOpsPerms ? button("Save").submit(true).onClick("return validateForm();") : "" %>
+                <%= button(!hasAdminOpsPerms ? "Done" : "Cancel").href(new AdminController.AdminUrlsImpl().getAdminConsoleURL()) %>
+            </td>
         </tr>
     </table>
 </labkey:form>

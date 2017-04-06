@@ -16,6 +16,7 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.settings.AppProps"%>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -30,6 +31,7 @@
 <%
     AdminController.SiteSettingsBean bean = ((JspView<AdminController.SiteSettingsBean>)HttpView.currentView()).getModelBean();
     AppProps appProps = AppProps.getInstance();
+    boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %>
 <script type="text/javascript">
 
@@ -153,7 +155,10 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <%}%>
 <tr>
-    <td><%= button("Save").submit(true) %></td>
+    <td>
+        <%= hasAdminOpsPerms ? button("Save").submit(true) : "" %>
+        <%= button(!hasAdminOpsPerms ? "Done" : "Cancel").href(new AdminController.AdminUrlsImpl().getAdminConsoleURL()) %>
+    </td>
 </tr>
 </table>
 
@@ -358,11 +363,12 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="labkey-form-label"><label for="networkDrivePassword">Password</label></td>
     <td><input type="password" name="networkDrivePassword" id="networkDrivePassword" value="<%= h(appProps.getNetworkDrivePassword()) %>"></td>
 </tr>
+<% if (hasAdminOpsPerms) { %>
 <tr>
     <td></td>
     <td><%=textLink("Test network drive settings", "javascript:testNetworkDrive()")%> - Note: Do not test if the drive is currently being accessed from within LabKey Server.</td>
 </tr>
-
+<% } %>
 <tr>
     <td>&nbsp;</td>
 </tr>
@@ -425,7 +431,10 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td><%= button("Save").submit(true) %></td>
+    <td>
+        <%= hasAdminOpsPerms ? button("Save").submit(true) : "" %>
+        <%= button(!hasAdminOpsPerms ? "Done" : "Cancel").href(new AdminController.AdminUrlsImpl().getAdminConsoleURL()) %>
+    </td>
 </tr>
 </table>
 </labkey:form>

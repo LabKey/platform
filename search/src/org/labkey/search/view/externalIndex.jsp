@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
-<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -31,10 +31,9 @@
 <%
 JspView<ExternalIndexProperties> me = (JspView<ExternalIndexProperties>) HttpView.currentView();
 ExternalIndexProperties props = me.getModelBean();
-User user = getUser();
 SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 String message = getActionURL().getParameter("externalMessage");
-
+boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 if (null != ss)
 {
     %><p><labkey:form method="POST" action="setExternalIndex.post">
@@ -67,7 +66,7 @@ if (null != ss)
             </td></tr>
             <%
 
-            if (user.isSiteAdmin())
+            if (hasAdminOpsPerms)
             {
             %>
             <tr><td colspan="2">

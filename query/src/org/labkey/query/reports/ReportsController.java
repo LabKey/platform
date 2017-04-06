@@ -108,11 +108,13 @@ import org.labkey.api.reports.report.view.RenderBackgroundRReportView;
 import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
+import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -510,7 +512,7 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresPermission(AdminPermission.class)
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class ConfigureReportsAndScriptsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -526,7 +528,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class ScriptEnginesSummaryAction extends ApiAction
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
@@ -587,7 +589,7 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresPermission(AdminPermission.class)
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class ScriptEnginesSaveAction extends ExtFormAction<LabkeyScriptEngineManager.EngineDefinition>
     {
         @Override
@@ -638,7 +640,7 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresPermission(AdminPermission.class)
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class ScriptEnginesDeleteAction extends ApiAction<LabkeyScriptEngineManager.EngineDefinition>
     {
         public ApiResponse execute(LabkeyScriptEngineManager.EngineDefinition def, BindException errors) throws Exception

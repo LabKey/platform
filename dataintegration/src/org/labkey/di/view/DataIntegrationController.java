@@ -329,8 +329,8 @@ public class DataIntegrationController extends SpringActionController
 
     public static void registerAdminConsoleLinks()
     {
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "etl- all job histories", new ActionURL(viewJobsAction.class, ContainerManager.getRoot()));
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "etl- run site scope etls", new ActionURL(BeginAction.class, ContainerManager.getRoot()));
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "etl- all job histories", new ActionURL(viewJobsAction.class, ContainerManager.getRoot()), AdminPermission.class);
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "etl- run site scope etls", new ActionURL(BeginAction.class, ContainerManager.getRoot()), AdminPermission.class);
     }
 
     @RequiresPermission(AdminPermission.class)

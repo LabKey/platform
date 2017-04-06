@@ -33,6 +33,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -47,9 +48,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
-import java.util.Map;
 
 /**
  * User: kevink
@@ -67,7 +66,7 @@ public class LoggerController extends SpringActionController
     {
         Container root = ContainerManager.getRoot();
 
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Diagnostics, "loggers", new ActionURL(ManageAction.class, root));
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Diagnostics, "loggers", new ActionURL(ManageAction.class, root), AdminOperationsPermission.class);
     }
 
     public LoggerController()

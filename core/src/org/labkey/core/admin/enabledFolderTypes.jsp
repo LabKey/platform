@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.module.FolderType"%>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
@@ -25,7 +26,8 @@
 <labkey:errors/>
 
 <%
-AdminController.FolderTypesBean bean = (AdminController.FolderTypesBean) HttpView.currentModel();
+    AdminController.FolderTypesBean bean = (AdminController.FolderTypesBean) HttpView.currentModel();
+    boolean canUpdate = getContainer().hasPermission(getUser(), AdminPermission.class);
 %>
 <div>
     If a folder type is disabled, it will not be available as a choice when setting the type for a folder or project.
@@ -55,6 +57,6 @@ AdminController.FolderTypesBean bean = (AdminController.FolderTypesBean) HttpVie
         %>
     </table>
     <br/>
-    <%= button("Save").submit(true) %>
-    <%= PageFlowUtil.generateBackButton("Cancel") %>
+    <%= canUpdate ? button("Save").submit(true) : "" %>
+    <%= PageFlowUtil.generateBackButton(!canUpdate ? "Done" : "Cancel") %>
 </labkey:form>

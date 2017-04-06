@@ -33,6 +33,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.BaseAggregatesAnalyticsProvider;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
@@ -537,7 +538,7 @@ public class QueryController extends SpringActionController
     }
 
 
-    @AdminConsoleAction
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class DataSourceAdminAction extends SimpleViewAction
     {
         @Override

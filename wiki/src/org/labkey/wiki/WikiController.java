@@ -138,7 +138,7 @@ public class WikiController extends SpringActionController
 
     public static void registerAdminConsoleLinks()
     {
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "site-wide terms of use", getEditWikiURL(ContainerManager.getRoot(), EditWikiAction.class, WikiTermsOfUseProvider.TERMS_OF_USE_WIKI_NAME, true));
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "site-wide terms of use", getEditWikiURL(ContainerManager.getRoot(), EditWikiAction.class, WikiTermsOfUseProvider.TERMS_OF_USE_WIKI_NAME, true), AdminPermission.class);
     }
 
     protected BaseWikiPermissions getPermissions()

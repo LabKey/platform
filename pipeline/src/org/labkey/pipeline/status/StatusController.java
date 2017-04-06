@@ -30,6 +30,8 @@ import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -88,7 +90,7 @@ public class StatusController extends SpringActionController
     public static void registerAdminConsoleLinks()
     {
         ActionURL url = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(ContainerManager.getRoot(), false);
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "pipeline", url);
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "pipeline", url, AdminOperationsPermission.class);
     }
 
     public PageConfig defaultPageConfig()

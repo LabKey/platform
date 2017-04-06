@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
-<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -29,8 +29,8 @@
 <%
 JspView<SearchController.AdminForm> me = (JspView<SearchController.AdminForm>) HttpView.currentView();
 SearchController.AdminForm form = me.getModelBean();
-User user = getUser();
 SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %><labkey:errors /><%
     if (!StringUtils.isEmpty(form.getMessage()))
     { %>
@@ -52,7 +52,7 @@ else
                 <td>Path to primary full-text search index:</td>
                 <td><input name="primaryIndexPath" size="80" value="<%=h(SearchPropertyManager.getPrimaryIndexDirectory().getPath())%>"></td>
             </tr><%
-        if (user.isSiteAdmin())
+        if (hasAdminOpsPerms)
         {
             %><tr><td colspan="2">Note: Changing the primary index path requires re-indexing all data, which can be very expensive.</td></tr>
             <tr><td><input type="hidden" name="path" value="1"></td></tr>
@@ -69,7 +69,7 @@ else
     {
         %><tr><td>The document crawler is running.</td></tr><%
 
-        if (user.isSiteAdmin())
+        if (hasAdminOpsPerms)
         {
         %>
         <tr><td><input type="hidden" name="pause" value="1"></td></tr>
@@ -80,7 +80,7 @@ else
     {
         %><tr><td>The document crawler is paused.</td></tr><%
 
-        if (user.isSiteAdmin())
+        if (hasAdminOpsPerms)
         {
         %>
         <tr><td><input type="hidden" name="start" value="1"></td></tr>
@@ -90,7 +90,7 @@ else
     %>
         </table>
     </labkey:form></p><%
-    if (user.isSiteAdmin())
+    if (hasAdminOpsPerms)
     {
     %>
     <p><labkey:form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
@@ -118,7 +118,7 @@ else
                 %>
             </select>
         </td></tr><%
-        if (user.isSiteAdmin())
+        if (hasAdminOpsPerms)
         {
         %>
         <tr><td><input type="hidden" name="directory" value="1"></td></tr>

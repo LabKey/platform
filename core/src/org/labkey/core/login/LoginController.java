@@ -52,6 +52,7 @@ import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -2433,7 +2434,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    @AdminConsoleAction
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class ConfigureAction extends SimpleViewAction<ReturnUrlForm>
     {
         public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
@@ -2448,7 +2449,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class SetAuthenticationParameterAction extends RedirectAction<AuthParameterForm>
     {
 
@@ -2498,7 +2499,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class EnableAction extends RedirectAction<ProviderForm>
     {
         public ActionURL getSuccessURL(ProviderForm form)
@@ -2517,7 +2518,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class DisableAction extends RedirectAction<ProviderForm>
     {
         public ActionURL getSuccessURL(ProviderForm form)
@@ -2565,7 +2566,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    @AdminConsoleAction
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class ConfigureDbLoginAction extends FormViewAction<Config>
     {
         public ModelAndView getView(Config form, boolean reshow, BindException errors) throws Exception
@@ -2658,7 +2659,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    @AdminConsoleAction
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class PickAuthLogoAction extends FormViewAction<AuthLogoForm>
     {
         private SSOAuthenticationProvider _provider;

@@ -62,6 +62,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
@@ -264,7 +265,7 @@ public class UserController extends SpringActionController
 
     public static void registerAdminConsoleLinks()
     {
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Configuration, "change user properties", new ActionURL(ShowUserPreferencesAction.class, ContainerManager.getRoot()));
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Configuration, "change user properties", new ActionURL(ShowUserPreferencesAction.class, ContainerManager.getRoot()), AdminPermission.class);
     }
 
     private void setDataRegionButtons(DataRegion rgn, boolean isOwnRecord)
@@ -809,7 +810,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @AdminConsoleAction
     public class ShowUserPreferencesAction extends RedirectAction<Object>
     {
         ActionURL _successUrl;

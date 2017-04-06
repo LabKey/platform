@@ -58,7 +58,6 @@ import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
-import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.CSRF;
@@ -73,6 +72,7 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -109,7 +109,6 @@ import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineRoot;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
-import org.labkey.pipeline.importer.FolderImportJob;
 import org.labkey.pipeline.status.StatusController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1594,7 +1593,7 @@ public class PipelineController extends SpringActionController
     public static void registerAdminConsoleLinks()
     {
         ActionURL url = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(ContainerManager.getRoot());
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "pipeline email notification", url);
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "pipeline email notification", url, AdminOperationsPermission.class);
     }
 
     public static class PipelineUrlsImp implements PipelineUrls

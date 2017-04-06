@@ -102,9 +102,11 @@
             }
         %>
         <tr>
-            <td valign="top">Add new users.<br><br>Enter one or more email addresses,&nbsp;<br>each on its own line.</td>
-            <td colspan="2">
-                <textarea name="newUsers" id="newUsers" cols=40 rows=20></textarea>
+            <td colspan="3">Add new users. Enter one or more email addresses, each on its own line.</td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <textarea name="newUsers" id="newUsers" cols=70 rows=20></textarea><br/><br/>
             </td>
         <tr>
             <td><input type=checkbox id="cloneUserCheck" name="cloneUserCheck" onclick="enableText();">Clone permissions from user:</td>

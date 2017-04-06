@@ -45,6 +45,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -264,7 +265,7 @@ public class SearchController extends SpringActionController
     }
     
 
-    @AdminConsoleAction
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class AdminAction extends FormViewAction<AdminForm>
     {
         @SuppressWarnings("UnusedDeclaration")

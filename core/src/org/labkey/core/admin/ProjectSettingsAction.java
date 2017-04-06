@@ -37,6 +37,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.DateParsingMode;
@@ -48,6 +49,7 @@ import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -55,7 +57,6 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ThemeFont;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.WebTheme;
@@ -85,14 +86,6 @@ import java.util.Map;
 @RequiresPermission(AdminPermission.class)
 public class ProjectSettingsAction extends FormViewAction<AdminController.ProjectSettingsForm>
 {
-    public void checkPermissions() throws UnauthorizedException
-    {
-        super.checkPermissions();
-
-        if (getContainer().isRoot() && !getUser().isSiteAdmin())
-            throw new UnauthorizedException();
-    }
-
     public void validateCommand(AdminController.ProjectSettingsForm form, Errors errors)
     {
         if (form.isFilesTab())
@@ -144,6 +137,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
     private boolean handlePropertiesPost(Container c, AdminController.ProjectSettingsForm form, BindException errors)
     {
         WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
+        boolean hasAdminOpsPerm = c.hasPermission(getUser(), AdminOperationsPermission.class);
 
         try
         {
@@ -179,17 +173,23 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
             SecurityManager.setNewSubfoldersInheritPermissions(c, getUser(), form.getShouldInherit());
         }
 
-        try
+        // a few properties on this page should be restricted to operational permissions (i.e. site admin)
+        if (hasAdminOpsPerm)
         {
-            // this will throw an InvalidEmailException for invalid email addresses
-            ValidEmail email = new ValidEmail(form.getSystemEmailAddress());
-            props.setSystemEmailAddress(email);
-        }
-        catch (ValidEmail.InvalidEmailException e)
-        {
-            errors.reject(SpringActionController.ERROR_MSG, "Invalid System Email Address: ["
-                    + e.getBadEmail() + "]. Please enter a valid email address.");
-            return false;
+            try
+            {
+                // this will throw an InvalidEmailException for invalid email addresses
+                ValidEmail email = new ValidEmail(form.getSystemEmailAddress());
+                props.setSystemEmailAddress(email);
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Invalid System Email Address: ["
+                        + e.getBadEmail() + "]. Please enter a valid email address.");
+                return false;
+            }
+
+            props.setCustomLogin(form.getCustomLogin());
         }
 
         props.setCompanyName(form.getCompanyName());
@@ -197,7 +197,6 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         props.setLogoHref(form.getLogoHref());
         props.setSystemShortName(form.getSystemShortName());
         props.setReportAProblemPath(form.getReportAProblemPath());
-        props.setCustomLogin(form.getCustomLogin());
 
         if (!StringUtils.isBlank(form.getSupportEmail()))
         {
@@ -439,8 +438,9 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                 }
                 case "menubar":
                     if (c.isRoot())
-                        throw new NotFoundException("Menu bar must be configured for each project separately.");
-                    WebPartView v = new JspView<Object>(AdminController.class, "editMenuBar.jsp", null);
+                        return getErrorView("Menu bar must be configured for each project separately.");
+
+                    WebPartView v = new JspView<>(AdminController.class, "editMenuBar.jsp", null);
                     v.setView("menubar", new VBox());
                     //TODO: propagate ClientDependencies
                     Portal.populatePortalView(getViewContext(), Portal.DEFAULT_PORTAL_PAGE_ID, v, false, true);
@@ -448,7 +448,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                     return v;
                 case "files":
                     if (c.isRoot())
-                        throw new NotFoundException("Files must be configured for each project separately.");
+                        return getErrorView("Files must be configured for each project separately.");
 
                     if (!_reshow || _form.isPipelineRootForm())
                     {
@@ -464,8 +464,8 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                     VBox box = new VBox();
                     box.addView(new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors));
 
-                    // only site admins can configure the pipeline root
-                    if (getViewContext().getUser().isSiteAdmin())
+                    // only site admins (i.e. AdminOperationsPermission) can configure the pipeline root
+                    if (c.hasPermission(getViewContext().getUser(), AdminOperationsPermission.class))
                     {
                         box.addView(new HttpView()
                         {
@@ -497,8 +497,13 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
                     return box;
                 default:
-                    throw new NotFoundException("Unknown tab id");
+                    return getErrorView("Unknown tab id");
             }
+        }
+
+        private HtmlView getErrorView(String msg)
+        {
+            return new HtmlView("<span class=\"labkey-error\">" + msg + "</span>");
         }
     }
 

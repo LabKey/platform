@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.reports.report.ExternalScriptEngineReport" %>
 <%@ page import="org.labkey.api.reports.report.RReport" %>
 <%@ page import="org.labkey.api.reports.report.ScriptEngineReport" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
@@ -36,6 +37,7 @@
 %>
 <%
     boolean isRemoteEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING);
+    boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %>
 <style type="text/css">
 
@@ -284,11 +286,11 @@
                 forceFit:true
             }),
             buttons: [
-                {text:'Add', id: 'btn_addEngine', menu: newMenu, tooltip: {text:'Configure a new external script engine', title:'Add Engine'}},
-                {text:'Delete', id: 'btn_deleteEngine', tooltip: {text:'Delete the selected script engine', title:'Delete Engine'}, listeners:{click:function(button, event) {deleteSelected(grid);}}},
-                {text:'Edit', id: 'btn_editEngine', tooltip: {text:'Edit an existing script engine', title:'Edit Engine'}, listeners:{click:function(button, event) {editSelected(button, grid);}}}
+                {text:'Add', id: 'btn_addEngine', menu: newMenu, tooltip: {text:'Configure a new external script engine', title:'Add Engine'}, hidden: <%=!hasAdminOpsPerms%>},
+                {text:'Delete', id: 'btn_deleteEngine', tooltip: {text:'Delete the selected script engine', title:'Delete Engine'}, listeners:{click:function(button, event) {deleteSelected(grid);}}, hidden: <%=!hasAdminOpsPerms%>},
+                {text:'Edit', id: 'btn_editEngine', tooltip: {text:'Edit an existing script engine', title:'Edit Engine'}, listeners:{click:function(button, event) {editSelected(button, grid);}}, hidden: <%=!hasAdminOpsPerms%>}
             ],
-            buttonAlign:'center',
+            buttonAlign:'left',
             selModel: new Ext.grid.RowSelectionModel({singleSelect: true})
         });
 
@@ -627,9 +629,10 @@
             buttons: [{
                 text: 'Submit',
                 id: 'btn_submit',
+                hidden: <%=!hasAdminOpsPerms%>,
                 handler: function(){submitForm(win, formPanel, grid);}
             },{
-                text: 'Cancel',
+                text: <%=q(!hasAdminOpsPerms ? "Close" : "Cancel")%>,
                 id: 'btn_cancel',
                 handler: function(){win.close();}
             }],

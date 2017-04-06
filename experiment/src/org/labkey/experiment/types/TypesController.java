@@ -86,7 +86,7 @@ public class TypesController extends SpringActionController
 
     public static void registerAdminConsoleLinks()
     {
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "ontology", new ActionURL(BeginAction.class,ContainerManager.getRoot()));
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "ontology", new ActionURL(BeginAction.class,ContainerManager.getRoot()), AdminPermission.class);
     }
 
     public TypesController() throws Exception

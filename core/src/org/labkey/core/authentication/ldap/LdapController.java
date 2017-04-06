@@ -27,6 +27,7 @@ import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -61,7 +62,8 @@ public class LdapController extends SpringActionController
     }
 
 
-    @AdminConsoleAction @CSRF
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    @CSRF
     public class ConfigureAction extends FormViewAction<Config>
     {
         public ModelAndView getView(Config form, boolean reshow, BindException errors) throws Exception

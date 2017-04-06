@@ -122,7 +122,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
@@ -227,16 +229,16 @@ public class AdminController extends SpringActionController
         // Configuration
         AdminConsole.addLink(SettingsLinkType.Configuration, "site settings", new AdminUrlsImpl().getCustomizeSiteURL());
         AdminConsole.addLink(SettingsLinkType.Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Configuration, "look and feel settings", new AdminUrlsImpl().getProjectSettingsURL(root));
+        AdminConsole.addLink(SettingsLinkType.Configuration, "look and feel settings", new AdminUrlsImpl().getProjectSettingsURL(root), AdminPermission.class);
         AdminConsole.addLink(SettingsLinkType.Configuration, "authentication", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL());
-        AdminConsole.addLink(SettingsLinkType.Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Configuration, "project display order", new ActionURL(ReorderFoldersAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Configuration, "missing value indicators", new ActionURL(FolderManagementAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Configuration, "files", new ActionURL(FilesSiteSettingsAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Configuration, "experimental features", new ActionURL(ExperimentalFeaturesAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Configuration, "folder types", new ActionURL(FolderTypesAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Configuration, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Configuration, "project display order", new ActionURL(ReorderFoldersAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Configuration, "missing value indicators", new ActionURL(FolderManagementAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Configuration, "files", new ActionURL(FilesSiteSettingsAction.class, root), AdminOperationsPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Configuration, "experimental features", new ActionURL(ExperimentalFeaturesAction.class, root), AdminOperationsPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Configuration, "folder types", new ActionURL(FolderTypesAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Configuration, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root), AdminPermission.class);
 
         // Diagnostics
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
@@ -247,15 +249,15 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "queries", getQueriesURL(null));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "caches", new ActionURL(CachesAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "sql scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "sql scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors", new ActionURL(ShowAllErrorsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view primary site log file", new ActionURL(ShowPrimaryLogAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "check database", new ActionURL(DbCheckerAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "test email configuration", new ActionURL(EmailTestAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root), AdminOperationsPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "check database", new ActionURL(DbCheckerAction.class, root), AdminOperationsPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "test email configuration", new ActionURL(EmailTestAction.class, root), AdminPermission.class);
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "credits", new ActionURL(CreditsAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "site validation", new ActionURL(SiteValidationAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "site validation", new ActionURL(SiteValidationAction.class, root), AdminPermission.class);
     }
 
     public AdminController()
@@ -977,14 +979,6 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ResetLogoAction extends SimpleRedirectAction
     {
-        public void checkPermissions() throws UnauthorizedException
-        {
-            super.checkPermissions();
-
-            if (getContainer().isRoot() && !getUser().isSiteAdmin())
-                throw new UnauthorizedException();
-        }
-
         public ActionURL getRedirectURL(Object o) throws Exception
         {
             deleteExistingLogo(getContainer(), getUser());
@@ -997,20 +991,14 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ResetPropertiesAction extends SimpleRedirectAction
     {
-        public void checkPermissions() throws UnauthorizedException
-        {
-            super.checkPermissions();
-
-            if (getContainer().isRoot() && !getUser().isSiteAdmin())
-                throw new UnauthorizedException();
-        }
-
         public ActionURL getRedirectURL(Object o)
         {
             Container c = getContainer();
             boolean folder = !(c.isRoot() || c.isProject());
+            boolean hasAdminOpsPerm = c.hasPermission(getUser(), AdminOperationsPermission.class);
+
             WriteableFolderLookAndFeelProperties props = folder ? LookAndFeelProperties.getWriteableFolderInstance(c) : LookAndFeelProperties.getWriteableInstance(c);
-            props.clear();
+            props.clear(hasAdminOpsPerm);
             props.save();
             // TODO: Audit log?
 
@@ -1045,14 +1033,6 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ResetFaviconAction extends SimpleRedirectAction
     {
-        public void checkPermissions() throws UnauthorizedException
-        {
-            super.checkPermissions();
-
-            if (getContainer().isRoot() && !getUser().isSiteAdmin())
-                throw new UnauthorizedException();
-        }
-
         public ActionURL getRedirectURL(Object o) throws SQLException
         {
             deleteExistingFavicon(getContainer(), getUser());
@@ -1074,14 +1054,6 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class DeleteCustomStylesheetAction extends SimpleRedirectAction
     {
-        public void checkPermissions() throws UnauthorizedException
-        {
-            super.checkPermissions();
-
-            if (getContainer().isRoot() && !getUser().isSiteAdmin())
-                throw new UnauthorizedException();
-        }
-
         public ActionURL getRedirectURL(Object o) throws SQLException
         {
             deleteExistingCustomStylesheet(getContainer(), getUser());
@@ -1101,7 +1073,8 @@ public class AdminController extends SpringActionController
     }
 
 
-    @AdminConsoleAction @CSRF
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    @CSRF
     public class CustomizeSiteAction extends FormViewAction<SiteSettingsForm>
     {
         public ModelAndView getView(SiteSettingsForm form, boolean reshow, BindException errors) throws Exception
@@ -2029,7 +2002,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ShowNetworkDriveTestAction extends SimpleViewAction<SiteSettingsForm>
     {
         public ModelAndView getView(SiteSettingsForm form, BindException errors) throws Exception
@@ -2205,12 +2178,15 @@ public class AdminController extends SpringActionController
     }
 
 
-    @AdminConsoleAction
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class QueriesAction extends SimpleViewAction<QueriesForm>
     {
         public ModelAndView getView(QueriesForm form, BindException errors) throws Exception
         {
-            String buttonHTML = PageFlowUtil.button("Reset All Statistics").href(getResetQueryStatisticsURL()) + "&nbsp;" + PageFlowUtil.button("Export").href(getExportQueriesURL());
+            String buttonHTML = "";
+            if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
+                buttonHTML += PageFlowUtil.button("Reset All Statistics").href(getResetQueryStatisticsURL()) + "&nbsp;";
+            buttonHTML += PageFlowUtil.button("Export").href(getExportQueriesURL()) + "<br/><br/>";
 
             return QueryProfiler.getInstance().getReportView(form.getStat(), buttonHTML, AdminController::getQueriesURL,
                     sql -> getQueryStackTracesURL(sql.hashCode()));
@@ -2344,7 +2320,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @AdminConsoleAction
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class CachesAction extends SimpleViewAction<MemForm>
     {
         public ModelAndView getView(MemForm form, BindException errors) throws Exception
@@ -2370,9 +2346,13 @@ public class AdminController extends SpringActionController
             }
 
             StringBuilder html = new StringBuilder();
-            html.append(PageFlowUtil.textLink("Clear Caches and Refresh", AdminController.getCachesURL(true, false)));
-            html.append(PageFlowUtil.textLink("Refresh", AdminController.getCachesURL(false, false)));
-            html.append("<hr size=1>\n");
+
+            if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
+            {
+                html.append(PageFlowUtil.textLink("Clear Caches and Refresh", AdminController.getCachesURL(true, false)));
+                html.append(PageFlowUtil.textLink("Refresh", AdminController.getCachesURL(false, false)));
+                html.append("<hr size=1>\n");
+            }
 
             appendStats(html, "Caches", cacheStats);
             appendStats(html, "Transaction Caches", transactionStats);
@@ -2389,8 +2369,17 @@ public class AdminController extends SpringActionController
             html.append(" (").append(stats.size()).append(")</b></p>\n");
 
             html.append("<table class=\"labkey-data-region labkey-show-borders\">\n");
-            html.append("<tr><th>Debug Name</th>");
-            html.append("<th>Limit</th><th>Max&nbsp;Size</th><th>Current&nbsp;Size</th><th>Gets</th><th>Misses</th><th>Puts</th><th>Expirations</th><th>Removes</th><th>Clears</th><th>Miss Percentage</th></tr>");
+            html.append("<tr><td class=\"labkey-column-header\">Debug Name</td>");
+            html.append("<td class=\"labkey-column-header\">Limit</td>");
+            html.append("<td class=\"labkey-column-header\">Max&nbsp;Size</td>");
+            html.append("<td class=\"labkey-column-header\">Current&nbsp;Size</td>");
+            html.append("<td class=\"labkey-column-header\">Gets</td>");
+            html.append("<td class=\"labkey-column-header\">Misses</td>");
+            html.append("<td class=\"labkey-column-header\">Puts</td>");
+            html.append("<td class=\"labkey-column-header\">Expirations</td>");
+            html.append("<td class=\"labkey-column-header\">Removes</td>");
+            html.append("<td class=\"labkey-column-header\">Clears</td>");
+            html.append("<td class=\"labkey-column-header\">Miss Percentage</td></tr>");
 
             long size = 0;
             long gets = 0;
@@ -2399,6 +2388,7 @@ public class AdminController extends SpringActionController
             long expirations = 0;
             long removes = 0;
             long clears = 0;
+            int rowCount = 0;
 
             for (CacheStats stat : stats)
             {
@@ -2410,7 +2400,7 @@ public class AdminController extends SpringActionController
                 removes += stat.getRemoves();
                 clears += stat.getClears();
 
-                html.append("<tr>");
+                html.append("<tr class=\"").append(rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row").append("\">");
 
                 appendDescription(html, stat.getDescription(), stat.getCreationStackTrace());
 
@@ -2424,6 +2414,7 @@ public class AdminController extends SpringActionController
                     html.append("<td><font class=\"labkey-error\">This cache has been limited</font></td>");
 
                 html.append("</tr>\n");
+                rowCount++;
             }
 
             double ratio = 0 != gets ? misses / (double)gets : 0;
@@ -2492,7 +2483,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class SystemPropertiesAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -2545,7 +2536,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @AdminConsoleAction
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class ConfigureSystemMaintenanceAction extends FormViewAction<ConfigureSystemMaintenanceForm>
     {
         @Override
@@ -2689,7 +2680,7 @@ public class AdminController extends SpringActionController
 
     private static volatile String lastCacheMemUsed = null;
 
-    @AdminConsoleAction
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class MemTrackerAction extends SimpleViewAction<MemForm>
     {
         public ModelAndView getView(MemForm form, BindException errors) throws Exception
@@ -3907,11 +3898,6 @@ public class AdminController extends SpringActionController
 
         public ModelAndView getView(CustomEmailForm form, boolean reshow, BindException errors) throws Exception
         {
-            if (getContainer().isRoot() && !getUser().isSiteAdmin())
-            {
-                // Must be a site admin to customize in the root, which is where the site-wide templates are stored
-                throw new UnauthorizedException();
-            }
             JspView<CustomEmailForm> result = new JspView<>("/org/labkey/core/admin/customizeEmail.jsp", form, errors);
             result.setTitle("Email Template");
             return result;
@@ -3919,12 +3905,6 @@ public class AdminController extends SpringActionController
 
         public boolean handlePost(CustomEmailForm form, BindException errors) throws Exception
         {
-            if (getContainer().isRoot() && !getUser().isSiteAdmin())
-            {
-                // Must be a site admin to customize in the root, which is where the site-wide templates are stored
-                throw new UnauthorizedException();
-            }
-
             if (form.getTemplateClass() != null)
             {
                 EmailTemplate template = EmailTemplateService.get().createTemplate(form.getTemplateClass());
@@ -3967,12 +3947,6 @@ public class AdminController extends SpringActionController
     {
         public ActionURL getRedirectURL(CustomEmailForm form) throws Exception
         {
-            if (getContainer().isRoot() && !getUser().isSiteAdmin())
-            {
-                // Must be a site admin to customize in the root, which is where the site-wide templates are stored
-                throw new UnauthorizedException();
-            }
-
             if (form.getTemplateClass() != null)
             {
                 EmailTemplate template = EmailTemplateService.get().createTemplate(form.getTemplateClass());
@@ -5670,7 +5644,7 @@ public class AdminController extends SpringActionController
         abstract boolean accept(Module module);
     }
 
-    @AdminConsoleAction
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class ModulesAction extends SimpleViewAction<ModulesForm>
     {
         @Override
@@ -5765,6 +5739,8 @@ public class AdminController extends SpringActionController
             @Override
             protected void renderView(Object model, PrintWriter out) throws Exception
             {
+                boolean hasAdminOpsPerm = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
+
                 if (_contexts.isEmpty())
                 {
                     out.println(_noModulesDescriptionHtml);
@@ -5778,7 +5754,8 @@ public class AdminController extends SpringActionController
                     out.println("<td class=\"labkey-column-header\">Class</td>");
                     out.println("<td class=\"labkey-column-header\">Source</td>");
                     out.println("<td class=\"labkey-column-header\">Schemas</td>");
-                    out.println("<td class=\"labkey-column-header\"></td></tr>");
+                    if (hasAdminOpsPerm) // this is for the "delete module and schema" column links
+                        out.println("<td class=\"labkey-column-header\"></td></tr>");
 
                     int rowCount = 0;
                     for (ModuleContext moduleContext : _contexts)
@@ -5817,9 +5794,12 @@ public class AdminController extends SpringActionController
                         out.print(PageFlowUtil.filter(StringUtils.join(schemas, ", ")));
                         out.println("</td>");
 
-                        out.print("    <td>");
-                        out.print(PageFlowUtil.textLink("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : ""))), getDeleteURL(moduleContext.getName())));
-                        out.println("</td>");
+                        if (hasAdminOpsPerm)
+                        {
+                            out.print("    <td>");
+                            out.print(PageFlowUtil.textLink("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : ""))), getDeleteURL(moduleContext.getName())));
+                            out.println("</td>");
+                        }
 
                         out.println("  </tr>");
 
@@ -6022,7 +6002,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @AdminConsoleAction @RequiresPermission(AdminPermission.class)
     public class FolderTypesAction extends FormViewAction<Object>
     {
         @Override
@@ -6697,7 +6677,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin @AdminConsoleAction
+    @AdminConsoleAction @RequiresPermission(AdminPermission.class)
     public class ShortURLAdminAction extends FormViewAction<ShortURLForm>
     {
         @Override
@@ -7023,7 +7003,7 @@ public class AdminController extends SpringActionController
     }
 
     @SuppressWarnings("UnusedDeclaration")
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminReadPermission.class)
     public class TestMothershipReportAction extends ApiAction<MothershipReportSelectionForm>
     {
         @Override
