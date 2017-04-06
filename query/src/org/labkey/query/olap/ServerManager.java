@@ -30,6 +30,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.Constants;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -83,6 +85,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -113,6 +116,7 @@ public class ServerManager
 
     private static final ModuleResourceCache<Map<String, OlapSchemaDescriptor>> MODULE_DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), new OlapSchemaCacheHandler(), "Olap cube definitions (module)");
     private static final BlockingStringKeyCache<OlapSchemaDescriptor> DB_DESCRIPTOR_CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.HOUR, "Olap cube definitions (db)", new OlapCacheLoader());
+    private static final BlockingCache<Container, Map<String, OlapSchemaDescriptor>> DB_DESCRIPTOR_CACHE2 = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Olap cube definitions (db)", new OlapCacheLoader2());
 
     private static final BlockingStringKeyCache<Cube> CUBES = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, 2 * CacheManager.DAY, "cube cache", null);
 
@@ -194,6 +198,21 @@ public class ServerManager
         }
     }
 
+    private static class OlapCacheLoader2 implements CacheLoader<Container, Map<String, OlapSchemaDescriptor>>
+    {
+        @Override
+        public Map<String, OlapSchemaDescriptor> load(Container c, @Nullable Object argument)
+        {
+            Map<String, OlapSchemaDescriptor> map = new HashMap<>();
+            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+
+            new TableSelector(QueryManager.get().getTableInfoOlapDef(), filter, null)
+                .forEach(def -> map.put(def.getName(), new CustomOlapSchemaDescriptor(def)), OlapDef.class);
+
+            return map.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(map);
+        }
+    }
+
     @Nullable
     public static OlapSchemaDescriptor getDescriptor(@NotNull Container c, @NotNull String schemaId)
     {
@@ -203,8 +222,13 @@ public class ServerManager
         // look for descriptor in database by container and name
         String olapDefCacheKey = c.getId() + "/" + id.getName();
         OlapSchemaDescriptor d = DB_DESCRIPTOR_CACHE.get(olapDefCacheKey);
+        OlapSchemaDescriptor d2 = DB_DESCRIPTOR_CACHE2.get(c).get(id.getName());
         if (null != d && d.getModule() == id.getModule() && c.getActiveModules().contains(d.getModule()))
+        {
+            assert d.getName().equals(d2.getName());
+            assert d.getDefinition().equals(d2.getDefinition());
             return d;
+        }
 
         // look for descriptor in active modules
         d = MODULE_DESCRIPTOR_CACHE.getResourceMap(id.getModule()).get(id.getName());
@@ -225,8 +249,10 @@ public class ServerManager
             .filter(osd -> osd.isExposed(c))
             .collect(Collectors.toList()));
 
-        // TODO: add list of all olap descriptors in the container to the db cache
+        // TODO: test and remove all this code
+        // ======================
         //List<OlapSchemaDescriptor> descriptors = DB_SCHEMA_DESCRIPTOR_CACHE.get(c.getId());
+        List<OlapSchemaDescriptor> db_descriptors = new ArrayList<>();
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         TableSelector s = new TableSelector(QueryManager.get().getTableInfoOlapDef(), Collections.singleton("name"), filter, null);
         s.forEach(name ->
@@ -235,8 +261,26 @@ public class ServerManager
             String olapDefCacheKey = c.getId() + "/" + name;
             OlapSchemaDescriptor d = DB_DESCRIPTOR_CACHE.get(olapDefCacheKey);
             if (d != null)
-                ret.add(d);
+                db_descriptors.add(d);
         }, String.class);
+        // ======================
+
+        List<OlapSchemaDescriptor> db_descriptors2 = new ArrayList<>();
+        db_descriptors2.addAll(DB_DESCRIPTOR_CACHE2.get(c).values());
+
+        assert db_descriptors2.size() == db_descriptors.size();
+
+        Iterator<OlapSchemaDescriptor> iter = db_descriptors2.iterator();
+
+        for (OlapSchemaDescriptor descriptor : db_descriptors)
+        {
+            OlapSchemaDescriptor descriptor2 = iter.next();
+
+            assert descriptor.getName().equals(descriptor2.getName());
+            assert descriptor.getDefinition().equals(descriptor2.getDefinition());
+        }
+
+        ret.addAll(db_descriptors);
 
         return ret;
     }
@@ -288,20 +332,16 @@ public class ServerManager
 
         String cubeCacheKey = c.getId() + "/" + cube.getSchema().getName() + "/" + cube.getUniqueName();
         final SQLException ex[] = new SQLException[1];
-        Cube cachedCube = CUBES.get(cubeCacheKey,cube,new CacheLoader<String,Cube>()
+        Cube cachedCube = CUBES.get(cubeCacheKey, cube, (key, src) ->
         {
-            @Override
-            public Cube load(String key, @Nullable Object src)
+            try
             {
-                try
-                {
-                    return (new Olap4JCachedCubeFactory()).createCachedCube((Cube)src);
-                }
-                catch (SQLException x)
-                {
-                    ex[0] = x;
-                    return null;
-                }
+                return (new Olap4JCachedCubeFactory()).createCachedCube((Cube)src);
+            }
+            catch (SQLException x)
+            {
+                ex[0] = x;
+                return null;
             }
         });
         if (null != ex[0])
@@ -321,21 +361,17 @@ public class ServerManager
 
         String cubeCacheKey = c.getId() + "/" + rolap.getName();
         final SQLException ex[] = new SQLException[1];
-        Cube cachedCube = CUBES.get(cubeCacheKey,rolap,new CacheLoader<String,Cube>()
+        Cube cachedCube = CUBES.get(cubeCacheKey, rolap, (key, src) ->
         {
-            @Override
-            public Cube load(String key, @Nullable Object src)
+            try
             {
-                try
-                {
-                    QuerySchema startSchema = null != schema ? schema : DefaultSchema.get(user, c).getSchema("core");
-                    return new RolapCachedCubeFactory((RolapCubeDef) src, startSchema).createCachedCube();
-                }
-                catch (SQLException x)
-                {
-                    ex[0] = x;
-                    return null;
-                }
+                QuerySchema startSchema = null != schema ? schema : DefaultSchema.get(user, c).getSchema("core");
+                return new RolapCachedCubeFactory((RolapCubeDef) src, startSchema).createCachedCube();
+            }
+            catch (SQLException x)
+            {
+                ex[0] = x;
+                return null;
             }
         });
         if (null != ex[0])
@@ -599,6 +635,7 @@ public class ServerManager
             SERVERS.clear();
             CUBES.clear();
             DB_DESCRIPTOR_CACHE.clear();
+            DB_DESCRIPTOR_CACHE2.clear();
             BitSetQueryImpl.invalidateCache();
         }
     }
@@ -615,6 +652,7 @@ public class ServerManager
                 invalidateCaches(d.getContainer());
                 String olapDefCacheKey = d.getContainer().getId() + "/" + d.getName();
                 DB_DESCRIPTOR_CACHE.remove(olapDefCacheKey);
+                DB_DESCRIPTOR_CACHE2.remove(d.getContainer());
             }
             else
             {
@@ -634,6 +672,7 @@ public class ServerManager
                 ref.decrement();
             invalidateCaches(c);
             DB_DESCRIPTOR_CACHE.removeUsingPrefix(c.getId());
+            DB_DESCRIPTOR_CACHE2.remove(c);
             BitSetQueryImpl.invalidateCache(c);
         }
     }
