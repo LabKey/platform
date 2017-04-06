@@ -1,8 +1,7 @@
 .labkey-page-header {
   color: $lk-page-header-color;
   background-color: $lk-page-header-bg-color;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  padding: $lk-page-header-padding;
 
   .container {
     position: relative;

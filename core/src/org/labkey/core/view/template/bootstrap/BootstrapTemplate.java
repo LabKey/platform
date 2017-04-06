@@ -9,6 +9,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
@@ -62,6 +63,30 @@ public class BootstrapTemplate extends HomeTemplate
         addClientDependencies(model.getClientDependencies());
 
         return new JspView<>("/org/labkey/core/view/template/bootstrap/navigation.jsp", model);
+    }
+
+    @Override
+    public void setView(String name, ModelAndView view)
+    {
+        // TODO: This doesn't feel right, however, there are certain views that should only be applied to the "bodyTemplate"
+        if (WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(name))
+        {
+            HttpView body = ((HttpView) getView("bodyTemplate"));
+
+            if (body != null)
+            {
+                HttpView right = (HttpView) body.getView(WebPartFactory.LOCATION_RIGHT);
+
+                if (right == null)
+                    body.setView(WebPartFactory.LOCATION_RIGHT, new VBox(view));
+                else if (right instanceof VBox)
+                    ((VBox) right).addView(view);
+            }
+        }
+        else
+        {
+            super.setView(name, view);
+        }
     }
 
     public static class NavigationModel

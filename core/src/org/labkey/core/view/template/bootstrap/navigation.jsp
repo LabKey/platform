@@ -26,6 +26,8 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -44,30 +46,10 @@
     NavigationModel model = (NavigationModel) HttpView.currentView().getModelBean();
     ViewContext context = getViewContext();
     List<NavTree> tabs = model.getTabs();
-%>
-<nav class="labkey-page-nav">
-    <div class="container">
-        <div class="navbar-header">
-            <ul class="nav">
-                <li class="dropdown visible-xs">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        <i class="fa fa-bars"></i>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li>Custom menu 1</li>
-                        <li>Custom menu 2</li>
-                        <li>Custom menu 3</li>
-                        <li>Custom menu 4</li>
-                    </ul>
-                </li>
-                <li class="dropdown lk-project-nav-ct" data-webpart="projectnav" data-name="projectnav">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        <i class="fa fa-folder-open"></i>&nbsp;<%=h(model.getProjectTitle())%>
-                    </a>
-                    <ul class="dropdown-menu"></ul>
-                </li>
 
-<%
+    // process custom menus
+    LinkedHashSet<Pair<String, Portal.WebPart>> menus = new LinkedHashSet<>();
+
     for (Portal.WebPart menu : model.getCustomMenus())
     {
         String caption = menu.getName();
@@ -87,12 +69,55 @@
         {
             // Use the part name...
         }
+
+        menus.add(new Pair<>(caption, menu));
+    }
 %>
-                <li class="dropdown hidden-xs" data-webpart="<%=text(getSafeName(menu))%>" data-name="<%=text(menu.getName())%>">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"><%=h(caption)%></a>
+<nav class="labkey-page-nav">
+    <div class="container">
+        <div class="navbar-header">
+            <ul class="nav">
+                <li id="project-mobile" class="dropdown visible-xs">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        <i class="fa fa-bars"></i><%=h(model.getProjectTitle())%>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li id="project-mobile-nav" class="mobiledrop" data-webpart="projectnav" data-name="projectnav">
+                            <a href="#" class="mobiledrop-toggle" data-toggle="mobiledrop">
+                                <i class="fa fa-folder-open"></i>
+                                <span>Projects</span>
+                            </a>
+                            <ul class="tier-2 mobiledrop-menu dropdown-menu"></ul>
+                        </li>
+<%
+    for (Pair<String, Portal.WebPart> pair : menus)
+    {
+%>
+                        <li class="mobiledrop" data-webpart="<%=text(getSafeName(pair.second))%>" data-name="<%=text(pair.second.getName())%>">
+                            <a href="#" class="mobiledrop-toggle" data-toggle="mobiledrop">
+                                <span><%=h(pair.first)%></span>
+                            </a>
+                            <ul class="tier-2 mobiledrop-menu dropdown-menu"></ul>
+                        </li>
+<%  } %>
+                    </ul>
+                </li>
+                <li class="dropdown hidden-xs" data-webpart="projectnav" data-name="projectnav">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        <i class="fa fa-folder-open"></i>&nbsp;<%=h(model.getProjectTitle())%>
+                    </a>
                     <ul class="dropdown-menu"></ul>
                 </li>
-                <% } %>
+
+<%
+    for (Pair<String, Portal.WebPart> pair : menus)
+    {
+%>
+                <li class="dropdown hidden-xs" data-webpart="<%=text(getSafeName(pair.second))%>" data-name="<%=text(pair.second.getName())%>">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"><%=h(pair.first)%></a>
+                    <ul class="dropdown-menu"></ul>
+                </li>
+<%  } %>
             </ul>
         </div>
         <div class="lk-nav-tabs-ct">
@@ -113,6 +138,7 @@
             </ul>
             <ul class="nav lk-nav-tabs hidden-md hidden-lg pull-right">
                 <%
+                    // Generate selected tab
                     for (NavTree tab : tabs)
                     {
                         if (null != tab.getText() && tab.getText().length() > 0)
@@ -127,60 +153,49 @@
                         <i class="fa fa-chevron-down" style="font-size: 12px;"></i>
                         <% } %>
                     </a>
-                </li>
                 <%
                             }
                         }
                     }
+
+                    if (tabs.size() > 1)
+                    {
                 %>
+                    <ul class="dropdown-menu dropdown-menu-right">
+                <%
+                        // Generate all other tabs
+                        for (NavTree tab : tabs)
+                        {
+                            if (null != tab.getText() && tab.getText().length() > 0 && !tab.isSelected())
+                            {
+                %>
+                        <li>
+                            <a href="<%=h(tab.getHref())%>"><%=h(tab.getText())%></a>
+                        </li>
+                <%
+                            }
+                        }
+                %>
+                    </ul>
+                <%
+                    }
+                %>
+                </li>
             </ul>
         </div>
     </div>
 </nav>
 <script type="application/javascript">
-    (function($) {
-
-        var menus = {};
-        <%
-            for (Portal.WebPart menu : model.getCustomMenus())
-            {
-                String safeName = getSafeName(menu);
-                %>menus[<%=PageFlowUtil.jsString(safeName)%>] = {};<%
+    var __menus = {};
+    <%
+        for (Portal.WebPart menu : model.getCustomMenus())
+        {
+            String safeName = getSafeName(menu);
+            %>__menus[<%=PageFlowUtil.jsString(safeName)%>] = {};<%
                 for (Map.Entry<String,String> entry : menu.getPropertyMap().entrySet())
                 {
-                    %>menus[<%=PageFlowUtil.jsString(safeName)%>][<%=PageFlowUtil.jsString(entry.getKey())%>] = <%=PageFlowUtil.jsString(entry.getValue())%>;<%
+                    %>__menus[<%=PageFlowUtil.jsString(safeName)%>][<%=PageFlowUtil.jsString(entry.getKey())%>] = <%=PageFlowUtil.jsString(entry.getValue())%>;<%
                 }
-            }
-        %>
-
-        $(function() {
-            $('[data-webpart]').click(function() {
-                var partName = $(this).data('name');
-                var safeName = $(this).data('webpart');
-                var target = $(this).find('.dropdown-menu');
-
-                if (partName && safeName && target) {
-                    var id = target.attr('id');
-                    if (!id) {
-                        id = LABKEY.Utils.id();
-                        target.attr('id', id);
-                    }
-
-                    var config = {
-                        renderTo: id,
-                        partName: partName,
-                        frame: 'none'
-                    };
-
-                    if (menus[safeName]) {
-                        config.partConfig = menus[safeName];
-                    }
-
-                    var wp = new LABKEY.WebPart(config);
-                    wp.render();
-                    $(this).unbind('click');
-                }
-            })
-        });
-    })(jQuery);
+        }
+    %>
 </script>

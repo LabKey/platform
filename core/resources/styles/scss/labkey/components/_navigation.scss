@@ -12,14 +12,22 @@
       padding: 8px 15px;
 
       &:hover, &:focus {
-        color: $lk-page-nav-bg-color;
-        background-color: $lk-primary-bg-color;
+        background-color: $lk-page-nav-bg-color-active;
+        color: $lk-page-nav-color-active;
         text-decoration: none;
       }
     }
 
-    &.open .fa-bars::before {
-      content: "\F00D"; // fa-close
+    &.open {
+
+      & > a {
+        background-color: $lk-page-nav-bg-color-active;
+        color: $lk-page-nav-color-active;
+      }
+
+      .fa-bars::before {
+        content: "\F00D"; // fa-close
+      }
     }
   }
 
@@ -54,8 +62,8 @@
     }
 
     & > li.active > a {
-      color: black;
-      background-color: #F8F8F8;
+      color: $lk-page-nav-color-active;
+      background-color: $lk-body-bg-color;
     }
   }
 }
@@ -64,4 +72,70 @@
   & > ul {
     list-style: none;
   }
+}
+
+#project-mobile > .dropdown-menu {
+  position: fixed;
+  top: 87px;
+  bottom: 0;
+  right: 0;
+  border: 0;
+  background-color: #3495D2;
+  padding: 0;
+
+  & > li {
+
+    & > a {
+      display: block;
+      height: 54px;
+      width: 80px;
+      text-align: center;
+      padding: 14px 0 0 0;
+      white-space: normal;
+      overflow: hidden;
+      color: $white;
+
+      &:hover, &:focus {
+        background-color: $lk-page-nav-bg-color-active;
+        color: $lk-page-nav-color-active;
+      }
+
+      & i.fa {
+        display: block;
+      }
+
+      & span {
+        font-size: $lk-font-size-small;
+      }
+    }
+
+    &.open > a {
+      background-color: $lk-page-nav-bg-color-active;
+      color: $lk-page-nav-color-active;
+    }
+  }
+
+  .tier-2 {
+    background-color: white;
+    bottom: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    left: 80px;
+
+    &.dropdown-menu {
+      padding: 0;
+      margin: 0;
+      border: none;
+      border-radius: 0;
+    }
+  }
+}
+
+#project-mobile > a > i {
+  padding-right: 15px;
+}
+
+.scroll-locked {
+  overflow: hidden !important;
 }

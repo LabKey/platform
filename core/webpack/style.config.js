@@ -50,6 +50,14 @@ module.exports = function makeWebpackConfig (env) {
             })
         ],
 
+        resolve: {
+            extensions: [ '.js' ]
+        },
+
+        externals: {
+            jQuery: 'jQuery'
+        },
+
         module: {
             rules: [
                 {
