@@ -17,45 +17,33 @@
 package org.labkey.study.assay;
 
 import org.apache.xmlbeans.XmlException;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceLoadException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.study.StudyModule;
 import org.labkey.study.assay.xml.ProviderDocument;
 import org.labkey.study.assay.xml.ProviderType;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.Set;
 
 /**
  * User: kevink
  * Date: Dec 10, 2008 1:34:33 PM
  */
 
-// TODO: Temporary: switch to a ModuleResourceCache
-public class ModuleAssayLoader
+public class ModuleAssayCacheHandler implements ModuleResourceCacheHandler<Collection<AssayProvider>>
 {
     public static final String DOMAINS_DIR_NAME = "domains";
 
-    @NotNull
-    public Set<String> getModuleDependencies(Module module, File explodedModuleDir)
-    {
-        // NOTE: Can't use Module's resource resolver yet since the module hasn't been initialized.
-        File assayDir = new File(explodedModuleDir, AssayService.ASSAY_DIR_NAME);
-        if (assayDir.exists())
-            return Collections.singleton(StudyModule.MODULE_NAME);
-        return Collections.emptySet();
-    }
-
-    public Collection<AssayProvider> getAssayProviders(Module module)
+    @Override
+    public Collection<AssayProvider> load(@Nullable Resource dir, Module module)
     {
         Collection<AssayProvider> ret = new LinkedList<>();
         Resource assayDir = module.getModuleResource(AssayService.ASSAY_DIR_NAME);
@@ -81,7 +69,7 @@ public class ModuleAssayLoader
                 }
             }
         }
-        return ret;
+        return Collections.unmodifiableCollection(ret);
     }
 
     private AssayProvider loadAssayProvider(Module module, Resource assayProviderDir, Resource configFile) throws IOException, ModuleResourceLoadException

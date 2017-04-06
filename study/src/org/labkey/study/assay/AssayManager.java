@@ -40,6 +40,8 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
@@ -109,6 +111,7 @@ import java.util.stream.Collectors;
 public class AssayManager implements AssayService
 {
     private static final Cache<GUID, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
+    private static final ModuleResourceCache<Collection<AssayProvider>> PROVIDER_CACHE = ModuleResourceCaches.create(new Path(ModuleAssayCacheHandler.DOMAINS_DIR_NAME), new ModuleAssayCacheHandler(), "Module assay providers");
 
     private boolean _addedFileBasedAssays = false;
     private static final Object PROVIDER_LOCK = new Object();
@@ -191,10 +194,8 @@ public class AssayManager implements AssayService
         {
             if (!_addedFileBasedAssays)
             {
-                // TODO: This is temporary... switch to a ModuleResourceCache
-                ModuleAssayLoader loader = new ModuleAssayLoader();
                 List<AssayProvider> providers = ModuleLoader.getInstance().getModules().stream()
-                    .map(loader::getAssayProviders)
+                    .map(PROVIDER_CACHE::getResourceMap)
                     .flatMap(Collection::stream)
                     .collect(Collectors.toList());
 

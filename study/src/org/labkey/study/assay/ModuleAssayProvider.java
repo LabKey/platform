@@ -332,7 +332,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     protected DomainDescriptorType parseDomain(IAssayDomainType domainType) throws ModuleAssayException
     {
-        Resource domainFile = getDeclaringModule().getModuleResolver().lookup(basePath.getPath().append(ModuleAssayLoader.DOMAINS_DIR_NAME, domainType.getName().toLowerCase() + ".xml"));
+        Resource domainFile = getDeclaringModule().getModuleResolver().lookup(basePath.getPath().append(ModuleAssayCacheHandler.DOMAINS_DIR_NAME, domainType.getName().toLowerCase() + ".xml"));
         if (domainFile == null || !domainFile.exists())
             return null;
 
