@@ -143,7 +143,7 @@
                     <!-- /BODY -->
                 </td>
                 <%
-                    if (me.getView("right") instanceof HttpView && ((HttpView)me.getView("right")).isVisible())
+                    if (me.getView(WebPartFactory.LOCATION_RIGHT) instanceof HttpView && ((HttpView)me.getView(WebPartFactory.LOCATION_RIGHT)).isVisible())
                     {
                 %>
                 <!-- RIGHT -->

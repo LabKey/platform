@@ -22,12 +22,34 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Portal.AddWebParts bean = (Portal.AddWebParts)HttpView.currentModel();
     Container c = getContainer();
     ActionURL currentURL = getActionURL();
 %>
+<% if (PageFlowUtil.useExperimentalCoreUI()) { %>
+<div>
+    <form class="form-inline" action="<%=urlProvider(ProjectUrls.class).getAddWebPartURL(c)%>">
+        <input type="hidden" name="pageId" value="<%=h(bean.pageId)%>"/>
+        <input type="hidden" name="location" value="<%=h(bean.location)%>"/>
+        <%=generateReturnUrlFormField(currentURL)%>
+        <div class="input-group">
+            <select name="name" class="form-control">
+                <option value="">&lt;Select Web Part&gt;</option>
+                <%          for (Map.Entry<String, String> entry : bean.webPartNames.entrySet())
+                {
+                %><option value="<%=h(entry.getKey())%>"><%=h(entry.getValue())%></option> <%
+                } %>
+            </select>
+            <span class="input-group-btn">
+                <%= button("Add").submit(true) %>
+            </span>
+        </div>
+    </form>
+</div>
+<% } else {%>
 <table width="100%">
 <tr>
     <td align="left">
@@ -71,3 +93,4 @@
 <%  } %>
 </tr>
 </table>
+<% } %>

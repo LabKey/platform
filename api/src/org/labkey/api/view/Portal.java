@@ -570,13 +570,9 @@ public class Portal
         newPart.setIndex(partIndex >= 0 ? partIndex : parts.size());
 
         if (location == null)
-        {
             newPart.setLocation(desc.getDefaultLocation());
-        }
         else
-        {
             newPart.setLocation(location);
-        }
 
         if (properties != null)
         {
@@ -588,39 +584,23 @@ public class Portal
             }
         }
 
-        if (parts == null)
-        {
-            parts = Collections.singletonList(newPart);
-        }
-        else
-        {
-            List<Portal.WebPart> partsNew = new LinkedList<>();
+        List<Portal.WebPart> partsNew = new LinkedList<>();
 
-            for (final WebPart currentPart : parts)
-            {
-                if (partsNew.size() == newPart.getIndex())
-                    partsNew.add(newPart);
-                final int iPart = currentPart.getIndex();
-                if (iPart > newPart.getIndex())
-                    currentPart.setIndex(iPart + 1);
-                partsNew.add(currentPart);
-            }
-
-            if (partsNew.size() <= parts.size())
+        for (final WebPart currentPart : parts)
+        {
+            if (partsNew.size() == newPart.getIndex())
                 partsNew.add(newPart);
-
-            parts = partsNew;
+            final int iPart = currentPart.getIndex();
+            if (iPart > newPart.getIndex())
+                currentPart.setIndex(iPart + 1);
+            partsNew.add(currentPart);
         }
 
-        Portal.saveParts(c, pageId, parts);
+        if (partsNew.size() <= parts.size())
+            partsNew.add(newPart);
 
-//        Set<Module> activeModules = new HashSet<Module>(c.getActiveModules());
-//        if (!activeModules.contains(desc.getModule()))
-//        {
-//            activeModules.add(desc.getModule());
-//            c.setActiveModules(activeModules);
-//        }
-//
+        Portal.saveParts(c, pageId, partsNew);
+
         return newPart;
     }
 
@@ -964,7 +944,6 @@ public class Portal
     public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView, boolean canCustomize) throws Exception
     {
         id = StringUtils.defaultString(id, DEFAULT_PORTAL_PAGE_ID);
-        String contextPath = context.getContextPath();
         List<WebPart> parts = getParts(context.getContainer(), id, context);
 
         // Initialize content for non-default portal pages that are folder tabs
