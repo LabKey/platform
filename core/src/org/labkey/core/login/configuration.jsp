@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="java.io.IOException" %>
@@ -32,69 +33,153 @@
     Collection<PrimaryAuthenticationProvider> primary = AuthenticationManager.getAllPrimaryProviders();
     Collection<SecondaryAuthenticationProvider> secondary = AuthenticationManager.getAllSecondaryProviders();
     boolean isExternalProviderEnabled = AuthenticationManager.isExternalProviderEnabled();
+    boolean canEdit = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 
     LoginUrls urls = urlProvider(LoginUrls.class);
 %>
+<style>
+    .labkey-enabled-option
+    {
+        color: black;
+    }
+</style>
 
 <table>
-    <tr><td colspan="5">These are the installed primary authentication providers:<br><br></td></tr>
+    <tr><td colspan="6">These are the installed primary authentication providers:<br><br></td></tr>
 
 <%
-    appendProviders(out, primary, urls);
+    appendProviders(out, primary, urls, canEdit);
 
     if (!secondary.isEmpty())
     {
 %>
-        <tr><td colspan="5">&nbsp;</td></tr>
-        <tr><td colspan="5">These are the installed secondary authentication providers:<br><br></td></tr>
+        <tr><td colspan="6">&nbsp;</td></tr>
+        <tr><td colspan="6">These are the installed secondary authentication providers:<br><br></td></tr>
 <%
-        appendProviders(out, secondary, urls);
+        appendProviders(out, secondary, urls, canEdit);
     }
 %>
-    <tr><td colspan="5">&nbsp;</td></tr>
-    <tr><td colspan="5">Other options:</td></tr>
-    <tr><td colspan="5">&nbsp;</td></tr>
+    <tr><td colspan="6">&nbsp;</td></tr>
+    <tr><td colspan="6">Other options:</td></tr>
+    <tr><td colspan="6">&nbsp;</td></tr>
     <tr>
         <td>&nbsp;</td>
         <td>Self sign-up</td>
-        <% if (AuthenticationManager.isRegistrationEnabled()) { %>
-        <td><%=PageFlowUtil.textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY))%></td>
-        <% } else { %>
-        <td><%=PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY))%></td>
-        <% } %>
+        <td>
+        <% if (AuthenticationManager.isRegistrationEnabled())
+        {
+            if (canEdit)
+            {
+                out.write(PageFlowUtil.textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY)));
+            }
+            else
+            {
+        %>
+            <div class="labkey-disabled-text-link labkey-enabled-option">Enabled</div>
+        <%
+            }
+        }
+        else
+        {
+                if (canEdit)
+                {
+                    out.write(PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY)));
+                }
+                else
+                {
+        %>
+            <div class="labkey-disabled-text-link">Disabled</div>
+        <%
+                }
+        }
+        %>
+        </td>
         <td colspan="2">&nbsp;</td>
         <td>Users are able to register for accounts when using database authentication. Use caution when enabling this if you have enabled sending email to non-users.</td>
     </tr>
     <tr>
         <td>&nbsp;</td>
         <td>Auto-create authenticated users</td>
-        <% if (AuthenticationManager.isAutoCreateAccountsEnabled()) { %>
-        <td><%=text(isExternalProviderEnabled ? textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY)) : "&nbsp;")%></td>
-        <% } else { %>
-        <td><%=text(isExternalProviderEnabled ? textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY)) : "&nbsp;")%></td>
-        <% } %>
+        <td>
+            <% if (!isExternalProviderEnabled)
+            {
+                out.write("&nbsp;");
+            }
+            else if (AuthenticationManager.isAutoCreateAccountsEnabled())
+            {
+                if (canEdit)
+                {
+                    out.write(PageFlowUtil.textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY)));
+                }
+                else
+                {
+            %>
+            <div class="labkey-disabled-text-link labkey-enabled-option">Enabled</div>
+            <%
+                }
+            }
+            else
+            {
+                if (canEdit)
+                {
+                    out.write(PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY)));
+                }
+                else
+                {
+            %>
+            <div class="labkey-disabled-text-link">Disabled</div>
+            <%
+                }
+            }
+            %>
+        </td>
         <td colspan="2">&nbsp;</td>
         <td>Accounts are created automatically when new users authenticate via LDAP or SSO.<%=h(isExternalProviderEnabled ? "" : " This option is available only when an LDAP or SSO provider is enabled.")%></td>
     </tr>
     <tr>
         <td>&nbsp;</td>
         <td>Self-service email changes</td>
-        <% if (AuthenticationManager.isSelfServiceEmailChangesEnabled()) { %>
-        <td><%=PageFlowUtil.textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY))%></td>
-        <% } else { %>
-        <td><%=PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY))%></td>
-        <% } %>
+        <td>
+            <%
+                if (AuthenticationManager.isSelfServiceEmailChangesEnabled())
+                {
+                    if (canEdit)
+                    {
+                        out.write(PageFlowUtil.textLink("Disable",  urls.getDisableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY)));
+                    }
+                    else
+                    {
+            %>
+            <div class="labkey-disabled-text-link labkey-enabled-option">Enabled</div>
+            <%
+                }
+            }
+            else
+            {
+                if (canEdit)
+                {
+                    out.write(PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY)));
+                }
+                else
+                {
+            %>
+            <div class="labkey-disabled-text-link">Disabled</div>
+            <%
+                    }
+                }
+            %>
+        </td>
         <td colspan="2">&nbsp;</td>
         <td>Users can change their own email address if their password is managed by LabKey Server.</td>
     </tr>
-    <tr><td colspan="5">&nbsp;</td></tr>
-    <tr><td colspan="5">
+    <tr><td colspan="6">&nbsp;</td></tr>
+    <tr><td colspan="6">
     <%=button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL())%>
     </td></tr>
 </table>
 
 <%!
-    private static void appendProviders(JspWriter out, Collection<? extends AuthenticationProvider> providers, LoginUrls urls) throws IOException
+    private static void appendProviders(JspWriter out, Collection<? extends AuthenticationProvider> providers, LoginUrls urls, Boolean canEdit) throws IOException
     {
         for (AuthenticationProvider authProvider : providers)
         {
@@ -114,7 +199,12 @@
             else
             {
                 if (AuthenticationManager.isActive(authProvider))
-                    out.write(PageFlowUtil.textLink("disable", urls.getDisableProviderURL(authProvider)));
+                {
+                    if (canEdit)
+                        out.write(PageFlowUtil.textLink("disable", urls.getDisableProviderURL(authProvider)));
+                    else
+                        out.write("<div class=\"labkey-disabled-text-link labkey-enabled-option\">Enabled</div>");
+                }
                 else if (AuthenticationManager.isAcceptOnlyFicamProviders() && !authProvider.isFicamApproved())
                 {
 
@@ -123,22 +213,27 @@
                               authProvider.getName() + " cannot be enabled because it is not FICAM approved. Please go to the <a target=\"_blank\" href=\"https://www.labkey.org/home/Documentation/wiki-page.view?name=complianceSettings#Accounts\">Compliance Settings</a> page to disable this control.",
                               true, 500));
                 }
-            else
-                    out.write(PageFlowUtil.textLink("enable", urls.getEnableProviderURL(authProvider)));
+                else
+                {
+                    if (canEdit)
+                        out.write(PageFlowUtil.textLink("enable", urls.getEnableProviderURL(authProvider)));
+                    else
+                        out.write("<div class=\"labkey-disabled-text-link\">Disabled</div>");
+                }
             }
             out.write("</td>");
 
             ActionURL url = authProvider.getConfigurationLink();
 
             out.write("<td>");
-            if (null == url)
+            if (null == url || !canEdit)
                 out.write("&nbsp;");
             else
                 out.write(PageFlowUtil.textLink("configure", url));
             out.write("</td>");
 
             out.write("<td>");
-            if (authProvider instanceof SSOAuthenticationProvider)
+            if (canEdit && authProvider instanceof SSOAuthenticationProvider)
             {
                 ActionURL pickLogoURL = urls.getPickLogosURL(authProvider);
                 out.write(PageFlowUtil.textLink("pick logos", pickLogoURL));
