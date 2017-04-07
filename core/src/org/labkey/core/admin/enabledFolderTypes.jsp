@@ -27,7 +27,7 @@
 
 <%
     AdminController.FolderTypesBean bean = (AdminController.FolderTypesBean) HttpView.currentModel();
-    boolean canUpdate = getContainer().hasPermission(getUser(), AdminPermission.class);
+    boolean hasAdminPerm = getContainer().hasPermission(getUser(), AdminPermission.class);
 %>
 <div>
     If a folder type is disabled, it will not be available as a choice when setting the type for a folder or project.
@@ -57,6 +57,6 @@
         %>
     </table>
     <br/>
-    <%= canUpdate ? button("Save").submit(true) : "" %>
-    <%= PageFlowUtil.generateBackButton(!canUpdate ? "Done" : "Cancel") %>
+    <%= hasAdminPerm ? button("Save").submit(true) : "" %>
+    <%= PageFlowUtil.generateBackButton(!hasAdminPerm ? "Done" : "Cancel") %>
 </labkey:form>
