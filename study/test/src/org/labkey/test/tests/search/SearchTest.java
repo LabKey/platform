@@ -287,11 +287,11 @@ public abstract class SearchTest extends StudyTest
         selectOptionByText(Locator.name("queryName"), "DEM-1 (DEM-1: Demographics)");
         String java = System.getProperty("java.home") + "/bin/java";
         setFormElement(Locator.name("program"), java);
-        setFormElement(Locator.name("arguments"), "-cp " + TestFileUtils.getLabKeyRoot() + "/server/test/build/classes org.labkey.test.util.Echo ${DATA_FILE} ${REPORT_FILE}");
+        setFormElement(Locator.name("arguments"), "-cp " + new File(TestFileUtils.getTestBuildDir(), "classes") + " org.labkey.test.util.Echo ${DATA_FILE} ${REPORT_FILE}");
         clickButton("Submit");
         assertTextPresent("Female");
         setFormElement(Locator.name("program"), java);
-        setFormElement(Locator.name("arguments"), "-cp " + TestFileUtils.getLabKeyRoot() + "/server/test/build/classes org.labkey.test.util.Echo ${DATA_FILE}");
+        setFormElement(Locator.name("arguments"), "-cp " + new File(TestFileUtils.getTestBuildDir(), "classes") + " org.labkey.test.util.Echo ${DATA_FILE}");
         selectOptionByValue(Locator.name("fileExtension"), "tsv");
         clickButton("Submit");
         assertTextPresent("Female");
