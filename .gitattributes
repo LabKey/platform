@@ -320,6 +320,7 @@ core/resources/styles/scss/labkey/_variables.scss -text
 core/resources/styles/scss/labkey/components/_button.scss -text
 core/resources/styles/scss/labkey/components/_customView.scss -text
 core/resources/styles/scss/labkey/components/_header.scss -text
+core/resources/styles/scss/labkey/components/_knitr.scss -text
 core/resources/styles/scss/labkey/components/_navigation.scss -text
 core/resources/styles/scss/labkey/components/_tabStrip.scss -text
 core/resources/styles/scss/lib/bootstrap/_bootstrap.scss -text

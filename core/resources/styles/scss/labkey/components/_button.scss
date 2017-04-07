@@ -51,9 +51,7 @@ table.labkey-button-bar {
 .labkey-disabled-menu-button,
 .labkey-wp-text-buttons a
 {
-  font-family: $lk-font-family-sans-serif-bold;
-  font-size: $lk-font-size-small;
-  letter-spacing: $lk-button-letter-spacing;
+  font: normal $lk-font-size-small $lk-font-family-sans-serif-bold;
 }
 
 /* Used for the new css menu buttons, which consist of a link (<a>)
@@ -73,7 +71,6 @@ table.labkey-button-bar {
 
   color: $lk-link-color;
   text-transform: uppercase;
-  letter-spacing: .5px;
   line-height: 2.3;
 }
 

@@ -9,14 +9,3 @@ $labkey-fonts-dir: '../../fonts';
   font-family: 'Roboto-Bold';
   src: url('#{$labkey-fonts-dir}/Roboto/Roboto-Bold.ttf');
 }
-
-/* TODO: Can we get rid of these? They do nothing except rename "Name" to "Name-Bold" */
-@font-face {
-  font-family: 'Arial-Bold';
-  src: local('Arial');
-}
-
-@font-face {
-  font-family: 'Helvetica-Bold';
-  src: local('Helvetica');
-}

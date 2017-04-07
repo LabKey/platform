@@ -2,18 +2,14 @@
 
 h1, h2, h3, h4, h5, h6
 {
-  font-weight: normal;
-  font-family: $lk-font-family-sans-serif-bold;
+  font: normal $lk-font-family-sans-serif-bold;
 }
 
 th
 {
-  font-weight: normal;
-  font-family: $lk-font-family-sans-serif;
-  font-size: $lk-font-size-base;
+  font: normal $lk-font-size-base $lk-font-family-sans-serif;
   margin: 0;
   color: #000000;
-  letter-spacing: .3px;
   line-height: 1.25;
 }
 
@@ -94,12 +90,6 @@ legend
   margin-top: 8px;
 }
 
-table#header
-{
-  width: 100%;
-  background-color: $lk-primary-bg-color;
-}
-
 /* General */
 
 /* labkey-header is used for small headers, but it's most important use is in
@@ -114,7 +104,6 @@ table#header
   padding: 1px;
 
   &:hover {
-    background-color: $lk-grid-color;
     cursor: pointer;
   }
 
@@ -460,7 +449,7 @@ div.labkey-completion
 
 .labkey-completion table
 {
-  border-spacing: 0; *border-collapse: collapse;
+  border-spacing: 0;
 }
 
 .labkey-completion td
@@ -471,7 +460,7 @@ div.labkey-completion
 table.labkey-completion-text
 {
   width: 100%;
-  border-spacing: 0; *border-collapse: collapse;
+  border-spacing: 0;
 }
 
 .labkey-completion-text td, .labkey-completion-text th
@@ -573,7 +562,8 @@ span.labkey-help-pop-up
 /* Used for the Admin Console page under Manage Site */
 table.labkey-admin-console
 {
-  border-collapse: separate; border-spacing: 10px;
+  border-collapse: separate;
+  border-spacing: 10px;
 }
 
 .labkey-admin-console td
@@ -587,7 +577,6 @@ table.labkey-admin-console
 regions look the same in IE, Safari, and Firefox */
 table.labkey-data-region {
   background-color: #FFFFFF;
-  *border-collapse: collapse;
   border-spacing: 0;
 }
 
@@ -781,23 +770,21 @@ table.labkey-show-borders
   font-family: $lk-font-family-sans-serif-bold;
 }
 
-.labkey-data-region-header-container
-{
+.labkey-data-region-header-container {
   background-color: #E9e9e9;
   border: 1px solid #b4b4b4;
   padding: 0;
+
+  td {
+    padding: 1px;
+    border: 0;
+  }
 }
 
 .labkey-data-region-header
 {
   width: 100%;
   border-collapse: collapse;
-}
-
-.labkey-data-region-header-container td
-{
-  padding: 1px;
-  border: 0;
 }
 
 /* Used to highlight cells with a darker color, limited use right now */
@@ -815,13 +802,12 @@ td.labkey-blank-cell, th.labkey-blank-cell
 }
 
 /* Used for tables nested within a dataregion cell */
-.labkey-noborder,
-.labkey-noborder td,
-.labkey-noborder tr
-{
-  border: 0 !important;
-  padding-right: 0;
-  border-collapse:collapse;
+.labkey-noborder {
+  td, tr {
+    border: 0 !important;
+    padding-right: 0;
+    border-collapse: collapse;
+  }
 }
 
 /* Used for the little icon on the column filter headers */
@@ -865,37 +851,37 @@ img.labkey-grid-filter-icon
 .labkey-tool-close {
   background-position: 0 0;
   cursor: pointer;
-}
 
-.labkey-tool-close:hover {
-  background-position: -15px 0;
+  &:hover {
+    background-position: -15px 0;
+  }
 }
 
 .labkey-tool-pin {
   background-position: 0 -135px;
   cursor: pointer;
-}
 
-.labkey-tool-pin:hover {
-  background-position: -15px -135px;
+  &:hover {
+    background-position: -15px -135px;
+  }
 }
 
 .labkey-tool-unpin {
   background-position: 0 -150px;
   cursor: pointer;
-}
 
-.labkey-tool-unpin:hover {
-  background-position: -15px -150px;
+  &:hover {
+    background-position: -15px -150px;
+  }
 }
 
 .labkey-tool-gear {
   background-position: 0 -90px;
   cursor: pointer;
-}
 
-.labkey-tool-gear:hover {
-  background-position: -15px -90px;
+  &:hover {
+    background-position: -15px -90px;
+  }
 }
 
 @import "components/customView";
@@ -917,15 +903,14 @@ img.labkey-grid-filter-icon
 /* Help pop ups */
 #helpDiv
 {
-  border:1px solid #AAAAAA;
-  position:absolute;
-  background-color:#FFFFFF;
-}
+  border: 1px solid #AAAAAA;
+  position: absolute;
+  background-color: #FFFFFF;
 
-#helpDiv table
-{
-  width: 100%;
-  border-spacing: 0; *border-collapse: collapse;
+  table {
+    width: 100%;
+    border-spacing: 0;
+  }
 }
 
 .header-block
@@ -959,90 +944,11 @@ table.labkey-main
   border-spacing: 0;
 }
 
-/* The top panel with the title and logo */
-#headerpanel
-{
-  padding: 0;
-  background-color: #FFFFFF;
-}
-
-/* Optional Top Menu */
-#topmenu
-{
-  vertical-align: top;
-}
-
-/* The icon (logo) in the header panel */
-td.labkey-main-icon
-{
-  vertical-align: middle;
-  margin-left: auto;
-  margin-right: auto;
-  padding: 6px 4px 6px 0;
-}
-
-td.labkey-main-icon img
-{
-  display: block;
-}
-
-
-/* The middle of the header panel */
-td.labkey-main-title-area
-{
-  vertical-align: bottom;
-  width: 100%;
-  padding: 10px 0;
-}
-
-.labkey-main-title-area span
-{
-  vertical-align: bottom;
-}
-
-.labkey-main-title-area a.labkey-main-title
-{
-  font-size:14pt;
-  vertical-align: bottom;
-  color: $lk-border-title-color;
-  text-decoration: none;
-  line-height: 1.25;
-}
-
-.labkey-main-title-area .labkey-main-title:hover {
-  text-decoration: underline;
-}
-
 /* The right side links and username on the header panel */
 td.labkey-main-nav
 {
   white-space: nowrap;
   padding:5px 5px 5px;
-}
-
-table.labkey-main-search
-{
-  height:16px; font-size:8pt;
-  width: 216px;
-  float: right;
-}
-
-table.labkey-main-search img {
-  width: 16px;
-  height: 16px;
-  position: relative;
-  left : -20px;
-  *top : -3px;
-}
-
-table.labkey-main-search img:hover {
-  cursor: pointer;
-}
-
-.labkey-main-search td
-{
-  vertical-align:bottom;
-  width: 200px;
 }
 
 .lk-input input {
@@ -1052,34 +958,21 @@ table.labkey-main-search img:hover {
   height: 25px;
   width : 303px;
   padding-left: 5px;
-}
 
-.lk-input input:hover {
-  border:  1px solid #A0A0A0;
-}
-
-.labkey-main-search input
-{
-  height:16px; font-size:8pt;
-  border:solid 1px #a0a0a0;
-}
-
-#headerSearchInput /* undo ie ext stuff */
-{
-  margin:0; top:0;
-  width: 200px;
+  &:hover {
+    border: 1px solid #A0A0A0;
+  }
 }
 
 /* search results page */
-.labkey-search-filter
-{
-  font-size:10pt;
+.labkey-search-filter {
+  font-size: 10pt;
   vertical-align: bottom;
   color: #000000;
   text-decoration: none;
 }
 
-.labkey-search-filter A, .labkey-search-filter A:visited
+.labkey-search-filter a, .labkey-search-filter a:visited
 {
   font-size:10pt;
   vertical-align: bottom;
@@ -1096,18 +989,11 @@ table.labkey-main-search img:hover {
 {
   padding-left:8px;
   border-left:1px solid #89A1B4;
-}
 
-.labkey-search-navresults h3
-{
-  color: $lk-border-title-color;
-  margin-top:0;
-}
-
-.labkey-search-results td
-{
-  color: $lk-border-title-color;
-  margin-top:0;
+  h3, td {
+    color: $lk-border-title-color;
+    margin-top: 0;
+  }
 }
 
 form.labkey-search-form
@@ -1139,7 +1025,6 @@ table.labkey-expandable-nav
   border: 0;
   margin: 3px;
   border-spacing: 0;
-  *border-collapse: collapse;
   border-collapse: collapse;
 }
 
@@ -1207,7 +1092,7 @@ td.labkey-expand-collapse-area {
 /* this is what sidenav and Pages are using - kc 07-29-11 */
 table.labkey-nav-tree
 {
-  border-spacing: 0; *border-collapse: collapse;
+  border-spacing: 0;
 }
 
 span.labkey-nav-tree-selected
@@ -1223,12 +1108,10 @@ tr.labkey-nav-tree-row
   text-decoration: none;
   vertical-align: top;
   padding-right:4px;
-}
 
-tr.labkey-nav-tree-row:hover
-{
-  background-color: $lk-grid-color;
-  cursor: pointer;
+  &:hover {
+    cursor: pointer;
+  }
 }
 
 /* The area on the left of a nav tree row which can be blank or have an expand/collapse button */
@@ -1265,8 +1148,7 @@ a.nav-tree-selected
 /* The expandable nav rows sometimes have a total like in the Study module */
 td.labkey-nav-tree-total
 {
-  padding: 0;
-  padding-top: 0.3em;
+  padding: 0.3em 0 0;
   vertical-align: top;
 }
 
@@ -1274,7 +1156,7 @@ td.labkey-nav-tree-total
 table.labkey-nav-tree-child
 {
   border-collapse: collapse;
-  border-spacing: 0; *border-collapse: collapse;
+  border-spacing: 0;
 }
 
 .labkey-nav-tree-child a
@@ -1318,7 +1200,7 @@ td.labkey-crumb-trail {
 table.labkey-wp
 {
   width: 100%;
-  border-spacing: 0; *border-collapse: collapse;
+  border-spacing: 0;
   border: 5px solid $lk-webpart-color;
 
   border-radius: 5px;
@@ -1332,11 +1214,10 @@ td.labkey-wp-body
   width: 100%;
   padding: 10px;
   background: #FFFFFF;
-}
 
-td.labkey-wp-body.labkey-wp-nopadding
-{
-  padding: 0;
+  &.labkey-wp-nopadding {
+    padding: 0;
+  }
 }
 
 /* This is used for the top strip on web parts, but is also used for headers elsewhere such as the
@@ -1344,36 +1225,31 @@ help pop up */
 tr.labkey-wp-header
 {
   background-color: $lk-webpart-color;
-  font-weight: normal;
   border: 0;
 }
 
 .labkey-wp-header th.labkey-wp-title-left, .labkey-wp-header td.labkey-wp-title-left
 {
-  font-family: $lk-font-family-sans-serif-bold;
-  font-weight: normal;
-  letter-spacing: .5px;
+  font: normal $lk-font-size-large $lk-font-family-sans-serif-bold;
   padding: 0 0 4px 4px;
   text-align: left;
-  white-space:nowrap;
+  white-space: nowrap;
   color:#000000;
-  font-size: 17px;
   border: 0;
 }
 
 .labkey-warning-messages
 {
+  // TODO: This should tie into standard warnings
   border: 1px solid #C8B560;
   background-color: #FFF8C6;
   padding: 2px;
-}
 
-.labkey-warning-messages ul
-{
-  margin: 0;
-  padding-left: 20px;
+  ul {
+    margin: 0;
+    padding-left: 20px;
+  }
 }
-
 
 /* This is used for the left side of the wp header and often contains the title */
 td.labkey-wp-title-left, th.labkey-wp-title-left, .labkey-wp-title {
@@ -1399,7 +1275,6 @@ th.labkey-wp-title-right, td.labkey-wp-title-right {
   border-left:  0 none;
   color: #000000;
   padding-bottom: 5px;
-  *padding-bottom: 1px;
   white-space: nowrap;
 }
 
@@ -1422,7 +1297,6 @@ span.labkey-wp-icon-button-inactive {
 
 span.labkey-wp-icon-button-inactive:hover {
   background: none;
-  *background: none;
   cursor: default;
 }
 
@@ -1433,8 +1307,6 @@ span.labkey-wp-icon-button-inactive:hover {
   padding-bottom: 2px;
   margin-bottom: 2px;
   margin-top: 2px;
-  *padding-top: 3px;
-  *padding-bottom: 7px;
 }
 
 .labkey-wp-text-buttons a, .labkey-wp-text-buttons a:visited {
@@ -1444,7 +1316,7 @@ span.labkey-wp-icon-button-inactive:hover {
   border: 1px solid #fff;
   color: $lk-link-color;
   text-transform: uppercase;
-  font-family: 'Roboto', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
+  font-family: $lk-font-family-sans-serif;
   white-space: nowrap;
 
   border-radius: 5px;
@@ -1470,9 +1342,7 @@ a.no-arrow {
 
 .labkey-text-link, a.labkey-text-link-noarrow, .labkey-disabled-text-link
 {
-  font-family: $lk-font-family-sans-serif-bold;
-  font-size: 11px;
-  letter-spacing: .5px;
+  font: normal $lk-font-size-small $lk-font-family-sans-serif-bold;
 }
 
 a.labkey-text-link, a.labkey-text-link:visited, a.labkey-text-link-noarrow {
@@ -1484,9 +1354,15 @@ a.labkey-text-link, a.labkey-text-link:visited, a.labkey-text-link-noarrow {
   vertical-align: middle;
   white-space: nowrap;
   margin: 0.1em 0.8em 0.5em 0;
+
+  &:hover {
+    padding: .3em 14px 2px 0;
+    border: none;
+    color: #000000;
+  }
 }
 
-a.labkey-text-link, a.labkey-text-link:visited {
+a.labkey-text-link {
   background: url('#{$internal-images-dir}/arrow_right.png') right no-repeat;
 }
 
@@ -1496,46 +1372,37 @@ table.labkey-data-region a.labkey-text-link:visited {
   position: static;
 }
 
-a.labkey-text-link:hover, a.labkey-text-link-noarrow:hover {
-  text-transform: uppercase;
-  /*font-size: 10px;*/
-  font-weight: normal;
-  padding: .3em 14px 2px 0;
-  border: none;
-  color: #000000;
-}
-
 /* Module Specific */
 
 /* Announcement */
 
 table.labkey-announcement-thread
 {
-  border-spacing: 0; *border-collapse: collapse;
-}
+  border-spacing: 0;
 
-.labkey-announcement-thread td
-{
-  padding: 3px;
+  td {
+    padding: 3px;
+  }
 }
 
 /* API */
 table.labkey-output
 {
   width: 100%;
-  border-spacing: 0; *border-collapse: collapse;
+  border-spacing: 0;
 }
 
 /*  Experiment */
 
 table.labkey-protocol-applications
 {
-  border-collapse: collapse; border-spacing: 0;
-}
+  border-collapse: collapse;
+  border-spacing: 0;
 
-table.labkey-protocol-applications td
-{
-  border: 1px solid #DDDDDD; padding: 5px;
+  td {
+    border: 1px solid #DDDDDD;
+    padding: 5px;
+  }
 }
 
 /* Flow */
@@ -1566,35 +1433,30 @@ td.labkey-ms1-filter
 
 /* MS2 */
 
-table.labkey-prot-annots
-{
+table.labkey-prot-annots {
   border-collapse: collapse;
-}
 
-table.labkey-prot-annots td, table.labkey-prot-annots th
-{
-  border: 1px solid black;
-  padding: 10px;
+  th, td {
+    border: 1px solid black;
+    padding: 10px;
+  }
 }
 
 /* Study */
 
-table.labkey-study-expandable-nav
-{
-  border-spacing: 0; *border-collapse: collapse;
+table.labkey-study-expandable-nav {
+  border-spacing: 0;
   width: 100%;
-}
 
-.labkey-study-expandable-nav td, .labkey-study-expandable-nav th
-{
-  padding-top: 0;
-  padding-bottom: 0;
-}
+  th, td {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
 
-.labkey-study-expandable-nav .labkey-nav-tree-node
-{
-  padding-top: 0;
-  vertical-align: top;
+  .labkey-nav-tree-node {
+    padding-top: 0;
+    vertical-align: top;
+  }
 }
 
 table.labkey-request-warnings
@@ -1612,18 +1474,18 @@ table.labkey-manage-default-reqs
   border-collapse: separate; border-spacing: 10px;
 }
 
-.labkey-data-region .labkey-participant-view-header
-{
-  font-family: $lk-font-family-sans-serif-bold;
-  border: solid 1px #808080;
-}
+.labkey-data-region {
+  .labkey-participant-view-header {
+    font-family: $lk-font-family-sans-serif-bold;
+    border: solid 1px #808080;
+  }
 
-.labkey-data-region .labkey-expandable-row-header
-{
-  text-align: left;
-  background-color: #e5e5e5;
-  border: solid 1px #808080;
-  padding-left: 10px;
+  .labkey-expandable-row-header {
+    text-align: left;
+    background-color: #e5e5e5;
+    border: solid 1px #808080;
+    padding-left: 10px;
+  }
 }
 
 .labkey-callout-tip {
@@ -1697,7 +1559,7 @@ div.labkey-wiki h1
   background-color: #EEE;
   border: 1px solid #CCC;
   color: #2020BE;
-  font-family: "Bitstream Vera Sans Mono", "Courier New", monospace;
+  font-family: $lk-font-family-code;
 }
 
 .CodeMirror pre {
@@ -1726,66 +1588,12 @@ div.labkey-webpart-menu div.labkey-wiki p {
   padding: 0 2px 2px;
 }
 
-/* for Knitr reports in the reports web-part; does not pick up  */
-div.labkey-knitr h1
-{
-  font-size: 2em;
-  margin: 0.83em 0;
-  font-weight: 500;
-}
-
-.labkey-knitr .heading-1, div.labkey-knitr h2
-{
-  font-size: 1.2em;
-  margin: 0.83em 0;
-  font-family: $lk-font-family-sans-serif-bold;
-}
-
-.labkey-knitr .heading-1-1, div.labkey-knitr h3
-{
-  font-size: 1.0em;
-  margin: 0.83em 0;
-  font-family: $lk-font-family-sans-serif-bold;
-}
-
-.labkey-knitr .heading-1-1-1, div.labkey-knitr h4
-{
-  text-transform: uppercase;
-  font-size: 0.8em;
-  margin: 0.83em 0 0.0px 0;
-  font-family: $lk-font-family-sans-serif-bold;
-}
-
-.labkey-knitr .code
-{
-  padding-left: 0.25in;
-  padding-top: 5px; padding-bottom:5px;
-  background-color: #EEE;
-  border: 1px solid #CCC;
-  color: #2020BE;
-  font-family: "Bitstream Vera Sans Mono", "Courier New", monospace;
-}
-
-.labkey-knitr pre
-{
-  margin-top : 0;
-  max-width: 95%;
-  border: 1px solid #ccc;
-  white-space: pre-wrap;
-}
-
-.labkey-knitr pre code {
-  display: block; padding: 0.5em;
-}
-
-.labkey-knitr code.r, .labkey-wiki code.cpp {
-  background-color: $lk-primary-bg-color;
-}
+@import "components/knitr";
 
 /* R reports */
 table.labkey-r-tsvout
 {
-  border-spacing: 0; *border-collapse: collapse;
+  border-spacing: 0;
 }
 
 @import "gwt";
@@ -1915,7 +1723,6 @@ div.note {
   text-decoration: none;
   color: $lk-link-color;
   font-size: 11px;
-  letter-spacing: .5px;
 }
 
 .tool-icon:hover a,
@@ -2146,23 +1953,23 @@ span.button-icon {
   display: inline-block;
   width: 26px;
   height: 20px;
-}
 
-.button-icon:hover {
-  opacity: 1.0;
-}
+  &:hover {
+    opacity: 1.0;
+  }
 
-.button-icon a {
-  display: inline-block;
-  width: 26px;
-  height: 20px;
-  margin-bottom: 0;
-}
+  a {
+    display: inline-block;
+    width: 26px;
+    height: 20px;
+    margin-bottom: 0;
+  }
 
-.button-icon img {
-  width: 26px;
-  height: 20px;
-  margin-bottom: 0;
+  img {
+    width: 26px;
+    height: 20px;
+    margin-bottom: 0;
+  }
 }
 
 .project-menu-buttons {
@@ -2253,14 +2060,17 @@ span.button-icon {
   margin: 0
 }
 
-.collapse-folder span.marked {
-  background: url('#{$internal-images-dir}/expand-collapse.gif') no-repeat 0 0;
-  padding: 0;
-  margin: 0;
-}
+.collapse-folder {
 
-.collapse-folder ul {
-  display: none;
+  span.marked {
+    background: url('#{$internal-images-dir}/expand-collapse.gif') no-repeat 0 0;
+    padding: 0;
+    margin: 0;
+  }
+
+  ul {
+    display: none;
+  }
 }
 
 .folder-menu-buttons {
@@ -2298,15 +2108,6 @@ div.headermenu {
   }
 }
 
-div.dialog-headermenu,
-div.wizard-headermenu {
-  position: absolute;
-  top: 0;
-  right: 0;
-  padding: 15px;
-  white-space: nowrap;
-}
-
 .lk-input input.hdr-search-input {
   padding-left: 22px;
   background: #FFFFFF;
@@ -2318,12 +2119,6 @@ div.wizard-headermenu {
   left: 12px;
   color: darkgrey;
   width: 0;
-}
-
-#headerSearchInput-inputEl {
-  line-height: 1.3;
-  border-color: #B5B8C8;
-  font-size: 8pt;
 }
 
 /* Visualization Library */
@@ -2347,7 +2142,6 @@ div.wizard-headermenu {
   font-family: $lk-font-family-sans-serif-bold;
   color: black;
   font-size: 10px;
-  letter-spacing: .5px;
 }
 
 .labkey-fa-plus-folder {

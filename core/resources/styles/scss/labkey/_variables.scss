@@ -47,7 +47,8 @@ $lk-font-size-large: 16px !default;
 $lk-font-size-small: 12px !default;
 
 $lk-font-family-sans-serif: 'Roboto', Arial, Helvetica, sans-serif !default;
-$lk-font-family-sans-serif-bold: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif !default;
+$lk-font-family-sans-serif-bold: 'Roboto-Bold', Arial, Helvetica, sans-serif !default;
+$lk-font-family-code: "Bitstream Vera Sans Mono", "Courier New", monospace;
 
 //== Media query breakpoints
 //
@@ -86,6 +87,7 @@ $lk-button-text-transform: uppercase !default;
 
 //== Dropdowns
 //
+$lk-dropdown-font-size: $lk-font-size-base !default;
 $lk-dropdown-link-color: $gray-dark !default;
 $lk-dropdown-link-hover-color: $white !default;
 $lk-dropdown-link-hover-bg: $lk-secondary-brand-color !default;
@@ -101,7 +103,7 @@ $lk-page-header-padding: 12px 0 !default;
 $lk-page-nav-bg-color: $lk-secondary-brand-color !default;
 $lk-page-nav-color: $white !default;
 $lk-page-nav-font-family: $lk-font-family-sans-serif-bold !default;
-$lk-page-nav-font-weight: 'normal' !default;
+$lk-page-nav-font-weight: bold !default;
 $lk-page-nav-height: 36px !default;
 $lk-page-nav-bg-color-active: $white !default;
 $lk-page-nav-color-active: $lk-brand-color !default;

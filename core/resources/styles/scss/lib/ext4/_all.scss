@@ -1,3 +1,4 @@
+// TODO: Need to make sure roboto adjustments are back in
 // Remove ExtJS style support for IE6 .x4-ie6
 
 @mixin border-radius($radius) {
@@ -10907,7 +10908,7 @@ body.x4-nbr .x4-grid-row-editor-buttons-default-top-frameInfo {
 /* line 14, ../../../ext-theme-neutral/sass/src/menu/Menu.scss */
 .x4-menu-body {
   background: $lk-secondary-bg-color;
-  padding: 2px;
+  padding: 0;
 }
 
 /* line 19, ../../../ext-theme-neutral/sass/src/menu/Menu.scss */
@@ -10931,17 +10932,9 @@ body.x4-nbr .x4-grid-row-editor-buttons-default-top-frameInfo {
 
 /* line 57, ../../../ext-theme-neutral/sass/src/menu/Menu.scss */
 .x4-menu-item-active {
-  background-image: none;
-  background-color: $button-default-border-color-over;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $menu-item-active-background-gradient-start), color-stop(100%, $menu-item-active-background-gradient-end));
-  background-image: -webkit-linear-gradient(top, $menu-item-active-background-gradient-start, $menu-item-active-background-gradient-end);
-  background-image: -moz-linear-gradient(top, $menu-item-active-background-gradient-start, $menu-item-active-background-gradient-end);
-  background-image: -o-linear-gradient(top, $menu-item-active-background-gradient-start, $menu-item-active-background-gradient-end);
-  background-image: linear-gradient(top, $menu-item-active-background-gradient-start, $menu-item-active-background-gradient-end);
-  border-color: $menu-item-active-border-color;
-  @include border-radius(3px);
-  border-width: 1px;
-  border-style: solid;
+  background: $lk-dropdown-link-hover-bg none;
+  border: 1px solid transparent;
+  color: $lk-dropdown-link-hover-color;
   padding: 0;
 }
 /* line 75, ../../../ext-theme-neutral/sass/src/menu/Menu.scss */
@@ -10953,7 +10946,7 @@ body.x4-nbr .x4-grid-row-editor-buttons-default-top-frameInfo {
 /* line 82, ../../../ext-theme-neutral/sass/src/menu/Menu.scss */
 .x4-menu-item-link {
   line-height: 22px;
-  padding: 0 0 0 30px;
+  padding: 3px 20px;
   display: inline-block;
 }
 
@@ -11002,10 +10995,14 @@ body.x4-nbr .x4-grid-row-editor-buttons-default-top-frameInfo {
 
 /* line 183, ../../../ext-theme-neutral/sass/src/menu/Menu.scss */
 .x4-menu-item-text {
-  font-size: 11px;
-  color: #222222;
+  font-size: $lk-dropdown-font-size;
+  color: $lk-dropdown-link-color;
   cursor: pointer;
   margin-right: 16px;
+}
+
+.x4-menu-item-active .x4-menu-item-text {
+  color: $lk-dropdown-link-hover-color;
 }
 
 /* line 201, ../../../ext-theme-neutral/sass/src/menu/Menu.scss */

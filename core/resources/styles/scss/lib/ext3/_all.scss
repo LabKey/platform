@@ -1,4 +1,4 @@
-// TODO: Fix usages of 'Roboto'
+// TODO: Need to make sure roboto adjustments are back in
 // TODO: Fix buttons
 
 /*!
@@ -2699,7 +2699,7 @@ a.x-grid3-hd-btn:hover {
   text-align: right;
   text-overflow: ellipsis;
   font-size: 11px;
-  font-family: 'Roboto';
+  font-family: $lk-font-family-sans-serif;
 }
 
 .ext-gecko .x-pivotgrid .x-grid3-row-headers table td {
@@ -2707,12 +2707,12 @@ a.x-grid3-hd-btn:hover {
 }
 
 .x-grid3-header-title {
-  top: 0%;
-  left: 0%;
+  top: 0;
+  left: 0;
   position: absolute;
   text-align: center;
   vertical-align: middle;
-  font-family: 'Roboto';
+  font-family: $lk-font-family-sans-serif;
   font-size: 11px;
   padding: auto 1px;
   display: table-cell;
@@ -2721,7 +2721,7 @@ a.x-grid3-hd-btn:hover {
 .x-grid3-header-title span {
   position: absolute;
   top: 50%;
-  left: 0%;
+  left: 0;
   width: 100%;
   margin-top: -6px;
 }.x-dd-drag-proxy{
