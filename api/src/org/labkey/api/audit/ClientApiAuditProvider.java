@@ -34,6 +34,7 @@ import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -236,6 +237,25 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
         public void setInt3(int int3)
         {
             _int3 = int3;
+        }
+
+        @Override
+        public Map<String, Object> getAuditLogMessageElements()
+        {
+            Map<String, Object> elements = new LinkedHashMap<>();
+            if (getSubType() != null)
+                elements.put("subType", getSubType());
+            if (getString1() != null)
+                elements.put("string1", getString1());
+            if (getString2() != null)
+                elements.put("string2", getString2());
+            if (getString3() != null)
+                elements.put("string3", getString3());
+            elements.put("int1", getInt1());
+            elements.put("int2", getInt2());
+            elements.put("int3", getInt3());
+            elements.putAll(super.getAuditLogMessageElements());
+            return elements;
         }
     }
 

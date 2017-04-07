@@ -20,7 +20,9 @@ import org.labkey.api.audit.AuditTypeEvent;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class SelectQueryAuditEvent extends AuditTypeEvent
@@ -116,5 +118,16 @@ public class SelectQueryAuditEvent extends AuditTypeEvent
     protected boolean isLogEmptyResults()
     {
         return true;
+    }
+
+    @Override
+    public Map<String, Object> getAuditLogMessageElements()
+    {
+        Map<String, Object> elements = new LinkedHashMap<>();
+        elements.put("loggedColumns", getLoggedColumns());
+        elements.put("identifiedData", getIdentifiedData());
+        elements.put("queryId", getQueryId());
+        elements.putAll(super.getAuditLogMessageElements());
+        return elements;
     }
 }

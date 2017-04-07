@@ -2992,7 +2992,7 @@ public class SecurityManager
         catch (ValidEmail.InvalidEmailException e)
         {
             //Should be caught in api validation
-            errors.addError(new LabkeyError(new Exception("nvalid email address." + e.getMessage(), e)));
+            errors.addError(new LabkeyError(new Exception("Invalid email address." + e.getMessage(), e)));
         }
     }
 }

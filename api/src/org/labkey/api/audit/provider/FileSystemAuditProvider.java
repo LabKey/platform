@@ -25,6 +25,7 @@ import org.labkey.api.query.FieldKey;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -144,6 +145,17 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
         public void setResourcePath(String resourcePath)
         {
             _resourcePath = resourcePath;
+        }
+
+        @Override
+        public Map<String, Object> getAuditLogMessageElements()
+        {
+            Map<String, Object> elements = new LinkedHashMap<>();
+            elements.put("directory", getDirectory());
+            elements.put("file", getFile());
+            elements.put("resourcePath", getResourcePath());
+            elements.putAll(super.getAuditLogMessageElements());
+            return elements;
         }
     }
 

@@ -66,6 +66,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -901,6 +902,15 @@ public class UserManager
         public void setUser(int user)
         {
             _user = user;
+        }
+
+        @Override
+        public Map<String, Object> getAuditLogMessageElements()
+        {
+            Map<String, Object> elements = new LinkedHashMap<>();
+            elements.put("user", getUserMessageElement(getUser()));
+            elements.putAll(super.getAuditLogMessageElements());
+            return elements;
         }
     }
 

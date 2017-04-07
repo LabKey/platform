@@ -29,6 +29,7 @@ import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -123,6 +124,15 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
         public void setChanges(String changes)
         {
             _changes = changes;
+        }
+
+        @Override
+        public Map<String, Object> getAuditLogMessageElements()
+        {
+            Map<String, Object> elements = new LinkedHashMap<>();
+            elements.put("changes", getChanges());
+            elements.putAll(super.getAuditLogMessageElements());
+            return elements;
         }
     }
 

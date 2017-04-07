@@ -26,6 +26,7 @@ import org.labkey.api.util.MailHelper;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -144,6 +145,17 @@ public class MessageAuditProvider extends AbstractAuditTypeProvider implements A
         public void setContentType(String contentType)
         {
             _contentType = contentType;
+        }
+
+        @Override
+        public Map<String, Object> getAuditLogMessageElements()
+        {
+            Map<String, Object> elements = new LinkedHashMap<>();
+            elements.put("from", getFrom());
+            elements.put("to", getTo());
+            elements.put("contentType", getContentType());
+            elements.putAll(super.getAuditLogMessageElements());
+            return elements;
         }
     }
 

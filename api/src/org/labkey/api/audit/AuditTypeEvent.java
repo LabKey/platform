@@ -15,10 +15,17 @@
  */
 package org.labkey.api.audit;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Bean object to capture audit log entries. Will be used to populate the database tables via get/set methods that
@@ -28,6 +35,12 @@ import java.util.Date;
  */
 public class AuditTypeEvent
 {
+    protected static final String CREATED_BY_KEY = "auditEventCreatedBy";
+    protected static final String IMPERSONATED_BY_KEY = "impersonatedBy";
+    protected static final String CONTAINER_KEY = "container";
+    protected static final String PROJECT_KEY = "project";
+    protected static final String COMMENT_KEY = "comment";
+
     private int _rowId;
     private Integer _impersonatedBy;
     private String _comment;
@@ -151,5 +164,65 @@ public class AuditTypeEvent
     public void setModifiedBy(User modifiedBy)
     {
         _modifiedBy = modifiedBy;
+    }
+
+    protected String getContainerMessageElement(@NotNull String containerId)
+    {
+        String value = " (" + containerId + ")";
+        Container container = ContainerManager.getForId(containerId);
+        if (container != null)
+            value = container.getPath() + value;
+        return value;
+    }
+
+    protected String getUserMessageElement(@NotNull Integer userId)
+    {
+        String value = " (" + userId + ")";
+        User user = UserManager.getUser(userId);
+        if (user != null)
+            value = user.getEmail() + value;
+        return value;
+    }
+
+    protected String getGroupMessageElement(@NotNull Integer groupId)
+    {
+        String value = " (" + groupId + ")";
+        Group group = SecurityManager.getGroup(groupId);
+        if (group != null)
+            value = group.getName() + value;
+        return value;
+    }
+
+    public Map<String, Object> getAuditLogMessageElements()
+    {
+        Map<String, Object> elements = new LinkedHashMap<>();
+        elements.put(CREATED_BY_KEY,  getCreatedBy().getEmail() + " (" + getCreatedBy().getUserId() + ")");
+        Integer impersonatorId = getImpersonatedBy();
+        if (impersonatorId != null)
+            elements.put(IMPERSONATED_BY_KEY, getUserMessageElement(impersonatorId));
+        String containerId = getContainer();
+        if (containerId != null)
+            elements.put(CONTAINER_KEY, getContainerMessageElement(containerId));
+        String projectId = getProjectId();
+        if (projectId != null)
+            elements.put(PROJECT_KEY, getContainerMessageElement(projectId));
+        if (getComment() != null)
+            elements.put(COMMENT_KEY, getComment());
+
+        return elements;
+    }
+
+    public String getAuditLogMessage()
+    {
+        StringBuilder builder = new StringBuilder();
+        builder.append(getEventType() + " - ");
+
+
+        Map<String, Object> messageElements = getAuditLogMessageElements();
+        for (String key : messageElements.keySet())
+        {
+            builder.append(key).append(": ").append(messageElements.get(key)).append(" | ");
+        }
+        return builder.toString();
     }
 }

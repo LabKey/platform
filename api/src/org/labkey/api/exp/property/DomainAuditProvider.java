@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -172,6 +173,16 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         public void setDomainName(String domainName)
         {
             _domainName = domainName;
+        }
+
+        @Override
+        public Map<String, Object> getAuditLogMessageElements()
+        {
+            Map<String, Object> elements = new LinkedHashMap<>();
+            elements.put("domainUri", getDomainUri());
+            elements.put("domainName", getDomainName());
+            elements.putAll(super.getAuditLogMessageElements());
+            return elements;
         }
     }
 
