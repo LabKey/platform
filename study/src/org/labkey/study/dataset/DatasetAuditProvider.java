@@ -34,12 +34,12 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.StudySchema;
-import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -248,6 +248,18 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         public void setNewRecordMap(String newRecordMap)
         {
             _newRecordMap = newRecordMap;
+        }
+
+        @Override
+        public Map<String, Object> getAuditLogMessageElements()
+        {
+            Map<String, Object> elements = new LinkedHashMap<>();
+            elements.put("datasetId", getDatasetId());
+            elements.put("hasDetails", isHasDetails());
+            elements.put("lsid", getLsid());
+            // N.B. oldRecordMap and newRecordMap can be very large; not included here
+            elements.putAll(super.getAuditLogMessageElements());
+            return elements;
         }
     }
 

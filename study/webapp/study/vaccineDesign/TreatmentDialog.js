@@ -109,6 +109,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
                     productDose.ProductLabel = product.get('Label');
                     productDose.Label = product.get('Label') + ' - ' + dose.get('Label');
                     productDose.ProductDoseRoute = dose.get('ProductId') + '-#-' + dose.get('Label');
+                    productDose.SortKey = product.get('RowId');
                     data.push(productDose);
                     hasDoseRoute = true;
                 }
@@ -119,6 +120,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
                 productDose.ProductLabel = product.get('Label');
                 productDose.Label = product.get('Label');
                 productDose.ProductDoseRoute = product.get('RowId') + '-#-';
+                productDose.SortKey = product.get('RowId');
                 data.push(productDose);
             }
             else {
@@ -129,28 +131,28 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
                         var productDose = Ext4.clone(checked);
                         productDose.ProductLabel = checked['ProductId/Label'];
                         productDose.Label = checked['ProductId/Label'];
+                        productDose.SortKey = product.get('RowId');
                         data.push(productDose);
                     }
                 });
             }
         }, this);
 
-        var me = this;
         data.sort(function(a, b){
-            // if different product, sort by product
-            if (a.ProductLabel && b.ProductLabel && a.ProductLabel != b.ProductLabel) {
-               return me.natural(a.ProductLabel, b.ProductLabel);
+            // if different product, sort by product RowId
+            // otherwise use a natural sort on the generated product + dose/route label
+            if (a.SortKey > b.SortKey) {
+                return 1;
             }
-            // if same product, sort by dose/route
-            var doseA = a.ProductDoseRoute.replace(a.ProductLabel, ''), doseB = b.ProductDoseRoute.replace(b.ProductLabel, '');
-            return me.natural(doseA, doseB);
+            else if (a.SortKey < b.SortKey) {
+                return -1;
+            }
+            else {
+                return LABKEY.internal.SortUtil.naturalSort(a.Label, b.Label);
+            }
         });
 
         return data;
-    },
-
-    natural : function (aso, bso) {
-        return LABKEY.internal.SortUtil.naturalSort(aso, bso);
     },
 
     getTreatmentFormValues: function() {

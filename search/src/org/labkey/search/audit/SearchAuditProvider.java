@@ -25,6 +25,7 @@ import org.labkey.api.query.FieldKey;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -120,6 +121,15 @@ public class SearchAuditProvider extends AbstractAuditTypeProvider implements Au
         public void setQuery(String query)
         {
             _query = query;
+        }
+
+        @Override
+        public Map<String, Object> getAuditLogMessageElements()
+        {
+            Map<String, Object> elements = new LinkedHashMap<>();
+            elements.put("query", getQuery());
+            elements.putAll(super.getAuditLogMessageElements());
+            return elements;
         }
     }
 

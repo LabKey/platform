@@ -65,6 +65,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /*
 * User: Dave
@@ -389,7 +390,6 @@ public class SecurityApiActions
             return new ApiSimpleResponse("groups", groupInfos);
         }
     }
-
 
     @RequiresLogin
     @IgnoresTermsOfUse
@@ -1990,6 +1990,46 @@ public class SecurityApiActions
                 response.put("message", errors.getMessage());
 
             return response;
+        }
+    }
+
+    @RequiresSiteAdmin
+    @CSRF
+    public static class ListProjectGroupsAction extends ApiAction<ListGroupsForm>
+    {
+        @Override
+        public ApiResponse execute(ListGroupsForm form, BindException errors) throws Exception
+        {
+            boolean includeSiteGroups = form.getIncludeSiteGroups();
+            List<Group> groups = SecurityManager.getGroups(getContainer(), includeSiteGroups);
+
+            //Convert to a json convertible map
+            List<Map<String, Object>> responseGroups = groups.stream().map(group -> {
+                Map<String, Object> props = new HashMap();
+                props.put("Name", group.getName());
+                props.put("Id", group.getUserId());
+                props.put("Container", group.getContainer());
+                return props;
+            }).collect(Collectors.toList());
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("groups", responseGroups);
+            return response;
+        }
+    }
+
+    public static class ListGroupsForm
+    {
+        private Boolean includeSiteGroups = false;
+
+        public Boolean getIncludeSiteGroups()
+        {
+            return includeSiteGroups ;
+        }
+
+        public void setIncludeSiteGroups(Boolean includeSiteGroups)
+        {
+            this.includeSiteGroups = includeSiteGroups;
         }
     }
 

@@ -37,6 +37,7 @@ import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -232,6 +233,18 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
         public void setRunGroup(int runGroup)
         {
             _runGroup = runGroup;
+        }
+
+        @Override
+        public Map<String, Object> getAuditLogMessageElements()
+        {
+            Map<String, Object> elements = new LinkedHashMap<>();
+            elements.put("protocolLsid", getProtocolLsid());
+            elements.put("protocolRun", getProtocolRun());
+            elements.put("runGroup", getRunGroup());
+            elements.put("runLsid", getRunLsid());
+            elements.putAll(super.getAuditLogMessageElements());
+            return elements;
         }
     }
 

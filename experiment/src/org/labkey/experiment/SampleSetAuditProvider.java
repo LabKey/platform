@@ -25,8 +25,10 @@ import org.labkey.api.query.FieldKey;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -134,6 +136,17 @@ public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements
         public void setInsertUpdateChoice(String insertUpdateChoice)
         {
             _insertUpdateChoice = insertUpdateChoice;
+        }
+
+        @Override
+        public Map<String, Object> getAuditLogMessageElements()
+        {
+            Map<String, Object> elements = new LinkedHashMap<>();
+            elements.put("sourceLsid", getSourceLsid());
+            elements.put("sampleSetName", getSampleSetName());
+            elements.put("insertUpdateChoice", getInsertUpdateChoice());
+            elements.putAll(super.getAuditLogMessageElements());
+            return elements;
         }
     }
 

@@ -38,6 +38,7 @@ import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -251,6 +252,18 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         public void setNewRecordMap(String newRecordMap)
         {
             _newRecordMap = newRecordMap;
+        }
+
+        @Override
+        public Map<String, Object> getAuditLogMessageElements()
+        {
+            Map<String, Object> elements = new LinkedHashMap<>();
+            elements.put("rowPk", getRowPk());
+            elements.put("schemaName", getSchemaName());
+            elements.put("queryName", getQueryName());
+            // N.B. oldRecordMap and newRecordMap are potentially very large (and are not displayed in the default grid view)
+            elements.putAll(super.getAuditLogMessageElements());
+            return elements;
         }
     }
 

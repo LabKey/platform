@@ -83,6 +83,8 @@ public class LogManager
         {
             try
             {
+                Logger auditLogger = Logger.getLogger("org.labkey.audit.event." + type.getEventType().replaceAll(" ", ""));
+                auditLogger.info(type.getAuditLogMessage());
                 Container c = ContainerManager.getForId(type.getContainer());
 
                 UserSchema schema = AuditLogService.getAuditLogSchema(user, c != null ? c : ContainerManager.getRoot());

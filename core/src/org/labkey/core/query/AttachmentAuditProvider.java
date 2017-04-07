@@ -29,6 +29,7 @@ import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -134,6 +135,16 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
         public void setAttachment(String attachment)
         {
             _attachment = attachment;
+        }
+
+        @Override
+        public Map<String, Object> getAuditLogMessageElements()
+        {
+            Map<String, Object> elements = new LinkedHashMap<>();
+            elements.put("attachmentName", getAttachment());
+            elements.put("attachmentParentEntityId", getAttachmentParentEntityId());
+            elements.putAll(super.getAuditLogMessageElements());
+            return elements;
         }
     }
 

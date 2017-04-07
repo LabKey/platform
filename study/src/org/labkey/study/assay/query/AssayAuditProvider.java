@@ -40,6 +40,7 @@ import org.labkey.study.StudySchema;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -246,6 +247,19 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
         public void setRecordCount(int recordCount)
         {
             _recordCount = recordCount;
+        }
+
+        @Override
+        public Map<String, Object> getAuditLogMessageElements()
+        {
+            Map<String, Object> elements = new LinkedHashMap<>();
+            elements.put("protocol", getProtocol());
+            elements.put("targetStudy", getTargetStudy());
+            elements.put("datasetId", getDatasetId());
+            elements.put("sourceLsid", getSourceLsid());
+            elements.put("recordCount", getRecordCount());
+            elements.putAll(super.getAuditLogMessageElements());
+            return elements;
         }
     }
 

@@ -11,8 +11,10 @@ import org.labkey.api.query.FieldKey;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -130,6 +132,17 @@ public class ProtocolManagementAuditProvider extends AbstractAuditTypeProvider
         private static String makeComment(String factory, String protocol, String action)
         {
             return StringUtils.capitalize(action) + " protocol file " + protocol + " for factory " + factory + ".";
+        }
+
+        @Override
+        public Map<String, Object> getAuditLogMessageElements()
+        {
+            Map<String, Object> elements = new LinkedHashMap<>();
+            elements.put("protocol", getProtocol());
+            elements.put("action", getAction());
+            elements.put("factory", getFactory());
+            elements.putAll(super.getAuditLogMessageElements());
+            return elements;
         }
     }
 

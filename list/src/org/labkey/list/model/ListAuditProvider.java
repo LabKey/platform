@@ -34,6 +34,7 @@ import org.labkey.api.util.StringExpressionFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -224,6 +225,18 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         public void setNewRecordMap(String newRecordMap)
         {
             _newRecordMap = newRecordMap;
+        }
+
+        @Override
+        public Map<String, Object> getAuditLogMessageElements()
+        {
+            Map<String, Object> elements = new LinkedHashMap<>();
+            elements.put("list",  getListName() + " (" + getListId() + ")");
+            elements.put("listDomainUri", getListDomainUri());
+            elements.put("listItemEntityId", getListItemEntityId());
+            // N.B. oldRecordMap and newRecordMap can be very large and are not included here
+            elements.putAll(super.getAuditLogMessageElements());
+            return elements;
         }
     }
 

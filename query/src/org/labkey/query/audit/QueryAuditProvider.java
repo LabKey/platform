@@ -32,6 +32,7 @@ import org.labkey.query.controllers.QueryController.QueryExportAuditRedirectActi
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -201,6 +202,18 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
         public void setDataRowCount(int dataRowCount)
         {
             _dataRowCount = dataRowCount;
+        }
+
+        @Override
+        public Map<String, Object> getAuditLogMessageElements()
+        {
+            Map<String, Object> elements = new LinkedHashMap<>();
+            elements.put("schemaName", getSchemaName());
+            elements.put("queryName", getQueryName());
+            elements.put("detailsUrl", getDetailsUrl());
+            elements.put("dataRowCount", getDataRowCount());
+            elements.putAll(super.getAuditLogMessageElements());
+            return elements;
         }
     }
 

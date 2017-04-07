@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -198,6 +199,15 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
         public void setVialId(String vialId)
         {
             _vialId = vialId;
+        }
+
+        @Override
+        public Map<String, Object> getAuditLogMessageElements()
+        {
+            Map<String, Object> elements = new LinkedHashMap<>();
+            elements.put("vialId", getVialId());
+            elements.putAll(super.getAuditLogMessageElements());
+            return elements;
         }
     }
 
