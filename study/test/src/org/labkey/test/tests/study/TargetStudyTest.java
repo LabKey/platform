@@ -72,7 +72,7 @@ public class TargetStudyTest extends AbstractAssayTest
 
 
     @Test
-    public void runUITests()
+    public void runUITests() throws Exception
     {
         log("** Setup");
         setupEnvironment();
@@ -91,7 +91,7 @@ public class TargetStudyTest extends AbstractAssayTest
 
 
     @LogMethod
-    protected void setupSpecimens()
+    protected void setupSpecimens() throws Exception
     {
         log("** Import specimens into Study 1 and Study 2");
         setupPipeline(TEST_ASSAY_PRJ_SECURITY);

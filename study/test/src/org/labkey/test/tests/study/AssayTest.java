@@ -137,7 +137,7 @@ public class AssayTest extends AbstractAssayTest
      *  as a PI, and tests to make sure that security is properly enforced
      */
     @Test
-    public void testAssaySecurity()
+    public void testAssaySecurity() throws Exception
     {
         log("Starting Assay security scenario tests");
         setupEnvironment();
