@@ -145,7 +145,7 @@ if (!LABKEY.DataRegions) {
      * @constructor
      */
     LABKEY.DataRegion = function(config) {
-        this._init(config, true);
+        _init.call(this, config, true);
     };
 
     LABKEY.DataRegion.prototype.toJSON = function() {
@@ -166,7 +166,7 @@ if (!LABKEY.DataRegions) {
      * @param {Boolean} [applyDefaults=false]
      * @private
      */
-    LABKEY.DataRegion.prototype._init = function(config, applyDefaults) {
+    var _init = function(config, applyDefaults) {
 
         // ensure name
         if (!config.dataRegionName) {
@@ -456,12 +456,12 @@ if (!LABKEY.DataRegions) {
             _load(this);
         }
         else if (!isQWP) {
-            this._initMessaging();
-            this._initSelection();
-            this._initHeaderLocking();
-            this._initPaging();
-            this._initCustomViews();
-            this._initPanes();
+            _initMessaging.call(this);
+            _initSelection.call(this);
+            _initHeaderLocking.call(this);
+            _initPaging.call(this);
+            _initCustomViews.call(this);
+            _initPanes.call(this);
         }
         // else the user needs to call render
 
@@ -769,7 +769,7 @@ if (!LABKEY.DataRegions) {
     /**
      * @private
      */
-    LABKEY.DataRegion.prototype._initSelection = function() {
+    var _initSelection = function() {
 
         var me = this,
             form = _getFormSelector(this);
@@ -1228,7 +1228,7 @@ if (!LABKEY.DataRegions) {
     /**
      * @private
      */
-    LABKEY.DataRegion.prototype._initMessaging = function() {
+    var _initMessaging = function() {
         if (!this.msgbox) {
             this.msgbox = new MessageArea(this);
             this.msgbox.on('rendermsg', function(evt, msgArea, parts) { _onRenderMessageArea(this, parts); }, this);
@@ -1476,7 +1476,7 @@ if (!LABKEY.DataRegions) {
     // Paging
     //
 
-    LABKEY.DataRegion.prototype._initPaging = function() {
+    var _initPaging = function() {
         _getHeaderSelector(this).find('div.labkey-pagination').css('visibility', 'visible');
     };
 
@@ -1593,7 +1593,7 @@ if (!LABKEY.DataRegions) {
     //
     // Customize View
     //
-    LABKEY.DataRegion.prototype._initCustomViews = function() {
+    var _initCustomViews = function() {
         if (this.view && this.view.session && this.getMessage('customizeview') == undefined) {
             var msg;
             if (this.view.savable) {
@@ -1945,7 +1945,7 @@ if (!LABKEY.DataRegions) {
     /**
      * @private
      */
-    LABKEY.DataRegion.prototype._initHeaderLocking = function() {
+    var _initHeaderLocking = function() {
         if (this._allowHeaderLock === true) {
             this.hLock = new HeaderLock(this);
         }
@@ -1954,7 +1954,7 @@ if (!LABKEY.DataRegions) {
     /**
      * @private
      */
-    LABKEY.DataRegion.prototype._initPanes = function() {
+    var _initPanes = function() {
         var callbacks = _paneCache[this.name];
         if (callbacks) {
             var me = this;
@@ -2255,9 +2255,9 @@ if (!LABKEY.DataRegions) {
 
                     var index = colProviderNames.indexOf(summaryStatName);
                     if (index == -1)
-                        this._addAnalyticsProviderToView(view, colFieldKey, summaryStatName, true);
+                        _addAnalyticsProviderToView.call(this, view, colFieldKey, summaryStatName, true);
                     else
-                        this._removeAnalyticsProviderFromView(view, colFieldKey, summaryStatName, true);
+                        _removeAnalyticsProviderFromView.call(this, view, colFieldKey, summaryStatName, true);
                 }
             }
         }, null, this);
@@ -2321,7 +2321,7 @@ if (!LABKEY.DataRegions) {
                     });
 
                     view.analyticsProviders = newAnalyticsProviders;
-                    this._updateSessionCustomView(view, true);
+                    _updateSessionCustomView.call(this, view, true);
                 }
             }
         }, null, this);
@@ -2348,7 +2348,7 @@ if (!LABKEY.DataRegions) {
                     if (fieldKeyIndex > -1)
                     {
                         view.columns.splice(fieldKeyIndex, 1);
-                        this._updateSessionCustomView(view, true);
+                        _updateSessionCustomView.call(this, view, true);
                     }
                 }
             }
@@ -2370,7 +2370,7 @@ if (!LABKEY.DataRegions) {
             {
                 if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
                 {
-                    this._addAnalyticsProviderToView(view, colFieldKey, providerName, false);
+                    _addAnalyticsProviderToView.call(this, view, colFieldKey, providerName, false);
 
                     var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
                     Ext4.each(Ext4.ComponentQuery.query('menuitem[elementId=' + elementId + ']'), function(menuItem) {
@@ -2396,7 +2396,7 @@ if (!LABKEY.DataRegions) {
             {
                 if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
                 {
-                    this._removeAnalyticsProviderFromView(view, colFieldKey, providerName, false);
+                    _removeAnalyticsProviderFromView.call(this, view, colFieldKey, providerName, false);
 
                     var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
                     Ext4.each(Ext4.ComponentQuery.query('menuitem[elementId=' + elementId + ']'), function(menuItem) {
@@ -2430,7 +2430,7 @@ if (!LABKEY.DataRegions) {
         }
     };
 
-    LABKEY.DataRegion.prototype._updateSessionCustomView = function(customView, requiresRefresh) {
+    var _updateSessionCustomView = function(customView, requiresRefresh) {
         var viewConfig = $.extend({}, customView, {
             shared: false,
             inherit: false,
@@ -2449,13 +2449,13 @@ if (!LABKEY.DataRegions) {
                 }
                 else if (info.views.length == 1) {
                     this.view = info.views[0];
-                    this._initCustomViews();
+                    _initCustomViews.call(this);
                 }
             }
         });
     };
 
-    LABKEY.DataRegion.prototype._addAnalyticsProviderToView = function(view, colFieldKey, providerName, isSummaryStatistic)
+    var _addAnalyticsProviderToView = function(view, colFieldKey, providerName, isSummaryStatistic)
     {
         var colProviderNames = [];
         $.each(view.analyticsProviders, function(index, existingProvider) {
@@ -2471,11 +2471,11 @@ if (!LABKEY.DataRegions) {
                 isSummaryStatistic: isSummaryStatistic
             });
 
-            this._updateSessionCustomView(view, isSummaryStatistic);
+            _updateSessionCustomView.call(this, view, isSummaryStatistic);
         }
     };
 
-    LABKEY.DataRegion.prototype._removeAnalyticsProviderFromView = function(view, colFieldKey, providerName, isSummaryStatistic)
+    var _removeAnalyticsProviderFromView = function(view, colFieldKey, providerName, isSummaryStatistic)
     {
         var indexToRemove = null;
         $.each(view.analyticsProviders, function(index, existingProvider) {
@@ -2488,7 +2488,7 @@ if (!LABKEY.DataRegions) {
         if (indexToRemove != null)
         {
             view.analyticsProviders.splice(indexToRemove, 1);
-            this._updateSessionCustomView(view, isSummaryStatistic);
+            _updateSessionCustomView.call(this, view, isSummaryStatistic);
         }
     };
 
@@ -3734,7 +3734,7 @@ if (!LABKEY.DataRegions) {
                 // when switching back to 'default' view, needs to clear region.view
                 region.view = undefined;
             }
-            region._init(config);
+            _init.call(region, config);
         }
         else {
             // instantiate a new region
