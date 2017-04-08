@@ -37,7 +37,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -181,13 +180,13 @@ public class VisualizationSourceColumn
         _clientAlias = measure.getAlias();
         if (values != null)
         {
-            _values.addAll(values.stream().collect(Collectors.toList()));
+            _values.addAll(values);
         }
         String namedSetValue = measure.getNsvalues();
         if (namedSetValue != null)
         {
             List<String> namedSet = QueryService.get().getNamedSet(namedSetValue);
-            _values.addAll(namedSet.stream().collect(Collectors.toList()));
+            _values.addAll(namedSet);
         }
     }
 
