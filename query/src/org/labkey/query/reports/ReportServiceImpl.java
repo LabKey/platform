@@ -90,6 +90,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -582,20 +583,17 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
         else
         {
-            readableReports = new ArrayList<>();
-
-            readableReports.addAll(
-                reports
-                    .stream()
-                    .filter(report -> report.hasPermission(user, report.getDescriptor().getResourceContainer(), ReadPermission.class))
-                    .collect(Collectors.toList()));
+            readableReports = reports
+                .stream()
+                .filter(report -> report.hasPermission(user, report.getDescriptor().getResourceContainer(), ReadPermission.class))
+                .collect(Collectors.toCollection(ArrayList::new));
         }
 
         // must re-sort to allow file-based reports to show in proper positions
         // NOTE: currently, the only way for file-based reports to appear in the middle of a category is to share a
         //       displayOrder number with a report already in the cache (all indices in a range are used when
         //       persisting); therefore the file-based report's order can never be fully guaranteed
-        readableReports.sort((r1, r2) -> r1.getDescriptor().getDisplayOrder() - r2.getDescriptor().getDisplayOrder());
+        readableReports.sort(Comparator.comparingInt(r -> r.getDescriptor().getDisplayOrder()));
 
         return readableReports;
     }
