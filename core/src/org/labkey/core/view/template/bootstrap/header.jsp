@@ -40,22 +40,40 @@
     }
 %>
 <%!
-    private void toHTML(NavTree tree, Writer out) throws Exception
+    private void renderTree(NavTree tree, Writer out) throws Exception
     {
         if (tree == null)
             return;
 
         for (NavTree child : tree.getChildren())
         {
-            if ("-".equals(child.getText()))
-                out.write("<li class=\"divider\"></li>");
+            if (child.hasChildren())
+            {
+                String text = PageFlowUtil.filter(child.getText());
+
+                out.write("<li class=\"dropdown-submenu\">");
+                out.write("<a class=\"subexpand\">" + text + "<i class=\"fa fa-chevron-right\"></i></a>");
+                out.write("<ul class=\"dropdown-layer-menu\">");
+                out.write("<li><a class=\"subcollapse\"><i class=\"fa fa-chevron-circle-left\"></i>" + text + "</a></li>");
+                renderTree(child, out);
+                out.write("</ul>");
+                out.write("</li>");
+            }
             else
             {
-                out.write("<li>");
-                out.write("<a href=\"" + child.getHref() + "\">");
-                out.write(PageFlowUtil.filter(child.getText()));
-                out.write("</a>");
-                out.write("</li>");
+                if ("-".equals(child.getText()))
+                    out.write("<li class=\"divider\"></li>");
+                else
+                {
+                    out.write("<li>");
+                    out.write("<a");
+                    if (null != child.getScript())
+                        out.write(" onclick=\"" + PageFlowUtil.filter(child.getScript()) +"\" ");
+                    if (null != child.getHref())
+                        out.write(" href=\"" + child.getHref() + "\" ");
+                    out.write(">" + PageFlowUtil.filter(child.getText()) + "</a>");
+                    out.write("</li>");
+                }
             }
         }
     }
@@ -99,7 +117,7 @@
                     <i class="fa fa-user"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
-                    <% toHTML(PopupUserView.createNavTree(context), out); %>
+                    <% renderTree(PopupUserView.createNavTree(context), out); %>
                 </ul>
             </li>
 <% } %>
@@ -109,7 +127,7 @@
                     <i class="fa fa-cog"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
-                    <% toHTML(PopupAdminView.createNavTree(context), out); %>
+                    <% renderTree(PopupAdminView.createNavTree(context), out); %>
                 </ul>
             </li>
 <% } %>
@@ -127,6 +145,25 @@
             $(this).parent().toggleClass('active');
             var input = $('input.search-box');
             input.is(':focus') ? input.blur() : input.focus();
+        });
+
+        $('.dropdown-submenu a.subexpand').on("click", function(e){
+            var el = $(this);
+            el.css('display', 'none');
+            el.parent().siblings('li').css('display', 'none');
+            el.next('ul').toggleClass('open');
+            e.stopPropagation();
+            e.preventDefault();
+        });
+
+        $('.dropdown-layer-menu a.subcollapse').on("click", function(e){
+            var el = $(this);
+            var menu = el.parents('ul');
+            menu.toggleClass('open');
+            menu.siblings('a.subexpand').css('display', '');
+            menu.parents('li').siblings('li').css('display', '');
+            e.stopPropagation();
+            e.preventDefault();
         });
     })(jQuery);
 </script>
