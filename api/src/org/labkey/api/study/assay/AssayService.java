@@ -71,8 +71,7 @@ public interface AssayService
     @Nullable
     AssayProvider getProvider(ExpRun run);
 
-    @NotNull
-    Collection<AssayProvider> getAssayProviders();
+    @NotNull Collection<AssayProvider> getAssayProviders();
 
     WebPartView createAssayListView(ViewContext context, boolean portalView, BindException errors);
 
@@ -85,20 +84,20 @@ public interface AssayService
     AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy);
 
     /** @return all of the assay protocols that are in scope in the given container */
-    List<ExpProtocol> getAssayProtocols(Container container);
+    @NotNull List<ExpProtocol> getAssayProtocols(Container container);
 
     /** @return all of the assay protocols that are in scope in the given container, filtered to only include those that are owned by the given provider */
-    List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider);
+    @NotNull List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider);
 
     /** @return an assay protocol that matches the given name for the assay protocols that are in scope in the given container */
-    ExpProtocol getAssayProtocolByName(Container container, String name);
+    @Nullable ExpProtocol getAssayProtocolByName(Container container, String name);
 
     /**
      * Populates the import button with possible containers
      * @param isStudyView true if this view is from a study, and thus should exclude the current container
      * unless it already has assay data in it
      */
-    List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView);
+    @NotNull List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView);
 
     /**
      * Creates a batch object but does not save it to the database
@@ -127,7 +126,7 @@ public interface AssayService
      * Returns the list of valid locations an assay design can be created in.
      * @return the list of containers as pairs of container objects and corresponding label.
      */
-    List<Pair<Container, String>> getLocationOptions(Container container, User user);
+    @NotNull List<Pair<Container, String>> getLocationOptions(Container container, User user);
 
     /**
      * Searches the ExpRun and ExpBatch for the configured participant visit resolver type.  If none is found,
@@ -156,7 +155,7 @@ public interface AssayService
      * Returns the list of registered providers which can add links to the assay header link listing.
      * @return the list of registered providers
      */
-    List<AssayHeaderLinkProvider> getAssayHeaderLinkProviders();
+    @NotNull List<AssayHeaderLinkProvider> getAssayHeaderLinkProviders();
 
     /**
      * Register a renderer to be used on the assay insert form to customize the input field.

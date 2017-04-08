@@ -56,7 +56,20 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
         ServiceRegistry.get().registerService(PipelineService.class, instance);
     }
 
+    /**
+     * Statically register a single PipelineProvider that's implemented in code.
+     * @param provider PipelineProvider to register
+     * @param aliases Alternate names for this provider
+     */
     void registerPipelineProvider(PipelineProvider provider, String... aliases);
+
+    /**
+     * Register a supplier of (likely multiple) PipelineProviders. Suppliers are called any time the service returns all
+     * providers or resolves a single provider. This allows the provider list to be dynamic, for example, as file-based
+     * assay definitions change.
+     * @param supplier PipelineProviderSupplier
+     */
+    void registerPipelineProviderSupplier(PipelineProviderSupplier supplier);
 
     /**
      * Looks up the container hierarchy until it finds a pipeline root defined which is being
@@ -195,4 +208,10 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     File getProtocolParametersFile(ExpRun expRun);
 
     void deleteStatusFile(Container c, User u, boolean deleteExpRuns, Collection<Integer> rowIds) throws PipelineProvider.HandlerException;
+
+    interface PipelineProviderSupplier
+    {
+        @NotNull Collection<PipelineProvider> getAll();
+        @Nullable PipelineProvider findPipelineProvider(String name);
+    }
 }

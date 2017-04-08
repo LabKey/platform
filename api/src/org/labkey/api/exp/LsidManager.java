@@ -31,8 +31,10 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * User: migra
@@ -41,16 +43,20 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class LsidManager
 {
-    private static final Map<String, Map<String, LsidHandler>> authorityMap = new ConcurrentHashMap<>();
-    private static final LsidManager _instance = new LsidManager();
+    private static final LsidManager INSTANCE = new LsidManager();
+
+    private final Map<String, Map<String, LsidHandler>> _authorityMap = new ConcurrentHashMap<>();
+    private final List<LsidHandlerFinder> _lsidHandlerFinders = new CopyOnWriteArrayList<>();
 
     private LsidManager()
     {
+        // Register a standard LsidHandlerFinder that resolves against LsidHandlers registered by Java modules via registerHandler()
+        registerHandlerFinder(new AssayLsidHandlerFinder());
     }
 
     public static LsidManager get()
     {
-        return _instance;
+        return INSTANCE;
     }
 
     public interface LsidHandler
@@ -107,9 +113,14 @@ public class LsidManager
         }
     }
 
+    public void registerHandlerFinder(LsidHandlerFinder finder)
+    {
+        _lsidHandlerFinders.add(finder);
+    }
+
     public void registerHandler(String prefix, LsidHandler handler, String authority)
     {
-        Map<String, LsidHandler> handlerMap = authorityMap.computeIfAbsent(authority, k -> new HashMap<>());
+        Map<String, LsidHandler> handlerMap = _authorityMap.computeIfAbsent(authority, k -> new HashMap<>());
 
         handlerMap.put(prefix, handler);
     }
@@ -158,27 +169,53 @@ public class LsidManager
         return AppProps.getInstance().getDefaultLsidAuthority();
     }
 
+    // This LsidHandlerFinder resolves against LsidHandlers registered by Java modules via registerHandler()
+    private class AssayLsidHandlerFinder implements LsidHandlerFinder
+    {
+        @Nullable
+        @Override
+        public LsidHandler findHandler(String authority, String namespacePrefix)
+        {
+            Map<String, LsidHandler> handlerMap = _authorityMap.get(authority);
+
+            //Try the default authority for this server if not found
+            if (null == handlerMap)
+                handlerMap = _authorityMap.get(AppProps.getInstance().getDefaultLsidAuthority());
+
+            if (null == handlerMap)
+                return null;
+
+            return handlerMap.get(namespacePrefix);
+        }
+    }
+
     private LsidHandler findHandler(Lsid lsid)
     {
         String authority = lsid.getAuthority();
-        if (authority == null)
+        String namespacePrefix = lsid.getNamespacePrefix();
+
+        // ConcurrentHashMap doesn't support null keys, so do our own check
+        if (authority == null || namespacePrefix == null)
         {
-            // ConcurrentHashMap doesn't support null keys, so do our own check
             return null;
         }
-        Map<String, LsidHandler> handlerMap = authorityMap.get(authority);
-        //Try the default authority for this server if not found
-        if (null == handlerMap)
-            handlerMap = authorityMap.get(AppProps.getInstance().getDefaultLsidAuthority());
 
-        if (null == handlerMap)
-            return null;
+        // This mechanism allows LsidHandlers to come and go during a server session, e.g., as file-based assay definitions change
+        for (LsidHandlerFinder finder : _lsidHandlerFinders)
+        {
+            LsidHandler handler = finder.findHandler(authority, namespacePrefix);
 
-        // ConcurrentHashMap doesn't allow null for keys, so avoid NPE
-        String namespacePrefix = lsid.getNamespacePrefix();
-        return namespacePrefix == null ? null : handlerMap.get(namespacePrefix);
+            if (null != handler)
+                return handler;
+        }
+
+        return null;
     }
 
+    public interface LsidHandlerFinder
+    {
+        @Nullable LsidHandler findHandler(String authority, String namespacePrefix);
+    }
 
     public Identifiable getObject(Lsid lsid)
     {
@@ -201,5 +238,4 @@ public class LsidManager
 
         return type.getDisplayURL(lsid);
     }
-
 }
