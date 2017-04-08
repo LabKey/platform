@@ -90,22 +90,26 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.labkey.api.pipeline.file.AbstractFileAnalysisJob.ANALYSIS_PARAMETERS_ROLE_NAME;
 
 public class PipelineServiceImpl implements PipelineService
 {
-    public static String PREF_LASTPROTOCOL = "lastprotocol";
-    public static String PREF_LASTSEQUENCEDB = "lastsequencedb";
-    public static String PREF_LASTSEQUENCEDBPATHS = "lastsequencedbpaths";
-    public static String KEY_PREFERENCES = "pipelinePreferences";
+    private static final Logger LOG = Logger.getLogger(PipelineService.class);
 
-    private static final Logger _log = Logger.getLogger(PipelineService.class);
+    private static final String PREF_LASTPROTOCOL = "lastprotocol";
+    private static final String PREF_LASTSEQUENCEDB = "lastsequencedb";
+    private static final String PREF_LASTSEQUENCEDBPATHS = "lastsequencedbpaths";
+    private static final String KEY_PREFERENCES = "pipelinePreferences";
 
-    private Map<String, PipelineProvider> _mapPipelineProviders = new TreeMap<>();
+    private final Map<String, PipelineProvider> _mapPipelineProviders = new ConcurrentSkipListMap<>();
+    private final List<PipelineProviderSupplier> _suppliers = new CopyOnWriteArrayList<>();
+
     private PipelineQueue _queue = null;
 
     public static PipelineServiceImpl get()
@@ -113,6 +117,18 @@ public class PipelineServiceImpl implements PipelineService
         return (PipelineServiceImpl) PipelineService.get();
     }
 
+    public PipelineServiceImpl()
+    {
+        registerPipelineProviderSupplier(new StandardPipelineProviderSupplier());
+    }
+
+    @Override
+    public void registerPipelineProviderSupplier(PipelineProviderSupplier supplier)
+    {
+        _suppliers.add(supplier);
+    }
+
+    @Override
     public void registerPipelineProvider(PipelineProvider provider, String... aliases)
     {
         _mapPipelineProviders.put(provider.getName(), provider);
@@ -135,6 +151,7 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     @Nullable
+    @Override
     public PipeRootImpl findPipelineRoot(Container container)
     {
         return findPipelineRoot(container, PipelineRoot.PRIMARY_ROOT);
@@ -197,6 +214,7 @@ public class PipelineServiceImpl implements PipelineService
         return new PipeRootImpl(p, sameAsFilesRoot);
     }
 
+    @Override
     public boolean hasSiteDefaultRoot(Container container)
     {
         PipelineRoot pipelineRoot = PipelineManager.findPipelineRoot(container);
@@ -215,6 +233,7 @@ public class PipelineServiceImpl implements PipelineService
 
 
     @NotNull
+    @Override
     public Map<Container, PipeRoot> getAllPipelineRoots()
     {
         PipelineRoot[] pipelines = PipelineManager.getPipelineRoots(PipelineRoot.PRIMARY_ROOT);
@@ -231,11 +250,13 @@ public class PipelineServiceImpl implements PipelineService
     }
 
 
+    @Override
     public PipeRootImpl getPipelineRootSetting(Container container)
     {
         return getPipelineRootSetting(container, PipelineRoot.PRIMARY_ROOT);
     }
 
+    @Override
     public PipeRootImpl getPipelineRootSetting(Container container, final String type)
     {
         PipelineRoot r = PipelineManager.getPipelineRootObject(container, type);
@@ -248,6 +269,7 @@ public class PipelineServiceImpl implements PipelineService
         return new PipeRootImpl(r);
     }
 
+    @Override
     public void setPipelineRoot(User user, Container container, String type, boolean searchable, URI... roots) throws SQLException
     {
         if (!canModifyPipelineRoot(user, container))
@@ -256,33 +278,71 @@ public class PipelineServiceImpl implements PipelineService
         PipelineManager.setPipelineRoot(user, container, roots, type, searchable);
     }
 
+    @Override
     public boolean canModifyPipelineRoot(User user, Container container)
     {
         //per Britt--user must be site admin
         return container != null && !container.isRoot() && user.isSiteAdmin();
     }
 
+    @Override
     @NotNull
     public List<PipelineProvider> getPipelineProviders()
     {
-        // Get a list of unique providers
-        return new ArrayList<>(new HashSet<>(_mapPipelineProviders.values()));
+        LinkedList<PipelineProvider> providers = new LinkedList<>();
+
+        // This mechanism allows PipelineProviders to come and go during a server session, e.g., as file-based assay definitions change
+        for (PipelineProviderSupplier supplier : _suppliers)
+            providers.addAll(supplier.getAll());
+
+        return Collections.unmodifiableList(providers);
+    }
+
+    private class StandardPipelineProviderSupplier implements PipelineProviderSupplier
+    {
+        @NotNull
+        @Override
+        public Collection<PipelineProvider> getAll()
+        {
+            // Get a set of unique providers
+            return new HashSet<>(_mapPipelineProviders.values());
+        }
+
+        @Nullable
+        @Override
+        public PipelineProvider findPipelineProvider(String name)
+        {
+            return _mapPipelineProviders.get(name);
+        }
     }
 
     @Nullable
+    @Override
     public PipelineProvider getPipelineProvider(String name)
     {
         if (name == null)
             return null;
-        return _mapPipelineProviders.get(name);
+
+        // This mechanism allows PipelineProviders to come and go during a server session, e.g., as file-based assay definitions change
+        for (PipelineProviderSupplier supplier : _suppliers)
+        {
+            PipelineProvider provider = supplier.findPipelineProvider(name);
+
+            if (null != provider)
+                return provider;
+        }
+
+        return null;
     }
 
+    @Override
     public boolean isEnterprisePipeline()
     {
         return (getPipelineQueue() instanceof EPipelineQueueImpl);
     }
 
     @NotNull
+    @Override
     public synchronized PipelineQueue getPipelineQueue()
     {
         if (_queue == null)
@@ -302,18 +362,20 @@ public class PipelineServiceImpl implements PipelineService
                 _queue = new PipelineQueueImpl();
             else
             {
-                _log.info("Found JMS queue; running Enterprise Pipeline.");
+                LOG.info("Found JMS queue; running Enterprise Pipeline.");
                 _queue = new EPipelineQueueImpl(factory);
             }
         }
         return _queue;
     }
 
+    @Override
     public void queueJob(PipelineJob job) throws PipelineValidationException
     {
         getPipelineQueue().addJob(job);
     }
 
+    @Override
     public void setPipelineJobStatus(PipelineJob job, PipelineJob.TaskStatus status) throws PipelineJobException
     {
         job.setActiveTaskStatus(status);
@@ -339,26 +401,31 @@ public class PipelineServiceImpl implements PipelineService
         }
     }
 
+    @Override
     public void setPipelineProperty(Container container, String name, String value)
     {
         PipelineManager.setPipelineProperty(container, name, value);
     }
 
+    @Override
     public String getPipelineProperty(Container container, String name)
     {
         return PipelineManager.getPipelineProperty(container, name);
     }
 
+    @Override
     public QueryView getPipelineQueryView(ViewContext context, PipelineButtonOption buttonOption)
     {
         return new PipelineQueryView(context, null, null, buttonOption, context.getActionURL());
     }
 
+    @Override
     public HttpView getSetupView(SetupForm form)
     {
         return new JspView<>("/org/labkey/pipeline/setup.jsp", form, form.getErrors());
     }
 
+    @Override
     public boolean savePipelineSetup(ViewContext context, SetupForm form, BindException errors) throws Exception
     {
         return PipelineController.savePipelineSetup(context, form, errors);
@@ -370,6 +437,7 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     // TODO: This should be on PipelineProtocolFactory
+    @Override
     public String getLastProtocolSetting(PipelineProtocolFactory factory, Container container, User user)
     {
         try
@@ -381,12 +449,13 @@ public class PipelineServiceImpl implements PipelineService
         }
         catch (Exception e)
         {
-            _log.error("Error", e);
+            LOG.error("Error", e);
         }
         return "";
     }
 
     // TODO: This should be on PipelineProtocolFactory
+    @Override
     public void rememberLastProtocolSetting(PipelineProtocolFactory factory, Container container, User user,
                                             String protocolName)
     {
@@ -398,6 +467,7 @@ public class PipelineServiceImpl implements PipelineService
     }
 
 
+    @Override
     public String getLastSequenceDbSetting(PipelineProtocolFactory factory, Container container, User user)
     {
         try
@@ -409,11 +479,12 @@ public class PipelineServiceImpl implements PipelineService
         }
         catch (Exception e)
         {
-            _log.error("Error", e);
+            LOG.error("Error", e);
         }
         return "";
     }
 
+    @Override
     public void rememberLastSequenceDbSetting(PipelineProtocolFactory factory, Container container, User user,
                                               String sequenceDbPath,String sequenceDb)
     {
@@ -429,6 +500,7 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     @Nullable
+    @Override
     public List<String> getLastSequenceDbPathsSetting(PipelineProtocolFactory factory, Container container, User user)
     {
         Map<String, String> props = PropertyManager.getProperties(user, container, PipelineServiceImpl.KEY_PREFERENCES);
@@ -440,6 +512,7 @@ public class PipelineServiceImpl implements PipelineService
         return null;
     }
 
+    @Override
     public void rememberLastSequenceDbPathsSetting(PipelineProtocolFactory factory, Container container, User user,
                                                    List<String> sequenceDbPathsList)
     {
@@ -460,6 +533,7 @@ public class PipelineServiceImpl implements PipelineService
     }
 
 
+    @Override
     public PipelineStatusFile getStatusFile(File logFile)
     {
         return PipelineStatusManager.getStatusFile(logFile);
@@ -471,26 +545,31 @@ public class PipelineServiceImpl implements PipelineService
         return PipelineStatusManager.getStatusFile(rowId);
     }
 
+    @Override
     public List<? extends PipelineStatusFile> getQueuedStatusFiles()
     {
         return PipelineStatusManager.getQueuedStatusFiles();
     }
 
+    @Override
     public List<PipelineStatusFileImpl> getJobsWaitingForFiles(Container c)
     {
         return PipelineStatusManager.getJobsWaitingForFiles(c);
     }
 
+    @Override
     public List<PipelineStatusFileImpl> getQueuedStatusFiles(Container c)
     {
         return PipelineStatusManager.getQueuedStatusFilesForContainer(c);
     }
 
+    @Override
     public boolean setStatus(PipelineJob job, String status, String statusInfo, boolean allowInsert)
     {
         return PipelineStatusManager.setStatusFile(job, job.getUser(), status, statusInfo, allowInsert);
     }
 
+    @Override
     public void ensureError(PipelineJob job) throws Exception
     {
         PipelineStatusManager.ensureError(job);
@@ -548,16 +627,17 @@ public class PipelineServiceImpl implements PipelineService
                 }
                 catch (UMOException e)
                 {
-                    _log.error("Failed to get implementation class from descriptor " + descriptor, e);
+                    LOG.error("Failed to get implementation class from descriptor " + descriptor, e);
                 }
                 catch (IllegalAccessException | InstantiationException e)
                 {
-                    _log.error("Failed to resume jobs for descriptor " + descriptor, e);
+                    LOG.error("Failed to resume jobs for descriptor " + descriptor, e);
                 }
             }
         }
     }
 
+    @Override
     public TableInfo getJobsTable(User user, Container container)
     {
         return new PipelineQuerySchema(user, container).getTable(PipelineQuerySchema.JOB_TABLE_NAME);
@@ -575,6 +655,7 @@ public class PipelineServiceImpl implements PipelineService
         }
     }
 
+    @Override
     public Integer getJobId(User u, Container c, String jobGUID)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("job"), jobGUID);

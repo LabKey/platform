@@ -18,17 +18,17 @@ package org.labkey.study.assay;
 
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceLoadException;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.study.assay.xml.ProviderDocument;
 import org.labkey.study.assay.xml.ProviderType;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -38,18 +38,17 @@ import java.util.LinkedList;
  * Date: Dec 10, 2008 1:34:33 PM
  */
 
-public class ModuleAssayCacheHandler implements ModuleResourceCacheHandler<Collection<AssayProvider>>
+public class ModuleAssayCacheHandler implements ModuleResourceCacheHandler<Collection<ModuleAssayProvider>>
 {
     public static final String DOMAINS_DIR_NAME = "domains";
 
     @Override
-    public Collection<AssayProvider> load(@Nullable Resource dir, Module module)
+    public Collection<ModuleAssayProvider> load(@Nullable Resource dir, Module module)
     {
-        Collection<AssayProvider> ret = new LinkedList<>();
-        Resource assayDir = module.getModuleResource(AssayService.ASSAY_DIR_NAME);
-        if (assayDir != null && assayDir.exists() && assayDir.isCollection())
+        Collection<ModuleAssayProvider> ret = new LinkedList<>();
+        if (dir != null && dir.isCollection())
         {
-            for (Resource assayProviderDir : assayDir.list())
+            for (Resource assayProviderDir : dir.list())
             {
                 if (!assayProviderDir.isCollection())
                     continue;
@@ -61,6 +60,7 @@ public class ModuleAssayCacheHandler implements ModuleResourceCacheHandler<Colle
 
                 try
                 {
+                    assayProviderDir.list(); // This adds a file watcher in this directory
                     ret.add(loadAssayProvider(module, assayProviderDir, configFile));
                 }
                 catch (Exception e)
@@ -72,7 +72,38 @@ public class ModuleAssayCacheHandler implements ModuleResourceCacheHandler<Colle
         return Collections.unmodifiableCollection(ret);
     }
 
-    private AssayProvider loadAssayProvider(Module module, Resource assayProviderDir, Resource configFile) throws IOException, ModuleResourceLoadException
+    @Nullable
+    @Override
+    public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+    {
+        return new FileSystemDirectoryListener()
+        {
+            @Override
+            public void entryCreated(Path directory, Path entry)
+            {
+                AssayManager.get().clearModuleAssayCollections();
+            }
+
+            @Override
+            public void entryDeleted(Path directory, Path entry)
+            {
+                AssayManager.get().clearModuleAssayCollections();
+            }
+
+            @Override
+            public void entryModified(Path directory, Path entry)
+            {
+                AssayManager.get().clearModuleAssayCollections();
+            }
+
+            @Override
+            public void overflow()
+            {
+            }
+        };
+    }
+
+    private ModuleAssayProvider loadAssayProvider(Module module, Resource assayProviderDir, Resource configFile) throws IOException, ModuleResourceLoadException
     {
         String assayName = assayProviderDir.getName();
 

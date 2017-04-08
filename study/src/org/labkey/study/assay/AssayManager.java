@@ -18,7 +18,6 @@ package org.labkey.study.assay;
 
 import gwt.client.org.labkey.study.StudyApplication;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
@@ -32,6 +31,10 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.LsidManager.ExpRunLsidHandler;
+import org.labkey.api.exp.LsidManager.LsidHandler;
+import org.labkey.api.exp.LsidManager.LsidHandlerFinder;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -39,12 +42,14 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineService.PipelineProviderSupplier;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -52,6 +57,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayColumnInfoRenderer;
 import org.labkey.api.study.assay.AssayHeaderLinkProvider;
@@ -95,13 +101,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -110,13 +115,11 @@ import java.util.stream.Collectors;
  */
 public class AssayManager implements AssayService
 {
-    private static final Cache<GUID, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
-    private static final ModuleResourceCache<Collection<AssayProvider>> PROVIDER_CACHE = ModuleResourceCaches.create(new Path(ModuleAssayCacheHandler.DOMAINS_DIR_NAME), new ModuleAssayCacheHandler(), "Module assay providers");
-
-    private boolean _addedFileBasedAssays = false;
+    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
+    private static final ModuleResourceCache<Collection<ModuleAssayProvider>> PROVIDER_CACHE = ModuleResourceCaches.create(new Path(AssayService.ASSAY_DIR_NAME), new ModuleAssayCacheHandler(), "Module assay providers");
     private static final Object PROVIDER_LOCK = new Object();
 
-    private final Map<String, AssayProvider> _providers = new ConcurrentSkipListMap<>();
+    private final List<AssayProvider> _providers = new CopyOnWriteArrayList<>();
     private final List<AssayHeaderLinkProvider> _headerLinkProviders = new CopyOnWriteArrayList<>();
     private final List<AssayColumnInfoRenderer> _assayColumnInfoRenderers = new CopyOnWriteArrayList<>();
 
@@ -125,6 +128,8 @@ public class AssayManager implements AssayService
 
     public AssayManager()
     {
+        LsidManager.get().registerHandlerFinder(new ModuleAssayLsidHandlerFinder());
+        PipelineService.get().registerPipelineProviderSupplier(new ModuleAssayPipelineProviderSupplier());
     }
 
     public static AssayManager get()
@@ -141,14 +146,12 @@ public class AssayManager implements AssayService
     public void registerAssayProvider(AssayProvider provider)
     {
         // Blow up if we've already added a provider with this name
-        if (AssaySchema.ASSAY_LIST_TABLE_NAME.equalsIgnoreCase(provider.getName()) || AssaySchema.ASSAY_LIST_TABLE_NAME.equalsIgnoreCase(provider.getResourceName()))
-        {
-            throw new IllegalArgumentException("'" + AssaySchema.ASSAY_LIST_TABLE_NAME + "' is not allowed as an AssayProvider name because it conflicts with the built-in query");
-        }
-        if (null != _providers.putIfAbsent(provider.getName(), provider))
+        verifyLegalName(provider);
+        if (getProvider(provider.getName(), _providers) != null) // Checks against all registered providers (so far)
         {
             throw new IllegalArgumentException("A provider with the name " + provider.getName() + " has already been registered");
         }
+        _providers.add(provider);
         PipelineProvider pipelineProvider = provider.getPipelineProvider();
         if (pipelineProvider != null)
         {
@@ -157,10 +160,23 @@ public class AssayManager implements AssayService
         provider.registerLsidHandler();
     }
 
+    private void verifyLegalName(AssayProvider provider)
+    {
+        if (AssaySchema.ASSAY_LIST_TABLE_NAME.equalsIgnoreCase(provider.getName()) || AssaySchema.ASSAY_LIST_TABLE_NAME.equalsIgnoreCase(provider.getResourceName()))
+        {
+            throw new IllegalArgumentException("'" + AssaySchema.ASSAY_LIST_TABLE_NAME + "' is not allowed as an AssayProvider name because it conflicts with the built-in query");
+        }
+    }
+
     @Override @Nullable
     public AssayProvider getProvider(String providerName)
     {
-        for (AssayProvider potential : getAssayProviders())
+        return getProvider(providerName, getAssayProviders());
+    }
+
+    private @Nullable AssayProvider getProvider(String providerName, Collection<AssayProvider> providers)
+    {
+        for (AssayProvider potential : providers)
         {
             if (potential.getName().equals(providerName) || potential.getResourceName().equals(providerName))
             {
@@ -190,23 +206,121 @@ public class AssayManager implements AssayService
     @Override @NotNull
     public Collection<AssayProvider> getAssayProviders()
     {
+        // Add the statically registered providers first
+        List<AssayProvider> ret = new LinkedList<>(_providers);
+
+        // Now add the module assay providers
+        ret.addAll(getModuleAssayCollections().getAssayProviders());
+
+        return Collections.unmodifiableCollection(ret);
+    }
+
+    // Protected by PROVIDER_LOCK
+    private ModuleAssayCollections _moduleAssayCollections = null;
+
+    private ModuleAssayCollections getModuleAssayCollections()
+    {
         synchronized (PROVIDER_LOCK)
         {
-            if (!_addedFileBasedAssays)
+            if (null == _moduleAssayCollections)
+                _moduleAssayCollections = new ModuleAssayCollections();
+
+            return _moduleAssayCollections;
+        }
+    }
+
+    void clearModuleAssayCollections()
+    {
+        synchronized (PROVIDER_LOCK)
+        {
+            _moduleAssayCollections = null;
+        }
+    }
+
+    private class ModuleAssayCollections
+    {
+        private final List<AssayProvider> _assayProviders = new LinkedList<>();
+        private final Map<String, PipelineProvider> _pipelineProviders = new HashMap<>();
+        private final Set<String> _runLsidPrefixes = new HashSet<>();
+
+        private ModuleAssayCollections()
+        {
+            for (Module module : ModuleLoader.getInstance().getModules())
             {
-                List<AssayProvider> providers = ModuleLoader.getInstance().getModules().stream()
-                    .map(PROVIDER_CACHE::getResourceMap)
-                    .flatMap(Collection::stream)
-                    .collect(Collectors.toList());
+                for (AssayProvider provider : PROVIDER_CACHE.getResourceMap(module))
+                {
+                    // Validate the provider
+                    verifyLegalName(provider);
+                    if (getProvider(provider.getName(), _providers) != null) // Check against the registered providers
+                    {
+                        throw new IllegalArgumentException("A provider with the name " + provider.getName() + " has already been registered");
+                    }
+                    if (getProvider(provider.getName(), _assayProviders) != null) // Check against the existing module assay providers
+                    {
+                        throw new IllegalArgumentException("A module assay provider with the name " + provider.getName() + " already exists");
+                    }
 
-                providers.forEach(provider -> AssayService.get().registerAssayProvider(provider));
-
-                Logger.getLogger(AssayManager.class).info("File assay providers have been loaded. All current providers: " + _providers.values());
-                _addedFileBasedAssays = true;
+                    // Update all the collections with this provider
+                    _assayProviders.add(provider);
+                    PipelineProvider pipelineProvider = provider.getPipelineProvider();
+                    if (pipelineProvider != null)
+                    {
+                        _pipelineProviders.put(pipelineProvider.getName(), pipelineProvider);
+                    }
+                    _runLsidPrefixes.add(provider.getRunLSIDPrefix());
+                }
             }
         }
 
-        return Collections.unmodifiableCollection(_providers.values());
+        public List<AssayProvider> getAssayProviders()
+        {
+            return _assayProviders;
+        }
+
+        public Map<String, PipelineProvider> getPipelineProviders()
+        {
+            return _pipelineProviders;
+        }
+
+        public Set<String> getRunLsidPrefixes()
+        {
+            return _runLsidPrefixes;
+        }
+    }
+
+    private class ModuleAssayPipelineProviderSupplier implements PipelineProviderSupplier
+    {
+        @NotNull
+        @Override
+        public Collection<PipelineProvider> getAll()
+        {
+            return getModuleAssayCollections().getPipelineProviders().values();
+        }
+
+        @Nullable
+        @Override
+        public PipelineProvider findPipelineProvider(String name)
+        {
+            return getModuleAssayCollections().getPipelineProviders().get(name);
+        }
+    }
+
+    // Module assays always use the default LSID authority and return a singleton LsidHandler. This matches previous
+    // behavior of the static registration approach.
+    private class ModuleAssayLsidHandlerFinder implements LsidHandlerFinder
+    {
+        // ExpRunLsidHandler has no state, so safe to use a singleton.
+        private final LsidHandler _fileBasedAssayLsidHandler = new ExpRunLsidHandler();
+
+        @Nullable
+        @Override
+        public LsidHandler findHandler(String authority, String namespacePrefix)
+        {
+            if (AppProps.getInstance().getDefaultLsidAuthority().equals(authority) && getModuleAssayCollections().getRunLsidPrefixes().contains(namespacePrefix))
+                return _fileBasedAssayLsidHandler;
+            else
+                return null;
+        }
     }
 
     @Override
@@ -216,7 +330,7 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public List<AssayHeaderLinkProvider> getAssayHeaderLinkProviders()
+    public @NotNull List<AssayHeaderLinkProvider> getAssayHeaderLinkProviders()
     {
         return Collections.unmodifiableList(_headerLinkProviders);
     }
@@ -249,27 +363,26 @@ public class AssayManager implements AssayService
         return new AssaySchemaImpl(user, container, targetStudy);
     }
 
-    public List<ExpProtocol> getAssayProtocols(Container container)
+    public @NotNull List<ExpProtocol> getAssayProtocols(Container container)
     {
-        List<ExpProtocol> result = PROTOCOL_CACHE.get(container.getEntityId());
-        if (result == null)
+        return PROTOCOL_CACHE.get(container, null, (c, argument) ->
         {
             // Build up a set of containers so that we can query them all at once
             Set<Container> containers = new HashSet<>();
-            containers.add(container);
+            containers.add(c);
             containers.add(ContainerManager.getSharedContainer());
-            Container project = container.getProject();
+            Container project = c.getProject();
             if (project != null)
             {
                 containers.add(project);
             }
-            if (container.isWorkbook())
+            if (c.isWorkbook())
             {
-                containers.add(container.getParent());
+                containers.add(c.getParent());
             }
 
             List<? extends ExpProtocol> protocols = ExperimentService.get().getExpProtocols(containers.toArray(new Container[containers.size()]));
-            result = new ArrayList<>();
+            List<ExpProtocol> result = new ArrayList<>();
 
             // Filter to just the ones that have an AssayProvider associated with them
             for (ExpProtocol protocol : protocols)
@@ -284,13 +397,11 @@ public class AssayManager implements AssayService
             }
             // Sort them, just to be nice
             Collections.sort(result);
-            result = Collections.unmodifiableList(result);
-            PROTOCOL_CACHE.put(container.getEntityId(), result);
-        }
-        return result;
+            return Collections.unmodifiableList(result);
+        });
     }
 
-    public List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider)
+    public @NotNull List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider)
     {
         // Take the full list
         List<ExpProtocol> allProtocols = getAssayProtocols(container);
@@ -312,7 +423,7 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public ExpProtocol getAssayProtocolByName(Container container, String name)
+    public @Nullable ExpProtocol getAssayProtocolByName(Container container, String name)
     {
         if (name != null)
         {
@@ -371,7 +482,7 @@ public class AssayManager implements AssayService
         return new StudyGWTView(new StudyApplication.AssayImporter(), properties);
     }
 
-    public List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView)
+    public @NotNull List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView)
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         assert provider != null : "Could not find a provider for protocol: " + protocol;
@@ -403,7 +514,7 @@ public class AssayManager implements AssayService
                 iter.remove();
             }
         }
-        if (containers.size() == 0)
+        if (containers.isEmpty())
             return Collections.emptyList(); // Nowhere to upload to, no button
 
         List<ActionButton> result = new ArrayList<>();
@@ -639,7 +750,7 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public List<Pair<Container, String>> getLocationOptions(Container container, User user)
+    public @NotNull List<Pair<Container, String>> getLocationOptions(Container container, User user)
     {
         List<Pair<Container, String>> containers = new ArrayList<>();
 

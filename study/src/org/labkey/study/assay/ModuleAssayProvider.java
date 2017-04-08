@@ -330,8 +330,9 @@ public class ModuleAssayProvider extends TsvAssayProvider
         };
     }
 
-    protected DomainDescriptorType parseDomain(IAssayDomainType domainType) throws ModuleAssayException
+    private DomainDescriptorType parseDomain(IAssayDomainType domainType) throws ModuleAssayException
     {
+        // TODO: Shouldn't this use the cache? Looks like this isn't called too much... and unclear what we'd do if the domain definition changed midstream...
         Resource domainFile = getDeclaringModule().getModuleResolver().lookup(basePath.getPath().append(ModuleAssayCacheHandler.DOMAINS_DIR_NAME, domainType.getName().toLowerCase() + ".xml"));
         if (domainFile == null || !domainFile.exists())
             return null;
@@ -466,6 +467,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     protected ModelAndView getCustomView(String viewResourceName)
     {
+        // TODO: This should use the cache!
         Resource viewResource = getDeclaringModule().getModuleResolver().lookup(basePath.getPath().append("views", viewResourceName));
         if (viewResource != null && viewResource.exists())
         {
@@ -804,6 +806,12 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 new PipelineProvider.FileTypesEntryFilter(dataType.getFileType()), this, "Import " + getName());
     }
 
+    @Override
+    public void registerLsidHandler()
+    {
+        throw new IllegalStateException("Shouldn't be registering an LSID handler on a ModuleAssayProvider!");
+    }
+
     static class ModuleAssayPipelineProvider extends AssayPipelineProvider
     {
         public ModuleAssayPipelineProvider(Class<? extends Module> moduleClass, FileEntryFilter filter, AssayProvider assayProvider, String actionDescription)
@@ -815,6 +823,12 @@ public class ModuleAssayProvider extends TsvAssayProvider
         protected String getFilePropertiesId()
         {
             return super.getFilePropertiesId() + ':' + this.getName();
+        }
+
+        @Override
+        public String toString()
+        {
+            return "ModuleAssayPipelineProvider " + getName();
         }
     }
 
