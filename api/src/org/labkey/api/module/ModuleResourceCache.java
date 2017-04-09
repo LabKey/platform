@@ -77,11 +77,11 @@ public final class ModuleResourceCache<V>
             @Override
             public V load(Module module, Object argument)
             {
-                ModuleResourceCache cache = (ModuleResourceCache)argument;
+                ModuleResourceCache<V> cache = (ModuleResourceCache<V>)argument;
                 Resource dir = module.getModuleResource(root);
                 Resource wrappedDir = (null != dir && dir.isCollection() ? new FileListenerResource(dir, module, cache) : null);
 
-                return _handler.load(wrappedDir, module);
+                return _handler.load(wrappedDir, module, cache);
             }
 
             @Override
@@ -159,7 +159,8 @@ public final class ModuleResourceCache<V>
     }
 
 
-    private static class FileListenerResource extends ResourceWrapper
+    // TODO: Make private
+    public static class FileListenerResource extends ResourceWrapper
     {
         private final Module _module;
         private final ModuleResourceCache _cache;
@@ -176,11 +177,31 @@ public final class ModuleResourceCache<V>
         {
             _cache.ensureListener(getWrappedResource(), _module);
 
-            // Wrap each "collection" (directory) with a FileListenerResource to ensure they get listeners as well
+            // Wrap all child directories with a FileListenerResource to ensure they get listeners as well
             return super.list()
                 .stream()
-                .map(resource -> resource.isCollection() ? new FileListenerResource(resource, _module, _cache) : resource)
+                .map(this::wrap)
                 .collect(Collectors.toList());
+        }
+
+        @Override
+        public Resource parent()
+        {
+            // Wrap parent with a FileListenerResource
+            return wrap(super.parent());
+        }
+
+        @Override
+        public Resource find(String name)
+        {
+            Resource resource = super.find(name);
+            return null != resource ? wrap(super.find(name)) : null;
+        }
+
+        // Ensure that directory resources are FileListenerResources
+        private Resource wrap(Resource resource)
+        {
+            return resource.isCollection() && !(resource instanceof FileListenerResource) ? new FileListenerResource(resource, _module, _cache) : resource;
         }
     }
 

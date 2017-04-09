@@ -64,7 +64,21 @@ public class ModuleHtmlView extends HtmlView
     @Deprecated
     public ModuleHtmlView(@NotNull Resource r)
     {
-        this(MODULE_HTML_VIEW_DEFINITION_CACHE.getResource(((ModuleResourceResolver) r.getResolver()).getModule(), r.getPath()), ((ModuleResourceResolver) r.getResolver()).getModule(), null);
+        this(getDef(r), ((ModuleResourceResolver) r.getResolver()).getModule(), null);
+    }
+
+    private static ModuleHtmlViewDefinition getDef(Resource r)
+    {
+        Module module = ((ModuleResourceResolver) r.getResolver()).getModule();
+        ModuleHtmlViewDefinition viewDefOld = MODULE_HTML_VIEW_DEFINITION_CACHE.getResource(module, r.getPath());
+
+        Map<Path, ModuleHtmlViewDefinition> map = MODULE_HTML_VIEW_DEFINITION_CACHE2.getResourceMap(module);
+        ModuleHtmlViewDefinition viewDefNew = map.get(r.getPath());
+
+        assert viewDefOld.getName().equals(viewDefNew.getName());
+        assert viewDefOld.getHtml().equals(viewDefNew.getHtml());
+
+        return viewDefOld;
     }
 
     private ModuleHtmlView(ModuleHtmlViewDefinition viewdef, @NotNull Module module, @Nullable Portal.WebPart webpart)

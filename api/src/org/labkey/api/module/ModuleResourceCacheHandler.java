@@ -33,6 +33,12 @@ public interface ModuleResourceCacheHandler<V>
      */
     V load(@Nullable Resource dir, Module module);
 
+    // TODO: Temporary hack... remove this
+    default V load(@Nullable Resource dir, Module module, ModuleResourceCache<V> cache)
+    {
+        return load(dir, module);
+    }
+
     /**
      * If needed, returns a FileSystemDirectoryListener that implements resource-specific file change handling. The
      * standard listener clears the module's resource map and then invokes the appropriate method of the chained listener,
