@@ -27,7 +27,6 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.JobRunner;
-import org.springframework.dao.DataAccessException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -281,14 +280,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         public void setup()
         {
             DbSchema temp = DbSchema.getTemp();
-            try
-            {
-                new SqlExecutor(temp).execute("DROP TABLE temp.MQH_TESTCASE");
-            }
-            catch (DataAccessException x)
-            {
-                // pass
-            }
+            temp.dropTableIfExists("MQH_TESTCASE");
             new SqlExecutor(temp).execute("CREATE TABLE temp.MQH_TESTCASE (x INT)");
         }
 
