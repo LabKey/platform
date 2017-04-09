@@ -109,8 +109,7 @@ public class PipelineServiceImpl implements PipelineService
 
     private final Map<String, PipelineProvider> _mapPipelineProviders = new ConcurrentSkipListMap<>();
     private final List<PipelineProviderSupplier> _suppliers = new CopyOnWriteArrayList<>();
-
-    private PipelineQueue _queue = null;
+    private final PipelineQueue _queue;
 
     public static PipelineServiceImpl get()
     {
@@ -120,6 +119,27 @@ public class PipelineServiceImpl implements PipelineService
     public PipelineServiceImpl()
     {
         registerPipelineProviderSupplier(new StandardPipelineProviderSupplier());
+
+        ConnectionFactory factory = null;
+        try
+        {
+            Context initCtx = new InitialContext();
+            Context env = (Context) initCtx.lookup("java:comp/env");
+            factory = (ConnectionFactory) env.lookup("jms/ConnectionFactory");
+        }
+        catch (NamingException e)
+        {
+        }
+
+        if (factory == null)
+        {
+            _queue = new PipelineQueueImpl();
+        }
+        else
+        {
+            LOG.info("Found JMS queue; running Enterprise Pipeline.");
+            _queue = new EPipelineQueueImpl(factory);
+        }
     }
 
     @Override
@@ -343,29 +363,8 @@ public class PipelineServiceImpl implements PipelineService
 
     @NotNull
     @Override
-    public synchronized PipelineQueue getPipelineQueue()
+    public PipelineQueue getPipelineQueue()
     {
-        if (_queue == null)
-        {
-            ConnectionFactory factory = null;
-            try
-            {
-                Context initCtx = new InitialContext();
-                Context env = (Context) initCtx.lookup("java:comp/env");
-                factory = (ConnectionFactory) env.lookup("jms/ConnectionFactory");
-            }
-            catch (NamingException e)
-            {
-            }
-
-            if (factory == null)
-                _queue = new PipelineQueueImpl();
-            else
-            {
-                LOG.info("Found JMS queue; running Enterprise Pipeline.");
-                _queue = new EPipelineQueueImpl(factory);
-            }
-        }
         return _queue;
     }
 
