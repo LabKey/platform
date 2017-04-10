@@ -177,7 +177,7 @@ public class SearchModule extends DefaultModule
     @Override
     public void startBackgroundThreads()
     {
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        SearchService ss = SearchService.get();
 
         if (null != (ss))
         {

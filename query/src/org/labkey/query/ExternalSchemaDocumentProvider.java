@@ -26,7 +26,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -77,8 +76,10 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
 
             // First, delete all external schema docs in this container.  This addresses schemas/tables that have
             // disappeared from the data source plus existing schemas that get changed to not index.
-            SearchService ss1 = ServiceRegistry.get().getService(SearchService.class);
-            ss1.deleteResourcesForPrefix("externalTable:" + c.getId());
+            SearchService ss1 = SearchService.get();
+
+            if (null != ss1)
+                ss1.deleteResourcesForPrefix("externalTable:" + c.getId());
 
             for (UserSchema schema : externalSchemas.values())
             {

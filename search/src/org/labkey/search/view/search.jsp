@@ -30,7 +30,6 @@
 <%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ page import="org.labkey.api.search.SearchUtils.HtmlParseException" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Path" %>
@@ -43,7 +42,6 @@
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="org.labkey.search.SearchController" %>
 <%@ page import="org.labkey.search.SearchController.SearchForm" %>
-<%@ page import="org.labkey.search.model.AbstractSearchService" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
@@ -65,7 +63,7 @@
     Container c = getContainer();
     User user = getUser();
     Path contextPath = Path.parse(ctx.getContextPath());
-    SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+    SearchService ss = SearchService.get();
     boolean wideView = true;
     List<String> q = new ArrayList<>(Arrays.asList(form.getQ()));
     SearchResultTemplate template = form.getSearchResultTemplate();
@@ -403,7 +401,7 @@ List<NavTree> parseNavTrail(String s)
     }
 }
 
-SearchService ss = ServiceRegistry.get(SearchService.class);
+SearchService ss = SearchService.get();
 
 Collection<NavTree> getActions(SearchService.SearchHit hit)
 {

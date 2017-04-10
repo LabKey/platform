@@ -37,7 +37,6 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
@@ -134,7 +133,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         SecurityManager.addGroupListener(new IssueGroupListener());
         UserManager.addUserListener(new IssueUserListener());
 
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        SearchService ss = SearchService.get();
 
         if (null != ss)
         {

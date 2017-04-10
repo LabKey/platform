@@ -28,7 +28,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -115,9 +114,9 @@ public class DavCrawler implements ShutdownListener
     // This is an awkward factoring.  Break out the "FileQueue" function instead
     public interface SavePaths
     {
-        final static java.util.Date failDate = SearchService.failDate;
-        final static java.util.Date nullDate = new java.sql.Timestamp(DateUtil.parseISODateTime("1899-12-31"));
-        final static java.util.Date oldDate =  new java.sql.Timestamp(DateUtil.parseISODateTime("1967-10-04"));
+        java.util.Date failDate = SearchService.failDate;
+        java.util.Date nullDate = new java.sql.Timestamp(DateUtil.parseISODateTime("1899-12-31"));
+        java.util.Date oldDate =  new java.sql.Timestamp(DateUtil.parseISODateTime("1967-10-04"));
 
         // collections
 
@@ -130,14 +129,14 @@ public class DavCrawler implements ShutdownListener
         void deletePath(Path path);
 
         /** <lastCrawl, nextCrawl> */
-        public Map<Path, Pair<Date,Date>> getPaths(int limit);
-        public Date getNextCrawl();
+        Map<Path, Pair<Date,Date>> getPaths(int limit);
+        Date getNextCrawl();
 
         // files
-        public Map<String,ResourceInfo> getFiles(Path path);
-        public boolean updateFile(@NotNull Path path, @NotNull Date lastIndexed, @Nullable Date modified);
+        Map<String,ResourceInfo> getFiles(Path path);
+        boolean updateFile(@NotNull Path path, @NotNull Date lastIndexed, @Nullable Date modified);
 
-        public void clearFailedDocuments();
+        void clearFailedDocuments();
     }
     
 
@@ -605,7 +604,7 @@ public class DavCrawler implements ShutdownListener
     SearchService getSearchService()
     {
         if (null == _ss)
-            _ss = ServiceRegistry.get().getService(SearchService.class);
+            _ss = SearchService.get();
         return _ss;
     }
 

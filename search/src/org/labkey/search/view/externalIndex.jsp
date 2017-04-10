@@ -18,20 +18,19 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.search.SearchController.ClearExternalIndexAction" %>
 <%@ page import="org.labkey.search.SearchController.PermissionsAction" %>
 <%@ page import="org.labkey.search.SearchController.SwapExternalIndexAction" %>
-<%@ page import="org.labkey.search.model.LuceneAnalyzer" %>
 <%@ page import="org.labkey.search.model.ExternalIndexProperties" %>
+<%@ page import="org.labkey.search.model.LuceneAnalyzer" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 JspView<ExternalIndexProperties> me = (JspView<ExternalIndexProperties>) HttpView.currentView();
 ExternalIndexProperties props = me.getModelBean();
-SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+SearchService ss = SearchService.get();
 String message = getActionURL().getParameter("externalMessage");
 boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 if (null != ss)

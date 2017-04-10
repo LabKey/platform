@@ -172,7 +172,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         ServiceRegistry.get().registerService(MessageConfigService.class, new MessageConfigServiceImpl());
         MessageConfigService.get().registerConfigType(new AnnouncementEmailConfig());
         
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        SearchService ss = SearchService.get();
 
         if (null != ss)
         {

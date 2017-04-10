@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.cloud.CloudStoreService"%>
 <%@ page import="org.labkey.api.cloud.CloudUrls" %>
 <%@ page import="org.labkey.api.files.FileContentService" %>
+<%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
@@ -32,7 +33,6 @@
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
-<%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 

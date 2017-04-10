@@ -56,7 +56,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayColumnInfoRenderer;
@@ -649,7 +648,7 @@ public class AssayManager implements AssayService
      */
     public void indexAssays(SearchService.IndexTask task, Container c)
     {
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        SearchService ss = SearchService.get();
 
         if (null == ss)
             return;

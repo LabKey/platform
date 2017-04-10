@@ -32,7 +32,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -196,7 +195,7 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
         }
         if (task == null)
         {
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            SearchService ss = SearchService.get();
             if (null == ss)
                 return;
             task = ss.defaultTask();

@@ -15,16 +15,15 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.search.model.AbstractSearchService" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+SearchService ss = SearchService.get();
 
 if (null == ss)
 {

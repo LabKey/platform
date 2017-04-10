@@ -728,7 +728,7 @@ public class AnnouncementManager
     {
         String parent = null == ann.getParent() ? ann.getEntityId() : ann.getParent();
         String container = ann.getContainerId();
-        SearchService svc = ServiceRegistry.get().getService(SearchService.class);
+        SearchService svc = SearchService.get();
         if (svc != null)
         {
             SearchService.IndexTask task = svc.defaultTask();

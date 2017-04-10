@@ -47,7 +47,6 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
@@ -286,7 +285,7 @@ public class SearchController extends SpringActionController
 
         public ModelAndView getView(AdminForm form, boolean reshow, BindException errors) throws Exception
         {
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            SearchService ss = SearchService.get();
 
             if (null == ss)
                 throw new ConfigurationException("Search is misconfigured");
@@ -334,7 +333,7 @@ public class SearchController extends SpringActionController
 
         public boolean handlePost(AdminForm form, BindException errors) throws Exception
         {
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            SearchService ss = SearchService.get();
             if (null == ss)
             {
                 errors.reject("Indexing service is not running");
@@ -448,7 +447,7 @@ public class SearchController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            SearchService ss = SearchService.get();
             ss.waitForIdle();
             throw new RedirectException(new ActionURL(AdminAction.class, getContainer()));
         }
@@ -472,7 +471,7 @@ public class SearchController extends SpringActionController
             if (null == message)
             {
                 SearchPropertyManager.saveExternalIndexProperties(form);
-                SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+                SearchService ss = SearchService.get();
 
                 // TODO: Add to SearchService interface
                 ((LuceneSearchServiceImpl)ss).resetExternalIndex();
@@ -518,7 +517,7 @@ public class SearchController extends SpringActionController
         public ActionURL getRedirectURL(Object o) throws Exception
         {
             SearchPropertyManager.clearExternalIndexProperties();
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            SearchService ss = SearchService.get();
 
             // TODO: Add to SearchService interface
             ((LuceneSearchServiceImpl)ss).resetExternalIndex();
@@ -552,7 +551,7 @@ public class SearchController extends SpringActionController
         @Override
         public ModelAndView getView(SwapForm form, BindException errors) throws Exception
         {
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            SearchService ss = SearchService.get();
             // TODO: Add to SearchService interface
             ((LuceneSearchServiceImpl)ss).swapExternalIndex();
 
@@ -588,7 +587,7 @@ public class SearchController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            SearchService ss = SearchService.get();
 
             if (null != ss)
             {
@@ -637,7 +636,7 @@ public class SearchController extends SpringActionController
         public ActionURL getRedirectURL(Object o) throws Exception
         {
             // SimpleRedirectAction doesn't take a form
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            SearchService ss = SearchService.get();
     
             if (null == ss)
                 return null;
@@ -671,7 +670,7 @@ public class SearchController extends SpringActionController
         public ActionURL getRedirectURL(Object o) throws Exception
         {
             // SimpleRedirectAction doesn't take a form
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            SearchService ss = SearchService.get();
 
             if (null == ss)
                 return null;
@@ -705,7 +704,7 @@ public class SearchController extends SpringActionController
             String returnUrl = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
             boolean wait = "1".equals(getViewContext().getRequest().getParameter("wait"));
 
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            SearchService ss = SearchService.get();
 
             if (null == ss)
                 return null;
@@ -748,7 +747,7 @@ public class SearchController extends SpringActionController
         @Override
         public ApiResponse execute(SearchForm form, BindException errors) throws Exception
         {
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            SearchService ss = SearchService.get();
             if (null == ss)
             {
                 throw new NotFoundException();
@@ -839,7 +838,7 @@ public class SearchController extends SpringActionController
     {
         public ModelAndView getView(SearchForm form, BindException errors, boolean external) throws Exception
         {
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            SearchService ss = SearchService.get();
 
             if (null == ss)
             {
@@ -1346,7 +1345,7 @@ public class SearchController extends SpringActionController
 
         public SearchResultTemplate getSearchResultTemplate()
         {
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            SearchService ss = SearchService.get();
             return ss.getSearchResultTemplate(getTemplate());
         }
 

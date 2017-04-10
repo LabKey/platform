@@ -20,7 +20,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.DavCrawler;
 
@@ -28,14 +27,14 @@ public class SearchContainerListener extends ContainerManager.AbstractContainerL
 {
     public void containerCreated(Container c, User user)
     {
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        SearchService ss = SearchService.get();
         if (null != ss)
             DavCrawler.getInstance().addPathToCrawl(WebdavService.getPath().append(c.getParsedPath()), null);
     }
 
     public void containerDeleted(Container c, User user)
     {
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        SearchService ss = SearchService.get();
         if (null != ss)
             ss.deleteContainer(c.getId());
     }

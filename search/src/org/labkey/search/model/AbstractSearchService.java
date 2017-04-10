@@ -34,7 +34,6 @@ import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Formats;
@@ -1300,7 +1299,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         public void run(Logger log)
         {
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            SearchService ss = SearchService.get();
 
             if (null != ss)
                 ss.maintenance();

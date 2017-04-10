@@ -107,7 +107,6 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.ParticipantCategory;
@@ -6093,7 +6092,6 @@ public class StudyController extends BaseStudyController
         {
             Container c = getViewContext().getContainer();
             User user = getViewContext().getUser();
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
             String subjectNoun = PageFlowUtil.filter(StudyService.get().getSubjectNounSingular(getViewContext().getContainer()));
             out.print("<table><tr><td align=\"left\">");
@@ -6108,6 +6106,8 @@ public class StudyController extends BaseStudyController
                 out.print(PageFlowUtil.textLink("Next " + subjectNoun, _nextURL));
                 out.print("&nbsp;");
             }
+
+            SearchService ss = SearchService.get();
 
             if (null != _currentParticipantId && null != ss)
             {

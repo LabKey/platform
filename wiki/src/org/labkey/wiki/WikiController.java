@@ -60,7 +60,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerTreeSelected;
@@ -158,7 +157,7 @@ public class WikiController extends SpringActionController
             WebPartView toc = new WikiTOC(context);
             page.addClientDependencies(toc.getClientDependencies());
 
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            SearchService ss = SearchService.get();
 
             if (null == ss)
             {

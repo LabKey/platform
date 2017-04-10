@@ -400,7 +400,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         ReportService.get().addUIProvider(new StudyReportUIProvider());
 
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        SearchService ss = SearchService.get();
 
         if (null != ss)
         {

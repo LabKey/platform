@@ -18,7 +18,6 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -29,7 +28,7 @@
 <%
 JspView<SearchController.AdminForm> me = (JspView<SearchController.AdminForm>) HttpView.currentView();
 SearchController.AdminForm form = me.getModelBean();
-SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+SearchService ss = SearchService.get();
 boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %><labkey:errors /><%
     if (!StringUtils.isEmpty(form.getMessage()))

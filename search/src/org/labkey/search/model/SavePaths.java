@@ -29,7 +29,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.springframework.dao.DuplicateKeyException;
@@ -450,7 +449,7 @@ public class SavePaths implements DavCrawler.SavePaths
 
     private static DbSchema getSearchSchema()
     {
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        SearchService ss = SearchService.get();
 
         if (null != ss)
             return ss.getSchema();

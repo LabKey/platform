@@ -51,7 +51,6 @@ import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
@@ -482,7 +481,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     {
         if (task == null)
         {
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            SearchService ss = SearchService.get();
             if (null == ss)
                 return;
             task = ss.defaultTask();

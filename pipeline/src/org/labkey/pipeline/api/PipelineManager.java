@@ -37,7 +37,6 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContainerUtil;
@@ -154,7 +153,7 @@ public class PipelineManager
                 }
 
                 Path davPath = WebdavService.getPath().append(container.getParsedPath()).append(PipelineWebdavProvider.PIPELINE_LINK);
-                SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+                SearchService ss = SearchService.get();
                 if (null != ss)
                     ss.addPathToCrawl(davPath, null);
             }

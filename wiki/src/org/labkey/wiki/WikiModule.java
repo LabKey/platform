@@ -106,7 +106,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         if (moduleContext.isNewInstall())
             bootstrap(moduleContext);
 
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        SearchService ss = SearchService.get();
         if (null != ss)
         {
             ss.addSearchCategory(WikiManager.searchCategory);

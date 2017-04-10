@@ -223,7 +223,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        SearchService ss = SearchService.get();
         if (null != ss)
         {
 //            ss.addSearchCategory(OntologyManager.conceptCategory);
