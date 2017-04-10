@@ -422,7 +422,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         treatmentDialog.clickOk();
         sleep(500);
         log("Validate that the text in the grid is as expected. ");
-        tempText = IMMUNOGENS[1] + "|" + IMMUNOGENS[0] + "|" + ADJUVANTS[0] + "|" + CHALLENGES[0];
+        tempText = IMMUNOGENS[0] + "|" + IMMUNOGENS[1] + "|" + ADJUVANTS[0] + "|" + CHALLENGES[0];
         Assert.assertEquals("Cell value not as expected after update.", tempText, singleManagementTable.getCellValue(1,5));
 
         sleep(1000);
