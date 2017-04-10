@@ -46,7 +46,6 @@ import org.labkey.api.security.permissions.EnableRestrictedModules;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
@@ -464,7 +463,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         ret.addAll(ContainerManager.getChildren(this, user, ReadPermission.class));
 
         //add resources from study
-        StudyService sts = ServiceRegistry.get().getService(StudyService.class);
+        StudyService sts = StudyService.get();
         if (null != sts)
             ret.addAll(sts.getSecurableResources(this, user));
 
@@ -488,7 +487,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         if (isRoot())
         {
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            SearchService ss = SearchService.get();
 
             if (null != ss)
             {

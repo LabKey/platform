@@ -34,7 +34,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
@@ -137,7 +136,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
     public void setLastIndexed(long indexed, long modified)
     {
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        SearchService ss = SearchService.get();
         if (isFile() && ss != null)
             ss.setLastIndexedForPath(getPath(), indexed, modified);
     }

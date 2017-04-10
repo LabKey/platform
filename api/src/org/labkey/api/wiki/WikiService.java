@@ -30,47 +30,47 @@ import java.util.Collection;
  */
 public interface WikiService
 {
-    /** Name of the UserSchema exposed by the Wiki module */ 
-    public static final String SCHEMA_NAME = "wiki";
+    /** Name of the UserSchema exposed by the Wiki module */
+    String SCHEMA_NAME = "wiki";
 
     /** Name of the table exposed with the list of renderer types */
-    public static final String RENDERER_TYPE_TABLE_NAME = "RendererType";
+    String RENDERER_TYPE_TABLE_NAME = "RendererType";
 
-    public static final String WIKI_PREFIX = "<div class=\"labkey-wiki\">";
-    public static final String WIKI_SUFFIX = "</div>";
+    String WIKI_PREFIX = "<div class=\"labkey-wiki\">";
+    String WIKI_SUFFIX = "</div>";
 
-    public WebPartView getView(Container c, String name, boolean renderContentOnly);
-    public WebPartView getHistoryView(Container c, String name);
+    WebPartView getView(Container c, String name, boolean renderContentOnly);
+    WebPartView getHistoryView(Container c, String name);
 
-    public String getHtml(Container c, String name);
+    String getHtml(Container c, String name);
 
     @Deprecated // Use getView(Container c, String name, boolean renderContentOnly) instead (forceRefresh parameter is ignored)
-    public WebPartView getView(Container c, String name, boolean forceRefresh, boolean renderContentOnly);
+    WebPartView getView(Container c, String name, boolean forceRefresh, boolean renderContentOnly);
 
     @Deprecated // Use getHtml(Container c, String name) instead (forceRefresh parameter is ignored)
-    public String getHtml(Container c, String name, boolean forceRefresh);
+    String getHtml(Container c, String name, boolean forceRefresh);
 
-    public void insertWiki(User user, Container container, String name, String content, WikiRendererType renderType, String title);
+    void insertWiki(User user, Container container, String name, String content, WikiRendererType renderType, String title);
 
     /**
      * Register a provider of macros.
      * @param name For macros of form {module:viewName} this is the module name
      * @param provider
      */
-    public void registerMacroProvider(String name, MacroProvider provider);
+    void registerMacroProvider(String name, MacroProvider provider);
 
-    public String getFormattedHtml(WikiRendererType rendererType, String source);
-    public String getFormattedHtml(WikiRendererType rendererType, String source, String attachPrefix, Collection<? extends Attachment> attachments);
+    String getFormattedHtml(WikiRendererType rendererType, String source);
+    String getFormattedHtml(WikiRendererType rendererType, String source, String attachPrefix, Collection<? extends Attachment> attachments);
 
     @Deprecated // use getFormattedHtml() -- service users shouldn't be exposed to WikiRenderer and FormattedHtml
-    public WikiRenderer getRenderer(WikiRendererType rendererType);
+    WikiRenderer getRenderer(WikiRendererType rendererType);
     @Deprecated // use getFormattedHtml() -- service users shouldn't be exposed to WikiRenderer and FormattedHtml
-    public WikiRenderer getRenderer(WikiRendererType rendererType, String attachPrefix, Collection<? extends Attachment> attachments);
+    WikiRenderer getRenderer(WikiRendererType rendererType, String attachPrefix, Collection<? extends Attachment> attachments);
 
-    public WikiRendererType getDefaultWikiRendererType();
-    public WikiRendererType getDefaultMessageRendererType();
-    public java.util.List<String> getNames(Container c);
+    WikiRendererType getDefaultWikiRendererType();
+    WikiRendererType getDefaultMessageRendererType();
+    java.util.List<String> getNames(Container c);
 
-    public void addWikiListener(WikiChangeListener listener);
-    public void removeWikiListener(WikiChangeListener listener);
+    void addWikiListener(WikiChangeListener listener);
+    void removeWikiListener(WikiChangeListener listener);
 }
