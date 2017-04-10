@@ -479,6 +479,16 @@ LABKEY.Utils = new function()
             return value.substring(value.length - ending.length) == ending;
         },
 
+        pluralBasic : function(count, singular)
+        {
+            return LABKEY.Utils.pluralize(count, singular, singular + 's');
+        },
+
+        pluralize : function(count, singular, plural)
+        {
+            return count.toLocaleString() + " " + (1 == count ? singular : plural);
+        },
+
         /**
          * Iteratively calls a tester function you provide, calling another callback function once the
          * tester function returns true. This function is useful for advanced JavaScript scenarios, such
