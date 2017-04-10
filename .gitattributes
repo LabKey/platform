@@ -2801,7 +2801,6 @@ study/test/sampledata/study/StudyVisitManagement.folder/visit_map.xml -text
 study/test/sampledata/study/StudyVisitManagement_Datasets.folder.zip -text
 study/test/sampledata/study/StudyVisitManagement_Specimens.folder.zip -text
 study/test/src/org/labkey/test/pages/DesignerController/DesignerTester.java -text
-study/test/src/org/labkey/test/pages/study/DeleteMultipleVisitsPage.java -text
 study/test/src/org/labkey/test/tests/search/DataClassSearchTest.java -text
 study/test/src/org/labkey/test/tests/search/SearchTest.java -text
 study/test/src/org/labkey/test/tests/search/SearchTestDefault.java -text
