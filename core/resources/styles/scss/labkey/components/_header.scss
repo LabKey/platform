@@ -69,6 +69,22 @@
       }
     }
 
+    @media (max-width: $lk-screen-sm-min) {
+      .dropdown.open::before {
+        border-color: transparent transparent #fff transparent;
+        border-style: solid;
+        border-width: 0 11px 11px 11px;
+        bottom: 0;
+        content: '';
+        height: 0;
+        margin-left: 6px;
+        position: absolute;
+        width: 0;
+        z-index: 1000041;
+        margin-bottom: -13px;
+      }
+    }
+
     @media (min-width: $lk-screen-sm-min) {
       .dropdown.open a.dropdown-toggle::before {
         border-color: transparent transparent #fff transparent;

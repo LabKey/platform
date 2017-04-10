@@ -184,18 +184,18 @@
             </ul>
         </div>
     </div>
-</nav>
-<script type="application/javascript">
-    var __menus = {};
-    <%
-        for (Portal.WebPart menu : model.getCustomMenus())
-        {
-            String safeName = getSafeName(menu);
-            %>__menus[<%=PageFlowUtil.jsString(safeName)%>] = {};<%
+    <script type="application/javascript">
+        var __menus = {};
+        <%
+            for (Portal.WebPart menu : model.getCustomMenus())
+            {
+                String safeName = getSafeName(menu);
+                %>__menus[<%=PageFlowUtil.jsString(safeName)%>] = {};<%
                 for (Map.Entry<String,String> entry : menu.getPropertyMap().entrySet())
                 {
                     %>__menus[<%=PageFlowUtil.jsString(safeName)%>][<%=PageFlowUtil.jsString(entry.getKey())%>] = <%=PageFlowUtil.jsString(entry.getValue())%>;<%
                 }
         }
     %>
-</script>
+    </script>
+</nav>

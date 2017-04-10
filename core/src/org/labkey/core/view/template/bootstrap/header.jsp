@@ -71,6 +71,8 @@
                         out.write(" onclick=\"" + PageFlowUtil.filter(child.getScript()) +"\" ");
                     if (null != child.getHref())
                         out.write(" href=\"" + child.getHref() + "\" ");
+                    if (null != child.getTarget())
+                        out.write(" target=\"" + child.getTarget() + "\" ");
                     out.write(">" + PageFlowUtil.filter(child.getText()) + "</a>");
                     out.write("</li>");
                 }
@@ -100,7 +102,7 @@
         </div>
         <ul class="navbar-nav-lk">
 <% if (showSearch) { %>
-            <li class="navbar-search">
+            <li class="navbar-search hidden-xs">
                 <a href="#" class="fa fa-search" id="global-search-trigger"></a>
                 <div id="global-search" class="global-search">
                     <labkey:form id="global-search-form" action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" method="GET">
@@ -110,19 +112,34 @@
                     </labkey:form>
                 </div>
             </li>
+            <li id="global-search-xs" class="dropdown visible-xs">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                    <i class="fa fa-search"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-right">
+                    <li style="padding: 3px 20px;">
+                        <labkey:form action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" method="GET">
+                            <div class="input-group" style="width: 100%;">
+                                <input type="text" class="search-box" name="q" placeholder="Search LabKey Server" value="" style="width: 100%;">
+                                <input type="submit" hidden>
+                            </div>
+                        </labkey:form>
+                    </li>
+                </ul>
+            </li>
 <% } %>
 <% if (isRealUser) { %>
-            <li class="dropdown">
+            <li class="dropdown dropdown-rollup">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                     <i class="fa fa-user"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
-                    <% renderTree(PopupUserView.createNavTree(context), out); %>
+                    <% renderTree(PopupUserView.createNavTree(context, model.pageConfig), out); %>
                 </ul>
             </li>
 <% } %>
 <% if (PopupAdminView.hasPermission(context)) { %>
-            <li class="dropdown">
+            <li class="dropdown dropdown-rollup">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                     <i class="fa fa-cog"></i>
                 </a>
@@ -138,32 +155,47 @@
 <% } %>
         </ul>
     </div>
+    <script type="application/javascript">
+        (function($) {
+            $('#global-search-trigger').click(function() {
+                $(this).parent().toggleClass('active');
+                var input = $('input.search-box');
+                input.is(':focus') ? input.blur() : input.focus();
+            });
+
+            // delay for mobile focus on search
+            $('#global-search-xs').on('show.bs.dropdown', function() {
+                setTimeout(function() {
+                    jQuery(this).find('input.search-box').focus();
+                }.bind(this), 500);
+            });
+
+            $('.dropdown-submenu a.subexpand').click(function(e) {
+                var el = $(this);
+                el.css('display', 'none');
+                el.parent().siblings('li').css('display', 'none');
+                el.next('ul').toggleClass('open');
+                e.stopPropagation();
+                e.preventDefault();
+            });
+
+            $('.dropdown-layer-menu a.subcollapse').click(function(e) {
+                var el = $(this);
+                var menu = el.parents('ul');
+                menu.toggleClass('open');
+                menu.siblings('a.subexpand').css('display', '');
+                menu.parents('li').siblings('li').css('display', '');
+                e.stopPropagation();
+                e.preventDefault();
+            });
+
+            // unfurl menus
+            $('.dropdown-rollup').on('hide.bs.dropdown', function() {
+                var menu =  $(this).children('ul.dropdown-menu');
+                menu.find('li').css('display', '');
+                menu.find('.subexpand').css('display', '');
+                menu.find('.dropdown-layer-menu.open').toggleClass('open');
+            });
+        })(jQuery);
+    </script>
 </div>
-<script type="application/javascript">
-    (function($) {
-        $('#global-search-trigger').click(function() {
-            $(this).parent().toggleClass('active');
-            var input = $('input.search-box');
-            input.is(':focus') ? input.blur() : input.focus();
-        });
-
-        $('.dropdown-submenu a.subexpand').on("click", function(e){
-            var el = $(this);
-            el.css('display', 'none');
-            el.parent().siblings('li').css('display', 'none');
-            el.next('ul').toggleClass('open');
-            e.stopPropagation();
-            e.preventDefault();
-        });
-
-        $('.dropdown-layer-menu a.subcollapse').on("click", function(e){
-            var el = $(this);
-            var menu = el.parents('ul');
-            menu.toggleClass('open');
-            menu.siblings('a.subexpand').css('display', '');
-            menu.parents('li').siblings('li').css('display', '');
-            e.stopPropagation();
-            e.preventDefault();
-        });
-    })(jQuery);
-</script>

@@ -43,8 +43,9 @@ public class BootstrapTemplate extends HomeTemplate
 
     protected HttpView getBodyTemplate(PageConfig page)
     {
-        HttpView view = new JspView<>("/org/labkey/core/view/template/bootstrap/body.jsp", page);
+        JspView view = new JspView<>("/org/labkey/core/view/template/bootstrap/body.jsp", page);
         view.setBody(getBody());
+        view.setFrame(FrameType.NONE);
         return view;
     }
 
@@ -62,7 +63,9 @@ public class BootstrapTemplate extends HomeTemplate
         NavigationModel model = new NavigationModel(context, page, appBar);
         addClientDependencies(model.getClientDependencies());
 
-        return new JspView<>("/org/labkey/core/view/template/bootstrap/navigation.jsp", model);
+        JspView view = new JspView<>("/org/labkey/core/view/template/bootstrap/navigation.jsp", model);
+        view.setFrame(FrameType.NONE);
+        return view;
     }
 
     @Override

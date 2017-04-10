@@ -17,15 +17,19 @@
 --%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.WebPartFactory" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
     boolean showRight = me.getView(WebPartFactory.LOCATION_RIGHT) instanceof HttpView && ((HttpView) me.getView(WebPartFactory.LOCATION_RIGHT)).isVisible();
+    ActionURL url = new ActionURL(AdminController.ExperimentalFeaturesAction.class, ContainerManager.getRoot());
 %>
 <div class="container">
     <div class="alert alert-warning" role="alert" style="margin-top: 20px;">
         <strong>Under construction!</strong>
-        This layout is under development. <a href="admin-experimentalFeatures.view" class="alert-link">Turn it off here</a> by disabling the "Core UI Migration" feature.
+        This layout is under development. <a href="<%=h(url.getLocalURIString())%>" class="alert-link">Turn it off here</a> by disabling the "Core UI Migration" feature.
     </div>
     <div>
         <div class="<%= h(showRight ? "col-md-9" : "col-md-*" ) %>">
