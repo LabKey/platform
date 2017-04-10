@@ -7,7 +7,12 @@ dependencies {
    external "org.antlr:antlr:${antlrVersion}"
    external "eigenbase:eigenbase-properties:${eigenbasePropertiesVersion}"
    external "eigenbase:eigenbase-resgen:${eigenbaseResgenVersion}"
-   external "pentaho:mondrian:${mondrianVersion}"
+   external "pentaho:mondrian:${mondrianVersion}",
+           {
+              // exclude these because they cause interference with the tomcat versions
+              exclude group: "javax.servlet", module:"jsp-api"
+              exclude group: "javax.servlet", module:"servlet-api"
+           }
    external "org.olap4j:olap4j:${olap4jVersion}"
 
    jspCompile "org.olap4j:olap4j:${olap4jVersion}" 
