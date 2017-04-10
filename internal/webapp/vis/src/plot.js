@@ -1145,8 +1145,14 @@ boxPlot.render();
          * @param {@link LABKEY.vis.Layer} newLayer
          */
         this.replaceLayer = function(oldLayer, newLayer){
-            this.layers.splice(this.layers.indexOf(oldLayer), 1, newLayer);
-            return newLayer;
+            var index = this.layers.indexOf(oldLayer);
+            if (index == -1) {
+                this.layers.push(newLayer);
+            }
+            else {
+                this.layers.splice(index, 1, newLayer);
+            }
+            return this.layers;
         };
 
         /**
