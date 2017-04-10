@@ -25,6 +25,7 @@ import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.template.PageConfig;
 
 /**
  * Popup menu for upper-right corner of main frame
@@ -44,11 +45,34 @@ public class PopupUserView extends PopupMenuView
 
     public static NavTree createNavTree(ViewContext context)
     {
+        return createNavTree(context, null);
+    }
+
+    public static NavTree createNavTree(ViewContext context, PageConfig pageConfig)
+    {
         User user = context.getUser();
         Container c = context.getContainer();
         ActionURL currentURL = context.getActionURL();
+        NavTree tree;
 
-        NavTree tree = new NavTree(user.getFriendlyName());
+        if (PageFlowUtil.useExperimentalCoreUI())
+        {
+            tree = new NavTree();
+
+            if (null != user && !user.isGuest())
+            {
+                NavTree signedIn = new NavTree("Signed in as " + user.getFriendlyName());
+                tree.addChild(signedIn);
+                tree.addSeparator();
+            }
+        }
+        else
+        {
+            tree = new NavTree(user.getFriendlyName());
+        }
+
+        tree.setId("userMenu");
+
         NavTree myaccount = new NavTree("My Account", PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL));
         myaccount.setId("__lk-usermenu-myaccount");
         tree.addChild(myaccount);
@@ -90,7 +114,19 @@ public class PopupUserView extends PopupMenuView
             tree.addChild(out);
         }
 
-        tree.setId("userMenu");
+        if (PageFlowUtil.useExperimentalCoreUI() && pageConfig != null)
+        {
+            NavTree help = PopupHelpView.createNavTree(context, pageConfig.getHelpTopic());
+
+            if (help.hasChildren())
+            {
+                tree.addSeparator();
+
+                for (NavTree child : help.getChildren())
+                    tree.addChild(child);
+            }
+        }
+
         return tree;
     }
 }

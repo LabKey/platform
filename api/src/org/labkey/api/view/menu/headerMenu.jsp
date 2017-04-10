@@ -57,7 +57,7 @@
             needSeparator = true;
         }
 
-        PopupHelpView helpMenu = new PopupHelpView(getContainer(), user, pageConfig.getHelpTopic());
+        PopupHelpView helpMenu = new PopupHelpView(currentContext, pageConfig.getHelpTopic());
         if (helpMenu.hasChildren())
         {
             if (needSeparator)

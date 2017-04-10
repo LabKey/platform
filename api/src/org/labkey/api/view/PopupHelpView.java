@@ -35,9 +35,20 @@ import java.util.List;
  */
 public class PopupHelpView extends PopupMenuView
 {
-    public PopupHelpView(Container c, User user, HelpTopic topic)
+    public PopupHelpView(ViewContext context, HelpTopic topic)
     {
+        setNavTree(createNavTree(context, topic));
+        setAlign(PopupMenu.Align.RIGHT);
+        setButtonStyle(PopupMenu.ButtonStyle.TEXT);
+    }
+
+    public static NavTree createNavTree(ViewContext context, HelpTopic topic)
+    {
+        Container c = context.getContainer();
+        User user = context.getUser();
+
         NavTree menu = new NavTree("Help" + (AppProps.getInstance().isDevMode() && topic == HelpTopic.DEFAULT_HELP_TOPIC ? " (default)" : ""));
+        menu.setId("helpMenu");
 
         LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
 
@@ -70,10 +81,6 @@ public class PopupHelpView extends PopupMenuView
             }
         }
 
-        menu.setId("helpMenu");
-
-        setNavTree(menu);
-        setAlign(PopupMenu.Align.RIGHT);
-        setButtonStyle(PopupMenu.ButtonStyle.TEXT);
+        return menu;
     }
 }
