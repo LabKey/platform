@@ -28,10 +28,10 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -90,7 +90,7 @@ public class StatusController extends SpringActionController
     public static void registerAdminConsoleLinks()
     {
         ActionURL url = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(ContainerManager.getRoot(), false);
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "pipeline", url, AdminOperationsPermission.class);
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "pipeline", url, ReadPermission.class);
     }
 
     public PageConfig defaultPageConfig()
@@ -105,7 +105,7 @@ public class StatusController extends SpringActionController
         Container c = getContainer();
         if (c == null || c.isRoot())
         {
-            if (!getUser().isSiteAdmin())
+            if (!getUser().hasRootPermission(AdminReadPermission.class))
             {
                 throw new UnauthorizedException();
             }
@@ -1160,7 +1160,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ForceRefreshAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception

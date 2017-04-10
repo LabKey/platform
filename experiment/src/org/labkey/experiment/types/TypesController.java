@@ -84,11 +84,6 @@ public class TypesController extends SpringActionController
 {
     static DefaultActionResolver _actionResolver = new DefaultActionResolver(TypesController.class);
 
-    public static void registerAdminConsoleLinks()
-    {
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "ontology", new ActionURL(BeginAction.class,ContainerManager.getRoot()), AdminPermission.class);
-    }
-
     public TypesController() throws Exception
     {
         setActionResolver(_actionResolver);

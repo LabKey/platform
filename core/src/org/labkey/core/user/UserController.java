@@ -810,7 +810,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction
+    @AdminConsoleAction @RequiresPermission(AdminPermission.class)
     public class ShowUserPreferencesAction extends RedirectAction<Object>
     {
         ActionURL _successUrl;

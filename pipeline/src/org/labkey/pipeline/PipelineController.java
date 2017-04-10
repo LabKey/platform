@@ -64,7 +64,6 @@ import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
@@ -182,7 +181,8 @@ public class PipelineController extends SpringActionController
         return url;
     }
 
-    @RequiresSiteAdmin @CSRF
+    @RequiresPermission(AdminOperationsPermission.class)
+    @CSRF
     public class SetupAction extends AbstractSetupAction<SetupForm>
     {
         protected SetupField getFormField()
@@ -653,7 +653,7 @@ public class PipelineController extends SpringActionController
         return properties;
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class UpdateRootPermissionsAction extends RedirectAction<PermissionForm>
     {
         public ActionURL getSuccessURL(PermissionForm permissionForm)
@@ -1049,7 +1049,7 @@ public class PipelineController extends SpringActionController
         return urlStatus(getContainer(), allContainers);
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class StatusAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception

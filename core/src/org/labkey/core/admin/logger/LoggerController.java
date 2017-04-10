@@ -32,7 +32,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AdminConsoleAction;
-import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.URLHelper;
@@ -145,7 +145,7 @@ public class LoggerController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ListAction extends ApiAction<ListFilter>
     {
         @Override
@@ -174,7 +174,7 @@ public class LoggerController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ResetAction extends ApiAction<Object>
     {
         @Override
@@ -187,7 +187,7 @@ public class LoggerController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class UpdateAction extends ApiAction<LoggerLevel>
     {
         @Override
@@ -215,7 +215,8 @@ public class LoggerController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin @AdminConsoleAction
+    @AdminConsoleAction
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ManageAction extends FormViewAction<Object>
     {
         @Override

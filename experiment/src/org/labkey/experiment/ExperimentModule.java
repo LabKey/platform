@@ -310,7 +310,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 ContainerManager.ContainerListener.Order.Last);
 
         SystemProperty.registerProperties();
-        TypesController.registerAdminConsoleLinks();
 
         FolderSerializationRegistry folderRegistry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
         if (null != folderRegistry)

@@ -233,7 +233,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors", new ActionURL(ShowAllErrorsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view primary site log file", new ActionURL(ShowPrimaryLogAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root), AdminOperationsPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root), AdminPermission.class);
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "check database", new ActionURL(DbCheckerAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "test email configuration", new ActionURL(EmailTestAction.class, root), AdminPermission.class);
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "credits", new ActionURL(CreditsAction.class, root));
@@ -2048,7 +2048,8 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @AdminConsoleAction
+    @RequiresPermission(AdminPermission.class)
     public class ResetErrorMarkAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception
@@ -2158,13 +2159,13 @@ public class AdminController extends SpringActionController
     }
 
 
-    @AdminConsoleAction(AdminOperationsPermission.class)
+    @AdminConsoleAction
     public class QueriesAction extends SimpleViewAction<QueriesForm>
     {
         public ModelAndView getView(QueriesForm form, BindException errors) throws Exception
         {
             String buttonHTML = "";
-            if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
+            if (getUser().hasRootAdminPermission())
                 buttonHTML += PageFlowUtil.button("Reset All Statistics").href(getResetQueryStatisticsURL()) + "&nbsp;";
             buttonHTML += PageFlowUtil.button("Export").href(getExportQueriesURL()) + "<br/><br/>";
 
@@ -2289,7 +2290,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminPermission.class)
     public class ResetQueryStatisticsAction extends SimpleRedirectAction<QueriesForm>
     {
         public ActionURL getRedirectURL(QueriesForm form) throws Exception
@@ -2449,7 +2450,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class EnvironmentVariablesAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -2660,7 +2661,7 @@ public class AdminController extends SpringActionController
 
     private static volatile String lastCacheMemUsed = null;
 
-    @AdminConsoleAction(AdminOperationsPermission.class)
+    @AdminConsoleAction
     public class MemTrackerAction extends SimpleViewAction<MemForm>
     {
         public ModelAndView getView(MemForm form, BindException errors) throws Exception
@@ -2670,7 +2671,7 @@ public class AdminController extends SpringActionController
             boolean gc = form.isGc();
             boolean cc = form.isClearCaches();
 
-            if (gc || cc)
+            if (getUser().hasRootAdminPermission() && (gc || cc))
             {
                 // If both are requested then try determine and record cache memory usage
                 if (gc && cc)
@@ -3645,7 +3646,7 @@ public class AdminController extends SpringActionController
         return navTrail;
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class DbCheckerAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -3661,7 +3662,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class DoCheckAction extends SimpleViewAction<DataCheckForm>
     {
         public ModelAndView getView(DataCheckForm form, BindException errors) throws Exception
@@ -3764,7 +3765,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class GetSchemaXmlDocAction extends ExportAction<DataCheckForm>
     {
         public void export(DataCheckForm form, HttpServletResponse response, BindException errors) throws Exception
@@ -5132,6 +5133,7 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @AdminConsoleAction
     @RequiresPermission(AdminPermission.class)
     public class EmailTestAction extends FormViewAction<EmailTestForm>
     {
@@ -5225,7 +5227,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class RecreateViewsAction extends ConfirmAction
     {
         public ModelAndView getConfirmView(Object o, BindException errors) throws Exception
@@ -5902,7 +5904,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ExperimentalFeatureAction extends ApiAction<ExperimentalFeaturesForm>
     {
         @Override
@@ -5926,7 +5928,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @AdminConsoleAction @RequiresPermission(AdminOperationsPermission.class)
     public class ExperimentalFeaturesAction extends FormViewAction<Object>
     {
         @Override
@@ -5982,7 +5984,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction @RequiresPermission(AdminPermission.class)
+    @AdminConsoleAction
+    @RequiresPermission(AdminPermission.class)
     public class FolderTypesAction extends FormViewAction<Object>
     {
         @Override
@@ -6657,7 +6660,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction @RequiresPermission(AdminPermission.class)
+    @AdminConsoleAction
+    @RequiresPermission(AdminPermission.class)
     public class ShortURLAdminAction extends FormViewAction<ShortURLForm>
     {
         @Override

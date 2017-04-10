@@ -62,7 +62,8 @@ public class AuditController extends SpringActionController
 
 
     @ActionNames("begin, showAuditLog")
-    @AdminConsoleAction @RequiresPermission(AdminPermission.class)
+    @AdminConsoleAction
+    @RequiresPermission(AdminPermission.class)
     public class ShowAuditLogAction extends QueryViewAction<ShowAuditLogForm, QueryView>
     {
         public ShowAuditLogAction()

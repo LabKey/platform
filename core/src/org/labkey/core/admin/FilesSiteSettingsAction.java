@@ -17,7 +17,9 @@
 package org.labkey.core.admin;
 
 import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -35,7 +37,7 @@ import java.io.File;
  * Date: Nov 24, 2009
  */
 
-@RequiresSiteAdmin
+@AdminConsoleAction @RequiresPermission(AdminOperationsPermission.class)
 public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<FileSettingsForm>
 {
     public FilesSiteSettingsAction()

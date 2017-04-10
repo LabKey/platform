@@ -46,7 +46,9 @@ import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -90,7 +92,7 @@ public class SqlScriptController extends SpringActionController
     }
 
     @SuppressWarnings("unused")
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     @AllowedDuringUpgrade
     public class GetModuleStatusAction extends ApiAction
     {
@@ -195,7 +197,8 @@ public class SqlScriptController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @AdminConsoleAction
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ScriptsAction extends SimpleViewAction<ScriptsForm>
     {
         public ModelAndView getView(ScriptsForm form, BindException errors) throws Exception
@@ -352,7 +355,7 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ScriptsWithErrorsAction extends SimpleViewAction
     {
         @Override
@@ -462,7 +465,7 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ConsolidateScriptsAction extends SimpleViewAction<ConsolidateForm>
     {
         public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception
@@ -549,7 +552,7 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ConsolidateBatchAction extends ExportAction<ConsolidateForm>
     {
         @Override
@@ -784,7 +787,7 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ConsolidateSchemaAction extends FormViewAction<ConsolidateForm>
     {
         private String _schemaName;
@@ -877,7 +880,7 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class OrphanedScriptsAction extends SimpleViewAction<ConsolidateForm>
     {
         public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception
@@ -1040,7 +1043,7 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ScriptAction extends SimpleViewAction<SqlScriptForm>
     {
         private String _filename;
@@ -1121,7 +1124,7 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ReorderScriptAction extends ScriptAction
     {
         @Override
@@ -1138,7 +1141,7 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ReorderAllScriptsAction extends SimpleViewAction
     {
         @Override
@@ -1177,7 +1180,7 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class SaveReorderedScriptAction extends ScriptAction
     {
         @Override
@@ -1227,7 +1230,7 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class UnreachableScriptsAction extends SimpleViewAction<ConsolidateForm>
     {
         public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception

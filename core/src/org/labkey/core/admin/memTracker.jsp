@@ -27,6 +27,7 @@
 <%
     JspView<MemBean> me = (JspView<MemBean>)HttpView.currentView();
     MemBean bean = me.getModelBean();
+    boolean hasAdminPerm = getUser().hasRootAdminPermission();
 
     if (!bean.activeThreads.isEmpty()) { %>
         <div class="labkey-error">Active thread(s) may have objects in use:
@@ -38,11 +39,13 @@
         </div> <%
     }
 %>
+<% if (hasAdminPerm) { %>
 <p>
     <%=textLink("Clear Caches, GC and Refresh", AdminController.getMemTrackerURL(true, true))%>
     <%=textLink("GC and Refresh", AdminController.getMemTrackerURL(false, true))%>
     <%=textLink("Refresh", AdminController.getMemTrackerURL(false, false))%>
 </p>
+<% } %>
 <table class="labkey-wp">
     <tr class="labkey-wp-header">
         <th class="labkey-wp-title-left">Memory Graphs</th>
