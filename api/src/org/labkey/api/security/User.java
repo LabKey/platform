@@ -27,9 +27,11 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.NotImpersonatingContext;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.DeveloperRole;
@@ -217,14 +219,15 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
     }
 
     // Is the user a Site Administrator? This is NOT a check for AdminPermission.
+    // TODO mark as @Deprecated should use hasRootAdminPermission() or hasRootPermission(AdminOperationsPermission.class) instead
     public boolean isSiteAdmin()
     {
         return isAllowedGlobalRoles() && isInGroup(Group.groupAdministrators);
     }
 
+    // Is the user assigned to the ApplicationAdminRole at the root container? This is NOT a check for AdminPermission.
     public boolean isApplicationAdmin()
     {
-        // TODO should this also return true for isSiteAdmin()
         List<Role> rootAssignedRoles = ContainerManager.getRoot().getPolicy().getAssignedRoles(this);
         return rootAssignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));
     }
@@ -233,6 +236,25 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
     public boolean isDeveloper()
     {
         return isAllowedGlobalRoles() && isInGroup(Group.groupDevelopers);
+    }
+
+    /**
+     * Check if the user has AdminPermission at the root container.
+     * @return boolean
+     */
+    public boolean hasRootAdminPermission()
+    {
+        return ContainerManager.getRoot().hasPermission(this, AdminPermission.class);
+    }
+
+    /**
+     * Check if the user has an explicit permissions at the root container.
+     * Example: user.hasRootPermission(AdminOperationsPermission.class)
+     * @return boolean
+     */
+    public boolean hasRootPermission(Class<? extends Permission> perm)
+    {
+        return ContainerManager.getRoot().hasPermission(this, perm);
     }
 
     public boolean isAllowedGlobalRoles()
