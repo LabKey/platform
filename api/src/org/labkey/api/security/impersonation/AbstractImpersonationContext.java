@@ -18,9 +18,13 @@ package org.labkey.api.security.impersonation;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
+
+import java.util.Set;
 
 /**
  * User: adam
@@ -69,5 +73,14 @@ public abstract class AbstractImpersonationContext implements ImpersonationConte
     {
         // If impersonating, we shouldn't be adding an impersonate menu
         throw new IllegalStateException("Shouldn't be adding an impersonate menu while impersonating!");
+    }
+
+    /** @return Returns a set of roles with the SiteAdminRole filtered out
+     *          if the admin user that is impersonating is not a site admin.*/
+    protected Set<Role> getFilteredContextualRoles(Set<Role> roles)
+    {
+        if (getAdminUser() != null && !getAdminUser().isInSiteAdminGroup())
+            roles.remove(RoleManager.siteAdminRole);
+        return roles;
     }
 }

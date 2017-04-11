@@ -142,7 +142,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         // Site admin can impersonate any active user...
         if (null == project)
         {
-            validUsers = adminUser.isSiteAdmin() ? UserManager.getActiveUsers(true) : Collections.emptyList();
+            validUsers = adminUser.hasRootAdminPermission() ? UserManager.getActiveUsers(true) : Collections.emptyList();
         }
         else if (!project.hasPermission(adminUser, AdminPermission.class))
         {
@@ -172,7 +172,8 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
             if (impersonatedUser.equals(adminUser))
                 throw new UnauthorizedImpersonationException("Can't impersonate yourself", getFactory());
 
-            if (adminUser.isSiteAdmin())
+            // Site/app admin can impersonate anywhere
+            if (adminUser.hasRootAdminPermission())
                 return;
 
             // Project admin...
@@ -186,7 +187,8 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         public boolean isAllowedGlobalRoles()
         {
             // Don't allow global roles (site admin, developer, etc.) if user is being impersonated within a project
-            return null == getImpersonationProject();
+            // or if the admin user is not a site admin
+            return null == getImpersonationProject() && getAdminUser().isInSiteAdminGroup();
         }
 
         @Override
@@ -216,7 +218,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         @Override
         public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
         {
-            return user.getStandardContextualRoles();
+            return getFilteredContextualRoles(user.getStandardContextualRoles());
         }
     }
 }

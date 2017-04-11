@@ -53,6 +53,7 @@ import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
+import org.labkey.api.security.permissions.AccountManagementPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -530,8 +531,10 @@ public class SecurityManager
     {
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
-        if (user.isSiteAdmin())
+
+        if (user.hasRootAdminPermission())
             project = null;
+
         impersonate(viewContext, new UserImpersonationContextFactory(project, user, impersonatedUser, returnURL));
     }
 
@@ -548,7 +551,7 @@ public class SecurityManager
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
 
-        if (user.isSiteAdmin())
+        if (user.hasRootAdminPermission())
             project = null;
 
         impersonate(viewContext, new RoleImpersonationContextFactory(project, user, roles, returnURL));
@@ -2533,7 +2536,7 @@ public class SecurityManager
             message.append(" was added successfully, but could not be emailed due to a failure:<br><pre>");
             message.append(e.getMessage());
             message.append("</pre>");
-            appendMailHelpText(message, messageContentsURL, currentUser.isSiteAdmin());
+            appendMailHelpText(message, messageContentsURL, currentUser.hasRootPermission(AccountManagementPermission.class));
 
             User newUser = UserManager.getUser(email);
 

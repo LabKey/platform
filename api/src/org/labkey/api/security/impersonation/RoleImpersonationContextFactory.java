@@ -148,8 +148,8 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         // Throws if user is not authorized.
         private void verifyPermissions(@Nullable Container project, User user)
         {
-            // Site admin can impersonate anywhere
-            if (user.isSiteAdmin())
+            // Site/app admin can impersonate anywhere
+            if (user.hasRootAdminPermission())
                 return;
 
             // Must not be root
@@ -200,7 +200,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         @Override
         public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
         {
-            return new HashSet<>(getRoles());
+            return getFilteredContextualRoles(getRoles());
         }
     }
 }

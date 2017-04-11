@@ -102,8 +102,12 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         if (group.isGuests())
             return false;
 
-        // Site admin can impersonate any group
-        if (user.isSiteAdmin())
+        // Impersonating the "Site: Administrators" group as a non-site admin is confusing as well.
+        if (group.isAdministrators() && !user.isInSiteAdminGroup())
+            return false;
+
+        // Site/app admin can impersonate any group
+        if (user.hasRootAdminPermission())
             return true;
 
         // Project admin...
@@ -198,7 +202,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         @Override
         public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
         {
-            return user.getStandardContextualRoles();
+            return getFilteredContextualRoles(user.getStandardContextualRoles());
         }
     }
 }
