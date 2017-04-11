@@ -37,6 +37,7 @@ public class SiteAdminRole extends AbstractContextualRole
                 UpdatePermission.class,
                 InsertPermission.class, 
                 DeletePermission.class,
+                AccountManagementPermission.class,
                 AdminOperationsPermission.class,
                 AdminReadPermission.class,
                 AdminPermission.class,

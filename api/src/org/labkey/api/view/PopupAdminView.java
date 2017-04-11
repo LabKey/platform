@@ -18,7 +18,6 @@ package org.labkey.api.view;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -105,7 +104,7 @@ public class PopupAdminView extends PopupMenuView
         User user = context.getUser();
         NavTree navTree = new NavTree("Admin");
 
-        if (isRootAdminReader(context))
+        if (user.hasRootPermission(AdminReadPermission.class))
         {
             NavTree siteAdmin = new NavTree("Site");
             siteAdmin.setId("__lk-adminmenu-site");
@@ -192,16 +191,11 @@ public class PopupAdminView extends PopupMenuView
 
     public static boolean hasPermission(ViewContext context)
     {
-        return isFolderAdmin(context) || isRootAdminReader(context);
+        return isFolderAdmin(context) || context.getUser().hasRootPermission(AdminReadPermission.class);
     }
 
     private static boolean isFolderAdmin(ViewContext context)
     {
         return context.hasPermission("PopupAdminView", AdminPermission.class);
-    }
-
-    private static boolean isRootAdminReader(ViewContext context)
-    {
-        return ContainerManager.getRoot().hasPermission(context.getUser(), AdminReadPermission.class);
     }
 }

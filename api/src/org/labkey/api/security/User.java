@@ -27,7 +27,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.NotImpersonatingContext;
-import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -218,9 +217,14 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
         return _displayName;
     }
 
-    // Is the user a Site Administrator? This is NOT a check for AdminPermission.
-    // TODO mark as @Deprecated should use hasRootAdminPermission() or hasRootPermission(AdminOperationsPermission.class) instead
+    @Deprecated //should use isInSiteAdminGroup(), hasRootAdminPermission(), or hasRootPermission(...) instead
     public boolean isSiteAdmin()
+    {
+        return isAllowedGlobalRoles() && isInGroup(Group.groupAdministrators);
+    }
+
+    // Is the user a Site Administrator? This is NOT a check for AdminPermission.
+    public boolean isInSiteAdminGroup()
     {
         return isAllowedGlobalRoles() && isInGroup(Group.groupAdministrators);
     }
@@ -228,7 +232,9 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
     // Is the user assigned to the ApplicationAdminRole at the root container? This is NOT a check for AdminPermission.
     public boolean isApplicationAdmin()
     {
-        List<Role> rootAssignedRoles = ContainerManager.getRoot().getPolicy().getAssignedRoles(this);
+        SecurityPolicy rootContainerPolicy = ContainerManager.getRoot().getPolicy();
+        List<Role> rootAssignedRoles = rootContainerPolicy.getAssignedRoles(this);
+        rootAssignedRoles.addAll(rootContainerPolicy.getRoles(getGroups()));
         return rootAssignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));
     }
 
@@ -244,7 +250,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
      */
     public boolean hasRootAdminPermission()
     {
-        return ContainerManager.getRoot().hasPermission(this, AdminPermission.class);
+        return hasRootPermission(AdminPermission.class);
     }
 
     /**
@@ -279,7 +285,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
     {
         Set<Role> roles = new HashSet<>();
 
-        if (isSiteAdmin())
+        if (isInSiteAdminGroup())
             roles.add(RoleManager.siteAdminRole);
         if (isApplicationAdmin())
             roles.add(RoleManager.getRole(ApplicationAdminRole.class));
@@ -475,7 +481,8 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
         props.put("canDelete", nonNullContainer && container.hasPermission(user, DeletePermission.class));
         props.put("canDeleteOwn", nonNullContainer && container.hasPermission(user, DeletePermission.class));
         props.put("isAdmin", nonNullContainer && container.hasPermission(user, AdminPermission.class));
-        props.put("isSystemAdmin", user.isSiteAdmin());
+        props.put("isRootAdmin", user.hasRootAdminPermission());
+        props.put("isSystemAdmin", user.isInSiteAdminGroup());
         props.put("isGuest", user.isGuest());
         props.put("isDeveloper", user.isDeveloper());
         props.put("isSignedIn", 0 != user.getUserId() || !user.isGuest());

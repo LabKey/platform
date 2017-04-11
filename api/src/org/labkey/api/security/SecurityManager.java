@@ -1161,7 +1161,8 @@ public class SecurityManager
     {
         if (groupId == Group.groupAdministrators ||
                 groupId == Group.groupGuests ||
-                groupId == Group.groupUsers)
+                groupId == Group.groupUsers ||
+                groupId == Group.groupDevelopers)
             throw new IllegalArgumentException("The global groups cannot be deleted.");
 
         Group group = getGroup(groupId);
@@ -2921,8 +2922,7 @@ public class SecurityManager
 
     public static boolean canSeeEmailAddresses(Container c, User user)
     {
-        return c.hasPermission(user, SeeUserEmailAddressesPermission.class) ||
-            ContainerManager.getRoot().hasPermission(user, SeeUserEmailAddressesPermission.class);
+        return c.hasPermission(user, SeeUserEmailAddressesPermission.class) || user.hasRootPermission(SeeUserEmailAddressesPermission.class);
     }
 
     public static boolean canSeeAuditLog(User user)
@@ -2931,7 +2931,7 @@ public class SecurityManager
         // Only returns true if the user has the site permission.  If the user is an admin, then the permission
         // check on the current container filter will return true
         //
-        return ContainerManager.getRoot().hasPermission(user, CanSeeAuditLogPermission.class);
+        return user.hasRootPermission(CanSeeAuditLogPermission.class);
     }
 
     public static void adminRotatePassword(String rawEmail, BindException errors, Container c, User user) throws Exception
