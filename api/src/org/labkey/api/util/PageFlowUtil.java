@@ -117,7 +117,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -152,7 +151,7 @@ public class PageFlowUtil
         xml
     }
 
-    private static Logger _log = Logger.getLogger(PageFlowUtil.class);
+    private static final Logger _log = Logger.getLogger(PageFlowUtil.class);
     private static final String _newline = System.getProperty("line.separator");
 
     private static final Pattern urlPatternStart = Pattern.compile("((http|https|ftp|mailto)://\\S+).*");
@@ -1155,14 +1154,7 @@ public class PageFlowUtil
     }
 
 
-    @Deprecated // TODO: Delete after verifying that no modules or branches use this version any more
-    public static String getStreamContentsAsString(InputStream is, Charset charset)
-    {
-        return getReaderContentsAsString(Readers.getReader(is));
-    }
-
-
-    /** Fetch the contents of an InputStream using the standard LabKey charset (currently UTF-8) and return in a String. Closes the reader after consuming it */
+    /** Fetch the contents of an InputStream using the standard LabKey charset (currently UTF-8) and return in a String. Closes the InputStream after consuming it */
     public static String getStreamContentsAsString(InputStream is)
     {
 		return getReaderContentsAsString(Readers.getReader(is));
@@ -1214,7 +1206,7 @@ public class PageFlowUtil
     }
 
 
-    static Pattern patternPhone = Pattern.compile("((1[\\D]?)?\\(?(\\d\\d\\d)\\)?[\\D]*)?(\\d\\d\\d)[\\D]?(\\d\\d\\d\\d)");
+    private static final Pattern patternPhone = Pattern.compile("((1[\\D]?)?\\(?(\\d\\d\\d)\\)?[\\D]*)?(\\d\\d\\d)[\\D]?(\\d\\d\\d\\d)");
 
     public static String formatPhoneNo(String s)
     {
