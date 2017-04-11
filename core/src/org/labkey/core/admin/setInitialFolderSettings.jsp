@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.io.File" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -42,6 +43,8 @@
             projectDefaultRoot = projRoot.getAbsolutePath();
         }
     }
+
+    boolean hasAdminOpsPerm = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %>
 <%=formatMissedErrors("form")%>
 <p></p>
@@ -93,13 +96,15 @@
                     boxLabel: 'Use Default',
                     checked: true,
                     name: 'fileRootOption',
-                    inputValue: 'default'
+                    inputValue: 'default',
+                    disabled: <%=!hasAdminOpsPerm%>
                 },{
                     xtype: 'radio',
                     boxLabel: 'Custom Location',
                     checked: false,
                     name: 'fileRootOption',
-                    inputValue: 'custom'
+                    inputValue: 'custom',
+                    disabled: <%=!hasAdminOpsPerm%>
                 }]
             },{
                 xtype: 'textfield',

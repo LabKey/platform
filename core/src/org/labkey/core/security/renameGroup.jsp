@@ -56,16 +56,27 @@
                 { xtype: 'hidden', name: 'id', value: <%=group.getUserId()%> }
             ],
             bodyStyle: 'background-color: transparent;',
-            buttonAlign: 'left',
-            buttons:[{
-                text:'Submit',
-                handler: function() {
-                    renameForm.getForm().submit({
-                        success: function() {
-                            window.location = <%=PageFlowUtil.jsString(manageURL.getLocalURIString())%>;
-                        }
-                    });
-                }
+            dockedItems: [{
+                xtype: 'toolbar',
+                dock: 'bottom',
+                ui: 'footer',
+                style: 'background-color: transparent; padding: 10px 0 0 0;',
+                items: [{
+                    text: 'Submit',
+                    formBind: true,
+                    handler: function() {
+                        renameForm.getForm().submit({
+                            success: function() {
+                                window.location = <%=PageFlowUtil.jsString(manageURL.getLocalURIString())%>;
+                            }
+                        });
+                    }
+                },{
+                    text: 'Cancel',
+                    handler: function() {
+                        window.location = <%=PageFlowUtil.jsString(manageURL.getLocalURIString())%>;
+                    }
+                }]
             }]
         });
     });

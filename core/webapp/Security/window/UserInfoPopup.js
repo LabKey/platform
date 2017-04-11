@@ -52,6 +52,11 @@ Ext4.define('Security.window.UserInfoPopup', {
 
             if (this.user.UserId == Security.util.SecurityCache.groupUsers || this.user.UserId == Security.util.SecurityCache.groupGuests)
                 this.canEdit = false;
+
+            if (!LABKEY.user.isSystemAdmin && (this.user.UserId == Security.util.SecurityCache.groupAdministrators
+                    || this.user.UserId == Security.util.SecurityCache.groupDevelopers))
+                this.canEdit = false;
+
             if (this.canEdit)
             {
                 hdrHtml += LABKEY.Utils.textLink({

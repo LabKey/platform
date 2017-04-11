@@ -176,11 +176,11 @@ Ext4.define('Security.panel.PermissionEditor', {
         var items = [this.getPolicyEditor()];
 
         // Not shown at root level since a root group is a site group
-        if ((this.isSiteAdmin || this.isProjectAdmin) && !this.isSiteRoot) {
+        if ((this.isRootAccountManager || this.isProjectAdmin) && !this.isSiteRoot) {
             items.push(this.getGroupTabConfig(this.securityCache.projectId, true));
         }
 
-        if (this.isSiteAdmin) {
+        if (this.isRootAccountManager) {
             items.push(this.getGroupTabConfig('', true));
         }
 
@@ -196,7 +196,7 @@ Ext4.define('Security.panel.PermissionEditor', {
             itemId : 'permissions',
             cache  : this.securityCache,
             border : false,
-            isSiteAdmin    : this.isSiteAdmin,
+            isRootAccountManager : this.isRootAccountManager,
             isProjectAdmin : this.isProjectAdmin,
             canInherit : this.canInherit,
             resourceId : LABKEY.container.id,
@@ -211,7 +211,7 @@ Ext4.define('Security.panel.PermissionEditor', {
         var items = [], groupList;
 
         var showPopup = function(group) {
-            var edit = (!group.Container && LABKEY.Security.currentUser.isSystemAdmin) || (group.Container && LABKEY.Security.currentUser.isAdmin);
+            var edit = (!group.Container && LABKEY.Security.currentUser.isRootAdmin) || (group.Container && LABKEY.Security.currentUser.isAdmin);
             var w = Ext4.create('Security.window.UserInfoPopup', {
                 userId  : group.UserId,
                 cache   : this.securityCache,

@@ -1404,7 +1404,7 @@ var GroupPicker = Ext.extend(Ext.Panel,{
  *
  * @param {SecurityCache} [config.cache] An allocated SecurityCache object
  * @param {string}  [config.resourceId] the id of the resource whose policy is being edited
- * @param {boolean} [config.isSiteAdmin] Is the current user a site administrator
+ * @param {boolean} [config.isRootAccountManager] Is the current user an account manager for the root container
  * @param {boolean} [config.isProjectAdministrator] Does the current user have project administrator permissions
  * @param {boolean} [config.saveButton] show the save button, may be hidden if the container has its own button/toolbar
  * @param {boolean} [config.canInherit] defaults to true, show the inherit permissions option
@@ -1440,7 +1440,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     // config
     resourceId : null,
     saveButton : true,      // overloaded
-    isSiteAdmin : false,
+    isRootAccountManager : false,
     isProjectAdmin : false,
     canInherit : true,
     doneURL : LABKEY.ActionURL.buildURL('project', 'begin', LABKEY.ActionURL.getContainer()),
@@ -1793,7 +1793,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         // is this a user or a group
         var principal = this.cache.getPrincipal(id);
         // can edit?
-        var canEdit = !principal.Container && this.isSiteAdmin || principal.Container && this.isProjectAdmin;
+        var canEdit = (!principal.Container && this.isRootAccountManager) || (principal.Container && this.isProjectAdmin);
         var w = new UserInfoPopup({userId:id, cache:this.cache, policy:policy, modal:true, canEdit:canEdit});
         w.show();
     },

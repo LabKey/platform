@@ -39,7 +39,7 @@
     int webPartId = me.getModelBean().getRowId();
     JSONObject jsonProps = new JSONObject(me.getModelBean().getPropertyMap());
     String renderTarget = "project-" + me.getModelBean().getIndex();
-    boolean isAdmin = getUser().isSiteAdmin();
+    boolean isRootAdmin = getUser().hasRootAdminPermission();
     boolean hasPermission;
 
     Container target;
@@ -172,8 +172,8 @@ Ext4.onReady(function() {
         store: store
     };
 
-    //NOTE: separated to differentiate site admins from those w/ admin permission in this container
-    if (<%=isAdmin%>) {
+    //NOTE: separated to differentiate site/app admins from those w/ admin permission in this container
+    if (<%=isRootAdmin%>) {
         panelCfg.buttons = [{
             text: 'Create New ' + config.noun,
             hidden: !LABKEY.Security.currentUser.isAdmin || config.hideCreateButton,

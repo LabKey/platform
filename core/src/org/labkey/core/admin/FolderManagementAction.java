@@ -357,7 +357,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             // or if the file root is changed.
             if (!service.isUseDefaultRoot(ctx.getContainer()) && !service.getFileRoot(ctx.getContainer()).getPath().equalsIgnoreCase(form.getFolderRootPath()))
             {
-                if (!ctx.getUser().isSiteAdmin())
+                if (!ctx.getUser().isInSiteAdminGroup())
                     throw new UnauthorizedException("Only site admins change change file roots");
             }
 

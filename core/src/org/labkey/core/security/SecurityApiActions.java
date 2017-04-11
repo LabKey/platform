@@ -34,6 +34,7 @@ import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.AccountManagementPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -1185,7 +1186,7 @@ public class SecurityApiActions
             if (!container.isRoot() && !container.isProject())
                 throw new IllegalArgumentException("You may not create groups at the folder level. Call this API at the project or root level.");
 
-            if (_group == null && getContainer().isRoot() && !getUser().isSiteAdmin() )
+            if (_group == null && getContainer().isRoot() && !getUser().hasRootPermission(AccountManagementPermission.class) )
             {
                 throw new UnauthorizedException("You do not have permission to create site-wide groups.");
             }
@@ -1196,9 +1197,14 @@ public class SecurityApiActions
                 writeToAuditLog(_group, this.getViewContext());
             }
 
-            if (_group.getContainer() == null && !getUser().isSiteAdmin())
+            if (_group.getContainer() == null && !getUser().hasRootPermission(AccountManagementPermission.class))
             {
                 throw new UnauthorizedException("You do not have permission to modify site-wide groups.");
+            }
+
+            if (_group.isSystemGroup() && !getUser().isInSiteAdminGroup())
+            {
+                throw new UnauthorizedException("Can not update members of system group: " + _group.getName());
             }
 
             Map<String, String> memberErrors = new HashMap<>();
@@ -1648,7 +1654,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AccountManagementPermission.class)
     @CSRF
     public static class DeleteUserAction extends MutatingApiAction<IdForm>
     {
@@ -1752,7 +1758,6 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("You must specify an id parameter!");
 
             group = getGroup(form);
-            Container c = getContainer();
             if (null == group)
                 throw new IllegalArgumentException("Group id " + form.getId() + " does not exist within this container!");
 
@@ -1853,6 +1858,10 @@ public class SecurityApiActions
         public ApiResponse execute(GroupMemberForm form, BindException errors) throws Exception
         {
             Group group = getGroup(form);
+
+            if (group != null && group.isSystemGroup() && !getUser().isInSiteAdminGroup())
+                throw new UnauthorizedException("Can not update members of system group: " + group.getName());
+
             for (int id : form.getPrincipalIds())
             {
                 UserPrincipal principal = getPrincipal(id);
@@ -1876,6 +1885,9 @@ public class SecurityApiActions
         public ApiResponse execute(GroupMemberForm form, BindException errors) throws Exception
         {
             Group group = getGroup(form);
+
+            if (group != null && group.isSystemGroup() && !getUser().isInSiteAdminGroup())
+                throw new UnauthorizedException("Can not update members of system group: " + group.getName());
 
             //ensure there will still be someone in the admin group
             if (group.isAdministrators() && SecurityManager.getGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS).size() == 1)
@@ -1961,16 +1973,23 @@ public class SecurityApiActions
     /**
      * Invalidate existing password and send new password link
      */
-    @RequiresSiteAdmin
+    @RequiresPermission(AccountManagementPermission.class)
     @CSRF
     public static class AdminRotatePasswordAction extends MutatingApiAction<SecurityController.EmailForm>
     {
         @Override
         public void validateForm(SecurityController.EmailForm form, Errors errors)
         {
+            ValidEmail email;
+
             try
             {
-                new ValidEmail(form.getEmail());
+                email = new ValidEmail(form.getEmail());
+
+                // don't let non-site admin reset password of site admin
+                User formUser = UserManager.getUser(email);
+                if (formUser != null && !getUser().isInSiteAdminGroup() && formUser.isInSiteAdminGroup())
+                    errors.rejectValue("Email", "Can not reset password for a Site Admin user");
             }
             catch (ValidEmail.InvalidEmailException e)
             {
@@ -1993,7 +2012,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AccountManagementPermission.class)
     @CSRF
     public static class ListProjectGroupsAction extends ApiAction<ListGroupsForm>
     {

@@ -130,7 +130,7 @@
 
     function showPopup(group, groupsList)
     {
-        var canEdit = !group.Container && LABKEY.Security.currentUser.isSystemAdmin || group.Container && LABKEY.Security.currentUser.isAdmin;
+        var canEdit = (!group.Container && LABKEY.Security.currentUser.isRootAdmin) || (group.Container && LABKEY.Security.currentUser.isAdmin);
 
         var w = Ext4.create('Security.window.UserInfoPopup', {
             userId : group.UserId,

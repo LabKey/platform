@@ -145,7 +145,7 @@
     </ul>
 </div>
 <%
-        if (getUser().isSiteAdmin())
+        if (getUser().hasRootAdminPermission())
         {
 %>
 <div class="project-menu-buttons">

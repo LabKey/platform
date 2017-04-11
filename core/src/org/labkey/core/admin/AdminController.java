@@ -553,7 +553,7 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
         {
-            if (!getUser().isSiteAdmin())
+            if (!getUser().isInSiteAdminGroup())
             {
                 getViewContext().getResponse().setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             }
@@ -4786,7 +4786,7 @@ public class AdminController extends SpringActionController
         {
             Container c = getContainer();
             String folderRootPath = StringUtils.trimToNull(form.getFolderRootPath());
-            String fileRootOption = form.getFileRootOption();
+            String fileRootOption = form.getFileRootOption() != null ? form.getFileRootOption() : "default";
 
             if(folderRootPath == null && !fileRootOption.equals("default"))
             {
@@ -4799,7 +4799,8 @@ public class AdminController extends SpringActionController
             {
                 service.setIsUseDefaultRoot(c, true);
             }
-            else
+            // Requires AdminOperationsPermission to set file root
+            else if (c.hasPermission(getUser(), AdminOperationsPermission.class))
             {
                 if (!service.isValidProjectRoot(folderRootPath))
                 {
@@ -4877,8 +4878,8 @@ public class AdminController extends SpringActionController
         {
             Container c = getContainer();
 
-            // Must be site admin to delete a project
-            if (c.isProject() && !getUser().isSiteAdmin())
+            // Must be site/app admin to delete a project
+            if (c.isProject() && !getUser().hasRootAdminPermission())
             {
                 throw new UnauthorizedException();
             }

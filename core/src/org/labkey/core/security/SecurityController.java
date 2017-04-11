@@ -52,10 +52,14 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.AccountManagementPermission;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
+import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -234,6 +238,21 @@ public class SecurityController extends SpringActionController
 
             return url;
         }
+    }
+
+    private static void ensureGroupUserAccess(Group group, User user)
+    {
+        if (!user.isInSiteAdminGroup() && group.isSystemGroup())
+            throw new UnauthorizedException();
+    }
+
+    private static void ensureGroupUserAccess(String group, User user)
+    {
+        if (!user.isInSiteAdminGroup() && group != null && (
+            group.equalsIgnoreCase("Administrators") || group.equalsIgnoreCase("Users") ||
+            group.equalsIgnoreCase("Guests") || group.equalsIgnoreCase("Developers")
+        ))
+            throw new UnauthorizedException();
     }
 
     private static void ensureGroupInContainer(Group group, Container c)
@@ -429,6 +448,7 @@ public class SecurityController extends SpringActionController
             {
                 Group group = form.getGroupFor(getContainer());
                 ensureGroupInContainer(group,getContainer());
+                ensureGroupUserAccess(group, getUser());
                 if (group != null)
                 {
                     SecurityManager.deleteGroup(group);
@@ -554,6 +574,7 @@ public class SecurityController extends SpringActionController
 
         public ModelAndView getView(UpdateMembersForm form, BindException errors) throws Exception
         {
+            // 0 - only site-admins can modify members of system groups
             // 1 - Global admins group cannot be empty
             // 2 - warn if you are deleting yourself from global or project admins
             // 3 - if user confirms delete, post to action again, with list of users to delete and confirmation flag.
@@ -566,6 +587,9 @@ public class SecurityController extends SpringActionController
             _group = form.getGroupFor(getContainer());
             if (null == _group)
                 throw new RedirectException(new ActionURL(PermissionsAction.class, container));
+
+            if (_group.isSystemGroup() && !getUser().isInSiteAdminGroup())
+                throw new UnauthorizedException("Can not update members of system group: " + _group.getName());
 
             List<String> messages = new ArrayList<>();
 
@@ -823,11 +847,12 @@ public class SecurityController extends SpringActionController
         // validate that group is in the current project!
         Container c = getContainer();
         ensureGroupInContainer(group, c);
+        ensureGroupUserAccess(group, getUser());
         Set<UserPrincipal> members = SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS);
         Map<UserPrincipal, List<UserPrincipal>> redundantMembers = SecurityManager.getRedundantGroupMembers(group);
         VBox view = new VBox(new GroupView(group, members, redundantMembers, messages, group.isSystemGroup(), errors));
 
-        if (getUser().isSiteAdmin())
+        if (getUser().hasRootPermission(AccountManagementPermission.class))
         {
             UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
             if (schema != null)
@@ -1004,6 +1029,7 @@ public class SecurityController extends SpringActionController
             // validate that group is in the current project!
             Container c = getContainer();
             ensureGroupInContainer(group, c);
+            ensureGroupUserAccess(group, getUser());
             List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds(group, true);
 
             DataRegion rgn = new DataRegion();
@@ -1382,7 +1408,8 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin @CSRF
+    @RequiresPermission(AccountManagementPermission.class)
+    @CSRF
     public class AddUsersAction extends FormViewAction<AddUsersForm>
     {
         public ModelAndView getView(AddUsersForm form, boolean reshow, BindException errors) throws Exception
@@ -1577,7 +1604,7 @@ public class SecurityController extends SpringActionController
         protected SecurityMessage createMessage(EmailForm form) throws Exception
         {
             // Site admins can see the email for everyone, but project admins can only see it for users they added
-            if (!getUser().isSiteAdmin())
+            if (!getUser().hasRootPermission(AccountManagementPermission.class))
             {
                 try
                 {
@@ -1602,7 +1629,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AccountManagementPermission.class)
     public class ShowResetEmailAction extends AbstractEmailAction
     {
         protected SecurityMessage createMessage(EmailForm form) throws Exception
@@ -1615,7 +1642,7 @@ public class SecurityController extends SpringActionController
     /**
      * Invalidate existing password and send new password link
      */
-    @RequiresSiteAdmin
+    @RequiresPermission(AccountManagementPermission.class)
     public class AdminResetPasswordAction extends SimpleViewAction<EmailForm>
     {
         public ModelAndView getView(EmailForm form, BindException errors) throws Exception
@@ -1631,6 +1658,11 @@ public class SecurityController extends SpringActionController
             try
             {
                 ValidEmail email = new ValidEmail(rawEmail);
+
+                // don't let non-site admin reset password of site admin
+                User formUser = UserManager.getUser(email);
+                if (formUser != null && !getUser().isInSiteAdminGroup() && formUser.isInSiteAdminGroup())
+                    throw new UnauthorizedException("Can not reset password for a Site Admin user.");
 
                 // We let admins create passwords (i.e., entries in the logins table) if they don't already exist.
                 // This addresses SSO and LDAP scenarios, see #10374.
@@ -1774,7 +1806,7 @@ public class SecurityController extends SpringActionController
                     {
                         html = "This feature requires graphviz to be installed; ";
 
-                        if (getUser().isSiteAdmin())
+                        if (getUser().hasRootPermission(AdminOperationsPermission.class))
                             html += "see " + new HelpTopic("thirdPartyCode").getSimpleLinkHtml("the LabKey installation instructions") + " for more information.";
                         else
                             html += "contact a server administrator about this problem.";
@@ -1957,7 +1989,7 @@ public class SecurityController extends SpringActionController
         public void testAnnotations() throws Exception
         {
             //clean up users in case this failed part way through
-            String[] cleanupUsers = {"guest@scjutc.com", "user@scjutc.com", "admin@scjutc.com"};
+            String[] cleanupUsers = {"guest@scjutc.com", "user@scjutc.com", "sadmin@scjutc.com", "aadmin@scjutc.com", "padmin@scjutc.com"};
             for (String cleanupUser : cleanupUsers)
             {
                 User oldUser = UserManager.getUser(new ValidEmail(cleanupUser));
@@ -1969,16 +2001,20 @@ public class SecurityController extends SpringActionController
             c = ContainerManager.createContainer(junit, "SecurityController-" + GUID.makeGUID());
 
             User site = TestContext.get().getUser();
-            assertTrue(site.isSiteAdmin());
+            assertTrue(site.isInSiteAdminGroup());
 
             User guest = SecurityManager.addUser(new ValidEmail("guest@scjutc.com"), null).getUser();
             User user = SecurityManager.addUser(new ValidEmail("user@scjutc.com"), null).getUser();
-            User admin = SecurityManager.addUser(new ValidEmail("admin@scjutc.com"), null).getUser();
+            User sadmin = SecurityManager.addUser(new ValidEmail("sadmin@scjutc.com"), null).getUser();
+            User aadmin = SecurityManager.addUser(new ValidEmail("aadmin@scjutc.com"), null).getUser();
+            User padmin = SecurityManager.addUser(new ValidEmail("padmin@scjutc.com"), null).getUser();
 
             MutableSecurityPolicy policy = new MutableSecurityPolicy(c, c.getPolicy());
-            policy.addRoleAssignment(admin, RoleManager.getRole(SiteAdminRole.class));
-            policy.addRoleAssignment(guest, RoleManager.getRole(ReaderRole.class));
+            policy.addRoleAssignment(sadmin, RoleManager.getRole(SiteAdminRole.class));
+            policy.addRoleAssignment(aadmin, RoleManager.getRole(ApplicationAdminRole.class));
+            policy.addRoleAssignment(padmin, RoleManager.getRole(ProjectAdminRole.class));
             policy.addRoleAssignment(user, RoleManager.getRole(EditorRole.class));
+            policy.addRoleAssignment(guest, RoleManager.getRole(ReaderRole.class));
             SecurityPolicyManager.savePolicy(policy);
 
             SecurityController controller = new SecurityController();
@@ -1987,18 +2023,42 @@ public class SecurityController extends SpringActionController
             BeginAction beginAction = controller.new BeginAction();
             assertPermission(guest, beginAction);
             assertPermission(user, beginAction);
-            assertPermission(admin, beginAction);
+            assertPermission(padmin, beginAction);
+            assertPermission(aadmin, beginAction);
+            assertPermission(sadmin, beginAction);
             assertPermission(site, beginAction);
 
-            // @RequiresSiteAdmin
+            // @RequiresPermission(ReadPermission.class)
+            CompleteUserReadAction completeUserReadAction = controller.new CompleteUserReadAction();
+            assertPermission(guest, completeUserReadAction);
+            assertPermission(user, completeUserReadAction);
+            assertPermission(padmin, completeUserReadAction);
+            assertPermission(aadmin, completeUserReadAction);
+            assertPermission(sadmin, completeUserReadAction);
+            assertPermission(site, completeUserReadAction);
+
+            // @RequiresPermission(AdminPermission.class)
+            PermissionsAction permissionsAction = controller.new PermissionsAction();
+            assertNoPermission(guest, permissionsAction);
+            assertNoPermission(user, permissionsAction);
+            assertPermission(padmin, permissionsAction);
+            assertPermission(aadmin, permissionsAction);
+            assertPermission(sadmin, permissionsAction);
+            assertPermission(site, permissionsAction);
+
+            // @RequiresPermission(AccountManagementPermission.class)
             AddUsersAction addUsersAction = controller.new AddUsersAction();
             assertNoPermission(guest, addUsersAction);
             assertNoPermission(user, addUsersAction);
-            assertNoPermission(admin, addUsersAction);
+            assertNoPermission(padmin, addUsersAction);
+            assertPermission(aadmin, addUsersAction);
+            assertPermission(sadmin, addUsersAction);
             assertPermission(site, addUsersAction);
 
             assertTrue(ContainerManager.delete(c, TestContext.get().getUser()));
-            UserManager.deleteUser(admin.getUserId());
+            UserManager.deleteUser(sadmin.getUserId());
+            UserManager.deleteUser(aadmin.getUserId());
+            UserManager.deleteUser(padmin.getUserId());
             UserManager.deleteUser(user.getUserId());
             UserManager.deleteUser(guest.getUserId());
         }
