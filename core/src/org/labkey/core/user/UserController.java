@@ -2658,7 +2658,7 @@ public class UserController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             User currentUser = getUser();
-            Container project = currentUser.isSiteAdmin() ? null : getContainer().getProject(); // TODO ???
+            Container project = currentUser.hasRootAdminPermission() ? null : getContainer().getProject();
             Collection<User> users = UserImpersonationContextFactory.getValidImpersonationUsers(project, getUser());
 
             Collection<Map<String, Object>> responseUsers = new LinkedList<>();
