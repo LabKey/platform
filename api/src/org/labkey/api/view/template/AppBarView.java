@@ -19,8 +19,8 @@ import org.labkey.api.view.JspView;
 
 public class AppBarView extends JspView<AppBar>
 {
-    public AppBarView(AppBar appBar)
+    public AppBarView(PageConfig page)
     {
-        super(AppBarView.class, "appBar.jsp", appBar);
+        super(AppBarView.class, "appBar.jsp", page.getAppBar());
     }
 }

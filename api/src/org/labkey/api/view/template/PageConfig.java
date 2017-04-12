@@ -20,6 +20,7 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.Module;
 import org.labkey.api.util.HelpTopic;
@@ -279,6 +280,7 @@ public class PageConfig
 
     String[] ignoreParameters = new String[] {"_dc", "_template", "_print", "_debug", "_docid", DataRegion.LAST_FILTER_PARAM};
 
+    @Nullable
     private String getCanonicalLink(URLHelper current)
     {
         if (null != _canonicalLink)

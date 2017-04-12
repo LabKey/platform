@@ -58,7 +58,7 @@ public class HomeTemplate extends PrintTemplate
     {
         super(template, page);
 
-        if (null==page.getNavTrail())
+        if (null == page.getNavTrail())
             page.setNavTrail(Collections.emptyList());
 
         // for testing add meta tags
@@ -91,13 +91,14 @@ public class HomeTemplate extends PrintTemplate
         else
             setView("header", getHeaderView(page));
 
+        page.setAppBar(generateAppBarModel(context, page));
+
         // TODO: This is being side-effected by isHidePageTitle() check. That setting should be moved to PageConfig
         setBody(body);
-        AppBar model = generateAppBarModel(context, page);
 
-        setView("navigation", getNavigationView(context, page, model));
+        setView("navigation", getNavigationView(context, page));
 
-        setView("appbar", getAppBarView(context, page, model));
+        setView("appbar", getAppBarView(context, page));
         setView("footer", getFooterView());
     }
 
@@ -131,16 +132,15 @@ public class HomeTemplate extends PrintTemplate
         page.setNavTrail(appBar.setNavTrail(navTrail, context));
 
         //allow views to have flag to hide title
-        if(getBody() instanceof WebPartView && ((WebPartView) getBody()).isHidePageTitle()){
+        if (getBody() instanceof WebPartView && ((WebPartView) getBody()).isHidePageTitle())
             appBar.setPageTitle(null);
-        }
 
         return appBar;
     }
 
-    protected HttpView getAppBarView(ViewContext context, PageConfig page, AppBar model)
+    protected HttpView getAppBarView(ViewContext context, PageConfig page)
     {
-        return new AppBarView(model);
+        return new AppBarView(page);
     }
 
     protected HttpView getHeaderView(PageConfig page)
@@ -180,7 +180,7 @@ public class HomeTemplate extends PrintTemplate
         return view;
     }
 
-    protected HttpView getNavigationView(ViewContext context, PageConfig page, AppBar model)
+    protected HttpView getNavigationView(ViewContext context, PageConfig page)
     {
         return new MenuBarView(context, page);
     }

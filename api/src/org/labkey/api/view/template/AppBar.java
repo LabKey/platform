@@ -243,7 +243,7 @@ public class AppBar extends NavTree
         catch (IllegalStateException ignored)
         {
             // That's OK, we just won't remember their last tab
-            return new HashMap<>();
+            return Collections.emptyMap();
         }
     }
 }
