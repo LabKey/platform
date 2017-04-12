@@ -378,7 +378,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         char c = name.charAt(0);
         if (c == '_' || c == '.')
         {
-            return user != null && (user.isSiteAdmin() || hasPermission(user, AdminPermission.class));
+            return user != null && (user.hasRootAdminPermission() || hasPermission(user, AdminPermission.class));
         }
         else
         {

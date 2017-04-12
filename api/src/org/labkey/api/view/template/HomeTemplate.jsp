@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.view.WebPartFactory" %>
 <%@ page import="org.labkey.api.view.template.PrintTemplate" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ page session="true" %>
 <%
@@ -82,7 +83,7 @@
         String script = AnalyticsService.getTrackingScript();
         if (StringUtils.isNotEmpty(script))
         {
-            if (user.isSiteAdmin())
+            if (c.hasPermission(user, AdminOperationsPermission.class))
             {
     %>      <!-- see <%=new ActionURL("analytics","begin",ContainerManager.getRoot()).getURIString()%> -->
     <%

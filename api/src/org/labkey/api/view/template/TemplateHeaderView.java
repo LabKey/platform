@@ -71,7 +71,7 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
         Container container = getViewContext().getContainer();
         TemplateHeaderBean bean = getModelBean();
 
-        if (null != user && user.isSiteAdmin())
+        if (null != user && user.isInSiteAdminGroup())
         {
             //admin-only mode--show to admins
             if (AppProps.getInstance().isUserRequestedAdminOnlyMode())

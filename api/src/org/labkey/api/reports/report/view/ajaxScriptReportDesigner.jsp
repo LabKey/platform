@@ -123,8 +123,8 @@
     reportConfig.put("runInBackground", bean.isRunInBackground());
     reportConfig.put("supportsPipeline", report.supportsPipeline());
 
-    // must be project admin (or above to to share a report to child folders
-    reportConfig.put("allowInherit", user.isSiteAdmin() || ReportUtil.isInRole(user, c, ProjectAdminRole.class));
+    // must be project admin (or above to share a report to child folders
+    reportConfig.put("allowInherit", user.hasRootAdminPermission() || ReportUtil.isInRole(user, c, ProjectAdminRole.class));
     reportConfig.put("inheritable", bean.isInheritable());
     reportConfig.put("editAreaSyntax", report.getEditAreaSyntax());
 

@@ -108,11 +108,6 @@ public class Overview
         return _container.hasPermission(_user, perm);
     }
 
-    public boolean isGlobalAdmin()
-    {
-        return getUser().isSiteAdmin();
-    }
-
     public User getUser()
     {
         return _user;

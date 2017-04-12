@@ -44,6 +44,7 @@ import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayColumnInfoRenderer;
@@ -150,7 +151,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 msg.append(") previously set for this folder does not exist or cannot be reached at this time.");
 
                 //if current user is an admin, include a link to the pipeline setup page
-                if (getUser().isSiteAdmin())
+                if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
                 {
                     ActionURL urlhelper = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(getContainer());
                     msg.append("</p><p><a href='").append(urlhelper.getLocalURIString()).append("'>[Setup Pipeline]</a></p>");

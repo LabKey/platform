@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -76,7 +77,7 @@
                 <option value="<%=h(value)%>" <%=selected(value.equals(form.getFileSet()))%>><%=h("Cloud storage: " + storeName)%></option>
 <%          } %>
             </select>
-<%          if (getUser().isSiteAdmin())
+<%          if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
             {
                 ActionURL configUrl = urlProvider(FileUrls.class).urlShowAdmin(getContainer()); %>
                 <a href="<%=h(configUrl)%>">Configure File Roots</a>

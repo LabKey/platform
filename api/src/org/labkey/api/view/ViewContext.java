@@ -450,7 +450,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
             case ALWAYS:
                 return true;
             case ADMIN:
-                return isAdminMode() || getUser().isSiteAdmin();
+                return isAdminMode() || getUser().hasRootAdminPermission();
             default:
                 return true;
         }

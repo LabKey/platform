@@ -478,7 +478,7 @@ public class Portal
             {
                 Container permissionContainer = part.getPermissionContainer() != null ? part.getPermissionContainer() : context.getContainer();
                 Permission permission = RoleManager.getPermission(part.getPermission());
-                boolean isAdmin = context.getUser().isSiteAdmin();
+                boolean isAdmin = context.getUser().hasRootAdminPermission();
                 boolean hasPermission = false;
 
                 if (permissionContainer != null && permission != null)

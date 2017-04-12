@@ -45,7 +45,7 @@ public class StudyContainerFilter extends ContainerFilter
     {
         if (_ids == null)
         {
-            if (_schema.getUser().isSiteAdmin())
+            if (_schema.getUser().hasRootAdminPermission())
             {
                 // Administrators can see everything
                 return null;

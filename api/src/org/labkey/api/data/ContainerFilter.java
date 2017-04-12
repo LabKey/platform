@@ -572,7 +572,7 @@ public abstract class ContainerFilter
         @Override
         public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, Class<? extends Permission> permission, Set<Role> roles, boolean allowNulls)
         {
-            if (_user.isSiteAdmin() && container.isRoot())
+            if (_user.hasRootAdminPermission() && container.isRoot())
                 return new SQLFragment("1 = 1");
             return super.getSQLFragment(schema,containerColumnSQL, container, permission, roles, allowNulls);
         }
@@ -909,7 +909,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            if (_user.isSiteAdmin())
+            if (_user.hasRootAdminPermission())
             {
                 // Don't bother filtering, the user can see everything
                 return null;

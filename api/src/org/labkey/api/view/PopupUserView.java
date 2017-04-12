@@ -99,7 +99,7 @@ public class PopupUserView extends PopupMenuView
             User adminUser = impersonationContext.isImpersonating() ? impersonationContext.getAdminUser() : user;
 
             // Must be site or project admin (folder admins can't impersonate)
-            if (adminUser.isSiteAdmin() || (null != project && project.hasPermission(adminUser, AdminPermission.class)))
+            if (adminUser.hasRootAdminPermission() || (null != project && project.hasPermission(adminUser, AdminPermission.class)))
             {
                 NavTree impersonateMenu = new NavTree("Impersonate");
                 impersonateMenu.setId("__lk-usermenu-impersonate");
