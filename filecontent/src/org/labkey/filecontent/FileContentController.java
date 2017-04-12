@@ -217,7 +217,7 @@ public class FileContentController extends SpringActionController
             File dir = p.getFileSystemDirectory();
             if (null == dir)
             {
-                if (getUser().isSiteAdmin())
+                if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
                     return HttpView.redirect(new ActionURL(ShowAdminAction.class,getContainer()));
                 else
                     throw new NotFoundException();
@@ -694,7 +694,8 @@ public class FileContentController extends SpringActionController
    }
 
 
-   @RequiresSiteAdmin @CSRF
+   @RequiresPermission(AdminOperationsPermission.class)
+   @CSRF
    public class AddAttachmentDirectoryAction extends ShowAdminAction
    {
        public static final int MAX_NAME_LENGTH = 80;
@@ -744,7 +745,8 @@ public class FileContentController extends SpringActionController
    }
 
 
-   @RequiresSiteAdmin @CSRF
+    @RequiresPermission(AdminOperationsPermission.class)
+   @CSRF
    public class DeleteAttachmentDirectoryAction extends ShowAdminAction
    {
        public boolean handlePost(FileContentForm form, BindException errors) throws Exception

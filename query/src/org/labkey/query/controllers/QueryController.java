@@ -61,7 +61,6 @@ import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -232,7 +231,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class EditRemoteConnectionAction extends FormViewAction<RemoteConnections.RemoteConnectionForm>
     {
         @Override
@@ -279,7 +278,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class DeleteRemoteConnectionAction extends FormViewAction<RemoteConnections.RemoteConnectionForm>
     {
         @Override
@@ -315,7 +314,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class TestRemoteConnectionAction extends FormViewAction<RemoteConnections.RemoteConnectionForm>
     {
         @Override
@@ -1193,7 +1192,7 @@ public class QueryController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class RawTableMetaDataAction extends QueryViewAction
     {
         private String _schemaName;
@@ -1283,7 +1282,7 @@ public class QueryController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class RawSchemaMetaDataAction extends SimpleViewAction
     {
         private String _schemaName;
@@ -4035,7 +4034,7 @@ public static class ExportSqlForm
 
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class InsertLinkedSchemaAction extends BaseInsertExternalSchemaAction<LinkedSchemaForm, LinkedSchemaDef>
     {
         public InsertLinkedSchemaAction()
@@ -4050,7 +4049,7 @@ public static class ExportSqlForm
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class InsertExternalSchemaAction extends BaseInsertExternalSchemaAction<ExternalSchemaForm, ExternalSchemaDef>
     {
         public InsertExternalSchemaAction()
@@ -4101,7 +4100,7 @@ public static class ExportSqlForm
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class DeleteLinkedSchemaAction extends BaseDeleteSchemaAction<LinkedSchemaForm, LinkedSchemaDef>
     {
         public DeleteLinkedSchemaAction()
@@ -4116,7 +4115,7 @@ public static class ExportSqlForm
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class DeleteExternalSchemaAction extends BaseDeleteSchemaAction<ExternalSchemaForm, ExternalSchemaDef>
     {
         public DeleteExternalSchemaAction()
@@ -4209,7 +4208,7 @@ public static class ExportSqlForm
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class EditLinkedSchemaAction extends BaseEditSchemaAction<LinkedSchemaForm, LinkedSchemaDef>
     {
         public EditLinkedSchemaAction()
@@ -4231,7 +4230,7 @@ public static class ExportSqlForm
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class EditExternalSchemaAction extends BaseEditSchemaAction<ExternalSchemaForm, ExternalSchemaDef>
     {
         public EditExternalSchemaAction()
@@ -4519,7 +4518,7 @@ public static class ExportSqlForm
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class GetTablesAction extends ApiAction<GetTablesForm>
     {
         @Override
@@ -4586,7 +4585,7 @@ public static class ExportSqlForm
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class SchemaTemplateAction extends ApiAction<SchemaTemplateForm>
     {
         @Override
@@ -4607,7 +4606,7 @@ public static class ExportSqlForm
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class SchemaTemplatesAction extends ApiAction
     {
         @Override
@@ -5856,7 +5855,7 @@ public static class ExportSqlForm
         abstract Tree _tree(String e) throws Exception;
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ParseExpressionAction extends ParseAction
     {
         QNode _parse(String s, List<QueryParseException> errors)
@@ -5871,7 +5870,7 @@ public static class ExportSqlForm
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ParseQueryAction extends ParseAction
     {
         QNode _parse(String s, List<QueryParseException> errors)

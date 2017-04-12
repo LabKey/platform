@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.search.SearchController" %>
+<%@ page import="org.labkey.api.security.permissions.AccountManagementPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SecurableResource> me = (JspView<SecurableResource>)HttpView.currentView();
@@ -51,7 +52,7 @@ Ext.QuickTips.init();
 <script type="text/javascript">
 var isFolderAdmin = <%=c.hasPermission(user, AdminPermission.class) ? "true" : "false"%>;
 var isProjectAdmin = <%=project != null && project.hasPermission(user, AdminPermission.class) ? "true" : "false"%>;
-var isSiteAdmin = <%= user.isSiteAdmin() ? "true" : "false" %>;
+var isRootAccountManager = <%= user.hasRootPermission(AccountManagementPermission.class) ? "true" : "false" %>;
 var isRoot = <%= c.isRoot() ? "true" : "false" %>;
 
 var $ = Ext.get;
@@ -171,8 +172,14 @@ Ext.onReady(function(){
     tabItems.push({contentEl:'permissionsFrame', title:'Permissions', autoHeight:true});
     Ext.onReady(function()
     {
-        policyEditor = new PolicyEditor({cache:securityCache, border:false, isSiteAdmin:isSiteAdmin, isProjectAdmin:isProjectAdmin, canInherit:false,
-            resourceId:"<%=resource.getResourceId()%>"});
+        policyEditor = new PolicyEditor({
+            cache:securityCache,
+            border:false,
+            isRootAccountManager:isRootAccountManager,
+            isProjectAdmin:isProjectAdmin,
+            canInherit:false,
+            resourceId:"<%=resource.getResourceId()%>"
+        });
         policyEditor.render($('permissionsFrame'));
     });
     </script>

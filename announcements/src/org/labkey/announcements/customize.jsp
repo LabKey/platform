@@ -109,13 +109,16 @@
     <tr>
         <td class="labkey-form-label">Email templates</td>
         <td>
-            <% if (me.getViewContext().getUser().isSiteAdmin()) { %><%= textLink("Customize site-wide template", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(ContainerManager.getRoot(), AnnouncementManager.NotificationEmailTemplate.class, getViewContext().getActionURL()))%><br /><% } %>
+            <% if (me.getViewContext().getUser().hasRootAdminPermission()) { %><%= textLink("Customize site-wide template", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(ContainerManager.getRoot(), AnnouncementManager.NotificationEmailTemplate.class, getViewContext().getActionURL()))%><br /><% } %>
             <%= textLink("Customize template for this " + getContainer().getContainerNoun(), PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), AnnouncementManager.NotificationEmailTemplate.class, getViewContext().getActionURL()))%>
         </td>
     </tr>
     <tr>
-        <td colspan=2><%= button("Save").submit(true) %>
-        <%= button("Cancel").href(bean.returnURL) %></td>
+        <td colspan=2>
+            <br/>
+            <%= button("Save").submit(true) %>
+            <%= button("Cancel").href(bean.returnURL) %>
+        </td>
     </tr>
 </table>
 </labkey:form>

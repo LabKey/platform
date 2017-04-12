@@ -1032,7 +1032,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         User user = _userSchema.getUser();
         Dataset def = getDatasetDefinition();
-        if (!user.isSiteAdmin() && !def.canWrite(user))
+        if (!user.hasRootAdminPermission() && !def.canWrite(user))
             return null;
         return new DatasetUpdateService(this);
     }

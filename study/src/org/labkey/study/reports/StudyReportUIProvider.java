@@ -29,6 +29,7 @@ import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.reports.CrosstabReport;
@@ -189,7 +190,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             }
 
             // external report
-            if (context.getUser().isSiteAdmin())
+            if (context.getContainer().hasPermission(context.getUser(), AdminOperationsPermission.class))
             {
                 ActionURL buttonURL = context.getActionURL().clone();
                 buttonURL.setAction(ReportsController.ExternalReportAction.class);

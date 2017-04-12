@@ -24,7 +24,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.LoginUrls;
-import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
@@ -174,7 +174,7 @@ public class LdapController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class TestLdapAction extends FormViewAction<TestLdapForm>
     {
         public void validateCommand(TestLdapForm target, Errors errors)

@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.attachments.AttachmentDirectory"%>
 <%@ page import="org.labkey.api.files.FileContentService"%>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
@@ -47,7 +48,7 @@
         %><div style="color:green;"><%=text(form.getMessage())%></div><%
     }
 
-    if (getUser().isSiteAdmin())
+    if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
     {
         File rootFile = service.getFileRoot(getContainer());
         ActionURL configureHelper = urlProvider(AdminUrls.class).getProjectSettingsURL(getContainer()).addParameter("tabId", "files");
@@ -116,7 +117,7 @@ Each file set is an additional directory that stores files accessible to users o
 </table>
 </labkey:form>
 <%
-if (getUser().isSiteAdmin())
+if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
 {
 %>
 <br><b>Additional Information</b><br>

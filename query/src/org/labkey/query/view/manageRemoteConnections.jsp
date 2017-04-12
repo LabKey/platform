@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -30,6 +31,7 @@
 </p>
 <%
     Container c = getContainer();
+    boolean hasAdminOpsPerm = c.hasPermission(getUser(), AdminOperationsPermission.class);
 %>
 
 <br>
@@ -53,6 +55,12 @@
             %> <%= h(connectionMap.get(field)) %> <br/> <%
         }
 %> <p/>
-<labkey:link href="<%= QueryController.RemoteQueryConnectionUrls.urlCreateRemoteConnection(c) %>" text="create new connection"/> <%
+<%
+        if (hasAdminOpsPerm)
+        {
+%>
+            <labkey:link href="<%= QueryController.RemoteQueryConnectionUrls.urlCreateRemoteConnection(c) %>" text="create new connection"/>
+<%
+        }
     }
 %>

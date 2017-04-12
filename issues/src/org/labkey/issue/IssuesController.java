@@ -1870,7 +1870,7 @@ public class IssuesController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            if (!getUser().isSiteAdmin())   // GLOBAL
+            if (!getUser().hasRootAdminPermission())   // GLOBAL
             {
                 throw new UnauthorizedException();
             }

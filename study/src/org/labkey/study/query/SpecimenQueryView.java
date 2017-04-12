@@ -838,10 +838,10 @@ public class SpecimenQueryView extends BaseStudyQueryView
             DisplaySettings settings = SpecimenManager.getInstance().getDisplaySettings(getContainer());
             oneVialIndicator = settings.getLastVialEnum() == DisplaySettings.DisplayOption.ALL_USERS ||
                     (settings.getLastVialEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY &&
-                            getUser().isSiteAdmin());
+                            getUser().hasRootAdminPermission());
             zeroVialIndicator = settings.getZeroVialsEnum() == DisplaySettings.DisplayOption.ALL_USERS ||
                     (settings.getZeroVialsEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY &&
-                            getUser().isSiteAdmin());
+                            getUser().hasRootAdminPermission());
         }
         RepositorySettings settings = SpecimenManager.getInstance().getRepositorySettings(getContainer());
         if (settings.isEnableRequests() && !_viewType.isForExport() && getViewContext().getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))

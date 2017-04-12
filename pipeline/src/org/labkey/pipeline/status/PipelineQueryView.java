@@ -30,6 +30,7 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -174,7 +175,8 @@ public class PipelineQueryView extends QueryView
             // Display the "Show Queue" button, if this is not the Enterprise Pipeline,
             // the user is an administrator, and this is the pipeline administration page.
             if (!PipelineService.get().isEnterprisePipeline() &&
-                    getUser().isSiteAdmin() && getContainer().isRoot())
+                    getContainer().hasPermission(getUser(), AdminOperationsPermission.class) &&
+                    getContainer().isRoot())
             {
                 ActionButton showQueue = new ActionButton(PipelineController.urlStatus(getContainer(), true), "Show Queue");
                 bar.add(showQueue);

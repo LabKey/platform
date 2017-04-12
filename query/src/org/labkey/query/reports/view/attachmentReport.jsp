@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies"%>
 <%@ page import="org.labkey.query.reports.ReportsController" %>
 <%@ page import="org.labkey.query.reports.ReportsController.AttachmentReportForm" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -31,15 +32,16 @@
 <%
     JspView<ReportsController.AttachmentReportForm> me = (JspView<ReportsController.AttachmentReportForm>) HttpView.currentView();
     ReportsController.AttachmentReportForm form = me.getModelBean();
+    boolean hasAdminOpsPerm = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
     boolean canUseDiskFile;
 
     if (form.isUpdate())
     {
-        canUseDiskFile = getUser().isSiteAdmin();
+        canUseDiskFile = hasAdminOpsPerm;
     }
     else
     {
-        canUseDiskFile = getUser().isSiteAdmin() && form.getReportId() == null;
+        canUseDiskFile = hasAdminOpsPerm && form.getReportId() == null;
     }
 
     String action = (form.isUpdate() ? "update" : "create") + "AttachmentReport";

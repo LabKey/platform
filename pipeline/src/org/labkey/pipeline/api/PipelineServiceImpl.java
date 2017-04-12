@@ -53,6 +53,7 @@ import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
@@ -302,7 +303,7 @@ public class PipelineServiceImpl implements PipelineService
     public boolean canModifyPipelineRoot(User user, Container container)
     {
         //per Britt--user must be site admin
-        return container != null && !container.isRoot() && user.isSiteAdmin();
+        return container != null && !container.isRoot() && container.hasPermission(user, AdminOperationsPermission.class);
     }
 
     @Override

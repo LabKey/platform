@@ -2313,7 +2313,7 @@ public class StudyManager
         if (user == null)
             return false;
 
-        if (user.isSiteAdmin())
+        if (user.hasRootAdminPermission())
             return true;
 
         StudyImpl study = StudyManager.getInstance().getStudy(container);

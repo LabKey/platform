@@ -82,8 +82,7 @@ public class EditResultsQueryView extends AssayBaseQueryView
     @Override
     protected boolean canDelete()
     {
-        return getViewContext().getUser().isSiteAdmin() &&
-               getViewContext().hasPermission(DeletePermission.class);
+        return getViewContext().getUser().hasRootAdminPermission() && getViewContext().hasPermission(DeletePermission.class);
     }
 
     @Override

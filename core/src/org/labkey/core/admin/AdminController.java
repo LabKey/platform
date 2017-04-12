@@ -5518,7 +5518,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ValidateDomainsAction extends RedirectAction
     {
         @Override
@@ -5838,7 +5838,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class DeleteModuleAction extends ConfirmAction<ModuleForm>
     {
         @Override
@@ -5929,7 +5929,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction @RequiresPermission(AdminOperationsPermission.class)
+    @AdminConsoleAction
+    @RequiresPermission(AdminOperationsPermission.class)
     public class ExperimentalFeaturesAction extends FormViewAction<Object>
     {
         @Override

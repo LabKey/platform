@@ -37,7 +37,8 @@ import java.io.File;
  * Date: Nov 24, 2009
  */
 
-@AdminConsoleAction @RequiresPermission(AdminOperationsPermission.class)
+@AdminConsoleAction
+@RequiresPermission(AdminOperationsPermission.class)
 public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<FileSettingsForm>
 {
     public FilesSiteSettingsAction()

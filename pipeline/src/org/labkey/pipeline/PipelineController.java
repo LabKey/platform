@@ -71,6 +71,7 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.AccountManagementPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -855,7 +856,7 @@ public class PipelineController extends SpringActionController
                 {
                     builder.append(u.getAutocompleteName(getContainer(), getUser())).append(';');
                 }
-                else if (getUser().isSiteAdmin())
+                else if (getContainer().hasPermission(getUser(), AccountManagementPermission.class))
                 {
                     try
                     {
@@ -1105,7 +1106,7 @@ public class PipelineController extends SpringActionController
 
     protected Container getJobDataContainer() throws Exception
     {
-        if (getUser().isSiteAdmin() &&
+        if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class) &&
                 getViewContext().getRequest().getParameter(StatusParams.allcontainers.toString()) != null)
         {
             return null;

@@ -4,7 +4,8 @@ import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.module.AllowedDuringUpgrade;
-import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.bigiron.mssql.GroupConcatInstallationManager;
@@ -24,7 +25,7 @@ public class BigIronController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     @AllowedDuringUpgrade
     public class DownloadGroupConcatInstallScriptAction extends ExportAction<Object>
     {

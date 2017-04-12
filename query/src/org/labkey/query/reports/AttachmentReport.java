@@ -34,6 +34,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportNameContext;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.thumbnail.Thumbnail;
@@ -78,8 +79,8 @@ public class AttachmentReport extends BaseRedirectReport
 
     public boolean canEdit(User user, Container container, List<ValidationError> errors)
     {
-        // disallow a non admin user from editing a server AttachmentReport
-        if (StringUtils.isNotEmpty(getFilePath()) && !user.isSiteAdmin())
+        // disallow a non site admin user from editing a server AttachmentReport
+        if (StringUtils.isNotEmpty(getFilePath()) && !container.hasPermission(user, AdminOperationsPermission.class))
         {
             errors.add(new SimpleValidationError("You must be an administrator in order to edit this report."));
             return false;

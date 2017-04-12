@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.assay.AssayManager" %>
 <%@ page import="org.labkey.study.controllers.assay.AssayController" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -42,7 +43,7 @@
 
     PipelineService pipeService = PipelineService.get();
     boolean hasPipelineRoot = pipeService.hasValidPipelineRoot(c);
-    boolean canSetPipelineRoot = user.isSiteAdmin();
+    boolean canSetPipelineRoot = c.hasPermission(user, AdminOperationsPermission.class);
 %>
 
 <% if (!hasAssayProtocols) { %>

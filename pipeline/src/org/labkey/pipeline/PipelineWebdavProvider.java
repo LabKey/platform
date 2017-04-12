@@ -23,6 +23,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResolverImpl;
@@ -115,7 +116,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         @Override
         protected boolean hasAccess(User user)
         {
-            return user.isSiteAdmin() || c.getPolicy().getPermissions(user).size() > 0;
+            return user.hasRootPermission(AdminOperationsPermission.class) || c.getPolicy().getPermissions(user).size() > 0;
         }
 
         @Override

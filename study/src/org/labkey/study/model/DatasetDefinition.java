@@ -883,7 +883,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             // Now check if they can write
             if (securityType == SecurityType.BASIC_WRITE)
             {
-                if (user instanceof User && ((User)user).isSiteAdmin())
+                if (user instanceof User && ((User)user).isInSiteAdminGroup())
                 {
                     result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
                 }
@@ -898,7 +898,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             }
             else if (securityType == SecurityType.ADVANCED_WRITE)
             {
-                if (user instanceof User && ((User)user).isSiteAdmin())
+                if (user instanceof User && ((User)user).isInSiteAdminGroup())
                 {
                     result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
                 }

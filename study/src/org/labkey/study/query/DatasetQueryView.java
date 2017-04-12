@@ -454,7 +454,7 @@ public class DatasetQueryView extends StudyQueryView
                 List<ActionButton> buttons = AssayService.get().getImportButtons(protocol, getUser(), getContainer(), true);
                 bar.addAll(buttons);
 
-                if (user.isSiteAdmin() || canWrite)
+                if (user.hasRootAdminPermission() || canWrite)
                 {
                     ActionURL deleteRowsURL = new ActionURL(StudyController.DeletePublishedRowsAction.class, getContainer());
                     deleteRowsURL.addParameter("protocolId", protocol.getRowId());
@@ -544,7 +544,7 @@ public class DatasetQueryView extends StudyQueryView
 
     private boolean canManage(DatasetDefinition def, User user)
     {
-        boolean userIsAdmin = user.isSiteAdmin() || def.getContainer().hasPermission(user, AdminPermission.class);
+        boolean userIsAdmin = user.hasRootAdminPermission() || def.getContainer().hasPermission(user, AdminPermission.class);
         return userIsAdmin; //  && inDefinitionContainer;
         // you can hide this for dataspace datasets if that's desireable
         //boolean inDefinitionContainer = def.getDefinitionContainer().equals(def.getContainer());

@@ -63,6 +63,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.ConceptURIProperties;
@@ -357,7 +358,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             // or if the file root is changed.
             if (!service.isUseDefaultRoot(ctx.getContainer()) && !service.getFileRoot(ctx.getContainer()).getPath().equalsIgnoreCase(form.getFolderRootPath()))
             {
-                if (!ctx.getUser().isInSiteAdminGroup())
+                if (!ctx.getUser().hasRootPermission(AdminOperationsPermission.class))
                     throw new UnauthorizedException("Only site admins change change file roots");
             }
 

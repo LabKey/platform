@@ -56,8 +56,7 @@ public class StudyPropertiesQueryView extends ExtensibleObjectQueryView
     public DataView createDataView()
     {
         DataView view = super.createDataView();
-        if (allowEditing() &&
-                getUser().isSiteAdmin())
+        if (allowEditing() && getUser().hasRootAdminPermission())
         {
             view.getDataRegion().addDisplayColumn(0, new EditColumn(view.getRenderContext().getContainer()));
         }

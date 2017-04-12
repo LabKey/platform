@@ -59,9 +59,9 @@
     Survey survey = SurveyManager.get().getSurvey(getContainer(), getUser(), rowId);
     boolean locked = survey != null && SurveyManager.get().getSurveyLockedStates().indexOf(survey.getStatus()) > -1;
 
-    // we allow editing for 1) non-submitted surveys 2) submitted surveys (that are not locked) if the user is a project or site admin
+    // we allow editing for 1) non-submitted surveys 2) submitted surveys (that are not locked) if the user is a project or site/app admin
     Container project = getContainer().getProject();
-    boolean isAdmin = (project != null && project.hasPermission(getUser(), AdminPermission.class)) || getUser().isSiteAdmin();
+    boolean isAdmin = (project != null && project.hasPermission(getUser(), AdminPermission.class)) || getUser().hasRootAdminPermission();
     boolean canEdit = !locked && ((!submitted && getContainer().hasPermission(getUser(), InsertPermission.class)) || isAdmin);
 
     String headerRenderId = "survey-header-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());

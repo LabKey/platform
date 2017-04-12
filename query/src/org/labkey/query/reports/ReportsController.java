@@ -1911,7 +1911,7 @@ public class ReportsController extends SpringActionController
 
                 // Only site administrators can specify a path, #14445
                 if (null != filePath)
-                    if (!getUser().isSiteAdmin())
+                    if (!getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
                         throw new UnauthorizedException();
 
                 // NOTE: no need to check if this is set because enforced in UI.
@@ -1971,16 +1971,16 @@ public class ReportsController extends SpringActionController
         {
             AttachmentReport report = (AttachmentReport) (form.isUpdate() ? form.getReportId().getReport(getViewContext()) : ReportService.get().createReportInstance(AttachmentReport.TYPE));
 
-            if (getUser().isSiteAdmin())
+            if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
             {
-                // only an admin can create or update an attachment report with a server path
+                // only a site admin can create or update an attachment report with a server path
                 if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.server)
                 {
                     report.setFilePath(form.getFilePath());
                 }
                 else
                 {
-                    // an admin may edit an attachment report and change its type from server to local
+                    // a site admin may edit an attachment report and change its type from server to local
                     // for this case be sure to remove the file path before save
                     report.setFilePath(null);
                 }

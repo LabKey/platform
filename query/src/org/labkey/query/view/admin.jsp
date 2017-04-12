@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.query.persist.QueryManager" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <h2>External Schemas</h2>
@@ -42,7 +43,7 @@
 </p>
 <%
     Container c = getContainer();
-    boolean isAdmin = getUser().isSiteAdmin();
+    boolean isAdmin = c.hasPermission(getUser(), AdminOperationsPermission.class);
     QueryUrlsImpl urls = new QueryUrlsImpl();
 
     List<ExternalSchemaDef> defs = QueryManager.get().getExternalSchemaDefs(c);

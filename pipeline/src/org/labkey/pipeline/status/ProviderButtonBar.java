@@ -93,7 +93,7 @@ public class ProviderButtonBar extends ButtonBar
                                 url.addParameter("rowId", _statusFile.getRowId());
                                 ActionButton button = new ActionButton(url, action.getLabel());
                                 button.setActionType(ActionButton.Action.LINK);
-                                if (!ctx.getViewContext().getUser().isSiteAdmin())
+                                if (!ctx.getViewContext().getUser().hasRootAdminPermission())
                                     button.setDisplayPermission(UpdatePermission.class);
 
                                 elements.add(button);

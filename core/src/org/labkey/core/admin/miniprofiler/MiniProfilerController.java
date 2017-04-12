@@ -151,7 +151,8 @@ public class MiniProfilerController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction @RequiresPermission(AdminPermission.class)
+    @AdminConsoleAction
+    @RequiresPermission(AdminPermission.class)
     @CSRF
     public class ResetAction extends SimpleRedirectAction
     {
