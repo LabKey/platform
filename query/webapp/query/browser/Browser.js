@@ -8,7 +8,9 @@ Ext4.define('LABKEY.query.browser.Browser', {
 
     layout: 'border',
 
-    useHistory: false,
+    bindResize: true,
+
+    useHistory: true,
 
     qdpPrefix: 'qdp-', // query details
     sspPrefix: 'ssp-', // schema summary
@@ -22,6 +24,16 @@ Ext4.define('LABKEY.query.browser.Browser', {
     },
 
     initComponent : function() {
+
+        if (LABKEY.experimental.useExperimentalCoreUI) {
+            // TODO: Once migrated, move these to be a part of the normal property setters
+            this.width = '100%';
+            this.height = 600;
+        }
+        else {
+            this.boxMinHeight =600;
+            this.boxMinWidth = 450;
+        }
 
         this.tabFactory = LABKEY.query.browser.SchemaBrowserTabFactory;
 
@@ -76,7 +88,9 @@ Ext4.define('LABKEY.query.browser.Browser', {
             this._initHistory();
         }
 
-        this._initResize();
+        if (this.bindResize) {
+            this._initResize();
+        }
 
         this.selectQueryTask = new Ext4.util.DelayedTask(this._selectQueryTaskHandler, this);
         this.on('selectquery', this.onSelectQuery, this);
@@ -121,18 +135,29 @@ Ext4.define('LABKEY.query.browser.Browser', {
     },
 
     _initResize : function() {
-        var resize = function(w, h) {
-            LABKEY.ext4.Util.resizeToViewport(this, w, h, 46, 32);
-        };
+        if (LABKEY.experimental.useExperimentalCoreUI) {
+            this.on('afterrender', function() {
+                Ext4.EventManager.onWindowResize(function() {
+                    var parent = this.getEl().parent();
+                    var size = parent.getBox();
+                    this.setWidth(size.width);
+                }, this, {delay: 250});
+            }, this, {single: true});
+        }
+        else {
+            var resize = function(w, h) {
+                LABKEY.ext4.Util.resizeToViewport(this, w, h, 46, 32);
+            };
 
-        Ext4.EventManager.onWindowResize(resize, this);
+            Ext4.EventManager.onWindowResize(resize, this);
 
-        this.on('afterrender', function() {
-            Ext4.defer(function() {
-                var size = Ext4.getBody().getBox();
-                resize.call(this, size.width, size.height);
-            }, 300, this);
-        });
+            this.on('afterrender', function() {
+                Ext4.defer(function() {
+                    var size = Ext4.getBody().getBox();
+                    resize.call(this, size.width, size.height);
+                }, 300, this);
+            });
+        }
     },
 
     _initTbar : function() {
@@ -478,7 +503,6 @@ Ext4.define('LABKEY.query.browser.Browser', {
 
     showPanel : function(queryId, node) {
         var tabs = this.getComponent('lk-sb-details');
-        //var safeId = this.getSafeId(queryId);
         var tab = tabs.getComponent(queryId);
         if (tab) {
             tabs.setActiveTab(tab);

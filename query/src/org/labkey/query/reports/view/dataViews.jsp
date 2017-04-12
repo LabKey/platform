@@ -47,60 +47,22 @@
 
     String renderId = "dataviews-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
-<div id='<%=h(renderId)%>' class="dvc"></div>
+<div id="<%=h(renderId)%>" class="dvc"></div>
 <script type="text/javascript">
 
     Ext4.onReady(function() {
-        var dvp = Ext4.create('LABKEY.ext4.DataViewsPanel', {
-            id          : 'data-views-panel-<%= webPartId %>',
-            renderTo    : <%=q(renderId)%>,
-            pageId      : <%= PageFlowUtil.jsString(me.getModelBean().getPageId()) %>,
-            index       : <%= me.getModelBean().getIndex() %>,
-            webpartId   : <%= webPartId %>,
-            manageView  : <%= manageView%>,
-            fullPage    : <%= manageView%>,
-            returnUrl   : '<%= getActionURL().getLocalURIString()%>',
-            allowCustomize : <%= getContainer().hasPermission(u, AdminPermission.class) %>,
-            allowEdit   : <%= getContainer().hasPermission(u, InsertPermission.class) %>,
-            listeners   : {
-                render: function(panel) {
-                    if (panel.fullPage) {
-
-                        var size = Ext4.getBody().getViewSize();
-                        LABKEY.ext4.Util.resizeToViewport(panel, size.width, size.height);
-                    }
-                }
-            }
+        Ext4.create('LABKEY.ext4.DataViewsPanel', {
+            id: 'data-views-panel-<%= webPartId %>',
+            renderTo: <%=q(renderId)%>,
+            pageId: <%= PageFlowUtil.jsString(me.getModelBean().getPageId()) %>,
+            index: <%= me.getModelBean().getIndex() %>,
+            webpartId: <%= webPartId %>,
+            manageView: <%= manageView%>,
+            fullPage: <%= manageView%>,
+            returnUrl: '<%= getActionURL().getLocalURIString()%>',
+            allowCustomize: <%= getContainer().hasPermission(u, AdminPermission.class) %>,
+            allowEdit: <%= getContainer().hasPermission(u, InsertPermission.class) %>
         });
-
-        var resize = function(w, h) {
-            if (dvp && dvp.doLayout) {
-
-                if (dvp.fullPage)
-                    LABKEY.ext4.Util.resizeToViewport(dvp, w, h);
-                else
-                {
-                    // Issue 18337: having multiple data view panels on same page causes resizing issues
-                    var lfh = Ext4.query('div.labkey-folder-header');
-                    var lsp  = Ext4.query('td.labkey-side-panel');
-
-                    if (lfh.length > 0)
-                    {
-                        // use the full width of the tab panel header bar minus the width  of the narrow webpart panel
-                        var labkeyProjWidth = Ext4.get(lfh[0]).getWidth();
-                        var leftPanelWidth = 0;
-                        if (lsp.length > 0)
-                            leftPanelWidth = Ext4.get(lsp[0]).getWidth();
-
-                        var width = labkeyProjWidth - leftPanelWidth - 30;
-                        dvp.setWidth(Ext4.Array.max([width, 625]));
-                        dvp.doLayout();
-                    }
-                }
-            }
-        };
-
-        Ext4.EventManager.onWindowResize(resize, this, {delay: 250});
     });
 
     /**

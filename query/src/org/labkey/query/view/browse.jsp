@@ -43,10 +43,7 @@
         Ext4.History.init();
 
         Ext4.create('LABKEY.query.browser.Browser', {
-            renderTo: <%=q(renderId)%>,
-            boxMinHeight: 600,
-            boxMinWidth: 450,
-            useHistory: true
+            renderTo: <%=q(renderId)%>
         });
     });
 </script>

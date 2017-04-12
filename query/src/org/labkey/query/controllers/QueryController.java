@@ -712,7 +712,9 @@ public class QueryController extends SpringActionController
 
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/query/view/browse.jsp", form);
+            JspView view = new JspView<>("/org/labkey/query/view/browse.jsp", form);
+            view.setFrame(WebPartView.FrameType.NONE);
+            return view;
         }
 
         public NavTree appendNavTrail(NavTree root)

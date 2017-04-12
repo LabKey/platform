@@ -95,6 +95,7 @@ $lk-dropdown-link-hover-bg: $lk-secondary-brand-color !default;
 //== Header
 //
 $lk-page-header-bg-color: $lk-brand-color !default;
+$lk-page-header-brand-link-color: $white !default;
 $lk-page-header-color: $white !default;
 $lk-page-header-padding: 12px 0 !default;
 
@@ -103,7 +104,7 @@ $lk-page-header-padding: 12px 0 !default;
 $lk-page-nav-bg-color: $lk-secondary-brand-color !default;
 $lk-page-nav-color: $white !default;
 $lk-page-nav-font-family: $lk-font-family-sans-serif-bold !default;
-$lk-page-nav-font-weight: bold !default;
+$lk-page-nav-font-weight: normal !default;
 $lk-page-nav-height: 36px !default;
 $lk-page-nav-bg-color-active: $white !default;
 $lk-page-nav-color-active: $lk-brand-color !default;

@@ -11,9 +11,11 @@
     font-size: 20px; // set to variable
   }
 
-  .nav > li > a:hover, .nav > li > a:focus {
-    color: #ADD4ED;
-    background-color: $lk-page-header-bg-color;
+  .nav > li > a {
+    &:hover, &:focus {
+      color: #ADD4ED;
+      background-color: $lk-page-header-bg-color;
+    }
   }
 
   .navbar-header {
@@ -26,13 +28,22 @@
     .brand-logo {
       margin: 0 15px;
     }
+
+    .brand-link {
+      vertical-align: bottom;
+      display: inline-block;
+      margin: 0;
+
+      & > a {
+        color: $lk-page-header-brand-link-color;
+      }
+    }
   }
 
   .navbar-nav-lk {
     list-style: none;
     margin-bottom: 0;
-    position: absolute;
-    right: 15px;
+    float: right;
 
     @media (max-width: $lk-screen-sm-min) {
       position: static;
@@ -123,12 +134,13 @@
   }
 
   .navbar-search {
+    position: relative;
 
     .global-search {
       position: absolute;
       top: 0;
       width: 0;
-      right: 100px;
+      right: 35px;
       overflow: hidden;
       transition: width .25s ease;
 

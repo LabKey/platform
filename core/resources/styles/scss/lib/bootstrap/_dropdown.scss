@@ -1,61 +1,61 @@
-// TODO: SCSS improve this, initial working draft of submenus
 .dropdown-menu > li > a {
   position: relative;
-}
 
-.dropdown-menu > li > a:hover {
-  cursor: pointer;
+  &:hover {
+    cursor: pointer;
+  }
 }
 
 .dropdown-submenu {
   overflow: hidden;
-}
 
-.dropdown-submenu > a > i.fa-chevron-right {
-  font-size: 11px;
-  color: lightgray;
-  position: absolute;
-  top: 8px;
-  right: 10px;
+  & > a > i.fa-chevron-right {
+    font-size: 11px;
+    color: lightgray;
+    position: absolute;
+    top: 8px;
+    right: 10px;
+  }
 }
 
 .dropdown-layer-menu {
   height: 0;
   visibility: hidden;
-  opacity: 0;
   list-style: none;
   padding: 0;
-  transition: opacity .2s ease;
-}
+  transition: left .1s ease;
+  position: relative;
+  left: 100px;
 
-.dropdown-layer-menu > li > a > i.fa-chevron-circle-left {
-  font-size: 12px;
-  padding-right: 5px;
-}
+  & > li > a {
+    display: block;
+    padding: 3px 20px;
+    clear: both;
+    font-weight: normal;
+    line-height: 1.42857;
+    color: $gray-dark;
+    white-space: nowrap;
 
-.dropdown-layer-menu > li > a.test-up {
-  font-size: 16px;
-}
+    &:hover {
+      text-decoration: none;
+      color: $white;
+      background-color: $lk-secondary-brand-color;
+      cursor: pointer;
+    }
 
-.dropdown-layer-menu > li > a {
-  display: block;
-  padding: 3px 20px;
-  clear: both;
-  font-weight: normal;
-  line-height: 1.42857;
-  color: $gray-dark;
-  white-space: nowrap;
-}
+    &.test-up {
+      font-size: 16px;
+    }
 
-.dropdown-layer-menu > li > a:hover {
-  text-decoration: none;
-  color: $white;
-  background-color: $lk-secondary-brand-color;
-  cursor: pointer;
-}
+    & > i.fa-chevron-circle-left {
+      font-size: 12px;
+      padding-right: 5px;
+    }
+  }
 
-.dropdown-layer-menu.open {
-  height: 100%;
-  opacity: 1;
-  visibility: visible;
+  &.open {
+    height: 100%;
+    visibility: visible;
+    left: 0;
+  }
 }

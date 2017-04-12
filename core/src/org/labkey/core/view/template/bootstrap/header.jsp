@@ -98,6 +98,9 @@
             <a class="hidden-sm hidden-md hidden-lg brand-logo" href="<%=h(laf.getLogoHref())%>">
                 <img src="<%=h(PageFlowUtil.staticResourceUrl("/_images/lk_logo_white_m.png"))%>" alt="<%=h(laf.getShortName())%>" height="30">
             </a>
+            <% if (laf.getShortName() != null && laf.getShortName().length() > 0) { %>
+            <h4 class="brand-link"><a href="<%=h(laf.getLogoHref())%>"><%=h(laf.getShortName())%></a></h4>
+            <% } %>
         </div>
         <ul class="navbar-nav-lk">
 <% if (showSearch) { %>
@@ -145,6 +148,11 @@
                 <ul class="dropdown-menu dropdown-menu-right">
                     <% renderTree(PopupAdminView.createNavTree(context), out); %>
                 </ul>
+            </li>
+<% } %>
+<% if (user != null && user.isImpersonated()) { %>
+            <li>
+                <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()))%>" class="btn btn-primary">Stop impersonating</a>
             </li>
 <% } %>
 <% if (!isRealUser && model.pageConfig.shouldIncludeLoginLink()) { %>

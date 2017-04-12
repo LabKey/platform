@@ -51,14 +51,17 @@
 <%
     HttpView me = HttpView.currentView();
     PageConfig pageConfig = (PageConfig) me.getModelBean();
+    String pageTitle = pageConfig.getAppBar().getFolderTitle();
     boolean showRight = me.getView(WebPartFactory.LOCATION_RIGHT) instanceof HttpView && ((HttpView) me.getView(WebPartFactory.LOCATION_RIGHT)).isVisible();
     ActionURL url = new ActionURL(AdminController.ExperimentalFeaturesAction.class, ContainerManager.getRoot());
+    // TODO: Remove all inline styles
 %>
 <div class="container" style="padding: 20px 0 0 0;">
     <div class="alert alert-warning" role="alert" style="margin: 0 15px 15px;">
         <strong>Under construction!</strong>
         This layout is under development. <a href="<%=h(url.getLocalURIString())%>" class="alert-link">Turn it off here</a> by disabling the "Core UI Migration" feature.
     </div>
+    <% if (pageTitle != null && !pageTitle.equalsIgnoreCase(getContainer().getName())) { %>
     <div class="col-md-12" style="margin-bottom: 20px;">
         <% renderTrail(pageConfig.getAppBar().getNavTrail(), out); %>
         <% if (pageConfig.getAppBar().getPageTitle() != null) { %>
@@ -67,6 +70,7 @@
         <h3 style="margin: 0;"><%= h(pageConfig.getAppBar().getFolderTitle()) %></h3>
         <% } %>
     </div>
+    <% } %>
     <div class="<%= h(showRight ? "col-md-9" : "col-md-12" ) %>">
         <!-- BODY -->
         <% me.include(me.getBody(), out); %>

@@ -135,9 +135,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     layout: 'border',
 
-    minWidth: 625,
-
     frame: false,
+
+    bindResize: true,
 
     border: false,
 
@@ -258,6 +258,60 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         // Initialize and bind "Full" store
         this.getFullStore().on('load', this.refreshViewStore, this);
+
+        if (this.bindResize) {
+            this._initResize();
+        }
+    },
+
+    _initResize : function() {
+        if (LABKEY.experimental.useExperimentalCoreUI) {
+            this.on('afterrender', function() {
+                Ext4.EventManager.onWindowResize(function() {
+                    var parent = this.getEl().parent();
+                    var size = parent.getBox();
+                    this.setWidth(size.width);
+                }, this, {delay: 100});
+            }, this, {single: true});
+        }
+        else {
+            this.on('render', function(panel) {
+                if (panel.fullPage) {
+
+                    var size = Ext4.getBody().getViewSize();
+                    LABKEY.ext4.Util.resizeToViewport(panel, size.width, size.height);
+                }
+            }, this, {single: true});
+
+            var resize = function(w, h) {
+                if (this && this.doLayout) {
+
+                    if (this.fullPage) {
+                        LABKEY.ext4.Util.resizeToViewport(this, w, h);
+                    }
+                    else {
+                        // Issue 18337: having multiple data view panels on same page causes resizing issues
+                        var lfh = Ext4.query('div.labkey-folder-header');
+                        var lsp  = Ext4.query('td.labkey-side-panel');
+
+                        if (lfh.length > 0)
+                        {
+                            // use the full width of the tab panel header bar minus the width  of the narrow webpart panel
+                            var labkeyProjWidth = Ext4.get(lfh[0]).getWidth();
+                            var leftPanelWidth = 0;
+                            if (lsp.length > 0)
+                                leftPanelWidth = Ext4.get(lsp[0]).getWidth();
+
+                            var width = labkeyProjWidth - leftPanelWidth - 30;
+                            this.setWidth(Ext4.Array.max([width, 625]));
+                            this.doLayout();
+                        }
+                    }
+                }
+            };
+
+            Ext4.EventManager.onWindowResize(resize, this, {delay: 250});
+        }
     },
 
     /**
@@ -846,6 +900,16 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     getSearchToolbar : function() {
 
+        var msgField = Ext4.create('Ext.Component', {
+            tpl: '<span>{msg:htmlEncode}</span>',
+            data: {},
+            flex: 4
+        });
+
+        var clearMessage = function() {
+            msgField.update({});
+        };
+
         var filterSearch = function() {
             this.searchVal = searchField.getValue();
             this.applySearchFilter();
@@ -854,81 +918,64 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         var filterTask = new Ext4.util.DelayedTask(filterSearch, this);
 
         var searchField = Ext4.create('Ext.form.field.Text', {
-            emptyText       : 'name, category, etc.',
-            enableKeyEvents : true,
-            cls             : 'dataset-search',
-            size            : 57,
-            height          : 25,
-            width           : 400,
-            border: false, frame : false,
-            listeners       : {
-                change : function(cmp, e) {
+            emptyText: 'Filter name, category, etc.',
+            enableKeyEvents: true,
+            cls: 'dataset-search',
+            flex: 5,
+            maxWidth: 400,
+            border: false,
+            frame: false,
+            listeners: {
+                change : function() {
                     filterTask.delay(350);
+                    clearMessage();
                 }
             }
         });
 
         var mineField = Ext4.create('Ext.form.field.Checkbox', {
-            boxLabel        : '<span data-qtip="Check to show only views that have either been created by me or that list me as the author.">&nbsp;Mine</span>',
-            boxLabelAlign   : 'before',
-            border          : false, frame : false,
-            listeners       : {
+            boxLabel: '<span data-qtip="Check to show only views that have either been created by me or that list me as the author.">&nbsp;Mine</span>',
+            boxLabelAlign: 'before',
+            border: false,
+            frame: false,
+            flex: 1,
+            listeners: {
                 change : function(cmp, checked) {
                     this.searchMine = checked === true;
                     this.refreshViewStore();
                     this.applySearchFilter();
+                    clearMessage();
                 },
-                scope : this
+                scope: this
             },
-            scope : this
+            scope: this
         });
-
-        var msgField = Ext4.create('Ext.Component', {
-            tpl: new Ext4.XTemplate('<span>{msg:htmlEncode}</span>'),
-            data: {}
-        });
-
-        var clearMessage = function() {
-            msgField.update({});
-        };
-
-        searchField.on('change', clearMessage);
-        mineField.on('change', clearMessage);
 
         this.on('initgrid', function(grid) {
-            this.on('disableCustomMode', function() {
-                clearMessage();
-            });
+            this.on('disableCustomMode', clearMessage);
 
             grid.on({
-                remove: function() { clearMessage(); },
-                hasmatches: function() { clearMessage(); },
-                nomatches: function() { msgField.update({msg: 'No results found.'}) }
+                remove: clearMessage,
+                hasmatches: clearMessage,
+                nomatches: function() {
+                    msgField.update({msg: 'No results found.'})
+                }
             });
         }, this);
 
         // toolbar
         return {
-            height  : 30,
-            items   : [{
-                xtype   : 'panel',
-                border  : false,
-                layout  : {type:'table'},
-                items   : [searchField, {
-                    xtype   : 'box',
-                    border  : 0,
-                    autoEl  : {
-                        tag : 'span',
-                        style : {
-                            position : 'relative',
-                            left     : '-20px',
-                            bottom   : '3px',
-                            color    : 'darkgrey'
-                        },
-                        cls : 'fa fa-search'
-                    }}
-                ]},
-                msgField, '->', mineField
+            height: 30,
+            border: false,
+            layout: {
+                type: 'hbox',
+                align: 'stretch'
+            },
+            items: [
+                searchField,
+                msgField,
+                '->',
+                mineField
             ]
         };
     },
@@ -1552,7 +1599,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         if (this.manageView && rec.data.access && rec.data.accessUrl)
             return tpl.apply(rec.data);
-        else
-            return value;
+        return value;
     }
 });
