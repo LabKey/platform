@@ -2,6 +2,7 @@ package org.labkey.core.view.template.bootstrap;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.UsageReportingLevel;
@@ -13,7 +14,6 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
@@ -36,7 +36,7 @@ public class BootstrapTemplate extends HomeTemplate
     }
 
     @Override
-    protected HttpView getAppBarView(ViewContext context, PageConfig page, AppBar model)
+    protected HttpView getAppBarView(ViewContext context, PageConfig page)
     {
         return null;
     }
@@ -58,9 +58,9 @@ public class BootstrapTemplate extends HomeTemplate
     }
 
     @Override
-    protected HttpView getNavigationView(ViewContext context, PageConfig page, AppBar appBar)
+    protected HttpView getNavigationView(ViewContext context, PageConfig page)
     {
-        NavigationModel model = new NavigationModel(context, page, appBar);
+        NavigationModel model = new NavigationModel(context, page);
         addClientDependencies(model.getClientDependencies());
 
         JspView view = new JspView<>("/org/labkey/core/view/template/bootstrap/navigation.jsp", model);
@@ -94,7 +94,6 @@ public class BootstrapTemplate extends HomeTemplate
 
     public static class NavigationModel
     {
-        public AppBar appBar;
         public PageConfig page;
 
         private LinkedHashSet<ClientDependency> _clientDependencies;
@@ -103,9 +102,8 @@ public class BootstrapTemplate extends HomeTemplate
 
         private static final Logger LOG = Logger.getLogger(NavigationModel.class);
 
-        private NavigationModel(ViewContext context, PageConfig page, AppBar appBar)
+        private NavigationModel(ViewContext context, PageConfig page)
         {
-            this.appBar = appBar;
             this._context = context;
             this.page = page;
 
@@ -128,6 +126,7 @@ public class BootstrapTemplate extends HomeTemplate
             return _menus;
         }
 
+        @NotNull
         public String getProjectTitle()
         {
             Container c = _context.getContainer();
@@ -143,15 +142,17 @@ public class BootstrapTemplate extends HomeTemplate
             return projectTitle;
         }
 
+        @NotNull
         public List<NavTree> getTabs()
         {
-            if (null == appBar)
+            if (null == page.getAppBar())
                 return Collections.emptyList();
 
             // TODO: switch getButtons() to offer a List
-            return Arrays.asList(appBar.getButtons());
+            return Arrays.asList(page.getAppBar().getButtons());
         }
 
+        @NotNull
         private List<Portal.WebPart> initMenus()
         {
             Container c = _context.getContainer();

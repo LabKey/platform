@@ -38,8 +38,7 @@
     {
         dependencies.add("internal/jQuery");
     }
-%>
-<%!
+
     private void renderTree(NavTree tree, Writer out) throws Exception
     {
         if (tree == null)
