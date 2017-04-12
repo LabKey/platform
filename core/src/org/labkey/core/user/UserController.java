@@ -1612,9 +1612,11 @@ public class UserController extends SpringActionController
             if (schema == null)
                 throw new NotFoundException(CoreQuerySchema.NAME + " schema");
 
-            TableInfo table = schema.getTable(CoreQuerySchema.SITE_USERS_TABLE_NAME);
+            // for the root container or if the user is site/app admin, use the site users table
+            String userTableName = c.isRoot() || c.hasPermission(user, AccountManagementPermission.class) ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME;
+            TableInfo table = schema.getTable(userTableName);
             if (table == null)
-                throw new NotFoundException(CoreQuerySchema.SITE_USERS_TABLE_NAME + " table");
+                throw new NotFoundException(userTableName + " table");
 
             QueryUpdateForm quf = new QueryUpdateForm(table, getViewContext());
             DetailsView detailsView = new DetailsView(quf);
