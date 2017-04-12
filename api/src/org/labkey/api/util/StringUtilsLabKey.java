@@ -22,10 +22,14 @@ import org.junit.Test;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
+
+import static java.lang.Math.min;
 
 /**
  * User: adam
@@ -174,6 +178,44 @@ public class StringUtilsLabKey
         throw new IllegalArgumentException("Unable to get int value for value parameter");
     }
 
+    // Domain names can contain only ASCII alphanumeric characters and dashes and may not start or end with a dash.
+    // Each domain name can be at most 63 characters.
+    public static Pattern domainNamePattern = Pattern.compile("(?!-)[A-za-z0-9-]{0,62}[A-za-z0-9]$");
+
+    public static boolean isValidDomainName(String name)
+    {
+        return !StringUtils.isEmpty(name) && domainNamePattern.matcher(name).matches();
+    }
+
+    /**
+     * Given a name, transforms it into a valid domain for an internet address, if possible, according to the constraints
+     * specified here: https://tools.ietf.org/html/rfc1035
+     * @param name the name to be transformed.
+     * @return null if the given string contains no characters that can be transformed in the order given to make a valid domain name ; a string containing only alphanumeric characters and dashes
+     * that does not start with a dash or
+     */
+    public static String getDomainName(String name)
+    {
+        if (StringUtils.isEmpty(name))
+            return null;
+        // decompose non-ASCII characters into component characters.
+        String normalizedName = Normalizer.normalize(name.trim().toLowerCase(), Normalizer.Form.NFD);
+        // replaces spaces with dashes and remove all characters that are not alpanumeric or a dash
+        normalizedName = normalizedName.replaceAll(" ", "-").replaceAll("[^A-Za-z0-9-]", "");
+        int start = 0;
+        int end = min(63,normalizedName.length()); // a sub-domain can be at most 63 characters in length
+        while (start < end && normalizedName.charAt(start) == '-')
+            start++;
+        while (end > start && normalizedName.charAt(end-1) == '-')
+            end--;
+        if (end-start == 0)
+            return null;
+        if (start > 0 || end < normalizedName.length())
+            return normalizedName.substring(start, end);
+        else
+            return normalizedName;
+    }
+
     public static class TestCase extends Assert
     {
         @Test
@@ -246,6 +288,45 @@ public class StringUtilsLabKey
             assertEquals("99 Bottles", splitCamelCase("99Bottles"));
             assertEquals("May 5", splitCamelCase("May5"));
             assertEquals("BFG 9000", splitCamelCase("BFG9000"));
+        }
+
+        @Test
+        public void testGetDomainName()
+        {
+            assertEquals("Null value expected", null, getDomainName(null));
+            assertEquals("No transformation expected", "subdomain", getDomainName("subdomain"));
+            assertEquals("Expected to convert to lower case", "subdomain", getDomainName("SubDomain"));
+            assertEquals("Expected to convert to lower case and remove spaces at beginning and end", "subdomain", getDomainName(" subDomain   "));
+            assertEquals("Expected to replace space with dash", "sub-domain", getDomainName(" sub Domain "));
+            assertEquals("Expected to remove leading and trailing dashes after trimming spaces", "sub-domain", getDomainName(" -sub Domain- "));
+            assertEquals("Expected to remove invalid characters are normalize accented characters", "aoua", getDomainName("\u2603~!@$&()_+{}-=[],.#\u00E4\u00F6\u00FC\u00C5"));
+            assertEquals("Null expected if all characters are invalid ", null, getDomainName("-\u2603~!@$&()_+{}=[],.#-"));
+            assertEquals("Null expected if all characters are dashes ", null, getDomainName("-------"));
+            assertEquals("Expected to remove invalid characters in the middle, replace spaces with dashes", "my-own--domain-with-dashes", getDomainName("My Own \u2603 D\u00F6main-with-[dashes]"));
+            assertEquals("Expected to remove invalid characters and produce a string without any characters truncated", "my-own--domain-with-dashes-789012345678901234567890123456789012", getDomainName("My Own \u2603 D\u00F6main-with-[dashes]-789012345678901234567890123456789012"));
+            assertEquals("Expected to truncate characters beyond valid length after removing and converting characters", "my-own--domain-with-dashes-789012345678901234567890123456789012", getDomainName("My Own \u2603 D\u00F6main-with-[dashes]-7890123456789012345678901234567890123"));
+        }
+
+        @Test
+        public void testIsValidDomainName()
+        {
+            assertFalse("Null is not a valid domain name", isValidDomainName(null));
+            assertFalse("Empty string is not a valid domain name", isValidDomainName(""));
+            assertFalse("domain name cannot start with a dash", isValidDomainName("-dashing-before"));
+            assertFalse("domain name cannot end with a dash", isValidDomainName("dashing-after-"));
+            assertFalse("domain name cannot start and end with a dash", isValidDomainName("-dashing-"));
+            assertFalse("domain name cannot contain spaces before or after", isValidDomainName(" spacesNoDashes "));
+            assertFalse("domain name cannot contain spaces in the middle", isValidDomainName("spaces in between"));
+            assertFalse("domain name cannot contain illegal characters", isValidDomainName("build-a-\u2603-today"));
+            assertFalse("domain name cannot contain accented characters", isValidDomainName("build-\u00E4\u00F6\u00FC\u00C5-today"));
+            assertFalse("domain name cannot be too long", isValidDomainName("1234567890-1234567890-1234567890-1234567890-12345678901234567890"));
+            assertTrue("domain name can be long, but not too long", isValidDomainName("1234567890-1234567890-1234567890-1234567890-1234567890123456789"));
+            assertTrue("domain name can be very short", isValidDomainName("1"));
+            assertTrue("domain name can contain dashes", isValidDomainName("domain-name"));
+            assertTrue("domain name can contain dashes", isValidDomainName("sub-domain-for-you"));
+            assertTrue("domain name can contain double dashes", isValidDomainName("sub--domain"));
+            assertTrue("domain name can contain only letters", isValidDomainName("subdomain"));
+            assertTrue("domain name can contain only numbers", isValidDomainName("123445"));
         }
     }
 }
