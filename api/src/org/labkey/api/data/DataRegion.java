@@ -983,7 +983,7 @@ public class DataRegion extends AbstractDataRegion
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         if (renderButtons)
             renderFormHeader(ctx, out, MODE_GRID);
-        out.write("\n<div class=\"" + (newUI ? " table-responsive " : "") + " labkey-data-region-wrap\"><table class=\"" + (newUI ? " table " : "") + " labkey-data-region");
+        out.write("\n<div class=\"" + (newUI ? " table-responsive " : "") + " labkey-data-region-wrap\"><table class=\"" + (newUI ? " table table-condensed" : "") + " labkey-data-region");
 
         if (isShowBorders())
             out.write(newUI ? " table-bordered" : " labkey-show-borders");
