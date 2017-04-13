@@ -192,6 +192,7 @@ import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
+import org.labkey.core.security.SecurityActionPermissionTest;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.security.validators.PermissionsValidator;
 import org.labkey.core.statistics.AnalyticsProviderRegistryImpl;
@@ -906,7 +907,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 TabLoader.TabLoaderTestCase.class,
                 MapLoader.MapLoaderTestCase.class,
                 GroupManager.TestCase.class,
-                SecurityController.TestCase.class,
+                SecurityActionPermissionTest.class,
                 AttachmentServiceImpl.TestCase.class,
                 WebdavResolverImpl.TestCase.class,
                 MimeMap.TestCase.class,

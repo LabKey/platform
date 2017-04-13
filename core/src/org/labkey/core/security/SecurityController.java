@@ -19,8 +19,6 @@ import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.json.JSONObject;
-import org.junit.Assert;
-import org.junit.Test;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -29,7 +27,6 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.FormattedError;
 import org.labkey.api.action.LabkeyError;
-import org.labkey.api.action.PermissionCheckableAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -56,25 +53,16 @@ import org.labkey.api.security.permissions.AccountManagementPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.ApplicationAdminRole;
-import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
-import org.labkey.api.security.roles.ProjectAdminRole;
-import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DotRunner;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
@@ -101,7 +89,6 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.mail.MessagingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
@@ -1978,138 +1965,6 @@ public class SecurityController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-    public static class TestCase extends Assert
-    {
-        private Container c;
-
-        @Test
-        public void testAnnotations() throws Exception
-        {
-            //clean up users in case this failed part way through
-            String[] cleanupUsers = {"guest@scjutc.com", "user@scjutc.com", "sadmin@scjutc.com", "aadmin@scjutc.com", "padmin@scjutc.com"};
-            for (String cleanupUser : cleanupUsers)
-            {
-                User oldUser = UserManager.getUser(new ValidEmail(cleanupUser));
-                if (null != oldUser)
-                    UserManager.deleteUser(oldUser.getUserId());
-            }
-
-            Container junit = JunitUtil.getTestContainer();
-            c = ContainerManager.createContainer(junit, "SecurityController-" + GUID.makeGUID());
-
-            User site = TestContext.get().getUser();
-            assertTrue(site.isInSiteAdminGroup());
-
-            User guest = SecurityManager.addUser(new ValidEmail("guest@scjutc.com"), null).getUser();
-            User user = SecurityManager.addUser(new ValidEmail("user@scjutc.com"), null).getUser();
-            User sadmin = SecurityManager.addUser(new ValidEmail("sadmin@scjutc.com"), null).getUser();
-            User aadmin = SecurityManager.addUser(new ValidEmail("aadmin@scjutc.com"), null).getUser();
-            User padmin = SecurityManager.addUser(new ValidEmail("padmin@scjutc.com"), null).getUser();
-
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(c, c.getPolicy());
-            policy.addRoleAssignment(sadmin, RoleManager.getRole(SiteAdminRole.class));
-            policy.addRoleAssignment(aadmin, RoleManager.getRole(ApplicationAdminRole.class));
-            policy.addRoleAssignment(padmin, RoleManager.getRole(ProjectAdminRole.class));
-            policy.addRoleAssignment(user, RoleManager.getRole(EditorRole.class));
-            policy.addRoleAssignment(guest, RoleManager.getRole(ReaderRole.class));
-            SecurityPolicyManager.savePolicy(policy);
-
-            SecurityController controller = new SecurityController();
-
-            // @RequiresNoPermission
-            BeginAction beginAction = controller.new BeginAction();
-            assertPermission(guest, beginAction);
-            assertPermission(user, beginAction);
-            assertPermission(padmin, beginAction);
-            assertPermission(aadmin, beginAction);
-            assertPermission(sadmin, beginAction);
-            assertPermission(site, beginAction);
-
-            // @RequiresPermission(ReadPermission.class)
-            CompleteUserReadAction completeUserReadAction = controller.new CompleteUserReadAction();
-            assertPermission(guest, completeUserReadAction);
-            assertPermission(user, completeUserReadAction);
-            assertPermission(padmin, completeUserReadAction);
-            assertPermission(aadmin, completeUserReadAction);
-            assertPermission(sadmin, completeUserReadAction);
-            assertPermission(site, completeUserReadAction);
-
-            // @RequiresPermission(AdminPermission.class)
-            PermissionsAction permissionsAction = controller.new PermissionsAction();
-            assertNoPermission(guest, permissionsAction);
-            assertNoPermission(user, permissionsAction);
-            assertPermission(padmin, permissionsAction);
-            assertPermission(aadmin, permissionsAction);
-            assertPermission(sadmin, permissionsAction);
-            assertPermission(site, permissionsAction);
-
-            // @RequiresPermission(AccountManagementPermission.class)
-            AddUsersAction addUsersAction = controller.new AddUsersAction();
-            assertNoPermission(guest, addUsersAction);
-            assertNoPermission(user, addUsersAction);
-            assertNoPermission(padmin, addUsersAction);
-            assertPermission(aadmin, addUsersAction);
-            assertPermission(sadmin, addUsersAction);
-            assertPermission(site, addUsersAction);
-
-            assertTrue(ContainerManager.delete(c, TestContext.get().getUser()));
-            UserManager.deleteUser(sadmin.getUserId());
-            UserManager.deleteUser(aadmin.getUserId());
-            UserManager.deleteUser(padmin.getUserId());
-            UserManager.deleteUser(user.getUserId());
-            UserManager.deleteUser(guest.getUserId());
-        }
-
-
-        private void assertPermission(User u, PermissionCheckableAction action) throws Exception
-        {
-            action.setViewContext(makeContext(u));
-
-            try
-            {
-                action.checkPermissions();
-            }
-            catch (UnauthorizedException x)
-            {
-                fail("Should have permission");
-            }
-        }
-
-        private void assertNoPermission(User u, PermissionCheckableAction action) throws Exception
-        {
-            action.setViewContext(makeContext(u));
-
-            try
-            {
-                action.checkPermissions();
-                fail("Should not have permission");
-            }
-            catch (UnauthorizedException x)
-            {
-                // expected
-            }
-        }
-
-        private ViewContext makeContext(User u)
-        {
-            HttpServletRequest w = new HttpServletRequestWrapper(TestContext.get().getRequest())
-            {
-                @Override
-                public String getParameter(String name)
-                {
-                    if (CSRFUtil.csrfName.equals(name))
-                        return CSRFUtil.getExpectedToken(TestContext.get().getRequest(), null);
-                    return super.getParameter(name);
-                }
-            };
-            ViewContext context = new ViewContext();
-            context.setContainer(c);
-            context.setUser(u);
-            context.setRequest(w);
-            return context;
         }
     }
 }
