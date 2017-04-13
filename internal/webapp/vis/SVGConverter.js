@@ -45,6 +45,12 @@ LABKEY.vis.SVGConverter = {
         newForm.target = '_blank';
         document.body.appendChild(newForm);
 
+        var csrfInput = document.createElement('input');
+        csrfInput.setAttribute('type', 'hidden');
+        csrfInput.setAttribute('name', 'X-LABKEY-CSRF');
+        csrfInput.setAttribute('value', LABKEY.CSRF);
+        newForm.appendChild(csrfInput);
+
         var svgInput = document.createElement('input');
         svgInput.setAttribute('type', 'hidden');
         svgInput.setAttribute('name', 'svg');
