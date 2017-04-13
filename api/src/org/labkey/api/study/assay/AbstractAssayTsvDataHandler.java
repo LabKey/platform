@@ -501,7 +501,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         List<String> missing = new ArrayList<>();
         List<String> unexpected = new ArrayList<>();
 
-        Set<String> columnNames = rawData.get(0).keySet();
+        Set<String> columnNames = Collections.emptySet();
+        if (rawData != null && !rawData.isEmpty() && rawData.get(0) != null)
+            columnNames = rawData.get(0).keySet();
+
         // For now, we'll only enforce that required columns are present.  In the future, we'd like to
         // do a strict check first, and then present ignorable warnings.
         checkColumns(dataDomain, columnNames, missing, unexpected, rawData, false);
