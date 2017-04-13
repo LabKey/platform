@@ -456,7 +456,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     protected boolean hasCustomView(String viewResourceName)
     {
-        return getDeclaringModule().getModuleResolver().lookup(basePath.getPath().append("views", viewResourceName)) != null;
+        return ModuleHtmlView.exists(getDeclaringModule(), basePath.getPath().append("views", viewResourceName));
     }
 
     @Override
@@ -467,11 +467,9 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     protected ModelAndView getCustomView(String viewResourceName)
     {
-        // TODO: This should use the cache!
-        Resource viewResource = getDeclaringModule().getModuleResolver().lookup(basePath.getPath().append("views", viewResourceName));
-        if (viewResource != null && viewResource.exists())
+        ModuleHtmlView view = ModuleHtmlView.get(getDeclaringModule(), basePath.getPath().append("views", viewResourceName));
+        if (view != null)
         {
-            ModuleHtmlView view = new ModuleHtmlView(viewResource);
             view.setFrame(WebPartView.FrameType.NONE);
             return view;
         }

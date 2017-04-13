@@ -41,7 +41,6 @@ import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
@@ -60,7 +59,25 @@ import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.SpecimenImporter.VialSpecimenRollup;
-import org.labkey.study.model.*;
+import org.labkey.study.model.AdditiveType;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.DerivativeType;
+import org.labkey.study.model.ExtendedSpecimenRequestView;
+import org.labkey.study.model.LocationImpl;
+import org.labkey.study.model.PrimaryType;
+import org.labkey.study.model.SpecimenComment;
+import org.labkey.study.model.SpecimenEvent;
+import org.labkey.study.model.SpecimenRequest;
+import org.labkey.study.model.SpecimenRequestActor;
+import org.labkey.study.model.SpecimenRequestEvent;
+import org.labkey.study.model.SpecimenRequestRequirement;
+import org.labkey.study.model.SpecimenRequestStatus;
+import org.labkey.study.model.SpecimenTypeSummary;
+import org.labkey.study.model.SpecimenTypeSummaryRow;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.Vial;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.requirements.RequirementProvider;
@@ -93,7 +110,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class SpecimenManager implements ContainerManager.ContainerListener
@@ -110,7 +126,6 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     private final QueryHelper<SpecimenRequestStatus> _requestStatusHelper;
     private final RequirementProvider<SpecimenRequestRequirement, SpecimenRequestActor> _requirementProvider =
             new SpecimenRequestRequirementProvider();
-    private final Map<String, Resource> _moduleExtendedSpecimenRequestViews = new ConcurrentHashMap<>();
     private final Comparator<SpecimenEvent> _specimenEventDateComparator = new SpecimenEventDateComparator();
 
     private SpecimenManager()
@@ -3318,25 +3333,20 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         url.addParameter("SpecimenDetail." + urlColumnName + "~eq", label);
     }
 
-    public void registerExtendedSpecimenRequestView(Module module, Resource requestView)
-    {
-        _moduleExtendedSpecimenRequestViews.put(module.getName(), requestView);
-    }
-
     @Nullable
     public ExtendedSpecimenRequestView getExtendedSpecimenRequestView(ViewContext context)
     {
         if (context == null || context.getContainer() == null)
             return null;
 
-        Path path = new Path(ModuleHtmlView.VIEWS_DIR, "extendedrequest.html");
+        Path path = ModuleHtmlView.getStandardPath("extendedrequest");
 
         for (Module module : context.getContainer().getActiveModules())
         {
-            ModuleHtmlView moduleView = ModuleHtmlView.get(module, path, null);
-
-            if (null != moduleView)
+            if (ModuleHtmlView.exists(module, path))
             {
+                ModuleHtmlView moduleView = ModuleHtmlView.get(module, path);
+                assert null != moduleView;
                 String html = moduleView.getHtml();
                 html = ModuleHtmlView.replaceTokens(html, context);
                 return ExtendedSpecimenRequestView.createView(html);

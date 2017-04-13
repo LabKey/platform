@@ -42,15 +42,32 @@ import org.labkey.api.data.Project;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.SimpleAction;
-import org.labkey.api.security.*;
+import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
+import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
+import org.labkey.api.security.CSRF;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.PasswordExpiration;
+import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityMessage;
+import org.labkey.api.security.TokenAuthenticationManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
+import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.services.ServiceRegistry;
@@ -297,7 +314,6 @@ public class LoginController extends SpringActionController
         {
             // Attempt authentication with all active form providers
             PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, form.getEmail(), form.getPassword(), form.getReturnURLHelper(), logFailures);
-            LookAndFeelProperties laf;
 
             switch (result.getStatus())
             {
@@ -393,7 +409,7 @@ public class LoginController extends SpringActionController
 
             JspView jsp = new JspView("/org/labkey/core/login/register.jsp");
 
-            WebPartView view = SimpleAction.getModuleHtmlView(ModuleLoader.getInstance().getModule("core"), "register", null);
+            WebPartView view = ModuleHtmlView.get(ModuleLoader.getInstance().getCoreModule(), "register");
             view.setFrame(WebPartView.FrameType.NONE);
             jsp.setView("registerView", view);
             return jsp;
@@ -1227,18 +1243,18 @@ public class LoginController extends SpringActionController
             Module loginModule = ModuleLoader.getInstance().getModule(loginController);
             // custom login
             if (null != loginModule)
-                view = SimpleAction.getModuleHtmlView(loginModule, loginAction, null);
+                view = ModuleHtmlView.get(loginModule, loginAction);
             if (null == view )
             {
                 // custom failed so default to login-login html with error message
                 errors.reject(ERROR_MSG, "Custom login page specified via Look and Feel Settings as: '" + customLogin + "' was not found. Default login page being used instead.");
-                view = SimpleAction.getModuleHtmlView(ModuleLoader.getInstance().getModule("core"), "login", null);
+                view = ModuleHtmlView.get(ModuleLoader.getInstance().getCoreModule(), "login");
             }
         }
         else
         {
             // the login.html is in the core/resources/views
-            view = SimpleAction.getModuleHtmlView(ModuleLoader.getInstance().getModule("core"), loginAction, null);
+            view = ModuleHtmlView.get(ModuleLoader.getInstance().getCoreModule(), loginAction);
         }
         if (null != view)
         {

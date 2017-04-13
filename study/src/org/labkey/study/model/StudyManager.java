@@ -222,56 +222,52 @@ public class StudyManager
                 final Set<Container> siblingsWithNoStudies = new HashSet<>();
                 final Set<Study> siblingsStudies = new HashSet<>();
 
-                CacheLoader<String, Object> loader = new CacheLoader<String, Object>()
+                CacheLoader<String, Object> loader = (key, argument) ->
                 {
-                    @Override
-                    public Object load(String key, Object argument)
+                    // Bulk-load the study for the current container and its siblings, instead of issuing separate
+                    // requests for each container. See issue 19632
+                    SQLFragment selectSQL = new SQLFragment("SELECT * FROM study.Study WHERE Container IN (SELECT ? AS EntityId ");
+                    selectSQL.add(c);
+                    if (c.getParent() != null)
                     {
-                        // Bulk-load the study for the current container and its siblings, instead of issuing separate
-                        // requests for each container. See issue 19632
-                        SQLFragment selectSQL = new SQLFragment("SELECT * FROM study.Study WHERE Container IN (SELECT ? AS EntityId ");
-                        selectSQL.add(c);
-                        if (c.getParent() != null)
-                        {
-                            selectSQL.append(" UNION SELECT EntityId FROM ");
-                            selectSQL.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
-                            selectSQL.append(" WHERE Parent = ?");
-                            selectSQL.add(c.getParent());
-                        }
-                        selectSQL.append(")");
-                        List<StudyImpl> objs = new SqlSelector(StudySchema.getInstance().getSchema(), selectSQL).getArrayList(StudyImpl.class);
-
-                        // The match, if any, for the container that's being queried directly
-                        StudyImpl result = null;
-                        // Keep track of all of the containers that DON'T have a study so we can cache them as a miss
-                        if (c.getParent() != null)
-                        {
-                            siblingsWithNoStudies.addAll(ContainerManager.getChildren(c.getParent()));
-                            // No need to reprocess the original container
-                            siblingsWithNoStudies.remove(c);
-                        }
-
-                        for (StudyImpl obj : objs)
-                        {
-                            obj.lock();
-
-                            if (obj.getContainer().equals(c))
-                            {
-                                result = obj;
-                            }
-                            else
-                            {
-                                // Found a study for this container
-                                siblingsWithNoStudies.remove(obj.getContainer());
-
-                                // Remember the hit
-                                siblingsStudies.add(obj);
-                            }
-                        }
-
-                        // Return the specific hit/miss for the originally queried container
-                        return result == null ? Collections.emptyList() : Collections.singletonList(result);
+                        selectSQL.append(" UNION SELECT EntityId FROM ");
+                        selectSQL.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
+                        selectSQL.append(" WHERE Parent = ?");
+                        selectSQL.add(c.getParent());
                     }
+                    selectSQL.append(")");
+                    List<StudyImpl> objs = new SqlSelector(StudySchema.getInstance().getSchema(), selectSQL).getArrayList(StudyImpl.class);
+
+                    // The match, if any, for the container that's being queried directly
+                    StudyImpl result = null;
+                    // Keep track of all of the containers that DON'T have a study so we can cache them as a miss
+                    if (c.getParent() != null)
+                    {
+                        siblingsWithNoStudies.addAll(ContainerManager.getChildren(c.getParent()));
+                        // No need to reprocess the original container
+                        siblingsWithNoStudies.remove(c);
+                    }
+
+                    for (StudyImpl obj : objs)
+                    {
+                        obj.lock();
+
+                        if (obj.getContainer().equals(c))
+                        {
+                            result = obj;
+                        }
+                        else
+                        {
+                            // Found a study for this container
+                            siblingsWithNoStudies.remove(obj.getContainer());
+
+                            // Remember the hit
+                            siblingsStudies.add(obj);
+                        }
+                    }
+
+                    // Return the specific hit/miss for the originally queried container
+                    return result == null ? Collections.emptyList() : Collections.singletonList(result);
                 };
 
                 List<StudyImpl> result = (List<StudyImpl>) StudyCache.get(getTableInfo(), c, cacheId, loader);
@@ -349,31 +345,27 @@ public class StudyManager
         // Cache of PropertyDescriptors found in the Shared container for datasets in the given study Container.
         // The shared properties cache will be cleared when the _datasetHelper cache is cleared.
         _sharedProperties = CacheManager.getBlockingCache(1000, CacheManager.UNLIMITED, "StudySharedProperties",
-                new CacheLoader<Container, Set<PropertyDescriptor>>()
+                (key, argument) ->
                 {
-                    @Override
-                    public Set<PropertyDescriptor> load(Container key, @Nullable Object argument)
+                    Container sharedContainer = ContainerManager.getSharedContainer();
+                    assert key != sharedContainer;
+
+                    List<DatasetDefinition> defs = _datasetHelper.get(key);
+                    if (defs == null)
+                        return Collections.emptySet();
+
+                    Set<PropertyDescriptor> set = new LinkedHashSet<>();
+                    for (DatasetDefinition def : defs)
                     {
-                        Container sharedContainer = ContainerManager.getSharedContainer();
-                        assert key != sharedContainer;
+                        Domain domain = def.getDomain();
+                        if (domain == null)
+                            continue;
 
-                        List<DatasetDefinition> defs = _datasetHelper.get(key);
-                        if (defs == null)
-                            return Collections.emptySet();
-
-                        Set<PropertyDescriptor> set = new LinkedHashSet<>();
-                        for (DatasetDefinition def : defs)
-                        {
-                            Domain domain = def.getDomain();
-                            if (domain == null)
-                                continue;
-
-                            for (DomainProperty dp : domain.getProperties())
-                                if (dp.getContainer().equals(sharedContainer))
-                                    set.add(dp.getPropertyDescriptor());
-                        }
-                        return Collections.unmodifiableSet(set);
+                        for (DomainProperty dp : domain.getProperties())
+                            if (dp.getContainer().equals(sharedContainer))
+                                set.add(dp.getPropertyDescriptor());
                     }
+                    return Collections.unmodifiableSet(set);
                 }
         );
 
@@ -395,13 +387,7 @@ public class StudyManager
         // datasets that are cached under container.containerId/ds.entityId
 
         private QueryHelper<DatasetDefinition> helper = new QueryHelper<DatasetDefinition>(
-                new TableInfoGetter()
-                {
-                    public TableInfo getTableInfo()
-                    {
-                        return StudySchema.getInstance().getTableInfoDataset();
-                    }
-                },
+                () -> StudySchema.getInstance().getTableInfoDataset(),
                 DatasetDefinition.class)
         {
             @Override
@@ -4350,15 +4336,13 @@ public class StudyManager
         if (study == null)
             return null;
 
-        Path path = new Path(ModuleHtmlView.VIEWS_DIR, "participant.html");
+        Path path = ModuleHtmlView.getStandardPath("participant");
 
         for (Module module : study.getContainer().getActiveModules())
         {
-            ModuleHtmlView moduleView = ModuleHtmlView.get(module, path, null);
-
-            if (null != moduleView)
+            if (ModuleHtmlView.exists(module, path))
             {
-                return CustomParticipantView.create(moduleView);
+                return CustomParticipantView.create(ModuleHtmlView.get(module, path));
             }
         }
 
