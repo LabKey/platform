@@ -41,123 +41,83 @@ import static org.labkey.api.module.ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION
 import static org.labkey.api.module.ModuleHtmlViewDefinition.VIEW_METADATA_EXTENSION;
 
 /**
- * Cache for views provided by modules as simple HTML files in their ./resources/views directory, along with
- * any associated metadata from corresponding a .view.xml file.
+ * Cache for views provided by modules as simple HTML files (along with metadata from an associated .view.xml file) in
+ * the /resources/views directory or /resources/assays/[provider name]/views.
  * User: adam
  * Date: 1/21/14
  */
-public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandlerOld<Path, ModuleHtmlViewDefinition>
+public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandler<Map<Path, ModuleHtmlViewDefinition>>
 {
+    // TODO: Push this into ModuleResourceCache()
     @Override
-    public boolean isResourceFile(String filename)
+    public Map<Path, ModuleHtmlViewDefinition> load(@Nullable Resource dir, Module module, ModuleResourceCache<Map<Path, ModuleHtmlViewDefinition>> cache)
     {
-        return filename.endsWith(HTML_VIEW_EXTENSION) || filename.endsWith(VIEW_METADATA_EXTENSION);
-    }
-
-    @Override  // Always return the .html filename as the resource name
-    public String getResourceName(Module module, String filename)
-    {
-        if (filename.endsWith(HTML_VIEW_EXTENSION))
-            return filename;
-
-        if (filename.endsWith(VIEW_METADATA_EXTENSION))
-            return filename.substring(0, filename.length() - VIEW_METADATA_EXTENSION.length()) + HTML_VIEW_EXTENSION;
-
-        throw new IllegalStateException("Filename doesn't end in " + HTML_VIEW_EXTENSION + " or " + VIEW_METADATA_EXTENSION + ": \"" + filename + "\"");
+        return load(new FileListenerResource(module.getModuleResource(Path.rootPath), module, cache), module);
     }
 
     @Override
-    public String createCacheKey(Module module, Path path)
+    public Map<Path, ModuleHtmlViewDefinition> load(@Nullable Resource dir, Module module)
     {
-        return ModuleResourceCaches.createCacheKey(module, path.toString());
+        return getResourceRoots(module, dir, new Path(ModuleHtmlView.VIEWS_DIR));
     }
 
-    @Override
-    public CacheLoader<String, ModuleHtmlViewDefinition> getResourceLoader()
+    private Map<Path, ModuleHtmlViewDefinition> getResourceRoots(Module module, @Nullable Resource resources, Path path)
     {
-        return (key, argument) ->
+        List<Resource> roots = new LinkedList<>();
+
+        if (null != resources)
         {
-            CacheId cid = ModuleResourceCaches.parseCacheKey(key);
-            Path path = Path.parse(cid.getName());
-            Resource r = cid.getModule().getModuleResource(path);
+            Resource standardRoot = resources.find(path.getName());
 
-            return new ModuleHtmlViewDefinition(r);
-        };
-    }
+            if (null != standardRoot && standardRoot.isCollection())
+                roots.add(standardRoot);
 
-    public static class ModuleHtmlViewCacheHandler2 implements ModuleResourceCacheHandler<Map<Path, ModuleHtmlViewDefinition>>
-    {
-        // TODO: Push this into ModuleResourceCache()
-        @Override
-        public Map<Path, ModuleHtmlViewDefinition> load(@Nullable Resource dir, Module module, ModuleResourceCache<Map<Path, ModuleHtmlViewDefinition>> cache)
-        {
-            return load(new FileListenerResource(module.getModuleResource(Path.rootPath), module, cache), module);
-        }
+            Resource assayRoot = resources.find("assay");
 
-        @Override
-        public Map<Path, ModuleHtmlViewDefinition> load(@Nullable Resource dir, Module module)
-        {
-            return getResourceRoots(module, dir, new Path(ModuleHtmlView.VIEWS_DIR));
-        }
-
-        private Map<Path, ModuleHtmlViewDefinition> getResourceRoots(Module module, @Nullable Resource resources, Path path)
-        {
-            List<Resource> roots = new LinkedList<>();
-
-            if (null != resources)
+            if (null != assayRoot && assayRoot.isCollection())
             {
-                Resource standardRoot = resources.find(path.getName());
-
-                if (null != standardRoot && standardRoot.isCollection())
-                    roots.add(standardRoot);
-
-                Resource assayRoot = resources.find("assay");
-
-                if (null != assayRoot && assayRoot.isCollection())
+                for (Resource root : assayRoot.list())
                 {
-                    for (Resource root : assayRoot.list())
+                    if (root.isCollection())
                     {
-                        if (root.isCollection())
-                        {
-                            Resource r = root.find(path.getName());
+                        Resource r = root.find(path.getName());
 
-                            if (null != r && r.isCollection())
-                                roots.add(r);
-                        }
+                        if (null != r && r.isCollection())
+                            roots.add(r);
                     }
                 }
             }
-
-            return load(roots.stream(), module, resource -> resource.getName().endsWith(HTML_VIEW_EXTENSION));
         }
 
-        private Map<Path, ModuleHtmlViewDefinition> load(Stream<Resource> roots, Module module, Filter<Resource> filter)
-        {
-            Map<Path, ModuleHtmlViewDefinition> map = new HashMap<>();
+        return load(roots.stream(), module, resource -> resource.getName().endsWith(HTML_VIEW_EXTENSION));
+    }
 
-            roots.forEach(root -> {
-                root.list().stream()
-                    .filter(resource -> resource.isFile() && filter.accept(resource))
-                    .forEach(resource -> {
-                        ModuleHtmlViewDefinition def = new ModuleHtmlViewDefinition(resource);
-                        map.put(resource.getPath(), def);
-                    });
-            });
+    private Map<Path, ModuleHtmlViewDefinition> load(Stream<Resource> roots, Module module, Filter<Resource> filter)
+    {
+        Map<Path, ModuleHtmlViewDefinition> map = new HashMap<>();
 
-            return map.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(map);
-        }
+        roots.forEach(root -> {
+            root.list().stream()
+                .filter(resource -> resource.isFile() && filter.accept(resource))
+                .forEach(resource -> {
+                    ModuleHtmlViewDefinition def = new ModuleHtmlViewDefinition(resource);
+                    map.put(resource.getPath(), def);
+                });
+        });
 
-        // Sample impl, if case we choose to auto-filter
-        private Map<Path, ModuleHtmlViewDefinition> load2(Stream<Resource> files, Module module)
-        {
-            Map<Path, ModuleHtmlViewDefinition> map = new HashMap<>();
+        return map.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(map);
+    }
 
-            files.forEach(file -> {
-                ModuleHtmlViewDefinition def = new ModuleHtmlViewDefinition(file);
-                map.put(file.getPath(), def);
-            });
+    // Sample impl, if case we choose to auto-filter
+    private Map<Path, ModuleHtmlViewDefinition> load2(Stream<Resource> files, Module module)
+    {
+        Map<Path, ModuleHtmlViewDefinition> map = new HashMap<>();
 
-            return map.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(map);
-        }
+        files.forEach(file -> {
+            ModuleHtmlViewDefinition def = new ModuleHtmlViewDefinition(file);
+            map.put(file.getPath(), def);
+        });
+
+        return map.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(map);
     }
 }

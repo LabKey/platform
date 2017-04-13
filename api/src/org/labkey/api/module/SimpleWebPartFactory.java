@@ -178,7 +178,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         if (null == getViewName())
             throw new WebPartConfigurationException(this, "No view name specified for the module web part defined in " + _resourceName);
 
-        WebPartView ret = SimpleAction.getModuleHtmlView(getModule(), getViewName(), webPart);
+        WebPartView ret = ModuleHtmlView.get(getModule(), ModuleHtmlView.getStandardPath(getViewName()), webPart);
         if (null != _webPartDef && null != _webPartDef.getView())
         {
             if (null != _webPartDef.getView().getFrame())

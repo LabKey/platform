@@ -28,11 +28,10 @@ import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleHtmlViewDefinition;
+import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SimpleAction;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
@@ -42,6 +41,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -78,6 +78,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -152,7 +153,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     public static Collection<ActionDescriptor> getRegisteredActionDescriptors()
     {
         return new ArrayList<>(_classToDescriptor.values());
-    };
+    }
 
 
     // I don't think there is an interface for this
@@ -703,35 +704,33 @@ public abstract class SpringActionController implements Controller, HasViewConte
             if (null == module)
                 return null;
 
-            Resource r = module.getModuleResource("/" + VIEWS_DIRECTORY + "/" + actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
-            if (r == null || !r.isFile())
-            {
+            Path path = ModuleHtmlView.getStandardPath(actionName);
+            if (!ModuleHtmlView.exists(module, path))
                 return null;
-            }
 
-            HTMLFileActionDescriptor htmlDescriptor = createFileActionDescriptor(actionName, r);
+            HTMLFileActionDescriptor htmlDescriptor = createFileActionDescriptor(module, actionName);
             _nameToDescriptor.put(actionName, htmlDescriptor);
             registerAction(htmlDescriptor);
 
             return htmlDescriptor.createController(actionController);
         }
 
-        protected HTMLFileActionDescriptor createFileActionDescriptor(String actionName, Resource r)
+        protected HTMLFileActionDescriptor createFileActionDescriptor(Module module, String actionName)
         {
-            return new HTMLFileActionDescriptor(actionName, r);
+            return new HTMLFileActionDescriptor(module, actionName);
         }
 
         protected class HTMLFileActionDescriptor extends BaseActionDescriptor
         {
+            private final Module _module;
             private final String _primaryName;
             private final List<String> _allNames;
-            protected final Resource _resource;
 
-            protected HTMLFileActionDescriptor(String primaryName, Resource resource)
+            protected HTMLFileActionDescriptor(Module module, String primaryName)
             {
+                _module = module;
                 _primaryName = primaryName;
-                _resource = resource;
-                _allNames = Arrays.asList(_primaryName);
+                _allNames = Collections.singletonList(_primaryName);
             }
 
             public String getControllerName()
@@ -751,14 +750,12 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             public Class<? extends Controller> getActionClass()
             {
-                // This is an HTML View so it does not have a class.
-                //return null;
                 return SimpleAction.class;
             }
 
             public Controller createController(Controller actionController)
             {
-                return new SimpleAction(_resource);
+                return new SimpleAction(_module, ModuleHtmlView.getStandardPath(getPrimaryName()));
             }
         }
 
@@ -779,8 +776,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
     {
         private final Class<? extends Controller> _outerClass;
         private final String _controllerName;
-        //private final Map<String, ActionDescriptor> _nameToDescriptor;
         private final Map<String, ActionDescriptor> _nameToDescriptor;
+
         private HTMLFileActionResolver _htmlResolver;
 
         @SafeVarargs
@@ -926,17 +923,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     else
                         return (Controller)_con.newInstance();
                 }
-                catch (IllegalAccessException e)
-                {
-                    _log.error("unexpected error", e);
-                    throw new RuntimeException(e);
-                }
-                catch (InstantiationException e)
-                {
-                    _log.error("unexpected error", e);
-                    throw new RuntimeException(e);
-                }
-                catch (InvocationTargetException e)
+                catch (IllegalAccessException | InstantiationException | InvocationTargetException e)
                 {
                     _log.error("unexpected error", e);
                     throw new RuntimeException(e);
@@ -977,7 +964,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         protected Controller resolveHTMLActionName(Controller actionController, String actionName)
         {
-            if(_htmlResolver == null)
+            if (_htmlResolver == null)
             {
                 _htmlResolver = getHTMLFileActionResolver();
             }

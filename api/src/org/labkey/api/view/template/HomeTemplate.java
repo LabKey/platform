@@ -19,9 +19,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.MultiPortalFolderType;
-import org.labkey.api.module.SimpleAction;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.FooterProperties;
@@ -164,13 +164,13 @@ public class HomeTemplate extends PrintTemplate
             ListIterator<Module> i = modules.listIterator(modules.size());
             while (i.hasPrevious())
             {
-                view = SimpleAction.getModuleHtmlView(i.previous(), "_footer", null);
+                view = ModuleHtmlView.get(i.previous(), "_footer");
                 if (null != view)
                     break;
             }
             if (null == view)
             {
-                view = SimpleAction.getModuleHtmlView(coreModule, "_footer", null);
+                view = ModuleHtmlView.get(coreModule, "_footer");
             }
             if (null != view)
             {

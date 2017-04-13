@@ -49,6 +49,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
  * User: adam
  * Date: 12/26/13
  */
+@Deprecated
 public final class PathBasedModuleResourceCache<T>
 {
     private static final Logger LOG = Logger.getLogger(PathBasedModuleResourceCache.class);

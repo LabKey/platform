@@ -17,7 +17,7 @@ package org.labkey.api.module;
 
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
-import org.labkey.api.resource.Resource;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -36,7 +36,6 @@ import java.util.Collections;
  */
 public class SimpleController extends SpringActionController implements SpringActionController.ActionResolver
 {
-    public static final String VIEWS_DIRECTORY = "views";
     public static final String BEGIN_VIEW_NAME = "begin";
 
     public SimpleController()
@@ -49,22 +48,14 @@ public class SimpleController extends SpringActionController implements SpringAc
         setActionResolver(new HTMLFileActionResolver(controllerName));
     }
 
-    private static Resource getViewResource(Module module, String actionName)
-    {
-        if (null == module)
-            return null;
-
-        return module.getModuleResource("/" + VIEWS_DIRECTORY + "/" + actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
-    }
-
     public Controller resolveActionName(Controller actionController, String actionName)
     {
         String controllerName = getViewContext().getActionURL().getController();
         Module module = ModuleLoader.getInstance().getModuleForController(controllerName);
 
-        Resource r = getViewResource(module, actionName);
-        if (r != null && r.isFile())
-            return new SimpleAction(r);
+        Path path = ModuleHtmlView.getStandardPath(actionName);
+        if (ModuleHtmlView.exists(module, path))
+            return new SimpleAction(module, path);
 
         return null;
     }
@@ -80,11 +71,10 @@ public class SimpleController extends SpringActionController implements SpringAc
 
     public static ActionURL getBeginViewUrl(Module module, Container container)
     {
-        Resource r = getViewResource(module, BEGIN_VIEW_NAME);
-        if (r != null && r.isFile())
+        Path path = ModuleHtmlView.getStandardPath(BEGIN_VIEW_NAME);
+        if (ModuleHtmlView.exists(module, path))
             return new ActionURL(module.getName(), BEGIN_VIEW_NAME, container);
 
         return null;
     }
-
 }

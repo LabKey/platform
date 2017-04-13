@@ -42,10 +42,10 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
-import org.labkey.api.module.SimpleController;
 import org.labkey.api.module.SimpleWebPartFactory;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.FieldKey;
@@ -90,7 +90,7 @@ public class Portal
     public static final int MOVE_UP = 0;
     public static final int MOVE_DOWN = 1;
     public static final ModuleResourceCache<Collection<SimpleWebPartFactory>> WEB_PART_FACTORY_CACHE =
-        ModuleResourceCaches.create(new Path(SimpleController.VIEWS_DIRECTORY), new SimpleWebPartFactoryCacheHandler(), "File-based webpart definitions");
+        ModuleResourceCaches.create(new Path(ModuleHtmlView.VIEWS_DIR), new SimpleWebPartFactoryCacheHandler(), "File-based webpart definitions");
 
     private static Map<String, WebPartFactory> _viewMap = null;
 

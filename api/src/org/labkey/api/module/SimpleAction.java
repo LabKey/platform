@@ -15,11 +15,9 @@
  */
 package org.labkey.api.module;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.NavTrailAction;
 import org.labkey.api.data.Container;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -32,9 +30,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ForbiddenProjectException;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.Portal;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.WebPartView;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -52,11 +48,6 @@ import java.util.Set;
  */
 public class SimpleAction extends BaseViewAction implements NavTrailAction
 {
-    public static WebPartView getModuleHtmlView(Module module, String viewName, @Nullable Portal.WebPart webpart)
-    {
-        return ModuleHtmlView.get(module, new Path(SimpleController.VIEWS_DIRECTORY, viewName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION), webpart);
-    }
-
     public enum PermissionEnum
     {
         login(0),
@@ -83,11 +74,11 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
     private ModuleHtmlView _view;
     private Exception _exception;
 
-    public SimpleAction(Resource r)
+    public SimpleAction(Module module, Path path)
     {
         try
         {
-            _view = new ModuleHtmlView(r);
+            _view = ModuleHtmlView.get(module, path);
         }
         catch(Exception e)
         {

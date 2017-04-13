@@ -18,13 +18,12 @@ package org.labkey.api.module;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.ModuleHtmlViewCacheHandler;
-import org.labkey.api.view.Portal;
+import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
@@ -46,14 +45,50 @@ public class ModuleHtmlView extends HtmlView
 {
     public static final String VIEWS_DIR = "views";
 
-    private static final PathBasedModuleResourceCache<ModuleHtmlViewDefinition> MODULE_HTML_VIEW_DEFINITION_CACHE = ModuleResourceCaches.create("HTML view definitions", new ModuleHtmlViewCacheHandler());
-    private static final ModuleResourceCache<Map<Path, ModuleHtmlViewDefinition>> MODULE_HTML_VIEW_DEFINITION_CACHE2 = ModuleResourceCaches.create(new Path(VIEWS_DIR), new ModuleHtmlViewCacheHandler.ModuleHtmlViewCacheHandler2(), "HTML view definitions");
+    private static final ModuleResourceCache<Map<Path, ModuleHtmlViewDefinition>> MODULE_HTML_VIEW_DEFINITION_CACHE = ModuleResourceCaches.create(new Path(VIEWS_DIR), new ModuleHtmlViewCacheHandler(), "HTML view definitions");
 
     private final ModuleHtmlViewDefinition _viewdef;
 
-    public static @Nullable ModuleHtmlView get(@NotNull Module module, @NotNull Path path, @Nullable Portal.WebPart webpart)
+    public static Path getStandardPath(String viewName)
     {
-        ModuleHtmlViewDefinition viewDefinition = MODULE_HTML_VIEW_DEFINITION_CACHE2.getResourceMap(module).get(path);
+        return new Path(VIEWS_DIR, viewName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
+    }
+
+    /**
+     * Quick check for existence of an HTML view at this path
+     * @param module
+     * @param path
+     * @return
+     */
+    public static boolean exists(Module module, Path path)
+    {
+        return null != MODULE_HTML_VIEW_DEFINITION_CACHE.getResourceMap(module).get(path);
+    }
+
+    /**
+     * Quick check for existence of an HTML view with this name in the standard location /views/*
+     * @param module
+     * @param viewName
+     * @return
+     */
+    public static boolean exists(Module module, String viewName)
+    {
+        return exists(module, getStandardPath(viewName));
+    }
+
+    public static @Nullable ModuleHtmlView get(@NotNull Module module, @NotNull String viewName)
+    {
+        return get(module, getStandardPath(viewName));
+    }
+
+    public static @Nullable ModuleHtmlView get(@NotNull Module module, @NotNull Path path)
+    {
+        return get(module, path, null);
+    }
+
+    public static @Nullable ModuleHtmlView get(@NotNull Module module, @NotNull Path path, @Nullable WebPart webpart)
+    {
+        ModuleHtmlViewDefinition viewDefinition = MODULE_HTML_VIEW_DEFINITION_CACHE.getResourceMap(module).get(path);
 
         if (null == viewDefinition)
             return null;
@@ -61,27 +96,7 @@ public class ModuleHtmlView extends HtmlView
         return new ModuleHtmlView(viewDefinition, module, webpart);
     }
 
-    @Deprecated
-    public ModuleHtmlView(@NotNull Resource r)
-    {
-        this(getDef(r), ((ModuleResourceResolver) r.getResolver()).getModule(), null);
-    }
-
-    private static ModuleHtmlViewDefinition getDef(Resource r)
-    {
-        Module module = ((ModuleResourceResolver) r.getResolver()).getModule();
-        ModuleHtmlViewDefinition viewDefOld = MODULE_HTML_VIEW_DEFINITION_CACHE.getResource(module, r.getPath());
-
-        Map<Path, ModuleHtmlViewDefinition> map = MODULE_HTML_VIEW_DEFINITION_CACHE2.getResourceMap(module);
-        ModuleHtmlViewDefinition viewDefNew = map.get(r.getPath());
-
-        assert viewDefOld.getName().equals(viewDefNew.getName());
-        assert viewDefOld.getHtml().equals(viewDefNew.getHtml());
-
-        return viewDefOld;
-    }
-
-    private ModuleHtmlView(ModuleHtmlViewDefinition viewdef, @NotNull Module module, @Nullable Portal.WebPart webpart)
+    private ModuleHtmlView(ModuleHtmlViewDefinition viewdef, @NotNull Module module, @Nullable WebPart webpart)
     {
         super(null);
         _debugViewDescription = getClass().getSimpleName() + ": " + module.getName() + "/" + viewdef.getName();
@@ -102,7 +117,7 @@ public class ModuleHtmlView extends HtmlView
     }
 
 
-    public String replaceTokensForView(String html, ViewContext context, @Nullable Portal.WebPart webpart)
+    public String replaceTokensForView(String html, ViewContext context, @Nullable WebPart webpart)
     {
         if (null == html)
             return null;
