@@ -216,6 +216,13 @@ public class RoleManager
         return roles;
     }
 
+    @SafeVarargs
+    public static void testPermissionsInAdminRoles(boolean shouldBePresent, Class<? extends Permission>... permissionsToTest)
+    {
+        Set<Role> adminRoleSet = RoleManager.roleSet(SiteAdminRole.class, ApplicationAdminRole.class, ProjectAdminRole.class, FolderAdminRole.class);
+        testPermissionsInAdminRoles(shouldBePresent, adminRoleSet, permissionsToTest);
+    }
+
     /**
      * Helper method for tests to verify whether the given permissions are present in the administrator roles.
      *
@@ -223,10 +230,9 @@ public class RoleManager
      * @param permissionsToTest Permission classes to test
      */
     @SafeVarargs
-    public static void testPermissionsInAdminRoles(boolean shouldBePresent, Class<? extends Permission>... permissionsToTest)
+    public static void testPermissionsInAdminRoles(boolean shouldBePresent, Set<Role> adminRoleSet, Class<? extends Permission>... permissionsToTest)
     {
         Collection<Class<? extends Permission>> permCollection = Arrays.asList(permissionsToTest);
-        Set<Role> adminRoleSet = RoleManager.roleSet(SiteAdminRole.class, ApplicationAdminRole.class, ProjectAdminRole.class, FolderAdminRole.class);
 
         adminRoleSet.forEach(role->{
             Collection<Class<? extends Permission>> permissions = CollectionUtils.intersection(role.getPermissions(), permCollection);
