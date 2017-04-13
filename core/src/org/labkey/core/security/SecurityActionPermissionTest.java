@@ -38,15 +38,15 @@ import java.util.Set;
 
 public class SecurityActionPermissionTest extends Assert
 {
-    private static final String SITE_ADMIN_EMAIL = "sadmin@scjutc.com";
-    private static final String APPLICATION_ADMIN_EMAIL = "aadmin@scjutc.com";
-    private static final String PROJECT_ADMIN_EMAIL = "padmin@scjutc.com";
-    private static final String FOLDER_ADMIN_EMAIL = "fadmin@scjutc.com";
-    private static final String USER_EMAIL = "user@scjutc.com";
-    private static final String GUEST_EMAIL = "guest@scjutc.com";
+    private static final String SITE_ADMIN_EMAIL = "sadmin@securitycontroller.test";
+    private static final String APPLICATION_ADMIN_EMAIL = "aadmin@securitycontroller.test";
+    private static final String PROJECT_ADMIN_EMAIL = "padmin@securitycontroller.test";
+    private static final String FOLDER_ADMIN_EMAIL = "fadmin@securitycontroller.test";
+    private static final String EDITOR_EMAIL = "editor@securitycontroller.test";
+    private static final String READER_EMAIL = "reader@securitycontroller.test";
     private static final String[] ALL_EMAILS = {
             SITE_ADMIN_EMAIL, APPLICATION_ADMIN_EMAIL, PROJECT_ADMIN_EMAIL,
-            FOLDER_ADMIN_EMAIL, USER_EMAIL, GUEST_EMAIL
+            FOLDER_ADMIN_EMAIL, EDITOR_EMAIL, READER_EMAIL
     };
 
     private static Container _c;
@@ -65,8 +65,8 @@ public class SecurityActionPermissionTest extends Assert
         policy.addRoleAssignment(_users.get(APPLICATION_ADMIN_EMAIL), RoleManager.getRole(ApplicationAdminRole.class));
         policy.addRoleAssignment(_users.get(PROJECT_ADMIN_EMAIL), RoleManager.getRole(ProjectAdminRole.class));
         policy.addRoleAssignment(_users.get(FOLDER_ADMIN_EMAIL), RoleManager.getRole(FolderAdminRole.class));
-        policy.addRoleAssignment(_users.get(USER_EMAIL), RoleManager.getRole(EditorRole.class));
-        policy.addRoleAssignment(_users.get(GUEST_EMAIL), RoleManager.getRole(ReaderRole.class));
+        policy.addRoleAssignment(_users.get(EDITOR_EMAIL), RoleManager.getRole(EditorRole.class));
+        policy.addRoleAssignment(_users.get(READER_EMAIL), RoleManager.getRole(ReaderRole.class));
         SecurityPolicyManager.savePolicy(policy);
     }
 
@@ -82,8 +82,8 @@ public class SecurityActionPermissionTest extends Assert
     {
         User site = TestContext.get().getUser();
         assertTrue(site.isInSiteAdminGroup());
-        User reader = _users.get(GUEST_EMAIL);
-        User editor = _users.get(USER_EMAIL);
+        User reader = _users.get(READER_EMAIL);
+        User editor = _users.get(EDITOR_EMAIL);
         User folderAdmin = _users.get(FOLDER_ADMIN_EMAIL);
         User projectAdmin = _users.get(PROJECT_ADMIN_EMAIL);
         User applicationAdmin = _users.get(APPLICATION_ADMIN_EMAIL);
@@ -141,8 +141,8 @@ public class SecurityActionPermissionTest extends Assert
     {
         User site = TestContext.get().getUser();
         assertTrue(site.isInSiteAdminGroup());
-        User reader = _users.get(GUEST_EMAIL);
-        User editor = _users.get(USER_EMAIL);
+        User reader = _users.get(READER_EMAIL);
+        User editor = _users.get(EDITOR_EMAIL);
         User folderAdmin = _users.get(FOLDER_ADMIN_EMAIL);
         User projectAdmin = _users.get(PROJECT_ADMIN_EMAIL);
         User applicationAdmin = _users.get(APPLICATION_ADMIN_EMAIL);
