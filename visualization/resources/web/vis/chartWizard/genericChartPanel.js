@@ -314,6 +314,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         this.getCenterPanel().getLayout().setActiveItem(1);
                         this.toggleViewBtn.setText('View Chart');
 
+                        this.getMsgPanel().removeAll();
                         this.getChartTypeBtn().hide();
                         this.getChartLayoutBtn().hide();
 
@@ -1373,14 +1374,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 scope: this,
                 render: function(cmp) {
                     Ext4.get('dismiss-link-' + warningDivId).on('click', function() {
+                        // removing the warning message which will adjust the view panel height, so suspend events temporarily
+                        this.getViewPanel().suspendEvents();
                         this.getMsgPanel().remove(cmp);
+                        this.getViewPanel().resumeEvents();
                     }, this);
                 }
             }
         });
 
-        // add the warning message which will adjust the view panel height,
-        // so suspend events temporarily
+        // add the warning message which will adjust the view panel height, so suspend events temporarily
         this.getViewPanel().suspendEvents();
         this.getMsgPanel().add(warningCmp);
         this.getViewPanel().resumeEvents();
@@ -1755,7 +1758,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.clearWarningText();
         this.getViewPanel().removeAll();
         if (clearMessages) {
+            this.getViewPanel().suspendEvents();
             this.getMsgPanel().removeAll();
+            this.getViewPanel().resumeEvents();
         }
     },
 
@@ -1872,6 +1877,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.getChartTypePanel().loadQueryColumns(this.getMeasureStoreMetadata().fields);
 
         this.setDataLoading(false);
+        
+        this.getMsgPanel().removeAll();
 
         // If it's already been requested then we just need to request it again, since this time we have the data to render.
         if (this.isRenderRequested())

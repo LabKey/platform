@@ -82,6 +82,7 @@ import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -701,6 +702,7 @@ public class VisualizationController extends SpringActionController
      * Alternately a form-encoded post with a parameter called svg to allow JavaScript clients to access it
      */
     @RequiresPermission(ReadPermission.class)
+    @CSRF
     abstract class ExportSVGAction extends BaseViewAction
     {
         private String _svgSource;
