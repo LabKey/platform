@@ -14,12 +14,14 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.roles.ApplicationAdminRole;
+import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
+import org.labkey.api.security.roles.SubmitterRole;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
@@ -39,10 +41,12 @@ public abstract class AbstractActionPermissionTest extends Assert
     private static final String PROJECT_ADMIN_EMAIL = "padmin@actionpermission.test";
     private static final String FOLDER_ADMIN_EMAIL = "fadmin@actionpermission.test";
     private static final String EDITOR_EMAIL = "editor@actionpermission.test";
+    private static final String AUTHOR_EMAIL = "author@actionpermission.test";
     private static final String READER_EMAIL = "reader@actionpermission.test";
+    private static final String SUBMITTER_EMAIL = "submitter@actionpermission.test";
     private static final String[] ALL_EMAILS = {
             SITE_ADMIN_EMAIL, APPLICATION_ADMIN_EMAIL, PROJECT_ADMIN_EMAIL,
-            FOLDER_ADMIN_EMAIL, EDITOR_EMAIL, READER_EMAIL
+            FOLDER_ADMIN_EMAIL, EDITOR_EMAIL, AUTHOR_EMAIL, READER_EMAIL, SUBMITTER_EMAIL
     };
 
     private static Container _c;
@@ -62,7 +66,9 @@ public abstract class AbstractActionPermissionTest extends Assert
         policy.addRoleAssignment(_users.get(PROJECT_ADMIN_EMAIL), RoleManager.getRole(ProjectAdminRole.class));
         policy.addRoleAssignment(_users.get(FOLDER_ADMIN_EMAIL), RoleManager.getRole(FolderAdminRole.class));
         policy.addRoleAssignment(_users.get(EDITOR_EMAIL), RoleManager.getRole(EditorRole.class));
+        policy.addRoleAssignment(_users.get(AUTHOR_EMAIL), RoleManager.getRole(AuthorRole.class));
         policy.addRoleAssignment(_users.get(READER_EMAIL), RoleManager.getRole(ReaderRole.class));
+        policy.addRoleAssignment(_users.get(SUBMITTER_EMAIL), RoleManager.getRole(SubmitterRole.class));
         SecurityPolicyManager.savePolicy(policy);
     }
 
@@ -117,9 +123,50 @@ public abstract class AbstractActionPermissionTest extends Assert
             assertPermission(action, user);
 
             assertPermission(action,
-                _users.get(READER_EMAIL), _users.get(EDITOR_EMAIL),
+                _users.get(READER_EMAIL), _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
                 _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL),
                 _users.get(APPLICATION_ADMIN_EMAIL), _users.get(SITE_ADMIN_EMAIL)
+            );
+
+            assertNoPermission(action,
+                _users.get(SUBMITTER_EMAIL)
+            );
+        }
+    }
+
+    public void assertForInsertPermission(User user, PermissionCheckableAction... actions)
+    {
+        for (PermissionCheckableAction action : actions)
+        {
+            assertPermission(action, user);
+
+            assertPermission(action,
+                _users.get(SUBMITTER_EMAIL), _users.get(AUTHOR_EMAIL),
+                _users.get(EDITOR_EMAIL), _users.get(FOLDER_ADMIN_EMAIL),
+                _users.get(PROJECT_ADMIN_EMAIL), _users.get(APPLICATION_ADMIN_EMAIL),
+                _users.get(SITE_ADMIN_EMAIL)
+            );
+
+            assertNoPermission(action,
+                _users.get(READER_EMAIL)
+            );
+        }
+    }
+
+    public void assertForUpdateOrDeletePermission(User user, PermissionCheckableAction... actions)
+    {
+        for (PermissionCheckableAction action : actions)
+        {
+            assertPermission(action, user);
+
+            assertPermission(action,
+                _users.get(EDITOR_EMAIL), _users.get(FOLDER_ADMIN_EMAIL),
+                _users.get(PROJECT_ADMIN_EMAIL), _users.get(APPLICATION_ADMIN_EMAIL),
+                _users.get(SITE_ADMIN_EMAIL)
+            );
+
+            assertNoPermission(action,
+                _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL), _users.get(AUTHOR_EMAIL)
             );
         }
     }
@@ -136,7 +183,8 @@ public abstract class AbstractActionPermissionTest extends Assert
             );
 
             assertNoPermission(action,
-                _users.get(READER_EMAIL), _users.get(EDITOR_EMAIL)
+                _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),
+                _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL)
             );
         }
     }
@@ -152,7 +200,8 @@ public abstract class AbstractActionPermissionTest extends Assert
             );
 
             assertNoPermission(action,
-                _users.get(READER_EMAIL), _users.get(EDITOR_EMAIL),
+                _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),
+                _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
                 _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL),
                 _users.get(APPLICATION_ADMIN_EMAIL)
             );
@@ -170,7 +219,8 @@ public abstract class AbstractActionPermissionTest extends Assert
             );
 
             assertNoPermission(action,
-                _users.get(READER_EMAIL), _users.get(EDITOR_EMAIL),
+                _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),
+                _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
                 _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL)
             );
         }
