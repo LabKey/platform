@@ -1985,10 +1985,8 @@ public class SecurityController extends SpringActionController
 
             SecurityController controller = new SecurityController();
 
-            // @RequiresNoPermission, @RequiresLogin, @RequiresPermission(ReadPermission.class)
+            // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user,
-                controller.new BeginAction(),
-                controller.new ApiKeyAction(),
                 controller.new CompleteUserReadAction()
             );
 

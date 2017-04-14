@@ -71,6 +71,7 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AccountManagementPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -87,6 +88,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlBeansUtil;
@@ -1674,6 +1676,51 @@ public class PipelineController extends SpringActionController
         protected BaseRemoteService createService()
         {
             return new PipelineGWTServiceImpl(getViewContext());
+        }
+    }
+
+    public static class TestCase extends AbstractActionPermissionTest
+    {
+        @Override
+        public void testActionPermissions()
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.isInSiteAdminGroup());
+
+            PipelineController controller = new PipelineController();
+
+            // @RequiresPermission(ReadPermission.class)
+            assertForReadPermission(user,
+                controller.new BeginAction(),
+                controller.new BrowseAction(),
+                controller.new ActionsAction(),
+                controller.new GetPipelineActionConfigAction(),
+                controller.new GetPipelineFilePropertiesAction(),
+                controller.new DownloadAction(),
+                controller.new GetPipelineContainerAction(),
+                controller.new PipelineConfigurationAction()
+            );
+
+            // @RequiresPermission(DeletePermission.class)
+            assertForUpdateOrDeletePermission(user,
+                controller.new CancelJobAction()
+            );
+
+            // @RequiresPermission(AdminPermission.class)
+            assertForAdminPermission(user,
+                controller.new UpdatePipelineActionConfigAction(),
+                controller.new UpdateEmailNotificationAction(),
+                controller.new ResetEmailNotificationAction(),
+                controller.new ImportFolderFromPipelineAction(),
+                controller.new StartFolderImportAction()
+            );
+
+            // @RequiresPermission(AdminOperationsPermission.class)
+            assertForAdminOperationsPermission(user,
+                controller.new UpdateRootPermissionsAction(),
+                controller.new StatusAction(),
+                controller.new SetupAction()
+            );
         }
     }
 }

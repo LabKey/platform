@@ -2063,9 +2063,8 @@ public class SecurityApiActions
             User user = TestContext.get().getUser();
             assertTrue(user.isInSiteAdminGroup());
 
-            // @RequiresNoPermission, @RequiresLogin, @RequiresPermission(ReadPermission.class)
+            // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user,
-                new EnsureLoginAction(),
                 new GetGroupPermsAction(),
                 new GetUserPermsAction(),
                 new GetGroupsForCurrentUserAction(),

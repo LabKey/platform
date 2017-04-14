@@ -247,7 +247,10 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return Collections.singleton(PipelineQueueImpl.TestCase.class);
+        return new HashSet<>(Arrays.asList(
+            PipelineQueueImpl.TestCase.class,
+            PipelineController.TestCase.class
+        ));
     }
 
     @Override
