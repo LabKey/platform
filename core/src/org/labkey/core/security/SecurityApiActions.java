@@ -36,7 +36,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
-import org.labkey.api.security.permissions.AccountManagementPermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -1189,7 +1189,7 @@ public class SecurityApiActions
             if (!container.isRoot() && !container.isProject())
                 throw new IllegalArgumentException("You may not create groups at the folder level. Call this API at the project or root level.");
 
-            if (_group == null && getContainer().isRoot() && !getUser().hasRootPermission(AccountManagementPermission.class) )
+            if (_group == null && getContainer().isRoot() && !getUser().hasRootPermission(UserManagementPermission.class) )
             {
                 throw new UnauthorizedException("You do not have permission to create site-wide groups.");
             }
@@ -1200,7 +1200,7 @@ public class SecurityApiActions
                 writeToAuditLog(_group, this.getViewContext());
             }
 
-            if (_group.getContainer() == null && !getUser().hasRootPermission(AccountManagementPermission.class))
+            if (_group.getContainer() == null && !getUser().hasRootPermission(UserManagementPermission.class))
             {
                 throw new UnauthorizedException("You do not have permission to modify site-wide groups.");
             }
@@ -1657,7 +1657,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermission(AccountManagementPermission.class)
+    @RequiresPermission(UserManagementPermission.class)
     @CSRF
     public static class DeleteUserAction extends MutatingApiAction<IdForm>
     {
@@ -1976,7 +1976,7 @@ public class SecurityApiActions
     /**
      * Invalidate existing password and send new password link
      */
-    @RequiresPermission(AccountManagementPermission.class)
+    @RequiresPermission(UserManagementPermission.class)
     @CSRF
     public static class AdminRotatePasswordAction extends MutatingApiAction<SecurityController.EmailForm>
     {
@@ -2015,7 +2015,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermission(AccountManagementPermission.class)
+    @RequiresPermission(UserManagementPermission.class)
     @CSRF
     public static class ListProjectGroupsAction extends ApiAction<ListGroupsForm>
     {
@@ -2089,8 +2089,8 @@ public class SecurityApiActions
                 new CreateNewUserAction()
             );
 
-            // @RequiresPermission(AccountManagementPermission.class)
-            assertForAccountManagementPermission(user,
+            // @RequiresPermission(UserManagementPermission.class)
+            assertForUserManagementPermission(user,
                 new DeleteUserAction(),
                 new AdminRotatePasswordAction(),
                 new ListProjectGroupsAction()

@@ -23,15 +23,15 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
-<%@ page import="org.labkey.api.security.permissions.AccountManagementPermission" %>
+<%@ page import="org.labkey.api.security.permissions.UserManagementPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<UserController.UserForm> me = (JspView<UserController.UserForm>) HttpView.currentView();
     UserController.UserForm form = me.getModelBean();
     ActionURL cancelURL = new ActionURL(UserController.DetailsAction.class, getContainer()).addParameter("userId", form.getUserId());
     String currentEmail;
-    boolean isAccountManager = getUser().hasRootPermission(AccountManagementPermission.class);
-    if (!isAccountManager)
+    boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
+    if (!isUserManager)
     {
         currentEmail = getUser().getEmail();
     }
@@ -42,7 +42,7 @@
 %>
 <% if (form.getIsChangeEmailRequest()) {%>
 <form <%=formAction(ChangeEmailAction.class, Method.Post)%>><labkey:csrf/>
-    <% if (!isAccountManager) {%>
+    <% if (!isUserManager) {%>
         <p>NOTE: You will need to know your account password and have access to your new email address to change your email address!</p>
     <% } %>
     <table><%=formatMissedErrorsInTable("form", 2)%>

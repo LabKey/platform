@@ -72,7 +72,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
-import org.labkey.api.security.permissions.AccountManagementPermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -858,7 +858,7 @@ public class PipelineController extends SpringActionController
                 {
                     builder.append(u.getAutocompleteName(getContainer(), getUser())).append(';');
                 }
-                else if (getContainer().hasPermission(getUser(), AccountManagementPermission.class))
+                else if (getContainer().hasPermission(getUser(), UserManagementPermission.class))
                 {
                     try
                     {

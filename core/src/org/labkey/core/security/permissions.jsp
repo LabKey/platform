@@ -30,7 +30,7 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.security.permissions.AccountManagementPermission" %>
+<%@ page import="org.labkey.api.security.permissions.UserManagementPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -102,7 +102,7 @@ Ext4.onReady(function(){
 
     var isFolderAdmin  = <%=c.hasPermission(user, AdminPermission.class) ? "true" : "false"%>,
         isProjectAdmin = <%=project != null && project.hasPermission(user, AdminPermission.class) ? "true" : "false"%>,
-        isRootAccountManager    = <%= user.hasRootPermission(AccountManagementPermission.class) ? "true" : "false" %>,
+        isRootUserManager    = <%= user.hasRootPermission(UserManagementPermission.class) ? "true" : "false" %>,
         isRoot         = <%= c.isRoot() ? "true" : "false" %>,
         doneURL        = <%=doneURL==null?"null":PageFlowUtil.jsString(doneURL.getLocalURIString())%>;
 
@@ -136,7 +136,7 @@ Ext4.onReady(function(){
         renderTo       : 'tabBoxDiv',
         minHeight      : 450,
         isSiteRoot     : isRoot,
-        isRootAccountManager : isRootAccountManager,
+        isRootUserManager : isRootUserManager,
         isProjectRoot  : <%=(c.isProject())?"true":"false"%>, //LABKEY.Security.currentContainer.path == '/',
         isProjectAdmin : isProjectAdmin,
         canInherit     : <%=(!c.isProject() && !c.isRoot())?"true":"false"%>,

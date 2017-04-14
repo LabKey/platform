@@ -51,7 +51,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
-import org.labkey.api.security.permissions.AccountManagementPermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -846,7 +846,7 @@ public class SecurityController extends SpringActionController
         Map<UserPrincipal, List<UserPrincipal>> redundantMembers = SecurityManager.getRedundantGroupMembers(group);
         VBox view = new VBox(new GroupView(group, members, redundantMembers, messages, group.isSystemGroup(), errors));
 
-        if (getUser().hasRootPermission(AccountManagementPermission.class))
+        if (getUser().hasRootPermission(UserManagementPermission.class))
         {
             UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
             if (schema != null)
@@ -1402,7 +1402,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermission(AccountManagementPermission.class)
+    @RequiresPermission(UserManagementPermission.class)
     @CSRF
     public class AddUsersAction extends FormViewAction<AddUsersForm>
     {
@@ -1598,7 +1598,7 @@ public class SecurityController extends SpringActionController
         protected SecurityMessage createMessage(EmailForm form) throws Exception
         {
             // Site admins can see the email for everyone, but project admins can only see it for users they added
-            if (!getUser().hasRootPermission(AccountManagementPermission.class))
+            if (!getUser().hasRootPermission(UserManagementPermission.class))
             {
                 try
                 {
@@ -1623,7 +1623,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermission(AccountManagementPermission.class)
+    @RequiresPermission(UserManagementPermission.class)
     public class ShowResetEmailAction extends AbstractEmailAction
     {
         protected SecurityMessage createMessage(EmailForm form) throws Exception
@@ -1636,7 +1636,7 @@ public class SecurityController extends SpringActionController
     /**
      * Invalidate existing password and send new password link
      */
-    @RequiresPermission(AccountManagementPermission.class)
+    @RequiresPermission(UserManagementPermission.class)
     public class AdminResetPasswordAction extends SimpleViewAction<EmailForm>
     {
         public ModelAndView getView(EmailForm form, BindException errors) throws Exception
@@ -2006,8 +2006,8 @@ public class SecurityController extends SpringActionController
                 controller.new FolderAccessAction()
             );
 
-            // @RequiresPermission(AccountManagementPermission.class)
-            assertForAccountManagementPermission(user,
+            // @RequiresPermission(UserManagementPermission.class)
+            assertForUserManagementPermission(user,
                 controller.new AddUsersAction(),
                 controller.new ShowResetEmailAction(),
                 controller.new AdminResetPasswordAction()
@@ -2025,9 +2025,9 @@ public class SecurityController extends SpringActionController
             RoleManager.testPermissionsInAdminRoles(false, appAdminRoleSet, AdminOperationsPermission.class);
             RoleManager.testPermissionsInAdminRoles(false, otherAdminRoleSet, AdminOperationsPermission.class);
 
-            RoleManager.testPermissionsInAdminRoles(true, siteAdminRoleSet, AccountManagementPermission.class);
-            RoleManager.testPermissionsInAdminRoles(true, appAdminRoleSet, AccountManagementPermission.class);
-            RoleManager.testPermissionsInAdminRoles(false, otherAdminRoleSet, AccountManagementPermission.class);
+            RoleManager.testPermissionsInAdminRoles(true, siteAdminRoleSet, UserManagementPermission.class);
+            RoleManager.testPermissionsInAdminRoles(true, appAdminRoleSet, UserManagementPermission.class);
+            RoleManager.testPermissionsInAdminRoles(false, otherAdminRoleSet, UserManagementPermission.class);
         }
     }
 }

@@ -7,7 +7,7 @@
  * @class Security.panel.PolicyEditor
  * @param {SecurityCache} [config.cache] An allocated SecurityCache object
  * @cfg {string}  [config.resourceId] the id of the resource whose policy is being edited
- * @cfg {boolean} [config.isRootAccountManager] Is the current user an account manager for the root container
+ * @cfg {boolean} [config.isRootUserManager] Is the current user able to manage users for the root container
  * @cfg {boolean} [config.isProjectAdministrator] Does the current user have project administrator permissions
  * @cfg {boolean} [config.saveButton] show the save button, may be hidden if the container has its own button/toolbar
  * @cfg {boolean} [config.canInherit] defaults to true, show the inherit permissions option
@@ -74,7 +74,7 @@ Ext4.define('Security.panel.PolicyEditor', {
     // config
     resourceId : null,
     saveButton : true,      // overloaded
-    isRootAccountManager : false,
+    isRootUserManager : false,
     isProjectAdmin : false,
     canInherit : true,
     doneURL : LABKEY.ActionURL.buildURL('project', 'begin', LABKEY.ActionURL.getContainer()),
@@ -469,7 +469,7 @@ Ext4.define('Security.panel.PolicyEditor', {
 
         var id = btn.groupId;
         var principal = this.cache.getPrincipal(id);
-        var canEdit = (!principal.Container && this.isRootAccountManager) || (principal.Container && this.isProjectAdmin);
+        var canEdit = (!principal.Container && this.isRootUserManager) || (principal.Container && this.isProjectAdmin);
 
         Ext4.create('Security.window.UserInfoPopup', {
             userId : id,

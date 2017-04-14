@@ -45,7 +45,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.AccountManagementPermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
@@ -82,7 +82,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 " All signed-in users will see the columns UserId, EntityId, DisplayName, Email, FirstName, LastName, Description, Created, Modified." +
                 " Users with administrator permissions will also see the columns Phone, Mobile, Pager, IM, Active and LastLogin.");
         setImportURL(LINK_DISABLER);
-        if (schema.getUser().hasRootPermission(AccountManagementPermission.class))
+        if (schema.getUser().hasRootPermission(UserManagementPermission.class))
         {
             setDeleteURL(new DetailsURL(new ActionURL(UserController.DeleteUsersAction.class, schema.getContainer())));
             setInsertURL(new DetailsURL(new ActionURL(SecurityController.AddUsersAction.class, schema.getContainer())));
@@ -128,7 +128,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         hideExpirationDateColumn();
 
         // The details action requires admin permission so don't offer the link if they can't see it
-        if (getUser().hasRootPermission(AccountManagementPermission.class) || getContainer().hasPermission(getUser(), AdminPermission.class))
+        if (getUser().hasRootPermission(UserManagementPermission.class) || getContainer().hasPermission(getUser(), AdminPermission.class))
         {
             ColumnInfo userIdCol = getColumn(FieldKey.fromParts("UserId"));
             if (userIdCol != null)
@@ -174,7 +174,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             // handle the email column through a different code path
             _illegalColumns.add("Email");
 
-            if (!getUser().hasRootPermission(AccountManagementPermission.class) && !getContainer().hasPermission(getUser(), AdminPermission.class))
+            if (!getUser().hasRootPermission(UserManagementPermission.class) && !getContainer().hasPermission(getUser(), AdminPermission.class))
             {
                 //_illegalColumns.add("UserId");
 
@@ -319,7 +319,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
         if (c.isRoot())
         {
-            if (!u.hasRootPermission(AccountManagementPermission.class))
+            if (!u.hasRootPermission(UserManagementPermission.class))
                 throw new UnauthorizedException();
         }
         else

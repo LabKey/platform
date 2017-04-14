@@ -85,7 +85,7 @@ import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
-import org.labkey.api.security.permissions.AccountManagementPermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -273,8 +273,8 @@ public class UserController extends SpringActionController
         final User user = getUser();
         Container c = getContainer();
         ActionURL currentURL = getViewContext().getActionURL();
-        boolean isAccountManager = getUser().hasRootPermission(AccountManagementPermission.class);
-        boolean isAnyAdmin = isAccountManager || c.hasPermission(user, AdminPermission.class);
+        boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
+        boolean isAnyAdmin = isUserManager || c.hasPermission(user, AdminPermission.class);
 
         assert isOwnRecord || isAnyAdmin;
 
@@ -291,12 +291,12 @@ public class UserController extends SpringActionController
 
         ButtonBar gridButtonBar = new ButtonBar();
 
-        if (isAccountManager)
+        if (isUserManager)
         {
             rgn.setShowRecordSelectors(true);
         }
 
-        populateUserGridButtonBar(gridButtonBar, isAccountManager, isAnyAdmin);
+        populateUserGridButtonBar(gridButtonBar, isUserManager, isAnyAdmin);
         rgn.setButtonBar(gridButtonBar, DataRegion.MODE_GRID);
 
         ActionURL showUsersURL = new ActionURL(ShowUsersAction.class, c);
@@ -314,7 +314,7 @@ public class UserController extends SpringActionController
         editURL.addParameter("userId", NumberUtils.toInt(currentURL.getParameter("userId")));
         editURL.addReturnURL(currentURL);
 
-        if (isOwnRecord || (isAccountManager && canManageDetailsUser))
+        if (isOwnRecord || (isUserManager && canManageDetailsUser))
         {
             ActionButton edit = new ActionButton(editURL, "Edit");
             edit.setActionType(ActionButton.Action.LINK);
@@ -333,14 +333,14 @@ public class UserController extends SpringActionController
         }
         //update.setActionType(ActionButton.Action.LINK);
         updateButtonBar.add(update);
-        if (isAccountManager)
+        if (isUserManager)
             updateButtonBar.add(showGrid);
         rgn.setButtonBar(updateButtonBar, DataRegion.MODE_UPDATE);
     }
 
-    private void populateUserGridButtonBar(ButtonBar gridButtonBar, boolean isAccountManager, boolean isProjectAdminOrBetter)
+    private void populateUserGridButtonBar(ButtonBar gridButtonBar, boolean isUserManager, boolean isProjectAdminOrBetter)
     {
-        if (isAccountManager && getContainer().isRoot())
+        if (isUserManager && getContainer().isRoot())
         {
             ActionButton deactivate = new ActionButton(DeactivateUsersAction.class, "Deactivate");
             deactivate.setRequiresSelection(true);
@@ -515,7 +515,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AccountManagementPermission.class)
+    @RequiresPermission(UserManagementPermission.class)
     @CSRF
     public class DeactivateUsersAction extends BaseActivateUsersAction
     {
@@ -525,7 +525,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AccountManagementPermission.class)
+    @RequiresPermission(UserManagementPermission.class)
     @CSRF
     public class ActivateUsersAction extends BaseActivateUsersAction
     {
@@ -535,7 +535,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AccountManagementPermission.class)
+    @RequiresPermission(UserManagementPermission.class)
     @CSRF
     public class DeleteUsersAction extends FormViewAction<UserIdForm>
     {
@@ -670,8 +670,8 @@ public class UserController extends SpringActionController
                 settings.getBaseFilter().addCondition(FieldKey.fromString("ExpirationDate"), null, CompareType.NONBLANK);
             }
 
-            final boolean isAccountManager = getUser().hasRootPermission(AccountManagementPermission.class);
-            final boolean isProjectAdminOrBetter = isAccountManager || isProjectAdmin();
+            final boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
+            final boolean isProjectAdminOrBetter = isUserManager || isProjectAdmin();
 
             QueryView queryView = new QueryView(schema, settings, errors)
             {
@@ -693,7 +693,7 @@ public class UserController extends SpringActionController
                 protected void populateButtonBar(DataView view, ButtonBar bar)
                 {
                     super.populateButtonBar(view, bar);
-                    populateUserGridButtonBar(bar, isAccountManager, isProjectAdminOrBetter);
+                    populateUserGridButtonBar(bar, isUserManager, isProjectAdminOrBetter);
                 }
             };
             queryView.setUseQueryViewActionExportURLs(true);
@@ -746,7 +746,7 @@ public class UserController extends SpringActionController
         User user = getUser();
 
         // Site admin and Application admin can do anything
-        if (user.hasRootPermission(AccountManagementPermission.class))
+        if (user.hasRootPermission(UserManagementPermission.class))
             return;
 
         Container c = getContainer();
@@ -772,7 +772,7 @@ public class UserController extends SpringActionController
     {
         User user = getUser();
 
-        if (!(user.hasRootPermission(AccountManagementPermission.class) || isProjectAdmin(user)))
+        if (!(user.hasRootPermission(UserManagementPermission.class) || isProjectAdmin(user)))
             throw new UnauthorizedException();
     }
 
@@ -871,13 +871,13 @@ public class UserController extends SpringActionController
     {
         public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
         {
-            boolean isAccountManager = getUser().hasRootPermission(AccountManagementPermission.class);
+            boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
             User user = UserManager.getUser(form.getUserId());
             if (null == user)
             {
                 throw new NotFoundException("Unable to find user");
             }
-            else if (!isAccountManager && user.getUserId() != getUser().getUserId())
+            else if (!isUserManager && user.getUserId() != getUser().getUserId())
             {
                 throw new IllegalArgumentException("Unable to download user attachment");
             }
@@ -936,7 +936,7 @@ public class UserController extends SpringActionController
             boolean isOwnRecord = _pkVal.equals(_userId);
             HttpView view;
 
-            if (user.hasRootPermission(AccountManagementPermission.class) || isOwnRecord)
+            if (user.hasRootPermission(UserManagementPermission.class) || isOwnRecord)
             {
                 ButtonBar bb = createSubmitCancelButtonBar(form);
                 bb.addContextualRole(OwnerRole.class);
@@ -1080,7 +1080,7 @@ public class UserController extends SpringActionController
             if (targetUser != null)
                 oldExpirationDate = targetUser.getExpirationDate();
 
-            if (user.hasRootPermission(AccountManagementPermission.class) || isOwnRecord)
+            if (user.hasRootPermission(UserManagementPermission.class) || isOwnRecord)
             {
                 TableInfo table = form.getTable();
                 if (table instanceof UsersTable)
@@ -1210,7 +1210,7 @@ public class UserController extends SpringActionController
 
         private boolean mustCheckPermissions(User user, int userRecordId)
         {
-            if (user.hasRootPermission(AccountManagementPermission.class))
+            if (user.hasRootPermission(UserManagementPermission.class))
                 return false;
 
             return user.getUserId() != userRecordId;
@@ -1551,7 +1551,7 @@ public class UserController extends SpringActionController
         Container c = getContainer();
         if (c.isRoot())
         {
-            if (getUser().hasRootPermission(AccountManagementPermission.class))
+            if (getUser().hasRootPermission(UserManagementPermission.class))
                 root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
         }
         else
@@ -1589,8 +1589,8 @@ public class UserController extends SpringActionController
                 throw new NotFoundException("User does not exist");
 
             Container c = getContainer();
-            boolean isAccountManager = user.hasRootPermission(AccountManagementPermission.class);
-            boolean isProjectAdminOrBetter = isAccountManager || isProjectAdmin();
+            boolean isUserManager = user.hasRootPermission(UserManagementPermission.class);
+            boolean isProjectAdminOrBetter = isUserManager || isProjectAdmin();
 
             // don't let a non-site admin manage certain parts of a site-admin's account
             boolean canManageDetailsUser = user.isInSiteAdminGroup() || !detailsUser.isInSiteAdminGroup();
@@ -1613,7 +1613,7 @@ public class UserController extends SpringActionController
                 throw new NotFoundException(CoreQuerySchema.NAME + " schema");
 
             // for the root container or if the user is site/app admin, use the site users table
-            String userTableName = c.isRoot() || c.hasPermission(user, AccountManagementPermission.class) ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME;
+            String userTableName = c.isRoot() || c.hasPermission(user, UserManagementPermission.class) ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME;
             TableInfo table = schema.getTable(userTableName);
             if (table == null)
                 throw new NotFoundException(userTableName + " table");
@@ -1634,7 +1634,7 @@ public class UserController extends SpringActionController
                 bb.add(changePasswordButton);
             }
 
-            if (isAccountManager)
+            if (isUserManager)
             {
                 // Always display "Reset/Create Password" button (even for LDAP and OpenSSO users)... except for admin's own record
                 if (null != detailsEmail && !isOwnRecord && canManageDetailsUser)
@@ -1687,7 +1687,7 @@ public class UserController extends SpringActionController
 
             if (isOwnRecord)
             {
-                if (!isAccountManager  // site/app admin already had this link added above
+                if (!isUserManager  // site/app admin already had this link added above
                         && loginExists  // only show link to users where LabKey manages the password
                         && AuthenticationManager.isSelfServiceEmailChangesEnabled())
                 {
@@ -1819,8 +1819,8 @@ public class UserController extends SpringActionController
 
         public ModelAndView getView(UserForm form, boolean reshow, BindException errors) throws Exception
         {
-            boolean isAccountManager = getUser().hasRootPermission(AccountManagementPermission.class);
-            if (!isAccountManager)
+            boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
+            if (!isUserManager)
             {
                 if(!AuthenticationManager.isSelfServiceEmailChangesEnabled())  // uh oh, shouldn't be here
                 {
@@ -1847,7 +1847,7 @@ public class UserController extends SpringActionController
                         throw new UnauthorizedException("Can not reset password for a Site Admin user");
 
                     // update email in database
-                    UserManager.changeEmail(isAccountManager, userId, _currentEmailFromDatabase, _requestedEmailFromDatabase, form.getVerificationToken(), getUser());
+                    UserManager.changeEmail(isUserManager, userId, _currentEmailFromDatabase, _requestedEmailFromDatabase, form.getVerificationToken(), getUser());
                     // post-verification email to old account
                     Container c = getContainer();
                     MimeMessage m = getChangeEmailMessage(_currentEmailFromDatabase, _requestedEmailFromDatabase);
@@ -1864,7 +1864,7 @@ public class UserController extends SpringActionController
 
         void validateVerification(UserForm target, Errors errors)
         {
-            boolean isAccountManager = getUser().hasRootPermission(AccountManagementPermission.class);
+            boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
 
             try
             {
@@ -1892,7 +1892,7 @@ public class UserController extends SpringActionController
                         Instant verificationTimeoutInstant = verifyEmail.getVerificationTimeout().toInstant();
                         if (Instant.now().isAfter(verificationTimeoutInstant))
                         {
-                            if (!isAccountManager)  // don't bother auditing admin password link clicks
+                            if (!isUserManager)  // don't bother auditing admin password link clicks
                             {
                                 UserManager.auditEmailTimeout(loggedInUser.getUserId(), validUserEmail.getEmailAddress(), requestedEmailFromDatabase, verificationToken, getUser());
                             }
@@ -1911,7 +1911,7 @@ public class UserController extends SpringActionController
                 {
                     if ((verificationToken == null) || (verificationToken.length() != SecurityManager.tempPasswordLength))
                     {
-                        if (!isAccountManager)  // don't bother auditing admin password link clicks
+                        if (!isUserManager)  // don't bother auditing admin password link clicks
                         {
                             UserManager.auditBadVerificationToken(loggedInUser.getUserId(), validUserEmail.getEmailAddress(), verifyEmail.getRequestedEmail(), verificationToken, loggedInUser);
                         }
@@ -1919,7 +1919,7 @@ public class UserController extends SpringActionController
                     }
                     else if(!(verificationToken.equals(verifyEmail.getVerification())))
                     {
-                        if (!isAccountManager)  // don't bother auditing admin password link clicks
+                        if (!isUserManager)  // don't bother auditing admin password link clicks
                         {
                             UserManager.auditBadVerificationToken(loggedInUser.getUserId(), validUserEmail.getEmailAddress(), verifyEmail.getRequestedEmail(), verificationToken, loggedInUser);
                         }
@@ -1940,11 +1940,11 @@ public class UserController extends SpringActionController
 
         public boolean handlePost(UserForm form, BindException errors) throws Exception
         {
-            boolean isAccountManager = getUser().hasRootPermission(AccountManagementPermission.class);
+            boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
             User user;
             int userId;
 
-            if (!isAccountManager)
+            if (!isUserManager)
             {
                 user = getUser();
                 userId = user.getUserId();
@@ -1955,7 +1955,7 @@ public class UserController extends SpringActionController
                 user = UserManager.getUser(userId);
             }
 
-            if (!isAccountManager)  // need to verify email before changing if not site or app admin
+            if (!isUserManager)  // need to verify email before changing if not site or app admin
             {
                 if(!AuthenticationManager.isSelfServiceEmailChangesEnabled())  // uh oh, shouldn't be here
                 {
@@ -2025,7 +2025,7 @@ public class UserController extends SpringActionController
                     throw new UnauthorizedException("Can not reset password for a Site Admin user");
 
                 // use "ADMIN" as verification token for debugging, but should never be checked/used
-                UserManager.changeEmail(isAccountManager, userId, user.getEmail(), form.getRequestedEmail(), "ADMIN", getUser());
+                UserManager.changeEmail(isUserManager, userId, user.getEmail(), form.getRequestedEmail(), "ADMIN", getUser());
             }
 
             return !errors.hasErrors();
@@ -2033,9 +2033,9 @@ public class UserController extends SpringActionController
 
         public ActionURL getSuccessURL(UserForm form)
         {
-            boolean isAccountManager = getUser().hasRootPermission(AccountManagementPermission.class);
+            boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
 
-            if (!isAccountManager)
+            if (!isUserManager)
             {
                 User user = getUser();
 
@@ -2533,7 +2533,7 @@ public class UserController extends SpringActionController
             Container container = getContainer();
             User currentUser = getUser();
 
-            if (container.isRoot() && !currentUser.hasRootPermission(AccountManagementPermission.class))
+            if (container.isRoot() && !currentUser.hasRootPermission(UserManagementPermission.class))
                 throw new UnauthorizedException("Only site/application administrators may see users in the root container!");
 
             ApiSimpleResponse response = new ApiSimpleResponse();

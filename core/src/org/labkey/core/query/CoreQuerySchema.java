@@ -36,7 +36,7 @@ import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.AccountManagementPermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.core.workbook.WorkbooksTableInfo;
@@ -207,7 +207,7 @@ public class CoreQuerySchema extends UserSchema
         // so the user can at least see and update their account info.
 
         User user = getUser();
-        if (!user.hasRootPermission(AccountManagementPermission.class))
+        if (!user.hasRootPermission(UserManagementPermission.class))
         {
             if (!user.isGuest())
             {
@@ -234,9 +234,9 @@ public class CoreQuerySchema extends UserSchema
         ColumnInfo expirationDateCol = users.getColumn(FieldKey.fromParts("ExpirationDate"));
         if (expirationDateCol != null)
         {
-            boolean isAccountManager = getUser().hasRootPermission(AccountManagementPermission.class);
+            boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
             boolean isAdmin = getContainer().hasPermission(getUser(), AdminPermission.class);
-            if ((isAccountManager || isAdmin) && AuthenticationManager.isAccountExpirationEnabled())
+            if ((isUserManager || isAdmin) && AuthenticationManager.isAccountExpirationEnabled())
             {
                 List<FieldKey> visibleColumns = new ArrayList<>(users.getDefaultVisibleColumns());
                 visibleColumns.add(FieldKey.fromParts("ExpirationDate"));
@@ -309,12 +309,12 @@ public class CoreQuerySchema extends UserSchema
 
         ColumnInfo col = members.wrapColumn(membersBase.getColumn("UserId"));
         col.setKeyField(true);
-        final boolean isAccountManager = getUser().hasRootPermission(AccountManagementPermission.class);
+        final boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
         col.setFk(new LookupForeignKey("UserId", "DisplayName")
         {
             public TableInfo getLookupTableInfo()
             {
-                return isAccountManager ? getSiteUsers() : getUsers();
+                return isUserManager ? getSiteUsers() : getUsers();
             }
         });
         members.addColumn(col);
@@ -466,7 +466,7 @@ public class CoreQuerySchema extends UserSchema
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return getUser().hasRootPermission(AccountManagementPermission.class) ? getSiteUsers() : getUsers();
+                return getUser().hasRootPermission(UserManagementPermission.class) ? getSiteUsers() : getUsers();
             }
         });
 
