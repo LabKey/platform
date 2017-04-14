@@ -53,7 +53,7 @@ import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
-import org.labkey.api.security.permissions.AccountManagementPermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -2536,7 +2536,7 @@ public class SecurityManager
             message.append(" was added successfully, but could not be emailed due to a failure:<br><pre>");
             message.append(e.getMessage());
             message.append("</pre>");
-            appendMailHelpText(message, messageContentsURL, currentUser.hasRootPermission(AccountManagementPermission.class));
+            appendMailHelpText(message, messageContentsURL, currentUser.hasRootPermission(UserManagementPermission.class));
 
             User newUser = UserManager.getUser(email);
 

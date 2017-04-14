@@ -3,7 +3,7 @@ package org.labkey.api.security.roles;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.AccountManagementPermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -26,7 +26,7 @@ public class ApplicationAdminRole extends AbstractRootContainerRole
                 UpdatePermission.class,
                 InsertPermission.class,
                 DeletePermission.class,
-                AccountManagementPermission.class,
+                UserManagementPermission.class,
                 AdminReadPermission.class,
                 AdminPermission.class,
                 EditSharedViewPermission.class,

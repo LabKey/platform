@@ -23,7 +23,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserUrls;
-import org.labkey.api.security.permissions.AccountManagementPermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -61,7 +61,7 @@ public class SiteAdminMenu extends NavTreeMenu
             items.add(new NavTree("Site Developers", securityUrls.getManageGroupURL(root, "Developers")));
         }
 
-        if (user.hasRootPermission(AccountManagementPermission.class))
+        if (user.hasRootPermission(UserManagementPermission.class))
         {
             items.add(new NavTree("Site Users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL()));
             items.add(new NavTree("Site Groups", securityUrls.getSiteGroupsURL(root, context.getActionURL())));

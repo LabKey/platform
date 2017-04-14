@@ -30,7 +30,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.audit.provider.GroupAuditProvider;
-import org.labkey.api.security.permissions.AccountManagementPermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -173,12 +173,12 @@ public class GroupManager
             {
                 int userCount = SecurityManager.getGroupMembers(g, MemberType.ACTIVE_AND_INACTIVE_USERS).size();
                 int groupCount = SecurityManager.getGroupMembers(g, MemberType.GROUPS).size();
-                boolean isAccountManager = user.hasRootPermission(AccountManagementPermission.class);
+                boolean isUserManager = user.hasRootPermission(UserManagementPermission.class);
 
                 sb.append("\t").append(g.getUserId()).append(" [");
                 appendDotAttribute(sb, false, "label", g.getName() + (userCount > 0 ? "\\n " + StringUtilsLabKey.pluralize(userCount, "user") : "") + (groupCount > 0 ? "\\n" + StringUtilsLabKey.pluralize(groupCount, "group") : ""));
 
-                if (g.isProjectGroup() || (isAccountManager && !g.isSystemGroup()) || user.isInSiteAdminGroup())
+                if (g.isProjectGroup() || (isUserManager && !g.isSystemGroup()) || user.isInSiteAdminGroup())
                 {
                     appendDotAttribute(sb, true, "URL", "javascript:window.parent.showPopupId(" + g.getUserId() + ")");
                     appendDotAttribute(sb, true, "tooltip", "Click to manage the '" + g.getName() + "' " + (g.isProjectGroup() ? "project" : "site") + " group");

@@ -208,7 +208,7 @@ public abstract class AbstractActionPermissionTest extends Assert
         }
     }
 
-    public void assertForAccountManagementPermission(User user, PermissionCheckableAction... actions)
+    public void assertForUserManagementPermission(User user, PermissionCheckableAction... actions)
     {
         for (PermissionCheckableAction action : actions)
         {
