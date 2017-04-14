@@ -28,6 +28,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -45,7 +46,7 @@ public class ModuleHtmlView extends HtmlView
 {
     public static final String VIEWS_DIR = "views";
 
-    private static final ModuleResourceCache<Map<Path, ModuleHtmlViewDefinition>> MODULE_HTML_VIEW_DEFINITION_CACHE = ModuleResourceCaches.create(new Path(VIEWS_DIR), new ModuleHtmlViewCacheHandler(), "HTML view definitions");
+    private static final ModuleResourceCache<Map<Path, ModuleHtmlViewDefinition>> MODULE_HTML_VIEW_DEFINITION_CACHE = ModuleResourceCaches.create(new Path(VIEWS_DIR), new ModuleHtmlViewCacheHandler(), "HTML view definitions", Arrays.asList(ResourceRootProvider.STANDARD, ResourceRootProvider.ASSAY));
 
     private final ModuleHtmlViewDefinition _viewdef;
 

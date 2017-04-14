@@ -19,6 +19,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.resource.Resource;
 
+import java.util.stream.Stream;
+
 /**
  * User: adam
  * Date: 1/10/14
@@ -33,10 +35,10 @@ public interface ModuleResourceCacheHandler<V>
      */
     V load(@Nullable Resource dir, Module module);
 
-    // TODO: Temporary hack... remove this
-    default V load(@Nullable Resource dir, Module module, ModuleResourceCache<V> cache)
+    // Alternative approach -- generalizes standard root, assay root, and other resource location handling
+    default V load(Stream<Resource> roots)
     {
-        return load(dir, module);
+        throw new IllegalStateException("Shouldn't be here");
     }
 
     /**

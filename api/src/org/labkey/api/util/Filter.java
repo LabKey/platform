@@ -20,6 +20,7 @@ package org.labkey.api.util;
  * Date: Apr 10, 2009
  * Time: 9:05:45 AM
  */
+// TODO: Eliminate this in favor of Predicate?
 public interface Filter<T>
 {
     boolean accept(T object);

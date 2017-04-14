@@ -18,6 +18,7 @@ package org.labkey.api.module;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,6 +41,11 @@ public class ModuleResourceCaches
     public static <T> ModuleResourceCache<T> create(Path path, ModuleResourceCacheHandler<T> handler, String description)
     {
         return new ModuleResourceCache<>(path, handler, description);
+    }
+
+    public static <T> ModuleResourceCache<T> create(Path path, ModuleResourceCacheHandler<T> handler, String description, List<ResourceRootProvider> providers)
+    {
+        return new ModuleResourceCache<>(path, handler, description, providers);
     }
 
     public static <T> PathBasedModuleResourceCache<T> create(String description, ModuleResourceCacheHandlerOld<Path, T> handler)

@@ -16,7 +16,6 @@
 package org.labkey.api.webdav;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.FileFileFilter;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;

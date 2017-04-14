@@ -765,6 +765,7 @@ api/src/org/labkey/api/module/PathBasedModuleResourceCache.java -text
 api/src/org/labkey/api/module/QueryBasedModuleResourceCache.java -text
 api/src/org/labkey/api/module/QueryBasedModuleResourceCacheHandler.java -text
 api/src/org/labkey/api/module/ResourceFinder.java -text
+api/src/org/labkey/api/module/ResourceRootProvider.java -text
 api/src/org/labkey/api/module/SafeFlushResponseWrapper.java -text
 api/src/org/labkey/api/module/SchemaUpdateType.java -text
 api/src/org/labkey/api/module/SimpleAction.java -text

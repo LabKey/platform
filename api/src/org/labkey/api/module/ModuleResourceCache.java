@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
@@ -68,11 +69,11 @@ public final class ModuleResourceCache<V>
     private final ModuleResourceCacheHandler<V> _handler;
     private final FileSystemWatcher _watcher = FileSystemWatchers.get();
     private final Set<String> _pathsWithListeners = new ConcurrentHashSet<>();
-    private final String _description;
 
+    // This constructor assumes all resources are found in /resources/<path> (no support for /assay or other roots)
     ModuleResourceCache(Path root, ModuleResourceCacheHandler<V> handler, String description)
     {
-        CacheLoader<Module, V> wrapper = new CacheLoader<Module, V>()
+        this(handler, description, new CacheLoader<Module, V>()
         {
             @Override
             public V load(Module module, Object argument)
@@ -81,36 +82,50 @@ public final class ModuleResourceCache<V>
                 Resource dir = module.getModuleResource(root);
                 Resource wrappedDir = (null != dir && dir.isCollection() ? new FileListenerResource(dir, module, cache) : null);
 
-                return _handler.load(wrappedDir, module, cache);
+                return handler.load(wrappedDir, module);
             }
 
             @Override
             public String toString()
             {
-                return "CacheLoader for \"" + _description + "\" (" + _handler.getClass().getName() + ")";
-            }
-        };
-
-        _description = description;
-        _cache = CacheManager.getBlockingCache(Constants.getMaxModules(), CacheManager.DAY, _description, wrapper);  // Cache is one entry per module
-        _handler = handler;
-//        ensureListeners(root);  // TODO: Enable this to ensure file listeners along the root... except that this seems to deadlock. Maybe push this into CacheLoader.load() above?
-    }
-
-    // Add a listener in all modules to every directory that's part of this root path. This ensures that the cache will be
-    // invalidated if (for example) an entire resource directory is added or removed.
-    private void ensureListeners(Path root)
-    {
-        ModuleLoader.getInstance().getModules().forEach(module -> {
-            Path parent;
-            while (null != (parent = root.getParent()))
-            {
-                Resource resource = module.getModuleResource(parent);
-
-                if (null != resource && resource.isCollection())
-                    ensureListener(resource, module);
+                return "CacheLoader for \"" + description + "\" (" + handler.getClass().getName() + ")";
             }
         });
+    }
+
+    // This constructor supports /resources/<path>, /assay/<provider>/<path>, and other layouts
+    ModuleResourceCache(Path path, ModuleResourceCacheHandler<V> handler, String description, List<ResourceRootProvider> providers)
+    {
+        this(handler, description, new CacheLoader<Module, V>()
+        {
+            @Override
+            public V load(Module module, Object argument)
+            {
+                ModuleResourceCache<V> cache = (ModuleResourceCache<V>)argument;
+                Resource resourceRoot = new FileListenerResource(module.getModuleResource(Path.rootPath), module, cache);
+                Stream<Resource> resourceRoots = getResourceRoots(resourceRoot, path, providers);
+
+                return handler.load(resourceRoots);
+            }
+
+            private @NotNull Stream<Resource> getResourceRoots(@NotNull Resource rootResource, Path path, List<ResourceRootProvider> providers)
+            {
+                return providers.stream()
+                    .flatMap(provider -> provider.getResourceRoots(rootResource, path));
+            }
+
+            @Override
+            public String toString()
+            {
+                return "CacheLoader for \"" + description + "\" (" + handler.getClass().getName() + ")";
+            }
+        });
+    }
+
+    private ModuleResourceCache(ModuleResourceCacheHandler<V> handler, String description, CacheLoader<Module, V> wrapper)
+    {
+        _cache = CacheManager.getBlockingCache(Constants.getMaxModules(), CacheManager.DAY, description, wrapper);  // Cache is one entry per module
+        _handler = handler;
     }
 
     public @NotNull V getResourceMap(Module module)
@@ -159,8 +174,7 @@ public final class ModuleResourceCache<V>
     }
 
 
-    // TODO: Make private
-    public static class FileListenerResource extends ResourceWrapper
+    private static class FileListenerResource extends ResourceWrapper
     {
         private final Module _module;
         private final ModuleResourceCache _cache;
@@ -173,9 +187,17 @@ public final class ModuleResourceCache<V>
         }
 
         @Override
+        public Collection<String> listNames()
+        {
+            ensureListener();
+
+            return super.listNames();
+        }
+
+        @Override
         public Collection<? extends Resource> list()
         {
-            _cache.ensureListener(getWrappedResource(), _module);
+            ensureListener();
 
             // Wrap all child directories with a FileListenerResource to ensure they get listeners as well
             return super.list()
@@ -194,6 +216,8 @@ public final class ModuleResourceCache<V>
         @Override
         public Resource find(String name)
         {
+            ensureListener();
+
             Resource resource = super.find(name);
             return null != resource ? wrap(super.find(name)) : null;
         }
@@ -202,6 +226,13 @@ public final class ModuleResourceCache<V>
         private Resource wrap(Resource resource)
         {
             return resource.isCollection() && !(resource instanceof FileListenerResource) ? new FileListenerResource(resource, _module, _cache) : resource;
+        }
+
+        // Ensure that a file listener associated with this cache is registered in this directory
+        private void ensureListener()
+        {
+            if (isCollection())
+                _cache.ensureListener(getWrappedResource(), _module);
         }
     }
 

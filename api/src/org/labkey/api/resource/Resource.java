@@ -42,6 +42,26 @@ public interface Resource
 
     Resource find(String name);
 
+    /**
+     * Traverse a relative folder/collection path from this resource, invoking find(String) on each part
+     * @param path The path to traverse
+     * @return The collection resource at the requested location or null if path is invalid
+     */
+    default Resource find(Path path)
+    {
+        Resource r = this;
+
+        for (String part : path)
+        {
+            r = r.find(part);
+
+            if (null == r || !r.isCollection())
+                return null;
+        }
+
+        return r;
+    }
+
     boolean isFile();
 
     Collection<String> listNames();
