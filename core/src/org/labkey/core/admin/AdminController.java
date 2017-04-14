@@ -5634,6 +5634,7 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(ModulesForm form, BindException errors) throws Exception
         {
             ModuleLoader ml = ModuleLoader.getInstance();
+            boolean hasAdminOpsPerm = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 
             Collection<ModuleContext> unknownModules = ml.getUnknownModuleContexts().values();
             Collection<ModuleContext> knownModules = ml.getAllModuleContexts();
@@ -5681,10 +5682,11 @@ public class AdminController extends SpringActionController
             }
 
             ManageFilter filter = form.isManagedOnly() ? ManageFilter.ManagedOnly : (form.isUnmanagedOnly() ? ManageFilter.UnmanagedOnly : ManageFilter.All);
-            String deleteInstructions = "<br><br>" + PageFlowUtil.filter("The delete links below will remove all record of a module from the database tables, " +
+            String deleteInstructions = hasAdminOpsPerm ? "<br><br>" + PageFlowUtil.filter("The delete links below will remove all record of a module from the database tables, " +
                 "but to remove a module completely you must also manually delete its .module file and exploded module directory from your LabKey Server deployment directory. " +
-                "Module files are typically deployed in <labkey_deployment_root>/modules and <labkey_deployment_root>/externalModules.");
-            HttpView known = new ModulesView(knownModules, "Known", PageFlowUtil.filter("Each of these modules is installed and has a valid module file. ") + managedLink + unmanagedLink + deleteInstructions, null, ignoreSet, filter);
+                "Module files are typically deployed in <labkey_deployment_root>/modules and <labkey_deployment_root>/externalModules.") : "";
+            String docLink = "<br><br>Additional modules available, click " + (new HelpTopic("defaultModules").getSimpleLinkHtml("here")) + " to learn more.";
+            HttpView known = new ModulesView(knownModules, "Known", PageFlowUtil.filter("Each of these modules is installed and has a valid module file. ") + managedLink + unmanagedLink + deleteInstructions + docLink, null, ignoreSet, filter);
             HttpView unknown = new ModulesView(unknownModules, "Unknown",
                 PageFlowUtil.filter((1 == unknownModules.size() ? "This module" : "Each of these modules") + " has been installed on this server " +
                 "in the past but the corresponding module file is currently missing or invalid. Possible explanations: the " +
@@ -5805,6 +5807,7 @@ public class AdminController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
+            getPageConfig().setHelpTopic(new HelpTopic("defaultModules"));
             return appendAdminNavTrail(root, "Modules", getClass());
         }
     }

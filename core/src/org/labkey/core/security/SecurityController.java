@@ -19,6 +19,7 @@ import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -49,13 +50,18 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AccountManagementPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ApplicationAdminRole;
+import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
+import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DotRunner;
@@ -63,6 +69,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
@@ -1965,6 +1972,64 @@ public class SecurityController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
+        }
+    }
+
+    public static class TestCase extends AbstractActionPermissionTest
+    {
+        @Test
+        public void testActionPermissions()
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.isInSiteAdminGroup());
+
+            SecurityController controller = new SecurityController();
+
+            // @RequiresNoPermission, @RequiresLogin, @RequiresPermission(ReadPermission.class)
+            assertForReadPermission(user,
+                controller.new BeginAction(),
+                controller.new ApiKeyAction(),
+                controller.new CompleteUserReadAction()
+            );
+
+            // @RequiresPermission(AdminPermission.class)
+            assertForAdminPermission(user,
+                controller.new PermissionsAction(),
+                controller.new StandardDeleteGroupAction(),
+                controller.new UpdateMembersAction(),
+                controller.new GroupAction(),
+                controller.new CompleteMemberAction(),
+                controller.new CompleteUserAction(),
+                controller.new GroupExportAction(),
+                controller.new GroupPermissionAction(),
+                controller.new UpdatePermissionsAction(),
+                controller.new ShowRegistrationEmailAction(),
+                controller.new GroupDiagramAction(),
+                controller.new FolderAccessAction()
+            );
+
+            // @RequiresPermission(AccountManagementPermission.class)
+            assertForAccountManagementPermission(user,
+                controller.new AddUsersAction(),
+                controller.new ShowResetEmailAction(),
+                controller.new AdminResetPasswordAction()
+            );
+        }
+
+        @Test
+        public void validateAdministratorRolePermissionAssignment()
+        {
+            Set<Role> siteAdminRoleSet = RoleManager.roleSet(SiteAdminRole.class);
+            Set<Role> appAdminRoleSet = RoleManager.roleSet(ApplicationAdminRole.class);
+            Set<Role> otherAdminRoleSet = RoleManager.roleSet(ProjectAdminRole.class, FolderAdminRole.class);
+
+            RoleManager.testPermissionsInAdminRoles(true, siteAdminRoleSet, AdminOperationsPermission.class);
+            RoleManager.testPermissionsInAdminRoles(false, appAdminRoleSet, AdminOperationsPermission.class);
+            RoleManager.testPermissionsInAdminRoles(false, otherAdminRoleSet, AdminOperationsPermission.class);
+
+            RoleManager.testPermissionsInAdminRoles(true, siteAdminRoleSet, AccountManagementPermission.class);
+            RoleManager.testPermissionsInAdminRoles(true, appAdminRoleSet, AccountManagementPermission.class);
+            RoleManager.testPermissionsInAdminRoles(false, otherAdminRoleSet, AccountManagementPermission.class);
         }
     }
 }

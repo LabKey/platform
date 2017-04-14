@@ -18,6 +18,7 @@ package org.labkey.core.security;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Test;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -34,6 +35,7 @@ import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AccountManagementPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -47,6 +49,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -2052,4 +2055,47 @@ public class SecurityApiActions
         }
     }
 
+    public static class TestCase extends AbstractActionPermissionTest
+    {
+        @Test
+        public void testActionPermissions()
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.isInSiteAdminGroup());
+
+            // @RequiresNoPermission, @RequiresLogin, @RequiresPermission(ReadPermission.class)
+            assertForReadPermission(user,
+                new EnsureLoginAction(),
+                new GetGroupPermsAction(),
+                new GetUserPermsAction(),
+                new GetGroupsForCurrentUserAction(),
+                new GetRolesAction(),
+                new GetSecurableResourcesAction()
+            );
+
+            // @RequiresPermission(AdminPermission.class)
+            assertForAdminPermission(user,
+                new GetPolicyAction(),
+                new SavePolicyAction(),
+                new DeletePolicyAction(),
+                new AddAssignmentAction(),
+                new RemoveAssignmentAction(),
+                new ClearAssignedRolesAction(),
+                new CreateGroupAction(),
+                new BulkUpdateGroupAction(),
+                new DeleteGroupAction(),
+                new RenameGroupAction(),
+                new AddGroupMemberAction(),
+                new RemoveGroupMemberAction(),
+                new CreateNewUserAction()
+            );
+
+            // @RequiresPermission(AccountManagementPermission.class)
+            assertForAccountManagementPermission(user,
+                new DeleteUserAction(),
+                new AdminRotatePasswordAction(),
+                new ListProjectGroupsAction()
+            );
+        }
+    }
 }
