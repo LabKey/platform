@@ -70,12 +70,23 @@ public abstract class AbstractActionPermissionTest extends Assert
         policy.addRoleAssignment(_users.get(READER_EMAIL), RoleManager.getRole(ReaderRole.class));
         policy.addRoleAssignment(_users.get(SUBMITTER_EMAIL), RoleManager.getRole(SubmitterRole.class));
         SecurityPolicyManager.savePolicy(policy);
+
+        MutableSecurityPolicy rootPolicy = new MutableSecurityPolicy(ContainerManager.getRoot(), ContainerManager.getRoot().getPolicy());
+        rootPolicy.addRoleAssignment(_users.get(SITE_ADMIN_EMAIL), RoleManager.getRole(SiteAdminRole.class));
+        rootPolicy.addRoleAssignment(_users.get(APPLICATION_ADMIN_EMAIL), RoleManager.getRole(ApplicationAdminRole.class));
+        SecurityPolicyManager.savePolicy(rootPolicy);
     }
 
     @AfterClass
     public static void tearDown()
     {
         assertTrue(ContainerManager.delete(_c, TestContext.get().getUser()));
+
+        MutableSecurityPolicy rootPolicy = new MutableSecurityPolicy(ContainerManager.getRoot(), ContainerManager.getRoot().getPolicy());
+        rootPolicy.removeRoleAssignment(_users.get(SITE_ADMIN_EMAIL), RoleManager.getRole(SiteAdminRole.class));
+        rootPolicy.removeRoleAssignment(_users.get(APPLICATION_ADMIN_EMAIL), RoleManager.getRole(ApplicationAdminRole.class));
+        SecurityPolicyManager.savePolicy(rootPolicy);
+
         cleanupUsers(ALL_EMAILS);
     }
 
@@ -120,15 +131,15 @@ public abstract class AbstractActionPermissionTest extends Assert
     {
         for (PermissionCheckableAction action : actions)
         {
-            assertPermission(action, user);
+            assertPermission(_c, action, user);
 
-            assertPermission(action,
+            assertPermission(_c, action,
                 _users.get(READER_EMAIL), _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
                 _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL),
                 _users.get(APPLICATION_ADMIN_EMAIL), _users.get(SITE_ADMIN_EMAIL)
             );
 
-            assertNoPermission(action,
+            assertNoPermission(_c, action,
                 _users.get(SUBMITTER_EMAIL)
             );
         }
@@ -138,16 +149,16 @@ public abstract class AbstractActionPermissionTest extends Assert
     {
         for (PermissionCheckableAction action : actions)
         {
-            assertPermission(action, user);
+            assertPermission(_c, action, user);
 
-            assertPermission(action,
+            assertPermission(_c, action,
                 _users.get(SUBMITTER_EMAIL), _users.get(AUTHOR_EMAIL),
                 _users.get(EDITOR_EMAIL), _users.get(FOLDER_ADMIN_EMAIL),
                 _users.get(PROJECT_ADMIN_EMAIL), _users.get(APPLICATION_ADMIN_EMAIL),
                 _users.get(SITE_ADMIN_EMAIL)
             );
 
-            assertNoPermission(action,
+            assertNoPermission(_c, action,
                 _users.get(READER_EMAIL)
             );
         }
@@ -157,15 +168,15 @@ public abstract class AbstractActionPermissionTest extends Assert
     {
         for (PermissionCheckableAction action : actions)
         {
-            assertPermission(action, user);
+            assertPermission(_c, action, user);
 
-            assertPermission(action,
+            assertPermission(_c, action,
                 _users.get(EDITOR_EMAIL), _users.get(FOLDER_ADMIN_EMAIL),
                 _users.get(PROJECT_ADMIN_EMAIL), _users.get(APPLICATION_ADMIN_EMAIL),
                 _users.get(SITE_ADMIN_EMAIL)
             );
 
-            assertNoPermission(action,
+            assertNoPermission(_c, action,
                 _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL), _users.get(AUTHOR_EMAIL)
             );
         }
@@ -173,16 +184,25 @@ public abstract class AbstractActionPermissionTest extends Assert
 
     public void assertForAdminPermission(User user, PermissionCheckableAction... actions)
     {
+        assertForAdminPermission(_c, user, actions);
+    }
+
+    public void assertForAdminPermission(Container c, User user, PermissionCheckableAction... actions)
+    {
         for (PermissionCheckableAction action : actions)
         {
-            assertPermission(action, user);
+            assertPermission(c, action, user);
 
-            assertPermission(action,
-                _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL),
+            assertPermission(c, action,
                 _users.get(APPLICATION_ADMIN_EMAIL), _users.get(SITE_ADMIN_EMAIL)
             );
 
-            assertNoPermission(action,
+            if (c.isRoot())
+                assertNoPermission(c, action, _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL));
+            else
+                assertPermission(c, action, _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL));
+
+            assertNoPermission(c, action,
                 _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),
                 _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL)
             );
@@ -191,15 +211,20 @@ public abstract class AbstractActionPermissionTest extends Assert
 
     public void assertForAdminOperationsPermission(User user, PermissionCheckableAction... actions)
     {
+        assertForAdminOperationsPermission(_c, user, actions);
+    }
+
+    public void assertForAdminOperationsPermission(Container c, User user, PermissionCheckableAction... actions)
+    {
         for (PermissionCheckableAction action : actions)
         {
-            assertPermission(action, user);
+            assertPermission(c, action, user);
 
-            assertPermission(action,
+            assertPermission(c, action,
                 _users.get(SITE_ADMIN_EMAIL)
             );
 
-            assertNoPermission(action,
+            assertNoPermission(c, action,
                 _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),
                 _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
                 _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL),
@@ -210,15 +235,20 @@ public abstract class AbstractActionPermissionTest extends Assert
 
     public void assertForUserManagementPermission(User user, PermissionCheckableAction... actions)
     {
+        assertForUserManagementPermission(_c, user, actions);
+    }
+
+    public void assertForUserManagementPermission(Container c, User user, PermissionCheckableAction... actions)
+    {
         for (PermissionCheckableAction action : actions)
         {
-            assertPermission(action, user);
+            assertPermission(c, action, user);
 
-            assertPermission(action,
+            assertPermission(c, action,
                 _users.get(APPLICATION_ADMIN_EMAIL), _users.get(SITE_ADMIN_EMAIL)
             );
 
-            assertNoPermission(action,
+            assertNoPermission(c, action,
                 _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),
                 _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
                 _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL)
@@ -226,11 +256,26 @@ public abstract class AbstractActionPermissionTest extends Assert
         }
     }
 
-    private void assertPermission(PermissionCheckableAction action, User... users)
+    public void assertForRequiresSiteAdmin(User user, PermissionCheckableAction... actions)
+    {
+        for (PermissionCheckableAction action : actions)
+        {
+            assertPermission(_c, action, user);
+
+            assertNoPermission(_c, action,
+                _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),
+                _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
+                _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL),
+                _users.get(APPLICATION_ADMIN_EMAIL), _users.get(SITE_ADMIN_EMAIL)
+            );
+        }
+    }
+
+    private void assertPermission(Container c, PermissionCheckableAction action, User... users)
     {
         for (User u : users)
         {
-            action.setViewContext(makeContext(u));
+            action.setViewContext(makeContext(u, c));
 
             try
             {
@@ -243,11 +288,11 @@ public abstract class AbstractActionPermissionTest extends Assert
         }
     }
 
-    private void assertNoPermission(PermissionCheckableAction action, User... users)
+    private void assertNoPermission(Container c, PermissionCheckableAction action, User... users)
     {
         for (User u : users)
         {
-            action.setViewContext(makeContext(u));
+            action.setViewContext(makeContext(u, c));
 
             try
             {
@@ -261,7 +306,7 @@ public abstract class AbstractActionPermissionTest extends Assert
         }
     }
 
-    private ViewContext makeContext(User u)
+    private ViewContext makeContext(User u, Container c)
     {
         HttpServletRequest w = new HttpServletRequestWrapper(TestContext.get().getRequest())
         {
@@ -275,7 +320,7 @@ public abstract class AbstractActionPermissionTest extends Assert
         };
 
         ViewContext context = new ViewContext();
-        context.setContainer(_c);
+        context.setContainer(c);
         context.setUser(u);
         context.setRequest(w);
         return context;
