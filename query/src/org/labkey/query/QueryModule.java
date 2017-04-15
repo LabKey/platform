@@ -320,7 +320,8 @@ public class QueryModule extends DefaultModule
                 QueryServiceImpl.TestCase.class,
                 RolapReader.RolapTest.class,
                 RolapTestCase.class,
-                MultiValueTest.class
+                MultiValueTest.class,
+                QueryController.TestCase.class
         ));
     }
 

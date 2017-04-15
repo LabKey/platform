@@ -85,6 +85,7 @@ import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -104,6 +105,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
@@ -2020,12 +2022,15 @@ public class UserController extends SpringActionController
             }
             else  // site admin, so make change directly
             {
+                if (user == null)
+                    throw new IllegalStateException("Unknown user for change email POST.");
+
                 // don't let non-site admin reset password of site admin
-                if (user != null && !getUser().isInSiteAdminGroup() && user.isInSiteAdminGroup())
+                if (!getUser().isInSiteAdminGroup() && user.isInSiteAdminGroup())
                     throw new UnauthorizedException("Can not reset password for a Site Admin user");
 
                 // use "ADMIN" as verification token for debugging, but should never be checked/used
-                UserManager.changeEmail(isUserManager, userId, user.getEmail(), form.getRequestedEmail(), "ADMIN", getUser());
+                UserManager.changeEmail(true, userId, user.getEmail(), form.getRequestedEmail(), "ADMIN", getUser());
             }
 
             return !errors.hasErrors();
@@ -2949,6 +2954,49 @@ public class UserController extends SpringActionController
             else
                 getViewContext().getSession().setAttribute(TemplateHeaderView.SHOW_WARNING_MESSAGES_SESSION_PROP, form.isShowMessages());
             return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    public static class TestCase extends AbstractActionPermissionTest
+    {
+        @Override
+        public void testActionPermissions()
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.isInSiteAdminGroup());
+
+            UserController controller = new UserController();
+
+            // @RequiresPermission(ReadPermission.class)
+            assertForReadPermission(user,
+                controller.new BeginAction(),
+                controller.new GetUsersAction()
+            );
+
+            // @RequiresPermission(AdminPermission.class)
+            assertForAdminPermission(user,
+                controller.new ShowUsersAction(),
+                //TODO controller.new ShowUserHistoryAction(),
+                //TODO controller.new UserAccessAction(),
+                controller.new GetImpersonationUsersAction(),
+                controller.new ImpersonateUserAction(),
+                controller.new GetImpersonationGroupsAction(),
+                controller.new ImpersonateGroupAction(),
+                controller.new GetImpersonationRolesAction(),
+                controller.new ImpersonateRolesAction()
+            );
+
+            // @RequiresPermission(UserManagementPermission.class)
+            assertForUserManagementPermission(user,
+                controller.new DeactivateUsersAction(),
+                controller.new ActivateUsersAction(),
+                controller.new DeleteUsersAction()
+            );
+
+            // @AdminConsoleAction
+            assertForAdminPermission(ContainerManager.getRoot(), user,
+                controller.new ShowUserPreferencesAction()
+            );
         }
     }
 }

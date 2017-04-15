@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -83,6 +84,7 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -101,6 +103,7 @@ import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.HtmlView;
@@ -2104,6 +2107,61 @@ public class CoreController extends SpringActionController
             response.put("libraries", libraries);
 
             return response;
+        }
+    }
+
+    public static class TestCase extends AbstractActionPermissionTest
+    {
+        @Test
+        public void testActionPermissions()
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.isInSiteAdminGroup());
+
+            CoreController controller = new CoreController();
+
+            // @RequiresPermission(ReadPermission.class)
+            assertForReadPermission(user,
+                controller.new ProjectsAction(),
+                controller.new DownloadFileLinkAction(),
+                controller.new LookupWorkbookAction(),
+                controller.new GetExtContainerTreeAction(),
+                controller.new GetExtSecurityContainerTreeAction(),
+                controller.new GetExtMWBContainerTreeAction(),
+                controller.new GetExtContainerAdminTreeAction(),
+                controller.new GetFolderTypesAction(),
+                controller.new SaveModulePropertiesAction(),
+                controller.new GetContainerInfoAction(),
+                controller.new GetRegisteredFolderWritersAction(),
+                controller.new GetRegisteredFolderImportersAction(),
+                controller.new BackgroundImageAction()
+            );
+
+            // @RequiresPermission(InsertPermission.class)
+            assertForInsertPermission(user,
+                controller.new CreateContainerAction(),
+                controller.new CreateWorkbookAction()
+            );
+
+            // @RequiresPermission(UpdatePermission.class)
+            assertForUpdateOrDeletePermission(user,
+                controller.new UpdateDescriptionAction(),
+                controller.new UpdateTitleAction(),
+                controller.new GetModulePropertiesAction()
+            );
+
+            // @RequiresPermission(DeletePermission.class)
+            assertForUpdateOrDeletePermission(user,
+                controller.new DeleteContainerAction()
+            );
+
+            // @RequiresPermission(AdminPermission.class)
+            assertForAdminPermission(user,
+                controller.new MoveContainerAction(),
+                controller.new MoveWorkbooksAction(),
+                controller.new GetContainerTreeRootInfoAction(),
+                controller.new MoveWorkbookAction()
+            );
         }
     }
 }

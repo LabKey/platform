@@ -33,6 +33,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.BaseAggregatesAnalyticsProvider;
@@ -78,6 +79,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
@@ -181,7 +183,7 @@ public class QueryController extends SpringActionController
             GetQueryDetailsAction.class,
             ViewQuerySourceAction.class);
 
-    public QueryController() throws Exception
+    public QueryController()
     {
         setActionResolver(_actionResolver);
     }
@@ -6510,6 +6512,112 @@ public static class ExportSqlForm
         public NavTree appendNavTrail(NavTree root)
         {
             return root;
+        }
+    }
+
+    public static class TestCase extends AbstractActionPermissionTest
+    {
+        @Override
+        public void testActionPermissions()
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.isInSiteAdminGroup());
+
+            QueryController controller = new QueryController();
+
+            // @RequiresPermission(ReadPermission.class)
+            assertForReadPermission(user,
+                controller.new BrowseAction(),
+                controller.new BeginAction(),
+                controller.new SchemaAction(),
+                controller.new SourceQueryAction(),
+                controller.new SaveSourceQueryAction(),
+                controller.new ExecuteQueryAction(),
+                controller.new PrintRowsAction(),
+                controller.new ExportScriptAction(),
+                controller.new ExportRowsExcelAction(),
+                controller.new ExportRowsXLSXAction(),
+                controller.new ExportExcelTemplateAction(),
+                controller.new ExportRowsTsvAction(),
+                controller.new ExcelWebQueryDefinitionAction(),
+                controller.new MetadataServiceAction(),
+                controller.new SaveQueryViewsAction(),
+                controller.new PropertiesQueryAction(),
+                controller.new SelectRowsAction(),
+                controller.new GetDataAction(),
+                controller.new ExecuteSqlAction(),
+                controller.new SelectDistinctAction(),
+                controller.new GetColumnSummaryStatsAction(),
+                controller.new ImportAction(),
+                controller.new ExportSqlAction(),
+                controller.new UpdateRowsAction(),
+                controller.new InsertRowsAction(),
+                controller.new ImportRowsAction(),
+                controller.new DeleteRowsAction(),
+                controller.new TableInfoAction(),
+                controller.new SaveSessionViewAction(),
+                controller.new GetSchemasAction(),
+                controller.new GetQueriesAction(),
+                controller.new GetQueryViewsAction(),
+                controller.new SaveApiTestAction(),
+                controller.new ValidateQueryMetadataAction(),
+                controller.new AuditHistoryAction(),
+                controller.new AuditDetailsAction(),
+                controller.new QueryAuditChangesAction(),
+                controller.new ExportTablesAction(),
+                controller.new SaveNamedSetAction(),
+                controller.new DeleteNamedSetAction()
+            );
+
+            // @RequiresPermission(DeletePermission.class)
+            assertForUpdateOrDeletePermission(user,
+                controller.new DeleteQueryAction(),
+                controller.new DeleteQueryRowsAction()
+            );
+
+            // @RequiresPermission(AdminPermission.class)
+            assertForAdminPermission(user,
+                controller.new NewQueryAction(),
+                controller.new MetadataQueryAction(),
+                controller.new TruncateTableAction(),
+                controller.new ApiTestAction(),
+                controller.new AdminAction(),
+                controller.new ManageRemoteConnectionsAction(),
+                controller.new ReloadExternalSchemaAction(),
+                controller.new ReloadAllUserSchemas(),
+                controller.new ManageViewsAction(),
+                controller.new InternalDeleteView(),
+                controller.new InternalSourceViewAction(),
+                controller.new InternalNewViewAction(),
+                controller.new QueryExportAuditRedirectAction(),
+                controller.new GenerateSchemaAction(),
+                controller.new GetSchemasWithDataSourcesAction()
+            );
+
+            // @RequiresPermission(AdminOperationsPermission.class)
+            assertForAdminOperationsPermission(user,
+                controller.new EditRemoteConnectionAction(),
+                controller.new DeleteRemoteConnectionAction(),
+                controller.new TestRemoteConnectionAction(),
+                controller.new RawTableMetaDataAction(),
+                controller.new RawSchemaMetaDataAction(),
+                controller.new InsertLinkedSchemaAction(),
+                controller.new InsertExternalSchemaAction(),
+                controller.new DeleteLinkedSchemaAction(),
+                controller.new DeleteExternalSchemaAction(),
+                controller.new EditLinkedSchemaAction(),
+                controller.new EditExternalSchemaAction(),
+                controller.new GetTablesAction(),
+                controller.new SchemaTemplateAction(),
+                controller.new SchemaTemplatesAction(),
+                controller.new ParseExpressionAction(),
+                controller.new ParseQueryAction()
+            );
+
+            // @AdminConsoleAction
+            assertForAdminPermission(ContainerManager.getRoot(), user,
+                controller.new DataSourceAdminAction()
+            );
         }
     }
 }

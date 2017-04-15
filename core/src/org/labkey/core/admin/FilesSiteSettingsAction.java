@@ -16,13 +16,18 @@
 
 package org.labkey.core.admin;
 
+import org.junit.Test;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -82,4 +87,19 @@ public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<File
         return PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Configure File System Access", null);
     }
 
+    public static class TestCase extends AbstractActionPermissionTest
+    {
+        @Test
+        public void testActionPermissions()
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.isInSiteAdminGroup());
+
+            // @AdminConsoleAction
+            // @RequiresPermission(AdminOperationsPermission.class)
+            assertForAdminOperationsPermission(ContainerManager.getRoot(), user,
+                new FilesSiteSettingsAction()
+            );
+        }
+    }
 }

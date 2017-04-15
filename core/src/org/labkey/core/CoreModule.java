@@ -147,6 +147,7 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.CustomizeMenuForm;
+import org.labkey.core.admin.FilesSiteSettingsAction;
 import org.labkey.core.admin.MenuViewFactory;
 import org.labkey.core.admin.importer.FolderTypeImporterFactory;
 import org.labkey.core.admin.importer.ModulePropertiesImporterFactory;
@@ -907,8 +908,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 TabLoader.TabLoaderTestCase.class,
                 MapLoader.MapLoaderTestCase.class,
                 GroupManager.TestCase.class,
-                SecurityController.TestCase.class,
-                SecurityApiActions.TestCase.class,
                 AttachmentServiceImpl.TestCase.class,
                 WebdavResolverImpl.TestCase.class,
                 MimeMap.TestCase.class,
@@ -940,7 +939,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 JspTemplate.TestCase.class,
                 SQLFragment.TestCase.class,
                 DavController.TestCase.class,
-                DomainTemplateGroup.TestCase.class
+                DomainTemplateGroup.TestCase.class,
+                AdminController.TestCase.class,
+                CoreController.TestCase.class,
+                FilesSiteSettingsAction.TestCase.class,
+                SecurityController.TestCase.class,
+                SecurityApiActions.TestCase.class,
+                UserController.TestCase.class
         ));
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());

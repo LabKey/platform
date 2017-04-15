@@ -34,6 +34,7 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.Constants;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
@@ -102,6 +103,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
@@ -7060,6 +7062,117 @@ public class AdminController extends SpringActionController
         public void setSubmit(boolean submit)
         {
             _submit = submit;
+        }
+    }
+
+    public static class TestCase extends AbstractActionPermissionTest
+    {
+        @Test
+        public void testActionPermissions()
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.isInSiteAdminGroup());
+
+            AdminController controller = new AdminController();
+
+            // @RequiresPermission(ReadPermission.class)
+            assertForReadPermission(user,
+                controller.new GetModulesAction(),
+                controller.new ClearDeletedTabFoldersAction(),
+                controller.new SetAdminModeAction()
+            );
+
+            // @RequiresPermission(AdminPermission.class)
+            assertForAdminPermission(user,
+                controller.new ResetLogoAction(),
+                controller.new ResetPropertiesAction(),
+                controller.new ResetFaviconAction(),
+                controller.new DeleteCustomStylesheetAction(),
+                controller.new SiteValidationAction(),
+                controller.new ResetQueryStatisticsAction(),
+                controller.new DefineWebThemesAction(),
+                controller.new SaveWebThemeAction(),
+                controller.new DeleteWebThemeAction(),
+                controller.new FolderAliasesAction(),
+                controller.new CustomizeEmailAction(),
+                controller.new DeleteCustomEmailAction(),
+                controller.new RenameFolderAction(),
+                controller.new ShowMoveFolderTreeAction(),
+                controller.new MoveFolderAction(),
+                controller.new ConfirmProjectMoveAction(),
+                controller.new CreateFolderAction(),
+                controller.new SetFolderPermissionsAction(),
+                controller.new SetInitialFolderSettingsAction(),
+                controller.new DeleteFolderAction(),
+                controller.new ReorderFoldersAction(),
+                controller.new ReorderFoldersApiAction(),
+                controller.new RevertFolderAction(),
+                controller.new CustomizeMenuAction(),
+                controller.new AddTabAction(),
+                controller.new ShowTabAction(),
+                controller.new MoveTabAction(),
+                controller.new RenameTabAction(),
+                controller.new ToggleTabEditModeAction()
+            );
+
+            //TODO @RequiresPermission(AdminReadPermission.class)
+            //controller.new TestMothershipReportAction()
+
+            // @RequiresPermission(AdminOperationsPermission.class)
+            assertForAdminOperationsPermission(user,
+                controller.new ShowNetworkDriveTestAction(),
+                controller.new DbCheckerAction(),
+                controller.new DoCheckAction(),
+                controller.new GetSchemaXmlDocAction(),
+                controller.new RecreateViewsAction(),
+                controller.new ValidateDomainsAction(),
+                controller.new DeleteModuleAction(),
+                controller.new ExperimentalFeatureAction()
+            );
+
+            // @AdminConsoleAction
+            assertForAdminPermission(ContainerManager.getRoot(), user,
+                controller.new ShowAdminAction(),
+                controller.new ShowThreadsAction(),
+                controller.new DumpHeapAction(),
+                controller.new ResetErrorMarkAction(),
+                controller.new ShowErrorsSinceMarkAction(),
+                controller.new ShowAllErrorsAction(),
+                controller.new ShowPrimaryLogAction(),
+                controller.new ActionsAction(),
+                controller.new ExportActionsAction(),
+                controller.new QueriesAction(),
+                controller.new QueryStackTracesAction(),
+                controller.new ExecutionPlanAction(),
+                controller.new ExportQueriesAction(),
+                controller.new MemTrackerAction(),
+                controller.new MemoryChartAction(),
+                controller.new EmailTestAction(),
+                controller.new FolderTypesAction(),
+                controller.new ShortURLAdminAction(),
+                controller.new CustomizeSiteAction(),
+                controller.new CachesAction(),
+                controller.new EnvironmentVariablesAction(),
+                controller.new SystemPropertiesAction(),
+                controller.new ConfigureSystemMaintenanceAction(),
+                controller.new ModulesAction()
+            );
+
+            // @AdminConsoleAction
+            // @RequiresPermission(AdminOperationsPermission.class)
+            assertForAdminOperationsPermission(ContainerManager.getRoot(), user,
+                controller.new ExperimentalFeaturesAction()
+            );
+
+            // @RequiresSiteAdmin
+            assertForRequiresSiteAdmin(user,
+                controller.new ShowModuleErrors(),
+                controller.new GetPendingRequestCountAction(),
+                controller.new SystemMaintenanceAction(),
+                controller.new ModuleStatusAction(),
+                controller.new NewInstallSiteSettingsAction(),
+                controller.new InstallCompleteAction()
+            );
         }
     }
 }

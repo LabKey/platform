@@ -29,8 +29,8 @@ import org.labkey.api.reader.Readers;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -1172,6 +1172,46 @@ public class StatusController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    public static class TestCase extends AbstractActionPermissionTest
+    {
+        @Override
+        public void testActionPermissions()
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.isInSiteAdminGroup());
+
+            StatusController controller = new StatusController();
+
+            // @RequiresPermission(ReadPermission.class)
+            assertForReadPermission(user,
+                controller.new BeginAction(),
+                controller.new ShowListAction(),
+                controller.new ShowListRegionAction(),
+                controller.new ShowPartRegionAction(),
+                controller.new DetailsAction(),
+                controller.new ShowDataAction(),
+                controller.new ShowFolderAction(),
+                controller.new ShowFileAction(),
+                controller.new RunActionAction(),
+                controller.new DeleteStatusAction(),
+                controller.new CancelStatusAction(),
+                controller.new CompleteStatusAction(),
+                controller.new EscalateJobFailureAction(),
+                controller.new EscalateAction()
+            );
+
+            // @RequiresPermission(UpdatePermission.class)
+            assertForUpdateOrDeletePermission(user,
+                controller.new ProviderActionAction()
+            );
+
+            // @RequiresPermission(AdminOperationsPermission.class)
+            assertForAdminOperationsPermission(user,
+                controller.new ForceRefreshAction()
+            );
         }
     }
 }

@@ -249,7 +249,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     {
         return new HashSet<>(Arrays.asList(
             PipelineQueueImpl.TestCase.class,
-            PipelineController.TestCase.class
+            PipelineController.TestCase.class,
+            StatusController.TestCase.class
         ));
     }
 
