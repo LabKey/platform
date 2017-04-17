@@ -181,8 +181,17 @@ public class SecurityPolicy implements HasPermission
     @NotNull
     public Set<Role> getEffectiveRoles(@NotNull UserPrincipal principal)
     {
+        return getEffectiveRoles(principal, true);
+    }
+
+    @NotNull
+    public Set<Role> getEffectiveRoles(@NotNull UserPrincipal principal, boolean includeContextualRoles)
+    {
         Set<Role> roles = getRoles(principal.getGroups());
-        roles.addAll(getContextualRoles(principal));
+        roles.addAll(getAssignedRoles(principal));
+        if (includeContextualRoles)
+            roles.addAll(getContextualRoles(principal));
+
         return roles;
     }
 

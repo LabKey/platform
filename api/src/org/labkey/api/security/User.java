@@ -238,6 +238,12 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
         return rootAssignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));
     }
 
+    public boolean hasApplicationAdminForPolicy(SecurityPolicy policy)
+    {
+        Set<Role> assignedRoles = policy.getEffectiveRoles(this, false);
+        return assignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));
+    }
+
     // Note: site administrators are always developers; see GroupManager.computeAllGroups().
     public boolean isDeveloper()
     {
