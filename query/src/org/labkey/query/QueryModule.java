@@ -321,6 +321,7 @@ public class QueryModule extends DefaultModule
                 RolapReader.RolapTest.class,
                 RolapTestCase.class,
                 MultiValueTest.class,
+                OlapController.TestCase.class,
                 QueryController.TestCase.class
         ));
     }

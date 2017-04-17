@@ -83,6 +83,8 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -96,6 +98,7 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GWTView;
@@ -157,7 +160,7 @@ public class FileContentController extends SpringActionController
 
    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(FileContentController.class);
 
-   public FileContentController() throws Exception
+   public FileContentController()
    {
        setActionResolver(_actionResolver);
    }
@@ -1778,5 +1781,63 @@ public class FileContentController extends SpringActionController
         if (mime.getContentType().startsWith("text/"))
             return RenderStyle.TEXT;
         return RenderStyle.PAGE;
+    }
+
+    public static class TestCase extends AbstractActionPermissionTest
+    {
+        @Override
+        public void testActionPermissions()
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.isInSiteAdminGroup());
+
+            FileContentController controller = new FileContentController();
+
+            // @RequiresPermission(ReadPermission.class)
+            assertForReadPermission(user,
+                controller.new SendFileAction(),
+                controller.new FrameAction(),
+                controller.new BeginAction(),
+                controller.new FileContentSummaryAction(),
+                controller.new FileContentProjectSummaryAction(),
+                controller.new GetEmailPrefAction(),
+                controller.new GetFileRootsAction(),
+                controller.new SetEmailPrefAction(),
+                controller.new FileEmailPreferenceAction()
+            );
+
+            // @RequiresPermission(InsertPermission.class)
+            assertForInsertPermission(user,
+                controller.new AddAttachmentAction(),
+                controller.new UpdateFilePropsAction(),
+                controller.new SaveCustomFilePropsAction()
+            );
+
+            // @RequiresPermission(DeletePermission.class)
+            assertForUpdateOrDeletePermission(user,
+                controller.new DeleteAttachmentAction()
+            );
+
+            // @RequiresPermission(AdminPermission.class)
+            assertForAdminPermission(user,
+                controller.new DesignerAction(),
+                controller.new FilePropertiesServiceAction(),
+                controller.new ResetFileOptionsAction(),
+                controller.new SetDefaultEmailPrefAction(),
+                controller.new ShowFilesHistoryAction()
+            );
+
+            // @RequiresPermission(AdminOperationsPermission.class)
+            assertForAdminOperationsPermission(user,
+                controller.new ShowAdminAction(),
+                controller.new AddAttachmentDirectoryAction(),
+                controller.new DeleteAttachmentDirectoryAction()
+            );
+
+            // @RequiresSiteAdmin
+            assertForRequiresSiteAdmin(user,
+                controller.new SendShortDigestAction()
+            );
+        }
     }
 }

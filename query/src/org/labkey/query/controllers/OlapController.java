@@ -67,6 +67,8 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -78,6 +80,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -151,7 +154,7 @@ public class OlapController extends SpringActionController
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(OlapController.class);
 
-    public OlapController() throws Exception
+    public OlapController()
     {
         setActionResolver(_actionResolver);
     }
@@ -1546,5 +1549,46 @@ public class OlapController extends SpringActionController
             return activeAppConfig;
         }
         return null;
+    }
+
+    public static class TestCase extends AbstractActionPermissionTest
+    {
+        @Override
+        public void testActionPermissions()
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.isInSiteAdminGroup());
+
+            OlapController controller = new OlapController();
+
+            // @RequiresPermission(ReadPermission.class)
+            assertForReadPermission(user,
+                controller.new GetCubeDefinitionAction(),
+                controller.new JsonQueryAction(),
+                controller.new CountDistinctQueryAction(),
+                controller.new XmlaAction()
+            );
+
+            // @RequiresPermission(AdminPermission.class)
+            assertForAdminPermission(user,
+                controller.new CreateDefinitionAction(),
+                controller.new EditDefinitionAction(),
+                controller.new DeleteDefinitionAction(),
+                controller.new TestBrowserAction(),
+                controller.new TestMdxAction(),
+                controller.new TestJsonAction(),
+                controller.new InsertAppAction(),
+                controller.new DeleteAppAction(),
+                controller.new ManageAppsAction(),
+                controller.new EditAppAction(),
+                controller.new SetActiveAppConfigAction(),
+                controller.new ListAppsAction()
+            );
+
+            // @RequiresSiteAdmin
+            assertForRequiresSiteAdmin(user,
+                controller.new ExecuteMdxAction()
+            );
+        }
     }
 }

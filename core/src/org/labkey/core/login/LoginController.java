@@ -69,6 +69,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -82,6 +83,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.SimpleNamedObject;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -2823,6 +2825,32 @@ public class LoginController extends SpringActionController
         public void setDeletedLogos(String[] deletedLogos)
         {
             _deletedLogos = deletedLogos;
+        }
+    }
+
+    public static class TestCase extends AbstractActionPermissionTest
+    {
+        @Override
+        public void testActionPermissions()
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.isInSiteAdminGroup());
+
+            LoginController controller = new LoginController();
+
+            // @RequiresPermission(AdminOperationsPermission.class)
+            assertForAdminOperationsPermission(user,
+                controller.new SetAuthenticationParameterAction(),
+                controller.new EnableAction(),
+                controller.new DisableAction()
+            );
+
+            // @AdminConsoleAction
+            assertForAdminPermission(ContainerManager.getRoot(), user,
+                controller.new ConfigureAction(),
+                controller.new ConfigureDbLoginAction(),
+                controller.new PickAuthLogoAction()
+            );
         }
     }
 }

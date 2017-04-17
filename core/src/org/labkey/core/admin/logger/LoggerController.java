@@ -33,8 +33,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -250,4 +253,28 @@ public class LoggerController extends SpringActionController
         }
     }
 
+    public static class TestCase extends AbstractActionPermissionTest
+    {
+        @Override
+        public void testActionPermissions()
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.isInSiteAdminGroup());
+
+            LoggerController controller = new LoggerController();
+
+            // @RequiresPermission(AdminOperationsPermission.class)
+            assertForAdminOperationsPermission(user,
+                controller.new ListAction(),
+                controller.new ResetAction(),
+                controller.new UpdateAction()
+            );
+
+            // @AdminConsoleAction
+            // @RequiresPermission(AdminOperationsPermission.class)
+            assertForAdminOperationsPermission(ContainerManager.getRoot(), user,
+                controller.new ManageAction()
+            );
+        }
+    }
 }

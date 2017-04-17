@@ -943,8 +943,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 AdminController.TestCase.class,
                 CoreController.TestCase.class,
                 FilesSiteSettingsAction.TestCase.class,
+                LoginController.TestCase.class,
+                LoggerController.TestCase.class,
                 SecurityController.TestCase.class,
                 SecurityApiActions.TestCase.class,
+                SqlScriptController.TestCase.class,
                 UserController.TestCase.class
         ));
 

@@ -48,11 +48,14 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -1315,6 +1318,39 @@ public class SqlScriptController extends SpringActionController
             new ScriptsAction().appendNavTrail(root);
             root.addChild("Unreachable Scripts");
             return root;
+        }
+    }
+
+    public static class TestCase extends AbstractActionPermissionTest
+    {
+        @Override
+        public void testActionPermissions()
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.isInSiteAdminGroup());
+
+            SqlScriptController controller = new SqlScriptController();
+
+            // @RequiresPermission(AdminOperationsPermission.class)
+            assertForAdminOperationsPermission(user,
+                controller.new GetModuleStatusAction(),
+                controller.new ScriptsWithErrorsAction(),
+                controller.new ConsolidateScriptsAction(),
+                controller.new ConsolidateBatchAction(),
+                controller.new ConsolidateSchemaAction(),
+                controller.new OrphanedScriptsAction(),
+                controller.new ScriptAction(),
+                controller.new ReorderScriptAction(),
+                controller.new ReorderAllScriptsAction(),
+                controller.new SaveReorderedScriptAction(),
+                controller.new UnreachableScriptsAction()
+            );
+
+            // @AdminConsoleAction
+            // @RequiresPermission(AdminOperationsPermission.class)
+            assertForAdminOperationsPermission(ContainerManager.getRoot(), user,
+                controller.new ScriptsAction()
+            );
         }
     }
 }
