@@ -20,8 +20,8 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
-import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
@@ -144,22 +144,32 @@ public class QueryImporter implements FolderImporter
                 boolean created = false;
                 QueryDefinition queryDef = QueryService.get().getQueryDef(ctx.getUser(), ctx.getContainer(), schemaName, queryName);
 
-                if (queryDef != null && !queryDef.getDefinitionContainer().equals(ctx.getContainer()))
+                if (queryDef != null)
                 {
-                    // We have an query of the same name being inherited from another container
-
-                    // Use normalizeSpace() as there may be differences in line endings
-                    if (!Objects.equals(StringUtils.normalizeSpace(queryDef.getSql()), StringUtils.normalizeSpace(sql)) ||
-                            !Objects.equals(StringUtils.normalizeSpace(queryDef.getDescription()), StringUtils.normalizeSpace(queryXml.getDescription())) ||
-                            !Objects.equals(StringUtils.normalizeSpace(queryDef.getMetadataXml()), StringUtils.normalizeSpace(metadataXml)))
+                    // Don't attempt to replace an existing module-based query... that won't go well. Just warn and move on. #30081
+                    if (!StringUtils.isEmpty(queryDef.getModuleName()))
                     {
-                        // Query is different, so we want to create a separate, local copy
-                        queryDef = null;
-                    }
-                    else
-                    {
-                        // We already have a matching query, so we can skip any additional processing
+                        ctx.getLogger().warn("Skipped import of query \"" + sqlFileName + "\" because \"" + schemaName + "." + queryName + "\" is an existing module-based query");
                         continue;
+                    }
+
+                    if (!queryDef.getDefinitionContainer().equals(ctx.getContainer()))
+                    {
+                        // We have a query of the same name being inherited from another container
+
+                        // Use normalizeSpace() as there may be differences in line endings
+                        if (!Objects.equals(StringUtils.normalizeSpace(queryDef.getSql()), StringUtils.normalizeSpace(sql)) ||
+                                !Objects.equals(StringUtils.normalizeSpace(queryDef.getDescription()), StringUtils.normalizeSpace(queryXml.getDescription())) ||
+                                !Objects.equals(StringUtils.normalizeSpace(queryDef.getMetadataXml()), StringUtils.normalizeSpace(metadataXml)))
+                        {
+                            // Query is different, so we want to create a separate, local copy
+                            queryDef = null;
+                        }
+                        else
+                        {
+                            // We already have a matching query, so we can skip any additional processing
+                            continue;
+                        }
                     }
                 }
 
@@ -176,9 +186,7 @@ public class QueryImporter implements FolderImporter
                 Collection<QueryPropertyChange> changes = queryDef.save(ctx.getUser(), ctx.getContainer(), false);
                 if (created)
                 {
-                    List<String> queries = createdQueries.get(schemaKey);
-                    if (queries == null)
-                        createdQueries.put(schemaKey, queries = new ArrayList<>());
+                    List<String> queries = createdQueries.computeIfAbsent(schemaKey, k -> new ArrayList<>());
                     queries.add(queryName);
                 }
                 else if (changes != null)
@@ -187,9 +195,7 @@ public class QueryImporter implements FolderImporter
                     {
                         // Group changed queries by schemaKey/QueryProperty
                         Pair<SchemaKey, QueryProperty> key = Pair.of(schemaKey, change.getProperty());
-                        List<QueryPropertyChange> changesBySchemaProperty = changedQueries.get(key);
-                        if (changesBySchemaProperty == null)
-                            changedQueries.put(key, changesBySchemaProperty = new ArrayList<>());
+                        List<QueryPropertyChange> changesBySchemaProperty = changedQueries.computeIfAbsent(key, k -> new ArrayList<>());
                         changesBySchemaProperty.add(change);
                     }
                 }
