@@ -237,7 +237,7 @@ public class UserManager
     }
 
 
-    private static final Comparator<Pair<String, Long>> RECENT_USER_COMPARATOR = Comparator.comparing(Pair<String, Long>::getKey).thenComparing(Pair::getValue);
+    private static final Comparator<Pair<String, Long>> RECENT_USER_COMPARATOR = Comparator.comparing(Pair<String, Long>::getValue).thenComparing(Pair::getKey);
 
     /** Returns all users who have logged in during this server session since the specified interval */
     public static List<Pair<String, Long>> getRecentUsers(long since)

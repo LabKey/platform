@@ -115,7 +115,6 @@ public class AuthenticationProviderConfigAuditTypeProvider extends AbstractAudit
         public Map<String, Object> getAuditLogMessageElements()
         {
             Map<String, Object> elements =  new LinkedHashMap<>();
-            super.getAuditLogMessageElements();
             elements.put("changes", getChanges());
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
