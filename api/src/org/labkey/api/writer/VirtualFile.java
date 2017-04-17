@@ -32,24 +32,24 @@ import java.io.PrintWriter;
 public interface VirtualFile extends AutoCloseable
 {
     /** PrintWriter that always encodes as UTF-8 */
-    public PrintWriter getPrintWriter(String path) throws IOException;
+    PrintWriter getPrintWriter(String path) throws IOException;
     /** Meant for binary data... if used with character data you must encode as UTF-8 yourself */
-    public OutputStream getOutputStream(String filename) throws IOException;
-    public void saveXmlBean(String filename, XmlObject doc) throws IOException;
+    OutputStream getOutputStream(String filename) throws IOException;
+    void saveXmlBean(String filename, XmlObject doc) throws IOException;
     /** Recursively exports the contents of the resource to this directory */
-    public void saveWebdavTree(WebdavResource resource, User user) throws IOException;
-    public XmlObject getXmlBean(String filename) throws IOException;
-    public InputStream getInputStream(String filename) throws IOException;
-    public String getRelativePath(String filename);
+    void saveWebdavTree(WebdavResource resource, User user) throws IOException;
+    XmlObject getXmlBean(String filename) throws IOException;
+    InputStream getInputStream(String filename) throws IOException;
+    String getRelativePath(String filename);
     /** @return all of the file children */
-    public String[] list();
+    String[] list();
     /** @return all of the directory children */
-    public String[] listDirs();
-    public boolean delete(String filename);
+    String[] listDirs();
+    boolean delete(String filename);
 
-    public VirtualFile createZipArchive(String name) throws IOException;
-    public VirtualFile getDir(String path);
-    public String makeLegalName(String name);
-    public String getLocation();
-    public void close() throws IOException;
+    VirtualFile createZipArchive(String name) throws IOException;
+    VirtualFile getDir(String path);
+    String makeLegalName(String name);
+    String getLocation();
+    void close() throws IOException;
 }
