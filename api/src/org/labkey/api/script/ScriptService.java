@@ -15,25 +15,31 @@
  */
 package org.labkey.api.script;
 
-import org.labkey.api.resource.Resource;
+import org.labkey.api.module.Module;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.Path;
 
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 
 public interface ScriptService extends ScriptEngineFactory
 {
+    static ScriptService get()
+    {
+        return ServiceRegistry.get().getService(ScriptService.class);
+    }
+
     // marker class for server script logging (see log4j.xml)
     class Console {}
 
     /**
-     * Compiles the Resource into a script and caches the result.
+     * Compiles the JS file at the specified location into a script and caches the result.
      * This is mostly equivalent to calling <code>getScriptEngine().compile()</code>
      * except the {@link javax.script.CompiledScript} will be cached on your behalf.
      * Each call to compile() returns a new {@link ScriptReference} and contains
      * its own execution context while sharing the same {@link javax.script.CompiledScript}.
-     * 
-     * @param r resource
+     *
      * @return The compiled script.
      */
-    ScriptReference compile(Resource r) throws ScriptException;
+    ScriptReference compile(Module module, Path path) throws ScriptException;
 }

@@ -19,11 +19,11 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleResourceResolver;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.script.ScriptReference;
 import org.labkey.api.script.ScriptService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
@@ -59,10 +59,9 @@ public class ScriptTriggerFactory implements TriggerFactory
     }
 
     @NotNull
-    protected Collection<Trigger> createTriggerScript(Container c, TableInfo table)
-             throws ScriptException
+    protected Collection<Trigger> createTriggerScript(Container c, TableInfo table) throws ScriptException
     {
-        ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
+        ScriptService svc = ScriptService.get();
         assert svc != null;
         if (svc == null)
             return Collections.emptyList();
@@ -106,6 +105,19 @@ public class ScriptTriggerFactory implements TriggerFactory
 
     protected Collection<Trigger> checkPaths(Container c, TableInfo table, @NotNull ScriptService svc, Set<Path> paths) throws ScriptException
     {
+//        Collection<Trigger> scripts = new ArrayList<>();
+//
+//        for (Module m : c.getActiveModules())
+//        {
+//            for (Path p : paths)
+//            {
+//                ScriptReference script = svc.compile(m, p);
+//                if (script != null)
+//                    scripts.add(new ScriptTrigger(c, table, script));
+//            }
+//        }
+//
+//        return scripts.isEmpty() ? Collections.emptyList() : Collections.unmodifiableCollection(scripts);
         Collection<Resource> rs = new ArrayList<>(10);
         for (Module m : c.getActiveModules())
         {
@@ -122,7 +134,7 @@ public class ScriptTriggerFactory implements TriggerFactory
         Collection<Trigger> scripts = new ArrayList<>();
         for (Resource r : rs)
         {
-            ScriptReference script = svc.compile(r);
+            ScriptReference script = svc.compile(((ModuleResourceResolver)r.getResolver()).getModule(), r.getPath());
             if (script != null)
                 scripts.add(new ScriptTrigger(c, table, script));
         }
