@@ -65,7 +65,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -1217,7 +1216,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     FileUtil.makeLegalName(StudyQuerySchema.SCHEMA_NAME),
                     FileUtil.makeLegalName(StudyQuerySchema.STUDY_DATA_TABLE_NAME) + ".js");
 
-            ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
+            ScriptService svc = ScriptService.get();
             if (svc == null)
                 return Collections.emptyList();
 

@@ -18,6 +18,9 @@ package org.labkey.survey;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.collections4.multimap.UnmodifiableMultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -48,10 +51,13 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCacheHandlerOld;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.module.PathBasedModuleResourceCache;
+import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -74,11 +80,15 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 public class SurveyManager
 {
@@ -86,6 +96,7 @@ public class SurveyManager
     private static final SurveyManager _instance = new SurveyManager();
     private static final List<SurveyListener> _surveyListeners = new CopyOnWriteArrayList<>();
     private static final PathBasedModuleResourceCache<Collection<SurveyDesign>> MODULE_SURVEY_DESIGN_CACHE = ModuleResourceCaches.create("Module Survey Design Cache", new SurveyDesignResourceCacheHandler());
+    private static final ModuleResourceCache<MultiValuedMap<String, SurveyDesign>> MODULE_SURVEY_DESIGN_CACHE2 = ModuleResourceCaches.create(Path.parse("surveys"), new SurveyDesignResourceCacheHandler2(), "Module Survey Design Cache", Collections.singletonList(ResourceRootProvider.STANDARD_SUBDIRECTORIES));
 
     public static final String MODULE_RESOURCE_FILE_EXTENSION = ".metadata.json";
     public static final String MODULE_RESOURCE_PREFIX = "module:";
@@ -268,7 +279,7 @@ public class SurveyManager
      * look like : module:schema/query for example module:mpower/participantDemographics.
      */
     @Nullable
-    public SurveyDesign getModuleSurveyDesign(Container container, User user, String surveyId)
+    public SurveyDesign getModuleSurveyDesign(Container container, String surveyId)
     {
         if (surveyId != null && surveyId.startsWith(MODULE_RESOURCE_PREFIX))
         {
@@ -276,7 +287,7 @@ public class SurveyManager
             Path parts = Path.parse(surveyId.substring(MODULE_RESOURCE_PREFIX.length()));
             if (parts.size() == 2)
             {
-                Map<String, SurveyDesign> surveyDesignMap = getModuleSurveyDesigns(container, user, parts.get(0));
+                Map<String, SurveyDesign> surveyDesignMap = getModuleSurveyDesigns(container, parts.get(0));
                 if (surveyDesignMap.containsKey(parts.get(1)))
                 {
                     return surveyDesignMap.get(parts.get(1));
@@ -579,7 +590,7 @@ public class SurveyManager
         return null;
     }
 
-    public Map<String, SurveyDesign> getModuleSurveyDesigns(Container container, User user, String schemaName)
+    public Map<String, SurveyDesign> getModuleSurveyDesigns(Container container, String schemaName)
     {
         Collection<Module> modules = container.getActiveModules();
         Map<String, SurveyDesign> designMap = new CaseInsensitiveHashMap<>();
@@ -587,12 +598,24 @@ public class SurveyManager
         for (Module module : modules)
         {
             Collection<SurveyDesign> surveyDesigns = MODULE_SURVEY_DESIGN_CACHE.getResource(module, new Path("surveys", schemaName), schemaName);
+            Collection<SurveyDesign> surveyDesigns2 = MODULE_SURVEY_DESIGN_CACHE2.getResourceMap(module).get(schemaName);
+
+            assert surveyDesigns.size() == surveyDesigns2.size();
+
             if (!surveyDesigns.isEmpty())
             {
+                Iterator<SurveyDesign> iter = surveyDesigns2.iterator();
+
                 // CacheLoader returns empty collection (not null) for non-existent directories
                 //noinspection ConstantConditions
                 for (SurveyDesign design : surveyDesigns)
                 {
+                    SurveyDesign design2 = iter.next();
+
+                    assert design.getSchemaName().equals(design2.getSchemaName());
+                    assert design.getQueryName().equals(design2.getQueryName());
+                    assert design.getMetadata().equals(design2.getMetadata());
+
                     if (design.getQueryName() != null)
                     {
                         designMap.put(design.getQueryName(), design);
@@ -600,6 +623,7 @@ public class SurveyManager
                 }
             }
         }
+
         return designMap;
     }
 
@@ -702,6 +726,65 @@ public class SurveyManager
                 }
             }
             return ret;
+        }
+    }
+
+    private static class SurveyDesignResourceCacheHandler2 implements ModuleResourceCacheHandler<MultiValuedMap<String, SurveyDesign>>
+    {
+        @Override
+        public MultiValuedMap<String, SurveyDesign> load(@Nullable Resource dir, Module module)
+        {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public MultiValuedMap<String, SurveyDesign> load(Stream<Resource> roots)
+        {
+            MultiValuedMap<String, SurveyDesign> mmap = new ArrayListValuedHashMap<>();
+
+            roots
+                .flatMap(root -> root.list().stream())
+                .filter(Resource::isFile)
+                .filter(getFilter())
+                .map(this::loadSurveyDesign)
+                .filter(Objects::nonNull)
+                .forEach(design -> mmap.put(design.getSchemaName(), design));
+
+            return UnmodifiableMultiValuedMap.unmodifiableMultiValuedMap(mmap);
+        }
+
+        private Predicate<Resource> getFilter()
+        {
+            return resource -> StringUtils.endsWithIgnoreCase(resource.getName(), MODULE_RESOURCE_FILE_EXTENSION);
+        }
+
+        private @Nullable SurveyDesign loadSurveyDesign(Resource r)
+        {
+            SurveyDesign design = null;
+
+            try
+            {
+                String metadata = PageFlowUtil.getStreamContentsAsString(r.getInputStream());
+                String errorMessage = validateSurveyMetadata(metadata);
+                if (errorMessage == null)
+                {
+                    design = new SurveyDesign();
+
+                    design.setMetadata(metadata);
+                    design.setSchemaName(r.parent().getName());
+                    design.setQueryName(r.getName().substring(0, r.getName().length() - MODULE_RESOURCE_FILE_EXTENSION.length()));
+                }
+                else
+                {
+                    _log.error(errorMessage);
+                }
+            }
+            catch (IOException e)
+            {
+                _log.error(e.getMessage());
+            }
+
+            return design;
         }
     }
 

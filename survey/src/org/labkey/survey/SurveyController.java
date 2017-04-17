@@ -427,7 +427,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
             }
             else
             {
-                survey = SurveyManager.get().getModuleSurveyDesign(getContainer(), getUser(), form.getDesignId());
+                survey = SurveyManager.get().getModuleSurveyDesign(getContainer(), form.getDesignId());
             }
         }
 
