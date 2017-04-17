@@ -398,8 +398,8 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         ColumnInfo colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
 
-        // Only include the sampleSetId parameter if the ExpMaterial row has a SampleSet
-        DetailsURL url = DetailsURL.fromString("/experiment/showMaterial.view?rowId=${rowId}${sampleSet/rowId:prefix('%26sampleSetId=')}");
+        ActionURL detailsUrl = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
+        DetailsURL url = new DetailsURL(detailsUrl, Collections.singletonMap("rowId", "RowId"));
         nameCol.setURL(url);
         rowIdCol.setURL(url);
         setDetailsURL(url);

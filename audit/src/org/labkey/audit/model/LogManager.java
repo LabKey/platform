@@ -77,14 +77,15 @@ public class LogManager
 
     public <K extends AuditTypeEvent> K _insertEvent(User user, K type)
     {
+        Logger auditLogger = Logger.getLogger("org.labkey.audit.event." + type.getEventType().replaceAll(" ", ""));
+        auditLogger.info(type.getAuditLogMessage());
+
         AuditTypeProvider provider = AuditLogService.get().getAuditProvider(type.getEventType());
 
         if (provider != null)
         {
             try
             {
-                Logger auditLogger = Logger.getLogger("org.labkey.audit.event." + type.getEventType().replaceAll(" ", ""));
-                auditLogger.info(type.getAuditLogMessage());
                 Container c = ContainerManager.getForId(type.getContainer());
 
                 UserSchema schema = AuditLogService.getAuditLogSchema(user, c != null ? c : ContainerManager.getRoot());
