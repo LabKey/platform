@@ -121,14 +121,39 @@ Ext4.define('Security.panel.PermissionEditor', {
     },
 
     onSaveFinish : function() {
-        var policyEditor = this.getPolicyEditor();
-        policyEditor.save(false, this.onCancel);
+        this.onSaveConfirm(this.onCancel);
     },
 
     onSave : function() {
-        var policyEditor = this.getPolicyEditor();
-        policyEditor.save(false, function() {
-            policyEditor.saveSuccess();
+        this.onSaveConfirm();
+    },
+
+    onSaveConfirm : function(onSuccess) {
+        var policyEditor = this.getPolicyEditor(),
+            me = this;
+
+        policyEditor.save(false, function(response) {
+            // check if the response succeeded or has a confirmation message to show
+            if (!response.success && response.needsConfirmation) {
+                Ext4.Msg.confirm("Confirm", response.message, function (btnId) {
+                    if (btnId == "yes") {
+                        this.policy.confirm = true;
+                        me.onSaveConfirm(onSuccess);
+                    }
+                    else {
+                        policyEditor.getEl().unmask();
+                    }
+                }, this);
+            }
+            // success
+            else {
+                if (Ext4.isFunction(onSuccess)) {
+                    onSuccess.call(this);
+                }
+                else {
+                    policyEditor.saveSuccess();
+                }
+            }
         });
     },
 

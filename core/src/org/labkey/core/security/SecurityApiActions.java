@@ -680,6 +680,13 @@ public class SecurityApiActions
         {
             return _props;
         }
+
+        public boolean isConfirm() {
+            if (_props.containsKey("confirm"))
+                return (Boolean) _props.get("confirm");
+
+            return false;
+        }
     }
 
     @RequiresPermission(AdminPermission.class)
@@ -714,17 +721,33 @@ public class SecurityApiActions
             SecurityPolicy oldPolicy = SecurityPolicyManager.getPolicy(resource);
             MutableSecurityPolicy policy = null;
 
-            //save it
             try
             {
                 //create the policy from the props (will throw if invalid)
                 policy = MutableSecurityPolicy.fromMap(form.getProps(), resource);
-                SecurityPolicyManager.savePolicy(policy);
             }
             catch (Exception e)
             {
                 errors.reject(null, e.getMessage());
             }
+
+            if (policy == null)
+                throw new IllegalArgumentException("Unable to load policy from map.");
+
+            //if root container permissions update, check for app admin removal
+            if (container.isRoot() && resource.getResourceName().equals("") && user.isApplicationAdmin()
+                    && !user.hasApplicationAdminForPolicy(policy) && !form.isConfirm())
+            {
+                Map<String, Object> props = new HashMap<>();
+                props.put("success", false);
+                props.put("needsConfirmation", true);
+                props.put("message", "If you remove your own user account from the Application Admin role, "
+                    + "you will no longer have administrative privileges. Are you sure that you want to continue?");
+                return new ApiSimpleResponse(props);
+            }
+
+            //save it
+            SecurityPolicyManager.savePolicy(policy);
 
             //audit log
             writeToAuditLog(resource, oldPolicy, policy);

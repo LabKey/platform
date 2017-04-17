@@ -672,6 +672,8 @@ Ext4.define('Security.panel.PolicyEditor', {
                 policy.addRoleAssignment(Security.util.SecurityCache.groupGuests, this.policy.noPermissionsRole);
             if (overwrite)
                 policy.setModified(null);
+            if (Ext4.isBoolean(this.policy.confirm))
+                policy.policy.confirm = this.policy.confirm;
             Security.util.Policy.savePolicy({policy:policy, successCallback:success, errorCallback:this.saveFail, scope:scope});
         }
     },

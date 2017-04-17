@@ -448,7 +448,7 @@ Ext4.define('Security.util.SecurityCache', {
             if (group.Name.toLowerCase().indexOf("administrators") > -1 && userid == LABKEY.user.id)
             {
                 var msg = "If you delete your own user account from the Administrators group, you will no longer have administrative privileges. Are you sure that you want to continue?";
-                Ext.Msg.confirm("Confirm", msg, function (btnId) {
+                Ext4.Msg.confirm("Confirm", msg, function (btnId) {
                     if (btnId == "yes")
                     {
                         LABKEY.Security.removeGroupMembers(config);
