@@ -91,10 +91,10 @@ public class HomeTemplate extends PrintTemplate
         else
             setView("header", getHeaderView(page));
 
-        page.setAppBar(generateAppBarModel(context, page));
-
         // TODO: This is being side-effected by isHidePageTitle() check. That setting should be moved to PageConfig
         setBody(body);
+
+        page.setAppBar(generateAppBarModel(context, page));
 
         setView("navigation", getNavigationView(context, page));
 
