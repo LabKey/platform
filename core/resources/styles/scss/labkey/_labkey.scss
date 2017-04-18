@@ -193,12 +193,14 @@ pre.labkey-log-file
 /*  Used across the site whenever there is a label with a colored background */
 .labkey-form-label, tr td.labkey-form-label
 {
-  background-color: $lk-webpart-color;
+  color: $lk-form-label-color;
+  background-color: $lk-form-label-bg-color;
   padding: 1px 4px;
 }
 
 .labkey-form-label-nowrap, tr td.labkey-form-label-nowrap {
-  background-color: $lk-webpart-color;
+  color: $lk-form-label-color;
+  background-color: $lk-form-label-bg-color;
   white-space: nowrap;
   padding: 1px 4px;
 }
@@ -1488,6 +1490,13 @@ table.labkey-manage-default-reqs
   margin-right: 2px;
   height: 100%;
   white-space: nowrap;
+
+  img {
+    background: transparent url('#{$internal-images-dir}/callout_tip.gif') no-repeat 0 0;
+    vertical-align: middle;
+    width: 8px;
+    height: 5px;
+  }
 }
 
 .labkey-callout-tip-left {
@@ -1497,21 +1506,17 @@ table.labkey-manage-default-reqs
 
 .labkey-callout-tip-over {
   background-color: #89A1B4;
-}
 
-.labkey-callout-tip img {
-  background: transparent url('#{$internal-images-dir}/callout_tip.gif') no-repeat 0 0;
-  vertical-align: middle;
-  width: 8px;
-  height: 5px;
+  img {
+    background-position: -9px 0;
+  }
 }
-
-.labkey-callout-tip-over img {
-  background-position: -9px 0;
-}
-
 
 /* Wiki */
+#wiki-input-body {
+  font-family: $lk-font-family-code;
+}
+
 div.labkey-wiki h1
 {
   font-size: 2em;

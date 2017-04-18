@@ -3216,8 +3216,8 @@ body.x4-nbr .x4-btn-default-large-frameInfo {
 
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-btn-default-toolbar-small {
-  @include border-radius(3px);
-  padding: 2px 2px 2px 2px;
+  @include border-radius($lk-button-border-radius);
+  padding: 2px;
   border-width: 1px;
   border-style: solid;
   background-color: transparent;

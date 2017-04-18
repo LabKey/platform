@@ -74,7 +74,8 @@ td.labkey-tab-inactive {
   background-color: #f4f4f4;
 }
 
-td.labkey-tab-content, .labkey-tab-content {
+.labkey-tab-content,
+td.labkey-tab-content {
   padding: 4px 7px;
   border-left: solid 1px #b4b4b4;
   border-right: solid 1px #b4b4b4;
@@ -89,7 +90,8 @@ td.labkey-tab-content, .labkey-tab-content {
 }
 
 /* This is used for breaks in between tabs */
-td.labkey-tab-space, .labkey-tab-space
+.labkey-tab-space,
+td.labkey-tab-space
 {
   border-top: 0;
   border-left: 0;
@@ -103,73 +105,64 @@ ul.labkey-tab-strip
   border-bottom : 1px solid #b4b4b4;
   margin : 0;
   padding-left : 10px;
+
+  .tab-strip-clear {
+    clear: both;
+    height: 0;
+    overflow: hidden;
+    line-height: 0;
+    font-size: 0;
+  }
+
+  li {
+    display: inline;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  a {
+    border-top: 1px solid #b4b4b4;
+    border-right: 1px solid #b4b4b4;
+    border-left: 1px solid #b4b4b4;
+    border-bottom: none;
+    float: left;
+    line-height: 1;
+    text-decoration: none;
+
+    border-radius: 5px 5px 0 0;
+    margin-right: 2px;
+    padding: 6px 9px;
+
+    -moz-box-shadow: 0 -2px 2px #ddd;
+    -webkit-box-shadow: 0 -2px 2px #ddd;
+    box-shadow: 0 -2px 2px #ddd;
+  }
 }
 
-ul.labkey-tab-strip .tab-strip-clear
-{
-  clear: both;
-  height: 0;
-  overflow: hidden;
-  line-height: 0;
-  font-size: 0;
-}
-
-ul.labkey-tab-strip li
-{
-  display : inline;
-  list-style-type : none;
-  margin : 0;
-  padding : 0;
-}
-
-ul.labkey-tab-strip a
-{
-  border-top : 1px solid #b4b4b4;
-  border-right : 1px solid #b4b4b4;
-  border-left : 1px solid #b4b4b4;
-  border-bottom : none;
-  float: left;
-  line-height : 1;
-  text-decoration : none;
-
-  border-radius: 5px 5px 0 0;
-  margin-right: 2px;
-  padding: 6px 9px;
-
-  -moz-box-shadow: 0 -2px 2px #ddd;
-  -webkit-box-shadow: 0 -2px 2px #ddd;
-  box-shadow: 0 -2px 2px #ddd;
-}
-
-li.labkey-tab-active a
-{
-  background-color : #fff;
-  border-bottom : 1px solid #fff;
+li.labkey-tab-active a {
+  background-color: $lk-active-tab-bg-color;
+  border-bottom: 1px solid $lk-active-tab-bg-color;
   margin-bottom: -1px;
-  color: #000000;
-  font-family: $font-family-sans-serif-bold;
+  color: $lk-active-tab-color;
 }
 
-li.labkey-tab-inactive a
-{
-  background-color: #f4f4f4;
-  font-family: $font-family-sans-serif-bold;
+li.labkey-tab-inactive a {
+  color: $lk-inactive-tab-color;
+  background-color: $lk-inactive-tab-bg-color;
 }
 
-.labkey-tab-strip-spacer
-{
+.labkey-tab-strip-spacer {
   height: 4px;
-  background-color:#fff;
-  border-left : 1px solid #b4b4b4;
-  border-right : 1px solid #b4b4b4;
-  border-bottom : 1px solid #fff;
-  font-size:1px;
+  background-color: $lk-active-tab-bg-color;
+  border-left: 1px solid #b4b4b4;
+  border-right: 1px solid #b4b4b4;
+  border-bottom: 1px solid #fff;
   line-height:1;
 }
 
-.labkey-tab-strip-content
-{
-  background: #ffffff;
+.labkey-tab-strip-content {
+  background: $lk-active-tab-body-bg-color;
   border: 1px solid #b4b4b4;
   border-top: none;
   clear: both;

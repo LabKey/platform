@@ -96,7 +96,7 @@
                 <img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>" height="30">
             </a>
             <a class="hidden-sm hidden-md hidden-lg brand-logo" href="<%=h(laf.getLogoHref())%>">
-                <img src="<%=h(PageFlowUtil.staticResourceUrl("/_images/lk_logo_white_m.png"))%>" alt="<%=h(laf.getShortName())%>" height="30">
+                <img src="<%=h(TemplateResourceHandler.LOGO_MOBILE.getURL(c))%>" alt="<%=h(laf.getShortName())%>" height="30">
             </a>
             <% if (laf.getShortName() != null && laf.getShortName().length() > 0) { %>
             <h4 class="brand-link"><a href="<%=h(laf.getLogoHref())%>"><%=h(laf.getShortName())%></a></h4>
