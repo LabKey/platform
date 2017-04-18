@@ -70,6 +70,10 @@ public class ImageServlet extends HttpServlet
             {
                 TemplateResourceHandler.LOGO.sendResource(request, response);
             }
+            else if ("logo-mobile".equals(imageName))
+            {
+                TemplateResourceHandler.LOGO_MOBILE.sendResource(request, response);
+            }
             else if ("favicon".equals(imageName))
             {
                 TemplateResourceHandler.FAVICON.sendResource(request, response);

@@ -78,6 +78,44 @@ public enum TemplateResourceHandler
         }
     },
 
+    LOGO_MOBILE
+    {
+        protected String getResourceName()
+        {
+            return "logo-mobile.image";
+        }
+
+        protected String getDefaultLink()
+        {
+            return PageFlowUtil.useExperimentalCoreUI() ? "/_images/lk_logo_white_m.png" : "/_images/defaultlogo.png";
+        }
+
+        protected CacheableWriter getWriterForContainer(Container c) throws IOException, ServletException
+        {
+            // container will be null if the database isn't bootstrapped yet
+            CacheableWriter writer = (null == c ? null : AttachmentCache.getCachedLogo(c));
+
+            if (writer == null)
+            {
+                writer = CacheableWriter.noDocument;
+
+                if (c != null)
+                {
+                    ContainerParent parent = new ContainerParent(c);
+                    Attachment attachment = AttachmentCache.lookupMobileLogoAttachment(c);
+                    if (attachment != null)
+                    {
+                        writer = new CacheableWriter();
+                        AttachmentService.get().writeDocument(writer, parent, attachment.getName(), false);
+                    }
+                    AttachmentCache.cacheLogo(parent.getContainer(), writer);
+                }
+            }
+
+            return writer;
+        }
+    },
+
     FAVICON
     {
         protected String getResourceName()

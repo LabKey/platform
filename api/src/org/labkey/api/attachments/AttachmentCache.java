@@ -16,11 +16,11 @@
 
 package org.labkey.api.attachments;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AttachmentCache
 {
     public static final String LOGO_FILE_NAME_PREFIX = "labkey-logo";
+    public static final String MOBILE_LOGO_FILE_NAME_PREFIX = "labkey-mobile-logo";
     public static final String FAVICON_FILE_NAME = "labkey-favicon.ico";
     public static final String STYLESHEET_FILE_NAME = "labkey-stylesheet.css";
 
@@ -75,15 +76,25 @@ public class AttachmentCache
 
     public static Attachment lookupLogoAttachment(Container c)
     {
-        AttachmentParent parent = new ContainerParent(c);
-        Collection<Attachment> attachments = AttachmentService.get().getAttachments(parent);
-        for (Attachment attachment : attachments)
+        return getLogoAttachment(c, LOGO_FILE_NAME_PREFIX);
+    }
+
+    public static Attachment lookupMobileLogoAttachment(Container c)
+    {
+        return getLogoAttachment(c, MOBILE_LOGO_FILE_NAME_PREFIX);
+    }
+
+    @Nullable
+    private static Attachment getLogoAttachment(Container c, String prefix)
+    {
+        for (Attachment attachment : AttachmentService.get().getAttachments(new ContainerParent(c)))
         {
-            if (attachment.getName().startsWith(LOGO_FILE_NAME_PREFIX))
+            if (attachment.getName().startsWith(prefix))
             {
                 return attachment;
             }
         }
+
         return null;
     }
 
