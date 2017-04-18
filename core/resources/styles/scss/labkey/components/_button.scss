@@ -41,8 +41,6 @@ a.labkey-disabled-button {
 div.labkey-button-bar,
 table.labkey-button-bar {
   white-space: nowrap;
-  background-color: $lk-grid-color;
-  padding: 4px;
 }
 
 .labkey-button,
@@ -51,7 +49,8 @@ table.labkey-button-bar {
 .labkey-disabled-menu-button,
 .labkey-wp-text-buttons a
 {
-  font: normal $lk-font-size-small $lk-font-family-sans-serif-bold;
+  font-size: $lk-font-size-small;
+  font-weight: bold;
 }
 
 /* Used for the new css menu buttons, which consist of a link (<a>)
@@ -95,7 +94,7 @@ td .labkey-menu-button:visited,
   color: #000000;
   cursor:pointer;
 
-  border-radius: 5px;
+  border-radius: $lk-button-border-radius;
 
   /* For WebKit (Safari, Google Chrome etc) */
   background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5));
@@ -134,7 +133,7 @@ td .labkey-menu-button:hover,
   color: #000000;
   cursor:pointer;
 
-  border-radius: 5px;
+  border-radius: $lk-button-border-radius;
 
   background: #fff url('#{$internal-images-dir}/arrow_down.png') right no-repeat !important;
   /* For WebKit (Safari, Google Chrome etc) */

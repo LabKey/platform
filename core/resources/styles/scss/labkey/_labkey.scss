@@ -1,13 +1,9 @@
 @import "fonts";
 
-h1, h2, h3, h4, h5, h6
-{
-  font: normal $lk-font-family-sans-serif-bold;
-}
-
 th
 {
-  font: normal $lk-font-size-base $lk-font-family-sans-serif;
+  font-size: $lk-font-size-base;
+  font-weight: normal;
   margin: 0;
   color: #000000;
   line-height: 1.25;
@@ -38,7 +34,7 @@ li.labkey-fullscreen-wizard-active-step,
 li.labkey-ancillary-wizard-active-step
 {
   background-color: white;
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
 }
 
 .labkey-fullscreen-wizard-body
@@ -176,7 +172,7 @@ pre.labkey-log-file
   padding-bottom: 5px;
 
   a, span {
-    font-family: $lk-font-family-sans-serif-bold;
+    font-weight: bold;
     color: #000000;
   }
 
@@ -237,7 +233,7 @@ table.labkey-no-spacing
 .labkey-message-strong
 {
   font-size: 8pt;
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
   color: $lk-success-color;
 }
 
@@ -299,7 +295,7 @@ div.labkey-status-info, .labkey-status-info
   background-color: #CC0000;
   border: 1px solid #990000;
   color: #FFFFFF;
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
   padding: 2px;
 }
 
@@ -370,7 +366,7 @@ regions on mouseover */
 
 .labkey-disabled-text-link
 {
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
   padding: .3em 14px 2px 0;
   text-transform: uppercase;
   border: none;
@@ -389,7 +385,7 @@ regions on mouseover */
 /* This is used for bold text in a couple places. */
 .labkey-strong
 {
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
 }
 
 .labkey-emphasis
@@ -408,7 +404,7 @@ regions on mouseover */
  class is for the area with the links to change between the pages*/
 div.labkey-pagination {
   white-space: nowrap;
-  margin: 10px 5px 0 5px;
+  margin: 4px;
   font-size: 13px;
 
   a {
@@ -493,7 +489,7 @@ table.labkey-completion-text
 span.labkey-help-pop-up
 {
   cursor: help;
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
   font-size: xx-small;
   text-decoration: none;
   padding-left: 2pt;
@@ -746,13 +742,13 @@ table.labkey-show-borders
 .labkey-data-region .labkey-col-total, .labkey-data-region .labkey-row-total,
 .labkey-data-region .labkey-col-total td, .labkey-data-region .labkey-col-header th
 {
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
   background-color: #EEEEEE;
 }
 
 .labkey-data-region .labkey-col-total span.summary-stat-label
 {
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
 }
 
 .labkey-data-region .labkey-col-total td
@@ -767,24 +763,20 @@ table.labkey-show-borders
   border: 0;
   border-top: hidden;
   border-left: hidden;
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
 }
 
 .labkey-data-region-header-container {
-  background-color: #E9e9e9;
+  background-color: $lk-grid-color;
   border: 1px solid #b4b4b4;
-  padding: 0;
 
   td {
-    padding: 1px;
     border: 0;
   }
 }
 
-.labkey-data-region-header
-{
+.labkey-data-region-header {
   width: 100%;
-  border-collapse: collapse;
 }
 
 /* Used to highlight cells with a darker color, limited use right now */
@@ -970,14 +962,13 @@ td.labkey-main-nav
   vertical-align: bottom;
   color: #000000;
   text-decoration: none;
-}
 
-.labkey-search-filter a, .labkey-search-filter a:visited
-{
-  font-size:10pt;
-  vertical-align: bottom;
-  color: $lk-border-title-color;
-  text-decoration: none;
+  a, a:visited {
+    font-size:10pt;
+    vertical-align: bottom;
+    color: $lk-border-title-color;
+    text-decoration: none;
+  }
 }
 
 .labkey-search-filter a:hover
@@ -1141,7 +1132,7 @@ td.labkey-nav-tree-text a {
 
 a.nav-tree-selected
 {
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
   font-style: italic;
 }
 
@@ -1169,12 +1160,6 @@ table.labkey-nav-tree-child
 {
   width: 9px;
   background-image: url('#{$internal-webapp-dir}/_.gif');
-}
-
-
-table#navBar
-{
-  background-color:$lk-primary-bg-color;
 }
 
 /* This is used for the links at the top of the project area to the containing folders  */
@@ -1230,7 +1215,8 @@ tr.labkey-wp-header
 
 .labkey-wp-header th.labkey-wp-title-left, .labkey-wp-header td.labkey-wp-title-left
 {
-  font: normal $lk-font-size-large $lk-font-family-sans-serif-bold;
+  font-size: $lk-font-size-large;
+  font-weight: bold;
   padding: 0 0 4px 4px;
   text-align: left;
   white-space: nowrap;
@@ -1293,11 +1279,11 @@ span.labkey-wp-icon-button-inactive {
   margin-left: 3px;
   font-size: 19px;
   vertical-align: text-bottom;
-}
 
-span.labkey-wp-icon-button-inactive:hover {
-  background: none;
-  cursor: default;
+  &:hover {
+    background: none;
+    cursor: default;
+  }
 }
 
 
@@ -1340,12 +1326,18 @@ a.no-arrow {
 
 /* these are the new text links with css arrows */
 
-.labkey-text-link, a.labkey-text-link-noarrow, .labkey-disabled-text-link
+.labkey-text-link,
+a.labkey-text-link-noarrow,
+.labkey-disabled-text-link
 {
-  font: normal $lk-font-size-small $lk-font-family-sans-serif-bold;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
 }
 
-a.labkey-text-link, a.labkey-text-link:visited, a.labkey-text-link-noarrow {
+a.labkey-text-link,
+a.labkey-text-link:visited,
+a.labkey-text-link-noarrow {
   color: $lk-link-color;
   padding: .3em 14px 2px 0;
   text-transform: uppercase;
@@ -1476,7 +1468,7 @@ table.labkey-manage-default-reqs
 
 .labkey-data-region {
   .labkey-participant-view-header {
-    font-family: $lk-font-family-sans-serif-bold;
+    font-weight: bold;
     border: solid 1px #808080;
   }
 
@@ -1531,16 +1523,14 @@ div.labkey-wiki h1
 {
   font-size: 1.2em;
   margin: 0.83em 0;
-  font-family: $lk-font-family-sans-serif-bold;
-  font-weight: normal;
+  font-weight: bold;
 }
 
 .labkey-wiki .heading-1-1, div.labkey-wiki h3
 {
   font-size: 1.0em;
   margin: 0.83em 0;
-  font-family: $lk-font-family-sans-serif-bold;
-  font-weight: normal;
+  font-weight: bold;
 }
 
 .labkey-wiki .heading-1-1-1, div.labkey-wiki h4
@@ -1548,8 +1538,7 @@ div.labkey-wiki h1
   text-transform: uppercase;
   font-size: 0.8em;
   margin: 0.83em 0 0.0px 0;
-  font-family: $lk-font-family-sans-serif-bold;
-  font-weight: normal;
+  font-weight: bold;
 }
 
 .labkey-wiki .code
@@ -1716,35 +1705,33 @@ div.note {
   text-align: center;
 }
 
-.tool-icon a,
-.tool-icon a:visited {
-  font-family: $lk-font-family-sans-serif-bold;
-  text-transform: uppercase;
-  text-decoration: none;
-  color: $lk-link-color;
-  font-size: 11px;
-}
+.tool-icon {
+  a, a:visited {
+    text-transform: uppercase;
+    text-decoration: none;
+    color: $lk-link-color;
+    font-size: 11px;
+    font-weight: bold;
+  }
 
-.tool-icon:hover a,
-.tool-icon:hover a:visited {
-  color: #000000;
-}
+  img {
+    border: none;
+    width: 64px;
+    height: 64px;
+    background: rgb(18, 100, 149); /* no RGBa */
+    background: rgba(18, 100, 149, 0.7); /* FF, Safari, Chrome, IE9 */
+  }
 
-.tool-icon img {
-  border: none;
-  width: 64px;
-  height: 64px;
-  background: rgb(18, 100, 149); /* no RGBa */
-  background: rgba(18, 100, 149, 0.7); /* FF, Safari, Chrome, IE9 */
-  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#b2126495, endColorstr=#b2126495); /* IE 5.5 - 7 */
-  -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#b2126495, endColorstr=#b2126495)"; /* IE 8 */
-}
+  &:hover {
+    a, a:visited {
+      color: #000000;
+    }
 
-.tool-icon:hover img {
-  cursor: pointer;
-  background: rgba(18, 100, 149, 1.0); /* FF, Safari, Chrome, IE9 */
-  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#ff126495, endColorstr=#ff126495); /* IE 5.5 - 7 */
-  -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#ff126495, endColorstr=#ff126495)"; /* IE 8 */
+    img {
+      cursor: pointer;
+      background: rgba(18, 100, 149, 1.0); /* FF, Safari, Chrome, IE9 */
+    }
+  }
 }
 
 /* this affects how _print=true looks in the browser (see also printStyle.css) */
@@ -2139,7 +2126,7 @@ div.headermenu {
 .fbrowser .iconbtn-label,
 .schemabrowser .iconbtn-label {
   text-transform: uppercase;
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
   color: black;
 }
 

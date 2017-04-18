@@ -535,8 +535,7 @@ div.x4-editor {
 
 /* line 1, ../../../ext-theme-base/sass/src/panel/Header.scss */
 .x4-header-icon {
-  background-repeat: no-repeat;
-  background-position: 0 0;
+  background: no-repeat 0 0;
   vertical-align: middle;
   text-align: center;
 }
@@ -569,8 +568,7 @@ div.x4-editor {
 .x4-dd-drag-ghost {
   filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=85);
   opacity: 0.85;
-  padding: 5px;
-  padding-left: 20px;
+  padding: 5px 5px 5px 20px;
   white-space: nowrap;
   color: #000;
   font: normal 11px $lk-font-family-sans-serif;
@@ -587,9 +585,7 @@ div.x4-editor {
   display: block;
   width: 16px;
   height: 16px;
-  background-color: transparent;
-  background-position: center;
-  background-repeat: no-repeat;
+  background: transparent no-repeat center;
   z-index: 1;
 }
 
@@ -1342,11 +1338,6 @@ td.x4-grid-rowwrap .x4-grid-cell {
   zoom: 1;
 }
 
-/* line 40, ../../../ext-theme-base/sass/src/menu/Menu.scss */
-.x4-menu-item-text {
-  zoom: 1;
-}
-
 /* line 47, ../../../ext-theme-base/sass/src/menu/Menu.scss */
 .x4-menu-item-icon,
 .x4-menu-item-icon-right,
@@ -1935,7 +1926,7 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
 /* line 253, ../../../ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-small .x4-btn-inner {
   font-size: $lk-font-size-small;
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
   color: $button-default-color;
   padding: 0 4px;
 }
@@ -2451,7 +2442,7 @@ body.x4-nbr .x4-btn-default-medium-frameInfo {
 /* line 253, ../../../ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-medium .x4-btn-inner {
   font-size: $lk-font-size-small;
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
   color: $button-default-color;
   padding: 0 3px;
 }
@@ -2912,7 +2903,7 @@ body.x4-nbr .x4-btn-default-large-frameInfo {
 /* line 253, ../../../ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-large .x4-btn-inner {
   font-size: $lk-font-size-small;
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
   color: $button-default-color;
   padding: 0 3px;
 }
@@ -3340,7 +3331,7 @@ body.x4-nbr .x4-btn-default-toolbar-small-frameInfo {
 /* line 253, ../../../ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-toolbar-small .x4-btn-inner {
   font-size: 11px;
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
   color: #333333;
   padding: 0 4px;
 }
@@ -4726,12 +4717,6 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
   padding: 0;
 }
 
-/* line 212, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
-.x4-panel-header-default {
-  font-size: $lk-font-size-base;
-  border: 1px solid $panel-border-color;
-}
-
 /* line 232, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-header-default-horizontal {
   padding: 4px 5px 4px 5px;
@@ -4742,21 +4727,11 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
   padding: 5px 6px 4px 6px;
 }
 
-/* line 240, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
-.x4-panel-header-default-vertical {
-  padding: 5px 4px 5px 4px;
-}
-
-/* line 244, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
-.x4-panel-header-default-vertical-noborder {
-  padding: 6px 5px 6px 4px;
-}
-
 /* line 260, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-header-text-container-default {
   color: $panel-header-color;
   font-size: $lk-font-size-base;
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
   line-height: 15px;
   padding: 0 2px 1px;
   text-transform: none;
@@ -4775,8 +4750,10 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 
 /* line 432, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-header-default {
+  font-size: $lk-font-size-base;
+  border: 1px solid $panel-border-color;
   background-image: none;
-  background-color: $lk-secondary-brand-color;
+  background-color: $panel-header-background-color;
   background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $panel-background-gradient-start), color-stop(100%, $panel-background-gradient-end));
   background-image: -webkit-linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
   background-image: -moz-linear-gradient(top, $panel-background-gradient-start, $panel-background-gradient-end);
@@ -4793,6 +4770,11 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
   background-image: -moz-linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
   background-image: -o-linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
   background-image: linear-gradient(right, $panel-background-gradient-start, $panel-background-gradient-end);
+  padding: 5px 4px 5px 4px;
+
+  &-noborder {
+    padding: 6px 5px 6px 4px;
+  }
 }
 
 /* line 454, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
@@ -5006,7 +4988,7 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 .x4-panel-header-text-container-default-framed {
   color: $panel-header-color;
   font-size: $lk-font-size-base;
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
   line-height: 15px;
   padding: 0 2px 1px;
   text-transform: none;
@@ -5015,12 +4997,9 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 /* line 272, ../../../ext-theme-neutral/sass/src/panel/Panel.scss */
 .x4-panel-body-default-framed {
   background: #dfe9f6;
-  border-color: #99bce8;
   color: black;
-  font-size: 12px;
-  font-size: normal;
-  border-width: 0;
-  border-style: solid;
+  font-size: $lk-font-size-small;
+  border: 0 solid #99bce8;
 }
 
 /* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
@@ -7244,10 +7223,10 @@ body.x4-nbr .x4-btn-group-default-framed-notitle-frameInfo {
 /* line 126, ../../../ext-theme-neutral/sass/src/container/ButtonGroup.scss */
 .x4-btn-group-body-default-framed {
   padding: 0 1px 0 1px;
-}
-/* line 128, ../../../ext-theme-neutral/sass/src/container/ButtonGroup.scss */
-.x4-btn-group-body-default-framed .x4-table-layout {
-  border-spacing: 0;
+
+  .x4-table-layout {
+    border-spacing: 0;
+  }
 }
 
 /* line 545, ../../../ext-theme-neutral/sass/src/window/Window.scss */
@@ -7263,11 +7242,6 @@ body.x4-nbr .x4-btn-group-default-framed-notitle-frameInfo {
   -webkit-box-shadow: $window-shadow-color 0 1px 0px 0 inset, $window-shadow-color 0 -1px 0px 0 inset, $window-shadow-color -1px 0 0px 0 inset, $window-shadow-color 1px 0 0px 0 inset;
   -moz-box-shadow: $window-shadow-color 0 1px 0px 0 inset, $window-shadow-color 0 -1px 0px 0 inset, $window-shadow-color -1px 0 0px 0 inset, $window-shadow-color 1px 0 0px 0 inset;
   box-shadow: $window-shadow-color 0 1px 0px 0 inset, $window-shadow-color 0 -1px 0px 0 inset, $window-shadow-color -1px 0 0px 0 inset, $window-shadow-color 1px 0 0px 0 inset;
-}
-
-/* line 137, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
-.x4-window-default {
-  @include border-radius(5px);
   padding: 4px 4px 4px 4px;
   border-width: 1px;
   border-style: solid;
@@ -7379,7 +7353,7 @@ body.x4-nbr .x4-window-default-frameInfo {
 
 /* line 437, ../../../ext-theme-base/sass/etc/mixins/frame.scss */
 .x4-window-default-mc {
-  padding: 0px 0px 0px 0px;
+  padding: 0;
 }
 
 /*<if slicer>*/
@@ -7433,7 +7407,7 @@ body.x4-nbr .x4-window-default-frameInfo {
 .x4-window-header-text-container-default {
   color: $window-header-color;
   line-height: 15px;
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
   font-size: 11px;
   padding: 0 2px 1px;
   text-transform: none;
@@ -8904,7 +8878,8 @@ textarea.x4-form-empty-field {
 
 /* line 39, ../../../ext-theme-neutral/sass/src/form/FieldSet.scss */
 .x4-fieldset-header-text {
-  font: 11px/14px $lk-font-family-sans-serif-bold;
+  font-size: 11px/14px;
+  font-weight: bold;
   color: #15428b;
   padding: 1px 0;
 }
@@ -9212,9 +9187,7 @@ div.x4-form-spinner-down {
 
 /* line 1, ../../../ext-theme-neutral/sass/src/view/BoundList.scss */
 .x4-boundlist {
-  border-width: 1px;
-  border-style: solid;
-  border-color: $border-layout-ct-background-color;
+  border: 1px solid $border-layout-ct-background-color;
   background: white;
 }
 
@@ -9227,9 +9200,7 @@ div.x4-form-spinner-down {
   position: relative;
   /*allow hover in IE on empty items*/
   zoom: 1;
-  border-width: 1px;
-  border-style: dotted;
-  border-color: white;
+  border: 1px dotted white;
 }
 
 /* line 33, ../../../ext-theme-neutral/sass/src/view/BoundList.scss */
@@ -9257,9 +9228,7 @@ div.x4-form-spinner-down {
 
 /* line 9, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
 .x4-datepicker {
-  border-width: 1px;
-  border-style: solid;
-  border-color: #1b376c;
+  border: 1px solid #1b376c;
   background-color: white;
   width: 177px;
 }
@@ -9336,9 +9305,8 @@ a.x4-datepicker-arrow:hover {
   color: #233d6d;
   font: normal 10px $lk-font-family-sans-serif;
   text-align: right;
-  border-width: 0 0 1px;
-  border-style: solid;
-  border-color: #b2d1f5;
+  border: 0 solid #b2d1f5;
+  border-bottom-width: 1px;
   background-image: none;
   background-color: #dfecfb;
   background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #edf4fd), color-stop(100%, #cde1f9));
@@ -9357,9 +9325,7 @@ a.x4-datepicker-arrow:hover {
 /* line 118, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
 .x4-datepicker-cell {
   text-align: right;
-  border-width: 1px;
-  border-style: solid;
-  border-color: white;
+  border: 1px solid white;
 }
 
 /* line 128, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
@@ -9379,8 +9345,7 @@ a.x4-datepicker-date:hover {
 
 /* line 143, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
 .x4-datepicker-selected {
-  border-style: solid;
-  border-color: #8db2e3;
+  border: solid #8db2e3;
 }
 /* line 146, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
 .x4-datepicker-selected .x4-datepicker-date {
@@ -9416,9 +9381,8 @@ a.x4-datepicker-date:hover {
 .x4-datepicker-footer,
 .x4-monthpicker-buttons {
   padding: 4px 0;
-  border-width: 1px 0 0;
-  border-style: solid;
-  border-color: #b2d1f5;
+  border: 0 solid #b2d1f5;
+  border-top-width: 1px;
   background-image: none;
   background-color: #dfecfb;
   background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #dee8f5), color-stop(49%, #d1dff0), color-stop(51%, #c7d8ed), color-stop(100%, #cbdaee));
@@ -9437,17 +9401,14 @@ a.x4-datepicker-date:hover {
 /* line 201, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
 .x4-monthpicker {
   width: 177px;
-  border-width: 1px;
-  border-style: solid;
-  border-color: #1b376c;
+  border: 1px solid #1b376c;
   background-color: white;
 }
 
 /* line 211, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
 .x4-monthpicker-months {
-  border-width: 0 1px 0 0;
-  border-color: #1b376c;
-  border-style: solid;
+  border: 0 solid #1b376c;
+  border-right-width: 1px;
   width: 87px;
 }
 /* line 220, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
@@ -9475,9 +9436,7 @@ a.x4-datepicker-date:hover {
 .x4-monthpicker-item-inner {
   margin: 0 5px 0 5px;
   color: #15428b;
-  border-width: 1px;
-  border-style: solid;
-  border-color: white;
+  border: 1px solid white;
   line-height: 16px;
   cursor: pointer;
 }
@@ -9490,8 +9449,7 @@ a.x4-monthpicker-item-inner:hover {
 /* line 258, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
 .x4-monthpicker-selected {
   background-color: #dae5f3;
-  border-style: solid;
-  border-color: #8db2e3;
+  border: solid #8db2e3;
 }
 
 /* line 264, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
@@ -9515,8 +9473,7 @@ a.x4-monthpicker-item-inner:hover {
 
 /* line 294, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
 .x4-monthpicker-yearnav-next {
-  background-image: url('#{$ext4-images-dir}/tools/tool-sprites.gif');
-  background-position: 0 -120px;
+  background: url('#{$ext4-images-dir}/tools/tool-sprites.gif') 0 -120px;
 }
 
 /* line 299, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
@@ -9526,8 +9483,7 @@ a.x4-monthpicker-item-inner:hover {
 
 /* line 303, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
 .x4-monthpicker-yearnav-prev {
-  background-image: url('#{$ext4-images-dir}/tools/tool-sprites.gif');
-  background-position: 0 -105px;
+  background: url('#{$ext4-images-dir}/tools/tool-sprites.gif') 0 -105px;
 }
 
 /* line 308, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
@@ -9554,16 +9510,12 @@ a.x4-monthpicker-item-inner:hover {
 
 /* line 334, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
 .x4-nlg .x4-datepicker-header {
-  background-image: url('#{$ext4-images-dir}/datepicker/datepicker-header-bg.gif');
-  background-repeat: repeat-x;
-  background-position: top left;
+  background: url('#{$ext4-images-dir}/datepicker/datepicker-header-bg.gif') repeat-x top left;
 }
 /* line 343, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
 .x4-nlg .x4-datepicker-footer,
 .x4-nlg .x4-monthpicker-buttons {
-  background-image: url('#{$ext4-images-dir}/datepicker/datepicker-footer-bg.gif');
-  background-repeat: repeat-x;
-  background-position: top left;
+  background: url('#{$ext4-images-dir}/datepicker/datepicker-footer-bg.gif') repeat-x top left;
 }
 
 /*<if slicer>*/
@@ -9599,18 +9551,14 @@ a.x4-monthpicker-item-inner:hover {
   width: 144px;
   height: 90px;
   background-color: white;
-  border-color: white;
-  border-width: 0;
-  border-style: solid;
+  border: 0 solid white;
 }
 
 /* line 10, ../../../ext-theme-neutral/sass/src/picker/Color.scss */
 .x4-color-picker-item {
   width: 18px;
   height: 18px;
-  border-width: 1px;
-  border-color: white;
-  border-style: solid;
+  border: 1px solid white;
   background-color: white;
   cursor: pointer;
   padding: 2px;
@@ -9636,9 +9584,7 @@ a.x4-color-picker-item:hover {
 /* line 38, ../../../ext-theme-neutral/sass/src/picker/Color.scss */
 .x4-color-picker-item-inner {
   line-height: 10px;
-  border-color: #aca899;
-  border-width: 1px;
-  border-style: solid;
+  border: 1px solid #aca899;
 }
 
 /* line 1, ../../../ext-theme-neutral/sass/src/form/field/HtmlEditor.scss */
@@ -10243,7 +10189,8 @@ a.x4-color-picker-item:hover {
 /* line 30, ../../../ext-theme-neutral/sass/src/grid/feature/Grouping.scss */
 .x4-grid-group-title {
   color: #3764a0;
-  font: 11px/13px $lk-font-family-sans-serif-bold;
+  font-size: 11px/13px;
+  font-weight: bold;
 }
 
 /* line 36, ../../../ext-theme-neutral/sass/src/grid/feature/Grouping.scss */
@@ -10999,6 +10946,7 @@ body.x4-nbr .x4-grid-row-editor-buttons-default-top-frameInfo {
   color: $lk-dropdown-link-color;
   cursor: pointer;
   margin-right: 16px;
+  zoom: 1;
 }
 
 .x4-menu-item-active .x4-menu-item-text {
@@ -12307,7 +12255,7 @@ body.x4-nbr .x4-tab-default-right-frameInfo {
 /* line 312, ../../../ext-theme-neutral/sass/src/tab/Tab.scss */
 .x4-tab-default .x4-tab-inner {
   font-size: 11px;
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
   color: #416da3;
   line-height: 13px;
 }
@@ -13490,8 +13438,7 @@ body.x4-nbr .x4-tab-default-right-frameInfo {
 
 /* line 81, ../../../ext-theme-classic/sass/src/dom/Element.scss */
 .x4-box-mc {
-  background-color: #eee;
-  background-image: url('#{$ext4-images-dir}/box/tb.gif');
+  background: #eee url('#{$ext4-images-dir}/box/tb.gif');
   font-family: $lk-font-family-sans-serif;
   color: #393939;
   font-size: 15px;
@@ -13602,8 +13549,7 @@ body.x4-nbr .x4-tab-default-right-frameInfo {
 
 /* line 1, ../../../ext-theme-classic/sass/src/grid/column/Column.scss */
 .x4-column-header-trigger {
-  background-color: #c5c5c5;
-  background-image: url('#{$ext4-images-dir}/grid/grid3-hd-btn.gif');
+  background: #c5c5c5 url('#{$ext4-images-dir}/grid/grid3-hd-btn.gif');
 }
 
 /* line 6, ../../../ext-theme-classic/sass/src/grid/plugin/Editing.scss */

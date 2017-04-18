@@ -5521,7 +5521,8 @@ ul.x-tab-strip-bottom{
 }
 
 .x-fieldset legend {
-  font:11px $lk-font-family-sans-serif-bold;
+  font-size:11px;
+  font-weight: bold;
   color:#15428b;
 }
 
@@ -5957,7 +5958,8 @@ td.grid-hd-group-cell {
 .x-grid-group-hd div.x-grid-group-title {
   background-image:url('#{$ext3-images-dir}/default/grid/group-collapse.gif');
   color:#3764a0;
-  font:11px $lk-font-family-sans-serif-bold;
+  font-size:11px;
+  font-weight: bold;
 }
 
 .x-grid-group-collapsed .x-grid-group-hd div.x-grid-group-title {
@@ -6321,14 +6323,16 @@ td.x-date-mp-sep {
 }
 
 .x-tip .x-tip-mc {
-  font: normal 11px $lk-font-family-sans-serif;
+  font-weight: normal;
+  font-size: 11px;
 }
 .x-tip .x-tip-ml {
   background-color: #fff;
 }
 
 .x-tip .x-tip-header-text {
-  font: 11px $lk-font-family-sans-serif-bold;
+  font-size: 11px;
+  font-weight: bold;
   color:#444;
 }
 
@@ -6496,17 +6500,19 @@ td.x-date-mp-sep {
 }
 
 .x-combo-list {
-   border-color:#98c0f4;
-   background-color:#ddecfe;
-   font: normal $lk-font-size-base $lk-font-family-sans-serif;
- }
+  border-color:#98c0f4;
+  background-color:#ddecfe;
+  font-weight: normal;
+  font-size: $lk-font-size-base;
+}
 
 .x-combo-list-inner {
   background-color:#fff;
 }
 
 .x-combo-list-hd {
-  font:11px $lk-font-family-sans-serif-bold;
+  font-size: 11px;
+  font-weight: bold;
   color:#15428b;
   background-image: url('#{$ext3-images-dir}/default/layout/panel-title-light-bg.gif');
   border-bottom-color:#98c0f4;
@@ -6526,15 +6532,18 @@ td.x-date-mp-sep {
 }
 
 .x-combo-list-small {
-  font: normal 11px $lk-font-family-sans-serif;
-}.x-panel {
-   border-color: #99bbe8;
- }
+  font-weight: normal;
+  font-size: 11px;
+}
+
+.x-panel {
+  border-color: #99bbe8;
+}
 
 .x-panel-header {
   color:#15428b;
   font-size: 11px;
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
   border-color:#99bbe8;
   background-image: url('#{$ext3-images-dir}/default/panel/white-top-bottom.gif');
 }
@@ -6558,7 +6567,8 @@ td.x-date-mp-sep {
 
 .x-panel-tl .x-panel-header {
   color:#15428b;
-  font:11px $lk-font-family-sans-serif-bold;
+  font-size: 11px;
+  font-weight: bold;
 }
 
 .x-panel-tc {
@@ -7095,7 +7105,8 @@ li.x-menu-item-active a.x-menu-item {
 
 /* Buttons */
 .x-btn {
-  font: normal $lk-font-size-small $lk-font-family-sans-serif-bold;
+  font-weight: bold;
+  font-size: $lk-font-size-small;
   letter-spacing: .5px;
   cursor: pointer;
   white-space: nowrap;
@@ -7105,7 +7116,8 @@ li.x-menu-item-active a.x-menu-item {
     border: 0 none;
     color: $lk-button-color;
     cursor: pointer;
-    font: normal $lk-font-size-small $lk-font-family-sans-serif-bold;
+    font-weight: bold;
+    font-size: $lk-font-size-small;
     margin: 0;
     -moz-outline: 0 none;
     outline: 0 none;
@@ -7153,7 +7165,7 @@ li.x-menu-item-active a.x-menu-item {
 
 .x-btn-text {
   font-size: $lk-font-size-small;
-  font-family: $lk-font-family-sans-serif-bold;
+  font-weight: bold;
   letter-spacing: $lk-button-letter-spacing;
 }
 

@@ -1,7 +1,6 @@
 .btn {
-  font-family: $lk-font-family-sans-serif-bold;
   font-size: $lk-font-size-small;
-  font-weight: normal;
+  font-weight: bold;
   letter-spacing: $lk-button-letter-spacing;
   text-transform: $lk-button-text-transform;
 }
@@ -46,5 +45,32 @@
   &:hover {
     background-color: $lk-brand-color;
     border-color: darken($lk-brand-color, 5%);
+  }
+}
+
+/*
+*   CSS file with Bootstrap grid classes for screens bigger than 1600px. Just add this file after the Bootstrap CSS file and you will be able to juse col-xl, col-xl-push, hidden-xl, etc.
+*
+*   Author: Marc van Nieuwenhuijzen
+*   Company: WebVakman
+*   Site: WebVakman.nl
+*
+*/
+
+@media (min-width: 1200px) and (max-width: 1599px) {
+  .hidden-lg {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1600px) {
+  .container {
+    width: 1570px;
+  }
+}
+
+@media (min-width: 1800px) {
+  .container {
+    width: 1770px;
   }
 }

@@ -10,15 +10,15 @@
   background-color: #e4e4e4;
 }
 
-.x4-boundlist-list-ct ul
-{
-  margin: 0;
-  padding: 0;
-}
+.x4-boundlist-list-ct {
+  ul {
+    margin: 0;
+    padding: 0;
+  }
 
-.x4-boundlist-list-ct li
-{
-  list-style: none;
+  li {
+    list-style: none;
+  }
 }
 
 /* NOTE: This selector is Firefox only */
@@ -51,17 +51,15 @@
 .x4-menu-item-icon
 {
   background-size: 16px 16px;
-}
 
-.x4-menu-item-icon.fa
-{
-  margin: 2px;
-}
+  &.fa {
+    margin: 2px;
 
-/* dont allow the up down arrows to show as disabled until bug 24434 has been fixed */
-.x4-menu-item-icon.fa.x4-btn-default-toolbar-small-disabled
-{
-  opacity: 1;
+    /* dont allow the up down arrows to show as disabled until bug 24434 has been fixed */
+    &.x4-btn-default-toolbar-small-disabled {
+      opacity: 1;
+    }
+  }
 }
 
 .x4-column-header
@@ -158,9 +156,9 @@ a.x4-menu-item-link {
 
 .x4-menu-body .iconbtn-label{
   text-transform: uppercase;
-  font-family: $lk-font-family-sans-serif-bold;
   color: black;
   font-size: 11px;
+  font-weight: bold;
   margin-left: 1em;
 }
 
