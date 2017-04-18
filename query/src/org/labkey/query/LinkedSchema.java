@@ -33,6 +33,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -247,7 +248,12 @@ public class LinkedSchema extends ExternalSchema
         TableInfo tableInfo = queryDef.getTable(errors, true);
         if (!errors.isEmpty())
         {
-            throw errors.get(0);
+            for (QueryException ex : errors)
+            {
+                if (ex instanceof QueryParseException && ((QueryParseException)ex).isWarning())
+                    continue;
+                throw ex;
+            }
         }
         if (tableInfo == null)
         {
