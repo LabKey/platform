@@ -67,7 +67,7 @@ import java.util.Set;
 public interface AssayProvider extends Handler<ExpProtocol>
 {
     /** Level of support provided for re running (starting from an existing run and creating a new run to take its place */
-    public enum ReRunSupport
+    enum ReRunSupport
     {
         /** No form of re run is supported */
         None,
@@ -175,7 +175,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     ModelAndView createResultsView(ViewContext context, ExpProtocol protocol, BindException errors);
 
-    public ModelAndView createResultDetailsView(ViewContext context, ExpProtocol protocol, ExpData data, Object dataRowId);
+    ModelAndView createResultDetailsView(ViewContext context, ExpProtocol protocol, ExpData data, Object dataRowId);
 
     void deleteProtocol(ExpProtocol protocol, User user) throws ExperimentException;
 
@@ -206,7 +206,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /** @return the links to be shown in the header of standard assay views (run and result data grids, for example) */
     List<NavTree> getHeaderLinks(ViewContext viewContext, ExpProtocol protocol, ContainerFilter containerFilter);
 
-    public enum Scope {
+    enum Scope
+    {
         ALL,
         ASSAY_TYPE,
         ASSAY_DEF,
