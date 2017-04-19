@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data.triggers;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -105,19 +106,18 @@ public class ScriptTriggerFactory implements TriggerFactory
 
     protected Collection<Trigger> checkPaths(Container c, TableInfo table, @NotNull ScriptService svc, Set<Path> paths) throws ScriptException
     {
-//        Collection<Trigger> scripts = new ArrayList<>();
-//
-//        for (Module m : c.getActiveModules())
-//        {
-//            for (Path p : paths)
-//            {
-//                ScriptReference script = svc.compile(m, p);
-//                if (script != null)
-//                    scripts.add(new ScriptTrigger(c, table, script));
-//            }
-//        }
-//
-//        return scripts.isEmpty() ? Collections.emptyList() : Collections.unmodifiableCollection(scripts);
+        Collection<Trigger> scripts2 = new ArrayList<>();
+
+        for (Module m : c.getActiveModules())
+        {
+            for (Path p : paths)
+            {
+                ScriptReference script = svc.compile(m, p);
+                if (script != null)
+                    scripts2.add(new ScriptTrigger(c, table, script));
+            }
+        }
+
         Collection<Resource> rs = new ArrayList<>(10);
         for (Module m : c.getActiveModules())
         {
@@ -138,6 +138,11 @@ public class ScriptTriggerFactory implements TriggerFactory
             if (script != null)
                 scripts.add(new ScriptTrigger(c, table, script));
         }
+
+        if (scripts.size() == scripts2.size())
+            Logger.getLogger(ScriptTriggerFactory.class).info("Script trigger lists matched");
+        else
+            Logger.getLogger(ScriptTriggerFactory.class).error("Script trigger list differed:\n" + scripts + "\n" + scripts2);
 
         return scripts;
     }
