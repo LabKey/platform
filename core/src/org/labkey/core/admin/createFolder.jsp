@@ -30,6 +30,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("clientapi/ext4");
+        dependencies.add("AdminWizardForm.js");
         dependencies.add("createFolder.css");
     }
 %>
@@ -143,7 +144,7 @@
 
             var folderTemplateWriters = null;
 
-            var panel = Ext4.create('Ext.form.Panel', {
+            var panel = Ext4.create('LABKEY.ext4.AdminWizardForm', {
                 renderTo: 'createFormDiv',
                 border: false,
                 style: 'padding-top: 20px;',
@@ -167,17 +168,6 @@
                                 panel.renderTemplateInfo();
                             }
                         }
-                    },
-                    boxready: {
-                        fn: function(panel) {
-                            panel.doLayout();
-
-                            var el = panel.getEl().parent();
-                            Ext4.EventManager.onWindowResize(function() {
-                                panel.setWidth(el.getBox().width);
-                            }, panel, {delay: 200});
-                        },
-                        single: true
                     }
                 },
                 items: [{

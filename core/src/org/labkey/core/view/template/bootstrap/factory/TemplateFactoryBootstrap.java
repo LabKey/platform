@@ -7,9 +7,9 @@ import org.labkey.api.view.ViewServiceImpl;
 import org.labkey.api.view.template.BodyTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
-import org.labkey.api.view.template.WizardTemplate;
 import org.labkey.core.view.template.bootstrap.DialogTemplate;
 import org.labkey.core.view.template.bootstrap.BootstrapTemplate;
+import org.labkey.core.view.template.bootstrap.WizardTemplate;
 import org.springframework.web.servlet.ModelAndView;
 
 public class TemplateFactoryBootstrap implements ViewService.TemplateFactory
@@ -44,7 +44,7 @@ public class TemplateFactoryBootstrap implements ViewService.TemplateFactory
             }
             case Wizard:
             {
-                return new WizardTemplate(body, page);
+                return new WizardTemplate(context, body, page);
             }
             case Body:
             {

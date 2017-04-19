@@ -27,6 +27,7 @@
     {
         dependencies.add("createFolder.css");
         dependencies.add("clientapi/ext4");
+        dependencies.add("AdminWizardForm.js");
     }
 %>
 <%
@@ -78,7 +79,7 @@
             }
         };
 
-        var panel = Ext4.create('Ext.form.Panel', {
+        var panel = Ext4.create('LABKEY.ext4.AdminWizardForm', {
             renderTo: 'folderPermissionsDiv',
             border: false,
             autoHeight: true,

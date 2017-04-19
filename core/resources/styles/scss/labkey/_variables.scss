@@ -133,6 +133,10 @@ $lk-page-nav-height: 36px !default;
 $lk-page-nav-bg-color-active: $white !default;
 $lk-page-nav-color-active: $lk-brand-color !default;
 
+//== Pills
+//
+$lk-nav-pills-active-link-hover-bg: $lk-secondary-brand-color !default;
+
 //== Panels
 //
 $lk-panel-bg-color: $white !default;
@@ -176,3 +180,7 @@ $lk-inactive-tab-bg-color: #f4f4f4 !default;
 //
 $lk-well-bg-color: $white !default;
 $lk-well-border-color: darken($lk-well-bg-color, 15%) !default;
+
+//== Wizards
+//
+$lk-wizard-pill-active-bg-color: $lk-nav-pills-active-link-hover-bg !default;

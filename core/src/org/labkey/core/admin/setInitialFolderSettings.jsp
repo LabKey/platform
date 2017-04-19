@@ -27,6 +27,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("Ext4");
+        dependencies.add("AdminWizardForm.js");
         dependencies.add("createFolder.css");
     }
 %>
@@ -54,7 +55,7 @@
         Ext4.FocusManager.enable(false);
         var projectDefault = "<%=h(projectDefaultRoot.replace("\\", "\\\\"))%>";
 
-        var panel = Ext4.create('Ext.form.Panel', {
+        var panel = Ext4.create('LABKEY.ext4.AdminWizardForm', {
             border: false,
             autoHeight: true,
             defaults: {

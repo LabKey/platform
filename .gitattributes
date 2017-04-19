@@ -572,12 +572,14 @@ core/src/org/labkey/core/view/template/bootstrap/BootstrapHeader.java -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapTemplate.jsp -text
 core/src/org/labkey/core/view/template/bootstrap/DialogTemplate.java -text
+core/src/org/labkey/core/view/template/bootstrap/WizardTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/body.jsp -text
 core/src/org/labkey/core/view/template/bootstrap/dialog.jsp -text
 core/src/org/labkey/core/view/template/bootstrap/factory/FrameFactoryBootstrap.java -text
 core/src/org/labkey/core/view/template/bootstrap/factory/TemplateFactoryBootstrap.java -text
 core/src/org/labkey/core/view/template/bootstrap/header.jsp -text
 core/src/org/labkey/core/view/template/bootstrap/navigation.jsp -text
+core/src/org/labkey/core/view/template/bootstrap/wizard.jsp -text
 core/src/org/labkey/core/webdav/DavController.java -text
 core/src/org/labkey/core/webdav/WebdavServlet.java -text
 core/src/org/labkey/core/webdav/apache/XMLWriter.java -text
@@ -594,6 +596,7 @@ core/src/org/labkey/core/workbook/createWorkbook.jsp -text
 core/src/org/labkey/core/workbook/moveWorkbooks.jsp -text
 core/src/org/labkey/core/workbook/workbookDescription.jsp -text
 core/src/org/labkey/core/workbook/workbookSearch.jsp -text
+core/webapp/AdminWizardForm.js -text
 core/webapp/ModulePropertiesAdminPanel.js -text
 core/webapp/Permissions.lib.xml -text
 core/webapp/Security/field/PrincipalComboBox.js -text

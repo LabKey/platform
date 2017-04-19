@@ -2227,5 +2227,38 @@ div span.labkey-main-menu-icon {
   display: inline;
 }
 
+.labkey-wizard-container
+{
+  border-top: 8px solid $lk-secondary-brand-color;
+
+  .labkey-wizard-row
+  {
+    padding-top: 20px;
+  }
+
+  .labkey-wizard-divider
+  {
+    border-left: 2px solid #ccc;
+    width: 30px;
+  }
+
+  .labkey-wizard-pills
+  {
+    padding: 25px 10px 25px 25px;
+    > li {
+      // Active state
+      &.active > a {
+        &,
+        &:hover,
+        &:focus {
+          color: #eee;
+          background-color: $lk-wizard-pill-active-bg-color;
+        }
+      }
+    }
+  }
+
+}
+
 @import "components/header";
 @import "components/navigation";
