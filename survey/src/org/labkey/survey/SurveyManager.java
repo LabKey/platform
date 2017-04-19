@@ -30,7 +30,6 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
@@ -53,10 +52,7 @@ import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
-import org.labkey.api.module.ModuleResourceCacheHandlerOld;
 import org.labkey.api.module.ModuleResourceCaches;
-import org.labkey.api.module.ModuleResourceCaches.CacheId;
-import org.labkey.api.module.PathBasedModuleResourceCache;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -80,9 +76,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -95,8 +89,7 @@ public class SurveyManager
     private static final Logger _log = Logger.getLogger(SurveyManager.class);
     private static final SurveyManager _instance = new SurveyManager();
     private static final List<SurveyListener> _surveyListeners = new CopyOnWriteArrayList<>();
-    private static final PathBasedModuleResourceCache<Collection<SurveyDesign>> MODULE_SURVEY_DESIGN_CACHE = ModuleResourceCaches.create("Module Survey Design Cache", new SurveyDesignResourceCacheHandler());
-    private static final ModuleResourceCache<MultiValuedMap<String, SurveyDesign>> MODULE_SURVEY_DESIGN_CACHE2 = ModuleResourceCaches.create(Path.parse("surveys"), new SurveyDesignResourceCacheHandler2(), "Module Survey Design Cache", Collections.singletonList(ResourceRootProvider.STANDARD_SUBDIRECTORIES));
+    private static final ModuleResourceCache<MultiValuedMap<String, SurveyDesign>> MODULE_SURVEY_DESIGN_CACHE = ModuleResourceCaches.create(Path.parse("surveys"), new SurveyDesignResourceCacheHandler(), "Module Survey Design Cache", Collections.singletonList(ResourceRootProvider.STANDARD_SUBDIRECTORIES));
 
     public static final String MODULE_RESOURCE_FILE_EXTENSION = ".metadata.json";
     public static final String MODULE_RESOURCE_PREFIX = "module:";
@@ -597,25 +590,14 @@ public class SurveyManager
 
         for (Module module : modules)
         {
-            Collection<SurveyDesign> surveyDesigns = MODULE_SURVEY_DESIGN_CACHE.getResource(module, new Path("surveys", schemaName), schemaName);
-            Collection<SurveyDesign> surveyDesigns2 = MODULE_SURVEY_DESIGN_CACHE2.getResourceMap(module).get(schemaName);
-
-            assert surveyDesigns.size() == surveyDesigns2.size();
+            Collection<SurveyDesign> surveyDesigns = MODULE_SURVEY_DESIGN_CACHE.getResourceMap(module).get(schemaName);
 
             if (!surveyDesigns.isEmpty())
             {
-                Iterator<SurveyDesign> iter = surveyDesigns2.iterator();
-
                 // CacheLoader returns empty collection (not null) for non-existent directories
                 //noinspection ConstantConditions
                 for (SurveyDesign design : surveyDesigns)
                 {
-                    SurveyDesign design2 = iter.next();
-
-                    assert design.getSchemaName().equals(design2.getSchemaName());
-                    assert design.getQueryName().equals(design2.getQueryName());
-                    assert design.getMetadata().equals(design2.getMetadata());
-
                     if (design.getQueryName() != null)
                     {
                         designMap.put(design.getQueryName(), design);
@@ -627,109 +609,7 @@ public class SurveyManager
         return designMap;
     }
 
-    private static class SurveyDesignResourceCacheHandler implements ModuleResourceCacheHandlerOld<Path, Collection<SurveyDesign>>
-    {
-        @Override
-        public boolean isResourceFile(String filename)
-        {
-            return filename.endsWith(MODULE_RESOURCE_FILE_EXTENSION);
-        }
-
-        @Override
-        public String getResourceName(Module module, String filename)
-        {
-            // We're invalidating the whole list of survey designs in the schema, not individual designs... so leave resource name blank
-            return "";
-        }
-
-        @Override
-        public String createCacheKey(Module module, Path path)
-        {
-            // We're retrieving/caching/invalidating a list of survey designs, not individual designs, so append "*" to the
-            // requested path. This causes the listener to be registered in "path", not its parent.
-            return ModuleResourceCaches.createCacheKey(module, path.append("*").toString());
-        }
-
-        @Override
-        public CacheLoader<String, Collection<SurveyDesign>> getResourceLoader()
-        {
-            return (key, argument) -> {
-                try
-                {
-                    CacheId id = ModuleResourceCaches.parseCacheKey(key);
-
-                    // Remove "/*" added by getCacheKey()
-                    String name = id.getName();
-                    Resource surveyDir = id.getModule().getModuleResource(name.substring(0, name.length() - 2));
-
-                    Collection<? extends Resource> viewResources = getModuleSurveyDesigns(surveyDir);
-                    if (viewResources.isEmpty())
-                    {
-                        return Collections.emptyList();
-                    }
-                    else
-                    {
-                        Collection<SurveyDesign> surveyDesigns = new LinkedList<>();
-                        for (Resource r : viewResources)
-                        {
-                            String metadata = PageFlowUtil.getStreamContentsAsString(r.getInputStream());
-
-                            try
-                            {
-                                String errorMessage = validateSurveyMetadata(metadata);
-                                if (errorMessage == null)
-                                {
-                                    SurveyDesign design = new SurveyDesign();
-
-                                    design.setMetadata(metadata);
-                                    design.setSchemaName((String)argument);
-                                    design.setQueryName(r.getName().substring(0, r.getName().length() - MODULE_RESOURCE_FILE_EXTENSION.length()));
-
-                                    surveyDesigns.add(design);
-                                }
-                                else
-                                {
-                                    _log.error(errorMessage);
-                                }
-                            }
-                            catch (IOException e)
-                            {
-                                _log.error(e.getMessage());
-                            }
-                        }
-                        return Collections.unmodifiableCollection(surveyDesigns);
-                    }
-                }
-                catch (IOException e)
-                {
-                    throw new RuntimeException(e);
-                }
-            };
-        }
-
-        /** Find any .metadata.json files under the given surveyDir Resource. */
-        private Collection<? extends Resource> getModuleSurveyDesigns(Resource surveyDir)
-        {
-            if (surveyDir == null || !surveyDir.isCollection())
-                return Collections.emptyList();
-
-            List<Resource> ret = new ArrayList<>();
-            for (String name : surveyDir.listNames())
-            {
-                if (StringUtils.endsWithIgnoreCase(name, MODULE_RESOURCE_FILE_EXTENSION))
-                {
-                    Resource surveyMetadata = surveyDir.find(name);
-                    if (surveyMetadata != null)
-                    {
-                        ret.add(surveyMetadata);
-                    }
-                }
-            }
-            return ret;
-        }
-    }
-
-    private static class SurveyDesignResourceCacheHandler2 implements ModuleResourceCacheHandler<MultiValuedMap<String, SurveyDesign>>
+    private static class SurveyDesignResourceCacheHandler implements ModuleResourceCacheHandler<MultiValuedMap<String, SurveyDesign>>
     {
         @Override
         public MultiValuedMap<String, SurveyDesign> load(@Nullable Resource dir, Module module)
@@ -799,7 +679,8 @@ public class SurveyManager
         mapper.readTree(metadata);
         StringBuilder sb = new StringBuilder();
 
-        try {
+        try
+        {
             JSONObject o = new JSONObject(metadata);
 
             if (o.has("survey"))
