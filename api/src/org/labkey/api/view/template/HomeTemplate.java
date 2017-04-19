@@ -129,7 +129,10 @@ public class HomeTemplate extends PrintTemplate
             navTrail = new ArrayList<>(navTrail);
             navTrail.add(0, new NavTree(context.getContainer().getTitle(), context.getContainer().getStartURL(context.getUser())));
         }
-        page.setNavTrail(appBar.setNavTrail(navTrail, context));
+
+        List<NavTree> appNavTrail = appBar.setNavTrail(navTrail, context);
+        if (page.getTemplate() != PageConfig.Template.Wizard)
+            page.setNavTrail(appNavTrail);
 
         //allow views to have flag to hide title
         if (getBody() instanceof WebPartView && ((WebPartView) getBody()).isHidePageTitle())
