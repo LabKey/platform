@@ -67,10 +67,8 @@ public class NotificationInfo
                     String queryName = reportDescriptor.getProperty(ReportDescriptor.Prop.queryName);
                     if (null != schemaName && null != queryName)
                     {
-                        {
-                            ViewCategory category = ReportUtil.getDefaultCategory(_container, schemaName, queryName);
-                            categoryId = category.getRowId();
-                        }
+                        ViewCategory category = ReportUtil.getDefaultCategory(_container, schemaName, queryName);
+                        categoryId = category.getRowId();
                     }
                 }
                 _categoryId = null != categoryId ? categoryId : ViewCategoryManager.UNCATEGORIZED_ROWID;
@@ -85,7 +83,7 @@ public class NotificationInfo
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 
