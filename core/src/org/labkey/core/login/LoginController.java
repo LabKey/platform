@@ -573,7 +573,7 @@ public class LoginController extends SpringActionController
                 // If user is already logged in, then redirect immediately. This handles users clicking on stale login links
                 // (e.g., multiple tab scenario) but is also necessary because of Excel's link behavior (see #9246).
                 if (!isGuest)
-                    HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()));
+                   return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()));
 
                 if (null != properties)
                     AuthenticationManager.setLoginReturnProperties(request, properties);
