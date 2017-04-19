@@ -16,7 +16,6 @@
 package org.labkey.query.reports;
 
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -26,7 +25,6 @@ import org.labkey.api.query.NotificationInfoProvider;
 import org.labkey.api.reports.model.NotificationInfo;
 import org.labkey.api.reports.report.ReportDB;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -44,24 +42,20 @@ public final class ReportNotificationInfoProvider extends NotificationInfoProvid
         filter.addBetween(FieldKey.fromString("Modified"), modifiedRangeStart, modifiedRangeEnd);
         Sort sort = new Sort("DisplayOrder");
         TableSelector selector = new TableSelector(reportTableInfo, filter, sort);
-        selector.forEach(new Selector.ForEachBlock<ReportDB>()
+        selector.forEach(report ->
         {
-            @Override
-            public void exec(ReportDB report) throws SQLException
+            String containerId = report.getContainerId();
+            if (!reportInfoMap.containsKey(containerId))
+                reportInfoMap.put(containerId, new HashMap<>());
+            Map<Integer, List<NotificationInfo>> subMap = reportInfoMap.get(containerId);
+            NotificationInfo notificationInfo = new NotificationInfo(report);
+            if (null != notificationInfo.getContainer() && !notificationInfo.isHidden() && notificationInfo.isShared())
             {
-                String containerId = report.getContainerId();
-                if (!reportInfoMap.containsKey(containerId))
-                    reportInfoMap.put(containerId, new HashMap<Integer, List<NotificationInfo>>());
-                Map<Integer, List<NotificationInfo>> subMap = reportInfoMap.get(containerId);
-                NotificationInfo notificationInfo = new NotificationInfo(report);
-                if (null != notificationInfo.getContainer() && !notificationInfo.isHidden() && notificationInfo.isShared())
-                {
-                    // Don't include hidden reports (or if container was deleted)
-                    int categoryId = notificationInfo.getCategoryId();
-                    if (!subMap.containsKey(categoryId))
-                        subMap.put(categoryId, new ArrayList<NotificationInfo>());
-                    subMap.get(categoryId).add(notificationInfo);
-                }
+                // Don't include hidden reports (or if container was deleted)
+                int categoryId = notificationInfo.getCategoryId();
+                if (!subMap.containsKey(categoryId))
+                    subMap.put(categoryId, new ArrayList<>());
+                subMap.get(categoryId).add(notificationInfo);
             }
         }, ReportDB.class);
         return reportInfoMap;
