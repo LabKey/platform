@@ -58,6 +58,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -342,6 +343,11 @@ public class XarReader extends AbstractXarImporter
         catch (SQLException e)
         {
             throw new XarFormatException(e);
+        }
+
+        for (ExpRun loadedRun : _loadedRuns)
+        {
+            AssayPublishService.get().autoCopyResults(loadedRun.getProtocol(), loadedRun, getUser(), getContainer());
         }
     }
 
@@ -1272,6 +1278,13 @@ public class XarReader extends AbstractXarImporter
             if (value != null && value.startsWith("urn:lsid:"))
             {
                 value = LsidUtils.resolveLsidFromTemplate(value, getRootContext());
+            }
+
+            if (AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI.equals(simpleProp.getOntologyEntryURI()) && value != null)
+            {
+                Container autoCopyContainer = ContainerManager.getForPath(value);
+                if (autoCopyContainer != null)
+                    value = autoCopyContainer.getId();
             }
 
             String ontologyEntryURI = trimString(simpleProp.getOntologyEntryURI());

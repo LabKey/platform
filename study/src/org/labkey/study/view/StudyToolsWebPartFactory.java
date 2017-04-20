@@ -104,8 +104,12 @@ public abstract class StudyToolsWebPartFactory extends BaseWebPartFactory
             String iconBase = portalCtx.getContextPath() + "/study/tools/";
             List<StudyToolsWebPart.Item> items = new ArrayList<>();
 
-            URLHelper timeChartURL = PageFlowUtil.urlProvider(VisualizationUrls.class).getTimeChartDesignerURL(portalCtx.getContainer());
-            items.add(new StudyToolsWebPart.Item("New Time Chart", iconBase + "timeline_chart.png", timeChartURL));
+            VisualizationUrls visUrlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
+            if (visUrlProvider != null)
+            {
+                URLHelper timeChartURL = visUrlProvider.getTimeChartDesignerURL(portalCtx.getContainer());
+                items.add(new StudyToolsWebPart.Item("New Time Chart", iconBase + "timeline_chart.png", timeChartURL));
+            }
 
             String noun = StudyService.get().getSubjectNounSingular(portalCtx.getContainer());
 

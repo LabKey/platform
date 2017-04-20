@@ -24,6 +24,7 @@ import org.fhcrc.cpas.exp.xml.*;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.ExperimentException;
@@ -48,6 +49,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.experiment.api.Data;
@@ -951,6 +953,13 @@ public class XarExporter
                             if (domain != null)
                             {
                                 queueDomain(domain);
+                            }
+
+                            if (AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI.equals(value.getPropertyURI()))
+                            {
+                                Container autoCopyContainer = ContainerManager.getForId(value.getStringValue());
+                                if (autoCopyContainer != null)
+                                    simpleValue.setStringValue(autoCopyContainer.getPath());
                             }
                         }
                         break;
