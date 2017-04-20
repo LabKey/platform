@@ -100,56 +100,32 @@ var viewTabs = [];
 Ext4.onReady(function(){
     Ext4.QuickTips.init();
 
-    var isFolderAdmin  = <%=c.hasPermission(user, AdminPermission.class) ? "true" : "false"%>,
-        isProjectAdmin = <%=project != null && project.hasPermission(user, AdminPermission.class) ? "true" : "false"%>,
-        isRootUserManager    = <%= user.hasRootPermission(UserManagementPermission.class) ? "true" : "false" %>,
-        isRoot         = <%= c.isRoot() ? "true" : "false" %>,
-        doneURL        = <%=doneURL==null?"null":PageFlowUtil.jsString(doneURL.getLocalURIString())%>;
-
-    var done = function() {
-        var policyEditor = editor.getPolicyEditor();
-        if (!policyEditor || !policyEditor.isDirty())
-            window.location = doneURL;
-        else
-        {
-            policyEditor.save(false, policyEditor.cancel);
-        }
-    };
-
-    var save = function() {
-        var policyEditor = editor.getPolicyEditor();
-        if (policyEditor)
-            policyEditor.save();
-    };
-
-    var securityCache = Ext4.create('Security.util.SecurityCache', {
-        root    : <%=PageFlowUtil.jsString(root.getId())%>,
-        project : <%=project==null?"null":PageFlowUtil.jsString(project.getId())%>,
-
-        // 16762 - Provide a projectPath, should be considered for folder
-        projectPath : <%=project==null?"null":PageFlowUtil.jsString(project.getPath())%>,
-        folder  : <%=PageFlowUtil.jsString(c.getId())%>,
-        global  : true
-    });
-
     var editor = Ext4.create('Security.panel.PermissionEditor', {
-        renderTo       : 'tabBoxDiv',
-        minHeight      : 450,
-        isSiteRoot     : isRoot,
-        isRootUserManager : isRootUserManager,
-        isProjectRoot  : <%=(c.isProject())?"true":"false"%>, //LABKEY.Security.currentContainer.path == '/',
-        isProjectAdmin : isProjectAdmin,
-        canInherit     : <%=(!c.isProject() && !c.isRoot())?"true":"false"%>,
-        securityCache  : securityCache,
-        doneURL        : doneURL
+        renderTo: 'tabBoxDiv',
+        minHeight: 450,
+        isSiteRoot: <%= c.isRoot() ? "true" : "false" %>,
+        isRootUserManager: <%= user.hasRootPermission(UserManagementPermission.class) ? "true" : "false" %>,
+        isProjectRoot: <%=(c.isProject())?"true":"false"%>,
+        isProjectAdmin: <%=project != null && project.hasPermission(user, AdminPermission.class) ? "true" : "false"%>,
+        canInherit: <%=(!c.isProject() && !c.isRoot())?"true":"false"%>,
+        securityCache: Ext4.create('Security.util.SecurityCache', {
+            root: <%=PageFlowUtil.jsString(root.getId())%>,
+            project: <%=project==null?"null":PageFlowUtil.jsString(project.getId())%>,
+
+            // 16762 - Provide a projectPath, should be considered for folder
+            projectPath: <%=project==null?"null":PageFlowUtil.jsString(project.getPath())%>,
+            folder: <%=PageFlowUtil.jsString(c.getId())%>,
+            global: true
+        }),
+        doneURL: <%=doneURL==null?"null":PageFlowUtil.jsString(doneURL.getLocalURIString())%>
     <% if (!c.isRoot()) { %>
-        ,treeConfig     : {
+        ,treeConfig: {
            requiredPermission: '<%=RoleManager.getPermission(AdminPermission.class).getUniqueName()%>',
            showContainerTabs: true,
-           project : {
-               id   : '<%=project.getRowId()%>',
-               name : <%=PageFlowUtil.jsString(project.getName())%>,
-               securityHref : <%=PageFlowUtil.qh(new ActionURL(SecurityController.PermissionsAction.class, project).getLocalURIString())%>
+           project: {
+               id : '<%=project.getRowId()%>',
+               name: <%=PageFlowUtil.jsString(project.getName())%>,
+               securityHref: <%=PageFlowUtil.qh(new ActionURL(SecurityController.PermissionsAction.class, project).getLocalURIString())%>
            }
         }
     <% } %>
@@ -172,11 +148,7 @@ Ext4.onReady(function(){
         if (!editor.rendered || !editor.el)
             return;
         var xy = editor.el.getXY();
-        var size = {
-            width  : Math.max(400,w-xy[0]-60),
-            height : Math.max(300,h-xy[1]-80)
-        };
-        editor.setSize(size.width, size.height);
+        editor.setSize(Math.max(400,w-xy[0]-60), Math.max(300,h-xy[1]-80));
     });
     Ext4.EventManager.fireResize();
 });

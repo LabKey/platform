@@ -21,9 +21,9 @@
   &:active,
   &:focus,
   &:hover {
-    color: $white;
-    background-color: $lk-accent-color;
-    border-color: darken($lk-button-border-color, 5%);
+    color: $lk-button-color-hover;
+    background-color: $lk-button-bg-color-hover;
+    border-color: darken($lk-button-bg-color-hover, 5%);
   }
 }
 

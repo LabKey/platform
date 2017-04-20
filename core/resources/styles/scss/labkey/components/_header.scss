@@ -55,8 +55,8 @@
 
       .dropdown-menu {
         font-size: $lk-font-size-large;
-        background-color: white;
-        color: black;
+        background-color: $lk-dropdown-bg-color;
+        color: $lk-dropdown-link-color;
         position: absolute;
         top: 30px;
         overflow: hidden;
@@ -151,7 +151,7 @@
         margin: 0;
         padding: 0 45px 0 5px;
         width: 300px;
-        color: black;
+        color: $lk-input-color;
       }
 
       .btn-search {

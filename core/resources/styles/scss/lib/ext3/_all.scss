@@ -879,13 +879,13 @@ ul.x-tab-strip li.x-tab-edge {
   margin-top: 1px;
 }
 
-.x-tab-scrolling .x-tab-strip-wrap {
-  margin-left:18px;
-  margin-right:18px;
-}
-
 .x-tab-scrolling {
-  position:relative;
+  position: relative;
+
+  .x-tab-strip-wrap {
+    margin-left:18px;
+    margin-right:18px;
+  }
 }
 
 .x-tab-panel-bbar .x-toolbar {
@@ -900,21 +900,17 @@ ul.x-tab-strip li.x-tab-edge {
   border-top:0 none;
   overflow:hidden;
   padding:2px;
-}/* all fields */
-.x-form-field{
+}
+
+/* all fields */
+.x-form-field {
   margin: 0 0 0 0;
 }
 
-/* 13192: LK controls don't reflect focus */
-/*.ext-webkit *:focus{*/
-/*outline: none !important;*/
-/*}*/
-
 /* ---- text fields ---- */
-.x-form-text, textarea.x-form-field{
-  padding:1px 3px;
-  background:repeat-x 0 0;
-  border:1px solid;
+.x-form-text, textarea.x-form-field {
+  padding: 1px 3px;
+  border: 1px solid #b5b8c8;
 }
 
 textarea.x-form-field {
@@ -950,12 +946,6 @@ textarea.x-form-field {
 .ext-safari.ext-mac textarea.x-form-field {
   margin-bottom:-2px; /* another bogus margin bug, safari/mac only */
 }
-
-/*
-.ext-strict .ext-ie8 .x-form-text, .ext-strict .ext-ie8 textarea.x-form-field {
-    margin-bottom: 1px;
-}
-*/
 
 .ext-gecko .x-form-text , .ext-ie8 .x-form-text {
   padding-top:2px; /* FF won't center the text vertically */
@@ -5417,11 +5407,6 @@ ul.x-tab-strip-bottom{
 
 .x-form-field {
   font: normal $lk-font-size-base $lk-font-family-sans-serif;
-}
-
-.x-form-text, textarea.x-form-field {
-  background: #fff url('#{$ext3-images-dir}/default/form/text-bg.gif');
-  border-color:#b5b8c8;
 }
 
 .x-form-select-one {

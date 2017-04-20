@@ -55,7 +55,7 @@
   &.fa {
     margin: 2px;
 
-    /* dont allow the up down arrows to show as disabled until bug 24434 has been fixed */
+    /* don't allow the up down arrows to show as disabled until bug 24434 has been fixed */
     &.x4-btn-default-toolbar-small-disabled {
       opacity: 1;
     }
@@ -154,20 +154,23 @@ a.x4-menu-item-link {
   width: 100%;
 }
 
-.x4-menu-body .iconbtn-label{
-  text-transform: uppercase;
-  color: black;
-  font-size: 11px;
-  font-weight: bold;
-  margin-left: 1em;
+.x4-menu-body {
+
+  .iconbtn-label {
+    text-transform: uppercase;
+    color: black;
+    font-size: 11px;
+    font-weight: bold;
+    margin-left: 1em;
+  }
+
+  .labkey-fa-stacked-wrapper {
+    font-size: 8px;
+    margin-left: -0.5em;
+  }
 }
 
-.x4-menu-body .labkey-fa-stacked-wrapper {
-  font-size: 8px;
-  margin-left: -0.5em;
-}
-
-/* dont show the box around disabled toolbar button icons */
+/* don't show the box around disabled toolbar button icons */
 .x4-box-target .x4-btn-default-toolbar-small-disabled {
   border-color: transparent;
 }

@@ -1,5 +1,11 @@
 @import "fonts";
 
+input, select, textarea {
+  background-color: $lk-input-bg-color;
+  border: $lk-input-border-width $lk-input-border-style $lk-input-border-color;
+  color: $lk-input-color;
+}
+
 th
 {
   font-size: $lk-font-size-base;
@@ -173,7 +179,7 @@ pre.labkey-log-file
 
   a, span {
     font-weight: bold;
-    color: #000000;
+    color: $lk-text-color;
   }
 
   a.announcement-title-link {
@@ -241,7 +247,7 @@ table.labkey-no-spacing
 
 .labkey-dataregion-msgbox
 {
-  background-color: #F4F4F4;
+  background-color: $lk-grid-msgbox-bg-color;
   border: 1px solid #AAAAAA;
   padding: 3px !important;
 }
@@ -571,13 +577,6 @@ table.labkey-admin-console
 
 /* Data Region */
 
-/* There are some odd styles that are used so that the data
-regions look the same in IE, Safari, and Firefox */
-table.labkey-data-region {
-  background-color: #FFFFFF;
-  border-spacing: 0;
-}
-
 .labkey-data-region-auth {
   display: inline-block;
   border: 1px solid #DDDDDD;
@@ -618,13 +617,8 @@ table.labkey-show-surrounding-border
 .labkey-data-region .labkey-column-header
 {
   border-bottom: solid 1px #AAAAAA;
-  vertical-align: top;
-}
-
-.labkey-row TD, .labkey-alternate-row TD,
-.labkey-data-region TH, .labkey-data-region .labkey-column-header
-{
   padding: 1px 4px;
+  vertical-align: top;
 }
 
 table.wiki-table, table.wiki-table td, table.wiki-table th {
@@ -659,31 +653,23 @@ table.labkey-fixed-width-columns
 table.labkey-show-borders
 {
   border: 1px solid #DDDDDD;
-}
 
-.labkey-show-borders td
-{
-  /* Safari gives precedence to the color drawn last for borders, which means
-  the borders usually win bottom and right over top and left (It is supposed to be
-  the opposite, which is how Firefox correctly does it. So we use a
-  combination of table borders and cell borders for Safari and Firefox*/
-  border-top: 0;
-  border-left: 0;
-  border-right: solid 1px #DDDDDD;
-  border-bottom: solid 1px #DDDDDD;
-}
+  td {
+    /* Safari gives precedence to the color drawn last for borders, which means
+    the borders usually win bottom and right over top and left (It is supposed to be
+    the opposite, which is how Firefox correctly does it. So we use a
+    combination of table borders and cell borders for Safari and Firefox*/
+    border-top: 0;
+    border-left: 0;
+    border-right: solid 1px #DDDDDD;
+    border-bottom: solid 1px #DDDDDD;
+  }
 
-/* These classes are used in Cross Tab data regions and for aggregate rows */
-.labkey-show-borders th, .labkey-show-borders .labkey-col-total, .labkey-show-borders .labkey-row-total,
-.labkey-show-borders .labkey-col-header, .labkey-show-borders .labkey-row-header,
-.labkey-show-borders .labkey-col-header th, .labkey-show-borders .labkey-stat-title
-{
-  border: solid 1px #AAAAAA;
-}
-
-.labkey-show-borders .labkey-col-total td
-{
-  border-top: solid 1px #AAAAAA;
+  /* These classes are used in Cross Tab data regions and for aggregate rows */
+  th, .labkey-col-total, .labkey-row-total, .labkey-col-header,
+  .labkey-row-header, .labkey-col-header th, .labkey-stat-title, .labkey-col-total td {
+    border: solid 1px #AAAAAA;
+  }
 }
 
 .labkey-has-row-totals col, .labkey-has-col-totals col
@@ -695,13 +681,13 @@ table.labkey-show-borders
 /* Used for the normal rows in data regions, sometimes these rows are not given a class */
 .labkey-row td, .labkey-row th, tr.labkey-row, div.labkey-row
 {
-  background: #FFFFFF;
+  background-color: $lk-grid-row-bg-color;
 }
 
 /* Used for the shaded alternate rows */
 .labkey-alternate-row td, .labkey-alternate-row th, tr.labkey-alternate-row, td.labkey-alternate-row, th.labkey-alternate-row, div.labkey-alternate-row
 {
-  background: #F4F4F4;
+  background-color: $lk-grid-row-alt-bg-color;
 }
 
 /* Used for the shaded alternate columns (for pivot queries) */
@@ -769,7 +755,7 @@ table.labkey-show-borders
 }
 
 .labkey-data-region-header-container {
-  background-color: $lk-grid-color;
+  background-color: $lk-grid-ct-bg-color;
   border: 1px solid #b4b4b4;
 
   td {
@@ -1112,11 +1098,10 @@ td.labkey-nav-tree-node
 {
   padding: .25em 0 0 0;
   vertical-align: top;
-}
 
-td.labkey-nav-tree-node img
-{
-  margin-right: 3px;
+  img {
+    margin-right: 3px;
+  }
 }
 
 /* The link in an expandable nav menu */
@@ -1125,11 +1110,11 @@ td.labkey-nav-tree-text
   padding: 4px 0;
   vertical-align: top;
   line-height: 1.2;
-}
 
-td.labkey-nav-tree-text a {
-  display: inline-block;
-  width: 100%;
+  a {
+    display: inline-block;
+    width: 100%;
+  }
 }
 
 a.nav-tree-selected
@@ -1178,8 +1163,6 @@ td.labkey-crumb-trail {
 .labkey-nav-page-header
 {
   font-size: 26px;
-  font-weight: normal;
-  color: #000000;
   line-height: 1.25;
 }
 
@@ -1191,8 +1174,6 @@ table.labkey-wp
   border: 5px solid $lk-webpart-color;
 
   border-radius: 5px;
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
 }
 
 /* This is the body of the web part */
@@ -1308,8 +1289,6 @@ span.labkey-wp-icon-button-inactive {
   white-space: nowrap;
 
   border-radius: 5px;
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
 }
 
 .labkey-wp-text-buttons a:hover {
@@ -1340,7 +1319,7 @@ a.labkey-text-link-noarrow,
 a.labkey-text-link,
 a.labkey-text-link:visited,
 a.labkey-text-link-noarrow {
-  color: $lk-link-color;
+  color: $lk-text-link-color;
   padding: .3em 14px 2px 0;
   text-transform: uppercase;
   border: none;
@@ -1352,7 +1331,7 @@ a.labkey-text-link-noarrow {
   &:hover {
     padding: .3em 14px 2px 0;
     border: none;
-    color: #000000;
+    color: $lk-text-link-color-hover;
   }
 }
 
@@ -1573,8 +1552,6 @@ div.labkey-wiki h1
   z-index:1000;
 
   box-shadow: 0 2px 4px rgba(0,0,0,.3);
-  -moz-box-shadow: 0 2px 4px rgba(0,0,0,.3);
-  -webkit-box-shadow: 0 2px 4px rgba(0,0,0,.3);
 }
 
 /* for wikis in custom menus */
@@ -1677,11 +1654,6 @@ a.upload-button
   margin-top: 1px;
 }
 
-.drag-target-table-positioner {
-  border-top: 2px solid green;
-  margin-top: 1px;
-}
-
 /* Added for Div-in-Wiki Feature */
 .bluebox
 {
@@ -1708,9 +1680,7 @@ div.note {
 .tool-icon {
   margin-bottom: 20px;
   text-align: center;
-}
 
-.tool-icon {
   a, a:visited {
     text-transform: uppercase;
     text-decoration: none;
@@ -1755,46 +1725,43 @@ input[type="checkbox"], input[type="radio"] {
 /* Webkit Scrollbar */
 .iScroll ::-webkit-scrollbar
 {
-  width: 7px;
-  height: 9px;
-}
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 9px;
+  }
 
-.iScroll ::-webkit-scrollbar-button:start:decrement,
-.iScroll ::-webkit-scrollbar-button:end:increment
-{
-  display: block;
-  height: 0;
-  background-color: transparent;
-}
+  ::-webkit-scrollbar-button:start:decrement,
+  ::-webkit-scrollbar-button:end:increment {
+    display: block;
+    height: 0;
+    background-color: transparent;
+  }
 
-.iScroll ::-webkit-scrollbar-track-piece
-{
-  -webkit-border-radius: 0 0 4px 4px;
-}
+  ::-webkit-scrollbar-track-piece {
+    border-radius: 0 0 4px 4px;
+  }
 
-.iScroll ::-webkit-scrollbar-thumb
-{
-  background-color: rgba(0, 0, 0, 0.3);
-  -webkit-border-radius: 4px;
-}
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
 
-.iScroll ::-webkit-scrollbar-thumb:vertical
-{
-  height: 50px;
-}
+    &:vertical {
+      height: 50px;
+    }
 
-.iScroll ::-webkit-scrollbar-thumb:horizontal
-{
-  width: 50px;
+    &:horizontal {
+      width: 50px;
+    }
+  }
 }
 
 li.tab-nav-active {
   border:  1px solid transparent;
   background-color: $lk-primary-bg-color;
-}
 
-li.tab-nav-active a {
-  color: #000000;
+  a {
+    color: #000000;
+  }
 }
 
 li.tab-nav-inactive a {
@@ -1805,138 +1772,17 @@ li.tab-nav-inactive:hover a {
   color: #000000;
 }
 
-.labkey-sub-container-tab-strip {
-  clear:both;
-  padding: 5px 0 5px 0;
-  box-shadow: 0 1px 3px 1px rgba(0, 0, 0, .2);
-  -moz-box-shadow: 0 1px 3px 1px rgba(0, 0, 0, .2);
-  -webkit-box-shadow: 0 1px 3px 1px rgba(0, 0, 0, .2);
-}
-
-.labkey-sub-container-tab-strip ul {
-  float: right;
-  margin: 5px 25px 0 0;
-  padding: 0;
-  list-style-type : none;
-}
-
-.labkey-sub-container-tab-strip ul li {
-  display : inline;
-  margin-left: 10px;
-  list-style-type : none;
-  padding: 0 5px 0 5px;
-}
-
-.labkey-sub-container-tab-strip a.selected {
-  color: black;
-}
-
 /* Popup */
 .edit-views-link
 {
   text-align: center;
   height: 18px;
   width: 23px;
-}
 
-.edit-views-link:hover
-{
-  cursor: pointer;
-  color: $lk-link-color;
-}
-
-.labkey-main-menu
-{
-  background-color: $lk-link-color;
-  padding: 1px;
-  position: relative;
-}
-
-.main-menu-replicate
-{
-  padding-left: 0;
-  padding-right: 0;
-  position: absolute;
-  top: 47px;
-  z-index: -1;
-  height: 26px;
-}
-
-a.labkey-main-menu-link,
-a.labkey-main-menu-link:visited
-{
-  color: #FFFFFF;
-}
-
-.labkey-main-menu ul
-{
-  list-style: none;
-  margin: 0 0 0 20px;
-  padding: 5px 0;
-  width: 75%;
-  white-space: nowrap;
-}
-
-.labkey-main-menu-right
-{
-  position: absolute;
-  right: 20px;
-  top: 0;
-}
-
-/* themestylesheet */
-.labkey-main-menu li
-{
-  display: inline;
-  height: 27px;
-  margin: 0 0 0 0;
-  padding: 6px 9px;
-  color: #fff;
-  cursor: pointer;
-  font-size: 95%;
-}
-
-/* themestylesheet */
-.labkey-main-menu li.menu-projects {
-  background: rgba(0, 0, 0, 0.3) url('#{$internal-images-dir}/icon_menu_projects.png') no-repeat top center;
-  padding: 6px 18px 6px 23px;
-  border-left: 1px solid rgba(255,255,255,0.3);
-}
-
-.labkey-main-menu li.menu-folders {
-  background-color: rgba(0,0,0,0.3);
-  margin-right: -5px;
-  padding-right: 12px;
-  padding-left: 6px;
-  border-right: 1px solid rgba(255,255,255,0.3);
-}
-
-.labkey-main-menu li:hover {
-  color: #000;
-}
-
-.labkey-main-menu li.selected
-{
-  background-color: #ffffff;
-  color: #000;
-}
-
-.labkey-main-menu li.menu-projects.selected
-{
-  background: url('#{$internal-images-dir}/icon_menu_projects_over.png') top center no-repeat;
-  border-left: 1px solid transparent;
-}
-
-.labkey-main-menu-item:hover,
-.labkey-main-menu-item.selected
-{
-  background-color: #ffffff;
-}
-
-.labkey-main-menu-item:hover a,
-.labkey-main-menu-item.selected a.labkey-main-menu-link
-{
-  color: #000000;
+  &:hover {
+    cursor: pointer;
+    color: $lk-link-color;
+  }
 }
 
 span.button-icon {
@@ -2073,44 +1919,9 @@ span.button-icon {
   margin-bottom: -5px;
 }
 
-div.headermenu {
-  position: absolute;
-  top: -1px;
-  white-space: nowrap;
-  z-index: 1;
-  color: gray;
-  height: 16px;
-  background-color: $lk-link-color;
-  padding: 6px 13px 6px 6px;
-  font-size: 95%;
-  right: 0;
-
-  a.labkey-menu-text-link,
-  a.labkey-nomenu-text-link {
-    color: white;
-    padding-right: 12px;
-
-    &:hover {
-      opacity: 0.7;
-    }
-
-    img {
-      display: none;
-    }
-  }
-}
-
 .lk-input input.hdr-search-input {
   padding-left: 22px;
   background: #FFFFFF;
-}
-
-.lk-fa-search-icon {
-  position: relative;
-  z-index: 1;
-  left: 12px;
-  color: darkgrey;
-  width: 0;
 }
 
 /* Visualization Library */

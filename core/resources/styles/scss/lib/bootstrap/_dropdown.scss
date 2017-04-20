@@ -1,5 +1,5 @@
 .dropdown-menu > li > a {
-  position: relative;
+  position: relative; /* to contain the submenu */
 
   &:hover {
     cursor: pointer;
@@ -10,8 +10,8 @@
   overflow: hidden;
 
   & > a > i.fa-chevron-right {
-    font-size: 11px;
-    color: lightgray;
+    font-size: $lk-dropdown-submenu-icon-size;
+    color: $lk-dropdown-submenu-icon-color;
     position: absolute;
     top: 8px;
     right: 10px;
@@ -25,26 +25,22 @@
   padding: 0;
   transition: left .1s ease;
   position: relative;
-  left: 100px;
+  left: 100px; /* used for transition, see .open */
 
   & > li > a {
     display: block;
     padding: 3px 20px;
     clear: both;
-    font-weight: normal;
     line-height: 1.42857;
-    color: $gray-dark;
+    color: $lk-dropdown-link-color;
     white-space: nowrap;
+    position: relative; /* to contain the chevron */
 
     &:hover {
       text-decoration: none;
-      color: $white;
-      background-color: $lk-secondary-brand-color;
+      color: $lk-dropdown-link-hover-color;
+      background-color: $lk-dropdown-link-hover-bg;
       cursor: pointer;
-    }
-
-    &.test-up {
-      font-size: 16px;
     }
 
     & > i.fa-chevron-circle-left {

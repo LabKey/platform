@@ -8,7 +8,7 @@ $accordion-header-background-color: $lk-webpart-color;
 //panel
 $panel-header-background-color: $base-color;
 $panel-header-color: #ffffff;
-$panel-body-background-color: #ffffff;
+$panel-body-background-color: $lk-panel-bg-color;
 $panel-border-color: #B4B4B4 !default;
 $panel-header-inner-border: false;
 $panel-header-background-gradient: color-stops($base-color, $base-color);
@@ -21,8 +21,6 @@ $panel-body-border-color: $panel-border-color;
 $panel-background-gradient-start: $panel-header-background-color; ///
 $panel-background-gradient-end: $panel-header-background-color; ///
 
-
-///$base-color: #C0D4ED !default;
 $neutral-color: #eeeeee !default;
 
 
@@ -35,24 +33,10 @@ $toolbar-background-gradient-end: #eeeeee;
 
 $border-layout-ct-background-color: adjust-color($base-color, $hue: 3.188deg, $saturation: 0.542%, $lightness: 7.843%) !default;
 
-// classic cells
-//$grid-row-cell-border-color: #ededed
-//adjust-color($base-color, $hue: 0deg, $saturation: -55.556%, $lightness: -2.549%) !default;
-// special cells
 $grid-row-cell-selected-border-color: adjust-color($base-color, $hue: 6.952deg, $saturation: 5.848%, $lightness: -6.471%) !default;
-//$grid-cell-special-background-color: #f6f6f6 !default;
-//$grid-cell-special-background-gradient: 'grid-cell-special' !default;
-//$grid-cell-special-selected-border-color: bottom($grid-row-cell-border-color) adjust-color($base-color, $hue: -0.175deg, $saturation: 25.296%, $lightness: -2.549%) !default;
-//$grid-cell-special-over-background-color: adjust-color($base-color, $hue: -0.476deg, $saturation: 25.214%, $lightness: 5.686%) !default;
-//$grid-cell-selected-background-color: #B8CFEE !default;
-//$grid-row-cell-over-border-color: adjust-color($neutral-color, $hue: 0deg, $saturation: 0%, $lightness: -6.667%) !default;
-//$grid-row-cell-over-background-color: adjust-color($neutral-color, $hue: 0deg, $saturation: 0%, $lightness: 0.392%) !default;
-//$grid-row-cell-selected-background-color: adjust-color($base-color, $hue: 3.188deg, $saturation: 0.542%, $lightness: 7.843%) !default;
-//$grid-row-cell-focus-border-color: adjust-color($neutral-color, $hue: 0deg, $saturation: 0%, $lightness: -66%) !default;
-//$grid-row-cell-focus-background-color: adjust-color($neutral-color, $hue: 0deg, $saturation: 0%, $lightness: 0.392%) !default;
 
 $button-default-color: $lk-button-color;
-$button-default-color-over: #000;
+$button-default-color-over: $lk-button-color-hover;
 $button-default-color-focus: #000;
 $button-default-color-pressed: #000;
 $button-default-color-disabled: #808080;
@@ -60,15 +44,15 @@ $button-default-color-disabled: #808080;
 $button-small-font-weight: bold;
 $button-small-border-radius: $lk-button-border-radius;
 
-$button-default-base-color: #fff;
-$button-default-base-color-over: #fff;
+$button-default-base-color: $lk-button-bg-color;
+$button-default-base-color-over: $lk-button-bg-color-hover;
 $button-default-base-color-focus: $button-default-base-color-over;
 $button-default-base-color-pressed: #c0c0c0;
 $button-default-base-color-disabled: adjust-color($base-color, $hue: 0deg, $saturation: -55.556%, $lightness: 12.745%) !default;
 
-$button-default-border-color: #b4b4b4;
-$button-default-border-color-over: #676767;
-$button-default-border-color-focus: #676767;
+$button-default-border-color: $lk-button-bg-color-hover;
+$button-default-border-color-over: $lk-button-border-color-hover;
+$button-default-border-color-focus: $lk-button-border-color-hover;
 $button-default-border-color-pressed: #b4b4b4;
 $button-default-border-color-disabled: #DDDDDD;
 
@@ -126,10 +110,6 @@ $menu-item-active-background-gradient-end: #EAEAEA;
 
 
 $btn-group-inner-border-color: adjust-color($base-color, $saturation: -9%, $lightness: 8.5%) !default;
-//$btn-group-framed-background-color: adjust-color($base-color, $hue: 1deg, $saturation: -4%, $lightness: 3.8%) !default;
-//$btn-group-border-color: adjust-color($base-color, $hue: -5deg, $saturation: -27%, $lightness: -6%) !default;
-//$btn-group-header-color: adjust-color($base-color, $hue: 2.6deg, $saturation: -9%, $lightness: -38.5%) !default;
-//$btn-group-header-background-color: adjust-color($base-color, $hue: -2deg, $saturation: 5%, $lightness: 1%) !default;
 
 
 $tip-base-color: #eeeeee;
@@ -140,7 +120,7 @@ $tip-border-color: adjust-color($tip-base-color, $hue: -1.705deg, $saturation: -
 
 $window-background-color: $base-color;
 $window-header-color: #ffffff;
-$window-body-background-color: #ffffff;
+$window-body-background-color: $lk-dialog-body-bg-color;
 $window-base-color: $base-color !default;
 $window-border-color: adjust-color($window-base-color, $hue: 0.952deg, $saturation: -32.377%, $lightness: -13.725%) !default;
 $window-inner-border-color: adjust-color($window-base-color, $hue: 2.667deg, $saturation: 9.662%, $lightness: 11.373%) !default;
@@ -152,5 +132,3 @@ $window-shadow-color: $window-background-color;
 $form-field-focus-border-color: adjust-color($base-color, $hue: -4.322deg, $saturation: -1.065%, $lightness: -16.863%) !default;
 $form-trigger-border-color-focus: $form-field-focus-border-color !default;
 $form-trigger-border-color-over: $form-trigger-border-color-focus !default;
-
-$boundlist-item-over-background-color: #e0e0e0;
