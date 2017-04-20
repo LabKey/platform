@@ -2045,12 +2045,18 @@ div span.labkey-main-menu-icon {
   .labkey-wizard-row
   {
     padding-top: 20px;
+    padding-bottom: 20px;
   }
 
   .labkey-wizard-divider
   {
     border-left: 2px solid #ccc;
     width: 30px;
+  }
+
+  .labkey-wizard-content-body
+  {
+    padding-top: 20px;
   }
 
   .labkey-wizard-pills

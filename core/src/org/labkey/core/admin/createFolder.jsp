@@ -147,7 +147,7 @@
             var panel = Ext4.create('LABKEY.ext4.AdminWizardForm', {
                 renderTo: 'createFormDiv',
                 border: false,
-                style: 'padding-top: 20px;',
+                style: LABKEY.experimental.useExperimentalCoreUI ? '' : 'padding-top: 20px;',
                 defaults: {
                     border: false
                 },
