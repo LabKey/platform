@@ -98,8 +98,19 @@ LABKEY.Utils = new function()
         while (nextRow != null && !nextRow.tagName)
             nextRow = nextRow.nextSibling;
 
-        if (nextRow == null || nextRow.tagName != "TR")
+        if (nextRow == null)
             return null;
+
+        if (LABKEY.experimental.useExperimentalCoreUI)
+        {
+            if (nextRow.tagName != "DIV")
+                return null;
+        }
+        else
+        {
+            if (nextRow.tagName != "TR")
+                return null;
+        }
 
         return nextRow;
     };
@@ -108,8 +119,16 @@ LABKEY.Utils = new function()
     {
         var collapse = false;
         var url = elem.href;
-        while (elem.tagName != 'TR')
-            elem = elem.parentNode;
+        if (LABKEY.experimental.useExperimentalCoreUI)
+        {
+            while (elem.tagName != 'DIV')
+                elem = elem.parentNode;
+        }
+        else
+        {
+            while (elem.tagName != 'TR')
+                elem = elem.parentNode;
+        }
 
         var nextRow = getNextRow(elem);
         if (null != nextRow && nextRow.style.display != "none")

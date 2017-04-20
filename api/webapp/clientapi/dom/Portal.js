@@ -69,7 +69,11 @@
             }
 
             // would be nice to use getElementsByName('webpart') here, but this isn't supported in IE.
-            var tables = document.getElementsByTagName('table');
+            var tables;
+            if (LABKEY.experimental.useExperimentalCoreUI)
+                tables = document.getElementsByClassName('labkey-portal-wp');
+            else
+                tables = document.getElementsByTagName('table');
             var webpartTables = [];
             var targetTable;
             var targetTableIndex;

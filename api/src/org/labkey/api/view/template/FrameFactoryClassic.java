@@ -89,6 +89,16 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
             this.context = context;
             this.config = config;
         }
+
+        protected ViewContext getContext()
+        {
+            return context;
+        }
+
+        protected FrameConfig getConfig()
+        {
+            return config;
+        }
     }
 
 
@@ -205,12 +215,47 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
         }
     }
 
-
-    protected class _FramePortal extends AbstractFrame
+    public class _FramePortal extends AbstractFrame
     {
-        _FramePortal(ViewContext context, FrameConfig config)
+        public _FramePortal(ViewContext context, FrameConfig config)
         {
             super(context, config);
+        }
+
+        public void renderWebpartStart(PrintWriter out)
+        {
+            out.print("<!--FrameType.PORTAL-->");
+            out.println("<table name=\"webpart\"");
+            if (null != config._webpart)
+                out.println(" id=\"webpart_" + config._webpart.getRowId() + "\"");
+            out.println(" class=\"labkey-wp\">");
+        }
+
+        public void renderWebpartHeaderStart(PrintWriter out, String title)
+        {
+            out.println("<tr class=\"labkey-wp-header\">");
+            out.print("<th class=\"labkey-wp-title-left\" title=\"");
+            if (config._showTitle)
+                out.print(PageFlowUtil.filter(title));
+            out.print("\">");
+            out.print("<a name=\"" + PageFlowUtil.filter(title) + "\" class=\"labkey-wp-title-anchor\">");
+
+            if (config._isCollapsible)
+            {
+                renderCollapsiblePortalTitle(out);
+            }
+            else
+            {
+                renderNonCollapsiblePortalTitle(out);
+            }
+
+            out.print("</a>");
+        }
+
+        public void renderWebpartHeaderEnd(PrintWriter out)
+        {
+            out.println("</th>");
+            out.println("</tr>");
         }
 
         @Override
@@ -218,255 +263,267 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
         {
             String title = StringUtils.trimToEmpty(config._title);
 
-            out.print("<!--FrameType.PORTAL-->");
-            out.println("<table name=\"webpart\"");
-            if (null != config._webpart)
-                out.println(" id=\"webpart_" + config._webpart.getRowId() + "\"");
-            out.println(" class=\"labkey-wp\">");
+            renderWebpartStart(out);
 
             // Don't render webpart header if title is null or blank
             if (!StringUtils.isEmpty(title))
             {
-                out.println("<tr class=\"labkey-wp-header\">");
-                out.print("<th class=\"labkey-wp-title-left\" title=\"");
-                if (config._showTitle)
-                    out.print(PageFlowUtil.filter(title));
-                out.print("\">");
-
-                out.print("<a name=\"" + PageFlowUtil.filter(title) + "\" class=\"labkey-wp-title-anchor\">");
-
-                if (config._isCollapsible)
-                {
-                    ActionURL expandCollapseUrl = null;
-                    String expandCollapseGifId = "expandCollapse-" + config._rootId;
-
-                    if (config._rootId == null)
-                        throw new IllegalArgumentException("pathToHere or rootId not provided");
-                    expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getExpandCollapseURL(context.getContainer(), "", config._rootId);
+                renderWebpartHeaderStart(out, title);
 
 
-                    out.printf("<a href=\"%s\" onclick=\"return LABKEY.Utils.toggleLink(this, %s);\" id=\"%s\">",
-                            filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);
-                    String image = config._collapsed ? "plus.gif" : "minus.gif";
-                    out.printf("<img width=9 height=9 style=\"margin-bottom: 0\" src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
-
-                    out.printf(" <a href=\"%s\" onclick=\"return LABKEY.Utils.toggleLink(document.getElementById(%s), %s);\">",
-                            filter(expandCollapseUrl.getLocalURIString()), PageFlowUtil.jsString(expandCollapseGifId), "true");
-                    if (config._showTitle)
-                    {
-                        out.print("<span class=\"labkey-wp-title-text\">");
-                        out.print(PageFlowUtil.filter(title));
-                        out.print("</span>");
-                    }
-                    out.print("</a>");
-                }
-                else
-                {
-                    if (null != config._titleHref)
-                        out.print("<a href=\"" + PageFlowUtil.filter(config._titleHref) + "\">");
-                    if (config._showTitle)
-                    {
-                        out.print("<span class=\"labkey-wp-title-text\">");
-                        out.print(PageFlowUtil.filter(title));
-                        out.print("</span>");
-                    }
-                    if (null !=  config._titleHref)
-                        out.print("</a>");
-                }
-
-                out.print("</a>");
 
                 if (config._helpPopup != null)
                 {
                     out.print(config._helpPopup);
                 }
 
-                NavTree[] links = null==config._portalLinks ? new NavTree[0] : config._portalLinks.getChildren();
-                String sep = "";
+                renderPortalMenu(out, title);
 
-                // Add Custom link
-                NavTree nMenu = config._navMenu;
-                if (nMenu == null)
-                    nMenu = new NavTree("More");  // // 11730 : Customize link missing on many webparts
-
-                if (config._customize != null)
-                {
-                    config._customize.setText("Customize");
-                    nMenu.addChild(config._customize);
-                }
-
-                if (config._webpart != null && context.getUser().isSiteAdmin())
-                {
-                    Portal.WebPart webPart = config._webpart;
-                    String permissionString = null;
-                    String containerPathString = null;
-
-                    if (webPart.getPermission() != null)
-                        permissionString = "'" + webPart.getPermission() + "'";
-
-                    if (webPart.getPermissionContainer() != null)
-                        containerPathString = PageFlowUtil.qh(webPart.getPermissionContainer().getPath());
-
-                    // Wrapped in immediately invoke function expression because of Issue 16953
-                    NavTree permissionsNav = new NavTree("Permissions",
-                            "javascript:LABKEY.Portal._showPermissions(" +
-                                    config._webpart.getRowId() + "," +
-                                    permissionString + "," +
-                                    containerPathString + ");"
-                    );
-
-                    permissionsNav.setId("permissions_" + webPart.getRowId());
-                    nMenu.addChild(permissionsNav);
-                }
-
-                if (config._location != null && config._location.equals(WebPartFactory.LOCATION_RIGHT))
-                {
-
-                    // Collapse all items into one drop-down
-                    // Render the navigation menu
-                    if (nMenu == null)
-                        nMenu = new NavTree("More");
-
-                    // Portal
-                    if (links.length > 0)
-                    {
-//                            NavTree portal = new NavTree("Layout");
-                        for (NavTree link : links)
-                            nMenu.addChild(link);
-//                            nMenu.addChild(portal);
-                    }
-
-                    if (nMenu.hasChildren())
-                    {
-                        out.print("&nbsp;");
-                        renderMenuWithFontImage(title, nMenu, out, "fa fa-caret-down");
-                    }
-                    out.print("</th>\n<th class=\"labkey-wp-title-right\">");
-                }
-                else if (!config._isWebpart)
-                {
-                    out.print("</th>\n<th class=\"labkey-wp-title-right\">");
-                    // Purposely don't render custom links to avoid duplicates
-
-                    // Render Navigation Links
-                    if (nMenu.hasChildren())
-                    {
-                        out.print("<div class=\"labkey-wp-text-buttons\">");
-                        for (NavTree link : nMenu.getChildren())
-                        {
-                            if (link.hasChildren())
-                            {
-                                renderMenu(link, out);
-                            }
-                            out.print(sep);
-                            String linkHref = link.getHref();
-                            String linkText = link.getText();
-
-                            if (null != linkHref && 0 < linkHref.length())
-                            {
-                                out.print("<a href=\"" + linkHref + "\"");
-                                if (link.isNoFollow())
-                                    out.print(" rel=\"nofollow\"");
-                                out.print(">" + linkText + "</a>");
-                            }
-                            else if (link.getScript() != null)
-                            {
-                                out.print("<a onClick=" + PageFlowUtil.jsString(link.getScript()) + ">" + linkText + "</a>");
-                            }
-                        }
-                        out.print("</div>");
-                    }
-                }
-                else
-                {
-                    // show the move up move down and delete web part menu options
-                    if (links.length > 0)
-                    {
-                        for (NavTree link : links)
-                            nMenu.addChild(link);
-                    }
-
-                    out.print("&nbsp;");
-
-                    if (nMenu != null && nMenu.hasChildren())
-                    {
-                        renderMenuWithFontImage(title, nMenu, out, "fa fa-caret-down");
-                    }
-
-                    // Render specific parts first (e.g. wiki edit)
-                    if (config._customMenus != null)
-                    {
-                        Iterator itr = config._customMenus.iterator();
-                        NavTree current;
-                        while (itr.hasNext())
-                        {
-                            current = (NavTree) itr.next();
-                            out.print(sep);
-                            if (current.hasChildren())
-                            {
-                                renderMenu(title, current, out, current.getImageSrc());
-                            }
-                            else
-                            {
-                                String linkHref = current.getHref();
-                                String linkText = current.getText();
-                                String script = current.getScript();
-
-                                if (StringUtils.isEmpty(linkHref) && StringUtils.isEmpty(script))
-                                {
-                                    out.print("<span class=\"labkey-wp-icon-button-inactive\">");
-                                }
-                                else
-                                {
-                                    out.print("<span class=\"labkey-wp-icon-button-active\">");
-
-                                    if (StringUtils.isEmpty(linkHref))
-                                        linkHref = "javascript:void(0);";
-
-                                    out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\"");
-                                    if (current.isNoFollow())
-                                        out.print(" rel=\"nofollow\"");
-                                    if (StringUtils.isNotEmpty(script))
-                                        out.print(" onclick=\"" + PageFlowUtil.filter(script) + "\"");
-                                    out.print(">");
-                                }
-
-                                if (null != current.getImageCls())
-                                {
-                                    out.print("<span class=\"" + current.getImageCls() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\"></span>");
-                                }
-                                else if (null != current.getImageSrc())
-                                {
-                                    if (current.getImageWidth() != null && current.getImageHeight() != null)
-                                        out.print("<img height=" + current.getImageHeight() + " width=" + current.getImageWidth() + " src=\"" + current.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
-                                    else
-                                        out.print("<img src=\"" + current.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
-                                }
-                                else
-                                {
-                                    out.print(PageFlowUtil.filter(linkText));
-                                }
-
-                                if (StringUtils.isNotEmpty(linkHref) || StringUtils.isNotEmpty(script))
-                                    out.print("</a>");
-                                out.print("</span>");
-                            }
-                        }
-                    }
-
-                    out.print("</th>\n<th class=\"labkey-wp-title-right\">");
-
-                }
-
-                out.println("</th>");
-                out.println("</tr>");
+                renderWebpartHeaderEnd(out);
             }
+            renderPortalBody(out);
+        }
+
+        public void renderCollapsiblePortalTitle(PrintWriter out)
+        {
+            ActionURL expandCollapseUrl = null;
+            String expandCollapseGifId = "expandCollapse-" + config._rootId;
+
+            if (config._rootId == null)
+                throw new IllegalArgumentException("pathToHere or rootId not provided");
+            expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getExpandCollapseURL(context.getContainer(), "", config._rootId);
+
+
+            out.printf("<a href=\"%s\" onclick=\"return LABKEY.Utils.toggleLink(this, %s);\" id=\"%s\">",
+                    filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);
+            String image = config._collapsed ? "plus.gif" : "minus.gif";
+            out.printf("<img width=9 height=9 style=\"margin-bottom: 0\" src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
+
+            out.printf(" <a href=\"%s\" onclick=\"return LABKEY.Utils.toggleLink(document.getElementById(%s), %s);\">",
+                    filter(expandCollapseUrl.getLocalURIString()), PageFlowUtil.jsString(expandCollapseGifId), "true");
+            if (config._showTitle)
+            {
+                out.print("<span class=\"labkey-wp-title-text\">");
+                out.print(PageFlowUtil.filter(StringUtils.trimToEmpty(config._title)));
+                out.print("</span>");
+            }
+            out.print("</a>");
+
+        }
+
+        public void renderNonCollapsiblePortalTitle(PrintWriter out)
+        {
+            if (null != config._titleHref)
+                out.print("<a href=\"" + PageFlowUtil.filter(config._titleHref) + "\">");
+            if (config._showTitle)
+            {
+                out.print("<span class=\"labkey-wp-title-text\">");
+                out.print(PageFlowUtil.filter(StringUtils.trimToEmpty(config._title)));
+                out.print("</span>");
+            }
+            if (null !=  config._titleHref)
+                out.print("</a>");
+
+        }
+
+        public void renderPortalBody(PrintWriter out)
+        {
             out.print("<tr id=\"WebPartView" + System.identityHashCode(this) + "\" ");
             if (config._collapsed && config._isCollapsible)
                 out.print("style=\"display: none\"");
             out.println(">");
 
             out.print("<td colspan=2 class=\"" + (null==config._className?"":config._className) + " labkey-wp-body\">");
+
+        }
+
+        public void renderPortalMenuIcon(String title, NavTree menu, PrintWriter out, String imageCls)
+        {
+            renderMenuWithFontImage(title, menu, out, imageCls);
+        }
+
+        public void renderPortalMenu(PrintWriter out, String title)
+        {
+            NavTree[] links = null==config._portalLinks ? new NavTree[0] : config._portalLinks.getChildren();
+            String sep = "";
+
+            // Add Custom link
+            NavTree nMenu = config._navMenu;
+            if (nMenu == null)
+                nMenu = new NavTree("More");  // // 11730 : Customize link missing on many webparts
+
+            if (config._customize != null)
+            {
+                config._customize.setText("Customize");
+                nMenu.addChild(config._customize);
+            }
+
+            if (config._webpart != null && context.getUser().isSiteAdmin())
+            {
+                Portal.WebPart webPart = config._webpart;
+                String permissionString = null;
+                String containerPathString = null;
+
+                if (webPart.getPermission() != null)
+                    permissionString = "'" + webPart.getPermission() + "'";
+
+                if (webPart.getPermissionContainer() != null)
+                    containerPathString = PageFlowUtil.qh(webPart.getPermissionContainer().getPath());
+
+                // Wrapped in immediately invoke function expression because of Issue 16953
+                NavTree permissionsNav = new NavTree("Permissions",
+                        "javascript:LABKEY.Portal._showPermissions(" +
+                                config._webpart.getRowId() + "," +
+                                permissionString + "," +
+                                containerPathString + ");"
+                );
+
+                permissionsNav.setId("permissions_" + webPart.getRowId());
+                nMenu.addChild(permissionsNav);
+            }
+
+            if (config._location != null && config._location.equals(WebPartFactory.LOCATION_RIGHT))
+            {
+
+                // Collapse all items into one drop-down
+                // Render the navigation menu
+                if (nMenu == null)
+                    nMenu = new NavTree("More");
+
+                // Portal
+                if (links.length > 0)
+                {
+//                            NavTree portal = new NavTree("Layout");
+                    for (NavTree link : links)
+                        nMenu.addChild(link);
+//                            nMenu.addChild(portal);
+                }
+
+                if (nMenu.hasChildren())
+                {
+                    out.print("&nbsp;");
+                    renderPortalMenuIcon(title, nMenu, out, "fa fa-caret-down");
+                }
+                renderPortalTitleRight(out);
+            }
+            else if (!config._isWebpart)
+            {
+                renderPortalTitleRight(out);
+                // Purposely don't render custom links to avoid duplicates
+
+                // Render Navigation Links
+                if (nMenu.hasChildren())
+                {
+                    out.print("<div class=\"labkey-wp-text-buttons\">");
+                    for (NavTree link : nMenu.getChildren())
+                    {
+                        if (link.hasChildren())
+                        {
+                            renderMenu(link, out);
+                        }
+                        out.print(sep);
+                        String linkHref = link.getHref();
+                        String linkText = link.getText();
+
+                        if (null != linkHref && 0 < linkHref.length())
+                        {
+                            out.print("<a href=\"" + linkHref + "\"");
+                            if (link.isNoFollow())
+                                out.print(" rel=\"nofollow\"");
+                            out.print(">" + linkText + "</a>");
+                        }
+                        else if (link.getScript() != null)
+                        {
+                            out.print("<a onClick=" + PageFlowUtil.jsString(link.getScript()) + ">" + linkText + "</a>");
+                        }
+                    }
+                    out.print("</div>");
+                }
+            }
+            else
+            {
+                // show the move up move down and delete web part menu options
+                if (links.length > 0)
+                {
+                    for (NavTree link : links)
+                        nMenu.addChild(link);
+                }
+
+                out.print("&nbsp;");
+
+                if (nMenu != null && nMenu.hasChildren())
+                {
+                    renderPortalMenuIcon(title, nMenu, out, "fa fa-caret-down");
+                }
+
+                // Render specific parts first (e.g. wiki edit)
+                if (config._customMenus != null)
+                {
+                    Iterator itr = config._customMenus.iterator();
+                    NavTree current;
+                    while (itr.hasNext())
+                    {
+                        current = (NavTree) itr.next();
+                        out.print(sep);
+                        if (current.hasChildren())
+                        {
+                            renderMenu(title, current, out, current.getImageSrc());
+                        }
+                        else
+                        {
+                            String linkHref = current.getHref();
+                            String linkText = current.getText();
+                            String script = current.getScript();
+
+                            if (StringUtils.isEmpty(linkHref) && StringUtils.isEmpty(script))
+                            {
+                                out.print("<span class=\"labkey-wp-icon-button-inactive\">");
+                            }
+                            else
+                            {
+                                out.print("<span class=\"labkey-wp-icon-button-active\">");
+
+                                if (StringUtils.isEmpty(linkHref))
+                                    linkHref = "javascript:void(0);";
+
+                                out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\"");
+                                if (current.isNoFollow())
+                                    out.print(" rel=\"nofollow\"");
+                                if (StringUtils.isNotEmpty(script))
+                                    out.print(" onclick=\"" + PageFlowUtil.filter(script) + "\"");
+                                out.print(">");
+                            }
+
+                            if (null != current.getImageCls())
+                            {
+                                out.print("<span class=\"" + current.getImageCls() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\"></span>");
+                            }
+                            else if (null != current.getImageSrc())
+                            {
+                                if (current.getImageWidth() != null && current.getImageHeight() != null)
+                                    out.print("<img height=" + current.getImageHeight() + " width=" + current.getImageWidth() + " src=\"" + current.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
+                                else
+                                    out.print("<img src=\"" + current.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
+                            }
+                            else
+                            {
+                                out.print(PageFlowUtil.filter(linkText));
+                            }
+
+                            if (StringUtils.isNotEmpty(linkHref) || StringUtils.isNotEmpty(script))
+                                out.print("</a>");
+                            out.print("</span>");
+                        }
+                    }
+                }
+
+                renderPortalTitleRight(out);
+            }
+        }
+
+        public void renderPortalTitleRight(PrintWriter out)
+        {
+            out.print("</th>\n<th class=\"labkey-wp-title-right\">");
         }
 
 
@@ -578,7 +635,12 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
         }
     }
 
-    private void renderMenuWithFontImage(String title, NavTree menu, PrintWriter out, String imageCls)
+    protected void renderMenuWithFontImage(String title, NavTree menu, PrintWriter out, String imageCls)
+    {
+        renderMenuWithFontImage(title, menu, out, imageCls, false);
+    }
+
+    protected void renderMenuWithFontImage(String title, NavTree menu, PrintWriter out, String imageCls, boolean rightAlign)
     {
         try
         {
@@ -586,7 +648,12 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
             PopupMenu more = new PopupMenu(menu, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.IMAGE);
             menu.setImageCls(imageCls);
             more.setImageId("more-" + PageFlowUtil.filter(title.toLowerCase()));
-            out.print("<span class=\"labkey-wp-icon-button-active\">");
+
+            out.print("<span class=\"labkey-wp-icon-button-active");
+            if (rightAlign)
+                out.print(" pull-right");
+            out.print("\">");
+
             more.render(out);
             out.print("</span>");
         }
