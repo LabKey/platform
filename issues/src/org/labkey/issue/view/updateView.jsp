@@ -183,7 +183,7 @@
     })(jQuery);
 </script>
 
-<labkey:form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data" action="<%=IssuesController.issueURL(c, bean.getAction())%>">
+<labkey:form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data">
 
     <table><%
         if (null != errors && 0 != errors.getErrorCount())

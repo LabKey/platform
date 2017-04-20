@@ -25,6 +25,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.issue.IssuesController;
+import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 
 import java.util.Map;
@@ -52,9 +53,23 @@ public class IssuesWebPartFactory extends BaseWebPartFactory
         if (issueDefName != null)
             view = new IssuesListView(issueDefName);
         else
+        {
             view = new HtmlView(IssuesController.getUndefinedIssueListMessage(context, issueDefName));
+            String title = IssueManager.getEntryTypeNames(context.getContainer(), IssueListDef.DEFAULT_ISSUE_LIST_NAME).pluralName + " List";
+            view.setTitle(title);
+        }
 
-        view.setTitle("Issues List : " + StringUtils.trimToEmpty(issueDefName));
+        //set specified web part title
+        Object title = properties.get("title");
+        if (title == null)
+        {
+            if (issueDefName != null)
+                title = IssueManager.getEntryTypeNames(context.getContainer(), issueDefName).pluralName + " List : " + issueDefName;
+            else
+                title = "Issues List";
+        }
+
+        view.setTitle(title.toString());
         view.setFrame(WebPartView.FrameType.PORTAL);
 
         return view;

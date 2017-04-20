@@ -41,6 +41,13 @@
     String selected = pm.get(IssuesListView.ISSUE_LIST_DEF_NAME);
     String title = pm.get("title");
     String singularName = IssueManager.getEntryTypeNames(getContainer(), selected != null ? selected : IssueListDef.DEFAULT_ISSUE_LIST_NAME).singularName;
+    String titleLabel = "Optional title for the Issues List web part.";
+    String defaultTitle = h(singularName) + " List";
+    if (webPart.getName().equalsIgnoreCase(IssuesSummaryWebPartFactory.NAME))
+    {
+        titleLabel = "Optional title for the Issues Summary web part.";
+        defaultTitle = h(singularName) + " Summary";
+    }
 %>
 
 <labkey:form method="post" action="<%=h(webPart.getCustomizePostURL(context))%>">
@@ -52,17 +59,13 @@
                     <labkey:options value="<%=selected%>" set="<%=issueDefs%>"/>
                 </select>
             </td>
-        </tr><%
-        if (webPart.getName().equalsIgnoreCase(IssuesSummaryWebPartFactory.NAME))
-        {
-        %>
+        </tr>
         <tr>
-            <td class="labkey-form-label">Enter title for the Issues Summary web part.</td>
+            <td class="labkey-form-label"><%=h(titleLabel)%>&nbsp<%=helpPopup("Enter the web part title. If omitted. a default title will be generated from the plural items name.")%></td>
             <td>
-                <input name="title" size="25" type="text" value="<%=text(null == title ? h(singularName) + " Summary" : h(title) )%>">
+                <input name="title" size="25" type="text" value="<%=text(null == title ? null : h(title) )%>">
             </td>
-        </tr><%
-        }%>
+        </tr>
     </table><p/>
     <labkey:button text="Submit"/>
 </labkey:form>
