@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.util.PageFlowUtil;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
@@ -87,9 +88,12 @@ public class VBox extends WebPartView
         {
             if (null == view)
                 continue;
-            out.println(sep);
-            if (_includeBreak)
-                sep = "<br/>";
+            if (!PageFlowUtil.useExperimentalCoreUI())
+            {
+                out.println(sep);
+                if (_includeBreak)
+                    sep = "<br/>";
+            }
             include(view);
         }
     }
