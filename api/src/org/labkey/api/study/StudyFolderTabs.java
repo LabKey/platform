@@ -159,8 +159,15 @@ public class StudyFolderTabs
         public List<Portal.WebPart> createWebParts()
         {
             List<Portal.WebPart> parts = new ArrayList<>();
-            parts.add(Portal.getPortalPart("Search").createWebPart());
-            parts.add(Portal.getPortalPart("Subject List").createWebPart());
+
+            WebPartFactory factory = Portal.getPortalPart("Search");
+            if (factory != null)
+                parts.add(factory.createWebPart());
+
+            factory = Portal.getPortalPart("Subject List");
+            if (factory != null)
+                parts.add(factory.createWebPart());
+            
             return parts;
         }
 
