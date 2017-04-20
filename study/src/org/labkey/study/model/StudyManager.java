@@ -4130,6 +4130,12 @@ public class StudyManager
                 return false;
             }
 
+            if (info.demographicData && (info.keyPropertyName != null))
+            {
+                errors.reject("importDatasetSchemas", "Dataset '" + name + "' has key field set to " + info.keyPropertyName + ". This a demographic dataset therefore cannot have an extra key property.");
+                return false;
+            }
+
             DatasetDefinition def = manager.getDatasetDefinition(study, id);
 
             if (def == null)
