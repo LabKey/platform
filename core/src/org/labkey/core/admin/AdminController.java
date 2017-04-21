@@ -3562,6 +3562,9 @@ public class AdminController extends SpringActionController
                 // now that they've set up their account and defaults, and then every 24 hours after.
                 ModuleLoader.getInstance().setDeferUsageReport(false);
                 AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
+
+                ContextListener.afterNewInstallComplete(getUser());
+
                 return true;
             }
             return false;
