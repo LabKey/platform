@@ -151,9 +151,9 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
 
 
 
-    protected class _FrameTitle extends AbstractFrame
+    public class _FrameTitle extends AbstractFrame
     {
-        _FrameTitle(ViewContext context, FrameConfig config)
+        public _FrameTitle(ViewContext context, FrameConfig config)
         {
             super(context, config);
         }
@@ -177,9 +177,9 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
     }
 
 
-    protected class _FrameDialog extends AbstractFrame
+    public class _FrameDialog extends AbstractFrame
     {
-        _FrameDialog(ViewContext context, FrameConfig config)
+        public _FrameDialog(ViewContext context, FrameConfig config)
         {
             super(context, config);
         }
@@ -477,11 +477,15 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
 
                             if (StringUtils.isEmpty(linkHref) && StringUtils.isEmpty(script))
                             {
-                                out.print("<span class=\"labkey-wp-icon-button-inactive\">");
+                                out.print("<span class=\"");
+                                out.print(getWebpartIconBtnInactiveCls());
+                                out.print("\">");
                             }
                             else
                             {
-                                out.print("<span class=\"labkey-wp-icon-button-active\">");
+                                out.print("<span class=\"");
+                                out.print(getWebpartIconBtnActiveCls());
+                                out.print("\">");
 
                                 if (StringUtils.isEmpty(linkHref))
                                     linkHref = "javascript:void(0);";
@@ -625,7 +629,9 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
             PopupMenu more = new PopupMenu(menu, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.IMAGE);
             menu.setImage(imageSrc, 24, 24);
             more.setImageId("more-" + PageFlowUtil.filter(title.toLowerCase()));
-            out.print("<span class=\"labkey-wp-icon-button-active\">");
+            out.print("<span class=\"");
+            out.print(getWebpartIconBtnActiveCls());
+            out.print("\">");
             more.render(out);
             out.print("</span>");
         }
@@ -640,6 +646,16 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
         renderMenuWithFontImage(title, menu, out, imageCls, false);
     }
 
+    protected String getWebpartIconBtnActiveCls()
+    {
+        return "labkey-wp-icon-button-active";
+    }
+
+    protected String getWebpartIconBtnInactiveCls()
+    {
+        return "labkey-wp-icon-button-inactive";
+    }
+
     protected void renderMenuWithFontImage(String title, NavTree menu, PrintWriter out, String imageCls, boolean rightAlign)
     {
         try
@@ -649,7 +665,8 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
             menu.setImageCls(imageCls);
             more.setImageId("more-" + PageFlowUtil.filter(title.toLowerCase()));
 
-            out.print("<span class=\"labkey-wp-icon-button-active");
+            out.print("<span class=\"");
+            out.print(getWebpartIconBtnActiveCls());
             if (rightAlign)
                 out.print(" pull-right");
             out.print("\">");
