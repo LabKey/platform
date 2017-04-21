@@ -27,7 +27,7 @@ public interface ScriptReference
     /**
      * The context in which the script will run when {@link #eval()} or {@link #invoke()} is called.
      */
-    public ScriptContext getContext();
+    ScriptContext getContext();
 
     /**
      * The eval family of methods will run the compiled script in the execution context.  Passing in
@@ -35,13 +35,13 @@ public interface ScriptReference
      * @return
      * @throws ScriptException
      */
-    public Object eval() throws ScriptException;
-    public Object eval(Map<String, ?> bindings) throws ScriptException;
-    public <T> T eval(Class<T> resultType) throws ScriptException;
-    public <T> T eval(Class<T> resultType, Map<String, ?> bindings) throws ScriptException;
+    Object eval() throws ScriptException;
+    Object eval(Map<String, ?> bindings) throws ScriptException;
+    <T> T eval(Class<T> resultType) throws ScriptException;
+    <T> T eval(Class<T> resultType, Map<String, ?> bindings) throws ScriptException;
 
     /** True if the script has been evaluated sucessfully. */
-    public boolean evaluated();
+    boolean evaluated();
 
     /**
      * Checks if a JavaScript function is in scope after {@link eval()}uating the compiled script.
@@ -50,7 +50,7 @@ public interface ScriptReference
      * @return
      * @throws ScriptException
      */
-    public boolean hasFn(String name) throws ScriptException;
+    boolean hasFn(String name) throws ScriptException;
 
     /**
      * Checks if a JavaScript function is in scope after {@link eval()}uating the compiled script.
@@ -59,7 +59,7 @@ public interface ScriptReference
      * @return
      * @throws ScriptException
      */
-    public boolean hasFn(Object thiz, String name) throws ScriptException;
+    boolean hasFn(Object thiz, String name) throws ScriptException;
 
     /**
      * Calls a JavaScript function after {@link eval()}uating the compiled script.  These are loose
@@ -70,8 +70,8 @@ public interface ScriptReference
      * @throws ScriptException
      * @throws NoSuchMethodException
      */
-    public Object invokeFn(String name, Object... args) throws ScriptException, NoSuchMethodException;
-    public <T> T invokeFn(Class<T> resultType, String name, Object... args) throws ScriptException, NoSuchMethodException;
+    Object invokeFn(String name, Object... args) throws ScriptException, NoSuchMethodException;
+    <T> T invokeFn(Class<T> resultType, String name, Object... args) throws ScriptException, NoSuchMethodException;
 
     /**
      * Calls a JavaScript function after {@link eval()}uating the compiled script.  These are loose
@@ -83,6 +83,6 @@ public interface ScriptReference
      * @throws ScriptException
      * @throws NoSuchMethodException
      */
-    public Object invokeFn(Object thiz, String name, Object... args) throws ScriptException, NoSuchMethodException;
-    public <T> T invokeFn(Class<T> resultType, Object thiz, String name, Object... args) throws ScriptException, NoSuchMethodException;
+    Object invokeFn(Object thiz, String name, Object... args) throws ScriptException, NoSuchMethodException;
+    <T> T invokeFn(Class<T> resultType, Object thiz, String name, Object... args) throws ScriptException, NoSuchMethodException;
 }

@@ -27,7 +27,6 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.script.ScriptService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.springframework.beans.MutablePropertyValues;
 
@@ -54,7 +53,8 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
     private static final String ENGINE_DEF_MAP_PREFIX = "ScriptEngineDefinition_";
     private static final String REMOTE_ENGINE_DEF_MAP_PREFIX = ENGINE_DEF_MAP_PREFIX + "remote_";
 
-    enum Props {
+    enum Props
+    {
         key,
         name,
         extensions,
@@ -80,7 +80,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         super();
 
         // replace the JDK bundled ScriptEngineFactory with the full, non-JDK version.
-        rhino = ServiceRegistry.get().getService(ScriptService.class);
+        rhino = ScriptService.get();
         assert rhino != null : "RhinoScriptEngineFactory not found";
         if (rhino != null)
         {
@@ -168,7 +168,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
     }
 
     //
-    // We allow both a local and a remote R engine to be registered.  Important:  this function assumes that remote
+    // We allow both a local and a remote R engine to be registered. Important: this function assumes that remote
     // engines are only returned from getEngineDefinitions() if the Rserve feature has been enabled.
     //
     // If a single engine is registered, return it.
@@ -620,7 +620,5 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
             if (jsonPathMap != null)
                 _pathMap = PathMapperImpl.fromJSON(jsonPathMap, true /*trackValidationErrors*/);
         }
-
     }
-
 }

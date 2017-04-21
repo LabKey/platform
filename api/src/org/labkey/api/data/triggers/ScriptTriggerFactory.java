@@ -15,14 +15,11 @@
  */
 package org.labkey.api.data.triggers;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleResourceResolver;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.script.ScriptReference;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.util.FileUtil;
@@ -106,7 +103,7 @@ public class ScriptTriggerFactory implements TriggerFactory
 
     protected Collection<Trigger> checkPaths(Container c, TableInfo table, @NotNull ScriptService svc, Set<Path> paths) throws ScriptException
     {
-        Collection<Trigger> scripts2 = new ArrayList<>();
+        Collection<Trigger> scripts = new ArrayList<>();
 
         for (Module m : c.getActiveModules())
         {
@@ -114,35 +111,9 @@ public class ScriptTriggerFactory implements TriggerFactory
             {
                 ScriptReference script = svc.compile(m, p);
                 if (script != null)
-                    scripts2.add(new ScriptTrigger(c, table, script));
+                    scripts.add(new ScriptTrigger(c, table, script));
             }
         }
-
-        Collection<Resource> rs = new ArrayList<>(10);
-        for (Module m : c.getActiveModules())
-        {
-            for (Path p : paths)
-            {
-                Resource r = m.getModuleResource(p);
-                if (r != null && r.isFile())
-                    rs.add(r);
-            }
-        }
-        if (rs.isEmpty())
-            return Collections.emptyList();
-
-        Collection<Trigger> scripts = new ArrayList<>();
-        for (Resource r : rs)
-        {
-            ScriptReference script = svc.compile(((ModuleResourceResolver)r.getResolver()).getModule(), r.getPath());
-            if (script != null)
-                scripts.add(new ScriptTrigger(c, table, script));
-        }
-
-        if (scripts.size() == scripts2.size())
-            Logger.getLogger(ScriptTriggerFactory.class).info("Script trigger lists matched");
-        else
-            Logger.getLogger(ScriptTriggerFactory.class).error("Script trigger list differed:\n" + scripts + "\n" + scripts2);
 
         return scripts;
     }

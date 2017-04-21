@@ -24,6 +24,8 @@ import javax.script.ScriptException;
 
 public interface ScriptService extends ScriptEngineFactory
 {
+    String SCRIPTS_DIR = "scripts";
+
     static ScriptService get()
     {
         return ServiceRegistry.get().getService(ScriptService.class);
