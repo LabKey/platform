@@ -618,7 +618,7 @@ public class SurveyManager
         }
 
         @Override
-        public MultiValuedMap<String, SurveyDesign> load(Stream<Resource> roots)
+        public MultiValuedMap<String, SurveyDesign> load(Stream<Resource> roots, Module module)
         {
             MultiValuedMap<String, SurveyDesign> mmap = new ArrayListValuedHashMap<>();
 

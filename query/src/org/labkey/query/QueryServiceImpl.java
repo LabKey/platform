@@ -17,6 +17,9 @@
 package org.labkey.query;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.collections4.multimap.UnmodifiableMultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
@@ -39,9 +42,12 @@ import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.QueryBasedModuleResourceCache;
 import org.labkey.api.module.QueryBasedModuleResourceCacheHandler;
+import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
@@ -130,6 +136,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 public class QueryServiceImpl implements QueryService
@@ -139,6 +146,7 @@ public class QueryServiceImpl implements QueryService
     private static final QueryBasedModuleResourceCache<ModuleQueryDef> MODULE_QUERY_DEFS_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path(MODULE_QUERIES_DIRECTORY), "Module query definitions cache", new QueryDefResourceCacheHandler());
     private static final QueryBasedModuleResourceCache<ModuleQueryMetadataDef> MODULE_QUERY_METADATA_DEF_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path(MODULE_QUERIES_DIRECTORY), "Module query meta data cache", new QueryMetaDataDefResourceCacheHandler());
     private static final QueryBasedModuleResourceCache<ModuleCustomViewDef> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path(MODULE_QUERIES_DIRECTORY), "Module custom view definitions cache", new CustomViewResourceCacheHandler());
+    private static final ModuleResourceCache<MultiValuedMap<Path, ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE2 = ModuleResourceCaches.create(new Path(MODULE_QUERIES_DIRECTORY), new CustomViewResourceCacheHandler2(), "Module custom view definitions cache", Arrays.asList(ResourceRootProvider.QUERY2, ResourceRootProvider.chain(ResourceRootProvider.ASSAY, ResourceRootProvider.QUERY2)));
 
     private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
     private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
@@ -227,9 +235,9 @@ public class QueryServiceImpl implements QueryService
         public List<String> getColumnNames()
         {
             return getFieldKeys().stream()
-                    .filter(f -> null==f.getParent())
-                    .map(f -> f.getName())
-                    .collect(Collectors.toList());
+                .filter(f -> null==f.getParent())
+                .map(f -> f.getName())
+                .collect(Collectors.toList());
         }
 
         @Override
@@ -239,7 +247,7 @@ public class QueryServiceImpl implements QueryService
                 return Collections.emptyList();
             Set<FieldKey> set = new HashSet<>();
             collectKeys(expr, set);
-            return set.stream().collect(Collectors.toList());
+            return new ArrayList<>(set);
         }
 
         private void collectKeys(QExpr expr, Set<FieldKey> set)
@@ -593,7 +601,7 @@ public class QueryServiceImpl implements QueryService
         return ret.get(name);
     }
 
-    private Map<String, CustomView> getCustomViewMap(@NotNull User user, @NotNull Container container, @Nullable User owner, String schema, String query,
+    private @NotNull Map<String, CustomView> getCustomViewMap(@NotNull User user, @NotNull Container container, @Nullable User owner, String schema, String query,
             boolean includeInherited, boolean sharedOnly, boolean alwaysUseTitlesForLoadingCustomViews)
     {
         // Check for a custom query that matches
@@ -656,6 +664,7 @@ public class QueryServiceImpl implements QueryService
      * a very small number of custom views. Probably the most effective optimization would be to make tableinfos immutable and then begin to cache them
      * but that is a much larger chunk of work.
      */
+    @NotNull
     private Collection<CustomView> getCustomViewsForContainer(@NotNull User user, Container container, @Nullable User owner, boolean inheritable, boolean sharedOnly, boolean alwaysUseTitlesForLoadingCustomViews)
     {
         if (AppProps.getInstance().isExperimentalFeatureEnabled(CustomView.EXPERIMENTAL_DISABLE_TITLE_LOADED_CUSTOM_VIEWS))
@@ -861,7 +870,7 @@ public class QueryServiceImpl implements QueryService
             views = getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly, alwaysUseTitlesForLoadingCustomViews).values();
         }
 
-        if (views == null || views.isEmpty())
+        if (views.isEmpty())
             return Collections.emptyList();
 
         return new ArrayList<>(views);
@@ -973,6 +982,60 @@ public class QueryServiceImpl implements QueryService
                 }
             };
         }
+    }
+
+    private static class CustomViewResourceCacheHandler2 implements ModuleResourceCacheHandler<MultiValuedMap<Path, ModuleCustomViewDef>>
+    {
+        @Override
+        public MultiValuedMap<Path, ModuleCustomViewDef> load(@Nullable Resource dir, Module module)
+        {
+            throw new IllegalStateException("Should not be here");
+        }
+
+        @Override
+        public MultiValuedMap<Path, ModuleCustomViewDef> load(Stream<Resource> roots, Module module)
+        {
+            MultiValuedMap<Path, ModuleCustomViewDef> mmap = new ArrayListValuedHashMap<>();
+
+            roots
+                .map(root -> getModuleResources(root, CustomViewXmlReader.XML_FILE_EXTENSION))
+                .flatMap(Collection::stream)
+                .map(ModuleCustomViewDef::new)
+                .forEach(def -> mmap.put(def.getPath().getParent(), def));
+
+            return UnmodifiableMultiValuedMap.unmodifiableMultiValuedMap(mmap);
+        }
+//
+//        @Override
+//        public boolean isResourceFile(String filename)
+//        {
+//            return filename.endsWith(CustomViewXmlReader.XML_FILE_EXTENSION);
+//        }
+//
+//        @Override
+//        public CacheLoader<Path, Collection<ModuleCustomViewDef>> getResourceLoader()
+//        {
+//            return (path, argument) -> {
+//                Module module = (Module)argument;
+//                Resource queryDir = module.getModuleResource(path);
+//
+//                Collection<? extends Resource> viewResources = getModuleResources(queryDir, CustomViewXmlReader.XML_FILE_EXTENSION);
+//
+//                if (viewResources.isEmpty())
+//                {
+//                    return null;
+//                }
+//                else
+//                {
+//                    Collection<ModuleCustomViewDef> viewDefs = viewResources
+//                        .stream()
+//                        .map(ModuleCustomViewDef::new)
+//                        .collect(Collectors.toCollection(LinkedList::new));
+//
+//                    return Collections.unmodifiableCollection(viewDefs);
+//                }
+//            };
+//        }
     }
 
     /** Find all files under the given queryDir Resource that end with suffix. */
@@ -3131,5 +3194,54 @@ public class QueryServiceImpl implements QueryService
                 assertTrue(JdbcType.VARCHAR.sqlType==rsmd.getColumnType(rs.findColumn("s")) || Types.NVARCHAR==rsmd.getColumnType(rs.findColumn("s")));
             }
         }
+
+//        @Test
+//        public void testModuleCustomViews()
+//        {
+//            MultiValuedMap<Path, ModuleCustomViewDef> mmap = new ArrayListValuedHashMap<>();
+//
+//            ModuleLoader.getInstance().getModules().stream()
+//                .map(MODULE_CUSTOM_VIEW_CACHE::getResourceMap)
+//                .map(Map::entrySet)
+//                .flatMap(Collection::stream)
+//                .forEach(entry -> {
+//                    entry.getValue().forEach(view -> mmap.put(entry.getKey(), view));
+//                });
+//
+//            MultiValuedMap<Path, ModuleCustomViewDef> mmap2 = new ArrayListValuedHashMap<>();
+//
+//            ModuleLoader.getInstance().getModules().stream()
+//                .map(MODULE_CUSTOM_VIEW_CACHE2::getResourceMap)
+//                .map(MultiValuedMap::asMap)
+//                .map(Map::entrySet)
+//                .flatMap(Collection::stream)
+//                .forEach(entry -> {
+//                    entry.getValue().forEach(view -> mmap2.put(entry.getKey(), view));
+//                });
+//
+//            _log.info(mmap.size() + " vs. " + mmap2.size());
+//
+//            mmap2.entries().forEach(e -> mmap.remove(e.getKey()));
+//            _log.info("unfound (" + mmap.size() + "): " + new TreeSet<>(mmap.keySet()));
+//        }
+//
+//        @Test
+//        public void testResourceRootProviders()
+//        {
+//            Path path = Path.parse("queries");
+//            ResourceRootProvider provider = ResourceRootProvider.chain(ResourceRootProvider.ASSAY, ResourceRootProvider.QUERY2);
+//
+//            ModuleLoader.getInstance().getModules()
+//                .forEach(module -> {
+//                    Resource root = module.getModuleResource(Path.rootPath);
+//
+//                    if (null != root)
+//                    {
+//                        Collection<Resource> roots = new LinkedList<>();
+//                        provider.fillResourceRoots(root, path, roots);
+//                        _log.info(module.getName() + ": " + roots);
+//                    }
+//                });
+//        }
     }
 }
