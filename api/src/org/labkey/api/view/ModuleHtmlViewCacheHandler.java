@@ -46,7 +46,7 @@ public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandler<Ma
 
     private static final Predicate<Resource> HTML_VIEW_FILTER = resource -> resource.getName().endsWith(HTML_VIEW_EXTENSION);
 
-    public Map<Path, ModuleHtmlViewDefinition> load(Stream<Resource> roots)
+    public Map<Path, ModuleHtmlViewDefinition> load(Stream<Resource> roots, Module module)
     {
         Map<Path, ModuleHtmlViewDefinition> map = roots
             .flatMap(root -> root.list().stream())

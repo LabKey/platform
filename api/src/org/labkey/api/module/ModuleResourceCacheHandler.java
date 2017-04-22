@@ -35,10 +35,15 @@ public interface ModuleResourceCacheHandler<V>
      */
     V load(@Nullable Resource dir, Module module);
 
-    // Alternative approach -- generalizes standard root, assay root, and other resource location handling
     default V load(Stream<Resource> roots)
     {
         throw new IllegalStateException("Shouldn't be here");
+    }
+
+    // Alternative approach -- generalizes standard root, assay root, and other resource location handling
+    default V load(Stream<Resource> roots, Module module)
+    {
+        return load(roots);
     }
 
     /**

@@ -34,6 +34,7 @@ import org.labkey.api.util.Path;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -105,13 +106,17 @@ public final class ModuleResourceCache<V>
                 Resource resourceRoot = new FileListenerResource(module.getModuleResource(Path.rootPath), module, cache);
                 Stream<Resource> resourceRoots = getResourceRoots(resourceRoot, path, providers);
 
-                return handler.load(resourceRoots);
+                return handler.load(resourceRoots, module);
             }
 
             private @NotNull Stream<Resource> getResourceRoots(@NotNull Resource rootResource, Path path, List<ResourceRootProvider> providers)
             {
-                return providers.stream()
-                    .flatMap(provider -> provider.getResourceRoots(rootResource, path));
+                Collection<Resource> roots = new LinkedList<>();
+
+                providers
+                    .forEach(provider -> provider.fillResourceRoots(rootResource, path, roots));
+
+                return roots.isEmpty() ? Stream.empty() : roots.stream();
             }
 
             @Override
