@@ -42,6 +42,11 @@ import java.util.Map;
 
 public class HomeTemplate extends PrintTemplate
 {
+    protected HomeTemplate(String template, PageConfig page)
+    {
+        super(template, page);
+    }
+
     public HomeTemplate(ViewContext context, Container c, ModelAndView body)
     {
         this(context, c, body, new PageConfig(context.getActionURL().getController()));
@@ -53,7 +58,6 @@ public class HomeTemplate extends PrintTemplate
         this("/org/labkey/api/view/template/HomeTemplate.jsp", context, c, body, page);
     }
 
-
     protected HomeTemplate(String template, ViewContext context, Container c, ModelAndView body, PageConfig page)
     {
         super(template, page);
@@ -61,18 +65,7 @@ public class HomeTemplate extends PrintTemplate
         if (null == page.getNavTrail())
             page.setNavTrail(Collections.emptyList());
 
-        // for testing add meta tags
-        User user = context.getUser();
-        User authenticatedUser = user;
-        User impersonatedUser = null;
-        if (authenticatedUser.isImpersonated())
-        {
-            impersonatedUser = user;
-            authenticatedUser = user.getImpersonatingUser();
-        }
-        page.setMetaTag("authenticatedUser",null==authenticatedUser?"-":StringUtils.defaultString(authenticatedUser.getEmail(),user.getDisplayName(user)));
-        page.setMetaTag("impersonatedUser", null==impersonatedUser?"-":StringUtils.defaultString(impersonatedUser.getEmail(),user.getDisplayName(user)));
-
+        setUserMetaTag(context, page);
         //show the header on the home template
         page.setShowHeader(true);
 
@@ -102,6 +95,21 @@ public class HomeTemplate extends PrintTemplate
         setView("footer", getFooterView());
     }
 
+    protected void setUserMetaTag(ViewContext context, PageConfig page)
+    {
+        // for testing add meta tags
+        User user = context.getUser();
+        User authenticatedUser = user;
+        User impersonatedUser = null;
+        if (authenticatedUser.isImpersonated())
+        {
+            impersonatedUser = user;
+            authenticatedUser = user.getImpersonatingUser();
+        }
+        page.setMetaTag("authenticatedUser",null==authenticatedUser?"-":StringUtils.defaultString(authenticatedUser.getEmail(),user.getDisplayName(user)));
+        page.setMetaTag("impersonatedUser", null==impersonatedUser?"-":StringUtils.defaultString(impersonatedUser.getEmail(),user.getDisplayName(user)));
+
+    }
 
     private AppBar generateAppBarModel(ViewContext context, PageConfig page)
     {
