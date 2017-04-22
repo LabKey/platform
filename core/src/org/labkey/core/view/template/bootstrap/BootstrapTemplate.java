@@ -28,6 +28,13 @@ import java.util.Map;
 
 public class BootstrapTemplate extends HomeTemplate
 {
+    private boolean isAppTemplate = false;
+
+    protected BootstrapTemplate(String template, PageConfig page)
+    {
+        super(template, page);
+    }
+
     public BootstrapTemplate(ViewContext context, ModelAndView body, PageConfig page)
     {
         super("/org/labkey/core/view/template/bootstrap/BootstrapTemplate.jsp", context, context.getContainer(), body, page);
@@ -43,7 +50,7 @@ public class BootstrapTemplate extends HomeTemplate
 
     protected HttpView getBodyTemplate(PageConfig page)
     {
-        JspView view = new JspView<>("/org/labkey/core/view/template/bootstrap/body.jsp", page);
+        JspView view = new JspView<>("/org/labkey/core/view/template/bootstrap/bootstrap.jsp", page);
         view.setBody(getBody());
         view.setFrame(FrameType.NONE);
         return view;
@@ -192,5 +199,15 @@ public class BootstrapTemplate extends HomeTemplate
 
             return Collections.emptyList();
         }
+    }
+
+    public boolean isAppTemplate()
+    {
+        return isAppTemplate;
+    }
+
+    protected void setAppTemplate(boolean appTemplate)
+    {
+        isAppTemplate = appTemplate;
     }
 }

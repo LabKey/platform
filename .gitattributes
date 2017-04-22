@@ -568,12 +568,15 @@ core/src/org/labkey/core/user/toggleShowAll.jsp -text
 core/src/org/labkey/core/user/userAccess.jsp -text
 core/src/org/labkey/core/view/ShortURLFilter.java -text
 core/src/org/labkey/core/view/ShortURLServiceImpl.java -text
+core/src/org/labkey/core/view/template/bootstrap/BootstrapBodyTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapHeader.java -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapTemplate.jsp -text
 core/src/org/labkey/core/view/template/bootstrap/DialogTemplate.java -text
+core/src/org/labkey/core/view/template/bootstrap/PrintTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/WizardTemplate.java -text
-core/src/org/labkey/core/view/template/bootstrap/body.jsp -text
+core/src/org/labkey/core/view/template/bootstrap/bootstrap.jsp -text
+core/src/org/labkey/core/view/template/bootstrap/bootstrapbody.jsp -text
 core/src/org/labkey/core/view/template/bootstrap/dialog.jsp -text
 core/src/org/labkey/core/view/template/bootstrap/factory/FrameFactoryBootstrap.java -text
 core/src/org/labkey/core/view/template/bootstrap/factory/TemplateFactoryBootstrap.java -text

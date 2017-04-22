@@ -4,11 +4,11 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
 import org.labkey.api.view.ViewServiceImpl;
-import org.labkey.api.view.template.BodyTemplate;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.view.template.PrintTemplate;
-import org.labkey.core.view.template.bootstrap.DialogTemplate;
+import org.labkey.core.view.template.bootstrap.BootstrapBodyTemplate;
 import org.labkey.core.view.template.bootstrap.BootstrapTemplate;
+import org.labkey.core.view.template.bootstrap.DialogTemplate;
+import org.labkey.core.view.template.bootstrap.PrintTemplate;
 import org.labkey.core.view.template.bootstrap.WizardTemplate;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -36,7 +36,7 @@ public class TemplateFactoryBootstrap implements ViewService.TemplateFactory
             case Framed:
             case Print:
             {
-                return new PrintTemplate(body, page);
+                return new PrintTemplate(context, body, page);
             }
             case Dialog:
             {
@@ -48,11 +48,11 @@ public class TemplateFactoryBootstrap implements ViewService.TemplateFactory
             }
             case Body:
             {
-                return new BodyTemplate(body, page);
+                return new BootstrapBodyTemplate(context, body, page);
             }
             case App:
             {
-                return new BodyTemplate(body, page, true);
+                return new BootstrapBodyTemplate(context, body, page, true);
             }
             case Home:
             default:

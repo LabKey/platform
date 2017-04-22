@@ -81,6 +81,7 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DefaultModelAndView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
@@ -96,6 +97,7 @@ import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.core.view.template.bootstrap.BootstrapBodyTemplate;
 import org.labkey.core.webdav.apache.XMLWriter;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
@@ -5679,7 +5681,18 @@ public class DavController extends SpringActionController
             {
                 JspView<ListPage> v = new JspView<>(DavController.class, "davListing.jsp", page);
                 config.addClientDependencies(v.getClientDependencies());
-                BodyTemplate template = new BodyTemplate(v, config);
+
+                DefaultModelAndView template;
+
+                if (PageFlowUtil.useExperimentalCoreUI())
+                {
+                    template = new BootstrapBodyTemplate(getViewContext(), v, config);
+                }
+                else
+                {
+                    template = new BodyTemplate(v, config);
+                }
+
                 template.render(getViewContext().getRequest(), getViewContext().getResponse());
             }
             return WebdavStatus.SC_OK;

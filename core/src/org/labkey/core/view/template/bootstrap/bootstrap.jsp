@@ -51,7 +51,8 @@
 <%
     HttpView me = HttpView.currentView();
     PageConfig pageConfig = (PageConfig) me.getModelBean();
-    String pageTitle = pageConfig.getAppBar().getFolderTitle();
+    String pageTitle = pageConfig.getAppBar() == null ? pageConfig.getTitle() : pageConfig.getAppBar().getFolderTitle();
+
     boolean showRight = me.getView(WebPartFactory.LOCATION_RIGHT) instanceof HttpView && ((HttpView) me.getView(WebPartFactory.LOCATION_RIGHT)).isVisible();
     ActionURL url = new ActionURL(AdminController.ExperimentalFeaturesAction.class, ContainerManager.getRoot());
     // TODO: Remove all inline styles
@@ -63,12 +64,17 @@
     </div>
     <% if (pageTitle != null && !pageTitle.equalsIgnoreCase(getContainer().getName())) { %>
     <div class="col-md-12" style="margin-bottom: 20px;">
-        <% renderTrail(pageConfig.getAppBar().getNavTrail(), out); %>
-        <% if (pageConfig.getAppBar().getPageTitle() != null) { %>
-        <h3 style="margin: 0;"><%= h(pageConfig.getAppBar().getPageTitle()) %></h3>
-        <% } else if (pageConfig.getAppBar().getFolderTitle() != null) { %>
-        <h3 style="margin: 0;"><%= h(pageConfig.getAppBar().getFolderTitle()) %></h3>
-        <% } %>
+        <%
+            if (null != pageConfig.getAppBar())
+            {
+                renderTrail(pageConfig.getAppBar().getNavTrail(), out);
+        %>
+            <% if (pageConfig.getAppBar().getPageTitle() != null) { %>
+            <h3 style="margin: 0;"><%= h(pageConfig.getAppBar().getPageTitle()) %></h3>
+            <% } else if (pageConfig.getAppBar().getFolderTitle() != null) { %>
+            <h3 style="margin: 0;"><%= h(pageConfig.getAppBar().getFolderTitle()) %></h3>
+            <% }
+            }%>
     </div>
     <% } %>
     <div class="<%= h(showRight ? "col-md-9" : "col-md-12" ) %>">

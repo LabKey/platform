@@ -21,10 +21,10 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
-<%@ page import="org.labkey.api.view.template.PrintTemplate" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.BootstrapTemplate" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    PrintTemplate me = (PrintTemplate) HttpView.currentView();
+    BootstrapTemplate me = (BootstrapTemplate) HttpView.currentView();
     PageConfig model = me.getModelBean();
     ActionURL url = getActionURL();
 
@@ -45,7 +45,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <%= text(model.getMetaTags(url)) %>
     <title><%= h(model.getTitle()) %></title>
+    <% if (me.isAppTemplate()) { %>
+    <%= PageFlowUtil.getAppIncludes(getViewContext(), model.getClientDependencies()) %>
+    <% } else { %>
     <%= PageFlowUtil.getStandardIncludes(getViewContext(), model.getClientDependencies()) %>
+    <% } %>
 </head>
 <body onload="<%=h(onLoad)%>">
 <%
@@ -56,7 +60,7 @@
     }
 %>
 <%
-    if (model.showHeader() != PageConfig.TrueFalse.False)
+    if (model.showHeader() != PageConfig.TrueFalse.False && null != me.getView("header"))
     {
         me.include(me.getView("header"), out);
 
