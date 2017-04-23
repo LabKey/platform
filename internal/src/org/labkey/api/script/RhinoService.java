@@ -16,7 +16,6 @@
 package org.labkey.api.script;
 
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -33,7 +32,6 @@ import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCacheHandlerOld;
 import org.labkey.api.module.ModuleResourceCaches;
-import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.module.PathBasedModuleResourceCache;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.BatchValidationException;
@@ -111,11 +109,12 @@ import static org.labkey.api.script.RhinoService.LOG;
 public final class RhinoService
 {
     public static final Logger LOG = Logger.getLogger(ScriptService.Console.class);
+    static final RhinoFactory RHINO_FACTORY = new RhinoFactory();
 
     public static void register()
     {
         SandboxContextFactory.initGlobal();
-        ServiceRegistry.get().registerService(ScriptService.class, new RhinoFactory());
+        ServiceRegistry.get().registerService(ScriptService.class, RHINO_FACTORY);
     }
 
     public static void clearCaches()
@@ -139,12 +138,9 @@ public final class RhinoService
         @Test
         public void exportsTest() throws Exception
         {
-            // Load script.
-            Path js = Path.parse("scripts/validationTest/exportTest.js");
             assertNotNull("RhinoService$TestCase requires module 'simpletest'", _module);
-            ScriptReference script = ScriptService.get().compile(_module, js);
 
-            script.invokeFn("doTest");
+            test("exportTest");
         }
 
         // TODO: Enable once APIs exist to create tables.
@@ -153,73 +149,55 @@ public final class RhinoService
             // Prepare table
             // Need APIs
 
-            // Load script.
-            Path js = Path.parse("scripts/validationTest/queryTest.js");
-            ScriptReference script = ScriptService.get().compile(_module, js);
-
-            script.invokeFn("doTest");
+            test("queryTest");
         }
 
         @Test
         public void simpleQueryTest() throws Exception
         {
-            Path js = Path.parse("scripts/validationTest/simpleQueryTest.js");
-            ScriptReference script = ScriptService.get().compile(_module, js);
-
-            script.invokeFn("doTest");
+            test("simpleQueryTest");
         }
 
         @Test
         public void filterTest() throws Exception
         {
-            Path js = Path.parse("scripts/validationTest/filterTest.js");
-            ScriptReference script = ScriptService.get().compile(_module, js);
-
-            script.invokeFn("doTest");
+            test("filterTest");
         }
 
         @Test
         public void messageTest() throws Exception
         {
-            Path js = Path.parse("scripts/validationTest/messageTest.js");
-            ScriptReference script = ScriptService.get().compile(_module, js);
-
-            script.invokeFn("doTest");
+            test("messageTest");
         }
 
         @Test
         public void actionUrlTest() throws Exception
         {
-            Path js = Path.parse("scripts/validationTest/actionUrlTest.js");
-            ScriptReference script = ScriptService.get().compile(_module, js);
-
-            script.invokeFn("doTest");
+            test("actionUrlTest");
         }
 
         @Test
         public void securityTest() throws Exception
         {
-            Path js = Path.parse("scripts/validationTest/securityTest.js");
-            ScriptReference script = ScriptService.get().compile(_module, js);
-
-            script.invokeFn("doTest");
+            test("securityTest");
         }
 
         @Test
         public void utilsTest() throws Exception
         {
-            Path js = Path.parse("scripts/validationTest/utilsTest.js");
-            ScriptReference script = ScriptService.get().compile(_module, js);
-
-            script.invokeFn("doTest");
+            test("utilsTest");
         }
 
         @Test
         public void reportTest() throws Exception
         {
-            Path js = Path.parse("scripts/validationTest/reportTest.js");
-            ScriptReference script = ScriptService.get().compile(_module, js);
+            test("reportTest");
+        }
 
+        private void test(String scriptName) throws ScriptException, NoSuchMethodException
+        {
+            Path js = Path.parse(ScriptService.SCRIPTS_DIR + "/validationTest/" + scriptName + ".js");
+            ScriptReference script = ScriptService.get().compile(_module, js);
             script.invokeFn("doTest");
         }
     }
@@ -230,14 +208,13 @@ class RhinoFactory extends RhinoScriptEngineFactory implements ScriptService
     @Override
     public RhinoEngine getScriptEngine()
     {
-        // XXX: consider using a ThreadLocal reference to the RhinoEngine
         return new RhinoEngine(this);
     }
 
     @Override
     public ScriptReference compile(Module module, Path path) throws ScriptException
     {
-        return ScriptReferenceImpl.get(module, path, getScriptEngine());
+        return ScriptReferenceImpl.get(module, path);
     }
 }
 
@@ -257,33 +234,50 @@ class ScriptReferenceImpl implements ScriptReference
         }
 
         @Override
-        public Map<Path, CompiledScript> load(Stream<Resource> roots)
+        public Map<Path, CompiledScript> load(Stream<Resource> roots, Module module)
         {
-            RhinoEngine engine = CURRENT_ENGINE.get();
-
-            if (null == engine)
-                throw new IllegalStateException("RhinoEngine is not set on ThreadLocal");
-
             Map<Path, CompiledScript> map = roots
                 .flatMap(root -> root.list().stream())
                 .filter(Resource::isFile)
                 .filter(getFilter())
-                .collect(Collectors.toMap(Resource::getPath, resource -> compile(resource, engine)));
+                .collect(Collectors.toMap(Resource::getPath, this::compile));
 
             return map.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(map);
+        }
+
+        private CompiledScript compile(Resource r)
+        {
+            RhinoEngine engine = RhinoService.RHINO_FACTORY.getScriptEngine();
+            Context ctx = Context.enter();
+
+            LOG.info("Compiling script '" + r.getPath().toString() + "'");
+
+            try (Reader reader = Readers.getReader(r.getInputStream()))
+            {
+                engine.put(ScriptEngine.FILENAME, r.getPath().toString());
+                return engine.compile(reader);
+            }
+            catch (IOException | ScriptException e)
+            {
+                throw new UnexpectedException(e);
+            }
+            finally
+            {
+                Context.exit();
+            }
         }
     };
 
     private static final ModuleResourceCacheHandlerOld<Path, CompiledScript> CACHE_HANDLER_OLD = new ModuleResourceCacheHandlerOld<Path, CompiledScript>()
     {
         private final CacheLoader<String, CompiledScript> _loader = (key, argument) -> {
-            RhinoEngine engine1 = (RhinoEngine)argument;
+            RhinoEngine engine = (RhinoEngine)argument;
 
-            CacheId cid = ModuleResourceCaches.parseCacheKey(key);
+            ModuleResourceCaches.CacheId cid = ModuleResourceCaches.parseCacheKey(key);
             Path path = Path.parse(cid.getName());
             Resource r1 = cid.getModule().getModuleResource(path);
 
-            return compile(r1, engine1);
+            return compile(r1, engine);
         };
 
         @Override
@@ -312,8 +306,7 @@ class ScriptReferenceImpl implements ScriptReference
     };
 
     private static final PathBasedModuleResourceCache<CompiledScript> SCRIPT_CACHE_OLD = ModuleResourceCaches.create("Module JavaScript cache", CACHE_HANDLER_OLD);
-    private static final ModuleResourceCache<Map<Path, CompiledScript>> SCRIPT_CACHE = ModuleResourceCaches.create(Path.parse("scripts"), CACHE_HANDLER, "Module JavaScript cache", Arrays.asList(ResourceRootProvider.STANDARD_HIERARCHY, ResourceRootProvider.QUERY));
-    private static final ThreadLocal<RhinoEngine> CURRENT_ENGINE = new ThreadLocal<>();
+    private static final ModuleResourceCache<Map<Path, CompiledScript>> SCRIPT_CACHE = ModuleResourceCaches.create(Path.parse(ScriptService.SCRIPTS_DIR), CACHE_HANDLER, "Module JavaScript cache", Arrays.asList(ResourceRootProvider.STANDARD_HIERARCHY, ResourceRootProvider.QUERY));
 
     private final Module _module;
     private final Path _path;
@@ -323,62 +316,32 @@ class ScriptReferenceImpl implements ScriptReference
     private ScriptContext context; // context to eval and invoke in, not compile.
     private boolean evaluated = false;
 
-    static ScriptReferenceImpl get(Module module, Path path, RhinoEngine engine) throws ScriptException
+    static ScriptReferenceImpl get(Module module, Path path) throws ScriptException
     {
-        final CompiledScript script;
+        CompiledScript script = SCRIPT_CACHE.getResourceMap(module).get(path);
 
-        Context ctx = Context.enter();
+        Resource r = module.getModuleResource(path);
+        CompiledScript script_old = null;
 
-        try
+        if (null != r)
         {
-            // TODO: Review... do we really want to skip caching based on optimization level?
-            boolean useCache = ctx.getOptimizationLevel() > -1;
-
-            if (useCache)
-            {
-                try
-                {
-                    // Not crazy about this... should CacheHandler.load() get a new instance of RhinoEngine and attach it to the CompiledScript?
-                    CURRENT_ENGINE.set(engine);
-                    script = SCRIPT_CACHE.getResourceMap(module).get(path);
-                }
-                finally
-                {
-                    CURRENT_ENGINE.remove(); // Keep memtracker happy
-                }
-
-                Resource r = module.getModuleResource(path);
-                CompiledScript script_old = null;
-
-                if (null != r)
-                {
-                    script_old = SCRIPT_CACHE_OLD.getResource(r, engine);
-                }
-
-                if (null != script_old && null == script)
-                    LOG.error("New cache didn't find " + module.getName() + " " + path);
-
-                if (null != script && null == script_old)
-                    LOG.error("Old cache didn't find " + module.getName() + " " + path);
-            }
-            else
-            {
-                Resource r = module.getModuleResource(path);
-                script = compile(r, engine);
-            }
-        }
-        finally
-        {
-            Context.exit();
+            script_old = SCRIPT_CACHE_OLD.getResource(r, RhinoService.RHINO_FACTORY.getScriptEngine());
         }
 
-        return null == script ? null : new ScriptReferenceImpl(module, path, engine, script);
+        if (null != script_old && null == script)
+            LOG.error("New cache didn't find " + module.getName() + " " + path);
+
+        if (null != script && null == script_old)
+            LOG.error("Old cache didn't find " + module.getName() + " " + path);
+
+        return null == script ? null : new ScriptReferenceImpl(module, path, (RhinoEngine)script.getEngine(), script);
     }
 
-    // This is factored out of the CacheLoader to provide access in the uncached case
     private static CompiledScript compile(Resource r, RhinoEngine engine)
     {
         LOG.info("Compiling script '" + r.getPath().toString() + "'");
+
+        Context ctx = Context.enter();
 
         try (Reader reader = Readers.getReader(r.getInputStream()))
         {
@@ -389,9 +352,13 @@ class ScriptReferenceImpl implements ScriptReference
         {
             throw new UnexpectedException(e);
         }
+        finally
+        {
+            Context.exit();
+        }
     }
 
-    ScriptReferenceImpl(Module module, Path path, RhinoEngine engine, CompiledScript script) throws ScriptException
+    private ScriptReferenceImpl(Module module, Path path, RhinoEngine engine, CompiledScript script) throws ScriptException
     {
         _module = module;
         _path = path;
@@ -553,7 +520,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
      * the resources themselves, however, it can't currently be used for this staleness check because it doesn't invalidate
      * on modify plus the exists() and lastModified() methods of FileResource access the file system directly.
      */
-    private static final ModuleResourceCache<Map<Path, Long>> TOP_LEVEL_SCRIPT_CACHE_OLD = ModuleResourceCaches.create(Path.parse("scripts"), new ModuleResourceCacheHandler<Map<Path, Long>>()
+    private static final ModuleResourceCache<Map<Path, Long>> TOP_LEVEL_SCRIPT_CACHE = ModuleResourceCaches.create(Path.parse(ScriptService.SCRIPTS_DIR), new ModuleResourceCacheHandler<Map<Path, Long>>()
     {
         @Override
         public Map<Path, Long> load(@Nullable Resource dir, Module module)
@@ -561,8 +528,13 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
             throw new IllegalStateException();
         }
 
+        private Predicate<Resource> getFilter()
+        {
+            return resource -> resource.getName().endsWith(".js");
+        }
+
         @Override
-        public Map<Path, Long> load(Stream<Resource> roots)
+        public Map<Path, Long> load(Stream<Resource> roots, Module module)
         {
             Map<Path, Long> map = roots
                 .flatMap(root -> root.list().stream())
@@ -572,58 +544,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
 
             return map.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(map);
         }
-
-        private Predicate<Resource> getFilter()
-        {
-            return resource -> resource.getName().endsWith(".js");
-        }
     }, "Top-level Rhino script cache", Arrays.asList(ResourceRootProvider.STANDARD_HIERARCHY, ResourceRootProvider.QUERY));
-
-    /**
-     * Caches the last modified date of all top-level Rhino scripts (e.g., scripts included in another script using require()).
-     * Rhino manages the compilation and caching of these scripts itself, but asks our code if they're stale (e.g., changed or
-     * deleted during the development process). This cache provides an efficient (typically no I/O) way to check both existence
-     * and last modified timestamp for these resources.
-     *
-     * This cache is a bit redundant with the module resource cache (see ModuleResourceResolver), which caches and invalidates
-     * the resources themselves, however, it can't currently be used for this staleness check because it doesn't invalidate
-     * on modify plus the exists() and lastModified() methods of FileResource access the file system directly.
-     */
-    private static final PathBasedModuleResourceCache<Long> TOP_LEVEL_SCRIPT_CACHE = ModuleResourceCaches.create("Top-level Rhino script cache", new ModuleResourceCacheHandlerOld<Path, Long>()
-    {
-        private final CacheLoader<String, Long> RESOURCE_LOADER = (key, argument) ->
-        {
-            CacheId cid = ModuleResourceCaches.parseCacheKey(key);
-            Path path = Path.parse(cid.getName());
-            Resource r1 = cid.getModule().getModuleResource(path);
-
-            return r1.getLastModified();
-        };
-
-        @Override
-        public boolean isResourceFile(String filename)
-        {
-            return StringUtils.endsWithIgnoreCase(filename, ".js");
-        }
-
-        @Override
-        public String getResourceName(Module module, String filename)
-        {
-            return filename;
-        }
-
-        @Override
-        public String createCacheKey(Module module, Path path)
-        {
-            return ModuleResourceCaches.createCacheKey(module, path.toString());
-        }
-
-        @Override
-        public CacheLoader<String, Long> getResourceLoader()
-        {
-            return RESOURCE_LOADER;
-        }
-    });
 
     @Override
     protected boolean entityNeedsRevalidation(Object validator)
@@ -633,13 +554,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
         if (validator instanceof RhinoScriptRef)
         {
             RhinoScriptRef ref = (RhinoScriptRef)validator;
-            Long currentLastModified = TOP_LEVEL_SCRIPT_CACHE.getResource(ref.getModule(), ref.getPath());
-            Long currentLastModifiedOld = TOP_LEVEL_SCRIPT_CACHE_OLD.getResourceMap(ref.getModule()).get(ref.getPath());
-
-            if (null == currentLastModified)
-                assert null == currentLastModifiedOld;
-            else
-                assert currentLastModified.equals(currentLastModifiedOld);
+            Long currentLastModified = TOP_LEVEL_SCRIPT_CACHE.getResourceMap(ref.getModule()).get(ref.getPath());
 
             isStale = (null == currentLastModified || currentLastModified.longValue() != ref.getLastModified());
         }
@@ -662,8 +577,8 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
     protected ModuleSource load(String moduleScript, Object validator)
     {
         // load non-relative modules from the root "/scripts" directory
-        if ((!moduleScript.startsWith("./") || !moduleScript.startsWith("../")) && !moduleScript.startsWith("scripts/"))
-            moduleScript = "/scripts/" + moduleScript;
+        if ((!moduleScript.startsWith("./") || !moduleScript.startsWith("../")) && !moduleScript.startsWith(ScriptService.SCRIPTS_DIR + "/"))
+            moduleScript = "/" + ScriptService.SCRIPTS_DIR + "/" + moduleScript;
 
         Path path = Path.parse(moduleScript);
         Resource res = ModuleLoader.getInstance().getResource(path);
@@ -803,7 +718,7 @@ class RhinoEngine extends RhinoScriptEngine
                 }
                 finally
                 {
-                    cx.exit();
+                    Context.exit();
                 }
                 
                 sharedTopLevel = new WeakReference<>(topLevel);
@@ -886,7 +801,7 @@ class RhinoEngine extends RhinoScriptEngine
         }
         finally
         {
-            cx.exit();
+            Context.exit();
         }
 
         return scriptable;
