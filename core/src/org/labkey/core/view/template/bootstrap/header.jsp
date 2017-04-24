@@ -179,8 +179,12 @@
 
             $('.dropdown-submenu a.subexpand').click(function(e) {
                 var el = $(this);
+
+                // hide this link and its direct parent sibling list elements
                 el.css('display', 'none');
                 el.parent().siblings('li').css('display', 'none');
+
+                // toggle the sibling ul element to show the nested list
                 el.next('ul').toggleClass('open');
                 e.stopPropagation();
                 e.preventDefault();
@@ -188,10 +192,16 @@
 
             $('.dropdown-layer-menu a.subcollapse').click(function(e) {
                 var el = $(this);
-                var menu = el.parents('ul');
+                var menu = el.parent().parent();
+
+                // toggle the element class
                 menu.toggleClass('open');
-                menu.siblings('a.subexpand').css('display', '');
-                menu.parents('li').siblings('li').css('display', '');
+
+                // show the parent link and its direct parent sibling list elements
+                var menuLink = menu.prev('a.subexpand');
+                menuLink.css('display', '');
+                menuLink.parent().siblings('li').css('display', '');
+
                 e.stopPropagation();
                 e.preventDefault();
             });

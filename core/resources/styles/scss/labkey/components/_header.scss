@@ -130,6 +130,7 @@
 
     .dropdown-menu {
       margin-top: 12px; // TODO: make this relative to the header height
+      z-index: 20001;
     }
   }
 

@@ -7077,10 +7077,10 @@ li.x-menu-item-active a.x-menu-item {
 /* Ghosting */
 .x-panel-ghost {
   background:#e0e0e0;
-}
 
-.x-panel-ghost ul {
-  border-color:#b0b0b0;
+  ul {
+    border-color:#b0b0b0;
+  }
 }
 
 .x-grid-panel .x-panel-mc .x-panel-body {
@@ -7090,7 +7090,7 @@ li.x-menu-item-active a.x-menu-item {
 
 /* Buttons */
 .x-btn {
-  font-weight: bold;
+  font-weight: $lk-button-font-weight;
   font-size: $lk-font-size-small;
   letter-spacing: .5px;
   cursor: pointer;

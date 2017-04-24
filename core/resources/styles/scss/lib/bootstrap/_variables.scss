@@ -150,14 +150,14 @@ $table-border-color:            $lk-grid-border-color;
 //
 //## For each of Bootstrap's buttons, define text, background and border color.
 
-$btn-font-weight:                normal !default;
+$btn-font-weight:                $lk-button-font-weight;
 
-$btn-default-color:              #333 !default;
-$btn-default-bg:                 #fff !default;
-$btn-default-border:             #ccc !default;
+$btn-default-color:              $lk-button-color;
+$btn-default-bg:                 $lk-button-bg-color;
+$btn-default-border:             $lk-button-border-color;
 
-$btn-primary-color:              #fff !default;
-$btn-primary-bg:                 $brand-primary !default;
+$btn-primary-color:              $lk-button-primary-color;
+$btn-primary-bg:                 $lk-button-primary-bg-color;
 $btn-primary-border:             darken($btn-primary-bg, 5%) !default;
 
 $btn-success-color:              #fff !default;

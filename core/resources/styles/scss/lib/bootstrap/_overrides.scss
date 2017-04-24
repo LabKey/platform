@@ -1,20 +1,20 @@
 .btn {
   font-size: $lk-font-size-small;
-  font-weight: bold;
+  font-weight: $btn-font-weight;
   letter-spacing: $lk-button-letter-spacing;
   text-transform: $lk-button-text-transform;
 }
 
 .btn-default {
-  color: $lk-button-color;
-  background-color: $lk-button-bg-color;
-  border-color: $lk-button-border-color;
+  color: $btn-default-color;
+  background-color: $btn-default-bg;
+  border-color: $btn-default-border;
 
   // Maintain same color when disabled
   &.disabled {
     &:active, &:focus, &:hover {
-      background-color: $white;
-      border-color: $lk-button-border-color;
+      background-color: $lk-button-bg-color-hover;
+      border-color: $lk-button-border-color-hover;
     }
   }
 
@@ -28,9 +28,9 @@
 }
 
 .btn-primary {
-  color: $white;
-  background-color: $lk-accent-color;
-  border-color: darken($lk-accent-color, 5%);
+  color: $btn-primary-color;
+  background-color: $btn-primary-bg;
+  border-color: $btn-primary-border;
 
   // Maintain same color when disabled
   &.disabled {
@@ -43,8 +43,9 @@
   &:active,
   &:focus,
   &:hover {
-    background-color: $lk-brand-color;
+    background-color: $lk-button-primary-bg-color-hover;
     border-color: darken($lk-brand-color, 5%);
+    color: $lk-button-primary-color-hover;
   }
 }
 

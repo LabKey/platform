@@ -69,7 +69,7 @@ table.labkey-button-bar {
   white-space: nowrap;
 
   color: $lk-link-color;
-  text-transform: uppercase;
+  text-transform: $lk-button-text-transform;
   line-height: 2.3;
 }
 
@@ -92,7 +92,7 @@ td .labkey-menu-button:visited,
   white-space: nowrap;
 
   color: #000000;
-  cursor:pointer;
+  cursor: pointer;
 
   border-radius: $lk-button-border-radius;
 
@@ -165,7 +165,7 @@ td .labkey-menu-button:hover,
   white-space: nowrap;
 
   color: #808080 !important;
-  text-transform: uppercase;
+  text-transform: $lk-button-text-transform;
   cursor: default;
 
   line-height: 2.3;
@@ -173,20 +173,17 @@ td .labkey-menu-button:hover,
 
 /* this keeps the space between text and menu down arrows */
 a.labkey-menu-button span,
-a.labkey-disabled-menu-button span
-{
+a.labkey-disabled-menu-button span {
   padding-right: 1.0em;
 }
 
 /* this keeps the enabled button text blue */
-a.labkey-menu-button
-{
+a.labkey-menu-button {
   color: $lk-link-color;
 }
 
 /* this keeps disabled button hover bg invisible and no hand cursor */
-.labkey-button-bar .labkey-disabled-button:hover
-{
+.labkey-button-bar .labkey-disabled-button:hover {
   border: 1px solid $lk-grid-color;
   background-color: $lk-grid-color;
   cursor: default;
@@ -194,8 +191,7 @@ a.labkey-menu-button
 
 /* this keeps the hover state style for enabled buttons */
 a.labkey-menu-button:hover
-a.labkey-menu-button:hover span
-{
+a.labkey-menu-button:hover span {
   border: 1px solid $lk-border-title-color;
   background-color: #FFFFFF;
   cursor: pointer;
@@ -205,14 +201,10 @@ a.labkey-menu-button:hover span
 /* classes to toggle the display state of buttons displayed in the dataregion message area
    on hover.
 */
-.labkey-dataregion-msg .labkey-button
-{
+.labkey-dataregion-msg .labkey-button {
   visibility: hidden;
 }
 
-.labkey-dataregion-msg:hover .labkey-button
-{
+.labkey-dataregion-msg:hover .labkey-button {
   visibility: visible;
 }
-
-// removed img.labkey-button-arrow

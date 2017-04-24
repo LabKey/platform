@@ -87,8 +87,8 @@ $lk-screen-lg-min: 1200px !default;
 
 //== Padding
 //
-$lk-padding-base-vertical: 6px !default;
-$lk-padding-base-horizontal: 12px !default;
+$lk-padding-base-vertical: 4px !default;
+$lk-padding-base-horizontal: 8px !default;
 
 //== Body
 //
@@ -113,9 +113,15 @@ $lk-button-border-color-hover: $lk-accent-color !default;
 $lk-button-border-radius: 0 !default;
 $lk-button-color: $lk-accent-color !default;
 $lk-button-color-hover: $white !default;
+$lk-button-font-weight: bold !default;
 $lk-button-letter-spacing: 0.5px !default;
 $lk-button-padding: $lk-padding-base-vertical $lk-padding-base-horizontal !default;
 $lk-button-text-transform: uppercase !default;
+
+$lk-button-primary-bg-color: $lk-accent-color !default;
+$lk-button-primary-bg-color-hover: $lk-accent-color !default;
+$lk-button-primary-color: $white !default;
+$lk-button-primary-color-hover: $white !default;
 
 //== Dialogs / Modals
 //
