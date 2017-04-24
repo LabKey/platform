@@ -42,7 +42,7 @@ public interface ResourceRootProvider
                 traverse(r, roots);
     }
 
-    // Returns a single resource root in the standard location, i.e., /resources/<path>
+    // Returns a single resource root, the directory at path, i.e., /resources/<path>
     ResourceRootProvider STANDARD = (topRoot, path, roots) ->
     {
         Resource standardRoot = topRoot.find(path);
@@ -51,8 +51,8 @@ public interface ResourceRootProvider
             roots.add(standardRoot);
     };
 
-    // Returns all directories traversing from the standard location, i.e., /resources/<path>/**
-    ResourceRootProvider STANDARD_HIERARCHY = (topRoot, path, roots) ->
+    // Returns the directory at path and all subdirectories, i.e., /resources/<path>/**
+    ResourceRootProvider HIERARCHY = (topRoot, path, roots) ->
     {
         Resource standardRoot = topRoot.find(path);
 
@@ -60,8 +60,8 @@ public interface ResourceRootProvider
             traverse(standardRoot, roots);
     };
 
-    // Returns all immediate subdirectories of the standard location, i.e., /resources/<path>/*
-    ResourceRootProvider STANDARD_SUBDIRECTORIES = (topRoot, path, roots) ->
+    // Returns all immediate subdirectories of the directory at path, i.e., /resources/<path>/*
+    ResourceRootProvider SUBDIRECTORIES = (topRoot, path, roots) ->
     {
         Resource standardRoot = topRoot.find(path);
 
@@ -77,7 +77,7 @@ public interface ResourceRootProvider
     //
     // /resources/assay/provider1/<path>
     // /resources/assay/provider2/<path>
-    ResourceRootProvider ASSAY = (topRoot, path, roots) ->
+    ResourceRootProvider ASSAY_PROVIDERS = (topRoot, path, roots) ->
     {
         Resource assayRoot = topRoot.find(AssayService.ASSAY_DIR_NAME);
 
@@ -92,25 +92,14 @@ public interface ResourceRootProvider
     };
 
     // Returns all immediate subdirectories of the "queries" directory, i.e., /resources/queries/*. Ignores path.
-    // TODO: Should be called SCHEMAS
-    ResourceRootProvider QUERY = (topRoot, path, roots) ->
+    ResourceRootProvider QUERY_SUBDIRECTORIES = (topRoot, path, roots) ->
     {
-        Resource queryRoot = topRoot.find(QueryService.MODULE_QUERIES_DIRECTORY);
-
-        if (null != queryRoot && queryRoot.isCollection())
-        {
-            queryRoot.list().stream()
-                .filter(Resource::isCollection)
-                .forEach(roots::add);
-        }
+        SUBDIRECTORIES.fillResourceRoots(topRoot, Path.parse(QueryService.MODULE_QUERIES_DIRECTORY), roots);
     };
 
-    // Returns all subdirectories directories of the "queries" directory, i.e., /resources/queries/**. Ignores path.
-    ResourceRootProvider QUERY2 = (topRoot, path, roots) ->
+    // Returns the "queries" directory and all subdirectories, i.e., /resources/queries/**. Ignores path.
+    ResourceRootProvider QUERY = (topRoot, path, roots) ->
     {
-        Resource queryRoot = topRoot.find(QueryService.MODULE_QUERIES_DIRECTORY);
-
-        if (null != queryRoot && queryRoot.isCollection())
-            traverse(queryRoot, roots);
+        HIERARCHY.fillResourceRoots(topRoot, Path.parse(QueryService.MODULE_QUERIES_DIRECTORY), roots);
     };
 }

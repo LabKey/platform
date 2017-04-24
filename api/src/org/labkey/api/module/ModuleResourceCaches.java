@@ -48,11 +48,6 @@ public class ModuleResourceCaches
         return new ModuleResourceCache<>(path, handler, description, providers);
     }
 
-    public static <T> PathBasedModuleResourceCache<T> create(String description, ModuleResourceCacheHandlerOld<Path, T> handler)
-    {
-        return new PathBasedModuleResourceCache<>(description, handler);
-    }
-
     /**
      * Create a new QueryBasedModuleResourceCache. This is used to cache file-system resources that are associated with
      * specific queries.

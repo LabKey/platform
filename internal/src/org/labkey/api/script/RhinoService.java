@@ -17,12 +17,10 @@ package org.labkey.api.script;
 
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.RowMap;
@@ -30,9 +28,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
-import org.labkey.api.module.ModuleResourceCacheHandlerOld;
 import org.labkey.api.module.ModuleResourceCaches;
-import org.labkey.api.module.PathBasedModuleResourceCache;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
@@ -222,12 +218,6 @@ class ScriptReferenceImpl implements ScriptReference
 {
     private static final ModuleResourceCacheHandler<Map<Path, CompiledScript>> CACHE_HANDLER = new ModuleResourceCacheHandler<Map<Path, CompiledScript>>()
     {
-        @Override
-        public Map<Path, CompiledScript> load(@Nullable Resource dir, Module module)
-        {
-            throw new IllegalStateException();
-        }
-
         private Predicate<Resource> getFilter()
         {
             return resource -> resource.getName().endsWith(".js");
@@ -268,45 +258,7 @@ class ScriptReferenceImpl implements ScriptReference
         }
     };
 
-    private static final ModuleResourceCacheHandlerOld<Path, CompiledScript> CACHE_HANDLER_OLD = new ModuleResourceCacheHandlerOld<Path, CompiledScript>()
-    {
-        private final CacheLoader<String, CompiledScript> _loader = (key, argument) -> {
-            RhinoEngine engine = (RhinoEngine)argument;
-
-            ModuleResourceCaches.CacheId cid = ModuleResourceCaches.parseCacheKey(key);
-            Path path = Path.parse(cid.getName());
-            Resource r1 = cid.getModule().getModuleResource(path);
-
-            return compile(r1, engine);
-        };
-
-        @Override
-        public boolean isResourceFile(String filename)
-        {
-            return filename.endsWith(".js");
-        }
-
-        @Override
-        public String getResourceName(Module module, String filename)
-        {
-            return filename;
-        }
-
-        @Override
-        public String createCacheKey(Module module, Path path)
-        {
-            return ModuleResourceCaches.createCacheKey(module, path.toString());
-        }
-
-        @Override
-        public CacheLoader<String, CompiledScript> getResourceLoader()
-        {
-            return _loader;
-        }
-    };
-
-    private static final PathBasedModuleResourceCache<CompiledScript> SCRIPT_CACHE_OLD = ModuleResourceCaches.create("Module JavaScript cache", CACHE_HANDLER_OLD);
-    private static final ModuleResourceCache<Map<Path, CompiledScript>> SCRIPT_CACHE = ModuleResourceCaches.create(Path.parse(ScriptService.SCRIPTS_DIR), CACHE_HANDLER, "Module JavaScript cache", Arrays.asList(ResourceRootProvider.STANDARD_HIERARCHY, ResourceRootProvider.QUERY));
+    private static final ModuleResourceCache<Map<Path, CompiledScript>> SCRIPT_CACHE = ModuleResourceCaches.create(Path.parse(ScriptService.SCRIPTS_DIR), CACHE_HANDLER, "Module JavaScript cache", Arrays.asList(ResourceRootProvider.HIERARCHY, ResourceRootProvider.QUERY_SUBDIRECTORIES));
 
     private final Module _module;
     private final Path _path;
@@ -320,42 +272,7 @@ class ScriptReferenceImpl implements ScriptReference
     {
         CompiledScript script = SCRIPT_CACHE.getResourceMap(module).get(path);
 
-        Resource r = module.getModuleResource(path);
-        CompiledScript script_old = null;
-
-        if (null != r)
-        {
-            script_old = SCRIPT_CACHE_OLD.getResource(r, RhinoService.RHINO_FACTORY.getScriptEngine());
-        }
-
-        if (null != script_old && null == script)
-            LOG.error("New cache didn't find " + module.getName() + " " + path);
-
-        if (null != script && null == script_old)
-            LOG.error("Old cache didn't find " + module.getName() + " " + path);
-
         return null == script ? null : new ScriptReferenceImpl(module, path, (RhinoEngine)script.getEngine(), script);
-    }
-
-    private static CompiledScript compile(Resource r, RhinoEngine engine)
-    {
-        LOG.info("Compiling script '" + r.getPath().toString() + "'");
-
-        Context ctx = Context.enter();
-
-        try (Reader reader = Readers.getReader(r.getInputStream()))
-        {
-            engine.put(ScriptEngine.FILENAME, r.getPath().toString());
-            return engine.compile(reader);
-        }
-        catch (IOException | ScriptException e)
-        {
-            throw new UnexpectedException(e);
-        }
-        finally
-        {
-            Context.exit();
-        }
     }
 
     private ScriptReferenceImpl(Module module, Path path, RhinoEngine engine, CompiledScript script) throws ScriptException
@@ -522,12 +439,6 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
      */
     private static final ModuleResourceCache<Map<Path, Long>> TOP_LEVEL_SCRIPT_CACHE = ModuleResourceCaches.create(Path.parse(ScriptService.SCRIPTS_DIR), new ModuleResourceCacheHandler<Map<Path, Long>>()
     {
-        @Override
-        public Map<Path, Long> load(@Nullable Resource dir, Module module)
-        {
-            throw new IllegalStateException();
-        }
-
         private Predicate<Resource> getFilter()
         {
             return resource -> resource.getName().endsWith(".js");
@@ -536,15 +447,13 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
         @Override
         public Map<Path, Long> load(Stream<Resource> roots, Module module)
         {
-            Map<Path, Long> map = roots
+            return unmodifiable(roots
                 .flatMap(root -> root.list().stream())
                 .filter(Resource::isFile)
                 .filter(getFilter())
-                .collect(Collectors.toMap(Resource::getPath, Resource::getLastModified));
-
-            return map.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(map);
+                .collect(Collectors.toMap(Resource::getPath, Resource::getLastModified)));
         }
-    }, "Top-level Rhino script cache", Arrays.asList(ResourceRootProvider.STANDARD_HIERARCHY, ResourceRootProvider.QUERY));
+    }, "Top-level Rhino script cache", Arrays.asList(ResourceRootProvider.HIERARCHY, ResourceRootProvider.QUERY_SUBDIRECTORIES));
 
     @Override
     protected boolean entityNeedsRevalidation(Object validator)

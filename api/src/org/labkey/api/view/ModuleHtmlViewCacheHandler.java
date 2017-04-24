@@ -15,7 +15,6 @@
  */
 package org.labkey.api.view;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlViewDefinition;
 import org.labkey.api.module.ModuleResourceCacheHandler;
@@ -38,23 +37,15 @@ import static org.labkey.api.module.ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION
  */
 public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandler<Map<Path, ModuleHtmlViewDefinition>>
 {
-    @Override
-    public Map<Path, ModuleHtmlViewDefinition> load(@Nullable Resource dir, Module module)
-    {
-        throw new IllegalStateException("Shouldn't be here");
-    }
-
     private static final Predicate<Resource> HTML_VIEW_FILTER = resource -> resource.getName().endsWith(HTML_VIEW_EXTENSION);
 
     public Map<Path, ModuleHtmlViewDefinition> load(Stream<Resource> roots, Module module)
     {
-        Map<Path, ModuleHtmlViewDefinition> map = roots
+        return unmodifiable(roots
             .flatMap(root -> root.list().stream())
             .filter(Resource::isFile)
             .filter(HTML_VIEW_FILTER)
-            .collect(Collectors.toMap(Resource::getPath, ModuleHtmlViewDefinition::new));
-
-        return map.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(map);
+            .collect(Collectors.toMap(Resource::getPath, ModuleHtmlViewDefinition::new)));
     }
 
     // Sample impl, that applies auto-filtering

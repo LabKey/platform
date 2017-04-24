@@ -19,6 +19,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.resource.Resource;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -31,9 +34,12 @@ public interface ModuleResourceCacheHandler<V>
     /**
      * Loads all resources of the appropriate type from the specified module and root directory.
      *
-     * @return A Map or similar data structure that gives callers access to those resources
+     * @return A Map, Collection, or other data structure that gives callers access to those resources
      */
-    V load(@Nullable Resource dir, Module module);
+    default V load(@Nullable Resource dir, Module module)
+    {
+        throw new IllegalStateException("Shouldn't be here");
+    };
 
     // Alternative approach -- generalizes standard root, assay root, and other resource location handling
     default V load(Stream<Resource> roots, Module module)
@@ -52,5 +58,15 @@ public interface ModuleResourceCacheHandler<V>
     default @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
     {
         return null;
+    }
+
+    default <K2, V2> Map<K2, V2> unmodifiable(Map<K2, V2> map)
+    {
+        return map.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(map);
+    }
+
+    default <V2> Collection<V2> unmodifiable(Collection<V2> collection)
+    {
+        return collection.isEmpty() ? Collections.emptyList() : Collections.unmodifiableCollection(collection);
     }
 }

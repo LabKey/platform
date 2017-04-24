@@ -46,7 +46,7 @@ public class ModuleHtmlView extends HtmlView
 {
     public static final String VIEWS_DIR = "views";
 
-    private static final ModuleResourceCache<Map<Path, ModuleHtmlViewDefinition>> MODULE_HTML_VIEW_DEFINITION_CACHE = ModuleResourceCaches.create(new Path(VIEWS_DIR), new ModuleHtmlViewCacheHandler(), "HTML view definitions", Arrays.asList(ResourceRootProvider.STANDARD, ResourceRootProvider.ASSAY));
+    private static final ModuleResourceCache<Map<Path, ModuleHtmlViewDefinition>> MODULE_HTML_VIEW_DEFINITION_CACHE = ModuleResourceCaches.create(new Path(VIEWS_DIR), new ModuleHtmlViewCacheHandler(), "HTML view definitions", Arrays.asList(ResourceRootProvider.STANDARD, ResourceRootProvider.ASSAY_PROVIDERS));
 
     private final ModuleHtmlViewDefinition _viewdef;
 
