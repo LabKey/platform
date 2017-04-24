@@ -89,7 +89,7 @@ public class SurveyManager
     private static final Logger _log = Logger.getLogger(SurveyManager.class);
     private static final SurveyManager _instance = new SurveyManager();
     private static final List<SurveyListener> _surveyListeners = new CopyOnWriteArrayList<>();
-    private static final ModuleResourceCache<MultiValuedMap<String, SurveyDesign>> MODULE_SURVEY_DESIGN_CACHE = ModuleResourceCaches.create(Path.parse("surveys"), new SurveyDesignResourceCacheHandler(), "Module Survey Design Cache", Collections.singletonList(ResourceRootProvider.STANDARD_SUBDIRECTORIES));
+    private static final ModuleResourceCache<MultiValuedMap<String, SurveyDesign>> MODULE_SURVEY_DESIGN_CACHE = ModuleResourceCaches.create(Path.parse("surveys"), new SurveyDesignResourceCacheHandler(), "Module Survey Design Cache", Collections.singletonList(ResourceRootProvider.SUBDIRECTORIES));
 
     public static final String MODULE_RESOURCE_FILE_EXTENSION = ".metadata.json";
     public static final String MODULE_RESOURCE_PREFIX = "module:";
@@ -611,12 +611,6 @@ public class SurveyManager
 
     private static class SurveyDesignResourceCacheHandler implements ModuleResourceCacheHandler<MultiValuedMap<String, SurveyDesign>>
     {
-        @Override
-        public MultiValuedMap<String, SurveyDesign> load(@Nullable Resource dir, Module module)
-        {
-            throw new IllegalStateException();
-        }
-
         @Override
         public MultiValuedMap<String, SurveyDesign> load(Stream<Resource> roots, Module module)
         {

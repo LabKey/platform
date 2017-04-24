@@ -146,7 +146,7 @@ public class QueryServiceImpl implements QueryService
     private static final QueryBasedModuleResourceCache<ModuleQueryDef> MODULE_QUERY_DEFS_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path(MODULE_QUERIES_DIRECTORY), "Module query definitions cache", new QueryDefResourceCacheHandler());
     private static final QueryBasedModuleResourceCache<ModuleQueryMetadataDef> MODULE_QUERY_METADATA_DEF_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path(MODULE_QUERIES_DIRECTORY), "Module query meta data cache", new QueryMetaDataDefResourceCacheHandler());
     private static final QueryBasedModuleResourceCache<ModuleCustomViewDef> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path(MODULE_QUERIES_DIRECTORY), "Module custom view definitions cache", new CustomViewResourceCacheHandler());
-    private static final ModuleResourceCache<MultiValuedMap<Path, ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE2 = ModuleResourceCaches.create(new Path(MODULE_QUERIES_DIRECTORY), new CustomViewResourceCacheHandler2(), "Module custom view definitions cache", Arrays.asList(ResourceRootProvider.QUERY2, ResourceRootProvider.chain(ResourceRootProvider.ASSAY, ResourceRootProvider.QUERY2)));
+    private static final ModuleResourceCache<MultiValuedMap<Path, ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE2 = ModuleResourceCaches.create(new Path(MODULE_QUERIES_DIRECTORY), new CustomViewResourceCacheHandler2(), "Module custom view definitions cache", Arrays.asList(ResourceRootProvider.QUERY, ResourceRootProvider.chain(ResourceRootProvider.ASSAY_PROVIDERS, ResourceRootProvider.QUERY)));
 
     private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
     private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
@@ -986,12 +986,6 @@ public class QueryServiceImpl implements QueryService
 
     private static class CustomViewResourceCacheHandler2 implements ModuleResourceCacheHandler<MultiValuedMap<Path, ModuleCustomViewDef>>
     {
-        @Override
-        public MultiValuedMap<Path, ModuleCustomViewDef> load(@Nullable Resource dir, Module module)
-        {
-            throw new IllegalStateException("Should not be here");
-        }
-
         @Override
         public MultiValuedMap<Path, ModuleCustomViewDef> load(Stream<Resource> roots, Module module)
         {
