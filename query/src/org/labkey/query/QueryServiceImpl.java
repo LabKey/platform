@@ -131,6 +131,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -143,10 +144,11 @@ public class QueryServiceImpl implements QueryService
 {
     private static final Logger _log = Logger.getLogger(QueryServiceImpl.class);
 
-    private static final QueryBasedModuleResourceCache<ModuleQueryDef> MODULE_QUERY_DEFS_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path(MODULE_QUERIES_DIRECTORY), "Module query definitions cache", new QueryDefResourceCacheHandler());
-    private static final QueryBasedModuleResourceCache<ModuleQueryMetadataDef> MODULE_QUERY_METADATA_DEF_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path(MODULE_QUERIES_DIRECTORY), "Module query meta data cache", new QueryMetaDataDefResourceCacheHandler());
-    private static final QueryBasedModuleResourceCache<ModuleCustomViewDef> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path(MODULE_QUERIES_DIRECTORY), "Module custom view definitions cache", new CustomViewResourceCacheHandler());
-    private static final ModuleResourceCache<MultiValuedMap<Path, ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE2 = ModuleResourceCaches.create(new Path(MODULE_QUERIES_DIRECTORY), new CustomViewResourceCacheHandler2(), "Module custom view definitions cache", Arrays.asList(ResourceRootProvider.QUERY, ResourceRootProvider.chain(ResourceRootProvider.ASSAY_PROVIDERS, ResourceRootProvider.QUERY)));
+    private static final QueryBasedModuleResourceCache<ModuleQueryDef> MODULE_QUERY_DEFS_CACHE = ModuleResourceCaches.createQueryBasedCache(MODULE_QUERIES_PATH, "Module query definitions cache", new QueryDefResourceCacheHandler());
+    private static final QueryBasedModuleResourceCache<ModuleQueryMetadataDef> MODULE_QUERY_METADATA_DEF_CACHE = ModuleResourceCaches.createQueryBasedCache(MODULE_QUERIES_PATH, "Module query meta data cache", new QueryMetaDataDefResourceCacheHandler());
+    private static final QueryBasedModuleResourceCache<ModuleCustomViewDef> MODULE_CUSTOM_VIEW_CACHE_OLD = ModuleResourceCaches.createQueryBasedCache(MODULE_QUERIES_PATH, "Module custom view definitions cache", new CustomViewResourceCacheHandlerOld());
+
+    private static final ModuleResourceCache<MultiValuedMap<Path, ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.create("Module custom view definitions cache", new CustomViewResourceCacheHandler(), ResourceRootProvider.QUERY, ResourceRootProvider.chain(ResourceRootProvider.getAssayProviders(Path.rootPath), ResourceRootProvider.QUERY));
 
     private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
     private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
@@ -373,7 +375,7 @@ public class QueryServiceImpl implements QueryService
         return null;
     }
 
-    @Deprecated /** Use SchemaKey form instead. */
+    @Deprecated /* Use SchemaKey form instead. */
     public QueryDefinition createQueryDef(User user, Container container, String schema, String name)
     {
         return new CustomQueryDefinitionImpl(user, container, SchemaKey.fromString(schema), name);
@@ -678,7 +680,7 @@ public class QueryServiceImpl implements QueryService
         Map<Module, Map<Path, Collection<ModuleCustomViewDef>>> moduleMap = new LinkedHashMap<>();
         for (Module module : ModuleLoader.getInstance().orderModules(modules))
         {
-            Map<Path, Collection<ModuleCustomViewDef>> map = MODULE_CUSTOM_VIEW_CACHE.getResourceMap(module);
+            Map<Path, Collection<ModuleCustomViewDef>> map = MODULE_CUSTOM_VIEW_CACHE_OLD.getResourceMap(module);
             if (!map.isEmpty())
                 moduleMap.put(module, map);
         }
@@ -929,7 +931,7 @@ public class QueryServiceImpl implements QueryService
 
         for (Module module : currentModules)
         {
-            Collection<ModuleCustomViewDef> views = MODULE_CUSTOM_VIEW_CACHE.getResource(module, path);
+            Collection<ModuleCustomViewDef> views = MODULE_CUSTOM_VIEW_CACHE_OLD.getResource(module, path);
 
             // CacheLoader returns empty collection (not null) for non-existent directories
             //noinspection ConstantConditions
@@ -950,7 +952,7 @@ public class QueryServiceImpl implements QueryService
         return view != null ? view.getName() : null;
     }
 
-    private static class CustomViewResourceCacheHandler implements QueryBasedModuleResourceCacheHandler<ModuleCustomViewDef>
+    private static class CustomViewResourceCacheHandlerOld implements QueryBasedModuleResourceCacheHandler<ModuleCustomViewDef>
     {
         @Override
         public boolean isResourceFile(String filename)
@@ -984,7 +986,7 @@ public class QueryServiceImpl implements QueryService
         }
     }
 
-    private static class CustomViewResourceCacheHandler2 implements ModuleResourceCacheHandler<MultiValuedMap<Path, ModuleCustomViewDef>>
+    private static class CustomViewResourceCacheHandler implements ModuleResourceCacheHandler<MultiValuedMap<Path, ModuleCustomViewDef>>
     {
         @Override
         public MultiValuedMap<Path, ModuleCustomViewDef> load(Stream<Resource> roots, Module module)
@@ -999,37 +1001,6 @@ public class QueryServiceImpl implements QueryService
 
             return UnmodifiableMultiValuedMap.unmodifiableMultiValuedMap(mmap);
         }
-//
-//        @Override
-//        public boolean isResourceFile(String filename)
-//        {
-//            return filename.endsWith(CustomViewXmlReader.XML_FILE_EXTENSION);
-//        }
-//
-//        @Override
-//        public CacheLoader<Path, Collection<ModuleCustomViewDef>> getResourceLoader()
-//        {
-//            return (path, argument) -> {
-//                Module module = (Module)argument;
-//                Resource queryDir = module.getModuleResource(path);
-//
-//                Collection<? extends Resource> viewResources = getModuleResources(queryDir, CustomViewXmlReader.XML_FILE_EXTENSION);
-//
-//                if (viewResources.isEmpty())
-//                {
-//                    return null;
-//                }
-//                else
-//                {
-//                    Collection<ModuleCustomViewDef> viewDefs = viewResources
-//                        .stream()
-//                        .map(ModuleCustomViewDef::new)
-//                        .collect(Collectors.toCollection(LinkedList::new));
-//
-//                    return Collections.unmodifiableCollection(viewDefs);
-//                }
-//            };
-//        }
     }
 
     /** Find all files under the given queryDir Resource that end with suffix. */
@@ -1787,7 +1758,7 @@ public class QueryServiceImpl implements QueryService
 
         for (Module module : c.getActiveModules())
         {
-            Resource schemasDir = module.getModuleResource(QueryService.MODULE_SCHEMAS_DIRECTORY);
+            Resource schemasDir = module.getModuleResource(QueryService.MODULE_SCHEMAS_PATH);
             if (schemasDir != null && schemasDir.isCollection())
             {
                 for (Resource resource : schemasDir.list())
@@ -1822,7 +1793,7 @@ public class QueryServiceImpl implements QueryService
         Map<String, TemplateSchemaType> ret = new HashMap<>();
         for (Module module : c.getActiveModules())
         {
-            Resource schemasDir = module.getModuleResource(QueryService.MODULE_SCHEMAS_DIRECTORY);
+            Resource schemasDir = module.getModuleResource(QueryService.MODULE_SCHEMAS_PATH);
             if (schemasDir != null && schemasDir.isCollection())
             {
                 for (Resource resource : schemasDir.list())
@@ -2090,7 +2061,7 @@ public class QueryServiceImpl implements QueryService
     {
         if (schemaKey == null)
         {
-            return new Path(QueryService.MODULE_QUERIES_DIRECTORY);
+            return QueryService.MODULE_QUERIES_PATH;
         }
         List<String> subDirs = new ArrayList<>(schemaKey.getParts().size() + 1);
         subDirs.add(QueryService.MODULE_QUERIES_DIRECTORY);
@@ -3189,41 +3160,42 @@ public class QueryServiceImpl implements QueryService
             }
         }
 
-//        @Test
-//        public void testModuleCustomViews()
-//        {
-//            MultiValuedMap<Path, ModuleCustomViewDef> mmap = new ArrayListValuedHashMap<>();
-//
-//            ModuleLoader.getInstance().getModules().stream()
-//                .map(MODULE_CUSTOM_VIEW_CACHE::getResourceMap)
-//                .map(Map::entrySet)
-//                .flatMap(Collection::stream)
-//                .forEach(entry -> {
-//                    entry.getValue().forEach(view -> mmap.put(entry.getKey(), view));
-//                });
-//
-//            MultiValuedMap<Path, ModuleCustomViewDef> mmap2 = new ArrayListValuedHashMap<>();
-//
-//            ModuleLoader.getInstance().getModules().stream()
-//                .map(MODULE_CUSTOM_VIEW_CACHE2::getResourceMap)
-//                .map(MultiValuedMap::asMap)
-//                .map(Map::entrySet)
-//                .flatMap(Collection::stream)
-//                .forEach(entry -> {
-//                    entry.getValue().forEach(view -> mmap2.put(entry.getKey(), view));
-//                });
-//
-//            _log.info(mmap.size() + " vs. " + mmap2.size());
-//
-//            mmap2.entries().forEach(e -> mmap.remove(e.getKey()));
-//            _log.info("unfound (" + mmap.size() + "): " + new TreeSet<>(mmap.keySet()));
-//        }
-//
+        @Test
+        public void testModuleCustomViews()
+        {
+            MultiValuedMap<Path, ModuleCustomViewDef> mmap = new ArrayListValuedHashMap<>();
+
+            ModuleLoader.getInstance().getModules().stream()
+                .map(MODULE_CUSTOM_VIEW_CACHE_OLD::getResourceMap)
+                .map(Map::entrySet)
+                .flatMap(Collection::stream)
+                .forEach(entry -> {
+                    entry.getValue().forEach(view -> mmap.put(entry.getKey(), view));
+                });
+
+            MultiValuedMap<Path, ModuleCustomViewDef> mmap2 = new ArrayListValuedHashMap<>();
+
+            ModuleLoader.getInstance().getModules().stream()
+                .map(MODULE_CUSTOM_VIEW_CACHE::getResourceMap)
+                .map(MultiValuedMap::asMap)
+                .map(Map::entrySet)
+                .flatMap(Collection::stream)
+                .forEach(entry -> {
+                    entry.getValue().forEach(view -> mmap2.put(entry.getKey(), view));
+                });
+
+            _log.info(mmap.size() + " vs. " + mmap2.size());
+
+            mmap2.entries().forEach(e -> mmap.remove(e.getKey()));
+            _log.info("unfound (" + mmap.size() + "): " + new TreeSet<>(mmap.keySet()));
+        }
+
 //        @Test
 //        public void testResourceRootProviders()
 //        {
-//            Path path = Path.parse("queries");
-//            ResourceRootProvider provider = ResourceRootProvider.chain(ResourceRootProvider.ASSAY, ResourceRootProvider.QUERY2);
+//            Path path = Path.rootPath;
+//            ResourceRootProvider provider = ResourceRootProvider.chain(ResourceRootProvider.ASSAY_PROVIDERS, ResourceRootProvider.QUERY);
+//            MutableInt assayCount = new MutableInt(0);
 //
 //            ModuleLoader.getInstance().getModules()
 //                .forEach(module -> {
@@ -3232,10 +3204,25 @@ public class QueryServiceImpl implements QueryService
 //                    if (null != root)
 //                    {
 //                        Collection<Resource> roots = new LinkedList<>();
-//                        provider.fillResourceRoots(root, path, roots);
-//                        _log.info(module.getName() + ": " + roots);
+//                        provider.fillResourceRoots(root, roots);
+//
+//                        if (!roots.isEmpty())
+//                        {
+//                            _log.info(module.getName() + ": " + roots);
+//
+//                            for (Resource dir : roots)
+//                            {
+//                                for (Resource f : dir.list())
+//                                {
+//                                    if (f.getName().endsWith(CustomViewXmlReader.XML_FILE_EXTENSION))
+//                                        assayCount.increment();
+//                                }
+//                            }
+//                        }
 //                    }
 //                });
+//
+//            _log.info("Count: " + assayCount);
 //        }
     }
 }

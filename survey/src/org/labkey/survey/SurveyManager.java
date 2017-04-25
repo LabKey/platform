@@ -89,7 +89,7 @@ public class SurveyManager
     private static final Logger _log = Logger.getLogger(SurveyManager.class);
     private static final SurveyManager _instance = new SurveyManager();
     private static final List<SurveyListener> _surveyListeners = new CopyOnWriteArrayList<>();
-    private static final ModuleResourceCache<MultiValuedMap<String, SurveyDesign>> MODULE_SURVEY_DESIGN_CACHE = ModuleResourceCaches.create(Path.parse("surveys"), new SurveyDesignResourceCacheHandler(), "Module Survey Design Cache", Collections.singletonList(ResourceRootProvider.SUBDIRECTORIES));
+    private static final ModuleResourceCache<MultiValuedMap<String, SurveyDesign>> MODULE_SURVEY_DESIGN_CACHE = ModuleResourceCaches.create("Module Survey Design Cache", new SurveyDesignResourceCacheHandler(), ResourceRootProvider.getSubdirectories(Path.parse("surveys")));
 
     public static final String MODULE_RESOURCE_FILE_EXTENSION = ".metadata.json";
     public static final String MODULE_RESOURCE_PREFIX = "module:";
@@ -269,7 +269,7 @@ public class SurveyManager
 
     /**
      * Experimental, retrieves a module based survey design from the cache. Module based survey IDs
-     * look like : module:schema/query for example module:mpower/participantDemographics.
+     * look like : module:schema/query for example module:mpower/participant.
      */
     @Nullable
     public SurveyDesign getModuleSurveyDesign(Container container, String surveyId)
