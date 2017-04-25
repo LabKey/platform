@@ -197,6 +197,8 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         gwt.setEachItemBodySetting(def.getEachItemBodySetting().getValue());
         gwt.setEachItemBodyTemplate(def.getEachItemBodyTemplate());
 
+        gwt.setFileAttachmentIndex(def.getFileAttachmentIndex());
+
         gwt.setDescription(def.getDescription());
         gwt.setDiscussionSetting(def.getDiscussionSetting().getValue());
         gwt.setKeyPropertyName(def.getKeyName());
@@ -244,6 +246,8 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         builder.setEachItemBodySetting(gwt.getEachItemBodySetting());
         builder.setEachItemBodyTemplate(gwt.getEachItemBodyTemplate());
 
+        builder.setFileAttachmentIndex(gwt.getFileAttachmentIndex());
+
         builder.setDescription(gwt.getDescription());
         builder.setDiscussionSetting(gwt.getDiscussionSetting());
         builder.setKeyName(gwt.getKeyPropertyName());
@@ -271,6 +275,8 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         defn.setEachItemTitleTemplate(gwt.getEachItemTitleTemplate());
         defn.setEachItemBodySetting(BodySetting.getForValue(gwt.getEachItemBodySetting()));
         defn.setEachItemBodyTemplate(gwt.getEachItemBodyTemplate());
+
+        defn.setFileAttachmentIndex(gwt.getFileAttachmentIndex());
 
         defn.setDescription(gwt.getDescription());
         defn.setDiscussionSetting(DiscussionSetting.getForValue(gwt.getDiscussionSetting()));

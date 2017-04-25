@@ -52,6 +52,8 @@ public class GWTList implements IsSerializable
     public IntegerProperty eachItemBodySetting = new IntegerProperty(0); // BodySetting.TextOnly
     public StringProperty eachItemBodyTemplate = new StringProperty();
 
+    public BooleanProperty fileAttachmentIndex = new BooleanProperty(false);
+
     // client should only read these
     private String _typeURI;
     private String _defaultTitleField;
@@ -290,6 +292,16 @@ public class GWTList implements IsSerializable
     public void setEachItemBodyTemplate(String template)
     {
         this.eachItemBodyTemplate.set(template);
+    }
+
+    public boolean getFileAttachmentIndex()
+    {
+        return fileAttachmentIndex.getBoolean();
+    }
+
+    public void setFileAttachmentIndex(boolean index)
+    {
+        this.fileAttachmentIndex.set(index);
     }
 
     public void _defaultTitleField(String title)

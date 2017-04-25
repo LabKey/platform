@@ -349,16 +349,14 @@ public class TreatmentManager
 
     public Collection<DoseAndRoute> getStudyProductsDoseAndRoute(Container container, User user, int productId)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("ProductId"), productId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ProductId"), productId);
         return new TableSelector(StudySchema.getInstance().getTableInfoDoseAndRoute(), filter, null).getCollection(DoseAndRoute.class);
     }
 
     @Nullable
     public DoseAndRoute getDoseAndRoute(Container container, String dose, String route, int productId)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("ProductId"), productId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ProductId"), productId);
         if (dose != null)
             filter.addCondition(FieldKey.fromParts("Dose"), dose);
         else

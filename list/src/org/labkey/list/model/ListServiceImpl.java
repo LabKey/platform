@@ -16,7 +16,10 @@
 
 package org.labkey.list.model;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -26,11 +29,22 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.FileSystemFile;
+import org.labkey.api.writer.ZipUtil;
 import org.labkey.list.controllers.ListController;
+import org.springframework.validation.BindException;
 
+import java.io.File;
+import java.io.InputStream;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 public class ListServiceImpl implements ListService
 {
@@ -93,5 +107,31 @@ public class ListServiceImpl implements ListService
     public ActionURL getManageListsURL(Container container)
     {
         return new ActionURL(ListController.BeginAction.class, container);
+    }
+
+    public void importListArchive(InputStream is, BindException errors, Container c, User user) throws Exception
+    {
+        File dir = FileUtil.createTempDirectory("list");
+        ZipUtil.unzipToDirectory(is, dir);
+
+        ListImporter li = new ListImporter();
+
+        List<String> errorList = new LinkedList<>();
+
+        try
+        {
+            li.process(new FileSystemFile(dir), c, user, errorList, Logger.getLogger(ListController.class));
+
+            for (String error : errorList)
+                errors.reject(ERROR_MSG, error);
+        }
+        catch (InvalidFileException e)
+        {
+            errors.reject(ERROR_MSG, "Invalid list archive");
+        }
+        catch (ImportException e)
+        {
+            errors.reject(ERROR_MSG, e.getMessage());
+        }
     }
 }

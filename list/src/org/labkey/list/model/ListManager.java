@@ -26,6 +26,8 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.Cache;
@@ -65,6 +67,9 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.webdav.SimpleDocumentResource;
+import org.labkey.api.webdav.WebdavResource;
+import org.labkey.list.controllers.ListController;
+import org.labkey.list.view.ListItemAttachmentParent;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -488,6 +493,10 @@ public class ListManager implements SearchService.DocumentProvider
         // TODO: Attempting to respect tableUrl for details link... but this doesn't actually work. See #28747.
         StringExpression se = listTable.getDetailsURL(null, list.getContainer());
 
+        //Get base attachment download url
+        ActionURL downloadActionUrl = new ActionURL(ListController.DownloadAction.class, list.getContainer())
+                .replaceParameter("listId", String.valueOf(list.getListId()));
+
         new TableSelector(listTable, filter, null).setForDisplay(true).forEachResults(results -> {
             Map<FieldKey, Object> map = results.getFieldKeyRowMap();
             final Object pk = map.get(keyKey);
@@ -496,7 +505,8 @@ public class ListManager implements SearchService.DocumentProvider
             String documentId = getDocumentId(list, entityId);
             Map<String, Object> props = new HashMap<>();
             props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
-            props.put(SearchService.PROPERTY.title.toString(), titleTemplate.eval(map));
+            String displayTitle = titleTemplate.eval(map);
+            props.put(SearchService.PROPERTY.title.toString(), displayTitle);
 
             String body = bodyTemplate.eval(map);
 
@@ -536,12 +546,61 @@ public class ListManager implements SearchService.DocumentProvider
             r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
 
             task.addResource(r, SearchService.PRIORITY.item);
+
+            //If attachmentIndexing is enabled index attachment file(s)
+            if (list.getFileAttachmentIndex())
+                indexAttachements(task, list, entityId, downloadActionUrl, displayTitle);
+
             count.increment();
         });
 
         return count.getValue();
     }
 
+    /**
+     * Add searchable resources to Indexing task for file attachments
+     * @param task indexing task
+     * @param list containing file attachments for back linking
+     * @param rowEntityId row Id to index attachments for
+     * @param downloadUrl ActionUrl to base download links from
+     * @param title base text to use for search entries NOTE: is appended with filename
+     */
+    private void indexAttachements(@NotNull final IndexTask task, ListDefinition list, String rowEntityId, ActionURL downloadUrl, String title)
+    {
+        AttachmentService as = AttachmentService.get();
+
+        List<Pair<String,String>> attachments = as.listAttachmentsForIndexing(Collections.singletonList(rowEntityId), list.getModified());
+        for (Pair<String, String> attachment : attachments)
+        {
+//            String entityId = attachment.first;
+            AttachmentParent listItemParent = new ListItemAttachmentParent(rowEntityId, list.getContainer());
+
+            String documentName = attachment.second;
+
+            //Generate download URL
+            ActionURL attachmentURL = downloadUrl.clone()
+                    .replaceParameter("entityId", rowEntityId)
+                    .replaceParameter("name", documentName);
+
+            //Generate searchable resource
+            String displayTitle = title + " attachment file \"" + documentName + "\"";
+            WebdavResource attachmentRes = as.getDocumentResource(
+                    new Path(rowEntityId, documentName),
+                    attachmentURL,
+                    displayTitle,
+                    listItemParent,
+                    documentName,
+                    SearchService.fileCategory
+            );
+
+            ActionURL gridURL = list.urlShowData();
+            gridURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
+            NavTree t = new NavTree("list", gridURL);
+            String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
+            attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
+            task.addResource(attachmentRes, SearchService.PRIORITY.item);
+        }
+    }
 
     private void indexEntireList(@NotNull IndexTask task, final ListDefinition list)
     {

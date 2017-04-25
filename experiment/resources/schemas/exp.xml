@@ -251,6 +251,7 @@
           <column columnName="EachItemTitleTemplate"/>
           <column columnName="EachItemBodySetting" />
           <column columnName="EachItemBodyTemplate"/>
+          <column columnName="FileAttachmentIndex"/>
       </columns>
   </table>
     <table tableName="Material" tableDbType="TABLE">

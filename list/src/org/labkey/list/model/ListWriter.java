@@ -219,6 +219,8 @@ public class ListWriter
         if (null != def.getEntireListTitleTemplate()) settings.setEntireListTitleTemplate(def.getEntireListTitleTemplate());
         if (def.getEntireListBodySetting().getValue() != 0) settings.setEntireListBodySetting(def.getEntireListBodySetting().getValue());
         if (null != def.getEntireListBodyTemplate()) settings.setEntireListBodyTemplate(def.getEntireListBodyTemplate());
+
+        if (def.getFileAttachmentIndex()) settings.setFileAttachmentIndex(def.getFileAttachmentIndex());
     }
 
     private void writeAttachments(TableInfo ti, ListDefinition def, Container c, VirtualFile listsDir, boolean removeProtected) throws SQLException, IOException

@@ -102,7 +102,7 @@ Ext4.define('LABKEY.VaccineDesign.Utils', {
             queryName: queryName,
             columns: columns,
             filterArray: Ext4.isDefined(filter) ? [filter] : (hasStudyDesignPrefix ? [LABKEY.Filter.create('Inactive', false)] : []),
-            containerFilter: LABKEY.container.type == 'project' || Ext4.isDefined(filter) || !hasStudyDesignPrefix ? 'Current' : 'CurrentPlusProject',
+            containerFilter: LABKEY.container.type == 'project' || Ext4.isDefined(filter) || !hasStudyDesignPrefix ? undefined : 'CurrentPlusProject',
             sort: '-Container/Path,Label',
             autoLoad: true,
             listeners: {

@@ -257,6 +257,16 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
                         productId = record.get(outerDataIndex)[subgridIndex]['ProductId'];
 
                     cmp.bindStore(this.getNewDoseAndRouteComboStore(productId));
+                },
+                change : function(cmp, newValue, oldValue) {
+                    var record = this.getStore().getAt(cmp.storeIndex),
+                        outerDataIndex = cmp.outerDataIndex,
+                        subgridIndex = Number(cmp.subgridIndex),
+                        subRecord = record.get(outerDataIndex)[subgridIndex];
+
+                    // if the ProductDoseRoute is set, we need to update it
+                    if (Ext4.isDefined(subRecord['ProductDoseRoute']) && Ext4.isDefined(subRecord['ProductId']))
+                        subRecord['ProductDoseRoute'] = subRecord['ProductId'] + '-#-' + newValue;
                 }
             }
         };

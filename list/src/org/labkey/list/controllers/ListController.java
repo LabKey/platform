@@ -35,8 +35,6 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderExportContext;
-import org.labkey.api.admin.ImportException;
-import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentForm;
@@ -104,13 +102,10 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
-import org.labkey.api.writer.ZipUtil;
 import org.labkey.list.model.ListAuditProvider;
 import org.labkey.list.model.ListDefinitionImpl;
 import org.labkey.list.model.ListEditorServiceImpl;
-import org.labkey.list.model.ListImporter;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListManagerSchema;
 import org.labkey.list.model.ListWriter;
@@ -128,13 +123,10 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -997,30 +989,7 @@ public class ListController extends SpringActionController
                 }
                 else
                 {
-                    InputStream is = file.getInputStream();
-
-                    File dir = FileUtil.createTempDirectory("list");
-                    ZipUtil.unzipToDirectory(is, dir);
-
-                    ListImporter li = new ListImporter();
-
-                    List<String> errorList = new LinkedList<>();
-
-                    try
-                    {
-                        li.process(new FileSystemFile(dir), getContainer(), getUser(), errorList, Logger.getLogger(ListController.class));
-
-                        for (String error : errorList)
-                            errors.reject(ERROR_MSG, error);
-                    }
-                    catch (InvalidFileException e)
-                    {
-                        errors.reject(ERROR_MSG, "Invalid list archive");
-                    }
-                    catch (ImportException e)
-                    {
-                        errors.reject(ERROR_MSG, e.getMessage());
-                    }
+                    ListService.get().importListArchive(file.getInputStream(), errors, getContainer(), getUser());
                 }
             }
 

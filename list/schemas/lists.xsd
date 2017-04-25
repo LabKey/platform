@@ -34,6 +34,8 @@
                         <xsd:attribute name="entireListTitleTemplate" type="xsd:string" use="optional"/>
                         <xsd:attribute name="entireListBodySetting" type="xsd:int" default="0" use="optional"/>
                         <xsd:attribute name="entireListBodyTemplate" type="xsd:string" use="optional"/>
+
+                        <xsd:attribute name="fileAttachmentIndex" type="xsd:boolean" default="false" use="optional" />
                     </xsd:complexType>
                 </xsd:element>
             </xsd:sequence>

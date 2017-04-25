@@ -341,6 +341,19 @@ public class ListDefinitionImpl implements ListDefinition
         edit().setEachItemBodyTemplate(template);
     }
 
+    @Override
+    public boolean getFileAttachmentIndex()
+    {
+        return _def.getFileAttachmentIndex();
+    }
+
+    @Override
+    public void setFileAttachmentIndex(boolean fileAttachmentIndex)
+    {
+        edit().setFileAttachmentIndex(fileAttachmentIndex);
+    }
+
+
     public void save(User user) throws Exception
     {
         save(user, true);

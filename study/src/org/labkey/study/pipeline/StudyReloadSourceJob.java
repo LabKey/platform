@@ -54,6 +54,7 @@ public class StudyReloadSourceJob extends StudyBatch implements Serializable, St
         File studyXml = new File(root.getRootPath(), "study.xml");
 
         _ctx = new StudyImportContext(info.getUser(), info.getContainer(), studyXml, null, new PipelineJobLoggerGetter(this), _root);
+        _ctx.setSkipQueryValidation(true);
         _errors = new NullSafeBindException(new Object(), "reloadSource");
 
         File logFile = new File(root.getRootPath(), FileUtil.makeFileNameWithTimestamp("study_reload_source", "log"));

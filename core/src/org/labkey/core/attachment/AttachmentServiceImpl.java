@@ -302,18 +302,14 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         if (null == user)
             throw new IllegalArgumentException("Cannot add attachments for the null user");
 
-        if (files != null)
-        {
-            List<String> duplicates = findDuplicates(files);
-
-            if (duplicates.size() > 0)
-            {
-                throw new AttachmentService.DuplicateFilenameException(duplicates);
-            }
-        }
-
         if (null == files || files.isEmpty())
             return;
+
+        List<String> duplicates = findDuplicates(files);
+        if (duplicates.size() > 0)
+        {
+            throw new AttachmentService.DuplicateFilenameException(duplicates);
+        }
 
         Set<String> filesToSkip = new TreeSet<>();
         File fileLocation = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;

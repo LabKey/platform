@@ -57,6 +57,8 @@ public class ListDef extends Entity implements Cloneable
     protected BodySetting _eachItemBodySetting = BodySetting.TextOnly;
     protected String _eachItemBodyTemplate = null;
 
+    protected boolean _fileAttachmentIndex = false;
+
     public int getListId()
     {
         return _listId;
@@ -202,6 +204,11 @@ public class ListDef extends Entity implements Cloneable
         return _eachItemBodyTemplate;
     }
 
+    public boolean getFileAttachmentIndex()
+    {
+        return _fileAttachmentIndex;
+    }
+
     protected void copyTo(ListDef to)
     {
         super.copyTo(to);
@@ -228,6 +235,7 @@ public class ListDef extends Entity implements Cloneable
         to._eachItemTitleTemplate = _eachItemTitleTemplate;
         to._eachItemBodySetting = _eachItemBodySetting;
         to._eachItemBodyTemplate = _eachItemBodyTemplate;
+        to._fileAttachmentIndex = _fileAttachmentIndex;
     }
 
     @Override
@@ -245,6 +253,7 @@ public class ListDef extends Entity implements Cloneable
         if (_allowExport != listDef._allowExport) return false;
         if (_entireListIndex != listDef._entireListIndex) return false;
         if (_eachItemIndex != listDef._eachItemIndex) return false;
+        if (_fileAttachmentIndex != listDef._fileAttachmentIndex) return false;
         if (_name != null ? !_name.equals(listDef._name) : listDef._name != null) return false;
         if (_keyName != null ? !_keyName.equals(listDef._keyName) : listDef._keyName != null) return false;
         if (_keyType != null ? !_keyType.equals(listDef._keyType) : listDef._keyType != null) return false;
@@ -296,6 +305,7 @@ public class ListDef extends Entity implements Cloneable
         result = 31 * result + (_eachItemTitleTemplate != null ? _eachItemTitleTemplate.hashCode() : 0);
         result = 31 * result + (_eachItemBodySetting != null ? _eachItemBodySetting.hashCode() : 0);
         result = 31 * result + (_eachItemBodyTemplate != null ? _eachItemBodyTemplate.hashCode() : 0);
+        result = 31 * result + (_fileAttachmentIndex ? 1 : 0);
         return result;
     }
 
@@ -451,6 +461,10 @@ public class ListDef extends Entity implements Cloneable
         public void setEachItemBodyTemplate(String template)
         {
             _eachItemBodyTemplate = template;
+        }
+        public void setFileAttachmentIndex(boolean index)
+        {
+            _fileAttachmentIndex = index;
         }
     }
 

@@ -152,7 +152,9 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
             else
             {
                 // Just add the column as a passthrough from source to target
-                outCols.add(out.getColumnInfo(out.addColumn(i)));
+                ColumnInfo passThruCol = out.getColumnInfo(out.addColumn(i));
+                passThruCol.setAlias(in.getColumnInfo(i).getAlias());
+                outCols.add(passThruCol);
             }
         }
         // Now add the transforms that didn't specify a source column

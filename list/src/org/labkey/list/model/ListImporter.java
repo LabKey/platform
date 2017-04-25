@@ -319,6 +319,8 @@ public class ListImporter
             list.setEntireListTitleTemplate(listSettingsXml.getEntireListTitleTemplate());
             list.setEntireListBodySetting(ListDefinition.BodySetting.getForValue(listSettingsXml.getEntireListBodySetting()));
             list.setEntireListBodyTemplate(listSettingsXml.getEntireListBodyTemplate());
+
+            list.setFileAttachmentIndex(listSettingsXml.getFileAttachmentIndex());
         }
 
         list.setPreferredListIds(preferredListIds);
