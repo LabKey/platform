@@ -289,7 +289,8 @@ public class DataClassSearchTest extends BaseWebDriverTest
 
         // commented out due to intermittently failing on TeamCity
         // TODO: if issue #26116 is ever resolved, re-enable this part of the test
-        //testSearchAfterModifyingDomain();
+        // NOTE: let's see if Postgres v42.0.0 driver fixes this problem, re-enabling for now
+        testSearchAfterModifyingDomain();
     }
 
     private void testSearchAfterModifyingDomain() throws Exception
