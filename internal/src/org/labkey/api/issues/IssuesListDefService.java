@@ -16,6 +16,8 @@
 package org.labkey.api.issues;
 
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
@@ -91,5 +93,27 @@ public interface IssuesListDefService
      * @return Map from IssueDefName to Domain
      */
     Map<String, Domain> getDomainsForIssueDefKind(String kind, Container container, User user);
+
+    /**
+     * Create a new IssueListDef in the specified container using the given provider name and IssueListDef name.
+     * @param container The container to create the new IssueListDef in
+     * @param user The user to create the new IssueListDef as
+     * @param providerName The name of the IssuesListDefProvider
+     * @param label The label to give to the IssueListDef
+     * @param itemNounSingular The singular item name to use for this IssueListDef
+     * @return int RowId for the newly created IssueListDef
+     */
+    int createIssueListDef(Container container, User user, @NotNull String providerName, @NotNull String label, @Nullable String itemNounSingular);
+
+    /**
+     * Create a new Issue in the IssueListDef for the specified container and user.
+     * @param container The container to create the Issue in
+     * @param user The user to create the issue as and set the initial assignedTo property
+     * @param issueDefName The name of the IssueListDef
+     * @param title The Issue title
+     * @param body The Issue message body
+     * @return int IssueId for the newly created Issue
+     */
+    int createIssue(Container container, User user, @NotNull String issueDefName, @NotNull String title, @Nullable String body) throws Exception;
 }
 
