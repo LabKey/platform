@@ -15,7 +15,10 @@
  */
 package org.labkey.issue.model;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.issues.IssueDetailHeaderLinkProvider;
 import org.labkey.api.issues.IssuesListDefProvider;
@@ -115,5 +118,39 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     public List<IssueDetailHeaderLinkProvider> getIssueDetailHeaderLinkProviders()
     {
         return Collections.unmodifiableList(_headerLinkProviders);
+    }
+
+    @Override
+    public int createIssueListDef(Container container, User user, @NotNull String providerName, @NotNull String label, @Nullable String itemNounSingular)
+    {
+        IssueListDef newDef = IssueManager.createIssueListDef(container, user, providerName, label);
+        if (itemNounSingular != null)
+            IssueManager.saveEntryTypeNames(newDef.getDomainContainer(user), newDef.getName(), itemNounSingular, itemNounSingular + "s");
+
+        return newDef.getRowId();
+    }
+
+    @Override
+    public int createIssue(Container container, User user, @NotNull String issueDefName, @NotNull String title, @Nullable String body) throws Exception
+    {
+        IssueListDef def = IssueManager.getIssueListDef(container, issueDefName);
+        if (def == null)
+            throw new IllegalArgumentException("Could not find the IssueListDef with the following name: " + issueDefName);
+
+        Issue issue = new Issue();
+        issue.open(container, user);
+        issue.setIssueDefName(def.getName());
+        issue.setAssignedTo(user.getUserId());
+        issue.setTitle(title);
+        issue.setPriority(3);
+        issue.setType("Todo");
+        if (body != null)
+            issue.addComment(user, body);
+
+        ObjectFactory factory = ObjectFactory.Registry.getFactory(Issue.class);
+        factory.toMap(issue, issue.getProperties());
+
+        IssueManager.saveIssue(user, container, issue);
+        return issue.getIssueId();
     }
 }

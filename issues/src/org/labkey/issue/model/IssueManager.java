@@ -34,6 +34,8 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.issues.IssuesListDefProvider;
+import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -80,6 +82,7 @@ import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.IssuesModule;
 import org.labkey.issue.query.IssueDefDomainKind;
+import org.labkey.issue.query.IssuesListDefTable;
 import org.labkey.issue.query.IssuesQuerySchema;
 
 import javax.servlet.ServletException;
@@ -1532,6 +1535,45 @@ public class IssueManager
             return def.getName();
         }
         return null;
+    }
+
+    public static IssuesListDefProvider getIssuesListDefProvider(Container container, @NotNull String providerName)
+    {
+        List<IssuesListDefProvider> providers = IssuesListDefService.get().getEnabledIssuesListDefProviders(container);
+        if (providers == null || providers.isEmpty())
+            throw new IllegalArgumentException("No IssuesListDefProviders available");
+
+        IssuesListDefProvider provider = null;
+        for (IssuesListDefProvider enabledProvider : providers)
+        {
+            if (enabledProvider.getName().equalsIgnoreCase(providerName))
+            {
+                provider = enabledProvider;
+                break;
+            }
+        }
+
+        if (provider == null)
+            throw new IllegalArgumentException("Could not find the IssuesListDefProvider with the following name: " + providerName);
+
+        return provider;
+    }
+
+    public static IssueListDef createIssueListDef(Container container, User user, @NotNull String providerName, @NotNull String label)
+    {
+        String name = IssuesListDefTable.nameFromLabel(label);
+        IssueListDef existingDef = getIssueListDef(container, name);
+        if (existingDef != null)
+            throw new IllegalArgumentException("An IssueListDef already exists for this container with the following name: " + name);
+
+        IssuesListDefProvider provider = getIssuesListDefProvider(container, providerName);
+
+        IssueListDef def = new IssueListDef();
+        def.setName(name);
+        def.setLabel(label);
+        def.setKind(provider.getName());
+        def.beforeInsert(user, container.getId());
+        return def.save(user);
     }
 
     public static void deleteIssueListDef(int rowId, Container c, User user) throws DomainNotFoundException
