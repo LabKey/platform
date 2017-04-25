@@ -79,7 +79,7 @@ public abstract class AbstractDataLoaderFactory extends AbstractDocumentParser i
     public boolean detect(WebdavResource resource, String contentType, byte[] buf) throws IOException
     {
         FileType fileType = getFileType();
-        return fileType.isType(resource.getFile(), contentType, buf);
+        return fileType.isType(resource.getName(), contentType, buf);
     }
 
     @Override

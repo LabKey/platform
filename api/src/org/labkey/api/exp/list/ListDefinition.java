@@ -370,4 +370,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
 
     String getEachItemBodyTemplate();
     void setEachItemBodyTemplate(String template);
+
+    boolean getFileAttachmentIndex();
+    void setFileAttachmentIndex(boolean index);
 }

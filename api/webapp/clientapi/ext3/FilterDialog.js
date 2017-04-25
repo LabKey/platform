@@ -1036,7 +1036,7 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                     resizable: false,
                     width: 340,
                     tpl: new Ext.XTemplate('<tpl for=".">' +
-                            '<span class="labkey-link" title="' + '{[Ext.util.Format.htmlEncode(values["displayValue"])]}' + '">' +
+                            '<span class="labkey-link" title="{[Ext.util.Format.htmlEncode(values["displayValue"])]}">' +
                             '{[Ext.util.Format.htmlEncode(values["displayValue"])]}' +
                             '</span></tpl>')
                 })

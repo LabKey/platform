@@ -21,8 +21,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.springframework.validation.BindException;
 
+import java.io.InputStream;
 import java.util.Map;
 
 public interface ListService
@@ -45,4 +48,8 @@ public interface ListService
     @Nullable ListDefinition getList(Container container, String name);
     ListDefinition getList(Domain domain);
     ActionURL getManageListsURL(Container container);
+
+    //TODO: should this have a default impl?
+    void importListArchive(InputStream is, BindException errors, Container c, User user) throws Exception;
+
 }

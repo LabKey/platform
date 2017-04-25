@@ -214,6 +214,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         this(new FieldKey(null, rsmd.getColumnLabel(col)), null);
         this.setSqlTypeName(rsmd.getColumnTypeName(col));
         this.jdbcType = JdbcType.valueOf(rsmd.getColumnType(col));
+        this.setAlias(rsmd.getColumnName(col));
     }
 
     public ColumnInfo(String name, TableInfo parentTable)
