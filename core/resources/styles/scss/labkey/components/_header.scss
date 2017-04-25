@@ -118,14 +118,13 @@
       float: left;
 
       & > a {
-        height: 30px;
         display: block;
         color: $lk-page-header-color;
-        padding: 5px 8px;
+        padding: $lk-page-header-navbar-nav-padding;
 
         &:hover,
         &:focus {
-          color: #EEEEEE;
+          color: $lk-page-header-navbar-nav-hover-color;
         }
       }
     }

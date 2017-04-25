@@ -16,20 +16,18 @@
  */
 --%>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.search.SearchUrls" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.core.view.template.bootstrap.BootstrapHeader" %>
-<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.view.PopupAdminView" %>
-<%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.PopupMenuView" %>
 <%@ page import="org.labkey.api.view.PopupUserView" %>
-<%@ page import="org.labkey.api.search.SearchUrls" %>
-<%@ page import="java.io.Writer" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.BootstrapHeader" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -37,46 +35,6 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("internal/jQuery");
-    }
-
-    private void renderTree(NavTree tree, Writer out) throws Exception
-    {
-        if (tree == null)
-            return;
-
-        for (NavTree child : tree.getChildren())
-        {
-            if (child.hasChildren())
-            {
-                String text = PageFlowUtil.filter(child.getText());
-
-                out.write("<li class=\"dropdown-submenu\">");
-                out.write("<a class=\"subexpand\" tabindex=\"0\">" + text + "<i class=\"fa fa-chevron-right\"></i></a>");
-                out.write("<ul class=\"dropdown-layer-menu\">");
-                out.write("<li><a class=\"subcollapse\" tabindex=\"0\"><i class=\"fa fa-chevron-circle-left\"></i>" + text + "</a></li>");
-                renderTree(child, out);
-                out.write("</ul>");
-                out.write("</li>");
-            }
-            else
-            {
-                if ("-".equals(child.getText()))
-                    out.write("<li class=\"divider\"></li>");
-                else
-                {
-                    out.write("<li>");
-                    out.write("<a");
-                    if (null != child.getScript())
-                        out.write(" onclick=\"" + PageFlowUtil.filter(child.getScript()) +"\" ");
-                    if (null != child.getHref())
-                        out.write(" href=\"" + child.getHref() + "\" ");
-                    if (null != child.getTarget())
-                        out.write(" target=\"" + child.getTarget() + "\" ");
-                    out.write(" tabindex=\"0\">" + PageFlowUtil.filter(child.getText()) + "</a>");
-                    out.write("</li>");
-                }
-            }
-        }
     }
 %>
 <%
@@ -136,7 +94,7 @@
                     <i class="fa fa-user"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
-                    <% renderTree(PopupUserView.createNavTree(context, model.pageConfig), out); %>
+                    <% PopupMenuView.renderTree(PopupUserView.createNavTree(context, model.pageConfig), out); %>
                 </ul>
             </li>
 <% } %>
@@ -146,7 +104,7 @@
                     <i class="fa fa-cog"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
-                    <% renderTree(PopupAdminView.createNavTree(context), out); %>
+                    <% PopupMenuView.renderTree(PopupAdminView.createNavTree(context), out); %>
                 </ul>
             </li>
 <% } %>

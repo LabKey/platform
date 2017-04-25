@@ -6,7 +6,7 @@ const path = require('path');
 const webpack = require('webpack');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
-module.exports = function makeWebpackConfig (env) {
+module.exports = function(env) {
     var entry = {};
     var baseJsDir = './resources/styles/js/';
     var styleJs = baseJsDir + 'style.js';
