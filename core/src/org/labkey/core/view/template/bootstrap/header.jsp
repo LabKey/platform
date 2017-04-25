@@ -51,9 +51,9 @@
                 String text = PageFlowUtil.filter(child.getText());
 
                 out.write("<li class=\"dropdown-submenu\">");
-                out.write("<a class=\"subexpand\">" + text + "<i class=\"fa fa-chevron-right\"></i></a>");
+                out.write("<a class=\"subexpand\" tabindex=\"0\">" + text + "<i class=\"fa fa-chevron-right\"></i></a>");
                 out.write("<ul class=\"dropdown-layer-menu\">");
-                out.write("<li><a class=\"subcollapse\"><i class=\"fa fa-chevron-circle-left\"></i>" + text + "</a></li>");
+                out.write("<li><a class=\"subcollapse\" tabindex=\"0\"><i class=\"fa fa-chevron-circle-left\"></i>" + text + "</a></li>");
                 renderTree(child, out);
                 out.write("</ul>");
                 out.write("</li>");
@@ -72,7 +72,7 @@
                         out.write(" href=\"" + child.getHref() + "\" ");
                     if (null != child.getTarget())
                         out.write(" target=\"" + child.getTarget() + "\" ");
-                    out.write(">" + PageFlowUtil.filter(child.getText()) + "</a>");
+                    out.write(" tabindex=\"0\">" + PageFlowUtil.filter(child.getText()) + "</a>");
                     out.write("</li>");
                 }
             }
@@ -162,57 +162,4 @@
 <% } %>
         </ul>
     </div>
-    <script type="application/javascript">
-        (function($) {
-            $('#global-search-trigger').click(function() {
-                $(this).parent().toggleClass('active');
-                var input = $('input.search-box');
-                input.is(':focus') ? input.blur() : input.focus();
-            });
-
-            // delay for mobile focus on search
-            $('#global-search-xs').on('show.bs.dropdown', function() {
-                setTimeout(function() {
-                    jQuery(this).find('input.search-box').focus();
-                }.bind(this), 500);
-            });
-
-            $('.dropdown-submenu a.subexpand').click(function(e) {
-                var el = $(this);
-
-                // hide this link and its direct parent sibling list elements
-                el.css('display', 'none');
-                el.parent().siblings('li').css('display', 'none');
-
-                // toggle the sibling ul element to show the nested list
-                el.next('ul').toggleClass('open');
-                e.stopPropagation();
-                e.preventDefault();
-            });
-
-            $('.dropdown-layer-menu a.subcollapse').click(function(e) {
-                var el = $(this);
-                var menu = el.parent().parent();
-
-                // toggle the element class
-                menu.toggleClass('open');
-
-                // show the parent link and its direct parent sibling list elements
-                var menuLink = menu.prev('a.subexpand');
-                menuLink.css('display', '');
-                menuLink.parent().siblings('li').css('display', '');
-
-                e.stopPropagation();
-                e.preventDefault();
-            });
-
-            // unfurl menus
-            $('.dropdown-rollup').on('hide.bs.dropdown', function() {
-                var menu =  $(this).children('ul.dropdown-menu');
-                menu.find('li').css('display', '');
-                menu.find('.subexpand').css('display', '');
-                menu.find('.dropdown-layer-menu.open').toggleClass('open');
-            });
-        })(jQuery);
-    </script>
 </div>
