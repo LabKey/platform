@@ -25,6 +25,7 @@ import java.util.Collection;
 /**
  * Created by adam on 10/24/2015.
  */
+@Deprecated
 public interface QueryBasedModuleResourceCacheHandler<V>
 {
     /**

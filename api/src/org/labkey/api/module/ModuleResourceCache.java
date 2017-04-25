@@ -95,7 +95,7 @@ public final class ModuleResourceCache<V>
     }
 
     // This constructor supports /resources/<path>, /assay/<provider>/<path>, and other layouts
-    ModuleResourceCache(Path path, ModuleResourceCacheHandler<V> handler, String description, List<ResourceRootProvider> providers)
+    ModuleResourceCache(String description, ModuleResourceCacheHandler<V> handler, ResourceRootProvider provider, ResourceRootProvider... extraProviders)
     {
         this(handler, description, new CacheLoader<Module, V>()
         {
@@ -104,17 +104,19 @@ public final class ModuleResourceCache<V>
             {
                 ModuleResourceCache<V> cache = (ModuleResourceCache<V>)argument;
                 Resource resourceRoot = new FileListenerResource(module.getModuleResource(Path.rootPath), module, cache);
-                Stream<Resource> resourceRoots = getResourceRoots(resourceRoot, path, providers);
+                Stream<Resource> resourceRoots = getResourceRoots(resourceRoot, provider, extraProviders);
 
                 return handler.load(resourceRoots, module);
             }
 
-            private @NotNull Stream<Resource> getResourceRoots(@NotNull Resource rootResource, Path path, List<ResourceRootProvider> providers)
+            private @NotNull Stream<Resource> getResourceRoots(@NotNull Resource rootResource, ResourceRootProvider provider, ResourceRootProvider... extraProviders)
             {
                 Collection<Resource> roots = new LinkedList<>();
 
-                providers
-                    .forEach(provider -> provider.fillResourceRoots(rootResource, path, roots));
+                provider.fillResourceRoots(rootResource, roots);
+
+                for (ResourceRootProvider extraProvider : extraProviders)
+                    extraProvider.fillResourceRoots(rootResource, roots);
 
                 return roots.isEmpty() ? Stream.empty() : roots.stream();
             }

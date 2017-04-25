@@ -18,7 +18,6 @@ package org.labkey.api.module;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,9 +42,9 @@ public class ModuleResourceCaches
         return new ModuleResourceCache<>(path, handler, description);
     }
 
-    public static <T> ModuleResourceCache<T> create(Path path, ModuleResourceCacheHandler<T> handler, String description, List<ResourceRootProvider> providers)
+    public static <T> ModuleResourceCache<T> create(String description, ModuleResourceCacheHandler<T> handler, ResourceRootProvider provider, ResourceRootProvider... extraProviders)
     {
-        return new ModuleResourceCache<>(path, handler, description, providers);
+        return new ModuleResourceCache<>(description, handler, provider, extraProviders);
     }
 
     /**
@@ -70,13 +69,6 @@ public class ModuleResourceCaches
         return PageFlowUtil.encode(module.getName()) + "/" + PageFlowUtil.encode(resourceName);
     }
 
-    public static CacheId parseCacheKey(String cacheKey)
-    {
-        // Now split and URL decode the parts
-        String[] parts = cacheKey.split("/");
-        return new CacheId(PageFlowUtil.decode(parts[0]), PageFlowUtil.decode(parts[1]));
-    }
-
 
     public static class CacheId
     {
@@ -86,12 +78,6 @@ public class ModuleResourceCaches
         public CacheId(String module, String name)
         {
             _moduleName = module;
-            _name = name;
-        }
-
-        public CacheId(Module module, String name)
-        {
-            _moduleName = module.getName();
             _name = name;
         }
 

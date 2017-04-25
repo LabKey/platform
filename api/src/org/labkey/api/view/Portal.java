@@ -90,7 +90,7 @@ public class Portal
     public static final int MOVE_UP = 0;
     public static final int MOVE_DOWN = 1;
     public static final ModuleResourceCache<Collection<SimpleWebPartFactory>> WEB_PART_FACTORY_CACHE =
-        ModuleResourceCaches.create(new Path(ModuleHtmlView.VIEWS_DIR), new SimpleWebPartFactoryCacheHandler(), "File-based webpart definitions");
+        ModuleResourceCaches.create(ModuleHtmlView.VIEWS_PATH, new SimpleWebPartFactoryCacheHandler(), "File-based webpart definitions");
 
     private static Map<String, WebPartFactory> _viewMap = null;
 

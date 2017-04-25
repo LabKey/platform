@@ -60,7 +60,9 @@ import java.util.Set;
 public interface QueryService
 {
     String MODULE_QUERIES_DIRECTORY = "queries";
-    String MODULE_SCHEMAS_DIRECTORY = "schemas";
+    Path MODULE_QUERIES_PATH = Path.parse(MODULE_QUERIES_DIRECTORY);
+
+    Path MODULE_SCHEMAS_PATH = Path.parse("schemas");
 
     String SCHEMA_TEMPLATE_EXTENSION = ".template.xml";
 

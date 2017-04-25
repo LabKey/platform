@@ -77,12 +77,12 @@ public class ScriptTriggerFactory implements TriggerFactory
     private Set<Path> getDefaultPaths(String schemaName, String name, String title)
     {
         // Create legal path name
-        Path pathNew = new Path(QueryService.MODULE_QUERIES_DIRECTORY,
+        Path pathNew = QueryService.MODULE_QUERIES_PATH.append(
                 FileUtil.makeLegalName(schemaName),
                 FileUtil.makeLegalName(name) + ".js");
 
         // For backwards compat with 10.2
-        Path pathOld = new Path(QueryService.MODULE_QUERIES_DIRECTORY,
+        Path pathOld = QueryService.MODULE_QUERIES_PATH.append(
                 schemaName.replaceAll("\\W", "_"),
                 name.replaceAll("\\W", "_") + ".js");
 
@@ -92,7 +92,7 @@ public class ScriptTriggerFactory implements TriggerFactory
 
         if (null != title && !name.equals(title))
         {
-            Path pathLabel = new Path(QueryService.MODULE_QUERIES_DIRECTORY,
+            Path pathLabel = QueryService.MODULE_QUERIES_PATH.append(
                     FileUtil.makeLegalName(schemaName),
                     FileUtil.makeLegalName(title) + ".js");
             paths.add(pathLabel);

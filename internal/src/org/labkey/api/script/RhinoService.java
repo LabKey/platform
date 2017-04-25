@@ -258,15 +258,19 @@ class ScriptReferenceImpl implements ScriptReference
         }
     };
 
-    private static final ModuleResourceCache<Map<Path, CompiledScript>> SCRIPT_CACHE = ModuleResourceCaches.create(Path.parse(ScriptService.SCRIPTS_DIR), CACHE_HANDLER, "Module JavaScript cache", Arrays.asList(ResourceRootProvider.HIERARCHY, ResourceRootProvider.QUERY_SUBDIRECTORIES));
+    private static final ModuleResourceCache<Map<Path, CompiledScript>> SCRIPT_CACHE = ModuleResourceCaches.create(
+        "Module JavaScript cache",
+        CACHE_HANDLER,
+        ResourceRootProvider.getHierarchy(Path.parse(ScriptService.SCRIPTS_DIR)),
+        ResourceRootProvider.QUERY_SUBDIRECTORIES);
 
     private final Module _module;
     private final Path _path;
     private final RhinoEngine _engine;
     private final CompiledScript _script;
 
-    private ScriptContext context; // context to eval and invoke in, not compile.
-    private boolean evaluated = false;
+    private ScriptContext _context; // context to eval and invoke in, not compile.
+    private boolean _evaluated = false;
 
     static ScriptReferenceImpl get(Module module, Path path) throws ScriptException
     {
@@ -275,6 +279,8 @@ class ScriptReferenceImpl implements ScriptReference
         return null == script ? null : new ScriptReferenceImpl(module, path, (RhinoEngine)script.getEngine(), script);
     }
 
+    // NB: At first glance, it might seem like we should cache ScriptReferenceImpl instances instead of CompiledScript instances,
+    // however, because this class mutates internal state (_context and _evaluated) we need to construct them each time.
     private ScriptReferenceImpl(Module module, Path path, RhinoEngine engine, CompiledScript script) throws ScriptException
     {
         _module = module;
@@ -292,9 +298,9 @@ class ScriptReferenceImpl implements ScriptReference
 
     public ScriptContext getContext()
     {
-        if (context == null)
-            context = new SimpleScriptContext();
-        return context;
+        if (_context == null)
+            _context = new SimpleScriptContext();
+        return _context;
     }
 
     public <T> T eval(Class<T> resultType) throws ScriptException
@@ -341,7 +347,7 @@ class ScriptReferenceImpl implements ScriptReference
 
             LOG.debug("Evaluating script '" + _path.toString() + "'");
             Object result = _script.eval(ctxt);
-            evaluated = true;
+            _evaluated = true;
             return result;
         }
         finally
@@ -350,7 +356,7 @@ class ScriptReferenceImpl implements ScriptReference
         }
     }
 
-    public boolean evaluated() { return evaluated; }
+    public boolean evaluated() { return _evaluated; }
 
     public boolean hasFn(String name) throws ScriptException
     {
@@ -365,7 +371,7 @@ class ScriptReferenceImpl implements ScriptReference
             throw new ScriptException("Scope must be a Rhino Scriptable object");
 
         // compile and evaluate if necessary
-        if (!evaluated)
+        if (!_evaluated)
             eval();
         return ScriptableObject.getProperty((Scriptable)thiz, name) instanceof Function;
     }
@@ -373,7 +379,7 @@ class ScriptReferenceImpl implements ScriptReference
     public <T> T invokeFn(Class<T> resultType, Object thiz, String name, Object... args) throws ScriptException, NoSuchMethodException
     {
         // compile and evaluate if necessary
-        if (!evaluated)
+        if (!_evaluated)
             eval();
 
         Context ctx = Context.enter();
@@ -399,7 +405,7 @@ class ScriptReferenceImpl implements ScriptReference
     public <T> T invokeFn(Class<T> resultType, String name, Object... args) throws ScriptException, NoSuchMethodException
     {
         // compile and evaluate if necessary
-        if (!evaluated)
+        if (!_evaluated)
             eval();
 
         Context ctx = Context.enter();
@@ -437,7 +443,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
      * the resources themselves, however, it can't currently be used for this staleness check because it doesn't invalidate
      * on modify plus the exists() and lastModified() methods of FileResource access the file system directly.
      */
-    private static final ModuleResourceCache<Map<Path, Long>> TOP_LEVEL_SCRIPT_CACHE = ModuleResourceCaches.create(Path.parse(ScriptService.SCRIPTS_DIR), new ModuleResourceCacheHandler<Map<Path, Long>>()
+    private static final ModuleResourceCache<Map<Path, Long>> TOP_LEVEL_SCRIPT_CACHE = ModuleResourceCaches.create("Top-level Rhino script cache", new ModuleResourceCacheHandler<Map<Path, Long>>()
     {
         private Predicate<Resource> getFilter()
         {
@@ -453,7 +459,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
                 .filter(getFilter())
                 .collect(Collectors.toMap(Resource::getPath, Resource::getLastModified)));
         }
-    }, "Top-level Rhino script cache", Arrays.asList(ResourceRootProvider.HIERARCHY, ResourceRootProvider.QUERY_SUBDIRECTORIES));
+    }, ResourceRootProvider.getHierarchy(Path.parse(ScriptService.SCRIPTS_DIR)), ResourceRootProvider.QUERY_SUBDIRECTORIES);
 
     @Override
     protected boolean entityNeedsRevalidation(Object validator)

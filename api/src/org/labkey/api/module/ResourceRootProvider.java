@@ -15,15 +15,15 @@ import java.util.LinkedList;
  */
 public interface ResourceRootProvider
 {
-    void fillResourceRoots(@NotNull Resource topRoot, @NotNull Path path, @NotNull Collection<Resource> roots);
+    void fillResourceRoots(@NotNull Resource topRoot, @NotNull Collection<Resource> roots);
 
     static ResourceRootProvider chain(ResourceRootProvider primary, ResourceRootProvider secondary)
     {
-        return (topRoot, path, roots) ->
+        return (topRoot, roots) ->
         {
             Collection<Resource> primaryRoots = new LinkedList<>();
-            primary.fillResourceRoots(topRoot, path, primaryRoots);
-            primaryRoots.forEach(root -> secondary.fillResourceRoots(root, path, roots));
+            primary.fillResourceRoots(topRoot, primaryRoots);
+            primaryRoots.forEach(root -> secondary.fillResourceRoots(root, roots));
         };
     }
 
@@ -43,63 +43,68 @@ public interface ResourceRootProvider
     }
 
     // Returns a single resource root, the directory at path, i.e., /resources/<path>
-    ResourceRootProvider STANDARD = (topRoot, path, roots) ->
+    static ResourceRootProvider getStandard(Path path)
     {
-        Resource standardRoot = topRoot.find(path);
+        return (topRoot, roots) ->
+        {
+            Resource standardRoot = topRoot.find(path);
 
-        if (null != standardRoot && standardRoot.isCollection())
-            roots.add(standardRoot);
-    };
+            if (null != standardRoot && standardRoot.isCollection())
+                roots.add(standardRoot);
+        };
+    }
 
     // Returns the directory at path and all subdirectories, i.e., /resources/<path>/**
-    ResourceRootProvider HIERARCHY = (topRoot, path, roots) ->
+    static ResourceRootProvider getHierarchy(Path path)
     {
-        Resource standardRoot = topRoot.find(path);
-
-        if (null != standardRoot && standardRoot.isCollection())
-            traverse(standardRoot, roots);
-    };
-
-    // Returns all immediate subdirectories of the directory at path, i.e., /resources/<path>/*
-    ResourceRootProvider SUBDIRECTORIES = (topRoot, path, roots) ->
-    {
-        Resource standardRoot = topRoot.find(path);
-
-        if (null != standardRoot && standardRoot.isCollection())
+        return (topRoot, roots) ->
         {
-            standardRoot.list().stream()
-                .filter(Resource::isCollection)
-                .forEach(roots::add);
-        }
-    };
+            Resource standardRoot = topRoot.find(path);
+
+            if (null != standardRoot && standardRoot.isCollection())
+                traverse(standardRoot, roots);
+        };
+    }
+
+    static ResourceRootProvider getSubdirectories(Path path)
+    {
+        return (topRoot, roots) ->
+        {
+            Resource standardRoot = topRoot.find(path);
+
+            if (null != standardRoot && standardRoot.isCollection())
+            {
+                standardRoot.list().stream()
+                    .filter(Resource::isCollection)
+                    .forEach(roots::add);
+            }
+        };
+    }
 
     // Returns resource roots associated with every assay provider folder under /assay, for example:
     //
     // /resources/assay/provider1/<path>
     // /resources/assay/provider2/<path>
-    ResourceRootProvider ASSAY_PROVIDERS = (topRoot, path, roots) ->
+    static ResourceRootProvider getAssayProviders(Path path)
     {
-        Resource assayRoot = topRoot.find(AssayService.ASSAY_DIR_NAME);
-
-        if (null != assayRoot && assayRoot.isCollection())
+        return (topRoot, roots) ->
         {
-            assayRoot.list().stream()
-                .filter(Resource::isCollection)
-                .map(providerDir -> providerDir.find(path))
-                .filter(r -> null != r && r.isCollection())
-                .forEach(roots::add);
-        }
-    };
+            Resource assayRoot = topRoot.find(AssayService.ASSAY_DIR_NAME);
 
-    // Returns all immediate subdirectories of the "queries" directory, i.e., /resources/queries/*. Ignores path.
-    ResourceRootProvider QUERY_SUBDIRECTORIES = (topRoot, path, roots) ->
-    {
-        SUBDIRECTORIES.fillResourceRoots(topRoot, Path.parse(QueryService.MODULE_QUERIES_DIRECTORY), roots);
-    };
+            if (null != assayRoot && assayRoot.isCollection())
+            {
+                assayRoot.list().stream()
+                    .filter(Resource::isCollection)
+                    .map(providerDir -> providerDir.find(path))
+                    .filter(r -> null != r && r.isCollection())
+                    .forEach(roots::add);
+            }
+        };
+    }
 
-    // Returns the "queries" directory and all subdirectories, i.e., /resources/queries/**. Ignores path.
-    ResourceRootProvider QUERY = (topRoot, path, roots) ->
-    {
-        HIERARCHY.fillResourceRoots(topRoot, Path.parse(QueryService.MODULE_QUERIES_DIRECTORY), roots);
-    };
+    // Returns all immediate subdirectories of the "queries" directory, i.e., /resources/queries/*.
+    ResourceRootProvider QUERY_SUBDIRECTORIES = getSubdirectories(QueryService.MODULE_QUERIES_PATH);
+
+    // Returns the "queries" directory and all subdirectories, i.e., /resources/queries/**.
+    ResourceRootProvider QUERY = getHierarchy(QueryService.MODULE_QUERIES_PATH);
 }

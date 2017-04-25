@@ -41,7 +41,6 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.dao.DeadlockLoserDataAccessException;
@@ -116,7 +115,7 @@ public class DbScope
     private static final Map<String, Throwable> _dataSourceFailures = new HashMap<>();
     // Cache for schema metadata XML files, shared across the whole server
     private static final ModuleResourceCache<Map<String, TablesDocument>> SCHEMA_XML_CACHE =
-        ModuleResourceCaches.create(new Path(QueryService.MODULE_SCHEMAS_DIRECTORY), new SchemaXmlCacheHandler(), "Parsed schema XML metadata");
+        ModuleResourceCaches.create(QueryService.MODULE_SCHEMAS_PATH, new SchemaXmlCacheHandler(), "Parsed schema XML metadata");
 
     private static DbScope _labkeyScope = null;
 
