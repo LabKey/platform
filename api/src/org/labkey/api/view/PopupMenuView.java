@@ -16,7 +16,10 @@
 
 package org.labkey.api.view;
 
+import org.labkey.api.util.PageFlowUtil;
+
 import java.io.PrintWriter;
+import java.io.Writer;
 
 /**
  * User: Mark Igra
@@ -78,5 +81,48 @@ public class PopupMenuView extends HttpView<PopupMenu>
     public boolean hasChildren()
     {
         return getNavTree().hasChildren();
+    }
+
+    public static void renderTree(NavTree tree, Writer out) throws Exception
+    {
+        if (tree == null || !PageFlowUtil.useExperimentalCoreUI())
+            return;
+
+        for (NavTree child : tree.getChildren())
+        {
+            if (child.hasChildren())
+            {
+                String text = PageFlowUtil.filter(child.getText());
+
+                out.write("<li class=\"dropdown-submenu\">");
+                out.write("<a class=\"subexpand\" tabindex=\"0\">" + text + "<i class=\"fa fa-chevron-right\"></i></a>");
+                out.write("<ul class=\"dropdown-layer-menu\">");
+                out.write("<li><a class=\"subcollapse\" tabindex=\"0\"><i class=\"fa fa-chevron-circle-left\"></i>" + text + "</a></li>");
+                renderTree(child, out);
+                out.write("</ul>");
+                out.write("</li>");
+            }
+            else
+            {
+                if ("-".equals(child.getText()))
+                    out.write("<li class=\"divider\"></li>");
+                else
+                {
+                    out.write("<li");
+                    if (child.isDisabled())
+                        out.write(" class=\"disabled\" ");
+                    out.write(">");
+                    out.write("<a");
+                    if (null != child.getScript())
+                        out.write(" onclick=\"" + PageFlowUtil.filter(child.getScript()) +"\" ");
+                    if (null != child.getHref())
+                        out.write(" href=\"" + child.getHref() + "\" ");
+                    if (null != child.getTarget())
+                        out.write(" target=\"" + child.getTarget() + "\" ");
+                    out.write(" tabindex=\"0\">" + PageFlowUtil.filter(child.getText()) + "</a>");
+                    out.write("</li>");
+                }
+            }
+        }
     }
 }

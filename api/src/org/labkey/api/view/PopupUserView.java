@@ -62,6 +62,7 @@ public class PopupUserView extends PopupMenuView
             if (null != user && !user.isGuest())
             {
                 NavTree signedIn = new NavTree("Signed in as " + user.getFriendlyName());
+                signedIn.setDisabled(true);
                 tree.addChild(signedIn);
                 tree.addSeparator();
             }

@@ -107,17 +107,17 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
             return;
 
         LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('user', 'impersonateUser'),
+            url: LABKEY.ActionURL.buildURL('user', 'impersonateUser.api'),
             method: 'POST',
             params: {
                 userId: this.userCombo.getValue(),
                 returnUrl: window.location
             },
             scope: this,
-            success: function(response) {
-                window.location = window.location; // avoid form resubmit
+            success: function() {
+                window.location.reload(); // avoid form resubmit
             },
-            failure: function(response){
+            failure: function(response) {
                 var jsonResp = LABKEY.Utils.decode(response.responseText);
                 if (jsonResp && jsonResp.errors)
                 {
