@@ -15,6 +15,8 @@
  */
 package org.labkey.api.module;
 
+import org.apache.commons.collections4.MultiMapUtils;
+import org.apache.commons.collections4.MultiValuedMap;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.resource.Resource;
@@ -68,5 +70,10 @@ public interface ModuleResourceCacheHandler<V>
     default <V2> Collection<V2> unmodifiable(Collection<V2> collection)
     {
         return collection.isEmpty() ? Collections.emptyList() : Collections.unmodifiableCollection(collection);
+    }
+
+    default <K2, V2> MultiValuedMap<K2, V2> unmodifiable(MultiValuedMap<K2, V2> mmap)
+    {
+        return mmap.isEmpty() ? MultiMapUtils.emptyMultiValuedMap() : MultiMapUtils.unmodifiableMultiValuedMap(mmap);
     }
 }

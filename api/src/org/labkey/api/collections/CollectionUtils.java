@@ -15,6 +15,7 @@
  */
 package org.labkey.api.collections;
 
+import org.apache.commons.collections4.MultiMapUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.Unmodifiable;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
@@ -171,6 +172,8 @@ public class CollectionUtils
 
             // Unmodifiable MultiMap
             assertUnmodifiable(UnmodifiableMultiValuedMap.unmodifiableMultiValuedMap(new ArrayListValuedHashMap<>()));
+            assertUnmodifiable(MultiMapUtils.unmodifiableMultiValuedMap(new ArrayListValuedHashMap<>()));
+            assertUnmodifiable(MultiMapUtils.emptyMultiValuedMap());
 
             //  These Collections methods are new to Java 8
             assertUnmodifiable(Collections.emptyNavigableSet());
