@@ -621,6 +621,9 @@ core/webapp/fileBrowser.js -text
 core/webapp/fonts/Roboto/LICENSE.txt -text
 core/webapp/fonts/Roboto/Roboto-Bold.ttf -text
 core/webapp/fonts/Roboto/Roboto-Regular.ttf -text
+core/webapp/fonts/TitilliumWeb/OFL.txt -text
+core/webapp/fonts/TitilliumWeb/TitilliumWeb-Bold.ttf -text
+core/webapp/fonts/TitilliumWeb/TitilliumWeb-Regular.ttf -text
 core/webapp/login.js -text
 core/webapp/notification/Notification.css -text
 core/webapp/notification/Notification.js -text

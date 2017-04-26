@@ -54,6 +54,7 @@ $lk-font-size-h5: $lk-font-size-base !default;
 $lk-font-size-h6: ceil(($lk-font-size-base * 0.85)) !default; // ~12px
 
 $lk-font-family-sans-serif: "Roboto", Arial, Helvetica, sans-serif !default;
+$lk-font-family-secondary-sans-serif: "Titillium Web", Arial, Helvetica, sans-serif !default;
 $lk-font-family-code: "Bitstream Vera Sans Mono", "Courier New", monospace;
 //$lk-font-family-code: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
 
@@ -158,6 +159,10 @@ $lk-page-header-navbar-nav-color: $lk-page-header-color !default;
 $lk-page-header-navbar-nav-hover-color: $lk-panel-base-color !default;
 $lk-page-header-navbar-nav-padding: 5px 8px !default;
 
+//== Headings
+//
+$lk-headings-font-family: $lk-font-family-secondary-sans-serif !default;
+
 //== Inputs
 //
 $lk-input-bg-color: $white !default;
@@ -190,6 +195,8 @@ $lk-panel-bg-color: $white !default;
 $lk-panel-body-padding: 15px !default;
 $lk-panel-heading-padding: 10px 15px !default;
 $lk-panel-footer-padding: $lk-panel-heading-padding !default;
+
+$lk-panel-title-font-weight: bold !default;
 
 $lk-panel-default-text: $gray-dark !default;
 $lk-panel-default-border: #ddd !default;

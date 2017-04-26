@@ -13,3 +13,17 @@ $labkey-fonts-dir: '../../fonts';
   font-weight: bold;
   font-style: normal;
 }
+
+@font-face {
+  font-family: 'Titillium Web'; /* regular */
+  src: url('#{$labkey-fonts-dir}/TitilliumWeb/TitilliumWeb-Regular.ttf');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Titillium Web'; /* bold */
+  src: url('#{$labkey-fonts-dir}/TitilliumWeb/TitilliumWeb-Bold.ttf');
+  font-weight: bold;
+  font-style: normal;
+}
