@@ -122,7 +122,7 @@ public class ListManagerSchema extends UserSchema
     @Override
     public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
-        if (settings.getQueryName().equalsIgnoreCase(LIST_MANAGER))
+        if (null != settings.getQueryName() && settings.getQueryName().equalsIgnoreCase(LIST_MANAGER))
         {
             return new QueryView(this, settings, errors)
             {
