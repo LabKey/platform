@@ -15,9 +15,9 @@
  */
 package org.labkey.experiment.api.property;
 
+import org.apache.commons.collections4.MultiMapUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.apache.commons.collections4.multimap.UnmodifiableMultiValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
@@ -59,21 +59,17 @@ public class DomainPropertyManager
 {
     private static final DomainPropertyManager _instance = new DomainPropertyManager();
 
-    private BlockingCache<GUID, List<ConditionalFormatWithPropertyId>> _conditionalFormatCache = CacheManager.getBlockingCache(500, CacheManager.DAY, "ConditionalFormats", new CacheLoader<GUID, List<ConditionalFormatWithPropertyId>>()
+    private BlockingCache<GUID, List<ConditionalFormatWithPropertyId>> _conditionalFormatCache = CacheManager.getBlockingCache(500, CacheManager.DAY, "ConditionalFormats", (containerId, argument) ->
     {
-        @Override
-        public List<ConditionalFormatWithPropertyId> load(GUID containerId, @Nullable Object argument)
-        {
-            SQLFragment sql = new SQLFragment("SELECT CF.* FROM ");
-            sql.append(getTinfoConditionalFormat(), "CF");
-            sql.append(" WHERE CF.PropertyId IN ");
-            sql.append("(SELECT PropertyId FROM ");
-            sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
-            sql.append(" WHERE pd.Container = ?) ORDER BY PropertyId, SortOrder");
-            sql.add(containerId);
+        SQLFragment sql = new SQLFragment("SELECT CF.* FROM ");
+        sql.append(getTinfoConditionalFormat(), "CF");
+        sql.append(" WHERE CF.PropertyId IN ");
+        sql.append("(SELECT PropertyId FROM ");
+        sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
+        sql.append(" WHERE pd.Container = ?) ORDER BY PropertyId, SortOrder");
+        sql.add(containerId);
 
-            return Collections.unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(ConditionalFormatWithPropertyId.class));
-        }
+        return Collections.unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(ConditionalFormatWithPropertyId.class));
     });
 
     private DomainPropertyManager(){}
@@ -184,17 +180,14 @@ public class DomainPropertyManager
 
             final MultiValuedMap<Integer, PropertyValidator> validators = new ArrayListValuedHashMap<>();
 
-            new SqlSelector(getExpSchema(), sql, containerId).forEach(pv -> {
-                validators.put(pv.getPropertyId(), pv);
-            }, PropertyValidator.class);
+            new SqlSelector(getExpSchema(), sql, containerId).forEach(pv -> validators.put(pv.getPropertyId(), pv), PropertyValidator.class);
 
-            return validators.isEmpty() ? _emptyMap : UnmodifiableMultiValuedMap.unmodifiableMultiValuedMap(validators);
+            return validators.isEmpty() ? MultiMapUtils.emptyMultiValuedMap() : MultiMapUtils.unmodifiableMultiValuedMap(validators);
         }
     };
 
     private static final Cache<String, MultiValuedMap<Integer, PropertyValidator>> validatorCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 5000, CacheManager.HOUR, "Property Validators"), PV_LOADER);
     private static final Collection<PropertyValidator> _emptyCollection = Collections.emptyList();
-    private static final MultiValuedMap<Integer, PropertyValidator> _emptyMap = UnmodifiableMultiValuedMap.unmodifiableMultiValuedMap(new ArrayListValuedHashMap<>());
 
 
     private Collection<PropertyValidator> getValidators(@NotNull Container c, int propertyId)

@@ -719,8 +719,7 @@ public class Query
         }
 
         // check if we've resolved the exact same table
-        if (null == _resolveCache.get(currentSchema))
-            _resolveCache.put(currentSchema, new HashMap<>());
+        _resolveCache.computeIfAbsent(currentSchema, k -> new HashMap<>());
         Pair<QuerySchema, TableInfo> found = _resolveCache.get(currentSchema).get(key);
         if (null != found)
         {
@@ -785,7 +784,7 @@ public class Query
 
         if (t instanceof TableInfo)
         {
-            _resolveCache.get(currentSchema).put(key, new Pair(resolvedSchema, t));
+            _resolveCache.get(currentSchema).put(key, new Pair<>(resolvedSchema, (TableInfo) t));
             return new QueryTable(this, resolvedSchema, (TableInfo)t, alias);
         }
 
@@ -953,34 +952,35 @@ public class Query
     }
 
 
-    static class SqlTest
+    private static class SqlTest
     {
-		public String name = null;
-        public String sql;
-		public String metadata = null;
-        public int countColumns = -1;
-        public int countRows = -1;
+        public final String _sql;
+
+		public String _name = null;
+		public String _metadata = null;
+        public int _countColumns = -1;
+        public int _countRows = -1;
 
         SqlTest(String sql)
         {
-            this.sql = sql;
+            _sql = sql;
         }
 
         SqlTest(String sql, int cols, int rows)
         {
-            this.sql = sql;
-            countColumns = cols;
-            countRows = rows;
+            this(sql);
+            _countColumns = cols;
+            _countRows = rows;
         }
 
 
 		SqlTest(String name, String sql, String metadata, int cols, int rows)
 		{
-			this.name = name;
-			this.sql = sql;
-			this.metadata = metadata;
-			countColumns = cols;
-			countRows = rows;
+            this(sql);
+			_name = name;
+			_metadata = metadata;
+			_countColumns = cols;
+			_countRows = rows;
 		}
 
         void validate(QueryTestCase test, @Nullable Container container)
@@ -988,48 +988,47 @@ public class Query
             if (null == container)
                 container = JunitUtil.getTestContainer();
 
-            try (CachedResultSet rs = test.resultset(sql, container == JunitUtil.getTestContainer() ? null : container))
+            try (CachedResultSet rs = test.resultset(_sql, container == JunitUtil.getTestContainer() ? null : container))
             {
                 ResultSetMetaData md = rs.getMetaData();
-                if (countColumns >= 0)
-                    QueryTestCase.assertEquals(sql, countColumns, md.getColumnCount());
-                if (countRows >= 0)
-                    QueryTestCase.assertEquals(sql, countRows, rs.getSize());
+                if (_countColumns >= 0)
+                    QueryTestCase.assertEquals(_sql, _countColumns, md.getColumnCount());
+                if (_countRows >= 0)
+                    QueryTestCase.assertEquals(_sql, _countRows, rs.getSize());
 
                 validateResults(rs);
 
-                if (name != null)
+                if (_name != null)
                 {
                     User user = TestContext.get().getUser();
-                    QueryDefinition existing = QueryService.get().getQueryDef(user, container, "lists", name);
+                    QueryDefinition existing = QueryService.get().getQueryDef(user, container, "lists", _name);
                     if (null != existing)
                         existing.delete(TestContext.get().getUser());
-                    QueryDefinition q = QueryService.get().createQueryDef(user, container, "lists", name);
-                    q.setSql(sql);
-                    if (null != metadata)
-                        q.setMetadataXml(metadata);
+                    QueryDefinition q = QueryService.get().createQueryDef(user, container, "lists", _name);
+                    q.setSql(_sql);
+                    if (null != _metadata)
+                        q.setMetadataXml(_metadata);
                     q.setCanInherit(true);
                     q.save(TestContext.get().getUser(), container);
                 }
             }
             catch (Exception x)
             {
-                QueryTestCase.fail(x.toString() + "\n" + sql);
+                QueryTestCase.fail(x.toString() + "\n" + _sql);
             }
         }
 
         protected void validateResults(CachedResultSet rs) throws Exception
         {
-
         }
     }
 
 
-    static class MethodSqlTest extends SqlTest
+    private static class MethodSqlTest extends SqlTest
     {
-        final JdbcType _type;
-        final Object _value;
-        final Callable _call;
+        private final JdbcType _type;
+        private final Object _value;
+        private final Callable _call;
 
         MethodSqlTest(String sql, JdbcType type, Object value)
         {
@@ -1050,9 +1049,9 @@ public class Query
         @Override
         protected void validateResults(CachedResultSet rs) throws Exception
         {
-            QueryTestCase.assertTrue("Expected one row: " + sql, rs.next());
+            QueryTestCase.assertTrue("Expected one row: " + _sql, rs.next());
             Object o = rs.getObject(1);
-            QueryTestCase.assertFalse("Expected one row: " + sql, rs.next());
+            QueryTestCase.assertFalse("Expected one row: " + _sql, rs.next());
             Object value = null == _call ? _value : _call.call();
             assertSqlEquals(value, o);
         }
@@ -1062,7 +1061,7 @@ public class Query
             if (null == a)
                 QueryTestCase.assertNull("Expected NULL value: + sql", b);
             if (null == b)
-                QueryTestCase.fail("Did not expect null value: " + sql);
+                QueryTestCase.fail("Did not expect null value: " + _sql);
 //            QueryTestCase.assertEquals(sql, _type.getJavaClass(), b.getClass());
             if (a instanceof Number && b instanceof Number)
             {
@@ -1080,7 +1079,7 @@ public class Query
             }
             if (a.equals(b))
                 return;
-            QueryTestCase.assertEquals("expected:<" + a + "> bug was:<" + b + "> " + sql, a, b);
+            QueryTestCase.assertEquals("expected:<" + a + "> bug was:<" + b + "> " + _sql, a, b);
         }
     }
 
@@ -1096,18 +1095,13 @@ public class Query
         @Override
         void validate(QueryTestCase test, @Nullable Container container)
         {
-
-            try (CachedResultSet ignored = (CachedResultSet) QueryService.get().select(test.lists, sql))
+            try (CachedResultSet ignored = (CachedResultSet) QueryService.get().select(test.lists, _sql))
             {
-                QueryTestCase.fail("should fail: " + sql);
+                QueryTestCase.fail("should fail: " + _sql);
             }
-            catch (SQLException x)
+            catch (SQLException | QueryParseException x)
             {
                 // should fail with SQLException not runtime exception
-            }
-            catch (QueryParseException x)
-            {
-                // OK
             }
             catch (Exception x)
             {
@@ -1134,11 +1128,11 @@ public class Query
 
             try
             {
-                test.validateInvolvedColumns(sql, container == JunitUtil.getTestContainer() ? null : container, _expectedInvolvedColumns);
+                test.validateInvolvedColumns(_sql, container == JunitUtil.getTestContainer() ? null : container, _expectedInvolvedColumns);
             }
             catch (Exception x)
             {
-                QueryTestCase.fail(x.toString() + "\n" + sql);
+                QueryTestCase.fail(x.toString() + "\n" + _sql);
             }
         }
     }
@@ -1615,9 +1609,9 @@ public class Query
 
             for (SqlTest test : tests)
             {
-                if (test.name != null)
+                if (test._name != null)
                 {
-                    QueryDefinition q = QueryService.get().getQueryDef(user, JunitUtil.getTestContainer(), "lists", test.name);
+                    QueryDefinition q = QueryService.get().getQueryDef(user, JunitUtil.getTestContainer(), "lists", test._name);
                     if (null != q)
                         q.delete(user);
                 }
@@ -1730,9 +1724,9 @@ public class Query
 
             for (SqlTest test : tests)
             {
-                if (test.name != null)
+                if (test._name != null)
                 {
-                    QueryDefinition q = QueryService.get().getQueryDef(user, JunitUtil.getTestContainer(), "lists", test.name);
+                    QueryDefinition q = QueryService.get().getQueryDef(user, JunitUtil.getTestContainer(), "lists", test._name);
                     assertNotNull(q);
 //                    q.delete(user);
                 }
@@ -1778,13 +1772,13 @@ public class Query
                 selectQ.validate(this, c);
                 selectQ.validate(this, sub);
 
-                rs = resultset(selectQ.sql, c);
+                rs = resultset(selectQ._sql, c);
                 boolean hasNext = rs.next();
                 assert hasNext;
                 assertEquals(rs.getInt(2), c.getRowId());
                 ResultSetUtil.close(rs); rs = null;
 
-                rs = resultset(selectQ.sql, sub);
+                rs = resultset(selectQ._sql, sub);
                 hasNext = rs.next();
                 assert hasNext;
                 assertEquals(rs.getInt(2), sub.getRowId());

@@ -15,9 +15,9 @@
  */
 package org.labkey.query.reports;
 
+import org.apache.commons.collections4.MultiMapUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.apache.commons.collections4.multimap.UnmodifiableMultiValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
@@ -71,7 +71,7 @@ public class DatabaseReportCache
 
             _rowIdMap = Collections.unmodifiableMap(rowIdMap);
             _entityIdMap = Collections.unmodifiableMap(entityIdMap);
-            _reportKeyMap = UnmodifiableMultiValuedMap.unmodifiableMultiValuedMap(reportKeyMap);
+            _reportKeyMap = MultiMapUtils.unmodifiableMultiValuedMap(reportKeyMap);
             _inheritableReports = Collections.unmodifiableList(inheritableReports);
         }
 

@@ -15,9 +15,9 @@
  */
 package org.labkey.query.persist;
 
+import org.apache.commons.collections4.MultiMapUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.apache.commons.collections4.multimap.UnmodifiableMultiValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
@@ -96,18 +96,12 @@ public class QuerySnapshotCache
             {
                 bySchema.put(def.getSchema(), def);
 
-                Map<String, QuerySnapshotDef> map = bySchemaAndName.get(def.getSchema());
-
-                if (null == map)
-                {
-                    map = new HashMap<>();
-                    bySchemaAndName.put(def.getSchema(), map);
-                }
+                Map<String, QuerySnapshotDef> map = bySchemaAndName.computeIfAbsent(def.getSchema(), k -> new HashMap<>());
 
                 map.put(def.getName(), def);
             }
 
-            _bySchema = UnmodifiableMultiValuedMap.unmodifiableMultiValuedMap(bySchema);
+            _bySchema = MultiMapUtils.unmodifiableMultiValuedMap(bySchema);
             _bySchemaAndName = Collections.unmodifiableMap(bySchemaAndName);
         }
 

@@ -20,7 +20,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.apache.commons.collections4.multimap.UnmodifiableMultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -624,7 +623,7 @@ public class SurveyManager
                 .filter(Objects::nonNull)
                 .forEach(design -> mmap.put(design.getSchemaName(), design));
 
-            return UnmodifiableMultiValuedMap.unmodifiableMultiValuedMap(mmap);
+            return unmodifiable(mmap);
         }
 
         private Predicate<Resource> getFilter()
