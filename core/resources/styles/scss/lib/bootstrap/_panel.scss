@@ -1,0 +1,3 @@
+.panel-portal {
+  @include panel-variant($panel-default-border, $panel-default-text, $panel-bg, $panel-default-border);
+}

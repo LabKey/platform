@@ -5,6 +5,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.PopupMenuView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFrame;
 import org.labkey.api.view.WebPartView;
@@ -145,10 +146,11 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
         public void renderWebpartStart(PrintWriter out)
         {
             out.print("<!--FrameType.PORTAL-->");
-            out.println("<div name=\"webpart\" class=\"panel panel-default labkey-portal-wp\"");
+            out.println("<div name=\"webpart\" class=\"labkey-portal-container\"");
             if (null != getConfig()._webpart)
                 out.println(" id=\"webpart_" + getConfig()._webpart.getRowId() + "\"");
             out.write(">");
+            out.println("<div class=\"panel panel-portal\">");
         }
 
         @Override
@@ -159,7 +161,7 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
             if (getConfig()._showTitle)
                 out.print(PageFlowUtil.filter(title));
             out.print("\">");
-            out.print("<a name=\"" + PageFlowUtil.filter(title) + "\" class=\"labkey-wp-title-anchor\">");
+            out.print("<a name=\"" + PageFlowUtil.filter(title) + "\" class=\"labkey-anchor-disabled\">");
             if (getConfig()._isCollapsible)
             {
                 renderCollapsiblePortalTitle(out);
@@ -182,7 +184,7 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
         @Override
         public void doEndTag(PrintWriter out)
         {
-            out.write("</div></div><!--/FrameType.PORTAL-->");
+            out.write("</div></div></div><!--/FrameType.PORTAL-->");
         }
 
         @Override
@@ -234,12 +236,47 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
 
         }
 
+        @Override
+        public void renderCustomDropDown(String title, NavTree current, PrintWriter out)
+        {
+            renderMenuWithFontImage(null, current, out, null, false);
+        }
+
+
     }
 
     @Override
     protected String getWebpartIconBtnActiveCls()
     {
         return "";
+    }
+
+    @Override
+    protected void renderMenuWithFontImage(String title, NavTree menu, PrintWriter out, String imageCls, boolean rightAlign)
+    {
+        try
+        {
+            out.print("<span class=\"dropdown dropdown-rollup");
+            if (rightAlign)
+                out.print(" pull-right");
+            out.print("\">");
+            out.print("<a href=\"#\" data-toggle=\"dropdown\" class=\"dropdown-toggle ");
+            out.print(!StringUtils.isEmpty(imageCls) ? imageCls : !StringUtils.isEmpty(menu.getImageCls()) ? menu.getImageCls() : "");
+            out.print("\">");
+            out.print("</a>");
+            out.print("<ul class=\"dropdown-menu dropdown-menu-right");
+            out.print(getWebpartIconBtnActiveCls());
+            out.print("\">");
+
+            PopupMenuView.renderTree(menu, out);
+
+            out.print("</ul>");
+            out.print("</span>");
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
 }

@@ -2040,7 +2040,7 @@ div span.labkey-main-menu-icon {
 
 .labkey-wizard-container
 {
-  border-top: 8px solid $lk-secondary-brand-color;
+  border-top: $lk-container-border-top;
 
   .labkey-wizard-row
   {
@@ -2074,8 +2074,19 @@ div span.labkey-main-menu-icon {
       }
     }
   }
+}
 
+.labkey-portal-container
+{
+  border-top: $lk-container-border-top;
+}
+
+.labkey-anchor-disabled
+{
+  color: $lk-text-color !important;
+  cursor: default;
 }
 
 @import "components/header";
 @import "components/navigation";
+@import "components/menu";

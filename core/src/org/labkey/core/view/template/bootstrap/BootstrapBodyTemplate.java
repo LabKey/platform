@@ -41,7 +41,7 @@ public class BootstrapBodyTemplate extends BootstrapTemplate
     @Override
     protected HttpView getBodyTemplate(PageConfig page)
     {
-        HttpView view = new JspView<>("/org/labkey/core/view/template/bootstrap/body.jsp", page);
+        HttpView view = new JspView<>("/org/labkey/core/view/template/bootstrap/bootstrapbody.jsp", page);
         view.setBody(getBody());
         return view;
     }

@@ -1,0 +1,38 @@
+.panel-portal {
+  .panel-heading {
+    @media (max-width: $lk-screen-sm-min) {
+
+      position: relative; // have to set parent to relative otherwise positioning is relative to wrong container component
+
+      .dropdown {
+        position: static;
+      }
+
+      .dropdown-menu {
+        font-size: $lk-font-size-large;
+        background-color: $lk-dropdown-bg-color;
+        color: $lk-dropdown-link-color;
+        position: absolute;
+        top: 35px;
+        overflow: hidden;
+        background-clip: padding-box;
+        z-index: 8000;
+        height: auto;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+        left: 0;
+        right: 0;
+
+        & > ul {
+          list-style: none;
+          margin: 0;
+          padding: 0;
+
+          & > li > a {
+            display: block;
+            padding: 8px 15px 8px 45px;
+          }
+        }
+      }
+    }
+  }
+}

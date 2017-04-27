@@ -51,6 +51,12 @@
 
 .panel-title {
   font-weight: $lk-panel-title-font-weight;
+  & > a {
+    &:hover {
+      color: $lk-brand-color;
+      text-decoration: $lk-link-hover-decoration;
+    }
+  }
 }
 
 /*
