@@ -295,6 +295,9 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             meta.editorConfig.regexText = 'Must be a decimal or two comma separated decimals if using a Between operator.';
         }
 
+        if (meta.jsonType == 'date')
+            meta.name = meta.caption;
+
         meta.editable = true; //force read only fields to give an input
 
         //create the field
