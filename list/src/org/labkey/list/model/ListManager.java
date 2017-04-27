@@ -87,7 +87,6 @@ public class ListManager implements SearchService.DocumentProvider
     private static final Logger LOG = Logger.getLogger(ListManager.class);
     private static final String LIST_SEQUENCE_NAME = "org.labkey.list.Lists";
     private static final ListManager INSTANCE = new ListManager();
-    private static final int SINGLE_LIST_MAX_SIZE_FOR_INDEX = 1000000000;      // 1 MB max
 
     public static final String LIST_AUDIT_EVENT = "ListAuditEvent";
     public static final String LISTID_FIELD_NAME = "listId";
@@ -669,7 +668,7 @@ public class ListManager implements SearchService.DocumentProvider
                     public void exec(Results results) throws SQLException, StopIteratingException
                     {
                         data.append(template.eval(results.getFieldKeyRowMap())).append("\n");
-                        if (data.length() > SINGLE_LIST_MAX_SIZE_FOR_INDEX)
+                        if (data.length() > SearchService.FILE_SIZE_LIMIT)
                             stopIterating();  // Short circuit for very large list, #25366
                     }
                 });

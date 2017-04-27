@@ -78,7 +78,6 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractSearchService implements SearchService, ShutdownListener
 {
     private static final Logger _log = Logger.getLogger(AbstractSearchService.class);
-    protected static final long FILE_SIZE_LIMIT = 100L*(1024*1024); // 100 MB
 
     // Runnables go here, and get pulled off in a single threaded manner (assumption is that Runnables can create work very quickly)
     final PriorityBlockingQueue<Item> _runQueue = new PriorityBlockingQueue<>(1000, itemCompare);
