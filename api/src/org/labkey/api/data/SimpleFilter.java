@@ -46,7 +46,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -768,9 +767,9 @@ public class SimpleFilter implements Filter
             if (params.length == 0)
             {
                 if (isIncludeNull())
-                    in.append(alias + " IS " + (isNegated() ? " NOT " : "") + "NULL");
+                    in.append(alias).append(" IS ").append(isNegated() ? " NOT " : "").append("NULL");
                 else if (!isNegated())
-                    in.append(alias + " IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
+                    in.append(alias).append(" IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
                 else
                     in.append("1=1");
 
@@ -1142,12 +1141,7 @@ public class SimpleFilter implements Filter
 
     public SimpleFilter deleteConditions(FieldKey fieldKey)
     {
-        for (Iterator<FilterClause> it = _clauses.iterator() ; it.hasNext(); )
-        {
-            SimpleFilter.FilterClause clause = it.next();
-            if (clause.getFieldKeys().contains(fieldKey))
-                it.remove();
-        }
+        _clauses.removeIf(clause -> clause.getFieldKeys().contains(fieldKey));
         return this;
     }
 

@@ -32,20 +32,20 @@ import java.util.List;
  */
 public interface Filter
 {
-    public SQLFragment getSQLFragment(TableInfo tableInfo, @Nullable List<ColumnInfo> colInfos);
-    public SQLFragment getSQLFragment(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columnMap);
-    public boolean isEmpty();
-    public Set<FieldKey> getWhereParamFieldKeys();
+    SQLFragment getSQLFragment(TableInfo tableInfo, @Nullable List<ColumnInfo> colInfos);
+    SQLFragment getSQLFragment(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columnMap);
+    boolean isEmpty();
+    Set<FieldKey> getWhereParamFieldKeys();
 
     /**
-     * @return the SQL fragment with the parameter values substituted in.  Suitable for using as a key in a cache,
+     * @return the SQL fragment with the parameter values substituted in. Suitable for using as a key in a cache,
      * or pasting into an external SQL tool.
      */
-    public String toSQLString(SqlDialect dialect);
+    String toSQLString(SqlDialect dialect);
 
     /**
-     * toString() on a Filter doesn't do the correct thing.  Should use "substituteParameters" instead.
+     * toString() on a Filter doesn't do the correct thing. Should use toSQLString() instead.
      */
     @Deprecated
-    public String toString();
+    String toString();
 }
