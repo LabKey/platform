@@ -93,6 +93,12 @@ public class RoleManager
         return role;
     }
 
+    // Quick check for existence, without warnings
+    public static boolean isPermissionRegistered(Class<? extends Permission> clazz)
+    {
+        return _classToRoleMap.containsKey(clazz);
+    }
+
     public static Permission getPermission(Class<? extends Permission> clazz)
     {
         Permission perm = (Permission)_classToRoleMap.get(clazz);

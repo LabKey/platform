@@ -18,6 +18,8 @@ package org.labkey.api.security;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -56,6 +58,8 @@ import java.util.TreeSet;
  */
 public class SecurityPolicy implements HasPermission
 {
+    private static final Logger LOG = Logger.getLogger(SecurityPolicy.class);
+
     protected final SortedSet<RoleAssignment> _assignments = new TreeSet<>();
     protected final String _resourceId;
     protected final String _containerId;
@@ -328,10 +332,15 @@ public class SecurityPolicy implements HasPermission
         return ret;
     }
 
+    // Throttle that limits warning logging to once per hour per permission class
+    private static final Throttle<Class<? extends Permission>> NOT_REGISTERED_PERMISSION_THROTTLE = new Throttle<>("unregistered permissions", 100, CacheManager.HOUR, permission -> LOG.warn(permission + " is not registered!"));
+
     private void testPermissionIsRegistered(Class<? extends Permission> permission)
     {
-        if (null == RoleManager.getPermission(permission))
-            Logger.getLogger(SecurityPolicy.class).warn(permission + " is not registered!");
+        if (!RoleManager.isPermissionRegistered(permission))
+        {
+            NOT_REGISTERED_PERMISSION_THROTTLE.execute(permission);
+        }
     }
 
     protected Set<Class<? extends Permission>> getPermissions(@NotNull int[] principals, @Nullable Set<Role> contextualRoles)
