@@ -64,6 +64,8 @@ public interface SearchService
 {
     Logger _log = Logger.getLogger(SearchService.class);
 
+    long FILE_SIZE_LIMIT = 100L*(1024*1024); // 100 MB
+
     SearchCategory navigationCategory = new SearchCategory("navigation", "internal category", false);
     SearchCategory fileCategory = new SearchCategory("file", "Files and Attachments", false);
 
