@@ -31,23 +31,46 @@
 %>
 <% if (PageFlowUtil.useExperimentalCoreUI()) { %>
 <div>
-    <form class="form-inline" action="<%=urlProvider(ProjectUrls.class).getAddWebPartURL(c)%>">
-        <input type="hidden" name="pageId" value="<%=h(bean.pageId)%>"/>
-        <input type="hidden" name="location" value="<%=h(bean.location)%>"/>
-        <%=generateReturnUrlFormField(currentURL)%>
-        <div class="input-group">
-            <select name="name" class="form-control">
-                <option value="">&lt;Select Web Part&gt;</option>
-                <%          for (Map.Entry<String, String> entry : bean.webPartNames.entrySet())
-                {
-                %><option value="<%=h(entry.getKey())%>"><%=h(entry.getValue())%></option> <%
-                } %>
-            </select>
-            <span class="input-group-btn">
-                <%= button("Add").submit(true) %>
-            </span>
-        </div>
-    </form>
+    <div>
+        <form class="form-inline pull-left" action="<%=urlProvider(ProjectUrls.class).getAddWebPartURL(c)%>">
+            <input type="hidden" name="pageId" value="<%=h(bean.pageId)%>"/>
+            <input type="hidden" name="location" value="<%=h(bean.location)%>"/>
+            <%=generateReturnUrlFormField(currentURL)%>
+            <div class="input-group">
+                <select name="name" class="form-control">
+                    <option value="">&lt;Select Web Part&gt;</option>
+                    <%          for (Map.Entry<String, String> entry : bean.webPartNames.entrySet())
+                    {
+                    %><option value="<%=h(entry.getKey())%>"><%=h(entry.getValue())%></option> <%
+                    } %>
+                </select>
+                <span class="input-group-btn">
+                    <%= button("Add").submit(true) %>
+                </span>
+            </div>
+        </form>
+    </div>
+<% if (bean.rightWebPartNames != null && !bean.rightWebPartNames.isEmpty()) { %>
+    <div>
+        <form class="form-inline pull-right" action="<%=urlProvider(ProjectUrls.class).getAddWebPartURL(c)%>">
+            <input type="hidden" name="pageId" value="<%=h(bean.pageId)%>"/>
+            <input type="hidden" name="location" value="right"/>
+            <%=generateReturnUrlFormField(currentURL)%>
+            <div class="input-group">
+                <select name="name" class="form-control">
+                    <option value="">&lt;Select Web Part&gt;</option>
+                    <%          for (Map.Entry<String, String> entry : bean.webPartNames.entrySet())
+                    {
+                    %><option value="<%=h(entry.getKey())%>"><%=h(entry.getValue())%></option> <%
+                    } %>
+                </select>
+                <span class="input-group-btn">
+                    <%= button("Add").submit(true) %>
+                </span>
+            </div>
+        </form>
+    </div>
+<% } %>
 </div>
 <% } else {%>
 <table width="100%">
