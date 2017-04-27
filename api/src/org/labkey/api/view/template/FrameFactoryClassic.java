@@ -270,8 +270,6 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
             {
                 renderWebpartHeaderStart(out, title);
 
-
-
                 if (config._helpPopup != null)
                 {
                     out.print(config._helpPopup);
@@ -286,7 +284,7 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
 
         public void renderCollapsiblePortalTitle(PrintWriter out)
         {
-            ActionURL expandCollapseUrl = null;
+            ActionURL expandCollapseUrl;
             String expandCollapseGifId = "expandCollapse-" + config._rootId;
 
             if (config._rootId == null)
@@ -467,62 +465,73 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
                         out.print(sep);
                         if (current.hasChildren())
                         {
-                            renderMenu(title, current, out, current.getImageSrc());
+                            renderCustomDropDown(title, current, out);
                         }
                         else
                         {
-                            String linkHref = current.getHref();
-                            String linkText = current.getText();
-                            String script = current.getScript();
-
-                            if (StringUtils.isEmpty(linkHref) && StringUtils.isEmpty(script))
-                            {
-                                out.print("<span class=\"");
-                                out.print(getWebpartIconBtnInactiveCls());
-                                out.print("\">");
-                            }
-                            else
-                            {
-                                out.print("<span class=\"");
-                                out.print(getWebpartIconBtnActiveCls());
-                                out.print("\">");
-
-                                if (StringUtils.isEmpty(linkHref))
-                                    linkHref = "javascript:void(0);";
-
-                                out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\"");
-                                if (current.isNoFollow())
-                                    out.print(" rel=\"nofollow\"");
-                                if (StringUtils.isNotEmpty(script))
-                                    out.print(" onclick=\"" + PageFlowUtil.filter(script) + "\"");
-                                out.print(">");
-                            }
-
-                            if (null != current.getImageCls())
-                            {
-                                out.print("<span class=\"" + current.getImageCls() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\"></span>");
-                            }
-                            else if (null != current.getImageSrc())
-                            {
-                                if (current.getImageWidth() != null && current.getImageHeight() != null)
-                                    out.print("<img height=" + current.getImageHeight() + " width=" + current.getImageWidth() + " src=\"" + current.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
-                                else
-                                    out.print("<img src=\"" + current.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
-                            }
-                            else
-                            {
-                                out.print(PageFlowUtil.filter(linkText));
-                            }
-
-                            if (StringUtils.isNotEmpty(linkHref) || StringUtils.isNotEmpty(script))
-                                out.print("</a>");
-                            out.print("</span>");
+                            renderCustomButton(current, out);
                         }
                     }
+
                 }
 
                 renderPortalTitleRight(out);
             }
+        }
+
+        public void renderCustomDropDown(String title, NavTree current, PrintWriter out)
+        {
+            renderMenu(title, current, out, current.getImageSrc());
+        }
+
+        public void renderCustomButton(NavTree current, PrintWriter out)
+        {
+            String linkHref = current.getHref();
+            String linkText = current.getText();
+            String script = current.getScript();
+
+            if (StringUtils.isEmpty(linkHref) && StringUtils.isEmpty(script))
+            {
+                out.print("<span class=\"");
+                out.print(getWebpartIconBtnInactiveCls());
+                out.print("\">");
+            }
+            else
+            {
+                out.print("<span class=\"");
+                out.print(getWebpartIconBtnActiveCls());
+                out.print("\">");
+
+                if (StringUtils.isEmpty(linkHref))
+                    linkHref = "javascript:void(0);";
+
+                out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\"");
+                if (current.isNoFollow())
+                    out.print(" rel=\"nofollow\"");
+                if (StringUtils.isNotEmpty(script))
+                    out.print(" onclick=\"" + PageFlowUtil.filter(script) + "\"");
+                out.print(">");
+            }
+
+            if (null != current.getImageCls())
+            {
+                out.print("<span class=\"" + current.getImageCls() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\"></span>");
+            }
+            else if (null != current.getImageSrc())
+            {
+                if (current.getImageWidth() != null && current.getImageHeight() != null)
+                    out.print("<img height=" + current.getImageHeight() + " width=" + current.getImageWidth() + " src=\"" + current.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
+                else
+                    out.print("<img src=\"" + current.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
+            }
+            else
+            {
+                out.print(PageFlowUtil.filter(linkText));
+            }
+
+            if (StringUtils.isNotEmpty(linkHref) || StringUtils.isNotEmpty(script))
+                out.print("</a>");
+            out.print("</span>");
         }
 
         public void renderPortalTitleRight(PrintWriter out)
