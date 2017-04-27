@@ -655,18 +655,12 @@ public class Portal
         {
             // Indexes only matter relative to each other
             // Sort tabs (often tabDefaultIndex is -1; sort will not change order of equal elements)
-            Collections.sort(tabs, new Comparator<FolderTab>()
-            {
-                public int compare(FolderTab w1, FolderTab w2)
-                {
-                    return w1.getDefaultIndex() - w2.getDefaultIndex();
-                }
-            });
+            tabs.sort(Comparator.comparingInt(FolderTab::getDefaultIndex));
             mustUpdateIndexes = true;
         }
 
         ArrayList<PortalPage> allPages = new ArrayList<>();
-        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
+        try
         {
             // First add pages for all tabs to allPages
             int tabIndex = 1;
@@ -697,54 +691,51 @@ public class Portal
                     newIndex += 1;
                     PortalPage p = new PortalPage();
                     p.setPageId(tab.getName());
-                    p.setIndex((startingWithNoPages && tab.getDefaultIndex() > 0) ?
-                            tab.getDefaultIndex() : newIndex);          // Only use default if we're adding all of them
+                    p.setIndex((startingWithNoPages && tab.getDefaultIndex() > 0) ? tab.getDefaultIndex() : newIndex);          // Only use default if we're adding all of them
+                    p.setContainer(c.getEntityId());
                     allPages.add(p);
                     mustUpdateIndexes = true;           // Adding a page so must update all indexes to accommodate
                 }
             }
 
             // Sort what we found by their existing indexes so they remain in order
-            Collections.sort(allPages, new Comparator<PortalPage>()
-            {
-                public int compare(PortalPage w1, PortalPage w2)
-                {
-                    return w1.getIndex() - w2.getIndex();
-                }
-            });
+            allPages.sort(Comparator.comparingInt(PortalPage::getIndex));
 
             // Next add all other pages to allPages (includes custom pages)
             ArrayList<PortalPage> pagesLeft = new ArrayList<>(pageMap.values());
-            Collections.sort(pagesLeft, new Comparator<PortalPage>()
-            {
-                public int compare(PortalPage w1, PortalPage w2)
-                {
-                    return w1.getIndex() - w2.getIndex();
-                }
-            });
+            pagesLeft.sort(Comparator.comparingInt(PortalPage::getIndex));
             allPages.addAll(pagesLeft);
 
             // Now set indexes of all pages by walking in reverse order, assigning indexes down
             Collections.reverse(allPages);
 
-            // We have to insure that the already set page with the highest index will get reset before that index is used
-            int validPageIndex = maxOriginalIndex + allPages.size();
+            Map<String, PortalPage> currentPages = new HashMap<>();
             TableInfo portalTable = getTableInfoPortalPages();
-            for (PortalPage p : allPages)
-            {
-                if (mustUpdateIndexes)
-                    p.setIndex(validPageIndex);
-                if (null != Portal.getPortalPage(c, p.getPageId()))
-                    Table.update(null, portalTable, p, new Object[] {p.getContainer(), p.getPageId()});
-                else
-                {
-                    assert mustUpdateIndexes;
-                    insertPortalPage(c, p);
-                }
-                validPageIndex -= 1;
-            }
+            new TableSelector(portalTable, SimpleFilter.createContainerFilter(c), null)
+                    .getArrayList(PortalPage.class)
+                    .forEach(page -> currentPages.put(page.getPageId(), page));
 
-            transaction.commit();
+            // Transaction does not have to call Portal.getPortalPage
+            try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
+            {
+                // We have to insure that the already set page with the highest index will get reset before that index is used
+                int validPageIndex = maxOriginalIndex + allPages.size();
+                for (PortalPage p : allPages)
+                {
+                    if (mustUpdateIndexes)
+                        p.setIndex(validPageIndex);
+                    if (currentPages.containsKey(p.getPageId()))
+                        Table.update(null, portalTable, p, new Object[]{p.getContainer(), p.getPageId()});
+                    else
+                    {
+                        assert mustUpdateIndexes;
+                        insertPortalPage(c, p);
+                    }
+                    validPageIndex -= 1;
+                }
+
+                transaction.commit();
+            }
         }
         catch (SQLException | DataIntegrityViolationException x)
         {
