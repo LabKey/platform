@@ -12,7 +12,7 @@
     </library>
     <dependencies>
         <dependency path="clientapi/ext4" /> <!-- needed for resizeToViewport -->
-        <dependency path="query/schemaBrowser.css" />
+        <!--<dependency path="query/schemaBrowser.css" />--> <!-- removed for UX refresh, added in browse.jsp for time being-->
         <dependency path="_images/icons.css" />
     </dependencies>
 </libraries>

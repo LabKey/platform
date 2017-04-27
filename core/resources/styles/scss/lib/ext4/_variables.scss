@@ -26,7 +26,7 @@ $neutral-color: #eeeeee !default;
 
 //toolbars
 $toolbar-background-color: #eeeeee;
-$toolbar-border-color: adjust-color($base-color, $hue: 0deg, $saturation: 7.644%, $lightness: -8.627%) !default;
+$toolbar-border-color: $lk-panel-default-border;
 $toolbar-separator-color: adjust-color($base-color, $hue: -1deg, $saturation: 100%, $lightness: -4.3%) !default;
 $toolbar-background-gradient-start: #eeeeee;
 $toolbar-background-gradient-end: #eeeeee;

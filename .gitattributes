@@ -323,6 +323,7 @@ core/resources/styles/scss/labkey/components/_header.scss -text
 core/resources/styles/scss/labkey/components/_knitr.scss -text
 core/resources/styles/scss/labkey/components/_menu.scss -text
 core/resources/styles/scss/labkey/components/_navigation.scss -text
+core/resources/styles/scss/labkey/components/_schemaBrowser.scss -text
 core/resources/styles/scss/labkey/components/_tabStrip.scss -text
 core/resources/styles/scss/lib/bootstrap/_bootstrap.scss -text
 core/resources/styles/scss/lib/bootstrap/_dropdown.scss -text

@@ -9628,11 +9628,6 @@ a.x4-color-picker-item:hover {
   border-bottom-style: dotted;
   border-bottom-color: $grid-row-cell-selected-border-color;
 }
-/* line 45, ../../../ext-theme-neutral/sass/src/panel/Table.scss */
-.x4-grid-row-selected .x4-grid-td {
-  border-bottom-style: dotted;
-  border-bottom-color: $grid-row-cell-selected-border-color;
-}
 /* line 50, ../../../ext-theme-neutral/sass/src/panel/Table.scss */
 .x4-grid-row-before-focused .x4-grid-td {
   border-bottom-style: dotted;
@@ -9649,7 +9644,13 @@ a.x4-color-picker-item:hover {
 }
 /* line 73, ../../../ext-theme-neutral/sass/src/panel/Table.scss */
 .x4-grid-row-selected .x4-grid-td {
+  border-bottom-style: dotted;
+  border-bottom-color: $grid-row-cell-selected-border-color;
   background-color: $lk-dropdown-link-hover-bg;
+
+  .x4-tree-node-text {
+    color: $lk-grid-row-select-color-hover;
+  }
 }
 /* line 82, ../../../ext-theme-neutral/sass/src/panel/Table.scss */
 .x4-grid-row-focused .x4-grid-td {
