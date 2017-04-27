@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.DOMUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.w3c.dom.Document;
@@ -41,6 +42,7 @@ public class ModuleQueryMetadataDef
     private static final Logger LOG = Logger.getLogger(ModuleQueryMetadataDef.class);
 
     private String _name;
+    private Path _path;
     private String _queryMetaData;
     private String _description;
     private double _schemaVersion;
@@ -49,6 +51,7 @@ public class ModuleQueryMetadataDef
     public ModuleQueryMetadataDef(Resource resource)
     {
         _name = resource.getName();
+        _path = resource.getPath();
 
         if (_name.endsWith(ModuleQueryDef.META_FILE_EXTENSION))
         {
@@ -123,6 +126,11 @@ public class ModuleQueryMetadataDef
     public String getName()
     {
         return _name;
+    }
+
+    public Path getPath()
+    {
+        return _path;
     }
 
     public String getQueryMetaData()

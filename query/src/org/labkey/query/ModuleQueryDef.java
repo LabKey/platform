@@ -19,6 +19,7 @@ import org.apache.commons.io.IOUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.query.persist.QueryDef;
 
@@ -126,5 +127,10 @@ public class ModuleQueryDef
         ret.setSql(getSql());
 
         return ret;
+    }
+
+    public Path getPath()
+    {
+        return _resource.getPath();
     }
 }
