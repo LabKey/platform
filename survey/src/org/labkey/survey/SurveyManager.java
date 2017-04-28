@@ -30,6 +30,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -229,8 +230,10 @@ public class SurveyManager
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             TableInfo table = SurveySchema.getInstance().getSurveysTable();
-            table.setAuditBehavior(AuditBehaviorType.DETAILED);
-
+            if (table.supportsAuditTracking())
+            {
+                ((AuditConfigurable)table).setAuditBehavior(AuditBehaviorType.DETAILED);
+            }
             Survey ret;
             BeanObjectFactory<Survey> objectFactory = new BeanObjectFactory<>(Survey.class);
             if (survey.isNew())
@@ -470,7 +473,7 @@ public class SurveyManager
         if (table != null)
         {
             QueryUpdateService qus = table.getUpdateService();
-            FieldKey pk = table.getAuditRowPk();
+            FieldKey pk = getSurveyPk(table);
             if (qus != null && pk != null)
             {
                 try {
@@ -488,6 +491,27 @@ public class SurveyManager
                 }
             }
         }
+    }
+
+    @Nullable
+    public static FieldKey getSurveyPk(TableInfo table)
+    {
+        FieldKey pk = null;
+        if (table.supportsAuditTracking())
+        {
+            pk = ((AuditConfigurable)table).getAuditRowPk();
+        }
+        else
+        {
+            List<String> pks = table.getPkColumnNames();
+            if (pks.size() == 1)
+                return FieldKey.fromParts(pks.get(0));
+            else if (table.getColumn(FieldKey.fromParts("EntityId")) != null)
+                return FieldKey.fromParts("EntityId");
+            else if (table.getColumn(FieldKey.fromParts("RowId")) != null)
+                return FieldKey.fromParts("RowId");
+        }
+        return pk;
     }
 
     public List<Throwable> fireUpdateSurvey(Container c, User user, Survey survey, Map<String, Object> oldRow, Map<String, Object> row)

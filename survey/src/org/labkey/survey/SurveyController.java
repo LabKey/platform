@@ -35,6 +35,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
+import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -513,9 +514,9 @@ public class SurveyController extends SpringActionController implements SurveyUr
                     response.put("success", false);
                     return response;
                 }
-                table.setAuditBehavior(AuditBehaviorType.DETAILED);
-
-                FieldKey pk = table.getAuditRowPk();
+                if (table.supportsAuditTracking())
+                    ((AuditConfigurable)table).setAuditBehavior(AuditBehaviorType.DETAILED);
+                FieldKey pk = SurveyManager.getSurveyPk(table);
 
                 if (pk != null)
                 {
@@ -726,7 +727,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                     }
                     else
                     {
-                        FieldKey pk = table.getAuditRowPk();
+                        FieldKey pk = SurveyManager.getSurveyPk(table);
                         UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), surveyDesign.getSchemaName());
 
                         if (schema != null)
@@ -837,7 +838,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                     if (surveyDesign != null)
                     {
                         TableInfo table = SurveyManager.get().getSurveyResponsesTableInfo(getContainer(), getUser(), surveyDesign);
-                        FieldKey pk = table.getAuditRowPk();
+                        FieldKey pk = SurveyManager.getSurveyPk(table);
 
                         if (table != null && pk != null)
                         {
@@ -997,7 +998,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
 
                     if (table != null && table.getUpdateService() != null)
                     {
-                        if (table.getAuditRowPk() != null)
+                        if (SurveyManager.getSurveyPk(table) != null)
                         {
                             Map<String, Object> query = new HashMap<>();
 

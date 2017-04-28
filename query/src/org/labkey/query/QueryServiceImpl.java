@@ -2768,112 +2768,116 @@ public class QueryServiceImpl implements QueryService
     @Override
     public void addAuditEvent(User user, Container c, TableInfo table, AuditAction action, List<Map<String, Object>> ... params)
     {
-        AuditBehaviorType auditType = table.getAuditBehavior();
-
-        // Truncate audit event doesn't accept any params
-        if (action == AuditAction.TRUNCATE)
+        if (table.supportsAuditTracking())
         {
-            assert params.length == 0;
+            AuditConfigurable auditConfigurable = (AuditConfigurable)table;
+            AuditBehaviorType auditType = auditConfigurable.getAuditBehavior();
+
+            // Truncate audit event doesn't accept any params
+            if (action == AuditAction.TRUNCATE)
+            {
+                assert params.length == 0;
+                switch (auditType)
+                {
+                    case NONE:
+                        return;
+
+                    case SUMMARY:
+                    case DETAILED:
+                        String comment = AuditAction.TRUNCATE.getCommentSummary();
+                        AuditTypeEvent event = _createAuditRecord(user, c, auditConfigurable, comment, null);
+                        AuditLogService.get().addEvent(user, event);
+                        return;
+                }
+            }
+
             switch (auditType)
             {
                 case NONE:
                     return;
 
                 case SUMMARY:
-                case DETAILED:
-                    String comment = AuditAction.TRUNCATE.getCommentSummary();
-                    AuditTypeEvent event = _createAuditRecord(user, c, table, comment, null);
-                    AuditLogService.get().addEvent(user, event);
-                    return;
-            }
-        }
-
-        switch (auditType)
-        {
-            case NONE:
-                return;
-
-            case SUMMARY:
-            {
-                assert (params.length > 0);
-
-                List<Map<String, Object>> rows = params[0];
-                String comment = String.format(action.getCommentSummary(), rows.size());
-                AuditTypeEvent event = _createAuditRecord(user, c, table, comment, rows.get(0));
-
-                AuditLogService.get().addEvent(user, event);
-                break;
-            }
-            case DETAILED:
-            {
-                assert (params.length > 0);
-
-                List<Map<String, Object>> rows = params[0];
-                for (int i=0; i < rows.size(); i++)
                 {
-                    Map<String, Object> row = rows.get(i);
-                    String comment = String.format(action.getCommentDetailed(), row.size());
+                    assert (params.length > 0);
 
-                    QueryUpdateAuditProvider.QueryUpdateAuditEvent event = _createAuditRecord(user, c, table, comment, row);
+                    List<Map<String, Object>> rows = params[0];
+                    String comment = String.format(action.getCommentSummary(), rows.size());
+                    AuditTypeEvent event = _createAuditRecord(user, c, auditConfigurable, comment, rows.get(0));
 
-                    switch (action)
+                    AuditLogService.get().addEvent(user, event);
+                    break;
+                }
+                case DETAILED:
+                {
+                    assert (params.length > 0);
+
+                    List<Map<String, Object>> rows = params[0];
+                    for (int i=0; i < rows.size(); i++)
                     {
-                        case INSERT:
-                        {
-                            String newRecord = QueryAuditProvider.encodeForDataMap(row);
-                            if (newRecord != null)
-                                event.setNewRecordMap(newRecord);
-                            break;
-                        }
-                        case DELETE:
-                        {
-                            String oldRecord = QueryAuditProvider.encodeForDataMap(row);
-                            if (oldRecord != null)
-                                event.setOldRecordMap(oldRecord);
-                            break;
-                        }
-                        case UPDATE:
-                        {
-                            assert (params.length >= 2);
+                        Map<String, Object> row = rows.get(i);
+                        String comment = String.format(action.getCommentDetailed(), row.size());
 
-                            List<Map<String, Object>> updatedRows = params[1];
-                            Map<String, Object> updatedRow = updatedRows.get(i);
+                        QueryUpdateAuditProvider.QueryUpdateAuditEvent event = _createAuditRecord(user, c, auditConfigurable, comment, row);
 
-                            // only record modified fields
-                            Map<String, Object> originalRow = new HashMap<>();
-                            Map<String, Object> modifiedRow = new HashMap<>();
-
-                            for (Entry<String, Object> entry : row.entrySet())
+                        switch (action)
+                        {
+                            case INSERT:
                             {
-                                if (updatedRow.containsKey(entry.getKey()))
+                                String newRecord = QueryAuditProvider.encodeForDataMap(row);
+                                if (newRecord != null)
+                                    event.setNewRecordMap(newRecord);
+                                break;
+                            }
+                            case DELETE:
+                            {
+                                String oldRecord = QueryAuditProvider.encodeForDataMap(row);
+                                if (oldRecord != null)
+                                    event.setOldRecordMap(oldRecord);
+                                break;
+                            }
+                            case UPDATE:
+                            {
+                                assert (params.length >= 2);
+
+                                List<Map<String, Object>> updatedRows = params[1];
+                                Map<String, Object> updatedRow = updatedRows.get(i);
+
+                                // only record modified fields
+                                Map<String, Object> originalRow = new HashMap<>();
+                                Map<String, Object> modifiedRow = new HashMap<>();
+
+                                for (Entry<String, Object> entry : row.entrySet())
                                 {
-                                    Object newValue = updatedRow.get(entry.getKey());
-                                    if (!Objects.equals(entry.getValue(), newValue))
+                                    if (updatedRow.containsKey(entry.getKey()))
                                     {
-                                        originalRow.put(entry.getKey(), entry.getValue());
-                                        modifiedRow.put(entry.getKey(), newValue);
+                                        Object newValue = updatedRow.get(entry.getKey());
+                                        if (!Objects.equals(entry.getValue(), newValue))
+                                        {
+                                            originalRow.put(entry.getKey(), entry.getValue());
+                                            modifiedRow.put(entry.getKey(), newValue);
+                                        }
                                     }
                                 }
+
+                                String oldRecord = QueryAuditProvider.encodeForDataMap(originalRow);
+                                if (oldRecord != null)
+                                    event.setOldRecordMap(oldRecord);
+
+                                String newRecord = QueryAuditProvider.encodeForDataMap(modifiedRow);
+                                if (newRecord != null)
+                                    event.setNewRecordMap(newRecord);
+                                break;
                             }
-
-                            String oldRecord = QueryAuditProvider.encodeForDataMap(originalRow);
-                            if (oldRecord != null)
-                                event.setOldRecordMap(oldRecord);
-
-                            String newRecord = QueryAuditProvider.encodeForDataMap(modifiedRow);
-                            if (newRecord != null)
-                                event.setNewRecordMap(newRecord);
-                            break;
                         }
+                        AuditLogService.get().addEvent(user, event);
                     }
-                    AuditLogService.get().addEvent(user, event);
+                    break;
                 }
-                break;
             }
         }
     }
 
-    private static QueryUpdateAuditProvider.QueryUpdateAuditEvent _createAuditRecord(User user, Container c, TableInfo tinfo, String comment, @Nullable Map<String, Object> row)
+    private static QueryUpdateAuditProvider.QueryUpdateAuditEvent _createAuditRecord(User user, Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row)
     {
         QueryUpdateAuditProvider.QueryUpdateAuditEvent event = new QueryUpdateAuditProvider.QueryUpdateAuditEvent(c.getId(), comment);
 
@@ -2897,32 +2901,38 @@ public class QueryServiceImpl implements QueryService
     @Override
     public @Nullable ActionURL getAuditHistoryURL(User user, Container c, TableInfo table)
     {
-        AuditBehaviorType auditBehavior = table.getAuditBehavior();
-
-        if (auditBehavior != null && auditBehavior != AuditBehaviorType.NONE)
+        if (table.supportsAuditTracking())
         {
-            return new ActionURL(QueryController.AuditHistoryAction.class, c).
-                    addParameter(QueryParam.schemaName, table.getPublicSchemaName()).
-                    addParameter(QueryParam.queryName, table.getPublicName());
-        }
+            AuditBehaviorType auditBehavior = ((AuditConfigurable)table).getAuditBehavior();
 
+            if (auditBehavior != null && auditBehavior != AuditBehaviorType.NONE)
+            {
+                return new ActionURL(QueryController.AuditHistoryAction.class, c).
+                        addParameter(QueryParam.schemaName, table.getPublicSchemaName()).
+                        addParameter(QueryParam.queryName, table.getPublicName());
+            }
+        }
         return null;
     }
 
     @Override
     public DetailsURL getAuditDetailsURL(User user, Container c, TableInfo table)
     {
-        if (table.getAuditBehavior() != AuditBehaviorType.NONE)
+        if (table.supportsAuditTracking())
         {
-            FieldKey rowPk = table.getAuditRowPk();
-
-            if (rowPk != null)
+            AuditConfigurable auditConfigurable = (AuditConfigurable)table;
+            if (auditConfigurable.getAuditBehavior() != AuditBehaviorType.NONE)
             {
-                ActionURL url = new ActionURL(QueryController.AuditDetailsAction.class, c).
-                        addParameter(QueryParam.schemaName, table.getPublicSchemaName()).
-                        addParameter(QueryParam.queryName, table.getName());
+                FieldKey rowPk = auditConfigurable.getAuditRowPk();
 
-                return new DetailsURL(url, Collections.singletonMap("keyValue", rowPk));
+                if (rowPk != null)
+                {
+                    ActionURL url = new ActionURL(QueryController.AuditDetailsAction.class, c).
+                            addParameter(QueryParam.schemaName, table.getPublicSchemaName()).
+                            addParameter(QueryParam.queryName, table.getName());
+
+                    return new DetailsURL(url, Collections.singletonMap("keyValue", rowPk));
+                }
             }
         }
         return null;
