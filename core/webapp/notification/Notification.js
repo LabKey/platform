@@ -50,7 +50,7 @@
                         count++;
                     }
                 }
-                NOTIFICATION_COUNT_EL.html(count);
+                NOTIFICATION_COUNT_EL.html(count > 0 ? count : '');
 
                 _updateGroupDisplay();
             }

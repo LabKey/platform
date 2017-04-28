@@ -181,3 +181,8 @@
     }
   }
 }
+
+.labkey-notification-panel,
+.labkey-notification-footer {
+  background-color: $lk-page-header-notification-bg-color;
+}

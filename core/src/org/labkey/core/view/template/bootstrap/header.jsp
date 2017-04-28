@@ -108,6 +108,9 @@
                 </ul>
             </li>
 <% } %>
+<% if (me.getView("notifications") != null) { %>
+    <% include(me.getView("notifications"), out); %>
+<% } %>
 <% if (user != null && user.isImpersonated()) { %>
             <li>
                 <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()))%>" class="btn btn-primary">Stop impersonating</a>
