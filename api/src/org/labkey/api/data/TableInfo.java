@@ -22,7 +22,6 @@ import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -530,15 +529,11 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     @Nullable
     ContainerContext getContainerContext();
 
-    void setAuditBehavior(AuditBehaviorType type);
-    AuditBehaviorType getAuditBehavior();
-
     /**
-     * Returns the row primary key column to use for audit history details. Note, this must
-     * be a single key as we don't support multiple column primary keys for audit details.
+     * Returns whether this table supports audit tracking of insert, updates and deletes by implementing the
+     * AuditConfigurable interface.
      */
-    @Nullable
-    FieldKey getAuditRowPk();
+    boolean supportsAuditTracking();
 
     /**
      * @return set of all columns involved in the query

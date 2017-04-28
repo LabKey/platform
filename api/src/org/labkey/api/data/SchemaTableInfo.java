@@ -74,7 +74,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * A thin wrapper over a table in the real underlying database.
  */
-public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
+public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditConfigurable
 {
     // Table properties
     private final DbSchema _parentSchema;
@@ -491,7 +491,13 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return getColumnMetaData().getColumnNameSet();
     }
 
-     @Override
+    @Override
+    public boolean supportsAuditTracking()
+    {
+        return true;
+    }
+
+    @Override
      public void setAuditBehavior(AuditBehaviorType type)
      {
          _auditBehaviorType = type;

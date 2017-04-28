@@ -19,6 +19,7 @@ package org.labkey.api.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.ButtonBarConfig;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -76,7 +77,8 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         _importTemplates = _rootTable.getRawImportTemplates();
         // UNDONE: lazy load button bar config????
         _buttonBarConfig = _rootTable.getButtonBarConfig() == null ? null : new ButtonBarConfig(_rootTable.getButtonBarConfig());
-        _auditBehaviorType = _rootTable.getAuditBehavior();
+        if (_rootTable.supportsAuditTracking())
+            _auditBehaviorType = ((AuditConfigurable)_rootTable).getAuditBehavior();
 
         // We used to copy the titleColumn from table, but this forced all ColumnInfos to load.  Now, delegate
         // to _rootTable lazily, allowing overrides.

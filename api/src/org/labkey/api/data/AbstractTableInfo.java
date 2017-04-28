@@ -86,7 +86,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-abstract public class AbstractTableInfo implements TableInfo, MemTrackable
+abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable, MemTrackable
 {
     private static final Logger LOG = Logger.getLogger(AbstractTableInfo.class);
 
@@ -1386,6 +1386,12 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     public boolean isLocked()
     {
         return _locked;
+    }
+
+    @Override
+    public boolean supportsAuditTracking()
+    {
+        return true;
     }
 
     @Override
