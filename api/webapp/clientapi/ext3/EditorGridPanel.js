@@ -330,13 +330,18 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
 
     onStoreLoadException : function(proxy, options, response, error) {
         var msg = error;
-        if(!msg && response.responseText)
+        if (!msg && response.responseText)
         {
-            var json = Ext.util.JSON.decode(response.responseText);
-            if(json)
-                msg = json.exception;
+            try
+            {
+                var json = Ext.util.JSON.decode(response.responseText);
+                if (json)
+                    msg = json.exception;
+            }
+            catch (err)
+            {}
         }
-        if(!msg)
+        if (!msg)
             msg = "Unable to load data from the server!";
 
         Ext.Msg.alert("Error", msg);
