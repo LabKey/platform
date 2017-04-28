@@ -245,7 +245,7 @@
                 },
                 itemdblclick : function(g) {
                     if (g.getSelectionModel().hasSelection()) {
-                        var filters = g.getSelectionMode().getSelection()[0].get('filters');
+                        var filters = g.getSelectionModel().getSelection()[0].get('filters');
                         if (filters == undefined || filters.length == 0)
                             editParticipantGroup(g.getSelectionModel().getSelection()[0]);
                     }

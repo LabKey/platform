@@ -221,7 +221,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
                 // TODO: Need handlers for each "create study" type (ancillary, publish, specimen)
                 if (!participantGroups.isEmpty())
-                    studyExportContext.setParticipants(getGroupParticipants(_form, sourceStudy, participantGroups, studyExportContext));
+                {
+                    studyExportContext.setParticipants(getGroupParticipants(_form, participantGroups, studyExportContext));
+                }
                 else if (null != _form.getVials())
                 {
                     studyExportContext.setParticipants(getSpecimenParticipants(_form));
@@ -558,7 +560,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         }
     }
 
-    private List<String> getGroupParticipants(ChildStudyDefinition form, StudyImpl sourceStudy, List<ParticipantGroup> participantGroups, StudyExportContext ctx)
+    private List<String> getGroupParticipants(ChildStudyDefinition form, List<ParticipantGroup> participantGroups, StudyExportContext ctx)
     {
         if (!participantGroups.isEmpty())
         {
@@ -578,12 +580,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             groupInClause.append(")");
 
             SQLFragment sql = new SQLFragment();
-
             sql.append(" SELECT DISTINCT(ParticipantId), ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "");
-            sql.append(" WHERE GroupId IN ").append(groupInClause).append(" AND Container = ?");
-
+            sql.append(" WHERE GroupId IN ").append(groupInClause);
             sql.add(getDstContainer());
-            sql.add(sourceStudy.getContainer().getId());
             SqlSelector selector = new SqlSelector(schema.getSchema(), sql);
 
             if (form.isUseAlternateParticipantIds())
