@@ -18,6 +18,7 @@ package org.labkey.api.util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.exp.api.ExperimentService;
 
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
@@ -318,6 +319,39 @@ public class SubstitutionFormat
         }
     }
 
+    public static class SampleCountSubstitutionFormat extends SubstitutionFormat
+    {
+        SampleCountSubstitutionFormat(String name)
+        {
+            super(name);
+        }
+
+        @Override
+        public boolean hasSideEffects()
+        {
+            return true;
+        }
+
+        @Override
+        public Object format(Object value)
+        {
+            Date date = null;
+            if (value instanceof Date)
+                date = (Date)value;
+
+            // Increment sample counters for the given date or today's date if null
+            // TODO: How can we check if we have incremented sample counters for this same date within the current context/row?
+            Map<String, Integer> counts = ExperimentService.get().incrementSampleCounts(date);
+            return counts.get(_name);
+        }
+    }
+
+    public static SampleCountSubstitutionFormat dailySampleCount = new SampleCountSubstitutionFormat("dailySampleCount");
+    public static SampleCountSubstitutionFormat weeklySampleCount = new SampleCountSubstitutionFormat("weeklySampleCount");
+    public static SampleCountSubstitutionFormat monthlySampleCount = new SampleCountSubstitutionFormat("monthlySampleCount");
+    public static SampleCountSubstitutionFormat yearlySampleCount = new SampleCountSubstitutionFormat("yearlySampleCount");
+
+
     final String _name;
     final String _shortName;
 
@@ -343,6 +377,11 @@ public class SubstitutionFormat
         return value;
     }
 
+    public boolean hasSideEffects()
+    {
+        return false;
+    }
+
     private final static Map<String, SubstitutionFormat> _map = new CaseInsensitiveHashMap<>();
 
     private static void register(SubstitutionFormat fmt)
@@ -365,6 +404,12 @@ public class SubstitutionFormat
         register(SubstitutionFormat.rest);
         register(SubstitutionFormat.trim);
         register(SubstitutionFormat.urlEncode);
+
+        // sample counters
+        register(SubstitutionFormat.dailySampleCount);
+        register(SubstitutionFormat.weeklySampleCount);
+        register(SubstitutionFormat.monthlySampleCount);
+        register(SubstitutionFormat.yearlySampleCount);
     }
 
     // More lenient than SubstitutionFormat.valueOf(), returns null for non-match

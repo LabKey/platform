@@ -49,7 +49,6 @@ public interface ListService
     ListDefinition getList(Domain domain);
     ActionURL getManageListsURL(Container container);
 
-    //TODO: should this have a default impl?
     void importListArchive(InputStream is, BindException errors, Container c, User user) throws Exception;
 
 }

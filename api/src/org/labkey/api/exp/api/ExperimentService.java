@@ -70,6 +70,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -339,6 +340,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void deleteExperimentRunsByRowIds(Container container, final User user, int... selectedRunIds);
 
     void deleteExpExperimentByRowId(Container container, User user, int experimentId);
+
+    /**
+     * Increment and get the sample counters for the given date, or the current date if no date is supplied.
+     * The resulting map has keys "dailySampleCount", "weeklySampleCount", "monthlySampleCount", and "yearlySampleCount".
+     */
+    Map<String, Integer> incrementSampleCounts(@Nullable Date counterDate);
 
     void addExperimentListener(ExperimentListener listener);
 

@@ -89,6 +89,11 @@ public class StringExpressionFactory
 
     public static StringExpression create(String str, boolean urlEncodeSubstitutions, @Nullable AbstractStringExpression.NullValueBehavior nullValueBehavior)
     {
+        return create(str, urlEncodeSubstitutions, nullValueBehavior, false);
+    }
+
+    public static StringExpression create(String str, boolean urlEncodeSubstitutions, @Nullable AbstractStringExpression.NullValueBehavior nullValueBehavior, boolean allowSideEffects)
+    {
         if (StringUtils.isEmpty(str))
             return EMPTY_STRING;
 
@@ -101,7 +106,7 @@ public class StringExpressionFactory
         if (null != expr)
             return expr;
 
-        expr = new SimpleStringExpression(str, urlEncodeSubstitutions, nullValueBehavior);
+        expr = new SimpleStringExpression(str, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects);
         templates.put(key, expr);
         return expr;
     }
@@ -252,6 +257,11 @@ public class StringExpressionFactory
             return o == null ? "" : String.valueOf(o);
         }
 
+        public boolean hasSideEffects()
+        {
+            return false;
+        }
+
         @Override
         public  Object clone()
         {
@@ -394,6 +404,17 @@ public class StringExpressionFactory
             }
 
             return valueOf(o);
+        }
+
+        public boolean hasSideEffects()
+        {
+            for (SubstitutionFormat f : _formats)
+            {
+                if (f.hasSideEffects())
+                    return true;
+            }
+
+            return false;
         }
 
         @Override
@@ -606,6 +627,8 @@ public class StringExpressionFactory
         }
 
         protected final NullValueBehavior _nullValueBehavior;
+        protected final boolean _allowSideEffects;
+
         protected String _source;
         protected ArrayList<StringPart> _parsedExpression = null;
 
@@ -617,11 +640,17 @@ public class StringExpressionFactory
 
         AbstractStringExpression(String source, NullValueBehavior nullValueBehavior)
         {
+            this(source, nullValueBehavior, false);
+        }
+
+        AbstractStringExpression(String source, NullValueBehavior nullValueBehavior, boolean allowSideEffects)
+        {
             _source = source;
             if (nullValueBehavior != null)
                 _nullValueBehavior = nullValueBehavior;
             else
                 _nullValueBehavior = NullValueBehavior.NullResult;
+            _allowSideEffects = allowSideEffects;
             //MemTracker.getInstance().put(this);
         }
 
@@ -647,7 +676,12 @@ public class StringExpressionFactory
                 if (index > 0)
                     _parsedExpression.add(new ConstantPart(_source.substring(start, index)));
                 String sub = _source.substring(index+2,closeIndex);
-                _parsedExpression.add(parsePart(sub));
+
+                StringPart part = parsePart(sub);
+                if (part.hasSideEffects() && !_allowSideEffects)
+                    throw new IllegalArgumentException("Side-effecting expression part not allowed: " + sub);
+
+                _parsedExpression.add(part);
                 start = closeIndex + 1;
             }
             if (start < _source.length())
@@ -843,12 +877,12 @@ public class StringExpressionFactory
 
         SimpleStringExpression(String source, boolean urlEncodeSubstitutions)
         {
-            this(source, urlEncodeSubstitutions, null);
+            this(source, urlEncodeSubstitutions, null, false);
         }
 
-        SimpleStringExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior)
+        SimpleStringExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects)
         {
-            super(source, nullValueBehavior);
+            super(source, nullValueBehavior, allowSideEffects);
             _urlEncodeSubstitutions = urlEncodeSubstitutions;
         }
         
