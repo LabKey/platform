@@ -27,8 +27,7 @@ public class MetadataParseWarning extends MetadataParseException
 {
     public MetadataParseWarning(String message)
     {
-        super(message, null, 0, 0);
-        _level = Level.WARN_INT;
+        this(message, null, 0, 0);
     }
 
     public MetadataParseWarning(String message, Throwable cause, int line, int column)
@@ -39,8 +38,7 @@ public class MetadataParseWarning extends MetadataParseException
 
     public MetadataParseWarning(String queryName, QueryParseException other)
     {
-        super(queryName + ":" + other.getMessage(), other.getCause(), other._line, other._column);
-        _level = Level.WARN_INT;
+        this(queryName + ":" + other.getMessage(), other.getCause(), other._line, other._column);
     }
 
     @Override

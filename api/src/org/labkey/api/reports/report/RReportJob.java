@@ -56,14 +56,14 @@ public class RReportJob extends PipelineJob implements Serializable
     private ReportIdentifier _reportId;
     private RReportBean _form;
 
-    public RReportJob(String provider, ViewBackgroundInfo info, ReportIdentifier reportId, PipeRoot root) throws SQLException
+    public RReportJob(String provider, ViewBackgroundInfo info, ReportIdentifier reportId, PipeRoot root)
     {
         super(provider, info, root);
         _reportId = reportId;
         init(this.getContainerId());
     }
 
-    public RReportJob(String provider, ViewBackgroundInfo info, RReportBean form, PipeRoot root) throws Exception
+    public RReportJob(String provider, ViewBackgroundInfo info, RReportBean form, PipeRoot root)
     {
         super(provider, info, root);
         _form = form;
@@ -72,13 +72,11 @@ public class RReportJob extends PipelineJob implements Serializable
 
     protected void init(@NotNull String executingContainerId)
     {
-        Report report = getReport();
-
-
-        if (report instanceof RReport)
+        RReport report = getReport();
+        if (report != null)
         {
-            File logFile = new File(((RReport)report).getReportDir(executingContainerId), LOG_FILE_NAME);
-            this.setLogFile(logFile);
+            File logFile = new File(report.getReportDir(executingContainerId), LOG_FILE_NAME);
+            setLogFile(logFile);
         }
     }
 
@@ -190,14 +188,15 @@ public class RReportJob extends PipelineJob implements Serializable
             }
             else
             {
-                setStatus(TaskStatus.error, "Job finished at: " + DateUtil.nowISO());
+                error("Unable to find input file " + inputFile);
+                setStatus(TaskStatus.error, "Job failed at: " + DateUtil.nowISO());
             }
         }
         catch (Exception e)
         {
             _log.error("Error occurred running the report background job", e);
             error("Error occurred running the report background job", e);
-            setStatus(TaskStatus.error, "Job finished at: " + DateUtil.nowISO());
+            setStatus(TaskStatus.error, "Job failed at: " + DateUtil.nowISO());
         }
     }
 
