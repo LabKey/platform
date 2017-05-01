@@ -1742,21 +1742,25 @@ public class DataRegion extends AbstractDataRegion
 
         RowMap rowMap = null;
         int rowIndex = 0;
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
 
         try (ResultSet rs = ctx.getResults())
         {
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
 
-            out.write("<table");
-            out.write(" id=\"" + PageFlowUtil.filter(getDomId()) + "\"");
-            out.write(" class=\"lk-details-table\"");
-
-            String name = getName();
-            if (name != null)
+            if (!newUI)
             {
-                out.write(" lk-region-name=\"" + PageFlowUtil.filter(name) + "\" ");
+                out.write("<table");
+                out.write(" id=\"" + PageFlowUtil.filter(getDomId()) + "\"");
+                out.write(" class=\"lk-details-table\"");
+
+                String name = getName();
+                if (name != null)
+                {
+                    out.write(" lk-region-name=\"" + PageFlowUtil.filter(name) + "\" ");
+                }
+                out.write(">\n");
             }
-            out.write(">\n");
 
             while (rs.next())
             {
@@ -1768,21 +1772,21 @@ public class DataRegion extends AbstractDataRegion
                 {
                     if (!renderer.isVisible(ctx) || (renderer.getDisplayModes() & MODE_DETAILS) == 0)
                         continue;
-                    out.write("  <tr>\n    ");
+                    out.write(newUI ? "<div class=\"form-group\">" : "<tr>");
                     renderer.renderDetailsCaptionCell(ctx, out);
                     renderer.renderDetailsData(ctx, out, 1);
-                    out.write("  </tr>\n");
+                    out.write(newUI ? "</div>" : "</tr>");
                 }
 
-                out.write("<tr><td style='font-size:1'>&nbsp;</td></tr>");
+                if (!newUI)
+                    out.write("<tr><td style='font-size:1'>&nbsp;</td></tr>");
             }
 
             if (rowIndex == 0)
-            {
                 renderNoRowsMessage(ctx, out, 1);
-            }
 
-            out.write("</table>");
+            if (!newUI)
+                out.write("</table>");
 
             renderDetailsHiddenFields(out, rowMap);
             _detailsButtonBar.render(ctx, out);
@@ -1966,18 +1970,30 @@ public class DataRegion extends AbstractDataRegion
 
     protected void renderFormField(RenderContext ctx, Writer out, DisplayColumn renderer, int span) throws IOException
     {
-        renderInputError(ctx, out, span, renderer);
-        out.write("  <tr>\n    ");
-        renderer.renderDetailsCaptionCell(ctx, out);
-        if (!renderer.isEditable())
-            renderer.renderDetailsData(ctx, out, span);
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+        Set<String> errors = getErrors(ctx, renderer);
+
+        if (newUI)
+        {
+            out.write("<div class=\"form-group" + (errors.size() > 0 ? " has-error" : "") + "\">");
+        }
         else
+        {
+            renderInputError(errors, out, span);
+            out.write("<tr>");
+        }
+        renderer.renderDetailsCaptionCell(ctx, out);
+
+        if (renderer.isEditable())
             renderer.renderInputCell(ctx, out, span);
-        out.write("  </tr>\n");
+        else
+            renderer.renderDetailsData(ctx, out, span);
+        if (newUI)
+            renderInputError(errors, out, span);
+        out.write(newUI ? "</div>" : "</tr>");
     }
 
-    protected void renderInputError(RenderContext ctx, Writer out, int span, DisplayColumn... renderers)
-            throws IOException
+    private Set<String> getErrors(RenderContext ctx, DisplayColumn... renderers)
     {
         TableViewForm viewForm = ctx.getForm();
         Set<String> errors = new HashSet<>();
@@ -1994,16 +2010,36 @@ public class DataRegion extends AbstractDataRegion
                 errors.add(error);
             }
         }
+
+        return errors;
+    }
+
+    protected void renderInputError(RenderContext ctx, Writer out, int span, DisplayColumn... renderers)
+            throws IOException
+    {
+        renderInputError(getErrors(ctx, renderers), out, span);
+    }
+
+    private void renderInputError(Set<String> errors, Writer out, int span) throws IOException
+    {
         if (!errors.isEmpty())
         {
-            out.write("  <tr><td colspan=");
-            out.write(Integer.toString(span + 1));
-            out.write(">");
-            for (String error : errors)
+            if (PageFlowUtil.useExperimentalCoreUI())
             {
-                out.write(error);
+                out.write("<span class=\"help-block\">");
+                for (String error : errors)
+                    out.write(error);
+                out.write("</span>");
             }
-            out.write("</td></tr>");
+            else
+            {
+                out.write("  <tr><td colspan=");
+                out.write(Integer.toString(span + 1));
+                out.write(">");
+                for (String error : errors)
+                    out.write(error);
+                out.write("</td></tr>");
+            }
         }
     }
 
@@ -2012,10 +2048,7 @@ public class DataRegion extends AbstractDataRegion
     {
         int action = ctx.getMode();
         Map valueMap = ctx.getRow();
-        TableViewForm viewForm = ctx.getForm();
-
-        List<DisplayColumn> renderers = getDisplayColumns();
-        Set<String> renderedColumns = Sets.newCaseInsensitiveHashSet();
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
 
         //if user doesn't have read permissions, don't render anything
         if ((action == MODE_INSERT && !hasPermission(ctx, InsertPermission.class)) ||
@@ -2044,18 +2077,31 @@ public class DataRegion extends AbstractDataRegion
         renderFormHeader(ctx, out, action);
         renderMainErrors(ctx, out);
 
-        out.write("<table>");
+        if (!newUI)
+            out.write("<table>");
 
         if (action == MODE_UPDATE_MULTIPLE)
         {
-            out.write("<tr><td colspan=\"3\">This will edit " + ctx.getForm().getSelectedRows().length + " rows.</td></tr>");
+            String msg = "This will edit " + ctx.getForm().getSelectedRows().length + " rows.";
+
+            if (newUI)
+                out.write("<p>" + msg + "</p>");
+            else
+                out.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
         }
+
+        List<DisplayColumn> renderers = getDisplayColumns();
 
         for (DisplayColumn renderer : renderers)
         {
             if (shouldRender(renderer, ctx) && null != renderer.getColumnInfo() && !renderer.getColumnInfo().isNullable())
             {
-                out.write("<tr><td colspan=3>Fields marked with an asterisk * are required.</td></tr>");
+                String msg = "Fields marked with an asterisk * are required.";
+
+                if (newUI)
+                    out.write("<p>" + msg + "</p>");
+                else
+                    out.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
                 break;
             }
         }
@@ -2065,6 +2111,8 @@ public class DataRegion extends AbstractDataRegion
                         (_horizontalGroups ?
                                 _groupTables.get(0).getGroups().get(0).getColumns().size() + 1 :
                                 _groupTables.get(0).getGroups().size()); // One extra one for the column to reuse the same value
+
+        Set<String> renderedColumns = Sets.newCaseInsensitiveHashSet();
 
         for (DisplayColumn renderer : renderers)
         {
@@ -2081,7 +2129,6 @@ public class DataRegion extends AbstractDataRegion
             {
                 List<DisplayColumnGroup> groups = groupTable.getGroups();
                 List<String> groupHeadings = groupTable.getGroupHeadings();
-//                assert _groupHeadings != null : "Must set group headings before rendering";
                 out.write("<tr><td/>");
                 boolean hasCopyable = false;
 
@@ -2178,7 +2225,7 @@ public class DataRegion extends AbstractDataRegion
                         if (rowClass != null)
                             out.write(" class=\"" + rowClass + "\"");
                         out.write(">");
-                        out.write("<td class='labkey-form-label' nowrap>");
+                        out.write("<td class=\"labkey-form-label\" nowrap>");
                         out.write(PageFlowUtil.filter(groupHeadings.get(i)));
                         out.write("</td>");
                         for (DisplayColumnGroup group : groups)
@@ -2192,7 +2239,7 @@ public class DataRegion extends AbstractDataRegion
                     }
                 }
 
-                out.write("<script language='javascript'>");
+                out.write("<script language=\"javascript\">");
                 for (DisplayColumnGroup group : groups)
                 {
                     group.writeCopyableJavaScript(ctx, out);
@@ -2201,19 +2248,20 @@ public class DataRegion extends AbstractDataRegion
             }
         }
 
-        out.write("<tr><td colspan=" + (span + 1) + " align=left>");
-
-        if (action == MODE_UPDATE && valueMap != null)
-        {
-            if (valueMap instanceof BoundMap)
-                renderOldValues(out, ((BoundMap) valueMap).getBean());
-            else
-                renderOldValues(out, valueMap, ctx.getFieldMap());
-        }
+        out.write("<tr><td colspan=\"" + (span + 1) + "\" align=\"left\">");
 
         //Make sure all pks are included
         if (action == MODE_UPDATE)
         {
+            if (valueMap != null)
+            {
+                if (valueMap instanceof BoundMap)
+                    renderOldValues(out, ((BoundMap) valueMap).getBean());
+                else
+                    renderOldValues(out, valueMap, ctx.getFieldMap());
+            }
+
+            TableViewForm viewForm = ctx.getForm();
             List<ColumnInfo> pkCols = getTable().getPkColumns();
             for (ColumnInfo pkCol : pkCols)
             {
@@ -2246,8 +2294,11 @@ public class DataRegion extends AbstractDataRegion
         }
 
         buttonBar.render(ctx, out);
-        out.write("</td></tr>");
-        out.write("</table>");
+        if (!newUI)
+        {
+            out.write("</td></tr>");
+            out.write("</table>");
+        }
         renderFormEnd(ctx, out);
     }
 
@@ -2255,8 +2306,8 @@ public class DataRegion extends AbstractDataRegion
     private void writeSameHeader(RenderContext ctx, Writer out, List<DisplayColumnGroup> groups)
             throws IOException
     {
-        out.write("<td class='labkey-form-label'>");
-        out.write("<input type='checkbox' name='~~SELECTALL~~' onchange=\"");
+        out.write("<td class=\"labkey-form-label\">");
+        out.write("<input type=\"checkbox\" name=\"~~SELECTALL~~\" onchange=\"");
         for (DisplayColumnGroup group : groups)
         {
             group.writeCopyableOnChangeHandler(ctx, out);

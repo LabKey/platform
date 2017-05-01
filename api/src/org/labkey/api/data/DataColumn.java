@@ -534,8 +534,16 @@ public class DataColumn extends DisplayColumn
 
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
+        if (_boundColumn.isVersionColumn() || _inputType.equalsIgnoreCase("none"))
+            return;
+
         boolean disabledInput = isDisabledInput();
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         String formFieldName = getFormFieldName(ctx);
+        String inputCls = newUI ? "form-control" : "";
+
+        if (newUI)
+            out.write("<div class=\"col-sm-9 col-lg-10\">");
 
         String strVal = "";
         //UNDONE: Should use output format here.
@@ -543,8 +551,9 @@ public class DataColumn extends DisplayColumn
         {
             // 4934: Don't render form input values with formatter since we don't parse formatted inputs on post.
             // For now, we can at least render disabled inputs with formatting since a
-            // hidden input with the actual value is emitted for diabled items.
+            // hidden input with the actual value is emitted for disabled items.
             if (null != _format && disabledInput)
+            {
                 try
                 {
                     strVal = _format.format(value);
@@ -553,15 +562,12 @@ public class DataColumn extends DisplayColumn
                 {
                     strVal = ConvertUtils.convert(value);
                 }
+            }
             else
                 strVal = ConvertUtils.convert(value);
         }
 
-        if (_boundColumn.isVersionColumn())
-        {
-            //should be in hidden field.
-        }
-        else if (_boundColumn.isAutoIncrement())
+        if (_boundColumn.isAutoIncrement())
         {
             renderHiddenFormInput(ctx, out, formFieldName, value);
             if (null != value)
@@ -575,7 +581,7 @@ public class DataColumn extends DisplayColumn
             NamedObject[] entries = entryList.toArray();
             String valueStr = ConvertUtils.convert(value);
 
-            out.write("<select");
+            out.write("<select class=\"" + inputCls + "\"");
             outputName(ctx, out, formFieldName);
             if (disabledInput)
                 out.write(" DISABLED");
@@ -603,7 +609,7 @@ public class DataColumn extends DisplayColumn
         }
         else if (_inputType.equalsIgnoreCase("textarea"))
         {
-            out.write("<textarea cols='");
+            out.write("<textarea class=\"" + inputCls + "\" cols='");
             out.write(String.valueOf(_inputLength));
             out.write("' rows='");
             out.write(String.valueOf(_inputRows));
@@ -620,22 +626,22 @@ public class DataColumn extends DisplayColumn
         }
         else if (_inputType.equalsIgnoreCase("file"))
         {
-            out.write("<input");
+            out.write("<input class=\"" + inputCls + "\"");
             outputName(ctx, out, formFieldName);
             if (disabledInput)
                 out.write(" DISABLED");
-            out.write(" type='file'>\n");
+            out.write(" type=\"file\">\n");
         }
         else if (_inputType.equalsIgnoreCase("checkbox"))
         {
             boolean checked = ColumnInfo.booleanFromObj(ConvertUtils.convert(value));
-            out.write("<input type='checkbox'");
+            out.write("<input type=\"checkbox\"");
             if (checked)
                 out.write(" CHECKED");
             if (disabledInput)
                 out.write(" DISABLED");
             outputName(ctx, out, formFieldName);
-            out.write(" value='1'>");
+            out.write(" value=\"1\">");
             /*
              * Checkboxes are weird. If set to FALSE they don't post at all, so it's impossible to tell
              * the difference between values that weren't on the html form at all and ones that were set
@@ -652,8 +658,6 @@ public class DataColumn extends DisplayColumn
             if (disabledInput)
                 renderHiddenFormInput(ctx, out, formFieldName, checked ? "1" : "");
         }
-        else if (_inputType.equalsIgnoreCase("none"))
-            ; //do nothing. Used 
         else
         {
             if (getAutoCompleteURLPrefix() != null)
@@ -684,9 +688,9 @@ public class DataColumn extends DisplayColumn
             }
             else
             {
-                out.write("<input type='text' size='");
+                out.write("<input class=\"" + inputCls + "\" type=\"text\" size=\"");
                 out.write(Integer.toString(_inputLength));
-                out.write("'");
+                out.write("\"");
                 outputName(ctx, out, formFieldName);
                 if (disabledInput)
                     out.write(" DISABLED");
@@ -699,6 +703,9 @@ public class DataColumn extends DisplayColumn
                     renderHiddenFormInput(ctx, out, formFieldName, value);
             }
         }
+
+        if (newUI)
+            out.write("</div>");
     }
 
     protected String getAutoCompleteURLPrefix()
@@ -746,7 +753,12 @@ public class DataColumn extends DisplayColumn
         if (null == _caption)
             return;
 
-        out.write("<td class='labkey-form-label'>");
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+
+        if (newUI)
+            out.write("<label class=\"col-sm-3 col-lg-2 control-label\">");
+        else
+            out.write("<td class=\"labkey-form-label\">");
         renderTitle(ctx, out);
         int mode = ctx.getMode();
         if ((mode == DataRegion.MODE_INSERT || mode == DataRegion.MODE_UPDATE) && isEditable())
@@ -775,7 +787,7 @@ public class DataColumn extends DisplayColumn
                 }
             }
         }
-        out.write("</td>");
+        out.write(newUI ? "</label>" : "</td>");
     }
 
     protected boolean renderRequiredIndicators()

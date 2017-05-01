@@ -981,9 +981,18 @@ public abstract class DisplayColumn extends RenderColumn
         if (null == _caption)
             return;
 
-        out.write("<td class='labkey-form-label'>");
-        renderTitle(ctx, out);
-        out.write("</td>");
+        if (PageFlowUtil.useExperimentalCoreUI())
+        {
+            out.write("<label class=\"col-sm-3 col-lg-2 control-label\">");
+            renderTitle(ctx, out);
+            out.write("</label>");
+        }
+        else
+        {
+            out.write("<td class=\"labkey-form-label\">");
+            renderTitle(ctx, out);
+            out.write("</td>");
+        }
     }
 
     public String getDetailsData(RenderContext ctx)
@@ -1002,12 +1011,21 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException
     {
-        if (null == _caption)
-            out.write("<td colspan=" + (span + 1) + ">");
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+        if (newUI)
+        {
+            out.write("<div class=\"col-sm-9 col-lg-10\"><p class=\"form-control-static\">");
+        }
         else
-            out.write("<td colspan=" + span + ">");
+        {
+            if (null == _caption)
+                out.write("<td colspan=\"" + (span + 1) + "\">");
+            else
+                out.write("<td colspan=\"" + span + "\">");
+        }
         renderDetailsCellContents(ctx, out);
-        out.write("</td>");
+
+        out.write(newUI ? "</p></div>" : "</td>");
     }
 
     public String getInputCell(RenderContext ctx)
@@ -1091,9 +1109,13 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
     {
-        out.write("<td colspan=" + span + ">");
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+
+        if (!newUI)
+            out.write("<td colspan=" + span + ">");
         renderInputHtml(ctx, out, getInputValue(ctx));
-        out.write("</td>");
+        if (!newUI)
+            out.write("</td>");
     }
 
     public String getSortHandler(RenderContext ctx, Sort.SortDirection sort)
