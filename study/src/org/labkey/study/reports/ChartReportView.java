@@ -225,6 +225,7 @@ public class ChartReportView extends AbstractReportView
         }
     }
 
+    @Override
     public HttpView renderDataView(ViewContext context) throws Exception
     {
         for (Report report : getChildReports(context))
