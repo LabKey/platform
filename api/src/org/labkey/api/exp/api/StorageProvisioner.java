@@ -1073,7 +1073,14 @@ public class StorageProvisioner
 
             if (null == c)
             {
-                Logger.getLogger(StorageProvisioner.class).info("Column not found in storage table: " + tableName + "." + p.getName());
+                if (p.getPropertyDescriptor().getStorageColumnName() == null)
+                {
+                    log.warn("No storage column name set for property " + p.getName() + " on table " + tableName);
+                }
+                else
+                {
+                    log.info("Column not found in storage table: " + tableName + "." + p.getPropertyDescriptor().getStorageColumnName());
+                }
                 continue;
             }
 
