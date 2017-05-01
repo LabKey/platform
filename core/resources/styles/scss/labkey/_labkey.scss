@@ -218,17 +218,14 @@ table.labkey-no-spacing
   border-spacing: 0;
 }
 
-/* Used as error border */
-.labkey-error-body
-{
-  margin: 40px;
-  background-color: $lk-webpart-color;
-}
-
 /* Used for the error messages across the site */
-.labkey-error, .error
-{
-  color: $lk-danger-color;
+.error,
+.labkey-error {
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 1px solid $lk-state-danger-border;
+  background-color: $lk-state-danger-bg;
+  color: $lk-state-danger-text;
 }
 
 /* Used for messages across the site */

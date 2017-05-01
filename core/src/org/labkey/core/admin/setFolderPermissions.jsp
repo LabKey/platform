@@ -16,9 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -31,13 +28,10 @@
     }
 %>
 <%
-    JspView<AdminController.SetFolderPermissionsForm> me = (JspView<AdminController.SetFolderPermissionsForm>) HttpView.currentView();
     Container c = getContainer();
 %>
 <%=formatMissedErrors("form")%>
-
 <p>Please choose the initial security configuration for the new <%= h(c.isProject() ? "project" : (c.isWorkbook() ? "workbook" : "folder"))%>.</p>
-
 <div id="folderPermissionsDiv"></div>
 <script type="text/javascript">
     Ext4.onReady(function() {
@@ -72,8 +66,9 @@
             if (f) {
                 f = f.getForm();
                 if (f) {
-                    if(!f.submitInProgress)
+                    if (!f.submitInProgress) {
                         f.submit();
+                    }
                     f.submitInProgress = true;
                 }
             }
@@ -86,7 +81,7 @@
             defaults: {
                 border: false
             },
-            url: LABKEY.ActionURL.buildURL('admin','setFolderPermissions.view'),
+            url: LABKEY.ActionURL.buildURL('admin', 'setFolderPermissions.view'),
             method: 'POST',
             standardSubmit: true,
             items: [{
@@ -162,13 +157,14 @@
                             change: function(field, checked){
                                 var form = field.up('form');
                                 var formPanel = form.down('#usersArea');
-                                if (checked)
-                                {
-                                    if(field.inputValue)
-                                        form['render'+field.inputValue](formPanel);
+                                if (checked) {
+                                    if (field.inputValue) {
+                                        form['render' + field.inputValue](formPanel);
+                                    }
                                 }
-                                else
+                                else {
                                     formPanel.removeAll();
+                                }
                             }
                         }
                     },{
@@ -190,29 +186,10 @@
                 }]
             }],
             buttons: buttons,
-            renderAdvanced: function(target){
-                //nothing needed
-            },
-            renderCurrentUser: function(target){
-                //nothing needed
-            },
-            renderInherit: function(target){
-                //nothing needed
-            },
+            renderAdvanced: Ext4.emptyFn,
+            renderCurrentUser: Ext4.emptyFn,
+            renderInherit: Ext4.emptyFn,
             renderCopyExistingProject: function(target) {
-
-                var store = Ext4.create('LABKEY.ext4.data.Store', {
-                    containerPath: '/home',
-                    schemaName: 'core',
-                    queryName: 'containers',
-                    columns: 'entityId,name',
-                    sort: 'name',
-                    autoLoad: true,
-                    filterArray: [
-                        LABKEY.Filter.create('containerType', 'project', LABKEY.Filter.Types.EQUAL)
-                    ],
-                    containerFilter: 'CurrentAndSiblings'
-                });
 
                 target.add({
                     xtype: 'combo',
@@ -223,12 +200,23 @@
                     editable: false,
                     displayField: 'Name',
                     valueField: 'EntityId',
-                    store: store
+                    store: Ext4.create('LABKEY.ext4.data.Store', {
+                        containerPath: '/home',
+                        schemaName: 'core',
+                        queryName: 'containers',
+                        columns: 'entityId,name',
+                        sort: 'name',
+                        autoLoad: true,
+                        filterArray: [
+                            LABKEY.Filter.create('containerType', 'project', LABKEY.Filter.Types.EQUAL)
+                        ],
+                        containerFilter: 'CurrentAndSiblings'
+                    })
                 });
             }
         });
 
-        var nav = new Ext4.util.KeyNav({
+        new Ext4.util.KeyNav({
             target: Ext4.getBody(),
             enter: function() { checkSubmit(panel, true); }
         });
