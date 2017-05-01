@@ -39,14 +39,18 @@ import org.labkey.api.issues.AbstractIssuesListDefDomainKind;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.issue.query.IssueDefDomainKind;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Created by klum on 4/5/2016.
@@ -195,7 +199,19 @@ public class IssueListDef extends Entity
                         throw new UnexpectedException(e);
                     }
                 }
-                IssueListDefCache.uncache(ContainerManager.getForId(def.getContainerId()));
+                Container container = ContainerManager.getForId(def.getContainerId());
+                // issue 29493 : set the default assigned to group to site administrators
+                List<Group> siteAdminGroups = SecurityManager.getGroups(container.getProject(), true)
+                        .stream()
+                        .filter(group -> !group.isProjectGroup() && group.isAdministrators() && group.getName().equalsIgnoreCase("Administrators"))
+                        .collect(Collectors.toList());
+
+                if (siteAdminGroups.size() == 1)
+                {
+                    IssueManager.saveAssignedToGroup(container, def.getName(), siteAdminGroups.get(0));
+                }
+
+                IssueListDefCache.uncache(container);
                 transaction.commit();
             }
         }
