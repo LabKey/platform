@@ -28,7 +28,6 @@ import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.GroupAuditProvider;
@@ -70,6 +69,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 /*
 * User: Dave
@@ -1796,8 +1797,8 @@ public class SecurityApiActions
             }
             catch (IllegalArgumentException x)
             {
-                errors.reject(SpringActionController.ERROR_MSG, x.getMessage());    
-                errors.rejectValue("newName", SpringActionController.ERROR_MSG, x.getMessage());
+                errors.reject(ERROR_MSG, x.getMessage());
+                errors.rejectValue("newName", ERROR_MSG, x.getMessage());
             }
 
             if (errors.getErrorCount() > 0)
@@ -2014,7 +2015,9 @@ public class SecurityApiActions
 
                 // don't let non-site admin reset password of site admin
                 User formUser = UserManager.getUser(email);
-                if (formUser != null && !getUser().isInSiteAdminGroup() && formUser.isInSiteAdminGroup())
+                if (null == formUser)
+                    errors.rejectValue("email", ERROR_MSG, "User not found");
+                else if (!getUser().isInSiteAdminGroup() && formUser.isInSiteAdminGroup())
                     errors.rejectValue("Email", "Can not reset password for a Site Admin user");
             }
             catch (ValidEmail.InvalidEmailException e)

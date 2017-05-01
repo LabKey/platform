@@ -271,7 +271,10 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             }
 
             if (s != null)
-                _parsedNameExpression = StringExpressionFactory.create(s, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
+            {
+                // NOTE: Side-effects are allowed so the sample counters can be incremented when evaluating the expression
+                _parsedNameExpression = StringExpressionFactory.create(s, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank, true);
+            }
         }
 
         return _parsedNameExpression;
@@ -327,11 +330,11 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             {
                 // Failed to generate a name due to some part of the expression not in the row
                 if (hasNameExpression())
-                    throw new ExperimentException("Failed to generate name for Sample on row " + i);
+                    throw new ExperimentException("Failed to generate name for Sample on row " + i, e);
                 else if (hasNameAsIdCol())
-                    throw new ExperimentException("Name is required for Sample on row " + i);
+                    throw new ExperimentException("Name is required for Sample on row " + i, e);
                 else
-                    throw new ExperimentException("All id columns are required for Sample on row " + i);
+                    throw new ExperimentException("All id columns are required for Sample on row " + i, e);
             }
 
             if (newNames.containsKey(name))
@@ -431,10 +434,16 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             }
         }
 
-        // Add the sample counter values for ${dailySampleCount}, ${weeklySampleCount}, ...
-        // Even if the expression doesn't contain a counter replacement token we need to increment the counts.
-        Map<String, Integer> counts = ExperimentServiceImpl.get().incrementSampleCounts();
-        ctx.putAll(counts);
+        // Inspect the expression looking for any sample counter formats bound to a column, e.g. ${column:dailySampleCount}
+        // If sample counters bound to a column are found, the sample counters will be incremented for that date when the expression is evaluated.
+        // Otherwise, update the sample counters for today's date immediately even if the expression doesn't contain a counter replacement token.
+        // TODO: Expose the set of expression variables and substitution formats instead of relying on the source
+        if (!(exprSource.contains(":dailysamplecount}") || exprSource.contains(":weeklysamplecount}") || exprSource.contains(":monthlysamplecount}") || exprSource.contains(":yearlysamplecount}")))
+        {
+            Date now = (Date)batchContext.get("now");
+            Map<String, Integer> counts = ExperimentServiceImpl.get().incrementSampleCounts(now);
+            ctx.putAll(counts);
+        }
 
         // If needed, add the parent names to the replacement map
         // TODO: Expose the set of expression variables instead of relying on the source

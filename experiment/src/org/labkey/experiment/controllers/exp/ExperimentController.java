@@ -4879,6 +4879,26 @@ public class ExperimentController extends SpringActionController
             if (errors.hasErrors())
                 return null;
 
+            // TODO: support list of resolved ExpData or ExpMaterial instead of string concatenated names
+            // Create "MaterialInputs/<SampleSet>" columns with a value containing a comma-separated list of Material names
+            final Map<String, String> parentInputNames = new HashMap<>();
+            for (ExpMaterial material : materialInputs.keySet())
+            {
+                ExpSampleSet ss = material.getSampleSet();
+                String keyName = UploadSamplesHelper.MATERIAL_INPUT_PARENT + "/" + ss.getName();
+                parentInputNames.merge(keyName, material.getName(), (s1, s2) -> s1.concat(",").concat(s2));
+            }
+
+            // TODO: support list of resolved ExpData or ExpMaterial instead of string concatenated names
+            // Create "DataInputs/<DataClass>" columns with a value containing a comma-separated list of ExpData names
+            for (ExpData d : dataInputs.keySet())
+            {
+                ExpDataClass dc = d.getDataClass();
+                String keyName = UploadSamplesHelper.DATA_INPUT_PARENT + "/" + dc.getName();
+                parentInputNames.merge(keyName, d.getName(), (s1, s2) -> s1.concat(",").concat(s2));
+            }
+
+
             try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
             {
 
@@ -4887,23 +4907,13 @@ public class ExperimentController extends SpringActionController
                 int materialOutputCount = Math.max(form.materialOutputCount, form.materialOutputs != null ? form.materialOutputs.size() : 0);
                 if (materialOutputCount > 0 && outSampleSet != null)
                 {
-                    DerivedOutputs<ExpMaterial> derived = new DerivedOutputs<ExpMaterial>(form.materialDefault, form.materialOutputs, materialOutputCount, "Material")
+                    DerivedOutputs<ExpMaterial> derived = new DerivedOutputs<ExpMaterial>(parentInputNames, form.materialDefault, form.materialOutputs, materialOutputCount, "Material")
                     {
                         @Override
                         protected TableInfo createTable()
                         {
                             SamplesSchema schema = new SamplesSchema(getUser(), getContainer());
                             return schema.getTable(outSampleSet.getName());
-                        }
-
-                        @Override
-                        public Pair<List<Map<String, Object>>, List<String>> prepareRows()
-                                throws ExperimentException
-                        {
-                            Pair<List<Map<String, Object>>, List<String>> pair = super.prepareRows();
-                            List<Map<String, Object>> rows = pair.first;
-                            outSampleSet.createSampleNames(rows, null, dataInputs.keySet(), materialInputs.keySet(), false, true);
-                            return pair;
                         }
 
                         @Override
@@ -4924,7 +4934,7 @@ public class ExperimentController extends SpringActionController
                 int dataOutputCount = Math.max(form.dataOutputCount, form.dataOutputs != null ? form.dataOutputs.size() : 0);
                 if (dataOutputCount > 0 && outDataClass != null)
                 {
-                    DerivedOutputs<ExpData> derived = new DerivedOutputs<ExpData>(form.dataDefault, form.dataOutputs, dataOutputCount, "Data")
+                    DerivedOutputs<ExpData> derived = new DerivedOutputs<ExpData>(parentInputNames, form.dataDefault, form.dataOutputs, dataOutputCount, "Data")
                     {
                         @Override
                         protected TableInfo createTable()
@@ -4974,14 +4984,16 @@ public class ExperimentController extends SpringActionController
         // Helper class that prepares and executes the QueryUpdateService.insertRows() on the data or material table.
         private abstract class DerivedOutputs<T extends ExpProtocolOutput>
         {
+            private final @NotNull Map<String, String> _parentInputNames;
             private final @Nullable Map<String, Object> _defaultValues;
             private final @Nullable List<DerivationSpec> _values;
             private final int _outputCount;
             private final String _rolePrefix;
 
 
-            public DerivedOutputs(@Nullable Map<String, Object> defaultValues, @Nullable List<DerivationSpec> values, int outputCount, String rolePrefix)
+            public DerivedOutputs(@NotNull Map<String, String> parentInputNames, @Nullable Map<String, Object> defaultValues, @Nullable List<DerivationSpec> values, int outputCount, String rolePrefix)
             {
+                _parentInputNames = parentInputNames;
                 _defaultValues = defaultValues;
                 _values = values;
                 _outputCount = outputCount;
@@ -5007,6 +5019,11 @@ public class ExperimentController extends SpringActionController
                         row.putAll(spec.values);
                         role = spec.role;
                     }
+
+                    // NOTE: Input parents are added to each row, but are only used for name generation and not for derivation.
+                    // NOTE: We will derive the inserted samples in a single derivation run after the sample/date have been inserted.
+                    row.putAll(_parentInputNames);
+
                     rows.add(row);
 
                     if (role == null || "".equals(role))
@@ -5036,6 +5053,8 @@ public class ExperimentController extends SpringActionController
 
                 Map<Enum, Object> configParams = new HashMap<>();
                 configParams.put(SampleSetUpdateService.Options.AddUniqueSuffixForDuplicateNames, true);
+                // Skip derivation during insert -- DeriveAction will call ExperimentService.get().derive() after samples are inserted
+                configParams.put(SampleSetUpdateService.Options.SkipDerivation, true);
 
                 BatchValidationException qusErrors = new BatchValidationException();
                 List<Map<String, Object>> insertedRows = qus.insertRows(getUser(), getContainer(), rows, qusErrors, configParams, null);

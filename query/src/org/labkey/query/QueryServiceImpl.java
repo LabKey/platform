@@ -2451,17 +2451,16 @@ public class QueryServiceImpl implements QueryService
         boolean viewHasSort = sort != null && !sort.getSortList().isEmpty();
         boolean viewHasLimit = maxRows > 0 || offset > 0 || Table.NO_ROWS == maxRows;
         boolean queryHasSort = table instanceof QueryTableInfo && ((QueryTableInfo)table).hasSort();
-
-
+        SqlDialect dialect = table.getSqlDialect();
+        
         if (!viewHasSort)
         {
-            if (viewHasLimit || (forceSort && !queryHasSort))
+            if ((viewHasLimit || forceSort) && (!queryHasSort || dialect.isSqlServer()))
             {
                 sort = createDefaultSort(selectColumns);
             }
         }
 
-        SqlDialect dialect = table.getSqlDialect();
         Map<String, SQLFragment> joins = new LinkedHashMap<>();
         List<ColumnInfo> allColumns = new ArrayList<>(selectColumns);
         Map<FieldKey, ColumnInfo> columnMap = new HashMap<>();

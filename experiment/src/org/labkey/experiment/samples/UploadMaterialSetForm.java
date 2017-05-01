@@ -47,6 +47,7 @@ public class UploadMaterialSetForm extends ViewForm
     private InsertUpdateChoice insertUpdateChoice;
     private Integer rowId;
     private boolean addUniqueSuffixForDuplicateNames = false;
+    private boolean skipDerivation = false;
 
     private DataLoader _loader;
 
@@ -149,6 +150,16 @@ public class UploadMaterialSetForm extends ViewForm
     public void setAddUniqueSuffixForDuplicateNames(boolean addUniqueSuffixForDuplicateNames)
     {
         this.addUniqueSuffixForDuplicateNames = addUniqueSuffixForDuplicateNames;
+    }
+
+    public boolean isSkipDerivation()
+    {
+        return skipDerivation;
+    }
+
+    public void setSkipDerivation(boolean skipDerivation)
+    {
+        this.skipDerivation = skipDerivation;
     }
 
     public void setData(String data)

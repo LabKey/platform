@@ -133,6 +133,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -2095,9 +2096,13 @@ public class ExperimentServiceImpl implements ExperimentService
                     and = "\nAND ";
                 }
 
-                if (options.getDepth() > 0)
+                if (options.getDepth() != 0)
                 {
-                    parents.append(and).append("depth >= ").append(0 - options.getDepth());
+                    // convert depth to negative value if it isn't
+                    int depth = options.getDepth();
+                    if (depth > 0)
+                        depth *= -1;
+                    parents.append(and).append("depth >= ").append(depth);
                     and = "\nAND ";
                 }
 
@@ -5505,29 +5510,34 @@ public class ExperimentServiceImpl implements ExperimentService
             _formatter = DateTimeFormatter.ofPattern(pattern);
         }
 
-        public String getSequenceName()
+        public String getSequenceName(@Nullable Date date)
         {
-            LocalDateTime ldt = LocalDateTime.now();
+            LocalDateTime ldt;
+            if (date == null)
+                ldt = LocalDateTime.now();
+            else
+                ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
             String suffix = _formatter.format(ldt);
             return "org.labkey.api.exp.api.ExpMaterial:" + name() + ":" + suffix;
         }
     }
 
-    private DbSequence getSampleSequence(@NotNull SampleSequenceType type)
+    private DbSequence getSampleSequence(@NotNull SampleSequenceType type, @Nullable Date date)
     {
         // For now, we only create sequences globally for all samples.  We could create sequences for each SampleSet
         // as well by using the id parameter as the SampleSet's rowId, but we don't need them at this time.
-        DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), type.getSequenceName());
+        DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), type.getSequenceName(date));
         return sequence;
     }
 
-    public Map<String, Integer> incrementSampleCounts()
+    @Override
+    public Map<String, Integer> incrementSampleCounts(@Nullable Date counterDate)
     {
         Map<String, Integer> counts = new HashMap<>();
-        counts.put("dailySampleCount", getSampleSequence(SampleSequenceType.DAILY).next());
-        counts.put("weeklySampleCount", getSampleSequence(SampleSequenceType.WEEKLY).next());
-        counts.put("monthlySampleCount", getSampleSequence(SampleSequenceType.MONTHLY).next());
-        counts.put("yearlySampleCount", getSampleSequence(SampleSequenceType.YEARLY).next());
+        counts.put("dailySampleCount", getSampleSequence(SampleSequenceType.DAILY, counterDate).next());
+        counts.put("weeklySampleCount", getSampleSequence(SampleSequenceType.WEEKLY, counterDate).next());
+        counts.put("monthlySampleCount", getSampleSequence(SampleSequenceType.MONTHLY, counterDate).next());
+        counts.put("yearlySampleCount", getSampleSequence(SampleSequenceType.YEARLY, counterDate).next());
         return counts;
     }
 

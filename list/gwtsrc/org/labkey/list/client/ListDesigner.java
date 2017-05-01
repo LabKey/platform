@@ -1010,8 +1010,8 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                         _list.entireListBodySetting, _list.entireListBodyTemplate, entireListBodyHelp, readonly);
 
                 //Add File Attachment Index checkbox
-                final BoundCheckBox indexCheckBox = new BoundCheckBox("ff_attachementsIndex", _list.fileAttachmentIndex, dirtySetter);
-                indexCheckBox.setText("Index File attachments");
+                final BoundCheckBox indexCheckBox = new BoundCheckBox("ff_attachmentsIndex", _list.fileAttachmentIndex, dirtySetter);
+                indexCheckBox.setText("Index file attachments");
                 indexCheckBox.setStyleName(checkboxStyleName);
                 indexCheckBox.setEnabled(!readonly);
                 indexPanel.add(indexCheckBox);

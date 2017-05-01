@@ -414,8 +414,6 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     @Override
     public void deleteAttachments(Collection<AttachmentParent> parents)
     {
-        SearchService ss = SearchService.get();
-
         for (AttachmentParent parent : parents)
         {
             List<Attachment> atts = getAttachments(parent);
@@ -425,9 +423,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                 continue;
 
             checkSecurityPolicy(parent);   // Only check policy if there are attachments (a client may delete attachment and policy, but attempt to delete again)
-            if (ss != null)
-                for (Attachment att : atts)
-                    ss.deleteResource(makeDocId(parent, att.getName()));
+            deleteAttachmentIndex(parent, atts);
 
             new SqlExecutor(coreTables().getSchema()).execute(sqlCascadeDelete(parent));
             if (parent instanceof AttachmentDirectory)
@@ -435,6 +431,26 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             AttachmentCache.removeAttachments(parent);
         }
     }
+
+    private void deleteAttachmentIndex(AttachmentParent parent, List<Attachment> atts)
+    {
+        if (atts.isEmpty())
+            return;
+
+        SearchService ss = SearchService.get();
+        if (ss != null)
+            for (Attachment att : atts)
+                ss.deleteResource(makeDocId(parent, att.getName()));
+    }
+
+
+    @Override
+    public void deleteAttachmentIndex(AttachmentParent parent)
+    {
+        List<Attachment> atts = getAttachments(parent);
+        deleteAttachmentIndex(parent, atts);
+    }
+
 
     @Override
     public void deleteAttachment(AttachmentParent parent, String name, @Nullable User auditUser)

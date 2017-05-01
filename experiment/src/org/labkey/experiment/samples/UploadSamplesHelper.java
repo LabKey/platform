@@ -319,7 +319,7 @@ public class UploadSamplesHelper
                 reusedMaterialLSIDs = deleteOldPropertyValues(hasCommentHeader, maps, descriptors);
             }
 
-            materials = insertTabDelimitedMaterial(maps, new ArrayList<>(descriptors), _materialSource, reusedMaterialLSIDs, inputOutputColumns);
+            materials = insertTabDelimitedMaterial(maps, new ArrayList<>(descriptors), _materialSource, reusedMaterialLSIDs, inputOutputColumns, _form.isSkipDerivation());
             _sampleSet.onSamplesChanged(_form.getUser(), null);
 
             transaction.commit();
@@ -558,7 +558,7 @@ public class UploadSamplesHelper
         }
     }
 
-    public List<ExpMaterial> insertTabDelimitedMaterial(List<Map<String, Object>> rows, List<PropertyDescriptor> descriptors, MaterialSource source, Set<String> reusedMaterialLSIDs, Set<String> inputOutputColumns)
+    public List<ExpMaterial> insertTabDelimitedMaterial(List<Map<String, Object>> rows, List<PropertyDescriptor> descriptors, MaterialSource source, Set<String> reusedMaterialLSIDs, Set<String> inputOutputColumns, boolean skipDerivation)
             throws SQLException, ValidationException, ExperimentException
     {
         long start = System.currentTimeMillis();
@@ -596,7 +596,7 @@ public class UploadSamplesHelper
             }
         });
 
-        if (source.getParentCol() != null || !inputOutputColumns.isEmpty())
+        if (!skipDerivation && (source.getParentCol() != null || !inputOutputColumns.isEmpty()))
         {
             Map<String, PropertyDescriptor> descriptorMap = new HashMap<>();
             Map<String, List<ExpMaterialImpl>> potentialParents = new HashMap<>();

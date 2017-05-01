@@ -316,9 +316,28 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             List<String> errors;
+            // Check for legalName problems -- GWT designer does not catch them (and doesn't have support on the client to easily check)
+            errors = checkLegalNameConflicts(dd);
+            if (!errors.isEmpty())
+                return errors;
+
+            boolean changedName = !def.getName().equals(list.getName());
+            def = update(def, list);
             try
             {
-                 errors = super.updateDomainDescriptor(orig, dd);
+                //Update list metadata first to ensure Indexing flags are correctly set before domain is updated
+                ListManager.get().update(getUser(), def);
+            }
+            catch (RuntimeSQLException x)
+            {
+                if (changedName && x.isConstraintException())
+                    throw new ListImportException("The name '" + def.getName() + "' is already in use.");
+                throw x;
+            }
+
+            try
+            {
+                errors = super.updateDomainDescriptor(orig, dd);  //Triggers search indexing during Domain refresh
             }
             catch(RuntimeSQLException x)
             {
@@ -333,35 +352,13 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
 
                 throw new ListImportException(message);
             }
-            if (!errors.isEmpty())
-            {
-                return errors;
-            }
-            else
-            {
-                // Check for legalName problems -- GWT designer does not catch them (and doesn't have support on the client to easily check)
-                errors = checkLegalNameConflicts(dd);
-                if (!errors.isEmpty())
-                    return errors;
-            }
 
-            boolean changedName = !def.getName().equals(list.getName());
-            def = update(def, list);
-            try
-            {
-                ListManager.get().update(getUser(), def);
-            }
-            catch (RuntimeSQLException x)
-            {
-                if (changedName && x.isConstraintException())
-                    throw new ListImportException("The name '" + def.getName() + "' is already in use.");
-                throw x;
-            }
+            if (!errors.isEmpty())
+                return errors;
+
             transaction.commit();
         }
 
-        // schedules a scan (doesn't touch db)
-//        ListManager.get().indexList(def);
         return new ArrayList<>(); // GWT error Collections.emptyList();
     }
 
