@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Another annoyance is that the object you use to track the task (Future
  * returned by submit()) is different than the object you submit.
  * <p/>
- * In short this is a ScheduledTheadPoolExecutor that lets you submit a Job,
+ * In short this is a ScheduledThreadPoolExecutor that lets you submit a Job,
  * in addition to a Runnable or Callable.  If you submit a Job, you can use
  * it to track you task status.
  * <p/>

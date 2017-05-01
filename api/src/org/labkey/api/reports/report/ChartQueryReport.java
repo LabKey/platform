@@ -150,7 +150,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
         }
     }
 
-    public HttpView renderReport(ViewContext context) throws Exception
+    public HttpView renderReport(ViewContext context)
     {
         ActionURL url = ReportUtil.getPlotChartURL(context, this);
         return new HtmlView("<img src='" + url.getLocalURIString() + "'>");
