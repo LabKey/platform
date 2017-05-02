@@ -71,6 +71,9 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
         ColumnInfo wrappedNumberColumn = table.addColumn(new AliasedColumn(table, numberColumn.getName() + NUMBER_COLUMN_SUFFIX, numberColumn));
         wrappedNumberColumn.setPropertyURI(null);
         wrappedNumberColumn.setLabel(caption + " " + NUMBER_COLUMN_SUFFIX);
+        wrappedNumberColumn.setShownInInsertView(false);
+        wrappedNumberColumn.setShownInUpdateView(false);
+        wrappedNumberColumn.setUserEditable(false);
 
         combinedCol.setDisplayColumnFactory(new OORDisplayColumnFactory());     // Do this after wrappedNumberColumn in case we did addColumn above instead of addWrappedColumn
 
@@ -92,6 +95,9 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
                     inRangeSQL, numberColumn.getJdbcType(), wrappedNumberColumn, wrappedOORIndicatorCol));
         inRangeColumn.setLabel(caption + " In Range");
         inRangeColumn.setFormat(numberColumn.getFormat());
+        inRangeColumn.setShownInInsertView(false);
+        inRangeColumn.setShownInUpdateView(false);
+        inRangeColumn.setUserEditable(false);
 
         return combinedCol;
     }

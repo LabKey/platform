@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.settings.DateParsingMode;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -772,6 +773,12 @@ validNum:       {
     @Deprecated  // Use version that takes a Container instead
     public static long parseDateTime(String s)
     {
+        //Issue 30004: Remote servers cannot use the database to lookup MonthDayOption, so default to MONTH_DAY
+        if (PipelineJobService.get().getLocationType() != PipelineJobService.LocationType.WebServer)
+        {
+            return parseDateTime(s, MonthDayOption.MONTH_DAY);
+        }
+
         return parseDateTime(ContainerManager.getRoot(), s);
     }
 
