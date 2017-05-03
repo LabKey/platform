@@ -305,6 +305,9 @@ public class ContainerManager
                 SecurityManager.setInheritPermissions(c);
         }
 
+        //Ensure this flag gets re-evaluated for ContainerFilters
+        c.getParent().hasWorkbookChildren = null;
+
         fireCreateContainer(c, user);
         return c;
     }
