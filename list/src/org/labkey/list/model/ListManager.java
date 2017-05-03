@@ -499,10 +499,6 @@ public class ListManager implements SearchService.DocumentProvider
         // TODO: Attempting to respect tableUrl for details link... but this doesn't actually work. See #28747.
         StringExpression se = listTable.getDetailsURL(null, list.getContainer());
 
-        //Get base attachment download url
-        ActionURL downloadActionUrl = new ActionURL(ListController.DownloadAction.class, list.getContainer())
-                .replaceParameter("listId", String.valueOf(list.getListId()));
-
         new TableSelector(listTable, filter, null).setForDisplay(true).forEachResults(results -> {
             Map<FieldKey, Object> map = results.getFieldKeyRowMap();
             final Object pk = map.get(keyKey);
@@ -740,14 +736,13 @@ public class ListManager implements SearchService.DocumentProvider
     {
         AttachmentService as = AttachmentService.get();
 
-        FieldKey entityIdKey = new FieldKey(null, "EntityId");
-        TableInfo listTable = list.getTable(User.getSearchUser());
+        FieldKey entityIdKey = FieldKey.fromParts("EntityId");
+        TableInfo listTable = new ListQuerySchema(User.getSearchUser(), list.getContainer()).getTable(list.getName());
         if (null == listTable)
             return;
 
-        new TableSelector(listTable, null, null).setForDisplay(true).forEachResults(row -> {
-            Map<FieldKey, Object> map = row.getFieldKeyRowMap();
-            String rowEntityId = (String)map.get(entityIdKey);
+        new TableSelector(listTable).getMapCollection().forEach(row -> {
+            String rowEntityId = (String)row.get(entityIdKey.getName());
             AttachmentParent listItemParent = new ListItemAttachmentParent(rowEntityId, list.getContainer());
             as.deleteAttachmentIndex(listItemParent);
         });
@@ -1191,7 +1186,7 @@ public class ListManager implements SearchService.DocumentProvider
 
             assertNull("Parent item visible in workbook", wbList1.getListItem(PARENT_LI_KEY, u, wb1));
             assertNull("Sibling workbook item visible in another workbook", wbList1.getListItem(WB2_LI_KEY, u, wb1));
-            assertTrue("Parent container can not see child workbook item",wbList1.getListItem(WB1_LI_KEY, u, c).getProperty(dp).equals(WORKBOOK1_LIST_ITEM));
+            assertTrue("Parent container can not see child workbook item", wbList1.getListItem(WB1_LI_KEY, u, c).getProperty(dp).equals(WORKBOOK1_LIST_ITEM));
             assertTrue("Workbook can not see its own list item", wbList1.getListItem(WB1_LI_KEY, u, wb1).getProperty(dp).equals(WORKBOOK1_LIST_ITEM));
         }
     }

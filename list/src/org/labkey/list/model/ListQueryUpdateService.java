@@ -576,4 +576,14 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         }
     }
 
+    @Override
+    /**
+     * Get Domain from list definition, unless null then get from super
+     */
+    protected Domain getDomain()
+    {
+        return _list != null?
+                _list.getDomain() :
+                super.getDomain();
+    }
 }

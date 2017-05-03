@@ -455,7 +455,7 @@ public class ListDefinitionImpl implements ListDefinition
 
     private ListItem getListItem(SimpleFilter filter, User user, Container c)
     {
-        TableInfo tbl = getTable(user, c);
+        TableInfo tbl = new ListQuerySchema(user, c).getTable(getName());
 
         if (null == tbl)
             return null;
