@@ -1,0 +1,224 @@
+.labkey-data-region-auth {
+  display: inline-block;
+  border: 1px solid #DDDDDD;
+}
+
+/* Within the wrap do not outline the Data Region */
+.labkey-data-region-wrap table.labkey-show-borders {
+  border-right-width: 0;
+  border-bottom-width: 0;
+}
+
+div.facet_header {
+  height: 34px;
+  border-color: #DDDDDD;
+  background: $lk-grid-color none;
+  box-shadow: none;
+  border-bottom: 1px solid black;
+}
+
+.facet-wrap {
+  float: left;
+}
+
+.region-wrap {
+  float: right;
+}
+
+/* Used to draw a border around the entire data region table when showBorders = false */
+table.labkey-show-surrounding-border {
+  border: 1px solid #DDDDDD;
+}
+
+.labkey-data-region {
+  thead tr {
+    background-color: $white;
+  }
+
+  th, .labkey-column-header {
+    border-bottom: solid 1px #AAAAAA;
+    padding: 1px 4px;
+    vertical-align: top;
+  }
+
+  .labkey-col-total {
+    span.summary-stat-label {
+      font-weight: bold;
+    }
+
+    td {
+      vertical-align: top;
+    }
+  }
+
+  /* Used for the unbordered empty or title cells sometimes put on tables */
+  .labkey-data-region-title {
+    background-color: $white;
+    border: 0;
+    border-top: hidden;
+    border-left: hidden;
+    font-weight: bold;
+  }
+
+  /*
+  "Pagination" is used with data views that don't display all the data on one page.
+  This class is for the area with the links to change between the pages
+  */
+  .labkey-pagination {
+    white-space: nowrap;
+  }
+
+  /* Used for checkboxes in Data Regions */
+  .labkey-update, .labkey-details, .labkey-selectors {
+    text-align: left;
+    width: 80px;
+  }
+}
+
+//.labkey-data-region .labkey-col-header, .labkey-data-region .labkey-row-header,
+//.labkey-data-region .labkey-col-total, .labkey-data-region .labkey-row-total,
+//.labkey-data-region .labkey-col-total td, .labkey-data-region .labkey-col-header th
+//{
+//  font-weight: bold;
+//  background-color: #EEEEEE;
+//}
+
+.labkey-data-region-header-container {
+  background-color: $lk-grid-ct-bg-color;
+  border: 1px solid #b4b4b4;
+
+  td {
+    border: 0;
+  }
+}
+
+// Nick: Preferred to use table-bordered instead
+/* Use this in the table class tag if you want your data region to have borders */
+//table.labkey-show-borders
+//{
+//  border: 1px solid #DDDDDD;
+//
+//  td {
+//    /* Safari gives precedence to the color drawn last for borders, which means
+//    the borders usually win bottom and right over top and left (It is supposed to be
+//    the opposite, which is how Firefox correctly does it. So we use a
+//    combination of table borders and cell borders for Safari and Firefox*/
+//    border-top: 0;
+//    border-left: 0;
+//    border-right: solid 1px #DDDDDD;
+//    border-bottom: solid 1px #DDDDDD;
+//  }
+//
+//  /* These classes are used in Cross Tab data regions and for aggregate rows */
+//  th, .labkey-col-total, .labkey-row-total, .labkey-col-header,
+//  .labkey-row-header, .labkey-col-header th, .labkey-stat-title, .labkey-col-total td {
+//    border: solid 1px #AAAAAA;
+//  }
+//}
+
+table.labkey-fixed-width-columns {
+  table-layout: fixed;
+}
+
+.labkey-has-row-totals col, .labkey-has-col-totals col {
+  border-right: solid 1px #DDDDDD;
+  border-left: solid 1px #DDDDDD;
+}
+
+/* Used for the normal rows in data regions, sometimes these rows are not given a class */
+.labkey-row td, .labkey-row th, tr.labkey-row, div.labkey-row {
+  background-color: $lk-grid-row-bg-color;
+}
+
+/* Used for the shaded alternate rows */
+.labkey-alternate-row td, .labkey-alternate-row th, tr.labkey-alternate-row, td.labkey-alternate-row, th.labkey-alternate-row, div.labkey-alternate-row {
+  background-color: $lk-grid-row-alt-bg-color;
+}
+
+/* Used for the shaded alternate columns (for pivot queries) */
+.labkey-alternate-col td, .labkey-alternate-col th, tr.labkey-alternate-col, td.labkey-alternate-col, th.labkey-alternate-col {
+  background: #F6F6F6;
+}
+
+/* Used for the shaded alternate rows and alternate columns (for pivot queries) */
+.labkey-alternate-row .labkey-alternate-col td, .labkey-alternate-row .labkey-alternate-col th, tr.labkey-alternate-row .labkey-alternate-col, td.labkey-alternate-row .labkey-alternate-col, th.labkey-alternate-row .labkey-alternate-col {
+  background: #F0F0F0;
+}
+
+/* Used for the normal rows in data regions, sometimes these rows are not given a class */
+.labkey-error-row td, .labkey-error-row th, tr.labkey-error-row, td.labkey-error-row {
+  border-top: 1px solid #990000;
+  border-bottom: 1px solid #990000;
+  background: #FFDDDD;
+  border-collapse: separate;
+}
+
+/* Used for the shaded alternate rows */
+.labkey-error-row.labkey-alternate-row td, .labkey-error-row.labkey-alternate-row th, tr.labkey-error-row.labkey-alternate-row, td.labkey-error-row.labkey-alternate-row, th.labkey-error-row.labkey-alternate-row {
+  background: #FFBBBB;
+}
+
+.labkey-col-header-filter {
+
+  &:hover,
+  th:hover {
+    background-color: $lk-grid-color;
+    cursor: pointer;
+  }
+}
+
+/* Used to highlight cells with a darker color, limited use right now */
+td.labkey-highlight-cell, th.labkey-highlight-cell {
+  background: #AAAAAA;
+  font-weight:bold;
+}
+
+/* Used for blank cells in the data region such as when the main row headers have sub row headers */
+td.labkey-blank-cell, th.labkey-blank-cell {
+  background: #FFFFFF;
+  border: 0;
+}
+
+/* Used for tables nested within a dataregion cell */
+.labkey-noborder {
+  td, tr {
+    border: 0 !important;
+    padding-right: 0;
+    border-collapse: collapse;
+  }
+}
+
+/* Used for the little icon on the column filter headers */
+img.labkey-grid-filter-icon
+{
+  background-repeat: no-repeat;
+  display: none;
+  height: 8px;
+  width: 11px;
+  margin-left:2px;
+  vertical-align: middle;
+}
+
+.labkey-filtered .labkey-grid-filter-icon {
+  background-image: url('#{$internal-images-dir}/filter_on.gif');
+  display: inline;
+}
+
+.labkey-column-header-sort-icon {
+  background-repeat: no-repeat;
+  display: none;
+  height: 4px;
+  width: 13px;
+  margin-left:3px;
+  vertical-align: middle;
+}
+
+.labkey-sort-asc .labkey-column-header-sort-icon {
+  background-image:url('#{$ext3-images-dir}/default/grid/sort_asc.gif');
+  display: inline;
+}
+
+.labkey-sort-desc .labkey-column-header-sort-icon {
+  background-image:url('#{$ext3-images-dir}/default/grid/sort_desc.gif');
+  display: inline;
+}

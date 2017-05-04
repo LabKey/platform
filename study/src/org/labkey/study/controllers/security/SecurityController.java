@@ -232,8 +232,12 @@ public class SecurityController extends SpringActionController
             }
             else if (_messageText != null)
             {
-                String cont = PageFlowUtil.generateDropDownButton("continue",new ActionURL(BeginAction.class, getContainer()).getLocalURIString(),null);
-                return new HtmlView(_messageText + "<br>" + cont);
+                String btn = PageFlowUtil.button("continue")
+                        .dropdown(true) // does this need to be a dropdown?
+                        .href(new ActionURL(BeginAction.class, getContainer()))
+                        .toString();
+
+                return new HtmlView(_messageText + "<br>" + btn);
             }
             else
             {

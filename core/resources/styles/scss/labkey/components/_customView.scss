@@ -36,6 +36,59 @@
 }
 
 /* grab */
+.labkey-grab {
+  background: url('#{$internal-images-dir}/grab.png') repeat-y 2px 0;
+  width: 8px;
+  cursor: move;
+}
+
+.labkey-paperclip {
+  background-image: url('#{$internal-images-dir}/paperclip.png') !important;
+}
+
+/** Unfortunately, gtheme doesn't include some of the x-tool-* styles, so I'm redefining them here. */
+
+.labkey-tool {
+  background: url('#{$ext3-images-dir}/default/panel/tool-sprites.gif');
+  width: 15px;
+  height: 15px;
+}
+
+.labkey-tool-close {
+  background-position: 0 0;
+  cursor: pointer;
+
+  &:hover {
+    background-position: -15px 0;
+  }
+}
+
+.labkey-tool-pin {
+  background-position: 0 -135px;
+  cursor: pointer;
+
+  &:hover {
+    background-position: -15px -135px;
+  }
+}
+
+.labkey-tool-unpin {
+  background-position: 0 -150px;
+  cursor: pointer;
+
+  &:hover {
+    background-position: -15px -150px;
+  }
+}
+
+.labkey-tool-gear {
+  background-position: 0 -90px;
+  cursor: pointer;
+
+  &:hover {
+    background-position: -15px -90px;
+  }
+}
 
 .labkey-customview-item .labkey-grab {
   opacity: 0;
@@ -143,4 +196,8 @@
 
 .labkey-fieldmeta-tree .x4-grid-body {
   border-top-width: 0;
+}
+
+.labkey-customview-list {
+  cursor: pointer;
 }

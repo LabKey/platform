@@ -78,16 +78,12 @@
     </div>
     <% } %>
     <div class="<%= h(showRight ? "col-md-9" : "col-md-12" ) %>">
-        <!-- BODY -->
         <% me.include(me.getBody(), out); %>
-        <!-- /BODY -->
     </div>
 
     <% if (showRight) { %>
     <div class="col-md-3">
-        <!-- RIGHT -->
         <% me.include(me.getView(WebPartFactory.LOCATION_RIGHT), out); %>
-        <!-- /RIGHT -->
     </div>
     <% } %>
 </div>

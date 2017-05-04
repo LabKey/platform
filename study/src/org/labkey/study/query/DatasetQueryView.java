@@ -439,6 +439,7 @@ public class DatasetQueryView extends StudyQueryView
                     if (deleteRowsURL != null)
                     {
                         ActionButton deleteRows = new ActionButton(deleteRowsURL, "Delete");
+                        deleteRows.setIconCls("trash");
                         if (_dataset.getDataSharingEnum() == DatasetDefinition.DataSharing.NONE)
                             deleteRows.setRequiresSelection(true, "Delete selected row from this dataset?", "Delete selected rows from this dataset?");
                         else
@@ -505,6 +506,7 @@ public class DatasetQueryView extends StudyQueryView
     private ActionButton createFilterButton()
     {
         ActionButton btn = new ActionButton("Filter");
+        btn.setIconCls("filter");
         btn.setActionType(ActionButton.Action.SCRIPT);
         btn.setScript("LABKEY.DataRegions['" + getDataRegionName() + "'].showFaceting(); return false;");
         return btn;
