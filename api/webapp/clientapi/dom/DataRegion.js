@@ -3446,11 +3446,19 @@ if (!LABKEY.DataRegions) {
                 maxCount = parseInt(maxCount);
             }
 
+            var newUI = LABKEY.experimental.useExperimentalCoreUI;
+
             if (minCount <= selectedCount && (!maxCount || maxCount >= selectedCount)) {
-                el.addClass('labkey-button').removeClass('labkey-disabled-button');
+                el.removeClass('labkey-disabled-button');
+                if (!newUI) {
+                    el.addClass('labkey-button');
+                }
             }
             else {
-                el.addClass('labkey-disabled-button').removeClass('labkey-button');
+                el.addClass('labkey-disabled-button');
+                if (!newUI) {
+                    el.removeClass('labkey-button');
+                }
             }
         });
     };

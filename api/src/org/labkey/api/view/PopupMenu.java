@@ -138,9 +138,14 @@ public class PopupMenu extends DisplayElement
         else if (_buttonStyle == ButtonStyle.MENUBUTTON)
         {
             if (requiresSelection)
-                attributes.put("labkey-requires-selection", PageFlowUtil.filter(dataRegionName));
-            out.append(PageFlowUtil.generateDropDownButton(_navTree.getText(), "javascript:void(0)",
-                    "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", attributes));
+                attributes.put("labkey-requires-selection", dataRegionName);
+
+            out.append(PageFlowUtil.button(_navTree.getText())
+                    .dropdown(true)
+                    .href("javascript:void(0)")
+                    .onClick("showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');")
+                    .attributes(attributes)
+                    .toString());
         }
         else if (_buttonStyle == ButtonStyle.TEXT || _buttonStyle == ButtonStyle.BOLDTEXT)
         {

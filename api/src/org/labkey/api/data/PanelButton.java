@@ -65,16 +65,21 @@ public class PanelButton extends ActionButton
         attributes.put("panel-toggle", panelId);
 
         if (requiresSelectionDataRegion != null)
-            attributes.put("labkey-requires-selection", PageFlowUtil.filter(requiresSelectionDataRegion));
+            attributes.put("labkey-requires-selection", requiresSelectionDataRegion);
 
         boolean active = true;
         // Remember that we've already rendered the content once
         ctx.put(id, true);
 
-        out.write(PageFlowUtil.generateDropDownButton(getCaption(), "javascript:void(0)",
-                "(function(el) { LABKEY.DataRegions[" + PageFlowUtil.jsString(_dataRegionName) + "].showButtonPanel(el); })(this);",
-                attributes));
+        String btn = PageFlowUtil.button(getCaption())
+                .dropdown(true)
+                .href("javascript:void(0)")
+                .iconCls(getIconCls())
+                .onClick("(function(el) { LABKEY.DataRegions[" + PageFlowUtil.jsString(_dataRegionName) + "].showButtonPanel(el); })(this);")
+                .attributes(attributes)
+                .toString();
 
+        out.write(btn);
         out.write("<div id=\"" + panelId + "\" name=\"" + getCaption() + "-panel\" class=\"tabbable tabs-left\" style=\"display: none;\">");
 
         // render tabs

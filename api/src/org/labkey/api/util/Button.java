@@ -20,6 +20,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
 import org.springframework.web.servlet.mvc.Controller;
 
+import java.util.Map;
+
 /**
  * Basic button UI element. Might be a simple link, have a JavaScript handler, etc.
  * Created by Nick Arnold on 2/27/14.
@@ -30,24 +32,31 @@ public class Button
     // Button constants
     private static final String CLS = "labkey-button";
     private static final String DISABLEDCLS = "labkey-disabled-button";
+    private static final String MENU_CLS = "labkey-menu-button";
 
     // Composable members
+    private String cssClass;
+    private String iconCls;
     private String text; // required
     private String href;
     private String onClick;
     private String id;
     private String attributes;
     private boolean disableOnClick;
+    private boolean dropdown;
     private boolean enabled = true;
     private boolean submit;
     private boolean textAsHTML;
 
     private Button(ButtonBuilder builder)
     {
+        this.cssClass = builder.cssClass;
+        this.dropdown = builder.dropdown;
         this.text = builder.text;
         this.textAsHTML = builder.textAsHTML;
         this.href = builder.href;
         this.onClick = builder.onClick;
+        this.iconCls = builder.iconCls;
         this.id = builder.id;
         this.attributes = builder.attributes;
         this.disableOnClick = builder.disableOnClick;
@@ -55,9 +64,19 @@ public class Button
         this.submit = builder.submit;
     }
 
+    public String getCssClass()
+    {
+        return this.cssClass;
+    }
+
     public String getText()
     {
         return text;
+    }
+
+    public boolean isDropdown()
+    {
+        return dropdown;
     }
 
     public boolean isTextAsHTML()
@@ -73,6 +92,11 @@ public class Button
     public String getOnClick()
     {
         return onClick;
+    }
+
+    public String getIconCls()
+    {
+        return iconCls;
     }
 
     public String getId()
@@ -145,6 +169,7 @@ public class Button
     @Override
     public String toString()
     {
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         StringBuilder sb = new StringBuilder();
         String submitId = GUID.makeGUID();
 
@@ -155,7 +180,22 @@ public class Button
         }
 
         // enabled
-        sb.append("<a class=\"").append(isEnabled() ? CLS : DISABLEDCLS).append("\" ");
+        // OLD UI: MENU_CLS is used in place of CLS
+        // NEW UI: CLS is always applied, MENU_CLS is not used
+        sb.append("<a class=\"");
+        if (isEnabled())
+            sb.append(isDropdown() ? (newUI ? CLS : MENU_CLS) : CLS);
+        else
+        {
+            if (newUI)
+                sb.append(CLS);
+            sb.append(" ").append(DISABLEDCLS);
+        }
+        if (newUI && isDropdown())
+            sb.append(" ").append("labkey-down-arrow");
+        if (getCssClass() != null)
+            sb.append(" ").append(getCssClass());
+        sb.append("\" ");
         //-- enabled
 
         // id
@@ -172,11 +212,19 @@ public class Button
         sb.append("onClick=\"").append(PageFlowUtil.filter(generateOnClick(submitId))).append("\" ");
         //-- onclick
 
-        // attributes
+        // attributes -- expected to be pre-filtered
         sb.append(getAttributes() == null ? "" : getAttributes());
         //-- attributes
 
-        sb.append("><span>");
+        sb.append(">");
+
+        if (newUI && getIconCls() != null)
+        {
+            sb.append("<i class=\"fa fa-").append(getIconCls()).append("\"></i>");
+            return sb.append("</a>").toString(); // for now, just show icon w/o text
+        }
+
+        sb.append("<span>");
         if (getText() != null)
             sb.append(isTextAsHTML() ? getText() : PageFlowUtil.filter(getText()));
         sb.append("</span></a>");
@@ -186,12 +234,15 @@ public class Button
 
     public static class ButtonBuilder
     {
+        private String cssClass;
+        private String iconCls;
         private String id;
         private String text;
         private String href;
         private String onClick;
         private String attributes;
         private boolean disableOnClick;
+        private boolean dropdown;
         private boolean enabled = true;
         private boolean submit;
         private boolean textAsHTML;
@@ -199,6 +250,20 @@ public class Button
         public ButtonBuilder(@NotNull String text)
         {
             this.text = text;
+        }
+
+        public ButtonBuilder addClass(@NotNull String cssClass)
+        {
+            if (this.cssClass == null)
+                this.cssClass = "";
+            this.cssClass += " " + cssClass;
+            return this;
+        }
+
+        public ButtonBuilder dropdown(boolean dropdown)
+        {
+            this.dropdown = dropdown;
+            return this;
         }
 
         public ButtonBuilder href(@NotNull String href)
@@ -231,15 +296,37 @@ public class Button
             return this;
         }
 
+        public ButtonBuilder iconCls(String iconCls)
+        {
+            this.iconCls = iconCls;
+            return this;
+        }
+
         public ButtonBuilder id(String id)
         {
             this.id = id;
             return this;
         }
 
+        @Deprecated // use Map<String, String> version instead
         public ButtonBuilder attributes(String attributes)
         {
             this.attributes = attributes;
+            return this;
+        }
+
+        public ButtonBuilder attributes(Map<String, String> attributes)
+        {
+            if (attributes != null && attributes.size() > 0)
+            {
+                String sAttributes = "";
+                for (String attribute : attributes.keySet())
+                    sAttributes += PageFlowUtil.filter(attribute) + "=\"" + PageFlowUtil.filter(attributes.get(attribute)) + "\"";
+                this.attributes = sAttributes;
+            }
+            else
+                this.attributes = null;
+
             return this;
         }
 

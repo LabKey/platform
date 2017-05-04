@@ -1244,25 +1244,14 @@ public class PageFlowUtil
         return button(text).href("#").onClick("window.history.back(); return false;").toString();
     }
 
-    /* Renders a span and a drop down arrow image wrapped in a link */
     public static String generateDropDownButton(String text, String href, String onClick, @Nullable Map<String, String> attributes)
     {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<a class=\"labkey-menu-button\" href=\"").append(filter(href)).append("\"");
-        sb.append(" onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; ").append(onClick == null ? "" : filter(onClick)).append("\"");
-        if (attributes != null)
-        {
-            for (String attribute : attributes.keySet())
-            {
-                String value = attributes.get(attribute);
-                sb.append(filter(attribute)).append("=\"").append(filter(value)).append("\"");
-            }
-        }
-        sb.append("><span>");
-        sb.append(filter(text));
-        sb.append("</span></a>");
-
-        return sb.toString();
+        return button(text)
+                .attributes(attributes)
+                .dropdown(true)
+                .href(href)
+                .onClick(onClick)
+                .toString();
     }
 
     /* Renders a span and a drop down arrow image wrapped in a link */
@@ -1297,10 +1286,9 @@ public class PageFlowUtil
                 "><span id=\"" + imageId + "\" title=\"" + filter(text) + "\" class=\"" + imageCls + "\"></span></a>";
     }
 
-    /* Renders a lightly colored inactive button, or in other words, a disabled span wrapped in a link of type labkey-disabled-button */
     public static String generateDisabledButton(String text)
     {
-        return "<a class=\"labkey-disabled-button\" disabled><span>" + filter(text) + "</span></a>";
+        return button(text).enabled(false).toString();
     }
 
     /**

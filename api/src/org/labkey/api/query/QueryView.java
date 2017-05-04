@@ -87,6 +87,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -935,6 +936,7 @@ public class QueryView extends WebPartView<Object>
         if (urlDelete != null)
         {
             ActionButton btnDelete = new ActionButton(urlDelete, "Delete");
+            btnDelete.setIconCls("trash");
             btnDelete.setActionType(ActionButton.Action.POST);
             btnDelete.setDisplayPermission(DeletePermission.class);
             btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected row?", "Are you sure you want to delete the selected rows?");
@@ -994,6 +996,7 @@ public class QueryView extends WebPartView<Object>
     public ActionButton createInsertMenuButton(ActionURL overrideInsertUrl, ActionURL overrideImportUrl)
     {
         MenuButton button = new MenuButton("Insert");
+        button.setIconCls("plus");
         boolean hasInsertNewOption = false;
         boolean hasImportDataOption = false;
 
@@ -1053,6 +1056,7 @@ public class QueryView extends WebPartView<Object>
         ActionButton btnPrint = actionButton("Print", QueryAction.printRows);
         if (null == btnPrint)
             return null;
+        btnPrint.setIconCls("print");
         btnPrint.setTarget("_blank");
         return btnPrint;
     }
@@ -1148,7 +1152,6 @@ public class QueryView extends WebPartView<Object>
         {
             return _xlsURL;
         }
-
     }
 
     public static class TextExportOptionsBean extends ExportOptionsBean
@@ -1167,12 +1170,12 @@ public class QueryView extends WebPartView<Object>
         {
             return _tsvURL;
         }
-
     }
 
     public PanelButton createExportButton(@Nullable List<String> recordSelectorColumns)
     {
         PanelButton exportButton = new PanelButton("Export", getDataRegionName(), 132);
+        exportButton.setIconCls("download");
         ActionURL exportRowsXlsURL = urlFor(QueryAction.exportRowsExcel);
         ActionURL exportRowsXlsxURL = urlFor(QueryAction.exportRowsXLSX);
 
@@ -1204,6 +1207,7 @@ public class QueryView extends WebPartView<Object>
             addExportScriptItems(exportButton);
             addExportRStudio(exportButton, hasRecordSelectors ? getSettings().getSelectionKey() : null);
         }
+
         return exportButton;
     }
 
@@ -1379,7 +1383,7 @@ public class QueryView extends WebPartView<Object>
                 }
             }
 
-            Collections.sort(reportDesigners, (o1, o2) -> o1.getLabel().compareTo(o2.getLabel()));
+            reportDesigners.sort(Comparator.comparing(ReportService.DesignerInfo::getLabel));
 
             ReportService.ItemFilter viewItemFilter = getItemFilter();
 
@@ -1409,6 +1413,7 @@ public class QueryView extends WebPartView<Object>
     public MenuButton createChartButton()
     {
         NavTreeMenuButton button = new NavTreeMenuButton("Charts");
+        button.setIconCls("bar-chart");
 
         if (!getQueryDef().isTemporary() && _report == null)
         {
@@ -1424,7 +1429,7 @@ public class QueryView extends WebPartView<Object>
                 }
             }
 
-            Collections.sort(reportDesigners, (o1, o2) -> o1.getLabel().compareTo(o2.getLabel()));
+            reportDesigners.sort(Comparator.comparing(ReportService.DesignerInfo::getLabel));
 
             for (ReportService.DesignerInfo designer : reportDesigners)
             {

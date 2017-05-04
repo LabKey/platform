@@ -783,9 +783,8 @@ public class DataRegion extends AbstractDataRegion
             catch (SQLException | RuntimeSQLException | IllegalArgumentException | ConversionException x)
             {
                 errorCreatingResults = true;
-                headerMessage.append("<span class=error>").append(PageFlowUtil.filter(x.getMessage())).append("</span><br>");
+                headerMessage.append("<span class=\"labkey-error\">").append(PageFlowUtil.filter(x.getMessage())).append("</span><br>");
             }
-
 
             if (showParameterForm)
             {
@@ -793,7 +792,10 @@ public class DataRegion extends AbstractDataRegion
             }
             else
             {
-                _renderTable(ctx, out, rs, headerMessage, errorCreatingResults);
+                if (PageFlowUtil.useExperimentalCoreUI())
+                    _renderTableNew(ctx, out, rs, headerMessage, errorCreatingResults);
+                else
+                    _renderTableOld(ctx, out, rs, headerMessage, errorCreatingResults);
             }
         }
         finally
@@ -804,14 +806,13 @@ public class DataRegion extends AbstractDataRegion
 
     private void _renderParameterForm(RenderContext ctx, Writer out) throws IOException
     {
-        boolean showRecordSelectors = false;
         _allowHeaderLock = false;
 
         try
         {
             Collection<QueryService.ParameterDecl> params = getTable().getNamedParameters();
             (new ParameterView(params, null)).render(ctx.getViewContext().getRequest(), ctx.getViewContext().getResponse());
-            renderHeaderScript(ctx, out, Collections.emptyMap(), showRecordSelectors);
+            renderHeaderScript(ctx, out, Collections.emptyMap(), false);
         }
         catch (IOException ioe)
         {
@@ -823,7 +824,7 @@ public class DataRegion extends AbstractDataRegion
         }
     }
 
-    private void _renderTable(RenderContext ctx, Writer out, ResultSet rs, StringBuilder headerMessage, boolean errorCreatingResults) throws IOException, SQLException
+    private void _renderTableOld(RenderContext ctx, Writer out, ResultSet rs, StringBuilder headerMessage, boolean errorCreatingResults) throws IOException, SQLException
     {
         boolean renderButtons = _gridButtonBar.shouldRender(ctx);
         if (renderButtons && _buttonBarConfigs != null && !_buttonBarConfigs.isEmpty())
@@ -858,34 +859,6 @@ public class DataRegion extends AbstractDataRegion
                 _totalRows = getOffset() + _rowCount.intValue();
         }
 
-        StringBuilder viewMsg = new StringBuilder();
-        StringBuilder filterMsg = new StringBuilder();
-        Map<String, String> messages = new LinkedHashMap<>();
-
-        addHeaderMessage(headerMessage, ctx);
-
-        if (errorCreatingResults)
-        {
-            _showPagination = false;
-            _allowHeaderLock = false;
-        }
-        else
-        {
-            //issue 13538: do not try to display filters if error, since this could result in a ConversionException
-            addFilterMessage(filterMsg, ctx, isShowFilterDescription());
-        }
-
-        // don't generate a view message if this is the default view and the filter is empty
-        if (!isDefaultView(ctx) || filterMsg.length() > 0)
-            addViewMessage(viewMsg, ctx);
-
-        if (headerMessage.length() > 0)
-            messages.put(MessagePart.header.name(), headerMessage.toString());
-        if (viewMsg.length() > 0)
-            messages.put(MessagePart.view.name(), viewMsg.toString());
-        if (filterMsg.length() > 0)
-            messages.put(MessagePart.filter.name(), filterMsg.toString());
-
         if (!_showPagination && rs instanceof TableResultSet)
         {
             TableResultSet tableRS = (TableResultSet) rs;
@@ -903,28 +876,131 @@ public class DataRegion extends AbstractDataRegion
 
         if (!errorCreatingResults)
         {
-            renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
-
-            if (_aggregateRowConfig.getAggregateRowFirst())
-                renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
-
-            int rows = renderTableContents(ctx, out, showRecordSelectors, renderers);
-            if (rows == 0)
-            {
-                renderNoRowsMessage(ctx, out, colCount);
-            }
-
-            if (_aggregateRowConfig.getAggregateRowLast())
-                renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
+            _renderDataTable(ctx, out, showRecordSelectors, renderers, colCount);
         }
 
         renderFooter(ctx, out, renderButtons, colCount);
 
         renderRegionEnd(ctx, out, renderButtons, renderers);
 
-        renderHeaderScript(ctx, out, messages, showRecordSelectors);
+        renderHeaderScript(ctx, out, prepareMessages(ctx, headerMessage, errorCreatingResults), showRecordSelectors);
 
         renderAnalyticsProvidersScripts(ctx, out);
+    }
+
+    private void _renderTableNew(RenderContext ctx, Writer out, ResultSet rs, StringBuilder headerMessage, boolean errorCreatingResults) throws IOException, SQLException
+    {
+        // renderButtons gets passed down all the things...
+        boolean renderButtons = _gridButtonBar.shouldRender(ctx);
+        if (renderButtons && _buttonBarConfigs != null && !_buttonBarConfigs.isEmpty())
+        {
+            if (_gridButtonBar.isLocked())
+                _gridButtonBar = new ButtonBar(_gridButtonBar);
+            _gridButtonBar.setConfigs(ctx, _buttonBarConfigs);
+            addMissingCaptionMessage(headerMessage);
+        }
+
+        boolean showRecordSelectors = getShowRecordSelectors(ctx);
+
+        List<DisplayColumn> renderers = getDisplayColumns();
+
+        //determine number of HTML table columns...watch out for hidden display columns
+        //and include one extra if showing record selectors
+        int colCount = 0;
+
+        for (DisplayColumn col : renderers)
+        {
+            if (col.isVisible(ctx))
+                colCount++;
+        }
+
+        if (showRecordSelectors)
+            colCount++;
+
+        if (rs instanceof TableResultSet && ((TableResultSet) rs).getSize() != -1)
+        {
+            _rowCount = ((TableResultSet) rs).getSize();
+            if (_complete && _totalRows == null)
+                _totalRows = getOffset() + _rowCount.intValue();
+        }
+
+        // 1. render form wrapper
+        renderFormHeader(ctx, out, ctx.getMode());
+
+        // 2. render button bar
+        //      a. render paging
+        _renderHeaderNew(ctx, out, renderButtons);
+
+        // 3. render context bar
+        // 4. render north section
+
+        // 5. render table
+        if (!errorCreatingResults)
+            _renderDataTableNew(ctx, out, showRecordSelectors, renderers, colCount);
+
+        // 6. Bind the region code
+        renderHeaderScript(ctx, out, prepareMessages(ctx, headerMessage, errorCreatingResults), showRecordSelectors);
+
+        // 7. end form wrapper
+        renderFormEnd(ctx, out);
+    }
+
+    private void _renderHeaderNew(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
+    {
+        if (shouldRenderHeader(renderButtons))
+        {
+            out.write("<div class=\"row bottom-spacing\">");
+            _renderButtonBarNew(ctx, out, renderButtons);
+            _renderPaginationNew(ctx, out);
+            out.write("</div>");
+        }
+    }
+
+    private void _renderButtonBarNew(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
+    {
+        if (renderButtons)
+        {
+            out.write("<div class=\"col-md-8\">");
+            renderButtons(ctx, out);
+            out.write("</div>");
+        }
+    }
+
+    private void _renderPaginationNew(RenderContext ctx, Writer out) throws IOException
+    {
+        out.write("<div class=\"col-md-4\">");
+        renderPagination(ctx, out, PaginationLocation.TOP);
+        out.write("</div>");
+    }
+
+    private void _renderDataTable(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
+    {
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+        renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
+
+        if (newUI)
+            out.write("<tbody>");
+
+        if (_aggregateRowConfig.getAggregateRowFirst())
+            renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
+
+        int rows = renderTableContents(ctx, out, showRecordSelectors, renderers);
+        if (rows == 0)
+            renderNoRowsMessage(ctx, out, colCount);
+
+        if (_aggregateRowConfig.getAggregateRowLast())
+            renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
+
+        if (newUI)
+            out.write("</tbody>");
+    }
+
+    private void _renderDataTableNew(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
+    {
+        out.write("<div class=\"table-responsive\">");
+        out.write("<table class=\"table table-condensed " + (isShowBorders() ? "table-bordered" : "") + " labkey-data-region\">");
+        _renderDataTable(ctx, out, showRecordSelectors, renderers, colCount);
+        out.write("</table></div>");
     }
 
     private void renderAnalyticsProvidersScripts(RenderContext ctx, Writer writer) throws IOException
@@ -980,13 +1056,12 @@ public class DataRegion extends AbstractDataRegion
 
     protected void renderRegionStart(RenderContext ctx, Writer out, boolean renderButtons, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         if (renderButtons)
             renderFormHeader(ctx, out, MODE_GRID);
-        out.write("\n<div class=\"" + (newUI ? " table-responsive " : "") + " labkey-data-region-wrap\"><table class=\"" + (newUI ? " table table-condensed" : "") + " labkey-data-region");
+        out.write("\n<div class=\"labkey-data-region-wrap\"><table class=\"labkey-data-region");
 
         if (isShowBorders())
-            out.write(newUI ? " table-bordered" : " labkey-show-borders");
+            out.write(" labkey-show-borders");
         else if (isShowSurroundingBorder())
             out.write(" labkey-show-surrounding-border");
 
@@ -1219,14 +1294,67 @@ public class DataRegion extends AbstractDataRegion
     {
         if (_showPagination)
         {
+            if (isSmallResultSet())
+                return;
+
+            NumberFormat fmt = NumberFormat.getInstance();
+
+            if (PageFlowUtil.useExperimentalCoreUI())
+            {
+                ArrayList<String> buttons = new ArrayList<>();
+                out.write("<div class=\"labkey-pagination pull-right\">");
+
+                final int maxRows = getMaxRows();
+                boolean enableNextPage = false;
+                boolean enablePrevPage = maxRows > 0 && getOffset() >= maxRows;
+                long nextOffset = 0;
+                // TODO: Disable onclick if button not enabled
+                buttons.add("<button class=\"btn btn-default " + (enablePrevPage ? "" : "disabled") + "\" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].setOffset(" + (getOffset() - maxRows) + "); return false;\"><i class=\"fa fa-chevron-left\"></i></button>");
+
+                if (_rowCount != null)
+                    out.write("<span>" + fmt.format(getOffset() + 1) + " - " + fmt.format(getOffset() + _rowCount.intValue()) + "</span>");
+
+                if (_totalRows != null)
+                {
+                    if (_rowCount != null)
+                        out.write("<span> of " + fmt.format(_totalRows) + "</span>");
+
+                    if (maxRows > 0)
+                    {
+                        long remaining = _totalRows.longValue() - getOffset();
+                        long lastPageSize = _totalRows.longValue() % maxRows;
+                        if (lastPageSize == 0)
+                            lastPageSize = maxRows;
+                        long lastPageOffset = _totalRows.longValue() - lastPageSize;
+
+                        if (remaining > maxRows)
+                        {
+                            nextOffset = getOffset() + maxRows;
+                            if (nextOffset > _totalRows.longValue())
+                                nextOffset = lastPageOffset;
+                            enableNextPage = true;
+                        }
+                    }
+                }
+
+                // TODO: Disable onclick if button not enabled
+                buttons.add("<button class=\"btn btn-default " + (enableNextPage ? "" : "disabled") + "\" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].setOffset(" + nextOffset + "); return false;\"><i class=\"fa fa-chevron-right\"></i></button>");
+
+                if (buttons.size() > 0)
+                {
+                    out.write("<div class=\"btn-group\">");
+                    for (String button : buttons)
+                        out.write(button);
+                    out.write("</div>");
+                }
+
+                out.write("</div>");
+                return;
+            }
+
             if ((_buttonBarPosition.atTop() && location == PaginationLocation.TOP) ||
                     (_buttonBarPosition._atBottom && location == PaginationLocation.BOTTOM))
             {
-                if (isSmallResultSet())
-                    return;
-
-                NumberFormat fmt = NumberFormat.getInstance();
-
                 out.write("<div class=\"labkey-pagination\" style=\"visibility:hidden;\">");
 
                 if (getMaxRows() > 0 && getOffset() >= 2 * getMaxRows())
@@ -1276,7 +1404,7 @@ public class DataRegion extends AbstractDataRegion
 
     protected void paginateLink(Writer out, String title, String text, long newOffset) throws IOException
     {
-        out.write("<a title=\"" + title + "\" href='javascript:LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].setOffset(" + newOffset + ");'>" + text + "</a> ");
+        out.write("<a title=\"" + title + "\" href=\"javascript:LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].setOffset(" + newOffset + ");\">" + text + "</a> ");
     }
 
     protected void renderNoRowsMessage(RenderContext ctx, Writer out, int colCount) throws IOException
@@ -1299,19 +1427,24 @@ public class DataRegion extends AbstractDataRegion
     protected void renderGridHeaderColumns(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers)
             throws IOException, SQLException
     {
-        out.write("\n<tr id=\"" + PageFlowUtil.filter(getDomId() + "-column-header-row") + "\">");
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+
+        if (newUI)
+            out.write("<thead>");
+        out.write("\n<tr id=\"" + PageFlowUtil.filter(getDomId() + "-column-header-row") + "\" " + (newUI ? "class=\"labkey-col-header-row\"" : "") + ">");
 
         if (showRecordSelectors)
         {
-            out.write("<td valign=\"top\" class=\"labkey-column-header labkey-selectors labkey-col-header-filter\"");
+            out.write(newUI ? "<th " : "<td ");
+            out.write("valign=\"top\" class=\"labkey-column-header labkey-selectors labkey-col-header-filter\"");
             out.write("id=\"");
             String headerId = "column-header-" + UniqueID.getServerSessionScopedUID();
             out.write(PageFlowUtil.filter(headerId));
             out.write("\">");
 
-            out.write("<input type=checkbox title='Select/unselect all on current page' name='");
+            out.write("<input type=\"checkbox\" title=\"Select/unselect all on current page\" name=\"");
             out.write(TOGGLE_CHECKBOX_NAME);
-            out.write("' ");
+            out.write("\" ");
             out.write(">");
 
             // TODO: move inline style to stylesheet
@@ -1363,7 +1496,7 @@ public class DataRegion extends AbstractDataRegion
             PopupMenu popup = new PopupMenu(navtree, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.TEXT);
             popup.renderMenuScript(out);
 
-            out.write("<script type='text/javascript'>\n");
+            out.write("<script type=\"text/javascript\">\n");
             out.write("Ext4.onReady(function () {\n");
             out.write("var header = Ext4.get(");
             out.write(PageFlowUtil.jsString(headerId));
@@ -1378,7 +1511,7 @@ public class DataRegion extends AbstractDataRegion
             out.write("});\n");
             out.write("</script>\n");
 
-            out.write("</td>");
+            out.write(newUI ? "</th>" : "</td>");
         }
 
         for (DisplayColumn renderer : renderers)
@@ -1397,10 +1530,11 @@ public class DataRegion extends AbstractDataRegion
 
             if (showRecordSelectors)
             {
-                out.write("<td valign=\"top\" class=\"labkey-column-header labkey-selectors");
+                out.write(newUI ? "<th " : "<td ");
+                out.write("valign=\"top\" class=\"labkey-column-header labkey-selectors");
                 out.write("\">");
 
-                out.write("<input type=checkbox title='Select/unselect all on current page' ");
+                out.write("<input type=\"checkbox\" title=\"Select/unselect all on current page\" ");
                 out.write(">");
 
                 out.write("<span style=\"display:inline-block; background: url('");
@@ -1408,7 +1542,7 @@ public class DataRegion extends AbstractDataRegion
                 out.write("/_images/arrow_down.png') right no-repeat; width: 16px; height: 10px;\"");
                 out.write("></span>");
 
-                out.write("</td>");
+                out.write(newUI ? "</th>" : "</td>");
             }
 
             for (DisplayColumn renderer : renderers)
@@ -1421,6 +1555,9 @@ public class DataRegion extends AbstractDataRegion
 
             out.write("</tr>\n");
         }
+
+        if (newUI)
+            out.write("</thead>");
     }
 
     protected void renderAggregatesTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
@@ -2486,6 +2623,40 @@ public class DataRegion extends AbstractDataRegion
                 dc.setFormatString(defaultNumber);
             }
         }
+    }
+
+    // TODO: This is side-effecting the pagination, header locking. Switch to building messages based on state
+    private Map<String, String> prepareMessages(RenderContext ctx, StringBuilder headerMessage, boolean errorCreatingResults) throws IOException
+    {
+        StringBuilder viewMsg = new StringBuilder();
+        StringBuilder filterMsg = new StringBuilder();
+        Map<String, String> messages = new LinkedHashMap<>();
+
+        addHeaderMessage(headerMessage, ctx);
+
+        if (errorCreatingResults)
+        {
+            _showPagination = false;
+            _allowHeaderLock = false;
+        }
+        else
+        {
+            //issue 13538: do not try to display filters if error, since this could result in a ConversionException
+            addFilterMessage(filterMsg, ctx, isShowFilterDescription());
+        }
+
+        // don't generate a view message if this is the default view and the filter is empty
+        if (!isDefaultView(ctx) || filterMsg.length() > 0)
+            addViewMessage(viewMsg, ctx);
+
+        if (headerMessage.length() > 0)
+            messages.put(MessagePart.header.name(), headerMessage.toString());
+        if (viewMsg.length() > 0)
+            messages.put(MessagePart.view.name(), viewMsg.toString());
+        if (filterMsg.length() > 0)
+            messages.put(MessagePart.filter.name(), filterMsg.toString());
+
+        return messages;
     }
 
     public void setShadeAlternatingRows(boolean shadeAlternatingRows)

@@ -36,6 +36,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -68,6 +69,7 @@ public class QuerySettings
     private boolean _showReports = true;
     private boolean _ignoreUserFilter;
     private int _maxRows = 100;
+    private boolean _maxRowsSet = false; // Explicitly track setting maxRows, allows for different defaults
     private long _offset = 0;
     private String _selectionKey = null;
 
@@ -89,9 +91,6 @@ public class QuerySettings
 
     private final Map<String, Object> _queryParameters = new CaseInsensitiveHashMap<>();
 
-
-    // only in use for argos -> rolap development cycle.
-    public static boolean useRolap = false;
 
     protected QuerySettings(String dataRegionName)
     {
@@ -128,7 +127,7 @@ public class QuerySettings
 
 
     /**
-     * @param params    all parameters from URL or POST, inluding dataregion.filter parameters
+     * @param params    all parameters from URL or POST, including dataregion.filter parameters
      * @param dataRegionName    prefix for filter params etc
      * @see UserSchema#getSettings(org.springframework.beans.PropertyValues, String) 
      */
@@ -151,7 +150,6 @@ public class QuerySettings
         }
         return pvs;
     }
-
 
 
     /**
@@ -258,9 +256,8 @@ public class QuerySettings
                 try
                 {
                     int maxRows = Integer.parseInt(maxRowsParam);
-                    assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for maxRows; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
                     if (maxRows >= 0)
-                        _maxRows = maxRows;
+                        setMaxRows(maxRows);
                     if (_maxRows == Table.NO_ROWS)
                         _showRows = ShowRows.NONE;
                 }
@@ -544,7 +541,7 @@ public class QuerySettings
             return Table.NO_ROWS;
         if (_showRows != ShowRows.PAGINATED)
             return Table.ALL_ROWS;
-        return _maxRows;
+        return _maxRowsSet ? _maxRows : (PageFlowUtil.useExperimentalCoreUI() ? 20 : 100);
     }
 
     /** @param maxRows the maximum number of rows to return, or Table.ALL_ROWS (unlimited) or Table.NO_ROWS (metadata only) */
@@ -552,6 +549,7 @@ public class QuerySettings
     {
         assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for maxRows; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
         assert (maxRows == Table.NO_ROWS && _showRows == ShowRows.NONE) || (maxRows == Table.ALL_ROWS && _showRows == ShowRows.ALL) || _showRows == ShowRows.PAGINATED : "Can't set maxRows when not paginated";
+        _maxRowsSet = true;
         _maxRows = maxRows;
     }
 

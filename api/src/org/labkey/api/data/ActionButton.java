@@ -31,10 +31,12 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A standard, fully-HTML rendered (as opposed to being rendered as ExtJS config),
- * button in the appearence sense (but not necessarily an &lt;input&gt; element).
+ * button in the appearance sense (but not necessarily an &lt;input&gt; element).
  */
 
 public class ActionButton extends DisplayElement implements Cloneable
@@ -121,6 +123,7 @@ public class ActionButton extends DisplayElement implements Cloneable
     private StringExpression _url;
     private StringExpression _script;
     private StringExpression _title;
+    private String _iconCls;
     private String _target;
     private boolean _appendScript;
     protected boolean _requiresSelection;
@@ -263,6 +266,18 @@ public class ActionButton extends DisplayElement implements Cloneable
         _caption = StringExpressionFactory.create(caption);
     }
 
+    public void setIconCls(String iconCls)
+    {
+        checkLocked();
+        _iconCls = iconCls;
+    }
+
+    @Nullable
+    public String getIconCls()
+    {
+        return _iconCls;
+    }
+
     public void setURL(ActionURL url)
     {
         setURL(url.getLocalURIString());
@@ -391,34 +406,25 @@ public class ActionButton extends DisplayElement implements Cloneable
         if (!shouldRender(ctx))
             return;
 
-        StringBuilder attributes = new StringBuilder();
-
-        if (_id != null)
-        {
-            attributes.append("id=\"");
-            attributes.append(PageFlowUtil.filter(_id));
-            attributes.append("\"" );
-        }
+        Map<String, String> attributes = new HashMap<>();
 
         if (_requiresSelection)
         {
             DataRegion dataRegion = ctx.getCurrentRegion();
             assert dataRegion != null : "ActionButton.setRequiresSelection() needs to be rendered in context of a DataRegion";
-            attributes.append(" labkey-requires-selection=\"").append(PageFlowUtil.filter(dataRegion.getName())).append("\"");
+            attributes.put("labkey-requires-selection", dataRegion.getName());
             if (_requiresSelectionMinCount != null)
-            {
-                attributes.append(" labkey-requires-selection-min-count=\"").append(_requiresSelectionMinCount).append("\"");
-            }
+                attributes.put("labkey-requires-selection-min-count", _requiresSelectionMinCount.toString());
             if (_requiresSelectionMaxCount != null)
-            {
-                attributes.append(" labkey-requires-selection-max-count=\"").append(_requiresSelectionMaxCount).append("\"");
-            }
+                attributes.put("labkey-requires-selection-max-count", _requiresSelectionMaxCount.toString());
         }
         
         if (_noFollow)
-        {
-            attributes.append(" rel=\"nofollow\"");
-        }
+            attributes.put("rel", "nofollow");
+
+        Button.ButtonBuilder button = PageFlowUtil.button(getCaption(ctx))
+                .iconCls(getIconCls())
+                .id(_id);
 
         if (_actionType.equals(Action.POST) || _actionType.equals(Action.GET))
         {
@@ -430,29 +436,34 @@ public class ActionButton extends DisplayElement implements Cloneable
 
             String actionName = getActionName(ctx);
             if (actionName != null)
-                attributes.append("name='").append(actionName).append("'");
-            out.write(PageFlowUtil.button(getCaption(ctx)).submit(true).onClick(onClickScript.toString()).attributes(attributes.toString()).toString());
+                attributes.put("name", actionName);
+
+            button.attributes(attributes)
+                    .onClick(onClickScript.toString())
+                    .submit(true);
         }
         else if (_actionType.equals(Action.LINK))
         {
             if (_target != null)
-                attributes.append(" target=\"").append(PageFlowUtil.filter(_target)).append("\"");
-            Button.ButtonBuilder button = PageFlowUtil.button(getCaption(ctx)).href(getURL(ctx)).attributes(attributes.toString());
+                attributes.put("target", _target);
             if (_script != null)
                 button.onClick(getScript(ctx));
-            out.write(button.toString());
+
+            button.attributes(attributes)
+                    .href(getURL(ctx));
         }
         else
         {
-            Button.ButtonBuilder button = PageFlowUtil.button(getCaption(ctx))
-                    .href("javascript:void(0);")
-                    .attributes(attributes.toString());
             if (_appendScript)
                 button.onClick(renderDefaultScript(ctx) + getScript(ctx));
             else
                 button.onClick(getScript(ctx));
-            out.write(button.toString());
+
+            button.attributes(attributes)
+                    .href("javascript:void(0);");
         }
+
+        out.write(button.toString());
     }
 
     public ActionButton clone()
@@ -469,6 +480,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         }
     }
 
+    @Nullable
     private static String _eval(StringExpression expr, RenderContext ctx)
     {
         return expr == null ? null : expr.eval(ctx);

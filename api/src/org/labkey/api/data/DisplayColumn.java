@@ -570,6 +570,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderGridHeaderCell(RenderContext ctx, Writer out, String headerClass) throws IOException
     {
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         Sort sort = getSort(ctx);
         Sort.SortField sortField = getSortColumn(sort);
         boolean filtered = isFiltered(ctx);
@@ -581,7 +582,8 @@ public abstract class DisplayColumn extends RenderColumn
         PopupMenu popup = new PopupMenu(navtree, PopupMenu.Align.LEFT, PopupMenu.ButtonStyle.TEXTBUTTON);
         boolean hasMenu = navtree != null;
 
-        out.write("\n<td class='labkey-column-header ");
+        out.write(newUI ? "<th " : "<td ");
+        out.write("class=\"labkey-column-header ");
         out.write(getGridHeaderClass());
         if (sortField != null)
         {
@@ -600,11 +602,11 @@ public abstract class DisplayColumn extends RenderColumn
         {
             out.write(" " + _displayClass);
         }
-        out.write("'");
+        out.write("\"");
 
-        out.write(" style='");
+        out.write(" style=\"");
         out.write(getDefaultHeaderStyle());
-        out.write("'");
+        out.write("\"");
 
         StringBuilder tooltip = new StringBuilder();
         if (null != getDescription())
@@ -659,7 +661,7 @@ public abstract class DisplayColumn extends RenderColumn
         {
             popup.renderMenuScript(out);
 
-            out.write("<script type='text/javascript'>\n");
+            out.write("<script type=\"text/javascript\">\n");
             out.write("Ext4.onReady(function () {\n");
             out.write("var header = Ext4.get(");
             out.write(PageFlowUtil.jsString(safeHeaderId));
@@ -675,7 +677,7 @@ public abstract class DisplayColumn extends RenderColumn
             out.write("</script>\n");
         }
 
-        out.write("</td>");
+        out.write(newUI ? "</th>" : "</td>");
     }
 
     private Sort getSort(RenderContext ctx)

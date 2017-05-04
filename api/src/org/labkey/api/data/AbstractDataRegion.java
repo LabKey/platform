@@ -114,7 +114,7 @@ public abstract class AbstractDataRegion extends DisplayElement
 
     public boolean getAllowHeaderLock()
     {
-        return _allowHeaderLock;
+        return _allowHeaderLock && !PageFlowUtil.useExperimentalCoreUI();
     }
 
     protected JSONObject getDataRegionJSON(RenderContext ctx, boolean showRecordSelectors)
