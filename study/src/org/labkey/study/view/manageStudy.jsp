@@ -408,22 +408,32 @@
     %>
 </table><br>
 <%
+    if (study.allowExport(getUser()))
+    {
+%>
+        <%= button("Export Study").href(urlProvider(AdminUrls.class).getExportFolderURL(c).addParameter("exportType", "study")) %>
+<%
+    }
+
     if (c.hasPermission(user, AdminPermission.class) && !c.isDataspace())
     {
 %>
-<%= button("Export Study").href(urlProvider(AdminUrls.class).getExportFolderURL(c).addParameter("exportType", "study")) %>
-<%= button("Reload Study").href(urlProvider(AdminUrls.class).getImportFolderURL(c).addParameter("origin", "Reload")) %>
-<%= button("Delete Study").href(StudyController.DeleteStudyAction.class, c) %>
-<%= button("Create Ancillary Study").href("javascript:void(0)").onClick("showCreateStudyWizard('ancillary')") %>
-<%= button("Publish Study").href("javascript:void(0)").onClick("showCreateStudyWizard('publish')") %>
+        <%= button("Reload Study").href(urlProvider(AdminUrls.class).getImportFolderURL(c).addParameter("origin", "Reload")) %>
+        <%= button("Delete Study").href(StudyController.DeleteStudyAction.class, c) %>
+<%
+    }
+
+    if (study.allowExport(getUser()))
+    {
+%>
+        <%= button("Create Ancillary Study").href("javascript:void(0)").onClick("showCreateStudyWizard('ancillary')") %>
+        <%= button("Publish Study").href("javascript:void(0)").onClick("showCreateStudyWizard('publish')") %>
 <%
     }
 %>
 <script type="text/javascript">
     function showCreateStudyWizard(mode)
     {
-//        Ext.onReady(
-                LABKEY.study.openCreateStudyWizard(mode, <%=q(availableStudyName)%>)
-//        );
+        LABKEY.study.openCreateStudyWizard(mode, <%=q(availableStudyName)%>);
     }
 </script>

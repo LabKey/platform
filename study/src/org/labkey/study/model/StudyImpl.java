@@ -52,6 +52,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Location;
@@ -1228,6 +1229,17 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return getContainer().isProject() && (_shareDatasetDefinitions || _shareVisitDefinitions);
     }
 
+    @Override
+    public boolean allowExport(User user)
+    {
+        Container c = getContainer();
+        boolean userHasPerm = c.hasPermission(user, AdminPermission.class);
+        boolean allowForNonDataspace = !c.isDataspace();
+        boolean allowForDataspace = c.isProject() && c.isDataspace() && getTimepointType() == TimepointType.VISIT
+                                        && getShareDatasetDefinitions() && getShareVisitDefinitions();
+        
+        return userHasPerm && (allowForNonDataspace || allowForDataspace);
+    }
 
     @Override
     public Visit getVisit(String participantID, Double visitID, Date date, boolean returnPotentialTimepoints)

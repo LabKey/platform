@@ -95,6 +95,8 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
@@ -1782,7 +1784,7 @@ public class CoreController extends SpringActionController
             {
                 Map<String, Object> writerMap = new HashMap<>();
                 String dataType = writer.getDataType();
-                boolean excludeForDataspace = getContainer().isDataspace() && "Study".equals(dataType);
+                boolean excludeForDataspace = "Study".equals(dataType) && shouldExcludeStudyForDataspace();
                 boolean excludeForTemplate = form.isForTemplate() && !writer.includeWithTemplate();
 
                 if (dataType != null && writer.show(getContainer()) && !excludeForDataspace && !excludeForTemplate)
@@ -1812,6 +1814,12 @@ public class CoreController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("writers", writerChildrenMap);
             return response;
+        }
+
+        private boolean shouldExcludeStudyForDataspace()
+        {
+            Study study = StudyService.get().getStudy(getContainer());
+            return study == null || !study.allowExport(getUser());
         }
     }
 
