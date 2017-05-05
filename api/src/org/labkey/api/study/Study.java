@@ -151,4 +151,10 @@ public interface Study extends StudyEntity
      * @return true if this study is at the project-level and is a DataspaceStudyFolderType (TODO: don't rely on DataspaceStudyFolderType)
      */
     boolean isDataspaceStudy();
+
+    /**
+     * @return true if this study can be exported, i.e. it is not a dataspace project/study and the user has admin permissions
+ *              OR it is a dataspace project folder with a visit based study that uses both shared datasets and shared visits.
+     */
+    boolean allowExport(User user);
 }

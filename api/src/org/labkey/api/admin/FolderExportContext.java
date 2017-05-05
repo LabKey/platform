@@ -17,6 +17,8 @@ package org.labkey.api.admin;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.folder.xml.FolderDocument;
 
 import java.util.Arrays;
@@ -48,8 +50,15 @@ public class FolderExportContext extends AbstractFolderContext
     {
         super(user, c, getFolderDocument(), dataTypes, logger, null);
 
+        // If the container is a Dataspace folder type and we are requesting exporting the study objects,
+        // verify that the user is allowed to export the study for this Dataspace configuration.
         if (c.isDataspace() && dataTypes.contains("Study"))
-            throw new IllegalStateException("Cannot export study from Dataspace folder.");
+        {
+            Study study = StudyService.get().getStudy(c);
+            if (study != null && !study.allowExport(getUser()))
+                throw new IllegalStateException("Cannot export study from this Dataspace folder.");
+        }
+
         _format = format;
         _includeSubfolders = includeSubfolders;
         _removeProtected = removeProtected;
