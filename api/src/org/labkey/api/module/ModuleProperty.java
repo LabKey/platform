@@ -41,9 +41,7 @@ public class ModuleProperty
     private Module _module;
     private String _name;
     private String _label;
-    //private boolean _required = false;
     private boolean _canSetPerContainer = false;
-    private boolean _canSetPerUser = false;
     private boolean _excludeFromClientContext = false;
     private String _defaultValue = null;
     private String _description = null;
@@ -87,16 +85,6 @@ public class ModuleProperty
         _label = label;
     }
 
-//    public boolean isRequired()
-//    {
-//        return _required;
-//    }
-//
-//    public void setRequired(boolean required)
-//    {
-//        _required = required;
-//    }
-
     public boolean isCanSetPerContainer()
     {
         return _canSetPerContainer;
@@ -106,16 +94,6 @@ public class ModuleProperty
     {
         _canSetPerContainer = canSetPerContainer;
     }
-
-//    public boolean isCanSetPerUser()
-//    {
-//        return _canSetPerUser;
-//    }
-//
-//    public void setCanSetPerUser(boolean canSetPerUser)
-//    {
-//        _canSetPerUser = canSetPerUser;
-//    }
 
     public String getDefaultValue()
     {
@@ -130,7 +108,7 @@ public class ModuleProperty
     @NotNull
     public List<Class<? extends Permission>> getEditPermissions()
     {
-        return _editPermissions == null ? new ArrayList<Class<? extends Permission>>(): _editPermissions;
+        return _editPermissions == null ? new ArrayList<>(): _editPermissions;
     }
 
     public void setEditPermissions(List<Class<? extends Permission>> editPermissions)
@@ -185,9 +163,7 @@ public class ModuleProperty
         ret.put("name", getName());
         ret.put("label", getLabel());
         ret.put("module", getModule().getName());
-        //ret.put("required", isRequired());
         ret.put("canSetPerContainer", isCanSetPerContainer());
-        //ret.put("canSetPerUser", isCanSetPerUser());
         ret.put("defaultValue", getDefaultValue());
         ret.put("editPermissions", getEditPermissions());
         ret.put("description", getDescription());
@@ -200,9 +176,6 @@ public class ModuleProperty
     {
         if (!isCanSetPerContainer() && !c.isRoot())
             throw new IllegalArgumentException("This property can not be set for this container.  It can only be set site-wide, which means it must be set on the root container.");
-
-//        if (!isCanSetPerUser() && userIdToSave != 0)
-//            throw new IllegalArgumentException("This property can not be set on a per user basis.  Use a userId of zero");
 
         // Don't bother checking permissions if we don't have a user
         if (user != null)
@@ -262,5 +235,4 @@ public class ModuleProperty
 
         return value;
     }
-
 }
