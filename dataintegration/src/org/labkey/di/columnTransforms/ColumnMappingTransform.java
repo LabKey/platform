@@ -1,6 +1,6 @@
 package org.labkey.di.columnTransforms;
 
-import org.labkey.api.di.columnTransform.AbstractColumnTransform;
+import org.labkey.api.di.columnTransform.ColumnTransform;
 
 /**
  * User: tgaluhn
@@ -10,7 +10,7 @@ import org.labkey.api.di.columnTransform.AbstractColumnTransform;
  * This is the default ColumnTransform class applied when no explicit class is set.
  * Allows the same source column to be specified in multiple <column/> elements to map to multiple target columns.
  */
-public class ColumnMappingTransform extends AbstractColumnTransform
+public class ColumnMappingTransform extends ColumnTransform
 {
     @Override
     public boolean requiresTargetColumnName()

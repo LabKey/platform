@@ -1,6 +1,6 @@
 package org.labkey.di.columnTransforms;
 
-import org.labkey.api.di.columnTransform.AbstractColumnTransform;
+import org.labkey.api.di.columnTransform.ColumnTransform;
 
 /**
  * User: tgaluhn
@@ -11,7 +11,7 @@ import org.labkey.api.di.columnTransform.AbstractColumnTransform;
  * to the value of the source column specified in the ETL xml,
  * then appends the value of the "myConstant" constant set in the xml.
  */
-public class TestColumnTransform extends AbstractColumnTransform
+public class TestColumnTransform extends ColumnTransform
 {
     @Override
     protected Object doTransform(Object inputValue)

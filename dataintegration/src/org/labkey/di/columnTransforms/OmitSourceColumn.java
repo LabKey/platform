@@ -1,6 +1,6 @@
 package org.labkey.di.columnTransforms;
 
-import org.labkey.api.di.columnTransform.AbstractColumnTransform;
+import org.labkey.api.di.columnTransform.ColumnTransform;
 
 /**
  * User: tgaluhn
@@ -8,7 +8,7 @@ import org.labkey.api.di.columnTransform.AbstractColumnTransform;
  *
  * Simple class to mark a source column as to be omitted from the passthrough to target output
  */
-public class OmitSourceColumn extends AbstractColumnTransform
+public class OmitSourceColumn extends ColumnTransform
 {
     @Override
     protected void registerOutput()
