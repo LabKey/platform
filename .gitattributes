@@ -547,8 +547,8 @@ api/src/org/labkey/api/di/DataIntegrationUrls.java -text
 api/src/org/labkey/api/di/ScheduledPipelineJobContext.java -text
 api/src/org/labkey/api/di/ScheduledPipelineJobDescriptor.java -text
 api/src/org/labkey/api/di/TaskRefTask.java -text
-api/src/org/labkey/api/di/columnTransform/AbstractColumnTransform.java -text
 api/src/org/labkey/api/di/columnTransform/ColumnTransform.java -text
+api/src/org/labkey/api/di/columnTransform/ColumnTransformException.java -text
 api/src/org/labkey/api/event/PropertyChange.java -text
 api/src/org/labkey/api/exceptions/OptimisticConflictException.java -text
 api/src/org/labkey/api/exceptions/TableNotFoundException.java -text
