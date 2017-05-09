@@ -330,6 +330,10 @@ public abstract class SearchTest extends StudyTest
 
         IssuesHelper issuesHelper = new IssuesHelper(this);
         issuesHelper.createNewIssuesList("issues", _containerHelper);
+        goToModule("Issues");
+        issuesHelper.goToAdmin();
+        issuesHelper.setIssueAssignmentList(null);
+        clickButton("Save");
 
         // Add Area
         IssuesTest.addLookupValues(this, "issues", "area", Collections.singleton("Area51"));

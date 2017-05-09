@@ -96,7 +96,13 @@ public class MothershipTest extends BaseWebDriverTest
         configurePage.save();
 
         _containerHelper.createProject(ISSUES_PROJECT, null);
-        new IssuesHelper(this).createNewIssuesList(ISSUES_LIST, _containerHelper);
+        IssuesHelper helper = new IssuesHelper(this);
+        helper.createNewIssuesList(ISSUES_LIST, _containerHelper);
+        goToModule("Issues");
+        helper.goToAdmin();
+        helper.setIssueAssignmentList(null);
+        clickButton("Save");
+
         ApiPermissionsHelper permHelper = new ApiPermissionsHelper(this);
         permHelper.createProjectGroup(ISSUES_GROUP, ISSUES_PROJECT);
         permHelper.addUserToProjGroup(ASSIGNEE, ISSUES_PROJECT, ISSUES_GROUP);
