@@ -1842,7 +1842,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderLegendItem = function(selection, plot) {
-        var i, xPad, glyphX, textX, yAcc, colorAcc, shapeAcc, textNodes, currentItem, cBBox, pBBox;
+        var i, xPad, glyphX, textX, yAcc, colorAcc, shapeAcc, hoverAcc, textNodes, currentItem, cBBox, pBBox;
 
         var fontFamily = plot.fontFamily ? plot.fontFamily : 'Roboto, arial, helvetica, sans-serif';
         selection.attr('font-family', fontFamily).attr('font-size', '11px');
@@ -1860,7 +1860,16 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             }
             return "M" + -5 + "," + -2.5 + "L" + 5 + "," + -2.5 + " " + 5 + "," + 2.5 + " " + -5 + "," + 2.5 + "Z";
         };
-        textNodes = selection.append('text').attr('x', textX).attr('y', yAcc);
+        textNodes = selection.append('text').attr('x', textX).attr('y', yAcc).attr('cursor', 'default');
+
+        hoverAcc = function(d) {
+            return d.hoverText ? d.hoverText : '';
+        };
+
+        // two different ways to add the hover title (so that it works in IE as well)
+        selection.attr('xlink:title', hoverAcc);
+        selection.append('title').text(hoverAcc);
+
         textNodes.each(function(){d3.select(this).call(appendTSpans, plot.grid.width - textX, plot.legendNoWrap);});
 
         // Now that we've rendered the text, iterate through the nodes and adjust the y values so they no longer overlap.
