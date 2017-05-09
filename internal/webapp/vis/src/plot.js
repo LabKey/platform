@@ -1596,6 +1596,8 @@ boxPlot.render();
  * @param {String} [config.groupBy] (optional) The data property name used to group plot lines and points.
  * @param {Function} [config.properties.hoverTextFn] (Optional) The hover text to display for each data point. The parameter
  *                  to that function will be a row of data with access to all values for that row.
+ * @param {Function} [config.properties.mouseOverFn] (Optional) The function to call on data point mouse over. The parameters to
+ *                  that function will be the click event, the point data, the selection layer, and the DOM element for the point itself.
  * @param {Function} [config.properties.pointClickFn] (Optional) The function to call on data point click. The parameters to
  *                  that function will be the click event and the row of data for the selected point.
  */
@@ -1626,7 +1628,7 @@ boxPlot.render();
         if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
             if (config.properties.value == null) {
                 throw new Error("Unable to create " + plotTypeLabel + " plot, value object not specified. "
-                        + "Required: value, xTickLabel. Optional: mean, stdDev, color, colorRange, hoverTextFn, "
+                        + "Required: value, xTickLabel. Optional: mean, stdDev, color, colorRange, hoverTextFn, mouseOverFn, "
                         + "pointClickFn, showTrendLine, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
             }
         }
@@ -1640,7 +1642,7 @@ boxPlot.render();
         else if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.MovingRange) {
             if (config.properties.valueMR == null) {
                 throw new Error("Unable to create " + plotTypeLabel + " plot, value object not specified. "
-                        + "Required: value, xTickLabel. Optional: meanMR, color, colorRange, hoverTextFn, "
+                        + "Required: value, xTickLabel. Optional: meanMR, color, colorRange, hoverTextFn, mouseOverFn, "
                         + "pointClickFn, showTrendLine, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
             }
         }
@@ -2080,8 +2082,12 @@ boxPlot.render();
             }
 
             // add some mouse over effects to highlight selected point
-            pointLayerConfig.aes.mouseOverFn = function(event, pointData, layerSel) {
+            pointLayerConfig.aes.mouseOverFn = function(event, pointData, layerSel, point) {
                 d3.select(event.srcElement).transition().duration(800).attr("stroke-width", 5).ease("elastic");
+
+                if (config.properties.mouseOverFn) {
+                    config.properties.mouseOverFn.call(this, event, pointData, layerSel, point, valueName);
+                }
             };
             pointLayerConfig.aes.mouseOutFn = function(event, pointData, layerSel) {
                 d3.select(event.srcElement).transition().duration(800).attr("stroke-width", 1).ease("elastic");
