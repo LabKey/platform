@@ -122,7 +122,6 @@ audit/src/org/labkey/audit/query/AuditLogUpdateService.java -text
 audit/src/org/labkey/audit/query/AuditQuerySchema.java -text
 audit/src/org/labkey/audit/query/AuditQueryView.java -text
 audit/src/org/labkey/audit/siteSettingsAuditDetails.jsp -text
-bigiron/BigIron.iml -text
 bigiron/module.properties -text
 bigiron/src/org/labkey/bigiron/BigIronController.java -text
 bigiron/src/org/labkey/bigiron/BigIronModule.java -text
@@ -148,7 +147,6 @@ bigiron/src/org/labkey/bigiron/sas/Sas93Dialect.java -text
 bigiron/src/org/labkey/bigiron/sas/SasDialect.java -text
 bigiron/src/org/labkey/bigiron/sas/SasDialectFactory.java -text
 /build.gradle -text
-core/Core-API.iml -text
 core/_package.json -text
 core/api-src/org/labkey/api/admin/PortalBackgroundImageCache.java -text
 core/api-src/org/labkey/api/admin/TableXmlUtils.java -text
@@ -621,7 +619,6 @@ core/webapp/register.js -text
 core/webapp/stylesheet.css -text
 core/webpack/buildThemes.js -text
 core/webpack/style.config.js -text
-dataintegration/Dataintegration.iml -text
 dataintegration/module.properties -text
 dataintegration/resources/schemas/dataintegration.xml -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.00-14.10.sql -text
@@ -1022,7 +1019,6 @@ experiment/webapp/Experiment/images/unflagData.png -text
 experiment/webapp/Experiment/unflagDefault.gif -text
 experiment/webapp/Experiment/unflagRun.gif -text
 experiment/webapp/WEB-INF/experiment/experimentContext.xml -text
-filecontent/gwtsrc/FileContentGWT.iml -text
 filecontent/gwtsrc/org/labkey/filecontent/designer/FilePropertiesDesigner.gwt.xml -text
 filecontent/gwtsrc/org/labkey/filecontent/designer/client/FilePropertiesDesigner.java -text
 filecontent/gwtsrc/org/labkey/filecontent/designer/client/FilePropertiesService.java -text
@@ -1082,8 +1078,6 @@ filecontent/webapp/File/panel/Upload.js -text
 filecontent/webapp/File/system/Abstract.js -text
 filecontent/webapp/File/system/Webdav.js -text
 filecontent/webapp/File/util/IconUtil.js -text
-issues/Issue-API.iml -text svneol=unset#application/xml
-issues/IssueGWT.iml -text
 issues/api-src/org/labkey/api/issues/IssuesUrls.java -text
 issues/gwtsrc/org/labkey/issues/Designer.gwt.xml -text
 issues/gwtsrc/org/labkey/issues/client/GWTIssueDefinition.java -text
@@ -1188,8 +1182,6 @@ issues/src/org/labkey/issue/view/updateView.jsp -text
 issues/webapp/issues/createIssueDef.js -text
 issues/webapp/issues/createRelated.js -text
 issues/webapp/issues/move.js -text
-list/List.iml -text
-list/ListGWT.iml -text
 list/gwtsrc/org/labkey/list/Designer.gwt.xml -text
 list/gwtsrc/org/labkey/list/client/GWTList.java -text
 list/gwtsrc/org/labkey/list/client/ListDesigner.java -text
@@ -1295,7 +1287,6 @@ mothership/test/src/org/labkey/test/pages/mothership/StackTraceDetailsPage.java 
 mothership/test/src/org/labkey/test/tests/mothership/MothershipReportTest.java -text
 mothership/test/src/org/labkey/test/tests/mothership/MothershipTest.java -text
 mothership/test/src/org/labkey/test/util/mothership/MothershipHelper.java -text
-mothership/test/test_mothership.iml -text
 pipeline/build.gradle -text
 pipeline/build.xml -text
 pipeline/gradle.properties -text
@@ -1858,7 +1849,6 @@ query/webapp/reports/web.png -text
 query/webapp/reports/wordprocessing.png -text
 query/webapp/reports/xls.gif -text
 query/webapp/scriptreporteditor.lib.xml -text
-search/Search.iml -text
 search/build.gradle -text
 search/lib/instructions.txt -text
 search/lib/lucene-analyzers-common-6.4.1.jar -text
@@ -2838,7 +2828,6 @@ study/test/src/org/labkey/test/tests/study/StudyVisitTagTest.java -text
 study/test/src/org/labkey/test/tests/study/TargetStudyTest.java -text
 study/test/src/org/labkey/test/tests/study/TruncationTest.java -text
 study/test/src/org/labkey/test/tests/study/VaccineProtocolTest.java -text
-study/test/test_study.iml -text
 study/webapp/WEB-INF/study/studyContext.xml -text
 study/webapp/sampleRequest.js -text
 study/webapp/study/MeasurePicker.js -text
@@ -2878,7 +2867,6 @@ study/webapp/study/vaccineDesign/Utils.js -text
 study/webapp/study/vaccineDesign/VaccineDesign.css -text
 study/webapp/study/vaccineDesign/VisitWindow.js -text
 study/webapp/study/vaccineDesign/vaccineDesign.lib.xml -text
-survey/Survey.iml -text
 survey/module.properties -text
 survey/resources/schemas/dbscripts/postgresql/survey-0.00-13.10.sql -text
 survey/resources/schemas/dbscripts/sqlserver/survey-0.00-13.10.sql -text
@@ -2911,7 +2899,6 @@ survey/webapp/survey/SurveyGridQuestion.js -text
 survey/webapp/survey/SurveyPanel.js -text
 survey/webapp/survey/UsersCombo.js -text
 survey/webapp/survey/surveyDesignPanel.js -text
-timeline/Timeline.iml -text
 timeline/minifyTimeline -text
 timeline/module.properties -text
 timeline/resources/credits/scripts.txt -text
@@ -3154,7 +3141,6 @@ timeline/webapp/timeline/timeline_2.3.0/timeplot_js/images/top-bubble.png -text
 timeline/webapp/timeline/timeline_2.3.0/timeplot_js/timeplot-api.js -text
 timeline/webapp/timeline/timeline_2.3.0/timeplot_js/timeplot-bundle.css -text
 timeline/webapp/timeline/timeline_2.3.0/timeplot_js/timeplot-bundle.js -text
-visualization/Visualization.iml -text
 visualization/module.properties -text
 visualization/resources/views/querySummary.html -text
 visualization/resources/views/querySummary.view.xml -text
