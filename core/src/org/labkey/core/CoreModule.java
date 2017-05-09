@@ -39,6 +39,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.CollectionUtils;
+import org.labkey.api.collections.MultiValuedMapCollectors;
 import org.labkey.api.collections.Sampler;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.data.*;
@@ -60,6 +61,7 @@ import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
+import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.notification.NotificationMenuView;
@@ -125,6 +127,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.VBox;
@@ -475,7 +478,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                     JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
 
-                    String title = webPart.getPropertyMap().containsKey("title") ? webPart.getPropertyMap().get("title") : "Projects";
+                    String title = webPart.getPropertyMap().getOrDefault("title", "Projects");
                     view.setTitle(title);
 
                     if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
@@ -833,7 +836,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     private static final String LIB_PATH = "/WEB-INF/lib/";
-    private static final Pattern LABKEY_JAR_PATTERN = Pattern.compile("^(?:api|schemas|internal|labkey\\-client\\-api).*\\.jar$");
+    private static final Pattern LABKEY_JAR_PATTERN = Pattern.compile("^(?:api|schemas|internal|labkey-client-api).*\\.jar$");
 
     @Nullable
     @Override
@@ -948,7 +951,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 SecurityController.TestCase.class,
                 SecurityApiActions.TestCase.class,
                 SqlScriptController.TestCase.class,
-                UserController.TestCase.class
+                UserController.TestCase.class,
+//                FolderTypeManager.TestCase.class,
+//                ModuleHtmlView.TestCase.class,
+//                Portal.TestCase.class,
+                MultiValuedMapCollectors.TestCase.class
         ));
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());
