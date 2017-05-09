@@ -222,7 +222,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
                 var record = this.getStore().getAt(cmp.storeIndex),
                     outerDataIndex = cmp.outerDataIndex,
                     subgridIndex = Number(cmp.subgridIndex),
-                    selector = 'tr.row:nth(' + (this.getStore().indexOf(record)+1) + ') table.subgrid-' + outerDataIndex
+                    selector = 'tr.data-row:nth(' + (this.getStore().indexOf(record)+1) + ') table.subgrid-' + outerDataIndex
                             + ' tr.subrow:nth(' + (subgridIndex+1) + ') td[data-index=DoseAndRoute] input';
 
                 var inputField = this.getInputFieldFromSelector(selector);
@@ -355,7 +355,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
             var updatedTreatmentLabel = this.getLabelFromProductIds(postProductIds);
 
             // need to update the input field value, which will intern update the record and fire teh celledited event
-            var inputField = this.getInputFieldFromSelector('tr.row:nth(' + (this.getStore().indexOf(record)+1) + ') td.cell-value input');
+            var inputField = this.getInputFieldFromSelector('tr.data-row:nth(' + (this.getStore().indexOf(record)+1) + ') td.cell-value input');
             if (inputField != null)
             {
                 inputField.setValue(updatedTreatmentLabel);

@@ -64,7 +64,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
 
         // add a single event listener to focus the first input field on the initial render
         this.on('renderviewcomplete', function() {
-            this.giveCellInputFocus('table.outer tr.row:first td.cell-value:first input', true);
+            this.giveCellInputFocus('table.outer tr.data-row:first td.cell-value:first input', true);
             LABKEY.Utils.signalWebDriverTest("VaccineDesign_renderviewcomplete");
         }, this, {single: true});
 
@@ -90,7 +90,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             this.dataView = Ext4.create('Ext.view.View', {
                 tpl: this.getDataViewTpl(),
                 store: this.getStore(),
-                itemSelector: 'tr.row',
+                itemSelector: 'tr.data-row',
                 disableSelection: true,
                 setTemplate: function(newTpl)
                 {
@@ -118,7 +118,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
 
         // data rows
         tplArr.push('<tpl for=".">');
-        tplArr.push('<tr class="row row-outer {[xindex % 2 === 0 ? "alternate-row" : ""]}">');
+        tplArr.push('<tr class="data-row row-outer {[xindex % 2 === 0 ? "alternate-row" : ""]}">');
         if (showEdit)
             tplArr.push('<td class="cell-display action"><i class="' + this.DELETE_ICON_CLS + '" outer-index="{[xindex-1]}"/></td>');
         Ext4.each(columns, function(column)
@@ -531,7 +531,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
         var index = 0;
         Ext4.each(this.getStore().getRange(), function(record)
         {
-            var targetCellEls = Ext4.DomQuery.select('tr.row:nth(' + (index+1) + ') td.cell-value', view.getEl().dom);
+            var targetCellEls = Ext4.DomQuery.select('tr.data-row:nth(' + (index+1) + ') td.cell-value', view.getEl().dom);
             Ext4.each(targetCellEls, function(targetCell)
             {
                 this.createNewCellEditField(targetCell, record, index);
@@ -563,7 +563,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
 
         // on refresh, call to give focus to the first column of the new row
         this.on('renderviewcomplete', function(){
-            this.giveCellInputFocus('table.outer tr.row:last td.cell-value:first input');
+            this.giveCellInputFocus('table.outer tr.data-row:last td.cell-value:first input');
         }, this, {single: true});
 
         this.refresh();
