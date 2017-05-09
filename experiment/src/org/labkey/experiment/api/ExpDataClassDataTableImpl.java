@@ -1196,7 +1196,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                     .append(" WHERE d.Container=?").add(container.getEntityId())
                     .append(" AND d.rowid=?").add(keys[0]);
 
-            return new SqlSelector(getDbTable().getSchema(), sql).getObject(Map.class);
+            return new SqlSelector(getDbTable().getSchema(), sql).getMap();
         }
 
         @Override
