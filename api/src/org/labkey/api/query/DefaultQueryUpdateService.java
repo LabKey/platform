@@ -365,7 +365,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             if (oldRow == null)
                 throw new UnauthorizedException("The existing row was not found");
 
-            Object oldContainer = new CaseInsensitiveHashMap(oldRow).get("container");
+            Object oldContainer = new CaseInsensitiveHashMap<>(oldRow).get("container");
             if (null != oldContainer && !rowContainer.equals(oldContainer))
                 throw new UnauthorizedException("The row is from the wrong container.");
         }
