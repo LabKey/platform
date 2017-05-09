@@ -244,3 +244,121 @@ if (Ext.isIE7 || Ext.isIE8) {
 // added in ext-all.js as well
 // - }else if (Ext.isWebKit){
 // + }else if (Ext.isWebKit || Ext.isGecko){
+
+
+if (LABKEY.experimental.useExperimentalCoreUI)
+{
+    (function() {
+
+        Ext.ns('LABKEY.ext3ResponsiveUtil');
+
+        /**
+         * @name LABKEY.ext4.ResponsiveUtil
+         * @class
+         * Ext4 responsive utilities, contains functions to support responsive ext4 components
+         */
+        LABKEY.ext3ResponsiveUtil = {};
+
+        var Util = LABKEY.ext3ResponsiveUtil;
+
+        Ext.apply(Util, {
+            getHeaderAndNavHeight: function() {
+                var parent = Ext.getBody();
+                var headerNavHeight = 0;
+                var header = parent.query(">div.labkey-page-header");
+                if (header && header[0])
+                    headerNavHeight += header[0].offsetHeight;
+                var nav = parent.query(">div.labkey-page-nav");
+                if (nav && nav[0])
+                    headerNavHeight += nav[0].offsetHeight;
+
+                return headerNavHeight;
+            },
+
+            getBodyContainerWidth: function () {
+                var containerWidth = window.innerWidth;
+                var parent = Ext.getBody();
+                var container = parent.query(">div.container");
+                if (container && container[0])
+                    containerWidth = container[0].offsetWidth;
+
+                return containerWidth;
+            }
+        });
+
+    }());
+    /**
+     * Patch to allow responsive modal interaction for Ext4 Ext.Window components.
+     * At small screen width (user configurable), the popup will take full screen width.
+     * For modal dialog with 'closable' set to true, clicking outside the popup will close the popup.
+     * Configs:
+     *      suppressResponsive: true to opt out of this feature, default false
+     *      smallScreenWidth: the pixel screen width at which responsive sizing kicks in, default 480
+     *      maximizeOnSmallScreen: true to maximize popup to full screen width and height on small screen,
+     *                              false to only take full width, default false.
+     *      closableOnMaskClick: true to always support closing closable modal by click on mask regardless of screen size,
+     *                            otherwise only closable on mask click for small screens, default false
+     */
+    Ext.override(Ext.Window, {
+            initComponent: function()
+            {
+                if (this.suppressResponsive)
+                {
+                    this.defaultInitComponent();
+                    return;
+                }
+                var useMaxWidth = window.innerWidth < (this.smallScreenWidth ? this.smallScreenWidth : 481);
+                useMaxWidth = useMaxWidth || (this.width && (this.width > window.innerWidth)); // if configured width is large than available screen size.
+                useMaxWidth = useMaxWidth || (this.minWidth && (this.minWidth > window.innerWidth)); // if configured min-width is large than available screen size.
+
+                if (useMaxWidth)
+                {
+                    if (this.maximizeOnSmallScreen)
+                    {
+                        this.maximized = true;
+                    }
+                    else {
+                        var windowWidth = window.innerWidth;
+                        var containerWidth = LABKEY.ext3ResponsiveUtil.getBodyContainerWidth();
+                        if (windowWidth - containerWidth < 30)
+                            this.width = containerWidth - 20 * 2; // reserve extra padding for scrollbar
+                        else
+                            this.width = containerWidth;
+                    }
+                }
+
+                var me = this;
+                if (this.closable && this.modal && (useMaxWidth || this.closableOnMaskClick))
+                {
+                    var parentCmp = Ext.getBody();
+                    this.clickOutHandler = function(){
+                        me.close(me.closeAction);
+                    };
+                    this.clickOutParentCmp = parentCmp;
+                    this.mon(this.clickOutParentCmp, 'click', this.clickOutHandler, this, { delegate: '.ext-el-mask' });
+                }
+
+                this.defaultInitComponent();
+            },
+
+            defaultInitComponent: function()
+            {
+                this.initTools();
+                Ext.Window.superclass.initComponent.call(this);
+                this.addEvents(
+                        'resize',
+                        'maximize',
+                        'minimize',
+                        'restore'
+                );
+                // for backwards compat, this should be removed at some point
+                if(Ext.isDefined(this.initHidden)){
+                    this.hidden = this.initHidden;
+                }
+                if(this.hidden === false){
+                    this.hidden = true;
+                    this.show();
+                }
+            }
+        });
+}
