@@ -100,6 +100,7 @@ public class SchemaXmlReader implements SchemaReader
             info.visitDatePropertyName = null;
             info.tags = tableProps.getTags();
             info.tag = tableProps.getTag();
+            info.useTimeKeyField = tableProps.getUseTimeKeyField();
 
             if (tableProps.getType() != null)
             {

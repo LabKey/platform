@@ -51,6 +51,8 @@ public class GWTDataset implements IsSerializable
     private boolean _definitionIsShared = false;
     private boolean _visitMapShared = false;
 
+    public static final String TIME_KEY_FIELD_KEY = "_Special$Time_";
+    public static final String TIME_KEY_FIELD_DISPLAY = "Time (from Date/Time)";
 
     private Map<String, String> _cohortMap;
 

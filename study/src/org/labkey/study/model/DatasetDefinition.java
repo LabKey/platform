@@ -157,6 +157,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     private String _tag;
     private String _type = Dataset.TYPE_STANDARD;
     private DataSharing _datasharing = DataSharing.NONE;
+    private boolean _useTimeKeyField = false;
 
 
     public enum DataSharing
@@ -839,6 +840,17 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         _type = type;
     }
 
+    public boolean getUseTimeKeyField()
+    {
+        return _useTimeKeyField;
+    }
+
+    public void setUseTimeKeyField(boolean useTimeKeyField)
+    {
+        verifyMutability();
+        _useTimeKeyField = useTimeKeyField;
+    }
+
     public StudyImpl getStudy()
     {
         if (null == _study)
@@ -989,6 +1001,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             if (getKeyPropertyName() != null)
                 sb.append("/").append(getKeyPropertyName());
+            else if (getUseTimeKeyField())
+                sb.append("/Time");
         }
         else if (getKeyPropertyName() != null)
         {
@@ -1317,15 +1331,17 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             // Date
 
-//            if (!study.getTimepointType().isVisitBased())
-            {
-                ColumnInfo column = getStorageColumn("Date");
-                ColumnInfo visitDateCol = newDatasetColumnInfo(this, column, getVisitDateURI());
-                if (!study.getTimepointType().isVisitBased())
-                    visitDateCol.setNullable(false);
+            ColumnInfo column = getStorageColumn("Date");
+            ColumnInfo visitDateCol = newDatasetColumnInfo(this, column, getVisitDateURI());
+            if (!study.getTimepointType().isVisitBased())
+                visitDateCol.setNullable(false);
+
+            if (!study.getTimepointType().isVisitBased() && def.getUseTimeKeyField())
+                visitDateCol.setFormat("DateTime");
+            else
                 visitDateCol.setFormat("Date");  // #26844: Date vs. date time type support
-                addColumn(visitDateCol);
-            }
+
+            addColumn(visitDateCol);
 
             // QCState
 
@@ -2050,7 +2066,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
-    /** @return a SQL expression that generates the LSID for a dataset row */
+    /** @return a SQL expression that generates the LSID for a dataset row
+     * MUST match what is produced by DatasetDataIteratorBuilder.DatasetColumnsIterator.LSIDColumn
+     * */
     public SQLFragment generateLSIDSQL()
     {
         if (null == getStorageTableInfo())
@@ -2073,11 +2091,17 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 seq.append(StudyManager.sequenceNumFromDateSQL("date"));
                 seq.append(") AS VARCHAR(36))");
                 parts.add(seq);
+                parts.add(new SQLFragment("'.0000'"));   // Match what insert/import does
             }
             else
                 parts.add(new SQLFragment("CAST(CAST(sequencenum AS NUMERIC(15,4)) AS VARCHAR)"));
 
-            if (getKeyPropertyName() != null)
+            if (!_study.getTimepointType().isVisitBased() && getUseTimeKeyField())
+            {
+                parts.add(new SQLFragment("'.'"));
+                parts.add(StudyManager.timePortionFromDateSQL("Date"));
+            }
+            else if (getKeyPropertyName() != null)
             {
                 ColumnInfo key = getStorageTableInfo().getColumn(getKeyPropertyName());
                 if (null != key)

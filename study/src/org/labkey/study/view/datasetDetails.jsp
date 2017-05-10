@@ -42,6 +42,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="gwt.client.org.labkey.study.dataset.client.model.GWTDataset" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DatasetDefinition> me = (JspView<DatasetDefinition>) HttpView.currentView();
@@ -165,7 +166,10 @@ if (!pipelineSet)
     </tr>
     <tr>
         <td class=labkey-form-label>Additional Key Column</td>
-        <td><%=h(dataset.getKeyPropertyName() != null ? h(dataset.getKeyPropertyName()) : "None")%></td>
+        <td><%=h(dataset.getKeyPropertyName() != null ?
+                         h(dataset.getKeyPropertyName()) :
+                         dataset.getUseTimeKeyField() ? h(GWTDataset.TIME_KEY_FIELD_DISPLAY) :
+                         "None")%></td>
 
         <td class=labkey-form-label>Tag</td>
         <td><%=h(dataset.getTag())%>

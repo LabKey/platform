@@ -63,5 +63,6 @@ public interface SchemaReader
         public PropertyList tags;
         public String tag;
         public Set<PropertyStorageSpec.Index> indices = new HashSet<>();
+        public boolean useTimeKeyField;
     }
 }

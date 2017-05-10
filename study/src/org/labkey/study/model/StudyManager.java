@@ -729,7 +729,10 @@ public class StudyManager
 
             // Check if the extra key field has changed
             boolean isProvisioned = domain != null && domain.getStorageTableName() != null;
-            boolean isKeyChanged = old.isDemographicData() != datasetDefinition.isDemographicData() || !StringUtils.equals(old.getKeyPropertyName(), datasetDefinition.getKeyPropertyName());
+            boolean isKeyChanged =
+                            old.isDemographicData() != datasetDefinition.isDemographicData() ||
+                            !StringUtils.equals(old.getKeyPropertyName(), datasetDefinition.getKeyPropertyName()) ||
+                            old.getUseTimeKeyField() != datasetDefinition.getUseTimeKeyField();
             boolean isSharedChanged = old.getDataSharingEnum() != datasetDefinition.getDataSharingEnum();
             if (isProvisioned && isSharedChanged)
             {
@@ -749,7 +752,17 @@ public class StudyManager
                 // Change how we build up tableName
                 String tableName = storageTableInfo.toString();
                 SQLFragment updateKeySQL = new SQLFragment("UPDATE " + tableName + " SET _key = ");
-                if (datasetDefinition.getKeyPropertyName() == null)
+                if (datasetDefinition.getUseTimeKeyField())
+                {
+                    ColumnInfo col = storageTableInfo.getColumn("Date");
+                    if (null == col)
+                    {
+                        throw new IllegalArgumentException("Cannot find 'Date' column in table: " + tableName);
+                    }
+                    SQLFragment colFrag = col.getValueSql(tableName);
+                    updateKeySQL.append(storageTableInfo.getSqlDialect().getISOFormat(colFrag));
+                }
+                else if (datasetDefinition.getKeyPropertyName() == null)
                 {
                     // No column selected, so set it to be null
                     updateKeySQL.append("NULL");
@@ -4151,6 +4164,7 @@ public class StudyManager
                 def.setType(info.type);
                 def.setTag(info.tag);
                 defEntryMap.put(name, new DatasetDefinitionEntry(def, true, info.tags));
+                def.setUseTimeKeyField(info.useTimeKeyField);
             }
             else if (def.isAssayData())
             {
@@ -4266,6 +4280,25 @@ public class StudyManager
         sql.append("(10000 * ").append(dialect.getDatePart(Calendar.YEAR, dateColumnName)).append(") + ");
         sql.append("(100 * ").append(dialect.getDatePart(Calendar.MONTH, dateColumnName)).append(") + ");
         sql.append("(").append(dialect.getDatePart(Calendar.DAY_OF_MONTH, dateColumnName)).append(")");
+        return sql;
+    }
+
+    public static SQLFragment timePortionFromDateSQL(String dateColumnName)
+    {
+        SqlDialect dialect = StudySchema.getInstance().getSqlDialect();
+        SQLFragment sql = new SQLFragment();
+        if (dialect.isPostgreSQL())
+        {
+            sql.append("to_char(").append(dateColumnName).append(", 'HH24MISS')");
+        }
+        else if (dialect.isSqlServer())
+        {
+            sql.append("FORMAT(").append(dateColumnName).append(", 'HHmmss')");
+        }
+        else
+        {
+            sql.append("CAST((").append(dateColumnName).append(") AS VARCHAR(10))");
+        }
         return sql;
     }
 

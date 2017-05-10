@@ -1046,6 +1046,10 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                     manageableFields.put(label, name);
                 }
             }
+
+            if (!"VISIT".equalsIgnoreCase(_timepointType))
+                fields.put(GWTDataset.TIME_KEY_FIELD_DISPLAY, GWTDataset.TIME_KEY_FIELD_KEY);
+            
             if (fields.size() == 0)
                 fields.put("","");
             if (manageableFields.size() == 0)

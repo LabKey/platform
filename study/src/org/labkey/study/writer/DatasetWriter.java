@@ -103,6 +103,9 @@ public class DatasetWriter implements InternalStudyWriter
             {
                 datasetXml.setTag(def.getTag());
             }
+
+            if (def.getUseTimeKeyField())
+                datasetXml.setUseTimeKeyField(true);
         }
 
         SchemaXmlWriter schemaXmlWriter = new SchemaXmlWriter();

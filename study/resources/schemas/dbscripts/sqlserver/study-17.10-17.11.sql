@@ -1,0 +1,1 @@
+ALTER TABLE study.dataset ADD UseTimeKeyField BIT NOT NULL DEFAULT 0

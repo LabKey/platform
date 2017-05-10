@@ -401,6 +401,9 @@
       <column columnName="DataSharing">
         <description>Controls sharing of dataset rows across folders: NONE,ALL,PTID</description>
       </column>
+      <column columnName="UseTimeKeyField">
+        <description>Whether to use the time portion of the date field as a key field</description>
+      </column>
     </columns>
   </table>
   <table tableName="SampleRequest" tableDbType="TABLE">

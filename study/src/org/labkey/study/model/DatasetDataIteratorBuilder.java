@@ -330,6 +330,14 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
                 ColumnInfo key = new ColumnInfo(keyColumn);
                 indexKeyProperty = it.addColumn(key, new SimpleTranslator.GuidColumn());
             }
+
+            //
+            // Time portion of Date field
+            //
+            else if (_datasetDefinition.getUseTimeKeyField())
+            {
+                indexKeyProperty = indexVisitDate;
+            }
         }
 
 
@@ -442,7 +450,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
     static class DatasetColumnsIterator extends SimpleTranslator
     {
         private DatasetDefinition _datasetDefinition;
-        DecimalFormat _seqenceFormat = new DecimalFormat("0.0000");
+        DecimalFormat _sequenceFormat = new DecimalFormat("0.0000");
         Converter convertDate = ConvertUtils.lookup(Date.class);
         List<String> lsids;
         User user;
@@ -634,7 +642,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
             Double d = getOutputDouble(indexSequenceNumOutput);
             if (null == d)
                 return null;
-            return _seqenceFormat.format(d);
+            return _sequenceFormat.format(d);
         }
 
     //        class SequenceNumFromDateColumn implements Callable
@@ -650,6 +658,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
     //            }
     //        }
 
+        // MUST match what is produced by DatasetDefinition.generateLSIDSQL
         class LSIDColumn implements Callable
         {
             Map<String, String> map = new HashMap<>();
@@ -697,7 +706,12 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
                     String seqnum = getFormattedSequenceNum();
                     sb.append(".").append(seqnum);
 
-                    if (null != indexKeyPropertyOutput)
+                    if (!_datasetDefinition.getStudy().getTimepointType().isVisitBased() && _datasetDefinition.getUseTimeKeyField())
+                    {
+                        Date date = getOutputDate(indexVisitDateOutput);
+                        sb.append(".").append(String.format("%tH%tM%tS", date, date, date));
+                    }
+                    else if (null != indexKeyPropertyOutput)
                     {
                         Object key = DatasetColumnsIterator.this.get(indexKeyPropertyOutput);
                         if (null != key)

@@ -55,7 +55,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -87,6 +86,12 @@ public class DatasetServiceImpl extends DomainEditorServiceBase implements Datas
             PropertyUtils.copyProperties(ds, dd);
             ds.setDatasetId(dd.getDatasetId()); // upper/lowercase problem
             ds.setKeyPropertyManaged(dd.getKeyManagementType() != Dataset.KeyManagementType.None);
+
+            // Use Time Key Field
+            if (dd.getUseTimeKeyField())
+            {
+                ds.setKeyPropertyName(GWTDataset.TIME_KEY_FIELD_KEY);
+            }
 
             if (study.getContainer().isProject() && study.isDataspaceStudy())
             {
@@ -229,14 +234,23 @@ public class DatasetServiceImpl extends DomainEditorServiceBase implements Datas
             if (!study.getShareVisitDefinitions())
                 ds.setDataSharing("NONE");
 
-            DatasetDefinition updated = def.createMutable();
-            // Clear the category ID so that it gets regenerated based on the new string - see issue 19649
-            updated.setCategoryId(null);
-            BeanUtils.copyProperties(updated, ds);
-
             // Default is no key management
             Dataset.KeyManagementType keyType = Dataset.KeyManagementType.None;
             String keyPropertyName = null;
+            boolean useTimeKeyField = false;
+
+            DatasetDefinition updated = def.createMutable();
+            // Clear the category ID so that it gets regenerated based on the new string - see issue 19649
+            updated.setCategoryId(null);
+
+            // Use Time as Key Field
+            if (GWTDataset.TIME_KEY_FIELD_KEY.equalsIgnoreCase(ds.getKeyPropertyName()))
+            {
+                ds.setKeyPropertyName(null);
+                useTimeKeyField = true;
+            }
+            BeanUtils.copyProperties(updated, ds);
+
             if (ds.getKeyPropertyName() != null)
             {
                 Domain domain = PropertyService.get().getDomain(getContainer(), domainURI);
@@ -270,6 +284,7 @@ public class DatasetServiceImpl extends DomainEditorServiceBase implements Datas
             }
             updated.setKeyPropertyName(keyPropertyName);
             updated.setKeyManagementType(keyType);
+            updated.setUseTimeKeyField(useTimeKeyField);
 
             if (!def.getLabel().equals(updated.getLabel()))
             {
