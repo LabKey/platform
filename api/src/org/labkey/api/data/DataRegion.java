@@ -2772,17 +2772,15 @@ public class DataRegion extends AbstractDataRegion
                 addMessage(new Message(viewMsg.toString(), MessageType.INFO, MessagePart.view));
         }
 
+        Map<String, String> messages = new LinkedHashMap<>();
+
         if (_messages != null)
         {
-            Map<String, String> messages = new LinkedHashMap<>();
-
             for (Message message : _messages)
                 messages.put(message.getArea(), message.getContent());
-
-            return messages;
         }
 
-        return Collections.emptyMap();
+        return messages;
     }
 
     public void setShadeAlternatingRows(boolean shadeAlternatingRows)
