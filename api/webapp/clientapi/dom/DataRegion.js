@@ -1477,7 +1477,65 @@ if (!LABKEY.DataRegions) {
     //
 
     var _initPaging = function() {
-        _getHeaderSelector(this).find('div.labkey-pagination').css('visibility', 'visible');
+        if (LABKEY.experimental.useExperimentalCoreUI) {
+            var ct = _getBarSelector(this).find('.labkey-pagination');
+
+            if (ct && ct.length) {
+                var hasOffset = $.isNumeric(this.offset);
+                var hasTotal = $.isNumeric(this.totalRows);
+
+                // display the counts
+                if (hasOffset) {
+                    var ofTotal = '';
+                    var low = this.offset + 1;
+                    var high = this.offset + this.rowCount;
+
+                    if (hasTotal && low <= this.totalRows && high <= this.totalRows) {
+                        ofTotal = ' of ' + this.totalRows;
+                        ct.html('<span>' + low + ' - ' + high + ofTotal + '</span>').css('visibility', 'visible');
+
+                        // only display buttons if all the results are not shown
+                        if (low === 1 && high === this.totalRows) {
+                            return;
+                        }
+
+                        var canNext = this.maxRows > 0 && high !== this.totalRows,
+                            canPrev = this.maxRows > 0 && low > 1,
+                            prevId = LABKEY.Utils.id(),
+                            nextId = LABKEY.Utils.id();
+
+                        ct.append([
+                            '<div class="btn-group" style="padding-left: 5px;">',
+                            '<button id="' + prevId + '" class="btn btn-default"><i class="fa fa-chevron-left"></i></button>',
+                            '<button id="' + nextId + '" class="btn btn-default"><i class="fa fa-chevron-right"></i></button>',
+                            '</div>'
+                        ].join(''));
+
+                        var prev = $('#' + prevId);
+                        prev.click(_page.bind(this, this.offset - this.maxRows, canPrev));
+                        if (!canPrev) {
+                            prev.addClass('disabled');
+                        }
+
+                        var next = $('#' + nextId);
+                        next.click(_page.bind(this, this.offset + this.maxRows, canNext));
+                        if (!canNext) {
+                            next.addClass('disabled');
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            _getHeaderSelector(this).find('div.labkey-pagination').css('visibility', 'visible');
+        }
+    };
+
+    var _page = function(offset, enabled) {
+        if (enabled) {
+            this.setPageOffset(offset);
+        }
+        return false;
     };
 
     /**
@@ -2703,6 +2761,10 @@ if (!LABKEY.DataRegions) {
 
     var _getAllRowSelectors = function(region) {
         return _getFormSelector(region).find('.labkey-selectors input[type="checkbox"][name=".toggle"]');
+    };
+
+    var _getBarSelector = function(region) {
+        return _getFormSelector(region).find('.lk-region-bar');
     };
 
     var _getFormSelector = function(region) {

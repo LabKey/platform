@@ -1040,7 +1040,7 @@ public class DataRegion extends AbstractDataRegion
     {
         if (shouldRenderHeader(renderButtons))
         {
-            out.write("<div class=\"row bottom-spacing\">");
+            out.write("<div class=\"row bottom-spacing lk-region-bar\">");
             _renderButtonBarNew(ctx, out, renderButtons);
             _renderPaginationNew(ctx, out);
             out.write("</div>");
@@ -1052,7 +1052,7 @@ public class DataRegion extends AbstractDataRegion
     {
         if (renderButtons)
         {
-            out.write("<div class=\"col-md-8\">");
+            out.write("<div class=\"col-md-9\">");
             renderButtons(ctx, out);
             out.write("</div>");
         }
@@ -1083,8 +1083,8 @@ public class DataRegion extends AbstractDataRegion
 
     private void _renderPaginationNew(RenderContext ctx, Writer out) throws IOException
     {
-        out.write("<div class=\"col-md-4 pull-right\">");
-        renderPagination(ctx, out, PaginationLocation.TOP);
+        out.write("<div class=\"col-md-3 pull-right\">");
+        out.write("<div class=\"labkey-pagination pull-right\"></div>"); // rendered by client
         out.write("</div>");
     }
 
@@ -1421,59 +1421,6 @@ public class DataRegion extends AbstractDataRegion
                 return;
 
             NumberFormat fmt = NumberFormat.getInstance();
-
-            if (PageFlowUtil.useExperimentalCoreUI())
-            {
-                ArrayList<String> buttons = new ArrayList<>();
-                out.write("<div class=\"labkey-pagination pull-right\">");
-
-                final int maxRows = getMaxRows();
-                boolean enableNextPage = false;
-                boolean enablePrevPage = maxRows > 0 && getOffset() >= maxRows;
-                long nextOffset = 0;
-                // TODO: Disable onclick if button not enabled
-                buttons.add("<button class=\"btn btn-default " + (enablePrevPage ? "" : "disabled") + "\" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].setOffset(" + (getOffset() - maxRows) + "); return false;\"><i class=\"fa fa-chevron-left\"></i></button>");
-
-                if (_rowCount != null)
-                    out.write("<span>" + fmt.format(getOffset() + 1) + " - " + fmt.format(getOffset() + _rowCount.intValue()) + "</span>");
-
-                if (_totalRows != null)
-                {
-                    if (_rowCount != null)
-                        out.write("<span> of " + fmt.format(_totalRows) + "</span>");
-
-                    if (maxRows > 0)
-                    {
-                        long remaining = _totalRows.longValue() - getOffset();
-                        long lastPageSize = _totalRows.longValue() % maxRows;
-                        if (lastPageSize == 0)
-                            lastPageSize = maxRows;
-                        long lastPageOffset = _totalRows.longValue() - lastPageSize;
-
-                        if (remaining > maxRows)
-                        {
-                            nextOffset = getOffset() + maxRows;
-                            if (nextOffset > _totalRows.longValue())
-                                nextOffset = lastPageOffset;
-                            enableNextPage = true;
-                        }
-                    }
-                }
-
-                // TODO: Disable onclick if button not enabled
-                buttons.add("<button class=\"btn btn-default " + (enableNextPage ? "" : "disabled") + "\" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].setOffset(" + nextOffset + "); return false;\"><i class=\"fa fa-chevron-right\"></i></button>");
-
-                if (buttons.size() > 0)
-                {
-                    out.write("<div class=\"btn-group\">");
-                    for (String button : buttons)
-                        out.write(button);
-                    out.write("</div>");
-                }
-
-                out.write("</div>");
-                return;
-            }
 
             if ((_buttonBarPosition.atTop() && location == PaginationLocation.TOP) ||
                     (_buttonBarPosition._atBottom && location == PaginationLocation.BOTTOM))
