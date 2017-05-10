@@ -163,10 +163,20 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             renderIconAndFilename(ctx, out, filename, false, false);
             out.write("&nbsp;[<a href=\"javascript:{}\" onClick=\"");
 
-            out.write("document.getElementById('" + divId + "').innerHTML = " + PageFlowUtil.filter(PageFlowUtil.jsString(filePicker + "<input type=\"hidden\" name=\"deletedAttachments\" value=\"" + filename + "\"><span class=\"labkey-message\">Previous file " + filename + " will be removed.</span>")) + "\"");
+            out.write("document.getElementById('" + divId + "').innerHTML = " + PageFlowUtil.filter(PageFlowUtil.jsString(filePicker + "<input type=\"hidden\" name=\"deletedAttachments\" value=\"" + filename + "\"><span class=\"labkey-message\">" + getRemovalWarningText(filename) + "</span>")) + "\"");
             out.write(">remove");
             out.write("</a>]");
             out.write("</div>\n");
         }
+    }
+
+    /**
+     * Enable subclasses to override the warning text
+     * @param filename being displayed
+     * @return
+     */
+    protected String getRemovalWarningText(String filename)
+    {
+        return "Previous file " + filename + " will be removed.";
     }
 }

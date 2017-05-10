@@ -39,6 +39,29 @@ if (typeof LABKEY == "undefined")
         // private variables not configurable
         var _requestedCssFiles = {};
 
+        // prepare null console to avoid errors in IE 11 and earlier, which only makes console available when the dev tools are open
+        (function(){
+            var method;
+            var noop = function () {};
+            var methods = [
+                'assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error',
+                'exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log',
+                'markTimeline', 'profile', 'profileEnd', 'table', 'time', 'timeEnd',
+                'timeline', 'timelineEnd', 'timeStamp', 'trace', 'warn'
+            ];
+            var length = methods.length;
+            var console = (window.console = window.console || {});
+
+            while (length--) {
+                method = methods[length];
+
+                // Only stub undefined methods.
+                if (!console[method]) {
+                    console[method] = noop;
+                }
+            }
+        })();
+
         // private caching mechanism for script loading
         var ScriptCache = function()
         {
