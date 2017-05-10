@@ -39,11 +39,20 @@
     color: $lk-bar-button-color;
     vertical-align: middle;
 
+    &.icon-only {
+      padding: 4px 20px;
+    }
+
     &:active,
     &:hover,
     &:focus {
       background-color: $lk-bar-button-bg-color-hover;
       color: $lk-bar-button-color-hover;
+    }
+
+    &.disabled, &.labkey-disabled-button, &[disabled] {
+      cursor: not-allowed;
+      opacity: 0.65;
     }
   }
 }

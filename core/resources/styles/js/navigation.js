@@ -304,3 +304,10 @@
             .on('keydown.bs.submenu.data-api', 'a.subexpand', SubMenu.prototype.keydown)
             .on('hide.bs.dropdown.data-api', '.dropdown-rollup', SubMenu.prototype.unfurl);
 }(jQuery);
+
+// Initialize tooltips
++function($) {
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    })
+}(jQuery);

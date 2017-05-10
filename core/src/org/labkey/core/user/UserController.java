@@ -333,7 +333,6 @@ public class UserController extends SpringActionController
             updateButtonBar.addContextualRole(OwnerRole.class);
             update.addContextualRole(OwnerRole.class);
         }
-        //update.setActionType(ActionButton.Action.LINK);
         updateButtonBar.add(update);
         if (isUserManager)
             updateButtonBar.add(showGrid);

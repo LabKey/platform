@@ -347,11 +347,6 @@ public class DatasetQueryView extends StudyQueryView
         }
     }
 
-    public MenuButton createPageSizeMenuButton()
-    {
-        return super.createPageSizeMenuButton();
-    }
-
     @Override
     public void addManageViewItems(MenuButton button, Map<String, String> params)
     {
@@ -452,8 +447,7 @@ public class DatasetQueryView extends StudyQueryView
             }
             else
             {
-                List<ActionButton> buttons = AssayService.get().getImportButtons(protocol, getUser(), getContainer(), true);
-                bar.addAll(buttons);
+                bar.addAll(AssayService.get().getImportButtons(protocol, getUser(), getContainer(), true));
 
                 if (user.hasRootAdminPermission() || canWrite)
                 {
@@ -546,11 +540,7 @@ public class DatasetQueryView extends StudyQueryView
 
     private boolean canManage(DatasetDefinition def, User user)
     {
-        boolean userIsAdmin = user.hasRootAdminPermission() || def.getContainer().hasPermission(user, AdminPermission.class);
-        return userIsAdmin; //  && inDefinitionContainer;
-        // you can hide this for dataspace datasets if that's desireable
-        //boolean inDefinitionContainer = def.getDefinitionContainer().equals(def.getContainer());
-        //return userIsAdmin && inDefinitionContainer;
+        return user.hasRootAdminPermission() || def.getContainer().hasPermission(user, AdminPermission.class);
     }
 
     private boolean hasSourceLsids() throws SQLException

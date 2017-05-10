@@ -73,6 +73,28 @@ table.labkey-show-surrounding-border {
     text-align: left;
     width: 80px;
   }
+
+  /* experimental -- support row highlighting. Expects class to be added to <tr> */
+  tr.labkey-row-hl > td {
+    background-color: #ffc; //#fef5dd;
+    //border-top: 2px solid #fbc02d !important;
+    //border-bottom: 2px solid #fbc02d !important;
+  }
+}
+
+.labkey-drawer {
+  //position: absolute;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+  background-clip: padding-box;
+  background-color: $white;
+  top: 0;
+  width: 100%;
+  z-index: 20001;
+}
+
+.labkey-drawer-container {
+  //display: none;
+  position: relative;
 }
 
 //.labkey-data-region .labkey-col-header, .labkey-data-region .labkey-row-header,
