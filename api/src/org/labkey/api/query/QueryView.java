@@ -272,7 +272,6 @@ public class QueryView extends WebPartView<Object>
             _allowExportExternalQuery &= !_queryDef.isTemporary();
         }
         _customView = settings.getCustomView(getViewContext(), getQueryDef());
-        //_report = settings.getReportView(getViewContext());
     }
 
 
@@ -365,7 +364,7 @@ public class QueryView extends WebPartView<Object>
 
 
     /* delay load menu, because it is usually visible==false */
-    private class QueryNavTreeMenuButton extends NavTreeMenuButton
+    private class QueryNavTreeMenuButton extends MenuButton
     {
         boolean populated = false;
 
@@ -814,7 +813,7 @@ public class QueryView extends WebPartView<Object>
 
     public boolean showRecordSelectors()
     {
-        return _showRecordSelectors;// || (_buttonBarPosition != DataRegion.ButtonBarPosition.NONE && showDeleteButton() && canDelete());
+        return _showRecordSelectors;
     }
 
     /**
@@ -903,9 +902,7 @@ public class QueryView extends WebPartView<Object>
                 }
                 bar.add(b);
             }
-            ActionButton p = createPrintButton();
-            if (null != p)
-                bar.add(p);
+            bar.add(createPrintButton());
         }
 
         if (view.getDataRegion().getShowPagination())
@@ -1051,6 +1048,7 @@ public class QueryView extends WebPartView<Object>
         return null;
     }
 
+    @Nullable
     protected ActionButton createPrintButton()
     {
         ActionButton btnPrint = actionButton("Print", QueryAction.printRows);
@@ -1258,6 +1256,12 @@ public class QueryView extends WebPartView<Object>
             @Override
             public void render(RenderContext ctx, Writer out) throws IOException
             {
+                if (PageFlowUtil.useExperimentalCoreUI())
+                {
+                    super.render(ctx, out);
+                    return;
+                }
+
                 addSeparator();
 
                 // We don't know if record selectors are showing until render time so we
@@ -1295,7 +1299,7 @@ public class QueryView extends WebPartView<Object>
         };
 
         // insert current maxRows into sorted list of possible sizes
-        List<Integer> sizes = new LinkedList<>(Arrays.asList(40, 100, 250, 1000));
+        List<Integer> sizes = new LinkedList<>(PageFlowUtil.useExperimentalCoreUI() ? Arrays.asList(20, 40, 100, 250) : Arrays.asList(40, 100, 250, 1000));
         if (maxRows > 0)
         {
             int index = Collections.binarySearch(sizes, maxRows);
@@ -1339,7 +1343,7 @@ public class QueryView extends WebPartView<Object>
             current = (_customView != null) ? StringUtils.defaultString(_customView.getName(), "") : "";
 
         URLHelper target = urlChangeView();
-        NavTreeMenuButton button = new NavTreeMenuButton("Grid Views");
+        MenuButton button = new MenuButton("Grid Views");
         NavTree menu = button.getNavTree();
         menu.setId(getBaseMenuId() + ".Menu.GridViews");
 
@@ -1365,7 +1369,7 @@ public class QueryView extends WebPartView<Object>
 
     public MenuButton createReportButton()
     {
-        NavTreeMenuButton button = new NavTreeMenuButton("Reports");
+        MenuButton button = new MenuButton("Reports");
         NavTree menu = button.getNavTree();
         menu.setId(getBaseMenuId() + ".Menu.Reports");
 
@@ -1412,8 +1416,8 @@ public class QueryView extends WebPartView<Object>
 
     public MenuButton createChartButton()
     {
-        NavTreeMenuButton button = new NavTreeMenuButton("Charts");
-        button.setIconCls("bar-chart");
+        MenuButton button = new MenuButton("Charts");
+        button.setIconCls("area-chart");
 
         if (!getQueryDef().isTemporary() && _report == null)
         {
@@ -1492,7 +1496,7 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    protected void addFilterItems(NavTreeMenuButton button)
+    protected void addFilterItems(MenuButton button)
     {
         if (_customView != null && _customView.hasFilterOrSort())
         {
@@ -2422,6 +2426,7 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
+    @Nullable
     public ByteArrayAttachmentFile exportToExcelFile() throws Exception
     {
         _exportView = true;
@@ -2442,8 +2447,8 @@ public class QueryView extends WebPartView<Object>
                 return byteArrayAttachmentFile;
             }
         }
-        else
-            return null;
+
+        return null;
     }
 
     public void exportToTsv(HttpServletResponse response) throws IOException
@@ -2473,6 +2478,7 @@ public class QueryView extends WebPartView<Object>
         return tsv.getDataRowCount();
     }
 
+    @Nullable
     public ByteArrayAttachmentFile exportToTsvFile() throws Exception
     {
         _exportView = true;
@@ -2489,8 +2495,8 @@ public class QueryView extends WebPartView<Object>
             logAuditEvent("Exported to TSV file", tsvWriter.getDataRowCount());
             return byteArrayAttachmentFile;
         }
-        else
-            return null;
+
+        return null;
     }
 
     public void exportToApiResponse(ApiQueryResponse response)
@@ -2525,7 +2531,6 @@ public class QueryView extends WebPartView<Object>
             if (null != errors && errors.size() > 0)
                 throw errors.get(0);
         }
-
     }
 
     public void exportToExcelWebQuery(HttpServletResponse response) throws Exception
@@ -2954,19 +2959,6 @@ public class QueryView extends WebPartView<Object>
     public List<AnalyticsProviderItem> getAnalyticsProviders()
     {
         return getSettings().getAnalyticsProviders();
-    }
-
-    private static class NavTreeMenuButton extends MenuButton
-    {
-        public NavTreeMenuButton(String caption)
-        {
-            super(caption);
-        }
-
-        public NavTree getNavTree()
-        {
-            return popupMenu.getNavTree();
-        }
     }
 
     @NotNull

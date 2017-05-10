@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -111,21 +112,33 @@ public class ButtonBar extends DisplayElement
         _elementList = Collections.unmodifiableList(_elementList);
     }
 
-    public ButtonBar addAll(Collection<? extends DisplayElement> elements)
+    public ButtonBar addAll(@Nullable Collection<? extends DisplayElement> elements)
     {
-        _elementList.addAll(elements);
+        if (elements != null)
+        {
+            for (DisplayElement de : elements)
+                add(de);
+        }
         return this;
     }
 
-    public ButtonBar add(DisplayElement element)
+    public ButtonBar add(@Nullable DisplayElement... elements)
     {
-        _elementList.add(element);
+        if (null != elements)
+        {
+            for (DisplayElement de : elements)
+            {
+                if (de != null)
+                    _elementList.add(de);
+            }
+        }
         return this;
     }
 
-    public ButtonBar add(int index, DisplayElement element)
+    public ButtonBar add(int index, @Nullable DisplayElement element)
     {
-        _elementList.add(index, element);
+        if (element != null)
+            _elementList.add(index, element);
         return this;
     }
 
@@ -189,6 +202,7 @@ public class ButtonBar extends DisplayElement
         return false;
     }
 
+    @Nullable
     public DataRegion.ButtonBarPosition getConfiguredPosition()
     {
         if (_configs != null && _configs.size() > 0)
@@ -254,7 +268,7 @@ public class ButtonBar extends DisplayElement
                 if (item.getInsertAfter() != null || item.getInsertBefore() != null || item.getInsertPosition() != null)
                     mergedItems.add(new Pair<>(item, elem));
                 else
-                    _elementList.add(elem);
+                    add(elem);
             }
         }
 
@@ -298,7 +312,7 @@ public class ButtonBar extends DisplayElement
                     String caption = existing.getCaption();
                     if (caption != null && caption.equalsIgnoreCase(target))
                     {
-                        _elementList.add(before ? i : i+1, elem);
+                        add(before ? i : i + 1, elem);
                         added = true;
                         break;
                     }
@@ -308,15 +322,15 @@ public class ButtonBar extends DisplayElement
             else if (item.getInsertPosition() != null)
             {
                 if (item.getInsertPosition() == -1)
-                    _elementList.add(elem);
+                    add(elem);
                 else
-                    _elementList.add(item.getInsertPosition(), elem);
+                    add(item.getInsertPosition(), elem);
                 added = true;
             }
 
             // Just add to end if we didn't find an element to insert before or after.
             if (!added)
-                _elementList.add(elem);
+                add(elem);
         }
 
     }

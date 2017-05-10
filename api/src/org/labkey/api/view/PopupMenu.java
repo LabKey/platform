@@ -16,7 +16,10 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.util.Button;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 
@@ -38,7 +41,7 @@ public class PopupMenu extends DisplayElement
     // a menu that appears on the page only once, can use id's,
     // however a menu that can appear on the page multiple times
     // should not use id's
-    private boolean singletonMenu = false;
+    private boolean _singletonMenu = false;
     private NavTree _navTree;
     private Align _align = Align.LEFT;
     private ButtonStyle _buttonStyle = ButtonStyle.MENUBUTTON;
@@ -93,10 +96,10 @@ public class PopupMenu extends DisplayElement
         return _safeID;
     }
 
-    public void setIsSingletonMenu(boolean b)
+    public void setIsSingletonMenu(boolean singletonMenu)
     {
         // basically indicates that is OK to render id's on menu items (useful for testing)
-        singletonMenu = true;
+        _singletonMenu = singletonMenu;
     }
 
     public void render(RenderContext ctx, Writer out) throws IOException
@@ -112,46 +115,57 @@ public class PopupMenu extends DisplayElement
 
     public void renderMenuButton(Writer out) throws IOException
     {
-        renderMenuButton(out, null, false);
+        renderMenuButton(null, out, false, null);
     }
 
-    public void renderMenuButton(Writer out, String dataRegionName, boolean requiresSelection) throws IOException
+    public void renderMenuButton(@Nullable RenderContext ctx, Writer out, boolean requiresSelection, @Nullable ActionButton button) throws IOException
     {
         if (null == _navTree.getText())
             return;
 
-        if (singletonMenu && StringUtils.isNotEmpty(_navTree.getId()))
+        if (_singletonMenu && StringUtils.isNotEmpty(_navTree.getId()))
             _safeID = _navTree.getId();
 
-        // Issue 11392: DataRegion name escaping in button menus.  Menu id is double-escaped.  Once here, once when rendering.
-        String jsStringFilteredMenuId = PageFlowUtil.qh(_safeID);
+        // Issue 11392: DataRegion name escaping in button menus. Menu id is double-escaped. Once here, once when rendering.
+        String onClickScript = "showMenu(this, " + PageFlowUtil.qh(_safeID) + ",'" + _align.getExtPosition() + "');";
 
         Map<String, String> attributes = new HashMap<>();
         attributes.put("lk-menu-id", _safeID);
 
+        String dataRegionName = null;
+
+        if (ctx != null && ctx.getCurrentRegion() != null)
+            dataRegionName = ctx.getCurrentRegion().getName();
+
         if (_buttonStyle == ButtonStyle.TEXTBUTTON)
         {
             assert !requiresSelection : "Only button-style popups can require selection.";
-            String link = PageFlowUtil.textLink(_navTree.getText(), "javascript:void(0)", "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", "", attributes);
-            out.append(link);
+            out.append(PageFlowUtil.textLink(_navTree.getText(), "javascript:void(0)", onClickScript, "", attributes));
         }
         else if (_buttonStyle == ButtonStyle.MENUBUTTON)
         {
             if (requiresSelection)
                 attributes.put("labkey-requires-selection", dataRegionName);
 
-            out.append(PageFlowUtil.button(_navTree.getText())
+            Button.ButtonBuilder bldr = PageFlowUtil.button(_navTree.getText())
                     .dropdown(true)
                     .href("javascript:void(0)")
-                    .onClick("showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');")
-                    .attributes(attributes)
-                    .toString());
+                    .onClick(onClickScript)
+                    .attributes(attributes);
+
+            if (button != null)
+            {
+                // set additional properties from the button
+                bldr.iconCls(button.getIconCls());
+            }
+
+            out.append(bldr.toString());
         }
         else if (_buttonStyle == ButtonStyle.TEXT || _buttonStyle == ButtonStyle.BOLDTEXT)
         {
             assert !requiresSelection : "Only button-style popups can require selection.";
             out.append(PageFlowUtil.generateDropDownTextLink(_navTree.getText(), "javascript:void(0)",
-                    "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", _buttonStyle == ButtonStyle.BOLDTEXT, _offset, _navTree.getId()));
+                    onClickScript, _buttonStyle == ButtonStyle.BOLDTEXT, _offset, _navTree.getId()));
         }
         else if (_buttonStyle == ButtonStyle.IMAGE)
         {
@@ -159,13 +173,13 @@ public class PopupMenu extends DisplayElement
             if (_navTree.getImageCls() != null && _navTree.getImageCls().length() > 0)
             {
                 out.append(PageFlowUtil.generateDropDownFontIconImage(_navTree.getText(), "javascript:void(0)",
-                        "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", _navTree.getImageCls(), _imageId));
+                        onClickScript, _navTree.getImageCls(), _imageId));
             }
             else
             {
                 assert _navTree.getImageSrc() != null && _navTree.getImageSrc().length() > 0 : "Must provide an image source or image cls for image based popups.";
                 out.append(PageFlowUtil.generateDropDownImage(_navTree.getText(), "javascript:void(0)",
-                        "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", _navTree.getImageSrc(), _imageId, _navTree.getImageHeight(), _navTree.getImageWidth()));
+                        onClickScript, _navTree.getImageSrc(), _imageId, _navTree.getImageHeight(), _navTree.getImageWidth()));
             }
         }
     }
@@ -182,7 +196,7 @@ public class PopupMenu extends DisplayElement
         out.append("if (typeof(Ext4) != 'undefined') { Ext4.onReady(function() {");
         out.append(renderUnregScript());
         out.append(" var m = Ext4.create('Ext.menu.Menu',");
-        out.append(renderMenuModel(_navTree.getChildList(), _safeID, singletonMenu));
+        out.append(renderMenuModel(_navTree.getChildList(), _safeID, _singletonMenu));
         out.append("); }); } else { console.error('Unable to render menu. Ext4 is not available.'); }");
     }
 

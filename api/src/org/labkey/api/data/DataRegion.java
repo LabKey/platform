@@ -118,6 +118,7 @@ public class DataRegion extends AbstractDataRegion
     private boolean _showPaginationCount = true;
 
     private boolean _horizontalGroups = true;
+    private boolean _errorCreatingResults = false;
 
     private Long _totalRows = null; // total rows in the query or null if unknown
     private Integer _rowCount = null; // number of rows in the result set or null if unknown
@@ -142,6 +143,9 @@ public class DataRegion extends AbstractDataRegion
     public static final String DEFAULTDATE = "Date";
     public static final String DEFAULTDATETIME = "DateTime";
 
+    private List<ContextAction> _contextActions;
+    private List<Message> _messages;
+
     private class GroupTable
     {
         private List<DisplayColumnGroup> _groups = new ArrayList<>();
@@ -163,6 +167,87 @@ public class DataRegion extends AbstractDataRegion
         }
     }
     private List<GroupTable> _groupTables = new ArrayList<>();
+
+    private class ContextAction
+    {
+        private String _caption;
+        private String _iconCls;
+        private String _onClick;
+        private String _tooltip;
+
+        public ContextAction(String caption, String iconCls, String onClick, String tooltip)
+        {
+            _caption = caption;
+            _iconCls = iconCls;
+            _onClick = onClick;
+            _tooltip = tooltip;
+        }
+
+        public String getCaption()
+        {
+            return _caption;
+        }
+
+        public String getIconCls()
+        {
+            return _iconCls;
+        }
+
+        public String getOnClick()
+        {
+            return _onClick;
+        }
+
+        public String getTooltip()
+        {
+            return _tooltip;
+        }
+    }
+
+    private class Message
+    {
+        private String _area;
+        private String _content;
+        private MessageType _type;
+
+        public Message(String content, MessageType type, String area)
+        {
+            _area = area;
+            _content = content;
+            _type = type;
+        }
+
+        public Message(String content, MessageType type, MessagePart area)
+        {
+            this(content, type, area != null ? area.name() : null);
+        }
+
+        public String getArea()
+        {
+            return _area;
+        }
+
+        public String getContent()
+        {
+            return _content;
+        }
+    }
+
+    public enum MessageType
+    {
+        ERROR,
+        INFO,
+        WARNING
+    }
+
+    public void addMessage(Message message)
+    {
+        if (_messages == null)
+            _messages = new ArrayList<>();
+
+        if (null != message)
+            _messages.add(message);
+    }
 
     public void addDisplayColumn(DisplayColumn col)
     {
@@ -764,9 +849,6 @@ public class DataRegion extends AbstractDataRegion
         ResultSet rs = null;
         try
         {
-            StringBuilder headerMessage = new StringBuilder();
-            boolean errorCreatingResults = false;
-
             boolean showParameterForm = false;
             try
             {
@@ -782,8 +864,10 @@ public class DataRegion extends AbstractDataRegion
             }
             catch (SQLException | RuntimeSQLException | IllegalArgumentException | ConversionException x)
             {
-                errorCreatingResults = true;
-                headerMessage.append("<span class=\"labkey-error\">").append(PageFlowUtil.filter(x.getMessage())).append("</span><br>");
+                _errorCreatingResults = true;
+                _showPagination = false;
+                _allowHeaderLock = false;
+                addMessage(new Message("<span class=\"labkey-error\">" + PageFlowUtil.filter(x.getMessage()) + "</span><br>", MessageType.ERROR, MessagePart.header));
             }
 
             if (showParameterForm)
@@ -793,9 +877,9 @@ public class DataRegion extends AbstractDataRegion
             else
             {
                 if (PageFlowUtil.useExperimentalCoreUI())
-                    _renderTableNew(ctx, out, rs, headerMessage, errorCreatingResults);
+                    _renderTableNew(ctx, out, rs);
                 else
-                    _renderTableOld(ctx, out, rs, headerMessage, errorCreatingResults);
+                    _renderTableOld(ctx, out, rs);
             }
         }
         finally
@@ -824,7 +908,7 @@ public class DataRegion extends AbstractDataRegion
         }
     }
 
-    private void _renderTableOld(RenderContext ctx, Writer out, ResultSet rs, StringBuilder headerMessage, boolean errorCreatingResults) throws IOException, SQLException
+    private void _renderTableOld(RenderContext ctx, Writer out, ResultSet rs) throws IOException, SQLException
     {
         boolean renderButtons = _gridButtonBar.shouldRender(ctx);
         if (renderButtons && _buttonBarConfigs != null && !_buttonBarConfigs.isEmpty())
@@ -832,7 +916,7 @@ public class DataRegion extends AbstractDataRegion
             if (_gridButtonBar.isLocked())
                 _gridButtonBar = new ButtonBar(_gridButtonBar);
             _gridButtonBar.setConfigs(ctx, _buttonBarConfigs);
-            addMissingCaptionMessage(headerMessage);
+            addMessage(getMissingCaptionMessage());
         }
 
         boolean showRecordSelectors = getShowRecordSelectors(ctx);
@@ -874,7 +958,7 @@ public class DataRegion extends AbstractDataRegion
 
         renderHeader(ctx, out, renderButtons, colCount);
 
-        if (!errorCreatingResults)
+        if (!_errorCreatingResults)
         {
             _renderDataTable(ctx, out, showRecordSelectors, renderers, colCount);
         }
@@ -883,12 +967,12 @@ public class DataRegion extends AbstractDataRegion
 
         renderRegionEnd(ctx, out, renderButtons, renderers);
 
-        renderHeaderScript(ctx, out, prepareMessages(ctx, headerMessage, errorCreatingResults), showRecordSelectors);
+        renderHeaderScript(ctx, out, prepareMessages(ctx), showRecordSelectors);
 
         renderAnalyticsProvidersScripts(ctx, out);
     }
 
-    private void _renderTableNew(RenderContext ctx, Writer out, ResultSet rs, StringBuilder headerMessage, boolean errorCreatingResults) throws IOException, SQLException
+    private void _renderTableNew(RenderContext ctx, Writer out, ResultSet rs) throws IOException, SQLException
     {
         // renderButtons gets passed down all the things...
         boolean renderButtons = _gridButtonBar.shouldRender(ctx);
@@ -897,7 +981,7 @@ public class DataRegion extends AbstractDataRegion
             if (_gridButtonBar.isLocked())
                 _gridButtonBar = new ButtonBar(_gridButtonBar);
             _gridButtonBar.setConfigs(ctx, _buttonBarConfigs);
-            addMissingCaptionMessage(headerMessage);
+            addMessage(getMissingCaptionMessage());
         }
 
         boolean showRecordSelectors = getShowRecordSelectors(ctx);
@@ -924,6 +1008,8 @@ public class DataRegion extends AbstractDataRegion
                 _totalRows = getOffset() + _rowCount.intValue();
         }
 
+        Map<String, String> messages = prepareMessages(ctx);
+
         // 1. render form wrapper
         renderFormHeader(ctx, out, ctx.getMode());
 
@@ -931,17 +1017,22 @@ public class DataRegion extends AbstractDataRegion
         //      a. render paging
         _renderHeaderNew(ctx, out, renderButtons);
 
-        // 3. render context bar
-        // 4. render north section
+        // 3. render messages
+        _renderMessages(ctx, out);
 
-        // 5. render table
-        if (!errorCreatingResults)
+        // 4. render context bar
+        _renderContextBar(ctx, out);
+
+        // 5. render north section
+
+        // 6. render table
+        if (!_errorCreatingResults)
             _renderDataTableNew(ctx, out, showRecordSelectors, renderers, colCount);
 
-        // 6. Bind the region code
-        renderHeaderScript(ctx, out, prepareMessages(ctx, headerMessage, errorCreatingResults), showRecordSelectors);
+        // 7. Bind the region code
+        renderHeaderScript(ctx, out, messages, showRecordSelectors);
 
-        // 7. end form wrapper
+        // 8. end form wrapper
         renderFormEnd(ctx, out);
     }
 
@@ -953,6 +1044,7 @@ public class DataRegion extends AbstractDataRegion
             _renderButtonBarNew(ctx, out, renderButtons);
             _renderPaginationNew(ctx, out);
             out.write("</div>");
+            _renderDrawer(ctx, out);
         }
     }
 
@@ -966,9 +1058,32 @@ public class DataRegion extends AbstractDataRegion
         }
     }
 
+    private void _renderDrawer(RenderContext ctx, Writer out) throws IOException
+    {
+        out.write("<div class=\"labkey-drawer\"></div>");
+    }
+
+    private void _renderContextBar(RenderContext ctx, Writer out) throws IOException
+    {
+
+    }
+
+    private void _renderMessages(RenderContext ctx, Writer out) throws IOException
+    {
+        if (_messages == null)
+            return;
+        else if (_messages.size() == 0)
+            return;
+
+        for (Message message : _messages)
+        {
+            out.write("We have a message!");
+        }
+    }
+
     private void _renderPaginationNew(RenderContext ctx, Writer out) throws IOException
     {
-        out.write("<div class=\"col-md-4\">");
+        out.write("<div class=\"col-md-4 pull-right\">");
         renderPagination(ctx, out, PaginationLocation.TOP);
         out.write("</div>");
     }
@@ -1036,12 +1151,16 @@ public class DataRegion extends AbstractDataRegion
         }
     }
 
-    private void addMissingCaptionMessage(StringBuilder headerMessage)
+    @Nullable
+    private Message getMissingCaptionMessage()
     {
+        Message msg = null;
+
         if (AppProps.getInstance().isDevMode() && _gridButtonBar.getMissingOriginalCaptions() != null && _gridButtonBar.getMissingOriginalCaptions().size() > 0)
         {
-            headerMessage.append("\n").append("WARNING: button bar configuration contains reference to buttons that don't exist.");
-            headerMessage.append("\n").append("Invalid original text: ");
+            StringBuilder content = new StringBuilder();
+            content.append("\n").append("WARNING: button bar configuration contains reference to buttons that don't exist.");
+            content.append("\n").append("Invalid original text: ");
             StringBuilder captions = new StringBuilder();
             for (String caption : _gridButtonBar.getMissingOriginalCaptions())
             {
@@ -1050,8 +1169,12 @@ public class DataRegion extends AbstractDataRegion
                 captions.append(caption);
             }
             captions.append(".");
-            headerMessage.append(captions.toString());
+            content.append(captions.toString());
+
+            msg = new Message(content.toString(), MessageType.WARNING, MessagePart.header);
         }
+
+        return msg;
     }
 
     protected void renderRegionStart(RenderContext ctx, Writer out, boolean renderButtons, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
@@ -1701,13 +1824,9 @@ public class DataRegion extends AbstractDataRegion
             case MODE_INSERT:
             case MODE_UPDATE:
                 if (isFileUploadForm())
-                {
                     out.write("enctype=\"multipart/form-data\" action=\"" + actionAttr + "\">");
-                }
                 else
-                {
                     out.write("action=\"" + actionAttr + "\">");
-                }
                 break;
             case MODE_GRID:
                 out.write("action=\"\">");
@@ -2290,7 +2409,7 @@ public class DataRegion extends AbstractDataRegion
                     }
                     for (String heading : groupHeadings)
                     {
-                        out.write("<td valign='bottom' class='labkey-form-label'>");
+                        out.write("<td valign=\"bottom\" class=\"labkey-form-label\">");
                         out.write(PageFlowUtil.filter(heading));
                         out.write("</td>");
                     }
@@ -2376,7 +2495,7 @@ public class DataRegion extends AbstractDataRegion
                     }
                 }
 
-                out.write("<script language=\"javascript\">");
+                out.write("<script type=\"text/javascript\">");
                 for (DisplayColumnGroup group : groups)
                 {
                     group.writeCopyableJavaScript(ctx, out);
@@ -2625,38 +2744,45 @@ public class DataRegion extends AbstractDataRegion
         }
     }
 
-    // TODO: This is side-effecting the pagination, header locking. Switch to building messages based on state
-    private Map<String, String> prepareMessages(RenderContext ctx, StringBuilder headerMessage, boolean errorCreatingResults) throws IOException
+    protected Map<String, String> prepareMessages(RenderContext ctx) throws IOException
     {
-        StringBuilder viewMsg = new StringBuilder();
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+
+        StringBuilder headerMsg = new StringBuilder();
         StringBuilder filterMsg = new StringBuilder();
-        Map<String, String> messages = new LinkedHashMap<>();
+        StringBuilder viewMsg = new StringBuilder();
 
-        addHeaderMessage(headerMessage, ctx);
+        addHeaderMessage(headerMsg, ctx);
+        if (headerMsg.length() > 0)
+            addMessage(new Message(headerMsg.toString(), MessageType.INFO, MessagePart.header));
 
-        if (errorCreatingResults)
-        {
-            _showPagination = false;
-            _allowHeaderLock = false;
-        }
-        else
+        if (!_errorCreatingResults && !newUI)
         {
             //issue 13538: do not try to display filters if error, since this could result in a ConversionException
             addFilterMessage(filterMsg, ctx, isShowFilterDescription());
+            if (filterMsg.length() > 0)
+                addMessage(new Message(filterMsg.toString(), MessageType.INFO, MessagePart.filter));
         }
 
         // don't generate a view message if this is the default view and the filter is empty
         if (!isDefaultView(ctx) || filterMsg.length() > 0)
+        {
             addViewMessage(viewMsg, ctx);
+            if (viewMsg.length() > 0)
+                addMessage(new Message(viewMsg.toString(), MessageType.INFO, MessagePart.view));
+        }
 
-        if (headerMessage.length() > 0)
-            messages.put(MessagePart.header.name(), headerMessage.toString());
-        if (viewMsg.length() > 0)
-            messages.put(MessagePart.view.name(), viewMsg.toString());
-        if (filterMsg.length() > 0)
-            messages.put(MessagePart.filter.name(), filterMsg.toString());
+        if (_messages != null)
+        {
+            Map<String, String> messages = new LinkedHashMap<>();
 
-        return messages;
+            for (Message message : _messages)
+                messages.put(message.getArea(), message.getContent());
+
+            return messages;
+        }
+
+        return Collections.emptyMap();
     }
 
     public void setShadeAlternatingRows(boolean shadeAlternatingRows)

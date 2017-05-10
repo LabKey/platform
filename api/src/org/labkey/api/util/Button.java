@@ -170,8 +170,10 @@ public class Button
     public String toString()
     {
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+        boolean iconOnly = newUI && getIconCls() != null;
         StringBuilder sb = new StringBuilder();
         String submitId = GUID.makeGUID();
+        final String text = getText() != null ? (isTextAsHTML() ? getText() : PageFlowUtil.filter(getText())) : null;
 
         if (isSubmit())
         {
@@ -192,9 +194,11 @@ public class Button
             sb.append(" ").append(DISABLEDCLS);
         }
         if (newUI && isDropdown())
-            sb.append(" ").append("labkey-down-arrow");
+            sb.append(" labkey-down-arrow");
         if (getCssClass() != null)
             sb.append(" ").append(getCssClass());
+        if (iconOnly)
+            sb.append(" icon-only");
         sb.append("\" ");
         //-- enabled
 
@@ -216,17 +220,22 @@ public class Button
         sb.append(getAttributes() == null ? "" : getAttributes());
         //-- attributes
 
+        if (iconOnly && text != null)
+        {
+            sb.append("data-toggle=\"tooltip\" data-placement=\"top\" title=\"").append(text).append("\" ");
+        }
+
         sb.append(">");
 
-        if (newUI && getIconCls() != null)
+        if (iconOnly)
         {
             sb.append("<i class=\"fa fa-").append(getIconCls()).append("\"></i>");
             return sb.append("</a>").toString(); // for now, just show icon w/o text
         }
 
         sb.append("<span>");
-        if (getText() != null)
-            sb.append(isTextAsHTML() ? getText() : PageFlowUtil.filter(getText()));
+        if (text != null)
+            sb.append(text);
         sb.append("</span></a>");
 
         return sb.toString();

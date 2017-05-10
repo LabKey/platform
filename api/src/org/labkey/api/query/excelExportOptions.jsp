@@ -56,7 +56,6 @@
     boolean hasSelected = model.hasSelected(getViewContext());
     String exportRegionName = model.getExportRegionName();
 %>
-<form>
 <table class="labkey-export-tab-contents">
     <tr>
         <td valign="center"><input type="radio" id="<%=h(xlsxGUID)%>" name="excelExportType" checked="checked" /></td>
@@ -90,7 +89,6 @@
         <td colspan="2"><%= button("Export to Excel").id(exportButtonId) %></td>
     </tr>
 </table>
-</form>
 <script type="text/javascript">
     (function($) {
 

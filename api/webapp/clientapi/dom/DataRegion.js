@@ -1890,7 +1890,7 @@ if (!LABKEY.DataRegions) {
             if (config) {
 
                 // find the ribbon container
-                var ribbon = _getHeaderSelector(this).find('.labkey-ribbon');
+                var ribbon = _getDrawerSelector(this);
 
                 config.hide.call(config.scope || this, this.activePanelId, config.panel, ribbon, function() {
                     this.activePanelId = undefined;
@@ -1925,7 +1925,7 @@ if (!LABKEY.DataRegions) {
             this.activePanelId = panelId;
 
             // ensure the ribbon is visible
-            var ribbon = _getHeaderSelector(this).find('.labkey-ribbon');
+            var ribbon = _getDrawerSelector(this);
             ribbon.show();
 
             config.show.call(config.scope || this, this.activePanelId, config.panel, ribbon, function() {
@@ -2120,7 +2120,7 @@ if (!LABKEY.DataRegions) {
      */
     LABKEY.DataRegion.prototype.showButtonPanel = function(panelButton) {
 
-        var ribbon = _getHeaderSelector(this).find('.labkey-ribbon'),
+        var ribbon = _getDrawerSelector(this),
             panelId = $(panelButton).attr('panel-toggle'),
             panelSel;
 
@@ -2791,6 +2791,14 @@ if (!LABKEY.DataRegions) {
         }
 
         return params;
+    };
+
+    var _getDrawerSelector = function(region) {
+        if (LABKEY.experimental.useExperimentalCoreUI) {
+            return $('.labkey-drawer'); // TODO: Adjust to work for more than one region
+        }
+
+        return _getHeaderSelector(region).find('.labkey-ribbon');
     };
 
     /**

@@ -54,7 +54,7 @@
 
     for (int i = 0; i < 2; i++)
     {
-        out.print("<tr>");
+        %><tr><%
 
         for (int j = 0; j < columns; j++)
         {
@@ -69,12 +69,12 @@
             }
         }
 
-        out.print("</tr>");
+        %></tr><%
     } %>
     <tr>
         <td colspan="6">
             <br>
-            <%= button("Create Script").onClick("var _scriptUrl = getRadioButtonValue(document.getElementById(\"" + guid + "\")); window.open(_scriptUrl, \"_blank\"); return false;") %>
+            <%= button("Create Script").onClick("window.open(getRadioButtonValue(document.getElementById(\"" + guid + "\")), \"_blank\"); return false;") %>
         </td>
     </tr>
 </table>

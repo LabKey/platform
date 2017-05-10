@@ -53,8 +53,7 @@ public class MenuButton extends ActionButton
 
     public void render(RenderContext ctx, Writer out) throws IOException
     {
-        String dataRegionName = ctx.getCurrentRegion() == null ? null : ctx.getCurrentRegion().getName();
-        popupMenu.renderMenuButton(out, dataRegionName, _requiresSelection);
+        popupMenu.renderMenuButton(ctx, out, _requiresSelection, this);
 
         if (!BooleanUtils.toBoolean((String)ctx.get(getCaption() + "MenuRendered")))
         {
@@ -120,5 +119,10 @@ public class MenuButton extends ActionButton
     public PopupMenu getPopupMenu()
     {
         return popupMenu;
+    }
+
+    public NavTree getNavTree()
+    {
+        return popupMenu.getNavTree();
     }
 }

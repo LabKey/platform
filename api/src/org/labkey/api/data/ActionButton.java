@@ -55,7 +55,7 @@ public class ActionButton extends DisplayElement implements Cloneable
 
         private String _description;
 
-        private Action(String desc)
+        Action(String desc)
         {
             _description = desc;
         }
