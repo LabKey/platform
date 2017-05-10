@@ -129,12 +129,11 @@ public class SamplesSchema extends AbstractExpSchema
      */
     public ForeignKey materialIdForeignKey(@NotNull final ExpSampleSet ss, @Nullable DomainProperty domainProperty)
     {
-        final String tableName = ExpSchema.TableType.Materials.toString();
-        return new LookupForeignKey(null, null, SamplesSchema.SCHEMA_NAME, tableName, "RowId", null)
+        return new LookupForeignKey(null, null, SamplesSchema.SCHEMA_NAME, ss.getName(), "RowId", null)
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpMaterialTable ret = ExperimentService.get().createMaterialTable(tableName, SamplesSchema.this);
+                ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ss.getName(), SamplesSchema.this);
                 ret.populate(ss, true);
                 ret.setContainerFilter(new ContainerFilter.SimpleContainerFilter(ExpSchema.getSearchContainers(getContainer(), ss, domainProperty, getUser())));
                 ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
