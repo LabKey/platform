@@ -57,6 +57,7 @@ import org.w3c.dom.Text;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class MetadataServiceImpl extends DomainEditorServiceBase implements MetadataService
@@ -592,9 +593,9 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                 // Check if it's the same FK, based on schema, query, and container
                 String rawTargetContainer = (rawFK == null || rawFK.getLookupContainer() == null) ? null : rawFK.getLookupContainer().getPath();
                 if (rawFK == null ||
-                        (!gwtColumnInfo.getLookupSchema().equals(rawFK.getLookupSchemaName()) &&
-                                !ObjectUtils.equals(gwtColumnInfo.getLookupContainer(), rawTargetContainer) &&
-                                !gwtColumnInfo.getLookupQuery().equals(rawFK.getLookupTableName())))
+                    !gwtColumnInfo.getLookupSchema().equals(rawFK.getLookupSchemaName()) ||
+                    !Objects.equals(gwtColumnInfo.getLookupContainer(), rawTargetContainer) ||
+                    !gwtColumnInfo.getLookupQuery().equals(rawFK.getLookupTableName()))
                 {
                     Container targetContainer = gwtColumnInfo.getLookupContainer() != null ? ContainerManager.getForPath(gwtColumnInfo.getLookupContainer()) : null;
                     UserSchema fkSchema = QueryService.get().getUserSchema(getViewContext().getUser(), targetContainer == null ? getViewContext().getContainer() : targetContainer, gwtColumnInfo.getLookupSchema());
@@ -621,6 +622,10 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                             }
                         }
                     }
+                }
+                else if (xmlColumn.isSetFk())
+                {
+                    xmlColumn.unsetFk();
                 }
             }
             else if (xmlColumn.isSetFk())
