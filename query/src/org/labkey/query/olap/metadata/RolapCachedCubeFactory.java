@@ -357,7 +357,7 @@ public class RolapCachedCubeFactory
             o = compareKey(m1.ordinalValue, m2.ordinalValue, null);
             if (0 != o)
                 return o;
-            o = compareKey(m2.keyValue, m2.keyValue, null);
+            o = compareKey(m1.keyValue, m2.keyValue, null);
             if (0 != o)
                 return o;
             return compareKey(m1.getName(), m2.getName(), "#null");

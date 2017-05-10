@@ -1956,7 +1956,8 @@ public class ExperimentServiceImpl implements ExperimentService
         }
 
         String nodesSelect = map.get("$NODES$");
-        String nodesToken  = ret.addCommonTableExpression(nodesSelect, "org_lk_exp_NODES", new SQLFragment(nodesSelect));
+        SQLFragment nodesMaterialized = materializeNodesCTE(nodesSelect);
+        String nodesToken  = ret.addCommonTableExpression(ExperimentServiceImpl.class.getName()+ "$CTE_NODES", "org_lk_exp_NODES", nodesMaterialized);
 
         String seedSelect = map.get("$SEED$");
         seedSelect = StringUtils.replace(seedSelect, "$NODES$", nodesToken);
@@ -1968,14 +1969,25 @@ public class ExperimentServiceImpl implements ExperimentService
         String edgesToken  = ret.addCommonTableExpression(ExperimentServiceImpl.class.getName()+ "$CTE_EDGES", "org_lk_exp_EDGES", edgesMaterialized);
 
         boolean recursive = getExpSchema().getSqlDialect().isPostgreSQL();
+
+        String parentsInnerSelect = map.get("$PARENTS_INNER$");
+        parentsInnerSelect = StringUtils.replace(parentsInnerSelect, "$SEED$", seedToken);
+        parentsInnerSelect = StringUtils.replace(parentsInnerSelect, "$EDGES$", edgesToken);
+        String parentsInnerToken = ret.addCommonTableExpression(parentsInnerSelect, "org_lk_exp_PARENTS_INNER", new SQLFragment(parentsInnerSelect), recursive);
+
         String parentsSelect = map.get("$PARENTS$");
-        parentsSelect = StringUtils.replace(parentsSelect, "$SEED$", seedToken);
-        parentsSelect = StringUtils.replace(parentsSelect, "$EDGES$", edgesToken);
+        parentsSelect = StringUtils.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
+        parentsSelect = StringUtils.replace(parentsSelect, "$NODES$", nodesToken);
         String parentsToken = ret.addCommonTableExpression(parentsSelect, "org_lk_exp_PARENTS", new SQLFragment(parentsSelect), recursive);
 
+        String childrenInnerSelect = map.get("$CHILDREN_INNER$");
+        childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$SEED$", seedToken);
+        childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$EDGES$", edgesToken);
+        String childrenInnerToken = ret.addCommonTableExpression(childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", new SQLFragment(childrenInnerSelect), recursive);
+
         String childrenSelect = map.get("$CHILDREN$");
-        childrenSelect = StringUtils.replace(childrenSelect, "$SEED$", seedToken);
-        childrenSelect = StringUtils.replace(childrenSelect, "$EDGES$", edgesToken);
+        childrenSelect = StringUtils.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
+        childrenSelect = StringUtils.replace(childrenSelect, "$NODES$", nodesToken);
         String childrenToken = ret.addCommonTableExpression(childrenSelect, "org_lk_exp_CHILDREN", new SQLFragment(childrenSelect), recursive);
 
         return new Pair<>(parentsToken,childrenToken);
@@ -1996,6 +2008,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
 
+    MaterializedQueryHelper materializedNodes = null;
     MaterializedQueryHelper materializedEdges = null;
     final Object initEdgesLock = new Object();
 
@@ -2003,9 +2016,47 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         synchronized (initEdgesLock)
         {
+            if (null != materializedNodes)
+                materializedNodes.uncache(null);
             if (null != materializedEdges)
                 materializedEdges.uncache(null);
         }
+    }
+
+    /* TODO AND CONSIDER:
+     *
+     * remove the DataInput and MaterialInput tables and replace with a table that looks like this "edges" table
+     */
+    SQLFragment materializeNodesCTE(String selectNodes)
+    {
+        final DbSchema exp = getExpSchema();
+        final long now = System.currentTimeMillis();
+
+        synchronized (initEdgesLock)
+        {
+            if (null == materializedNodes)
+            {
+                String materializeKeySql = "SELECT\n" + exp.getSqlDialect().concatenate(
+                        "(select coalesce(cast(count(*) as varchar(40)),'-') from exp.material)",
+                        "'/'",
+                        "(select coalesce(cast(count(*) as varchar(40)),'-') from exp.data)",
+                        "'/'",
+                        "(select coalesce(cast(max(rowid) as varchar(40)),'-') from exp.experimentrun)") + " AS \"key\"";
+
+                materializedNodes = MaterializedQueryHelper.create( "exp_nodes",
+                        getExpSchema().getScope(),
+                        new SQLFragment(selectNodes),
+                        new SQLFragment(materializeKeySql),
+                        Arrays.asList(
+                                "CREATE INDEX node_lsid_${NAME} ON temp.${NAME}  (lsid)"
+                        ),
+                        CacheManager.MINUTE
+                );
+            }
+        }
+
+        SQLFragment sqlf = new SQLFragment("SELECT * FROM ").append(materializedNodes.getFromSql(null,null));
+        return sqlf;
     }
 
     /* TODO AND CONSIDER:
@@ -2033,8 +2084,8 @@ public class ExperimentServiceImpl implements ExperimentService
                         new SQLFragment(selectEdges),
                         new SQLFragment(materializeKeySql),
                         Arrays.asList(
-                               "CREATE INDEX child_${NAME} ON temp.${NAME}  (child_lsid)",
-                               "CREATE INDEX parent_${NAME} ON temp.${NAME}  (parent_lsid)"
+                               "CREATE INDEX child_${NAME} ON temp.${NAME}  (child_lsid, parent_lsid, child_pathpart, parent_pathpart, role)",
+                               "CREATE INDEX parent_${NAME} ON temp.${NAME}  (parent_lsid, child_lsid, parent_pathpart, child_pathpart, role)"
                         ),
                         CacheManager.MINUTE
                         );
