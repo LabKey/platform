@@ -1600,6 +1600,7 @@ boxPlot.render();
  *                  to that function will be a row of data with access to all values for that row.
  * @param {Function} [config.properties.mouseOverFn] (Optional) The function to call on data point mouse over. The parameters to
  *                  that function will be the click event, the point data, the selection layer, and the DOM element for the point itself.
+ * @param {Object} [config.properties.mouseOverFnScope] (Optional) The scope to use for the call to mouseOverFn.
  * @param {Function} [config.properties.pointClickFn] (Optional) The function to call on data point click. The parameters to
  *                  that function will be the click event and the row of data for the selected point.
  */
@@ -2090,7 +2091,7 @@ boxPlot.render();
                 d3.select(event.srcElement).transition().duration(800).attr("stroke-width", 5).ease("elastic");
 
                 if (config.properties.mouseOverFn) {
-                    config.properties.mouseOverFn.call(this, event, pointData, layerSel, point, valueName);
+                    config.properties.mouseOverFn.call(config.properties.mouseOverFnScope || this, event, pointData, layerSel, point, valueName);
                 }
             };
             pointLayerConfig.aes.mouseOutFn = function(event, pointData, layerSel) {
