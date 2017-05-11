@@ -96,7 +96,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -196,6 +195,38 @@ public final class RhinoService
             ScriptReference script = ScriptService.get().compile(_module, js);
             script.invokeFn("doTest");
         }
+
+        @Test
+        public void testModuleResourceCache()
+        {
+            // Load all the scripts to ensure no exceptions and get a count
+            int scriptCount = ModuleLoader.getInstance().getModules().stream()
+                .map(ScriptReferenceImpl.SCRIPT_CACHE::getResourceMap)
+                .mapToInt(Map::size)
+                .sum();
+
+            LOG.info(scriptCount + " scripts in all modules");
+
+            // Load all the top-level script timestamps to ensure no exceptions and get a count
+            int timestampCount = ModuleLoader.getInstance().getModules().stream()
+                .map(LabKeyModuleSourceProvider.TOP_LEVEL_SCRIPT_CACHE::getResourceMap)
+                .mapToInt(Map::size)
+                .sum();
+
+            LOG.info(timestampCount + " top-level script timestamps in all modules");
+
+            assertEquals("Mismatch in counts for JavaScript scripts vs. script timestamps", scriptCount, timestampCount);
+
+            // Make sure the cache retrieves the expected number of scripts from the simpletest module, if present
+
+            Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
+
+            if (null != simpleTest)
+            {
+                assertEquals("Scripts from the simpletest module", 14, ScriptReferenceImpl.SCRIPT_CACHE.getResourceMap(simpleTest).size());
+                assertEquals("Top-level script timestamps from the simpletest module", 14, LabKeyModuleSourceProvider.TOP_LEVEL_SCRIPT_CACHE.getResourceMap(simpleTest).size());
+            }
+        }
     }
 }
 
@@ -218,21 +249,12 @@ class ScriptReferenceImpl implements ScriptReference
 {
     private static final ModuleResourceCacheHandler<Map<Path, CompiledScript>> CACHE_HANDLER = new ModuleResourceCacheHandler<Map<Path, CompiledScript>>()
     {
-        private Predicate<Resource> getFilter()
-        {
-            return resource -> resource.getName().endsWith(".js");
-        }
-
         @Override
-        public Map<Path, CompiledScript> load(Stream<Resource> roots, Module module)
+        public Map<Path, CompiledScript> load(Stream<? extends Resource> resources, Module module)
         {
-            Map<Path, CompiledScript> map = roots
-                .flatMap(root -> root.list().stream())
-                .filter(Resource::isFile)
-                .filter(getFilter())
-                .collect(Collectors.toMap(Resource::getPath, this::compile));
-
-            return map.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(map);
+            return unmodifiable(resources
+                .filter(getFilter(".js"))
+                .collect(Collectors.toMap(Resource::getPath, this::compile)));
         }
 
         private CompiledScript compile(Resource r)
@@ -258,7 +280,7 @@ class ScriptReferenceImpl implements ScriptReference
         }
     };
 
-    private static final ModuleResourceCache<Map<Path, CompiledScript>> SCRIPT_CACHE = ModuleResourceCaches.create(
+    static final ModuleResourceCache<Map<Path, CompiledScript>> SCRIPT_CACHE = ModuleResourceCaches.create(
         "Module JavaScript cache",
         CACHE_HANDLER,
         ResourceRootProvider.getHierarchy(Path.parse(ScriptService.SCRIPTS_DIR)),
@@ -443,20 +465,13 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
      * the resources themselves, however, it can't currently be used for this staleness check because it doesn't invalidate
      * on modify plus the exists() and lastModified() methods of FileResource access the file system directly.
      */
-    private static final ModuleResourceCache<Map<Path, Long>> TOP_LEVEL_SCRIPT_CACHE = ModuleResourceCaches.create("Top-level Rhino script cache", new ModuleResourceCacheHandler<Map<Path, Long>>()
+    static final ModuleResourceCache<Map<Path, Long>> TOP_LEVEL_SCRIPT_CACHE = ModuleResourceCaches.create("Top-level Rhino script cache", new ModuleResourceCacheHandler<Map<Path, Long>>()
     {
-        private Predicate<Resource> getFilter()
-        {
-            return resource -> resource.getName().endsWith(".js");
-        }
-
         @Override
-        public Map<Path, Long> load(Stream<Resource> roots, Module module)
+        public Map<Path, Long> load(Stream<? extends Resource> resources, Module module)
         {
-            return unmodifiable(roots
-                .flatMap(root -> root.list().stream())
-                .filter(Resource::isFile)
-                .filter(getFilter())
+            return unmodifiable(resources
+                .filter(getFilter(".js"))
                 .collect(Collectors.toMap(Resource::getPath, Resource::getLastModified)));
         }
     }, ResourceRootProvider.getHierarchy(Path.parse(ScriptService.SCRIPTS_DIR)), ResourceRootProvider.QUERY_SUBDIRECTORIES);

@@ -24,8 +24,8 @@ import org.labkey.api.resource.Resource;
 
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Creates and caches the file-based web parts defined by modules. File changes result in dynamic reloading and re-initialization of webpart-related maps.
@@ -36,17 +36,13 @@ import java.util.stream.Collectors;
 public class SimpleWebPartFactoryCacheHandler implements ModuleResourceCacheHandler<Collection<SimpleWebPartFactory>>
 {
     @Override
-    public Collection<SimpleWebPartFactory> load(@Nullable Resource dir, Module module)
+    public Collection<SimpleWebPartFactory> load(Stream<? extends Resource> resources, Module module)
     {
-        if (null == dir)
-            return Collections.emptyList();
-
-        Collection<SimpleWebPartFactory> webPartFactories = dir.list().stream()
-            .filter(resource -> resource.isFile() && SimpleWebPartFactory.isWebPartFile(resource.getName()))
+        return unmodifiable(resources
+            .filter(getFilter(SimpleWebPartFactory.FILE_EXTENSION))
             .map(resource -> new SimpleWebPartFactory(module, resource))
-            .collect(Collectors.toList());
-
-        return Collections.unmodifiableCollection(webPartFactories);
+            .collect(Collectors.toList())
+        );
     }
 
     @Nullable

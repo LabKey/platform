@@ -15,9 +15,12 @@
  */
 package org.labkey.api.module;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UniqueID;
@@ -45,6 +48,7 @@ public class ModuleHtmlView extends HtmlView
 {
     public static final Path VIEWS_PATH = Path.parse("views");
 
+    private static final Logger LOG = Logger.getLogger(ModuleHtmlView.class);
     private static final ModuleResourceCache<Map<Path, ModuleHtmlViewDefinition>> MODULE_HTML_VIEW_DEFINITION_CACHE = ModuleResourceCaches.create("HTML view definitions", new ModuleHtmlViewCacheHandler(), ResourceRootProvider.getStandard(VIEWS_PATH), ResourceRootProvider.getAssayProviders(VIEWS_PATH));
 
     private final ModuleHtmlViewDefinition _viewdef;
@@ -179,5 +183,28 @@ public class ModuleHtmlView extends HtmlView
     public String getHtml()
     {
         return _viewdef.getHtml();
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testModuleResourceCache()
+        {
+            // Load all the HTML view definitions to ensure no exceptions
+            int viewCount = ModuleLoader.getInstance().getModules().stream()
+                .map(MODULE_HTML_VIEW_DEFINITION_CACHE::getResourceMap)
+                .mapToInt(Map::size)
+                .sum();
+
+            LOG.info(viewCount + " HTML view definitions defined in all modules");
+
+            // Make sure the cache retrieves the expected number of HTML view definitions from the simpletest module, if present
+
+            Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
+
+            if (null != simpleTest)
+                assertEquals("HTML view definitions from the simpletest module", 6, MODULE_HTML_VIEW_DEFINITION_CACHE.getResourceMap(simpleTest).size());
+        }
     }
 }

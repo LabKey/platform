@@ -16,7 +16,6 @@
 package org.labkey.api.module;
 
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Path;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,37 +28,18 @@ import java.util.regex.Pattern;
 public class ModuleResourceCaches
 {
     /**
-     * Create a new ModuleResourceCache.
+     * Create a new ModuleResourceCache that finds its resources via one or more ResourceRootProviders.
      *
-     * @param path Path representing the root of the resource directory
-     * @param handler ModuleResourceCacheHandler that customizes this cache's behavior
      * @param description Short description of the cache
+     * @param handler ModuleResourceCacheHandler that converts resources into a resource map that can be cached and retrieved
+     * @param provider A ResourceRootProvider that defines the layout of these resources in the module
+     * @param extraProviders Optional ResourceRootProviders that can provide additional resource roots
      * @param <T> Object type of the resource map that this cache manages
-     * @return A ModuleResourceCache
+     * @return A new ModuleResourceCache
      */
-    public static <T> ModuleResourceCache<T> create(Path path, ModuleResourceCacheHandler<T> handler, String description)
-    {
-        return new ModuleResourceCache<>(path, handler, description);
-    }
-
     public static <T> ModuleResourceCache<T> create(String description, ModuleResourceCacheHandler<T> handler, ResourceRootProvider provider, ResourceRootProvider... extraProviders)
     {
         return new ModuleResourceCache<>(description, handler, provider, extraProviders);
-    }
-
-    /**
-     * Create a new QueryBasedModuleResourceCache. This is used to cache file-system resources that are associated with
-     * specific queries.
-     *
-     * @param root Path representing the module resource directory
-     * @param description Short description of the cache
-     * @param handler QueryBasedModuleResourceCacheHandler that customizes this cache's behavior
-     * @param <T> Object type that this cache handles
-     * @return A QueryBasedModuleResourceCache
-     */
-    public static <T> QueryBasedModuleResourceCache<T> createQueryBasedCache(Path root, String description, QueryBasedModuleResourceCacheHandler<T> handler)
-    {
-        return new QueryBasedModuleResourceCache<>(root, description, handler);
     }
 
 

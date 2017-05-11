@@ -47,17 +47,20 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 /**
  * Standard cache for file-system resources provided by a module. An instance of this class manages one specific type of
  * resource (e.g., query, custom view, report, etc.) for all modules. This class loads, returns, and invalidates a single
- * object per module (referred to as a "resource map" below), typically a Map or a bean containing multiple Maps presenting
- * different lookup options to callers. It registers file system listeners in every directory the loader visits and
- * invalidates the object on any file system change that occurs within those directories (update, delete, or add of any
- * file or directory). A single change to a single file will therefore result in reloading all the resources of the given
- * type in that module.
+ * object per module (referred to as a "resource map" below), typically a Map, MultiValuedMap, Collection, or a bean
+ * with multiple Maps or Collections that offer different lookup options to callers. The cache uses ResourceRootProviders
+ * to navigate the layout of resources (single directory, query-based hierarchy, arbitrary hierarchy, etc.) and uses a
+ * FileListenerResource to ensure file system listeners are registered in every resource directory. The cache invalidates
+ * a module's resource map whenever a file system change (update, delete, or add of any file or directory) occurs within
+ * the corresponding resource directories of that module. A single change to a single file will therefore result in
+ * reloading all the resources of the given type in that module.
  *
- * Note: This class is a simplification and generalization that should eventually be able to replace ModuleResourceCacheOld,
- * QueryBasedModuleResourceCache, and PathBasedModuleResourceCache. The trade-offs for this simplification: each loader
- * needs to do a little more work (traversing directories, filtering resource files, creating & populating maps) and all
- * resources of a given type for a given module are loaded & invalidated together, as opposed to invalidating individual
- * resources when changes occur. These seem like reasonable trade-offs...
+ * Note: Loading, caching, and invalidating all resources in each module together is a simple approach that provides good
+ * performance and flexibility. It supports the "simple" model where all resources live in a single directory as well as
+ * more complex models like query-based and path-based lookups, all via a single class and its helpers. It also easily
+ * supports common retrieval patterns like getting a single resource, all resources, or some filtered subset of resources.
+ * Previous approaches that attempted to cache and invalidate individual resources were much more complex and required
+ * new cache classes for each retrieval model and resource layout.
  *
  * User: adam
  * Date: 12/26/13
@@ -71,30 +74,7 @@ public final class ModuleResourceCache<V>
     private final FileSystemWatcher _watcher = FileSystemWatchers.get();
     private final Set<String> _pathsWithListeners = new ConcurrentHashSet<>();
 
-    // This constructor assumes all resources are found in /resources/<path> (no support for /assay or other roots)
-    ModuleResourceCache(Path root, ModuleResourceCacheHandler<V> handler, String description)
-    {
-        this(handler, description, new CacheLoader<Module, V>()
-        {
-            @Override
-            public V load(Module module, Object argument)
-            {
-                ModuleResourceCache<V> cache = (ModuleResourceCache<V>)argument;
-                Resource dir = module.getModuleResource(root);
-                Resource wrappedDir = (null != dir && dir.isCollection() ? new FileListenerResource(dir, module, cache) : null);
-
-                return handler.load(wrappedDir, module);
-            }
-
-            @Override
-            public String toString()
-            {
-                return "CacheLoader for \"" + description + "\" (" + handler.getClass().getName() + ")";
-            }
-        });
-    }
-
-    // This constructor supports /resources/<path>, /assay/<provider>/<path>, and other layouts
+    // Supports /resources/<path>, /assay/<provider>/<path>, and other layouts
     ModuleResourceCache(String description, ModuleResourceCacheHandler<V> handler, ResourceRootProvider provider, ResourceRootProvider... extraProviders)
     {
         this(handler, description, new CacheLoader<Module, V>()
@@ -106,7 +86,11 @@ public final class ModuleResourceCache<V>
                 Resource resourceRoot = new FileListenerResource(module.getModuleResource(Path.rootPath), module, cache);
                 Stream<Resource> resourceRoots = getResourceRoots(resourceRoot, provider, extraProviders);
 
-                return handler.load(resourceRoots, module);
+                Stream<? extends Resource> resources = resourceRoots
+                    .flatMap(root -> root.list().stream())
+                    .filter(Resource::isFile);
+
+                return handler.load(resources, module);
             }
 
             private @NotNull Stream<Resource> getResourceRoots(@NotNull Resource rootResource, ResourceRootProvider provider, ResourceRootProvider... extraProviders)

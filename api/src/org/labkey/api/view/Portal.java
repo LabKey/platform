@@ -19,8 +19,11 @@ package org.labkey.api.view;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.CompareType;
@@ -46,6 +49,7 @@ import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.module.SimpleWebPartFactory;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.FieldKey;
@@ -59,7 +63,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.Path;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -84,13 +87,14 @@ import java.util.TreeMap;
 
 public class Portal
 {
+    private static final Logger LOG = Logger.getLogger(Portal.class);
     private static final WebPartBeanLoader FACTORY = new WebPartBeanLoader();
 
     public static final String DEFAULT_PORTAL_PAGE_ID = "portal.default";
     public static final int MOVE_UP = 0;
     public static final int MOVE_DOWN = 1;
     public static final ModuleResourceCache<Collection<SimpleWebPartFactory>> WEB_PART_FACTORY_CACHE =
-        ModuleResourceCaches.create(ModuleHtmlView.VIEWS_PATH, new SimpleWebPartFactoryCacheHandler(), "File-based webpart definitions");
+        ModuleResourceCaches.create("File-based webpart definitions", new SimpleWebPartFactoryCacheHandler(), ResourceRootProvider.getStandard(ModuleHtmlView.VIEWS_PATH));
 
     private static Map<String, WebPartFactory> _viewMap = null;
 
@@ -1534,6 +1538,28 @@ public class Portal
             if (null != customTab && customTab.equalsIgnoreCase("true"))
                 return true;
             return false;
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testModuleResourceCache()
+        {
+            // Load all the webpart definitions to ensure no exceptions
+            int viewCount = ModuleLoader.getInstance().getModules().stream()
+                .map(WEB_PART_FACTORY_CACHE::getResourceMap)
+                .mapToInt(Collection::size)
+                .sum();
+
+            LOG.info(viewCount + " webparts defined in all modules");
+
+            // Make sure the cache retrieves the expected number of webpart definitions from the simpletest module, if present
+
+            Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
+
+            if (null != simpleTest)
+                assertEquals("Webpart definitions from the simpletest module", 1, WEB_PART_FACTORY_CACHE.getResourceMap(simpleTest).size());
         }
     }
 }

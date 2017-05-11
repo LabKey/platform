@@ -17,6 +17,7 @@ package org.labkey.api.module;
 
 import org.apache.commons.collections4.MultiMapUtils;
 import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.resource.Resource;
@@ -24,6 +25,7 @@ import org.labkey.api.resource.Resource;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -34,25 +36,20 @@ import java.util.stream.Stream;
 public interface ModuleResourceCacheHandler<V>
 {
     /**
-     * Loads all resources of the appropriate type from the specified module and root directory.
+     * Converts a stream of resources into a data structure that is cached and retrieved by callers that access the cache
      *
+     * @param resources A Stream of all file Resources in the cache's resource root(s)
+     * @param module The Module that owns the Resources
      * @return A Map, Collection, or other data structure that gives callers access to those resources
      */
-    default V load(@Nullable Resource dir, Module module)
-    {
-        throw new IllegalStateException("Shouldn't be here");
-    }
-
-    // Alternative approach -- generalizes standard root, assay root, and other resource location handling
-    default V load(Stream<Resource> roots, Module module)
-    {
-        throw new IllegalStateException("Shouldn't be here");
-    }
+    V load(Stream<? extends Resource> resources, Module module);
 
     /**
      * If needed, returns a FileSystemDirectoryListener that implements resource-specific file change handling. The
      * standard listener clears the module's resource map and then invokes the appropriate method of the chained listener,
-     * if present.
+     * if present. Note that the listener will be called for every change in the resource roots and all their parent
+     * directories up to /resources. Methods will be invoked for changes to directories, resource files, and non-resource
+     * files, so listeners may need to filter entries carefully.
      *
      * @param module Module for which to create the listener
      * @return A directory listener with implementation-specific handling.
@@ -61,6 +58,8 @@ public interface ModuleResourceCacheHandler<V>
     {
         return null;
     }
+
+    // Convenience methods that wrap maps and collections to make them unmodifiable
 
     default <K2, V2> Map<K2, V2> unmodifiable(Map<K2, V2> map)
     {
@@ -75,5 +74,27 @@ public interface ModuleResourceCacheHandler<V>
     default <K2, V2> MultiValuedMap<K2, V2> unmodifiable(MultiValuedMap<K2, V2> mmap)
     {
         return mmap.isEmpty() ? MultiMapUtils.emptyMultiValuedMap() : MultiMapUtils.unmodifiableMultiValuedMap(mmap);
+    }
+
+    /**
+     * Returns a standard filter for resources that end in the specified suffix. Filename must be at least one character
+     * longer than the suffix.
+     */
+    default Predicate<Resource> getFilter(String suffix)
+    {
+        return resource ->
+        {
+            String filename = resource.getName();
+            return StringUtils.endsWithIgnoreCase(filename, suffix) && filename.length() > suffix.length();
+        };
+    }
+
+    /**
+     * Returns a standard filter for filenames that end in the specified suffix. Filename must be at least one character
+     * longer than the suffix.
+     */
+    default Predicate<String> getFilenameFilter(String suffix)
+    {
+        return filename -> StringUtils.endsWithIgnoreCase(filename, suffix) && filename.length() > suffix.length();
     }
 }

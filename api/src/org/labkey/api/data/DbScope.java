@@ -32,6 +32,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceResolver;
+import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
@@ -115,7 +116,7 @@ public class DbScope
     private static final Map<String, Throwable> _dataSourceFailures = new HashMap<>();
     // Cache for schema metadata XML files, shared across the whole server
     private static final ModuleResourceCache<Map<String, TablesDocument>> SCHEMA_XML_CACHE =
-        ModuleResourceCaches.create(QueryService.MODULE_SCHEMAS_PATH, new SchemaXmlCacheHandler(), "Parsed schema XML metadata");
+        ModuleResourceCaches.create("Parsed schema XML metadata", new SchemaXmlCacheHandler(), ResourceRootProvider.getStandard(QueryService.MODULE_SCHEMAS_PATH));
 
     private static DbScope _labkeyScope = null;
 

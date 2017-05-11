@@ -30,6 +30,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
@@ -55,6 +56,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * User: kevink
@@ -65,20 +67,17 @@ public class DomainTemplateGroup
     private static final Logger LOG = Logger.getLogger(DomainTemplateGroup.class);
     private static final String DIR_NAME = "domain-templates";
     private static final String SUFFIX = ".template.xml";
-    private static final ModuleResourceCache<Map<String, DomainTemplateGroup>> CACHE = ModuleResourceCaches.create(new Path(DIR_NAME), new DomainTemplateGroupCacheHandler(), "Domain templates");
+    private static final ModuleResourceCache<Map<String, DomainTemplateGroup>> CACHE = ModuleResourceCaches.create("Domain templates", new DomainTemplateGroupCacheHandler(), ResourceRootProvider.getStandard(new Path(DIR_NAME)));
 
     private static class DomainTemplateGroupCacheHandler implements ModuleResourceCacheHandler<Map<String, DomainTemplateGroup>>
     {
         @Override
-        public Map<String, DomainTemplateGroup> load(@Nullable Resource dir, Module module)
+        public Map<String, DomainTemplateGroup> load(Stream<? extends Resource> resources, Module module)
         {
-            if (null == dir)
-                return Collections.emptyMap();
-
             Map<String, DomainTemplateGroup> map = new HashMap<>();
 
-            dir.list().stream()
-                .filter(resource -> resource.isFile() && resource.getName().endsWith(SUFFIX) && resource.getName().length() > SUFFIX.length())
+            resources
+                .filter(getFilter(SUFFIX))
                 .forEach(resource -> {
                     String groupName = getGroupName(resource);
                     String key = getGroupId(module, groupName);
@@ -87,7 +86,7 @@ public class DomainTemplateGroup
                         map.put(key, domainTemplateGroup);
                 });
 
-            return Collections.unmodifiableMap(map);
+            return unmodifiable(map);
         }
 
         private String getGroupName(Resource resource)
@@ -309,7 +308,19 @@ public class DomainTemplateGroup
         public void testDomainTemplateCache()
         {
             // Load all the DomainTemplateGroups to ensure no exceptions
-            ModuleLoader.getInstance().getModules().forEach(CACHE::getResourceMap);
+            int templateCount = ModuleLoader.getInstance().getModules().stream()
+                .map(CACHE::getResourceMap)
+                .mapToInt(Map::size)
+                .sum();
+
+            LOG.info(templateCount + " domain templates defined in all modules");
+
+            // Make sure the cache retrieves the expected number of test models in this module
+
+            Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
+
+            if (null != simpleTest)
+                assertEquals("Domain templates from the simpletest module", 2, CACHE.getResourceMap(simpleTest).size());
         }
     }
 }

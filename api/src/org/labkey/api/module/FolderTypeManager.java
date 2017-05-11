@@ -15,9 +15,10 @@
  */
 package org.labkey.api.module;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
@@ -35,6 +36,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by adam on 5/8/2015.
@@ -48,7 +50,7 @@ public class FolderTypeManager
     /** PropertyManager category name for folder type enabled state properties */
     private static final String FOLDER_TYPE_ENABLED_STATE = "FolderTypeEnabledState";
 
-    private final ModuleResourceCache<Collection<SimpleFolderType>> CACHE = ModuleResourceCaches.create(new Path(SIMPLE_TYPE_DIR_NAME), new SimpleFolderTypeCacheHandler(), "File-based folder types");
+    private final ModuleResourceCache<Collection<SimpleFolderType>> CACHE = ModuleResourceCaches.create("File-based folder types", new SimpleFolderTypeCacheHandler(), ResourceRootProvider.getStandard(new Path(SIMPLE_TYPE_DIR_NAME)));
     private final Map<String, FolderType> _javaFolderTypes = new ConcurrentHashMap<>();  // Map of folder types that are registered via java code
     private final Object FOLDER_TYPE_LOCK = new Object();
 
@@ -243,16 +245,12 @@ public class FolderTypeManager
     private static class SimpleFolderTypeCacheHandler implements ModuleResourceCacheHandler<Collection<SimpleFolderType>>
     {
         @Override
-        public Collection<SimpleFolderType> load(@Nullable Resource dir, Module module)
+        public Collection<SimpleFolderType> load(Stream<? extends Resource> resources, Module module)
         {
-            if (null == dir)
-                return Collections.emptyList();
-
-            Collection<SimpleFolderType> folderTypes = dir.list().stream()
-                .filter(resource -> resource.isFile() && StringUtils.endsWithIgnoreCase(resource.getName(), SIMPLE_TYPE_FILE_EXTENSION))
-                .map(SimpleFolderType::create).collect(Collectors.toList());
-
-            return Collections.unmodifiableCollection(folderTypes);
+            return unmodifiable(resources
+                .filter(getFilter(SIMPLE_TYPE_FILE_EXTENSION))
+                .map(SimpleFolderType::create)
+                .collect(Collectors.toList()));
         }
 
         @Nullable
@@ -285,6 +283,30 @@ public class FolderTypeManager
                     FolderTypeManager.get().clearAllFolderTypes();
                 }
             };
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testModuleResourceCache()
+        {
+            FolderTypeManager manager = get();
+
+            // Load all the folder types to ensure no exceptions
+            int folderTypeCount = ModuleLoader.getInstance().getModules().stream()
+                .map(manager.CACHE::getResourceMap)
+                .mapToInt(Collection::size)
+                .sum();
+
+            LOG.info(folderTypeCount + " folder types defined in all modules");
+
+            // Make sure the cache retrieves the expected number of folder types from the simpletest module, if present
+
+            Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
+
+            if (null != simpleTest)
+                assertEquals("Folder types from the simpletest module", 5, manager.CACHE.getResourceMap(simpleTest).size());
         }
     }
 }

@@ -29,9 +29,9 @@ import org.labkey.data.xml.TablesDocument;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * User: adam
@@ -41,35 +41,43 @@ import java.util.Map;
 public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<String, TablesDocument>>
 {
     @Override
-    public Map<String, TablesDocument> load(@Nullable Resource dir, Module module)
+    public Map<String, TablesDocument> load(Stream<? extends Resource> resources, Module module)
     {
-        if (null == dir)
-            return Collections.emptyMap();
-
         Map<String, TablesDocument> map = new HashMap<>();
 
-        dir.list().stream()
-            .filter(resource -> resource.isFile() && resource.getName().endsWith(".xml") && !resource.getName().endsWith(QueryService.SCHEMA_TEMPLATE_EXTENSION))
+        resources
+            .filter(resource -> isSchemaXmlFile(resource.getName()))
             .forEach(resource -> {
-                TablesDocument doc = null;
-
-                try (InputStream xmlStream = resource.getInputStream())
-                {
-                    if (null != xmlStream)
-                    {
-                        doc = TablesDocument.Factory.parse(xmlStream);
-                    }
-                }
-                catch (IOException | XmlException e)
-                {
-                    ExceptionUtil.logExceptionToMothership(null, e);
-                }
-
+                TablesDocument doc = getTablesDoc(resource);
                 if (null != doc)
                     map.put(resource.getName(), doc);
             });
 
-        return Collections.unmodifiableMap(map);
+        return unmodifiable(map);
+    }
+
+    private static boolean isSchemaXmlFile(String filename)
+    {
+        return filename.endsWith(".xml") && !filename.endsWith(QueryService.SCHEMA_TEMPLATE_EXTENSION);
+    }
+
+    private @Nullable TablesDocument getTablesDoc(Resource resource)
+    {
+        TablesDocument doc = null;
+
+        try (InputStream xmlStream = resource.getInputStream())
+        {
+            if (null != xmlStream)
+            {
+                doc = TablesDocument.Factory.parse(xmlStream);
+            }
+        }
+        catch (IOException | XmlException e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
+        }
+
+        return doc;
     }
 
     @Nullable
@@ -109,19 +117,23 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<Str
         private void uncacheDbSchema(java.nio.file.Path entry)
         {
             String filename = entry.toString();
-            String fullyQualified = FileUtil.getBaseName(filename);
 
-            // Special case "labkey" schema, which gets added to all module data sources
-            if ("labkey".equalsIgnoreCase(fullyQualified))
+            if (isSchemaXmlFile(filename))
             {
-                // Invalidate "labkey" in every scope if its meta data changes
-                for (DbScope scope : DbScope.getDbScopes())
-                    invalidateSchema(scope, "labkey");
-            }
-            else
-            {
-                Pair<DbScope, String> pair = DbSchema.getDbScopeAndSchemaName(fullyQualified);
-                invalidateSchema(pair.getKey(), pair.getValue());
+                String fullyQualified = FileUtil.getBaseName(filename);
+
+                // Special case "labkey" schema, which gets added to all module data sources
+                if ("labkey".equalsIgnoreCase(fullyQualified))
+                {
+                    // Invalidate "labkey" in every scope if its meta data changes
+                    for (DbScope scope : DbScope.getDbScopes())
+                        invalidateSchema(scope, "labkey");
+                }
+                else
+                {
+                    Pair<DbScope, String> pair = DbSchema.getDbScopeAndSchemaName(fullyQualified);
+                    invalidateSchema(pair.getKey(), pair.getValue());
+                }
             }
         }
 
