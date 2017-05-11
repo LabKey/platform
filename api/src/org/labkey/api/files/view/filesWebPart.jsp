@@ -146,11 +146,18 @@
                 var paddingX = 20;
                 var paddingY = 35;
             <%}%>
-            LABKEY.ext4.Util.resizeToViewport(fb, w, h, paddingX, paddingY);
+            if (LABKEY.experimental.useExperimentalCoreUI)
+            {
+                LABKEY.ext4ResponsiveUtil.resizeToParentContainer(fb, false, <%=!bean.isAutoResize()%>, 0, 0, 80);
+            }
+            else
+            {
+                LABKEY.ext4.Util.resizeToViewport(fb, w, h, paddingX, paddingY);
+            }
             fb.detailCheck();
         };
 
-        if (<%=bean.isAutoResize()%>) {
+        if (<%=bean.isAutoResize() || PageFlowUtil.useExperimentalCoreUI()%>) {
             Ext4.EventManager.onWindowResize(_resize);
             Ext4.defer(function(){
                 var size = Ext4.getBody().getBox();

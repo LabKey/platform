@@ -818,10 +818,10 @@ if (LABKEY.experimental.useExperimentalCoreUI)
             getHeaderAndNavHeight: function() {
                 var parent = Ext4.getBody();
                 var headerNavHeight = 0;
-                var header = parent.query(">div.labkey-page-header");
+                var header = parent.query("body>div.labkey-page-header");
                 if (header && header[0])
                     headerNavHeight += header[0].offsetHeight;
-                var nav = parent.query(">div.labkey-page-nav");
+                var nav = parent.query("body>div.labkey-page-nav");
                 if (nav && nav[0])
                     headerNavHeight += nav[0].offsetHeight;
 
@@ -834,8 +834,65 @@ if (LABKEY.experimental.useExperimentalCoreUI)
                 var container = parent.query(">div.container");
                 if (container && container[0])
                     containerWidth = container[0].offsetWidth;
+                else {
+                    // if template is not body
+                    container = parent.query(">div>div.container");
+                    if (container && container[0])
+                        containerWidth = container[0].offsetWidth;
+                }
 
                 return containerWidth;
+            },
+
+            /**
+             * This method takes an object that is/extends an Ext4.Container (e.g. Panels, Toolbars, Viewports, Menus) and
+             * resizes it so the Container fits inside the its parent container.
+             * @param extContainer - (Required) outer container which is the target to be resized
+             * @param skipWidth - true to skip updating width, default false
+             * @param skipHeight - true to skip updating height, default false
+             * @param paddingWidth - total width padding
+             * @param paddingHeight - total height padding
+             * @param offsetY - distance between bottom of page to bottom of component
+             */
+            resizeToParentContainer: function(extContainer, skipWidth, skipHeight, paddingWidth, paddingHeight, offsetY)
+            {
+                if (!extContainer || !extContainer.rendered || (skipWidth && skipHeight))
+                    return;
+
+                var width = 0;
+                if (!skipWidth)
+                {
+                    var parent = extContainer.el.parent();
+                    width = parent.getBox().width;
+                }
+
+                var xy = extContainer.el.getXY();
+
+                var height = 0;
+                if (!skipHeight)
+                {
+                    height = window.innerHeight - xy[1];
+                }
+
+                var padding = [0, 0];
+                padding[0] = paddingWidth ? paddingWidth : 0;
+                padding[1] = paddingHeight ? paddingHeight : 0;
+
+                if (offsetY == undefined || offsetY == null)
+                    offsetY = 35;
+
+                var size = {
+                    width  : Math.max(100,width-padding[0]),
+                    height : Math.max(100,height-padding[1] - offsetY)
+                };
+
+                if (skipWidth)
+                    extContainer.setHeight(size.height);
+                else if (skipHeight)
+                    extContainer.setWidth(size.width);
+                else
+                    extContainer.setSize(size);
+                extContainer.doLayout();
             }
         });
 
