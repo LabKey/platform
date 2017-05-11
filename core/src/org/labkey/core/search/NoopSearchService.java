@@ -156,7 +156,7 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public void resetPrimaryIndex()
+    public void resetIndex()
     {
     }
 
@@ -241,12 +241,6 @@ public class NoopSearchService implements SearchService
 
     @Override
     public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, int offset, int limit) throws IOException
-    {
-        return null;
-    }
-
-    @Override
-    public SearchResult searchExternal(String queryString, int offset, int limit) throws IOException
     {
         return null;
     }
@@ -350,13 +344,7 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public boolean hasExternalIndexPermission(User user)
-    {
-        return false;
-    }
-
-    @Override
-    public void updatePrimaryIndex()
+    public void updateIndex()
     {
     }
 

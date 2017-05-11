@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.search.SearchResultTemplate" %>
 <%@ page import="org.labkey.api.search.SearchScope" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
+<%@ page import="org.labkey.api.search.SearchService.SearchResult" %>
 <%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ page import="org.labkey.api.search.SearchUtils.HtmlParseException" %>
 <%@ page import="org.labkey.api.security.User" %>
@@ -174,43 +175,20 @@
 
         try
         {
-            SearchService.SearchResult result = searchConfig.getPrimarySearchResult(template.reviseQuery(ctx, queryString), categories, user, c, scope, offset, hitsPerPage);
+            SearchResult result = searchConfig.getSearchResult(template.reviseQuery(ctx, queryString), categories, user, c, scope, offset, hitsPerPage);
 
-            int primaryHits = result.totalHits;
-            int pageCount = (int)Math.ceil((double)primaryHits / hitsPerPage);
+            int hits = result.totalHits;
+            int pageCount = (int)Math.ceil((double)hits / hitsPerPage);
 
             %>
-            <table class="labkey-search-results-counts" cellspacing=0 cellpadding=0 width=100%><%
-               boolean includesSecondarySearch = false;
+            <table class="labkey-search-results-counts" cellspacing=0 cellpadding=0 width=100%>
+               <tr><td align=left><%=getResultsSummary(hits, null, template.getResultNameSingular(), template.getResultNamePlural(), null)%></td><%
 
-               if (searchConfig.hasSecondaryPermissions(user))
-               {
-                   includesSecondarySearch = true;
-                   SearchService.SearchResult secondaryResult = searchConfig.getSecondarySearchResult(queryString, categories, user, c, scope, offset, hitsPerPage);
-
-                   %>
-               <tr><td align=left colspan="2"><%
-                   if (secondaryResult.totalHits > 0)
-                   { %>
-                   <a href="<%=h(searchConfig.getSecondarySearchURL(c, queryString))%>"><%
-                   }
-
-                   out.print(getResultsSummary(secondaryResult.totalHits, searchConfig.getSecondaryDescription(c), template.getResultNameSingular(), template.getResultNamePlural(), "click to view"));
-
-                   if (secondaryResult.totalHits > 0)
-                   { %>
-                   </a><%
-                   } %>
-               </td></tr><%
-               }
-               %>
-               <tr><td align=left><%=getResultsSummary(primaryHits, includesSecondarySearch ? searchConfig.getPrimaryDescription(c) : null, template.getResultNameSingular(), template.getResultNamePlural(), includesSecondarySearch ? "shown below" : null)%></td><%
-
-            if (hitsPerPage < primaryHits)
+            if (hitsPerPage < hits)
             {
                 %><td align=right>Displaying page <%=Formats.commaf0.format(pageNo)%> of <%=Formats.commaf0.format(pageCount)%></td><%
             }
-            else if (primaryHits > 0)
+            else if (hits > 0)
             {
                 %><td align=right>Displaying all <%=h(template.getResultNamePlural())%></td><%
             }

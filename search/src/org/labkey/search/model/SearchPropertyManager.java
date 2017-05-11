@@ -31,64 +31,9 @@ import java.util.Map;
 public class SearchPropertyManager
 {
     private static final String CATEGORY = SearchModule.class.getName();
-    private static final String EXTERNAL_PATH = "externalPath";
-    private static final String EXTERNAL_ANALYZER = "externalAnalyzer";
-    private static final String EXTERNAL_DESCRIPTION = "externalDescription";
     private static final String CRAWLER_RUNNING_STATE = "runningState";
-    private static final String PRIMARY_INDEX_PATH = "primaryIndexPath";
+    private static final String INDEX_PATH = "primaryIndexPath";  // Note: don't change this legacy name
     private static final String DIRECTORY_TYPE = "directoryType";
-
-    public static ExternalIndexProperties getExternalIndexProperties()
-    {
-        final Map<String, String> map = PropertyManager.getProperties(CATEGORY);
-        final String externalIndexPath = map.get(EXTERNAL_PATH);
-        final String externalIndexAnalyzer = map.get(EXTERNAL_ANALYZER);
-        final String externalIndexDescription = map.get(EXTERNAL_DESCRIPTION);
-
-        return new ExternalIndexProperties() {
-            @Override
-            public String getExternalIndexPath()
-            {
-                return externalIndexPath;
-            }
-
-            @Override
-            public String getExternalIndexAnalyzer()
-            {
-                return externalIndexAnalyzer;
-            }
-
-            @Override
-            public String getExternalIndexDescription()
-            {
-                return externalIndexDescription;
-            }
-
-            @Override
-            public boolean hasExternalIndex()
-            {
-                return null != externalIndexPath && null != externalIndexAnalyzer && null != externalIndexDescription;
-            }
-        };
-    }
-
-    public static void saveExternalIndexProperties(ExternalIndexProperties props)
-    {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(CATEGORY, true);
-        map.put(EXTERNAL_PATH, props.getExternalIndexPath());
-        map.put(EXTERNAL_ANALYZER, props.getExternalIndexAnalyzer());
-        map.put(EXTERNAL_DESCRIPTION, props.getExternalIndexDescription());
-        map.save();
-    }
-
-    public static void clearExternalIndexProperties()
-    {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(CATEGORY, true);
-        map.remove(EXTERNAL_PATH);
-        map.remove(EXTERNAL_ANALYZER);
-        map.remove(EXTERNAL_DESCRIPTION);
-        map.save();
-    }
 
     public static boolean getCrawlerRunningState()
     {
@@ -105,17 +50,17 @@ public class SearchPropertyManager
         setProperty(CRAWLER_RUNNING_STATE, String.valueOf(running));
     }
 
-    public static File getPrimaryIndexDirectory()
+    public static File getIndexDirectory()
     {
-        String path = getProperty(PRIMARY_INDEX_PATH);
+        String path = getProperty(INDEX_PATH);
 
         // Use path if set, otherwise fall back to temp directory.
         return (null != path ? new File(path) : new File(FileUtil.getTempDirectory(), "labkey_full_text_index"));
     }
 
-    public static void setPrimaryIndexPath(String path)
+    public static void setIndexPath(String path)
     {
-        setProperty(PRIMARY_INDEX_PATH, path);
+        setProperty(INDEX_PATH, path);
     }
 
     public static String getDirectoryType()
@@ -131,13 +76,13 @@ public class SearchPropertyManager
 
     private static String getProperty(String key)
     {
-        Map<String, String> m = PropertyManager.getProperties(SearchModule.class.getName());
+        Map<String, String> m = PropertyManager.getProperties(CATEGORY);
         return m.get(key);
     }
 
     private static void setProperty(String key, String value)
     {
-        PropertyManager.PropertyMap m = PropertyManager.getWritableProperties(SearchModule.class.getName(), true);
+        PropertyManager.PropertyMap m = PropertyManager.getWritableProperties(CATEGORY, true);
         m.put(key, value);
         m.save();
     }

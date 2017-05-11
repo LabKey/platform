@@ -37,7 +37,7 @@ else
         Map<String, Double> m = ((AbstractSearchService)ss).getSearchStats();
 
         %>
-        <tr><td colspan=3 valign="top">Average time in milliseconds for each phase of searching the primary index:</td></tr>
+        <tr><td colspan=3 valign="top">Average time in milliseconds for each phase of searching the index:</td></tr>
         <tr><td colspan=3 valign="top">&nbsp;</td></tr><%
 
         for (Map.Entry<String, Double> e : m.entrySet())

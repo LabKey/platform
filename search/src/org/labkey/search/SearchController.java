@@ -27,7 +27,6 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -38,12 +37,11 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.search.SearchService.SearchResult;
 import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.AdminConsoleAction;
-import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -57,12 +55,10 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
@@ -70,17 +66,13 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.audit.SearchAuditProvider;
 import org.labkey.search.model.AbstractSearchService;
-import org.labkey.search.model.ExternalIndexProperties;
 import org.labkey.search.model.IndexInspector;
-import org.labkey.search.model.LuceneAnalyzer;
-import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.model.SearchPropertyManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.IOException;
 import java.sql.Date;
 import java.util.List;
@@ -130,18 +122,15 @@ public class SearchController extends SpringActionController
     }
 
 
-    public static class AdminForm implements ExternalIndexProperties
+    public static class AdminForm
     {
-        public String[] _messages = {"", "Primary index deleted", "Primary index path changed", "Directory type changed"};
+        public String[] _messages = {"", "Index deleted", "Index path changed", "Directory type changed"};
         private int msg = 0;
         private boolean pause;
         private boolean start;
         private boolean delete;
-        private String primaryIndexPath;
+        private String indexPath;
 
-        private String externalIndexPath = null;
-        private String externalIndexDescription = null;
-        private String externalIndexAnalyzer = null;
         private boolean _path;
 
         private boolean _directory;
@@ -155,41 +144,6 @@ public class SearchController extends SpringActionController
         public void setMsg(int m)
         {
             msg = m;
-        }
-
-        public String getExternalIndexPath()
-        {
-            return externalIndexPath;
-        }
-
-        public void setExternalIndexPath(String externalIndexPath)
-        {
-            this.externalIndexPath = externalIndexPath;
-        }
-
-        public String getExternalIndexDescription()
-        {
-            return externalIndexDescription;
-        }
-
-        public void setExternalIndexDescription(String externalIndexDescription)
-        {
-            this.externalIndexDescription = externalIndexDescription;
-        }
-
-        public String getExternalIndexAnalyzer()
-        {
-            return externalIndexAnalyzer;
-        }
-
-        public boolean hasExternalIndex()
-        {
-            throw new IllegalArgumentException();
-        }
-
-        public void setExternalIndexAnalyzer(String externalIndexAnalyzer)
-        {
-            this.externalIndexAnalyzer = externalIndexAnalyzer;
         }
 
         public boolean isDelete()
@@ -222,14 +176,14 @@ public class SearchController extends SpringActionController
             this.pause = pause;
         }
 
-        public String getPrimaryIndexPath()
+        public String getIndexPath()
         {
-            return primaryIndexPath;
+            return indexPath;
         }
 
-        public void setPrimaryIndexPath(String primaryIndexPath)
+        public void setIndexPath(String indexPath)
         {
-            this.primaryIndexPath = primaryIndexPath;
+            this.indexPath = indexPath;
         }
 
         public boolean isPath()
@@ -293,8 +247,6 @@ public class SearchController extends SpringActionController
             @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
             Throwable t = ss.getConfigurationError();
 
-            ExternalIndexProperties props = SearchPropertyManager.getExternalIndexProperties();
-
             VBox vbox = new VBox();
 
             if (null != t)
@@ -307,20 +259,16 @@ public class SearchController extends SpringActionController
                 vbox.addView(configErrorView);
             }
 
-            // Spring errors get displayed in the "Primary Index Configuration" pane
+            // Spring errors get displayed in the "Index Configuration" pane
             WebPartView indexerView = new JspView<>(SearchController.class, "view/indexerAdmin.jsp", form, errors);
-            indexerView.setTitle("Primary Index Configuration");
+            indexerView.setTitle("Index Configuration");
             vbox.addView(indexerView);
-
-            WebPartView externalIndexView = new JspView<>(SearchController.class, "view/externalIndex.jsp", props);
-            externalIndexView.setTitle("External Index Configuration");
-            vbox.addView(externalIndexView);
 
             // Won't be able to gather statistics if the search index is misconfigured
             if (null == t)
             {
                 WebPartView indexerStatsView = new JspView<>(SearchController.class, "view/indexerStats.jsp", form);
-                indexerStatsView.setTitle("Primary Index Statistics");
+                indexerStatsView.setTitle("Index Statistics");
                 vbox.addView(indexerStatsView);
             }
 
@@ -360,15 +308,15 @@ public class SearchController extends SpringActionController
             }
             else if (form.isPath())
             {
-                SearchPropertyManager.setPrimaryIndexPath(form.getPrimaryIndexPath()); 
-                ss.updatePrimaryIndex();
+                SearchPropertyManager.setIndexPath(form.getIndexPath());
+                ss.updateIndex();
                 _msgid = 2;
                 audit(getUser(), null, "(admin action)", "Index Path Set");
             }
             else if (form.isDirectory())
             {
                 SearchPropertyManager.setDirectoryType(form.getDirectoryType());
-                ss.resetPrimaryIndex();
+                ss.resetIndex();
                 _msgid = 3;
                 audit(getUser(), null, "(admin action)", "Directory type set to " + form.getDirectoryType());
             }
@@ -460,75 +408,6 @@ public class SearchController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
-    public class SetExternalIndexAction extends SimpleRedirectAction<AdminForm>
-    {
-        @Override
-        public ActionURL getRedirectURL(AdminForm form) throws Exception
-        {
-            String message = getValidationError(form);
-
-            if (null == message)
-            {
-                SearchPropertyManager.saveExternalIndexProperties(form);
-                SearchService ss = SearchService.get();
-
-                // TODO: Add to SearchService interface
-                ((LuceneSearchServiceImpl)ss).resetExternalIndex();
-                message = "External index set";
-            }
-
-            ActionURL url = new ActionURL(AdminAction.class, ContainerManager.getRoot());
-            url.addParameter("externalMessage", message);
-            return url;
-        }
-
-        private @Nullable String getValidationError(ExternalIndexProperties props)
-        {
-            if (StringUtils.isBlank(props.getExternalIndexDescription()))
-                return "You must enter a description";
-
-            String path = props.getExternalIndexPath();
-
-            if (StringUtils.isBlank(path))
-                return "You must enter a valid path";
-
-            if (!new File(path).exists())
-                return "You must enter a path to an existing directory";
-
-            try
-            {
-                LuceneAnalyzer.valueOf(props.getExternalIndexAnalyzer());
-            }
-            catch (IllegalArgumentException e)
-            {
-                return "Invalid analyzer";
-            }
-
-            return null;
-        }
-    }
-
-
-    @RequiresSiteAdmin
-    public class ClearExternalIndexAction extends SimpleRedirectAction
-    {
-        @Override
-        public ActionURL getRedirectURL(Object o) throws Exception
-        {
-            SearchPropertyManager.clearExternalIndexProperties();
-            SearchService ss = SearchService.get();
-
-            // TODO: Add to SearchService interface
-            ((LuceneSearchServiceImpl)ss).resetExternalIndex();
-
-            ActionURL url = new ActionURL(AdminAction.class, ContainerManager.getRoot());
-            url.addParameter("externalMessage", "External index cleared");
-            return url;
-        }
-    }
-
-
     public static class SwapForm
     {
         boolean _ui = true;
@@ -541,90 +420,6 @@ public class SearchController extends SpringActionController
         public void setUi(boolean ui)
         {
             _ui = ui;
-        }
-    }
-
-
-    @RequiresNoPermission
-    public class SwapExternalIndexAction extends SimpleViewAction<SwapForm>
-    {
-        @Override
-        public ModelAndView getView(SwapForm form, BindException errors) throws Exception
-        {
-            SearchService ss = SearchService.get();
-            // TODO: Add to SearchService interface
-            ((LuceneSearchServiceImpl)ss).swapExternalIndex();
-
-            String message = "External index replaced";
-
-            // If this was initiated from the UI and reload was not queued up then reshow the form and display the message
-            if (form.isUi())
-            {
-                ActionURL url = new ActionURL(AdminAction.class, ContainerManager.getRoot());
-                url.addParameter("externalMessage", message);
-
-                return HttpView.redirect(url);
-            }
-            else
-            {
-                // Plain text response for scripts
-                sendPlainText(message);
-                return null;
-            }
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-
-    @RequiresSiteAdmin
-    public class PermissionsAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            SearchService ss = SearchService.get();
-
-            if (null != ss)
-            {
-                if (SearchPropertyManager.getExternalIndexProperties().hasExternalIndex())
-                {
-                    List<SecurableResource> resources = ss.getSecurableResources(getUser());
-
-                    if (resources.size() < 1)
-                    {
-                        throw new IllegalStateException("No securable resources found");
-                    }
-                    else if (resources.size() > 1)
-                    {
-                        throw new IllegalStateException("Multiple securable resources found");
-                    }
-                    else
-                    {
-                        return new JspView<>(SearchController.class, "view/externalIndexPermissions.jsp", resources.get(0));
-                    }
-                }
-                else
-                {
-                    errors.reject(ERROR_MSG, "External index is not configured");
-                }
-            }
-            else
-            {
-                errors.reject(ERROR_MSG, "Search service is not running");
-            }
-
-            return new SimpleErrorView(errors);
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
         }
     }
 
@@ -761,7 +556,7 @@ public class SearchController extends SpringActionController
 
             if (null != StringUtils.trimToNull(query))
             {
-                SearchService.SearchResult result;
+                SearchResult result;
                 try
                 {
                     //UNDONE: paging, rowlimit etc
@@ -834,35 +629,6 @@ public class SearchController extends SpringActionController
     }
     
 
-    private abstract class AbstractSearchAction extends SimpleViewAction<SearchForm>
-    {
-        public ModelAndView getView(SearchForm form, BindException errors, boolean external) throws Exception
-        {
-            SearchService ss = SearchService.get();
-
-            if (null == ss)
-            {
-                throw new NotFoundException("Search service is not registered");
-            }
-
-            form.setPrint(isPrint());
-
-            audit(form, external);
-
-            // reenable caching for search results page (fast browser back button)
-            HttpServletResponse response = getViewContext().getResponse();
-            response.setDateHeader("Expires", HeartBeat.currentTimeMillis() + (5 * 60 * 1000));
-            response.setHeader("Cache-Control", "private");
-            response.setHeader("Pragma", "cache");
-            response.addHeader("Vary", "Cookie");
-            getPageConfig().setNoIndex();
-            getPageConfig().setHelpTopic(new HelpTopic("luceneSearch"));
-
-            return new JspView<>("/org/labkey/search/view/search.jsp", form);
-        }
-    }
-
-
     public static ActionURL getSearchURL(Container c)
     {
         return new ActionURL(SearchAction.class, c);
@@ -894,16 +660,12 @@ public class SearchController extends SpringActionController
         return url;
     }
 
-    // This interface hides all the specifics of internal vs. external index search, keeping search.jsp reasonably generic.
+    // This interface used to be used to hide all the specifics of internal vs. external index search, but we no longer support external indexes. This interface could be removed.
     public interface SearchConfiguration
     {
         ActionURL getPostURL(Container c);    // Search does not actually post
-        ActionURL getSecondarySearchURL(Container c, String queryString); // TODO: Need other params? (category, scope)
-        String getPrimaryDescription(Container c);
-        String getSecondaryDescription(Container c);
-        SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, int offset, int limit) throws IOException;
-        SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, int offset, int limit) throws IOException;
-        boolean hasSecondaryPermissions(User user);
+        String getDescription(Container c);
+        SearchResult getSearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, int offset, int limit) throws IOException;
         boolean includeAdvancedUI();
         boolean includeNavigationLinks();
     }
@@ -924,39 +686,15 @@ public class SearchController extends SpringActionController
         }
 
         @Override
-        public ActionURL getSecondarySearchURL(Container c, String queryString)
-        {
-            return getSearchExternalURL(c, queryString);
-        }
-
-        @Override
-        public String getPrimaryDescription(Container c)
+        public String getDescription(Container c)
         {
             return LookAndFeelProperties.getInstance(c).getShortName();
         }
 
         @Override
-        public String getSecondaryDescription(Container c)
-        {
-            return SearchPropertyManager.getExternalIndexProperties().getExternalIndexDescription();
-        }
-
-        @Override
-        public SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, int offset, int limit) throws IOException
+        public SearchResult getSearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, int offset, int limit) throws IOException
         {
             return _ss.search(queryString, _ss.getCategories(category), user, currentContainer, scope, offset, limit);
-        }
-
-        @Override
-        public SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, int offset, int limit) throws IOException
-        {
-            return _ss.searchExternal(queryString, offset, limit);
-        }
-
-        @Override
-        public boolean hasSecondaryPermissions(User user)
-        {
-            return _ss.hasExternalIndexPermission(user);
         }
 
         @Override
@@ -974,7 +712,7 @@ public class SearchController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class SearchAction extends AbstractSearchAction
+    public class SearchAction extends SimpleViewAction<SearchForm>
     {
         private String _category = null;
         private SearchScope _scope = null;
@@ -986,7 +724,27 @@ public class SearchController extends SpringActionController
             _scope = form.getSearchScope();
             _form = form;
 
-            return super.getView(form, errors, false);
+            SearchService ss = SearchService.get();
+
+            if (null == ss)
+            {
+                throw new NotFoundException("Search service is not registered");
+            }
+
+            form.setPrint(isPrint());
+
+            audit(form);
+
+            // reenable caching for search results page (fast browser back button)
+            HttpServletResponse response = getViewContext().getResponse();
+            response.setDateHeader("Expires", HeartBeat.currentTimeMillis() + (5 * 60 * 1000));
+            response.setHeader("Cache-Control", "private");
+            response.setHeader("Pragma", "cache");
+            response.addHeader("Vary", "Cookie");
+            getPageConfig().setNoIndex();
+            getPageConfig().setHelpTopic(new HelpTopic("luceneSearch"));
+
+            return new JspView<>("/org/labkey/search/view/search.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1028,119 +786,6 @@ public class SearchController extends SpringActionController
     }
 
 
-
-    public static ActionURL getSearchExternalURL(Container c)
-    {
-        return new ActionURL(SearchExternalAction.class, c);
-    }
-
-
-    public static ActionURL getSearchExternalURL(Container c, String queryString)
-    {
-        ActionURL url = getSearchExternalURL(c);
-        url.addParameter("q", queryString);
-        return url;
-    }
-
-
-    @RequiresPermission(ReadPermission.class)
-    public class SearchExternalAction extends AbstractSearchAction
-    {
-        String _description;
-
-        @Override
-        public void checkPermissions() throws UnauthorizedException
-        {
-            super.checkPermissions();
-
-            // Show results page only if user has permission to see external index results.
-            SearchService ss = SearchService.get();
-
-            if (!ss.hasExternalIndexPermission(getUser()))
-            {
-                throw new UnauthorizedException();
-            }
-        }
-
-        public ModelAndView getView(SearchForm form, BindException errors) throws Exception
-        {
-            SearchConfiguration config = new ExternalSearchConfiguration();
-            form.setConfiguration(config);
-            _description = config.getPrimaryDescription(getContainer());
-            return super.getView(form, errors, true);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Search " + _description);
-        }
-    }
-
-
-    public class ExternalSearchConfiguration implements SearchConfiguration
-    {
-        private final SearchService _ss = SearchService.get();
-
-        private ExternalSearchConfiguration()
-        {
-        }
-
-        @Override
-        public ActionURL getPostURL(Container c)
-        {
-            return getSearchExternalURL(c);
-        }
-
-        @Override
-        public ActionURL getSecondarySearchURL(Container c, String queryString)
-        {
-            return getSearchURL(c, queryString);
-        }
-
-        @Override
-        public String getPrimaryDescription(Container c)
-        {
-            return SearchPropertyManager.getExternalIndexProperties().getExternalIndexDescription();
-        }
-
-        @Override
-        public String getSecondaryDescription(Container c)
-        {
-            return LookAndFeelProperties.getInstance(c).getShortName();
-        }
-
-        @Override
-        public SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, int offset, int limit) throws IOException
-        {
-            return _ss.searchExternal(queryString, offset, limit);
-        }
-
-        @Override
-        public SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, int offset, int limit) throws IOException
-        {
-            return _ss.search(queryString, _ss.getCategories(category), user, currentContainer, scope, offset, limit);
-        }
-
-        @Override
-        public boolean hasSecondaryPermissions(User user)
-        {
-            return true;
-        }
-
-        @Override
-        public boolean includeAdvancedUI()
-        {
-            return false;
-        }
-
-        @Override
-        public boolean includeNavigationLinks()
-        {
-            return false;
-        }
-    }
-
-
     @RequiresPermission(ReadPermission.class)
     public class CommentAction extends FormHandlerAction<SearchForm>
     {
@@ -1152,7 +797,7 @@ public class SearchController extends SpringActionController
         @Override
         public boolean handlePost(SearchForm searchForm, BindException errors) throws Exception
         {
-            audit(searchForm, false);
+            audit(searchForm);
             return true;
         }
 
@@ -1371,20 +1016,10 @@ public class SearchController extends SpringActionController
     }
 
     
-    protected void audit(SearchForm form, boolean external)
+    protected void audit(SearchForm form)
     {
         ViewContext ctx = getViewContext();
         String comment = form.getComment();
-
-        if (external)
-        {
-            String prefix = "Searched against " + form.getConfig().getPrimaryDescription(ctx.getContainer());
-
-            if (StringUtils.isBlank(comment))
-                comment = prefix;
-            else
-                comment = prefix + ": " + comment;
-        }
 
         audit(ctx.getUser(), ctx.getContainer(), form.getQueryString(), comment);
     }

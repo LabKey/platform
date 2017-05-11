@@ -43,13 +43,7 @@ public class SolrSearchServiceImpl extends AbstractSearchService
     }
 
     @Override
-    public SearchResult searchExternal(String queryString, int offset, int limit) throws IOException
-    {
-        return null;
-    }
-
-    @Override
-    public void resetPrimaryIndex()
+    public void resetIndex()
     {
     }
 

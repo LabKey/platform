@@ -687,15 +687,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
 
     @Override
-    public void updatePrimaryIndex()
+    public void updateIndex()
     {
         // Subclasses should switch out the index at this point.
-    }
-
-    @Override
-    public boolean hasExternalIndexPermission(User user)
-    {
-        return false;
     }
 
     @Override

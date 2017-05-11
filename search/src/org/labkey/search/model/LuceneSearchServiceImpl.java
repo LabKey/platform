@@ -78,11 +78,7 @@ import org.labkey.api.search.SearchUtils.HtmlParseException;
 import org.labkey.api.search.SearchUtils.LuceneMessageParser;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
@@ -144,8 +140,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     // other threads immediately. Initialize to Noop class to prevent rare NPE (e.g., system maintenance runs before index
     // is initialized).
     private volatile WritableIndexManager _indexManager = new NoopWritableIndex("the indexer has not been started yet", _log);
-
-    private ExternalIndexManager _externalIndexManager;
 
     private final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
     private final Analyzer _standardAnalyzer = LuceneAnalyzer.LabKeyAnalyzer.getAnalyzer();
@@ -228,7 +222,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
-            File indexDir = SearchPropertyManager.getPrimaryIndexDirectory();
+            File indexDir = SearchPropertyManager.getIndexDirectory();
             _indexManager = WritableIndexManagerImpl.get(indexDir.toPath(), getAnalyzer());
             setConfigurationError(null);  // Clear out any previous error
         }
@@ -299,9 +293,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
     @Override
-    public void updatePrimaryIndex()
+    public void updateIndex()
     {
-        super.updatePrimaryIndex();
+        super.updateIndex();
 
         // Commit and close current index
         commit();
@@ -326,7 +320,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             initializeIndex();
             clearLastIndexedIfEmpty();
-            resetExternalIndex();
         }
         catch (Exception e)
         {
@@ -338,7 +331,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
 
     @Override
-    public void resetPrimaryIndex()
+    public void resetIndex()
     {
         closeIndex();
         initializeIndex();
@@ -377,36 +370,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         finally
         {
             _indexManager.releaseSearcher(is);
-        }
-    }
-
-
-    public void resetExternalIndex() throws IOException, InterruptedException
-    {
-        if (null != _externalIndexManager)
-        {
-            _externalIndexManager.close();
-            _externalIndexManager = null;
-        }
-
-        ExternalIndexProperties props = SearchPropertyManager.getExternalIndexProperties();
-
-        if (props.hasExternalIndex())
-        {
-            File externalIndexFile = new File(props.getExternalIndexPath());
-            Analyzer analyzer = LuceneAnalyzer.valueOf(props.getExternalIndexAnalyzer()).getAnalyzer();
-
-            if (externalIndexFile.exists())
-                _externalIndexManager = ExternalIndexManager.get(externalIndexFile, analyzer);
-        }
-    }
-
-
-    public void swapExternalIndex() throws IOException, InterruptedException
-    {
-        if (null != _externalIndexManager)
-        {
-            _externalIndexManager.swap();
         }
     }
 
@@ -1299,7 +1262,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
-            Directory directory = WritableIndexManagerImpl.openDirectory(SearchPropertyManager.getPrimaryIndexDirectory().toPath());
+            Directory directory = WritableIndexManagerImpl.openDirectory(SearchPropertyManager.getIndexDirectory().toPath());
 
             if (DirectoryReader.indexExists(directory))
             {
@@ -1547,59 +1510,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    @Override
-    public boolean hasExternalIndexPermission(User user)
-    {
-        if (null == _externalIndexManager)
-            return false;
-
-        SecurityPolicy policy = SecurityPolicyManager.getPolicy(_externalIndexManager);
-
-        return policy.hasPermission(user, ReadPermission.class);
-    }
-
-
-    @Override
-    public SearchResult searchExternal(String queryString, int offset, int limit) throws IOException
-    {
-        if (null == _externalIndexManager)
-            throw new IllegalStateException("External index is not defined");
-
-        int hitsToRetrieve = offset + limit;
-        IndexSearcher searcher = _externalIndexManager.getSearcher();
-
-        try
-        {
-            QueryParser queryParser = new MultiFieldQueryParser(new String[]{"content", "title"}, _externalIndexManager.getAnalyzer());
-            Query query = queryParser.parse(queryString);
-            TopDocs docs = searcher.search(query, hitsToRetrieve);
-            return createSearchResult(offset, hitsToRetrieve, docs, searcher);
-        }
-        catch (ParseException x)
-        {
-            throw new IOException(x.getMessage());
-        }
-        finally
-        {
-            _externalIndexManager.releaseSearcher(searcher);
-        }
-    }
-
-
     protected void shutDown()
     {
         closeIndex();
         _standardAnalyzer.close();
-
-        try
-        {
-            if (null != _externalIndexManager)
-                _externalIndexManager.close();
-        }
-        catch (Exception e)
-        {
-            _log.error("Closing external index", e);
-        }
     }
 
 
@@ -1668,13 +1582,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     @Override
     public List<SecurableResource> getSecurableResources(User user)
     {
-        if (null != _externalIndexManager)
-        {
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(_externalIndexManager);
-            if (policy.hasPermission(user, AdminPermission.class))
-                return Collections.singletonList(_externalIndexManager);
-        }
-
         return Collections.emptyList();
     }
 
@@ -1752,7 +1659,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
 
         /**
-         *  Analyzes text with all ExternalAnalyzers and logs the results
+         *  Analyzes text with the passed in Analyzer and logs the results
          */
         private void analyze(LuceneAnalyzer luceneAnalyzer, String text, String expectedResult, String... fieldNames) throws IOException
         {

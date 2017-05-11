@@ -79,7 +79,7 @@ public class IndexInspector
 
     private static Path getIndexDirectory()
     {
-        return SearchPropertyManager.getPrimaryIndexDirectory().toPath();
+        return SearchPropertyManager.getIndexDirectory().toPath();
     }
 
     private static class TSVIndexWriter extends TSVWriter

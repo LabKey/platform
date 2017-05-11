@@ -48,12 +48,12 @@ else
                 <td colspan="2">Index Format: <%=h(ss.getIndexFormatDescription())%></td>
             </tr>
             <tr>
-                <td>Path to primary full-text search index:</td>
-                <td><input name="primaryIndexPath" size="80" value="<%=h(SearchPropertyManager.getPrimaryIndexDirectory().getPath())%>"></td>
+                <td>Path to full-text search index:</td>
+                <td><input name="indexPath" size="80" value="<%=h(SearchPropertyManager.getIndexDirectory().getPath())%>"></td>
             </tr><%
         if (hasAdminOpsPerms)
         {
-            %><tr><td colspan="2">Note: Changing the primary index path requires re-indexing all data, which can be very expensive.</td></tr>
+            %><tr><td colspan="2">Note: Changing the index path requires re-indexing all data, which can be very expensive.</td></tr>
             <tr><td><input type="hidden" name="path" value="1"></td></tr>
             <tr><td colspan="2" width="500"><%= button("Set Path").submit(true) %></td></tr><%
         }
