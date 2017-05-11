@@ -290,9 +290,6 @@ public interface SearchService
 
     SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, int offset, int limit) throws IOException;
 
-    // Search the external index.
-    SearchResult searchExternal(String queryString, int offset, int limit) throws IOException;
-
     String escapeTerm(String term);
     
     List<SearchCategory> getSearchCategories();
@@ -303,13 +300,12 @@ public interface SearchService
 
     void purgeQueues();
     void start();
-    void resetPrimaryIndex();
+    void resetIndex();
     void startCrawler();
     void pauseCrawler();
-    void updatePrimaryIndex();
+    void updateIndex();
     @Nullable Throwable getConfigurationError();
     boolean isRunning();
-    boolean hasExternalIndexPermission(User user);
 
     List<SecurableResource> getSecurableResources(User user);    
     IndexTask defaultTask();
