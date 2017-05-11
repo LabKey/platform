@@ -137,11 +137,13 @@ Ext4.define('LABKEY.query.browser.Browser', {
     _initResize : function() {
         if (LABKEY.experimental.useExperimentalCoreUI) {
             this.on('afterrender', function() {
-                Ext4.EventManager.onWindowResize(function() {
-                    var parent = this.getEl().parent();
-                    var size = parent.getBox();
-                    this.setWidth(size.width);
-                }, this, {delay: 250});
+                var resize = function(){
+                    LABKEY.ext4ResponsiveUtil.resizeToParentContainer(this, false, false);
+                };
+                Ext4.EventManager.onWindowResize(resize, this);
+                Ext4.defer(function(){
+                    resize.call(this);
+                }, 250, this);
             }, this, {single: true});
         }
         else {

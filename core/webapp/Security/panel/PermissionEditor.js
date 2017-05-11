@@ -26,9 +26,14 @@ Ext4.define('Security.panel.PermissionEditor', {
             layout :'border',
             bodyStyle : 'background-color: transparent;',
             border :false,
-            minWidth  : 930,
             items  : this.getItems()
         });
+
+        if (!LABKEY.experimental.useExperimentalCoreUI){
+            Ext4.apply(this, {
+                minWidth  : 930
+            });
+        }
 
 //        if (!this.treeConfig) {
 //            console.warn('A treeConfig was not supplied. Unable to show Folder Tree.');

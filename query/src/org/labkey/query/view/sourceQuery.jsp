@@ -247,7 +247,12 @@
         });
 
         var _resize = function(w, h) {
-            LABKEY.ext.Utils.resizeToViewport(panel, w, h, 40, 50);
+            if (LABKEY.experimental.useExperimentalCoreUI) {
+                LABKEY.ext3ResponsiveUtil.resizeToParentContainer(panel, false, false);
+            }
+            else  {
+                LABKEY.ext.Utils.resizeToViewport(panel, w, h, 40, 50);
+            }
         };
 
         Ext.EventManager.onWindowResize(_resize);
