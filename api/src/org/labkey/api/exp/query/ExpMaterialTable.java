@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleSet;
 
@@ -47,6 +48,6 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>
         Outputs,
     }
 
-    void populate(ExpSampleSet ss, boolean filterSampleSet);
+    void populate(@Nullable ExpSampleSet ss, boolean filterSampleSet);
     void setSampleSet(ExpSampleSet ss, boolean filter);
 }
