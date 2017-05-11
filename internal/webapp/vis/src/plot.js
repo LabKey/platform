@@ -1593,6 +1593,8 @@ boxPlot.render();
  * @param {Array} [config.properties.yAxisDomain] (Optional) Y-axis min/max values. Example: [0,20].
  * @param {String} [config.properties.color] (Optional) The data property name for the color to be used for the data point.
  * @param {Array} [config.properties.colorRange] (Optional) The array of color values to use for the data points.
+ * @param {Function} [config.properties.pointOpacityFn] (Optional) A function to be called with the point data to
+ *                  return an opacity value for that point.
  * @param {String} [config.groupBy] (optional) The data property name used to group plot lines and points.
  * @param {Function} [config.properties.hoverTextFn] (Optional) The hover text to display for each data point. The parameter
  *                  to that function will be a row of data with access to all values for that row.
@@ -1890,8 +1892,9 @@ boxPlot.render();
         };
 
         // determine the width the error bars
-        if (config.properties.disableRangeDisplay)
+        if (config.properties.disableRangeDisplay) {
             config.layers = [];
+        }
         else {
             var barWidth = Math.max(config.width / config.data[config.data.length-1].seqValue / 5, 3);
 
@@ -2053,6 +2056,7 @@ boxPlot.render();
             var pointLayerConfig = {
                 geom: new LABKEY.vis.Geom.Point({
                     position: config.properties.position,
+                    opacity: config.properties.pointOpacityFn,
                     size: 3
                 }),
                 aes: {}
