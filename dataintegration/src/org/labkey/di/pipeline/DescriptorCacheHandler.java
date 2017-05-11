@@ -24,11 +24,11 @@ import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.resource.Resource;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * User: adam
@@ -37,23 +37,18 @@ import java.util.stream.Collectors;
  */
 public class DescriptorCacheHandler implements ModuleResourceCacheHandler<Map<String, ScheduledPipelineJobDescriptor>>
 {
+    public static final String DESCRIPTOR_EXTENSION = ".xml";
+
     private static final TransformManager _transformManager = TransformManager.get();
 
-    static final String DIR_NAME = "etls";
-
     @Override
-    public Map<String, ScheduledPipelineJobDescriptor> load(@Nullable Resource dir, Module module)
+    public Map<String, ScheduledPipelineJobDescriptor> load(Stream<? extends Resource> resources, Module module)
     {
-        if (null == dir)
-            return Collections.emptyMap();
-
-        Map<String, ScheduledPipelineJobDescriptor> map = dir.list().stream()
-            .filter(resource -> resource.isFile() && _transformManager.isConfigFile(resource.getName()))
+        return unmodifiable(resources
+            .filter(getFilter(DESCRIPTOR_EXTENSION))
             .map(resource -> _transformManager.parseETL(resource, module))
             .filter(Objects::nonNull)
-            .collect(Collectors.toMap(TransformDescriptor::getId, Function.identity()));
-
-        return Collections.unmodifiableMap(map);
+            .collect(Collectors.toMap(TransformDescriptor::getId, Function.identity())));
     }
 
     @Nullable
@@ -90,9 +85,12 @@ public class DescriptorCacheHandler implements ModuleResourceCacheHandler<Map<St
             {
                 String filename = entry.toString();
 
-                final String configName = _transformManager.getConfigName(filename);
-                final TaskId pipelineId = new TaskId(module.getName(), TaskId.Type.pipeline, _transformManager.createConfigId(module, configName), 0);
-                PipelineJobService.get().removeTaskPipeline(pipelineId);
+                if (getFilenameFilter(DESCRIPTOR_EXTENSION).test(filename))
+                {
+                    final String configName = _transformManager.getConfigName(filename);
+                    final TaskId pipelineId = new TaskId(module.getName(), TaskId.Type.pipeline, _transformManager.createConfigId(module, configName), 0);
+                    PipelineJobService.get().removeTaskPipeline(pipelineId);
+                }
             }
         };
     }

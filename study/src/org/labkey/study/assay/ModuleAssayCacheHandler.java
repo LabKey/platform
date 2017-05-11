@@ -30,8 +30,8 @@ import org.labkey.study.assay.xml.ProviderType;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
+import java.util.stream.Stream;
 
 /**
  * User: kevink
@@ -40,36 +40,58 @@ import java.util.LinkedList;
 
 public class ModuleAssayCacheHandler implements ModuleResourceCacheHandler<Collection<ModuleAssayProvider>>
 {
-    public static final String DOMAINS_DIR_NAME = "domains";
-
     @Override
-    public Collection<ModuleAssayProvider> load(@Nullable Resource dir, Module module)
+    public Collection<ModuleAssayProvider> load(Stream<? extends Resource> resources, Module module)
     {
         Collection<ModuleAssayProvider> ret = new LinkedList<>();
-        if (dir != null && dir.isCollection())
-        {
-            for (Resource assayProviderDir : dir.list())
+
+        resources
+            .filter(resource -> resource.getName().equals("config.xml"))
+            .forEach(resource ->
             {
-                if (!assayProviderDir.isCollection())
-                    continue;
-
-                // A config.xml file is required to define the file-based module assay.
-                Resource configFile = assayProviderDir.find("config.xml");
-                if (configFile == null || !configFile.isFile())
-                    continue;
-
                 try
                 {
-                    assayProviderDir.list(); // This adds a file watcher in this directory
-                    ret.add(loadAssayProvider(module, assayProviderDir, configFile));
+                    ret.add(loadAssayProvider(module, resource));
                 }
                 catch (Exception e)
                 {
                     ExceptionUtil.logExceptionToMothership(null, e);
                 }
-            }
+            });
+
+        return unmodifiable(ret);
+    }
+
+    private ModuleAssayProvider loadAssayProvider(Module module, Resource configFile) throws IOException, ModuleResourceLoadException
+    {
+        Resource assayProviderDir = configFile.parent();
+        String assayName = assayProviderDir.getName();
+
+        ProviderType providerConfig = parseProvider(configFile);
+        if (providerConfig == null)
+            providerConfig = ProviderDocument.Factory.newInstance().addNewProvider();
+
+        if (providerConfig.isSetName())
+            assayName = providerConfig.getName();
+        else
+            providerConfig.setName(assayName);
+
+        return new ModuleAssayProvider(assayName, module, assayProviderDir, providerConfig);
+    }
+
+    private ProviderType parseProvider(Resource configFile) throws IOException, ModuleResourceLoadException
+    {
+        try
+        {
+            ProviderDocument doc = ProviderDocument.Factory.parse(configFile.getInputStream());
+            if (doc != null)
+                return doc.getProvider();
         }
-        return Collections.unmodifiableCollection(ret);
+        catch (XmlException e)
+        {
+            throw new ModuleResourceLoadException(e);
+        }
+        return null;
     }
 
     @Nullable
@@ -101,36 +123,5 @@ public class ModuleAssayCacheHandler implements ModuleResourceCacheHandler<Colle
             {
             }
         };
-    }
-
-    private ModuleAssayProvider loadAssayProvider(Module module, Resource assayProviderDir, Resource configFile) throws IOException, ModuleResourceLoadException
-    {
-        String assayName = assayProviderDir.getName();
-
-        ProviderType providerConfig = parseProvider(configFile);
-        if (providerConfig == null)
-            providerConfig = ProviderDocument.Factory.newInstance().addNewProvider();
-
-        if (providerConfig.isSetName())
-            assayName = providerConfig.getName();
-        else
-            providerConfig.setName(assayName);
-
-        return new ModuleAssayProvider(assayName, module, assayProviderDir, providerConfig);
-    }
-
-    private ProviderType parseProvider(Resource configFile) throws IOException, ModuleResourceLoadException
-    {
-        try
-        {
-            ProviderDocument doc = ProviderDocument.Factory.parse(configFile.getInputStream());
-            if (doc != null)
-                return doc.getProvider();
-        }
-        catch (XmlException e)
-        {
-            throw new ModuleResourceLoadException(e);
-        }
-        return null;
     }
 }

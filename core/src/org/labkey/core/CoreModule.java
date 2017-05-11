@@ -952,9 +952,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 SecurityApiActions.TestCase.class,
                 SqlScriptController.TestCase.class,
                 UserController.TestCase.class,
-//                FolderTypeManager.TestCase.class,
-//                ModuleHtmlView.TestCase.class,
-//                Portal.TestCase.class,
+                FolderTypeManager.TestCase.class,
+                ModuleHtmlView.TestCase.class,
+                Portal.TestCase.class,
                 MultiValuedMapCollectors.TestCase.class
         ));
 

@@ -21,15 +21,27 @@ import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.pipeline.*;
+import org.labkey.api.pipeline.PipelineActionConfig;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineProvider;
+import org.labkey.api.pipeline.TaskFactory;
+import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.TaskPipeline;
+import org.labkey.api.pipeline.TaskPipelineRegistry;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.util.*;
+import org.labkey.api.util.FileType;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.data.Container;
 import org.labkey.api.view.ViewContext;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.api.TaskPipelineImpl;
@@ -226,7 +238,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
      * @param pipelineTaskId The taskid of the TaskPipeline
      * @param pipelineConfig The task pipeline definition.
      */
-    public static FileAnalysisTaskPipeline create(TaskId pipelineTaskId, Resource pipelineConfig)
+    public static FileAnalysisTaskPipeline create(Module module, Resource pipelineConfig, TaskId pipelineTaskId)
     {
         if (pipelineTaskId.getName() == null)
             throw new IllegalArgumentException("Task pipeline must by named");
@@ -236,8 +248,6 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
         if (pipelineTaskId.getModuleName() == null)
             throw new IllegalArgumentException("Task pipeline must be defined by a module");
-
-        Module module = ModuleLoader.getInstance().getModule(pipelineTaskId.getModuleName());
 
         PipelineDocument doc;
         try

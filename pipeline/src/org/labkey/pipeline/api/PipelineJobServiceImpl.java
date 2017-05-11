@@ -31,6 +31,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -87,8 +88,12 @@ import java.util.stream.Collectors;
 public class PipelineJobServiceImpl extends PipelineJobService
 {
     public static final String MODULE_PIPELINE_DIR = "pipeline";
+
+    private static final Logger LOG = Logger.getLogger(PipelineJobServiceImpl.class);
     private static final String PIPELINE_TOOLS_ERROR = "Failed to locate %s. Use the site pipeline tools settings to specify where it can be found. (Currently '%s')";
     private static final String INSTALLED_PIPELINE_TOOL_ERROR = "Failed to locate %s. Check tool install location defined in pipelineConfig.xml. (Currently '%s')";
+    private static final String MODULE_TASKS_DIR = "tasks";
+    private static final String MODULE_PIPELINES_DIR = "pipelines";
 
     public static PipelineJobServiceImpl get()
     {
@@ -133,10 +138,8 @@ public class PipelineJobServiceImpl extends PipelineJobService
     private Map<TaskId, TaskFactory> _taskFactoryStore = new HashMap<>();
     private Map<SchemaType, XMLBeanTaskFactoryFactory> _taskFactoryFactories = new HashMap<>();
 
-    private final ModuleResourceCache<Map<TaskId, TaskFactory>> TASK_FACTORY_CACHE = ModuleResourceCaches.create(
-        new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskFactoryCacheHandler.MODULE_TASKS_DIR), new TaskFactoryCacheHandler(), "TaskFactory cache");
-    private final ModuleResourceCache<Map<TaskId, TaskPipeline>> TASK_PIPELINE_CACHE = ModuleResourceCaches.create(
-        new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskPipelineCacheHandler.MODULE_PIPELINES_DIR), new TaskPipelineCacheHandler(), "TaskPipeline cache");
+    private final ModuleResourceCache<Map<TaskId, TaskFactory>> TASK_FACTORY_CACHE = ModuleResourceCaches.create("TaskFactory cache", new TaskFactoryCacheHandler(), ResourceRootProvider.getStandard(new Path(MODULE_PIPELINE_DIR, MODULE_TASKS_DIR)));
+    private final ModuleResourceCache<Map<TaskId, TaskPipeline>> TASK_PIPELINE_CACHE = ModuleResourceCaches.create("TaskPipeline cache", new TaskPipelineCacheHandler(), ResourceRootProvider.getStandard(new Path(MODULE_PIPELINE_DIR, MODULE_PIPELINES_DIR)));
 
     private String _defaultExecutionLocation = TaskFactory.WEBSERVER;
     private int _defaultAutoRetry = 0;
@@ -957,10 +960,37 @@ public class PipelineJobServiceImpl extends PipelineJobService
         @Test
         public void testModuleCaches()
         {
-            ModuleLoader.getInstance().getModules().forEach(module -> {
-                _impl.TASK_PIPELINE_CACHE.getResourceMap(module).values();
-                _impl.TASK_FACTORY_CACHE.getResourceMap(module).values();
-            });
+            int pipelineCount = ModuleLoader.getInstance().getModules().stream()
+                .map(module -> _impl.TASK_PIPELINE_CACHE.getResourceMap(module))
+                .mapToInt(Map::size)
+                .sum();
+
+            LOG.info(pipelineCount + " task pipelines defined in all modules");
+
+            int factoryCount = ModuleLoader.getInstance().getModules().stream()
+                .map(module -> _impl.TASK_FACTORY_CACHE.getResourceMap(module))
+                .mapToInt(Map::size)
+                .sum();
+
+            LOG.info(factoryCount + " task factories defined in all modules");
+
+            // Make sure the cache retrieves the expected number of pipelines and factories from a couple test modules, if present
+
+            Module pipelinetest = ModuleLoader.getInstance().getModule("pipelinetest");
+
+            if (null != pipelinetest)
+            {
+                assertEquals("Task pipelines from pipelinetest module", 6, _impl.TASK_PIPELINE_CACHE.getResourceMap(pipelinetest).size());
+                assertEquals("Task factories from pipelinetest module", 3, _impl.TASK_FACTORY_CACHE.getResourceMap(pipelinetest).size());
+            }
+
+            Module pipelinetest2 = ModuleLoader.getInstance().getModule("pipelinetest2");
+
+            if (null != pipelinetest2)
+            {
+                assertEquals("Task pipelines from pipelinetest2 module", 2, _impl.TASK_PIPELINE_CACHE.getResourceMap(pipelinetest2).size());
+                assertEquals("Task factories from pipelinetest2 module", 2, _impl.TASK_FACTORY_CACHE.getResourceMap(pipelinetest2).size());
+            }
         }
 
         @After

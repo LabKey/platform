@@ -34,10 +34,10 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
 {
     private final String _moduleName;
 
-    public ModuleCustomQueryDefinition(Module module, ModuleQueryDef moduleQueryDef, SchemaKey schemaKey, User user, Container container)
+    public ModuleCustomQueryDefinition(ModuleQueryDef moduleQueryDef, SchemaKey schemaKey, User user, Container container)
     {
         super(user, container, moduleQueryDef.toQueryDef(container, schemaKey));
-        _moduleName = module.getName();
+        _moduleName = moduleQueryDef.getModule().getName();
     }
 
     @Override

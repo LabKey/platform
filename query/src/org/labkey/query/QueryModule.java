@@ -18,10 +18,6 @@ package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.SasExportScriptFactory;
-import org.labkey.api.stats.AnalyticsProviderRegistry;
-import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Aggregate;
@@ -37,6 +33,7 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.JavaExportScriptFactory;
 import org.labkey.api.query.JavaScriptExportScriptFactory;
@@ -46,6 +43,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.RExportScriptFactory;
+import org.labkey.api.query.SasExportScriptFactory;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.URLExportScriptFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
@@ -69,6 +67,8 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.stats.AnalyticsProviderRegistry;
+import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -98,6 +98,7 @@ import org.labkey.query.olap.rolap.RolapTestSchema;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.reports.AttachmentReport;
 import org.labkey.query.reports.LinkReport;
+import org.labkey.query.reports.ModuleReportCache;
 import org.labkey.query.reports.ReportAndDatasetChangeDigestProviderImpl;
 import org.labkey.query.reports.ReportImporter;
 import org.labkey.query.reports.ReportNotificationInfoProvider;
@@ -322,7 +323,9 @@ public class QueryModule extends DefaultModule
                 RolapTestCase.class,
                 MultiValueTest.class,
                 OlapController.TestCase.class,
-                QueryController.TestCase.class
+                QueryController.TestCase.class,
+                ModuleReportCache.TestCase.class,
+                ServerManager.TestCase.class
         ));
     }
 

@@ -707,6 +707,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         set.add(StudyManager.VisitCreationTestCase.class);
         set.add(TreatmentManager.TreatmentDataTestCase.class);
         set.add(StudyManager.AssayScheduleTestCase.class);
+        set.add(AssayManager.TestCase.class);
 
         return set;
     }

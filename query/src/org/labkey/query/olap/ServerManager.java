@@ -30,6 +30,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.Constants;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.BlockingStringKeyCache;
@@ -40,9 +42,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceCaches.CacheId;
+import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
@@ -112,7 +117,8 @@ public class ServerManager
     private static final Map<String, ServerReferenceCount> SERVERS = new HashMap<>();
     private static final Object SERVERS_LOCK = new Object();
 
-    private static final ModuleResourceCache<Map<String, OlapSchemaDescriptor>> MODULE_DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), new OlapSchemaCacheHandler(), "Olap cube definitions (module)");
+    private static final String DIR_NAME = "olap";
+    private static final ModuleResourceCache<Map<String, OlapSchemaDescriptor>> MODULE_DESCRIPTOR_CACHE = ModuleResourceCaches.create("Olap cube definitions (module)", new OlapSchemaCacheHandler(), ResourceRootProvider.getStandard(new Path(DIR_NAME)));
     private static final BlockingCache<Container, Map<String, OlapSchemaDescriptor>> DB_DESCRIPTOR_CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Olap cube definitions (db)", new OlapCacheLoader());
 
     private static final BlockingStringKeyCache<Cube> CUBES = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, 2 * CacheManager.DAY, "cube cache", null);
@@ -862,6 +868,27 @@ public class ServerManager
                         set.add(s);
                 }
             }
+        }
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testModuleResourceCache()
+        {
+            // Load all the OLAP descriptors to ensure no exceptions
+            int descriptorCount = ModuleLoader.getInstance().getModules().stream()
+                .map(MODULE_DESCRIPTOR_CACHE::getResourceMap)
+                .mapToInt(Map::size)
+                .sum();
+
+            LOG.info(descriptorCount + " OLAP descriptors defined in all modules");
+
+            // Make sure the cache retrieves the test OLAP descriptor from this module
+
+            Module module = ModuleLoader.getInstance().getModule("query");
+            assertEquals("OLAP descriptors from the query module", 1, MODULE_DESCRIPTOR_CACHE.getResourceMap(module).size());
         }
     }
 }

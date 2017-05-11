@@ -31,9 +31,11 @@ import org.labkey.pipeline.xml.TaskDocument;
 import org.labkey.pipeline.xml.TaskType;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * User: kevink
@@ -44,34 +46,14 @@ import java.util.Map;
     private static final Logger LOG = Logger.getLogger(TaskFactoryCacheHandler.class);
     private static final String TASK_CONFIG_EXTENSION = ".task.xml";
 
-    static final String MODULE_TASKS_DIR = "tasks";
-
-    private @Nullable TaskId createTaskId(Module module, String filename)
-    {
-        if (!filename.endsWith(TASK_CONFIG_EXTENSION))
-            return null;
-
-        String name = filename.substring(0, filename.length() - TASK_CONFIG_EXTENSION.length());
-        return new TaskId(module.getName(), TaskId.Type.task, name, 0);
-    }
-
     @Override
-    public Map<TaskId, TaskFactory> load(@Nullable Resource dir, Module module)
+    public Map<TaskId, TaskFactory> load(Stream<? extends Resource> resources, Module module)
     {
-        if (null == dir)
-            return Collections.emptyMap();
-
-        Map<TaskId, TaskFactory> map = new HashMap<>();
-        dir.list().stream()
-            .filter(resource -> resource.isFile() && resource.getName().endsWith(TASK_CONFIG_EXTENSION) && resource.getName().length() > TASK_CONFIG_EXTENSION.length())
-            .forEach(resource -> {
-                TaskFactory factory = loadTaskConfig(module, resource);
-
-                if (null != factory)
-                    map.put(factory.getId(), factory);
-            });
-
-        return Collections.unmodifiableMap(map);
+        return unmodifiable(resources
+            .filter(getFilter(TASK_CONFIG_EXTENSION))
+            .map(resource -> loadTaskConfig(module, resource))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toMap(TaskFactory::getId, Function.identity())));
     }
 
     private @Nullable TaskFactory loadTaskConfig(Module module, Resource resource)
@@ -90,6 +72,15 @@ import java.util.Map;
             LOG.warn("Error registering '" + taskId + "' task: " + e.getMessage());
             return null;
         }
+    }
+
+    private @Nullable TaskId createTaskId(Module module, String filename)
+    {
+        if (!filename.endsWith(TASK_CONFIG_EXTENSION))
+            return null;
+
+        String name = filename.substring(0, filename.length() - TASK_CONFIG_EXTENSION.length());
+        return new TaskId(module.getName(), TaskId.Type.task, name, 0);
     }
 
     private TaskFactory create(TaskId taskId, Resource taskConfig)

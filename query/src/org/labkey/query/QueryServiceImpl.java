@@ -18,7 +18,6 @@ package org.labkey.query;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
@@ -32,9 +31,9 @@ import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.MultiValuedMapCollectors;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
@@ -44,8 +43,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
-import org.labkey.api.module.QueryBasedModuleResourceCache;
-import org.labkey.api.module.QueryBasedModuleResourceCacheHandler;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -130,7 +127,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -154,11 +150,7 @@ public class QueryServiceImpl implements QueryService
         }
     };
 
-    private static final QueryBasedModuleResourceCache<ModuleQueryDef> MODULE_QUERY_DEFS_CACHE_OLD = ModuleResourceCaches.createQueryBasedCache(MODULE_QUERIES_PATH, "Module query definitions cache", new QueryDefResourceCacheHandlerOld());
-    private static final QueryBasedModuleResourceCache<ModuleQueryMetadataDef> MODULE_QUERY_METADATA_DEF_CACHE_OLD = ModuleResourceCaches.createQueryBasedCache(MODULE_QUERIES_PATH, "Module query meta data cache", new QueryMetaDataDefResourceCacheHandlerOld());
-    private static final QueryBasedModuleResourceCache<ModuleCustomViewDef> MODULE_CUSTOM_VIEW_CACHE_OLD = ModuleResourceCaches.createQueryBasedCache(MODULE_QUERIES_PATH, "Module custom view definitions cache", new CustomViewResourceCacheHandlerOld());
-
-    private static final ModuleResourceCache<MultiValuedMap<Path, ModuleQueryDef>> MODULE_QUERY_DEFS_CACHE = ModuleResourceCaches.create("Module query definitions cache", new QueryDefResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
+    private static final ModuleResourceCache<MultiValuedMap<Path, ModuleQueryDef>> MODULE_QUERY_DEF_CACHE = ModuleResourceCaches.create("Module query definitions cache", new QueryDefResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleQueryMetadataDef>> MODULE_QUERY_METADATA_DEF_CACHE = ModuleResourceCaches.create("Module query meta data cache", new QueryMetaDataDefResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.create("Module custom view definitions cache", new CustomViewResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
 
@@ -562,75 +554,32 @@ public class QueryServiceImpl implements QueryService
 
         for (Module module : modules)
         {
-            MODULE_QUERY_DEFS_CACHE_OLD.getResource(module, path)
+            MODULE_QUERY_DEF_CACHE.getResourceMap(module).get(path)
                 .stream()
-                .map(queryDef -> new ModuleCustomQueryDefinition(module, queryDef, SchemaKey.fromString(schemaName), user, container))
+                .map(queryDef -> new ModuleCustomQueryDefinition(queryDef, SchemaKey.fromString(schemaName), user, container))
                 .forEach(ret::add);
         }
 
-        List<QueryDefinition> ret2 = new LinkedList<>();
-
-        for (Module module : modules)
-        {
-            MODULE_QUERY_DEFS_CACHE.getResourceMap(module).get(path)
-                .stream()
-                .map(queryDef -> new ModuleCustomQueryDefinition(module, queryDef, SchemaKey.fromString(schemaName), user, container))
-                .forEach(ret2::add);
-        }
+        List<QueryDefinition> ret2 = modules.stream()
+            .map(module -> MODULE_QUERY_DEF_CACHE.getResourceMap(module).get(path))
+            .flatMap(Collection::stream)
+            .map(queryDef -> new ModuleCustomQueryDefinition(queryDef, SchemaKey.fromString(schemaName), user, container))
+            .collect(Collectors.toList());
 
         assert ret.size() == ret2.size();
 
         return ret;
     }
 
-    private static class QueryDefResourceCacheHandlerOld implements QueryBasedModuleResourceCacheHandler<ModuleQueryDef>
-    {
-        @Override
-        public boolean isResourceFile(String filename)
-        {
-            return filename.endsWith(ModuleQueryDef.FILE_EXTENSION) || filename.endsWith(ModuleQueryDef.META_FILE_EXTENSION);
-        }
-
-        @Override
-        public CacheLoader<Path, Collection<ModuleQueryDef>> getResourceLoader()
-        {
-            return (path, argument) -> {
-                Module module = (Module)argument;
-                Resource queryDir = module.getModuleResource(path);
-
-                Collection<? extends Resource> queryDefResources = getModuleResources(queryDir, ModuleQueryDef.FILE_EXTENSION);
-
-                if (queryDefResources.isEmpty())
-                {
-                    return null;
-                }
-                else
-                {
-                    Collection<ModuleQueryDef> queryDefs = queryDefResources
-                        .stream()
-                        .map(ModuleQueryDef::new)
-                        .collect(Collectors.toCollection(LinkedList::new));
-
-                    return Collections.unmodifiableCollection(queryDefs);
-                }
-            };
-        }
-    }
-
     private static class QueryDefResourceCacheHandler implements ModuleResourceCacheHandler<MultiValuedMap<Path, ModuleQueryDef>>
     {
         @Override
-        public MultiValuedMap<Path, ModuleQueryDef> load(Stream<Resource> roots, Module module)
+        public MultiValuedMap<Path, ModuleQueryDef> load(Stream<? extends Resource> resources, Module module)
         {
-            MultiValuedMap<Path, ModuleQueryDef> mmap = new ArrayListValuedHashMap<>();
-
-            roots
-                .map(root -> getModuleResources(root, ModuleQueryDef.FILE_EXTENSION))
-                .flatMap(Collection::stream)
-                .map(ModuleQueryDef::new)
-                .forEach(def -> mmap.put(def.getPath().getParent(), def));
-
-            return unmodifiable(mmap);
+            return unmodifiable(resources
+                .filter(getFilter(ModuleQueryDef.FILE_EXTENSION))
+                .map(resource -> new ModuleQueryDef(module, resource))
+                .collect(MultiValuedMapCollectors.of(def -> def.getPath().getParent(), def -> def)));
         }
     }
 
@@ -719,23 +668,12 @@ public class QueryServiceImpl implements QueryService
 
         // find out if there are any module custom views to deal with
         Map<Module, Map<Path, Collection<ModuleCustomViewDef>>> moduleMap = new LinkedHashMap<>();
-        for (Module module : ModuleLoader.getInstance().orderModules(modules))
-        {
-            Map<Path, Collection<ModuleCustomViewDef>> map = MODULE_CUSTOM_VIEW_CACHE_OLD.getResourceMap(module);
-            if (!map.isEmpty())
-                moduleMap.put(module, map);
-        }
-
-        // find out if there are any module custom views to deal with
-        Map<Module, MultiValuedMap<Path, ModuleCustomViewDef>> moduleMap2 = new LinkedHashMap<>();
-        for (Module module : ModuleLoader.getInstance().orderModules(modules))
+        for (Module module : modules)
         {
             MultiValuedMap<Path, ModuleCustomViewDef> mmap = MODULE_CUSTOM_VIEW_CACHE.getResourceMap(module);
             if (!mmap.isEmpty())
-                moduleMap2.put(module, mmap);
+                moduleMap.put(module, mmap.asMap());
         }
-
-        assert moduleMap.size() == moduleMap2.size();
 
         for (Map.Entry<Module, Map<Path, Collection<ModuleCustomViewDef>>> moduleEntry : moduleMap.entrySet())
         {
@@ -761,6 +699,35 @@ public class QueryServiceImpl implements QueryService
                 }
             }
         }
+
+        // TODO: Switch to this simpler approach... no need to create moduleMap and iterate twice, we can just iterate the keys (Paths) in one step
+        Set<String> moduleViewSchemas2 = new LinkedHashSet<>();
+
+        // find out if there are any module custom views to deal with
+        modules.stream()
+            .map(MODULE_CUSTOM_VIEW_CACHE::getResourceMap)
+            .flatMap(mmap -> mmap.keys().stream())
+            .forEach(path -> {
+                if (AssayService.ASSAY_DIR_NAME.equals(path.get(0)) || AssayService.ASSAY_DIR_NAME.equals(path.get(1)))
+                {
+                    moduleViewSchemas2.add(AssayService.ASSAY_DIR_NAME);
+                }
+                else if (MODULE_QUERIES_DIRECTORY.equals(path.get(0)))
+                {
+                    // after the queries directory, paths should contain schema and query name information
+                    if (path.size() >= 3)
+                    {
+                        String[] parts = new String[path.size() - 2];
+                        for (int i=0; i < path.size()-2; i++)
+                            parts[i] = path.get(i+1);
+
+                        SchemaKey schemaKey = SchemaKey.fromParts(parts);
+                        moduleViewSchemas2.add(schemaKey.toString());
+                    }
+                }
+            });
+
+        assert moduleViewSchemas.size() == moduleViewSchemas2.size() : "Different sizes " + moduleViewSchemas.size() + " vs. " + moduleViewSchemas2.size();
 
         Map<Path, CustomView> views = new HashMap<>();
 
@@ -970,39 +937,19 @@ public class QueryServiceImpl implements QueryService
 
     public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query, Module... extraModules)
     {
-        Collection<Module> modules = container.getActiveModules();
-        Collection<Module> currentModules = new HashSet<>(modules);
+        Collection<Module> currentModules = new HashSet<>(container.getActiveModules());
         currentModules.addAll(Arrays.asList(extraModules));
 
         currentModules = ModuleLoader.getInstance().orderModules(currentModules);
 
         // TODO: Instead of caching a separate list for each module + query combination, we could cache the full list of views defined on this
-        // query in ALL modules... and then filter for active at this level. This probably requires a new variant of PathBasedModuleResourceCache.
+        // query in ALL modules... and then filter for active at this level.
 
-        List<CustomView> customViews = new LinkedList<>();
-
-        for (Module module : currentModules)
-        {
-            Collection<ModuleCustomViewDef> views = MODULE_CUSTOM_VIEW_CACHE_OLD.getResource(module, path);
-
-            // CacheLoader returns empty collection (not null) for non-existent directories
-            //noinspection ConstantConditions
-            customViews.addAll(
-                views.stream()
-                    .map(view -> new ModuleCustomView(qd, view))
-                    .collect(Collectors.toList())
-            );
-        }
-
-        List<CustomView> customViews2 = currentModules.stream()
+        return currentModules.stream()
             .map(module -> MODULE_CUSTOM_VIEW_CACHE.getResourceMap(module).get(path))
             .flatMap(Collection::stream)
             .map(view -> new ModuleCustomView(qd, view))
             .collect(Collectors.toList());
-
-        assert customViews.size() == customViews2.size();
-
-        return customViews;
     }
 
     @Override
@@ -1012,73 +959,17 @@ public class QueryServiceImpl implements QueryService
         return view != null ? view.getName() : null;
     }
 
-    private static class CustomViewResourceCacheHandlerOld implements QueryBasedModuleResourceCacheHandler<ModuleCustomViewDef>
-    {
-        @Override
-        public boolean isResourceFile(String filename)
-        {
-            return filename.endsWith(CustomViewXmlReader.XML_FILE_EXTENSION);
-        }
-
-        @Override
-        public CacheLoader<Path, Collection<ModuleCustomViewDef>> getResourceLoader()
-        {
-            return (path, argument) -> {
-                Module module = (Module)argument;
-                Resource queryDir = module.getModuleResource(path);
-
-                Collection<? extends Resource> viewResources = getModuleResources(queryDir, CustomViewXmlReader.XML_FILE_EXTENSION);
-
-                if (viewResources.isEmpty())
-                {
-                    return null;
-                }
-                else
-                {
-                    Collection<ModuleCustomViewDef> viewDefs = viewResources
-                        .stream()
-                        .map(ModuleCustomViewDef::new)
-                        .collect(Collectors.toCollection(LinkedList::new));
-
-                    return Collections.unmodifiableCollection(viewDefs);
-                }
-            };
-        }
-    }
-
     private static class CustomViewResourceCacheHandler implements ModuleResourceCacheHandler<MultiValuedMap<Path, ModuleCustomViewDef>>
     {
         @Override
-        public MultiValuedMap<Path, ModuleCustomViewDef> load(Stream<Resource> roots, Module module)
+        public MultiValuedMap<Path, ModuleCustomViewDef> load(Stream<? extends Resource> resources, Module module)
         {
-            MultiValuedMap<Path, ModuleCustomViewDef> mmap = new ArrayListValuedHashMap<>();
-
-            roots
-                .map(root -> getModuleResources(root, CustomViewXmlReader.XML_FILE_EXTENSION))
-                .flatMap(Collection::stream)
+            // Note: Can't use standard filter (getFilter(suffix)) below since we must allow ".qview.xml"
+            return unmodifiable(resources
+                .filter(resource -> StringUtils.endsWithIgnoreCase(resource.getName(), CustomViewXmlReader.XML_FILE_EXTENSION))
                 .map(ModuleCustomViewDef::new)
-                .forEach(def -> mmap.put(def.getPath().getParent(), def));
-
-            return unmodifiable(mmap);
+                .collect(MultiValuedMapCollectors.of(def -> def.getPath().getParent(), def -> def)));
         }
-    }
-
-    /** Find all files under the given queryDir Resource that end with suffix. */
-    private static Collection<? extends Resource> getModuleResources(Resource queryDir, String suffix)
-    {
-        if (queryDir == null || !queryDir.isCollection())
-            return Collections.emptyList();
-
-        List<Resource> ret = new ArrayList<>();
-        queryDir.listNames()
-            .stream()
-            .filter(name -> StringUtils.endsWithIgnoreCase(name, suffix))
-            .forEach(name -> {
-                Resource resource = queryDir.find(name);
-                if (resource != null)
-                    ret.add(resource);
-            });
-        return ret;
     }
 
     public void writeTables(Container c, User user, VirtualFile dir, Map<String, List<Map<String, Object>>> schemas, ColumnHeaderType header) throws IOException
@@ -2130,7 +2021,7 @@ public class QueryServiceImpl implements QueryService
         return new Path(subDirs);
     }
 
-    private QueryDef findMetadataOverrideInModules(UserSchema schema, String tableName, boolean allModules, @Nullable Path dir)
+    private @Nullable QueryDef findMetadataOverrideInModules(UserSchema schema, String tableName, boolean allModules, @Nullable Path dir)
     {
         String schemaName = schema.getSchemaPath().toString();
 
@@ -2142,26 +2033,7 @@ public class QueryServiceImpl implements QueryService
         // Look for file-based definitions in modules
         Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : schema.getContainer().getActiveModules(schema.getUser());
 
-        QueryDef result = null;
-
-        modules: for (Module module : modules)
-        {
-            Collection<ModuleQueryMetadataDef> metadataDefs = MODULE_QUERY_METADATA_DEF_CACHE_OLD.getResource(module, dir);
-
-            for (ModuleQueryMetadataDef metadataDef : metadataDefs)
-            {
-                if (metadataDef.getName().equalsIgnoreCase(tableName))
-                {
-                    result = metadataDef.toQueryDef(schema.getContainer());
-                    result.setSchema(schemaName);
-                    break modules;
-                }
-            }
-        }
-
-        QueryDef result2 = null;
-
-        modules2: for (Module module : modules)
+        for (Module module : modules)
         {
             Collection<ModuleQueryMetadataDef> metadataDefs = MODULE_QUERY_METADATA_DEF_CACHE.getResourceMap(module).get(dir);
 
@@ -2169,70 +2041,26 @@ public class QueryServiceImpl implements QueryService
             {
                 if (metadataDef.getName().equalsIgnoreCase(tableName))
                 {
-                    result2 = metadataDef.toQueryDef(schema.getContainer());
-                    result2.setSchema(schemaName);
-                    break modules2;
+                    QueryDef result = metadataDef.toQueryDef(schema.getContainer());
+                    result.setSchema(schemaName);
+                    return result;
                 }
             }
         }
 
-        if (null == result)
-            assert null == result2 : "result was null but result2 wasn't, for " + schemaName + "." + tableName;
-        else
-            assert result.getMetaData().equals(result2.getMetaData()) : "metadata differed for " + schemaName + "." + tableName;
-
-        return result;
+        return null;
     }
 
-
-    private static class QueryMetaDataDefResourceCacheHandlerOld implements QueryBasedModuleResourceCacheHandler<ModuleQueryMetadataDef>
-    {
-        @Override
-        public boolean isResourceFile(String filename)
-        {
-            return filename.endsWith(ModuleQueryDef.META_FILE_EXTENSION);
-        }
-
-        @Override
-        public CacheLoader<Path, Collection<ModuleQueryMetadataDef>> getResourceLoader()
-        {
-            return (path, argument) -> {
-                Module module = (Module)argument;
-                Resource queryDir = module.getModuleResource(path);
-
-                Collection<? extends Resource> metaDataResources = getModuleResources(queryDir, ModuleQueryDef.META_FILE_EXTENSION);
-
-                if (metaDataResources.isEmpty())
-                {
-                    return null;
-                }
-                else
-                {
-                    Collection<ModuleQueryMetadataDef> queryMetaDataDefs = metaDataResources
-                        .stream()
-                        .map(ModuleQueryMetadataDef::new)
-                        .collect(Collectors.toCollection(LinkedList::new));
-
-                    return Collections.unmodifiableCollection(queryMetaDataDefs);
-                }
-            };
-        }
-    }
 
     private static class QueryMetaDataDefResourceCacheHandler implements ModuleResourceCacheHandler<MultiValuedMap<Path, ModuleQueryMetadataDef>>
     {
         @Override
-        public MultiValuedMap<Path, ModuleQueryMetadataDef> load(Stream<Resource> roots, Module module)
+        public MultiValuedMap<Path, ModuleQueryMetadataDef> load(Stream<? extends Resource> resources, Module module)
         {
-            MultiValuedMap<Path, ModuleQueryMetadataDef> mmap = new ArrayListValuedHashMap<>();
-
-            roots
-                .map(root -> getModuleResources(root, ModuleQueryDef.META_FILE_EXTENSION))
-                .flatMap(Collection::stream)
+            return unmodifiable(resources
+                .filter(getFilter(ModuleQueryDef.META_FILE_EXTENSION))
                 .map(ModuleQueryMetadataDef::new)
-                .forEach(def -> mmap.put(def.getPath().getParent(), def));
-
-            return unmodifiable(mmap);
+                .collect(MultiValuedMapCollectors.of(def -> def.getPath().getParent(), def -> def)));
         }
     }
 
@@ -3272,68 +3100,42 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Test
-        public void testModuleCustomViews()
+        public void testModuleResources()
         {
-            MultiValuedMap<Path, ModuleCustomViewDef> mmap = new ArrayListValuedHashMap<>();
+            // Loads all custom views, queries, and query metadata overrides from all modules. This is a simple test of
+            // the caching process that also ensures resources are valid.
 
-            ModuleLoader.getInstance().getModules().stream()
-                .map(MODULE_CUSTOM_VIEW_CACHE_OLD::getResourceMap)
-                .map(Map::entrySet)
-                .flatMap(Collection::stream)
-                .forEach(entry -> {
-                    entry.getValue().forEach(view -> mmap.put(entry.getKey(), view));
-                });
-
-            MultiValuedMap<Path, ModuleCustomViewDef> mmap2 = new ArrayListValuedHashMap<>();
-
-            ModuleLoader.getInstance().getModules().stream()
+            int moduleCustomViewCount = ModuleLoader.getInstance().getModules().stream()
                 .map(MODULE_CUSTOM_VIEW_CACHE::getResourceMap)
-                .map(MultiValuedMap::asMap)
-                .map(Map::entrySet)
-                .flatMap(Collection::stream)
-                .forEach(entry -> {
-                    entry.getValue().forEach(view -> mmap2.put(entry.getKey(), view));
-                });
+                .mapToInt(MultiValuedMap::size)
+                .sum();
 
-            LOG.info(mmap.size() + " vs. " + mmap2.size());
+            LOG.info(moduleCustomViewCount + " custom views defined in all modules");
 
-            mmap2.entries().forEach(e -> mmap.remove(e.getKey()));
-            LOG.info("unfound (" + mmap.size() + "): " + new TreeSet<>(mmap.keySet()));
+            int moduleQueryCount = ModuleLoader.getInstance().getModules().stream()
+                .map(MODULE_QUERY_DEF_CACHE::getResourceMap)
+                .mapToInt(MultiValuedMap::size)
+                .sum();
+
+            LOG.info(moduleQueryCount + " module queries defined in all modules");
+
+            int moduleQueryMetadataCount = ModuleLoader.getInstance().getModules().stream()
+                .map(MODULE_QUERY_METADATA_DEF_CACHE::getResourceMap)
+                .mapToInt(MultiValuedMap::size)
+                .sum();
+
+            LOG.info(moduleQueryMetadataCount + " module query metadata overrides defined in all modules");
+
+            // Make sure the cache retrieves the expected number of report descriptors from a couple test modules, if present
+
+            Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
+
+            if (null != simpleTest)
+            {
+                assertEquals("Custom views from the simpletest module", 10, MODULE_CUSTOM_VIEW_CACHE.getResourceMap(simpleTest).size());
+                assertEquals("Queries from the simpletest module", 4, MODULE_QUERY_DEF_CACHE.getResourceMap(simpleTest).size());
+                assertEquals("Query metadata overrides from the simpletest module", 2, MODULE_QUERY_METADATA_DEF_CACHE.getResourceMap(simpleTest).size());
+            }
         }
-
-//        @Test
-//        public void testResourceRootProviders()
-//        {
-//            Path path = Path.rootPath;
-//            ResourceRootProvider provider = ResourceRootProvider.chain(ResourceRootProvider.ASSAY_PROVIDERS, ResourceRootProvider.QUERY);
-//            MutableInt assayCount = new MutableInt(0);
-//
-//            ModuleLoader.getInstance().getModules()
-//                .forEach(module -> {
-//                    Resource root = module.getModuleResource(Path.rootPath);
-//
-//                    if (null != root)
-//                    {
-//                        Collection<Resource> roots = new LinkedList<>();
-//                        provider.fillResourceRoots(root, roots);
-//
-//                        if (!roots.isEmpty())
-//                        {
-//                            _log.info(module.getName() + ": " + roots);
-//
-//                            for (Resource dir : roots)
-//                            {
-//                                for (Resource f : dir.list())
-//                                {
-//                                    if (f.getName().endsWith(CustomViewXmlReader.XML_FILE_EXTENSION))
-//                                        assayCount.increment();
-//                                }
-//                            }
-//                        }
-//                    }
-//                });
-//
-//            _log.info("Count: " + assayCount);
-//        }
     }
 }

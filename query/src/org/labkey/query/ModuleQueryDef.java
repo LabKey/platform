@@ -17,6 +17,7 @@ package org.labkey.query;
 
 import org.apache.commons.io.IOUtils;
 import org.labkey.api.data.Container;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
@@ -42,14 +43,16 @@ public class ModuleQueryDef
     public static final String FILE_EXTENSION = ".sql";
     public static final String META_FILE_EXTENSION = ".query.xml";
 
+    private final Module _module;
     private final Resource _resource;
     private final String _name;
 
     private String _sql;
     private ModuleQueryMetadataDef _metadataDef;
 
-    public ModuleQueryDef(Resource r)
+    public ModuleQueryDef(Module module, Resource r)
     {
+        _module = module;
         _resource = r;
         _name = getNameFromFile();
 
@@ -132,5 +135,10 @@ public class ModuleQueryDef
     public Path getPath()
     {
         return _resource.getPath();
+    }
+
+    public Module getModule()
+    {
+        return _module;
     }
 }

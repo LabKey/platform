@@ -26,9 +26,11 @@ import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.resource.Resource;
 import org.labkey.pipeline.analysis.FileAnalysisTaskPipelineImpl;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * User: kevink
@@ -42,7 +44,15 @@ import java.util.Map;
     private static final Logger LOG = Logger.getLogger(TaskPipelineCacheHandler.class);
     private static final String PIPELINE_CONFIG_EXTENSION = ".pipeline.xml";
 
-    static final String MODULE_PIPELINES_DIR = "pipelines";
+    @Override
+    public Map<TaskId, TaskPipeline> load(Stream<? extends Resource> resources, Module module)
+    {
+        return unmodifiable(resources
+            .filter(getFilter(PIPELINE_CONFIG_EXTENSION))
+            .map(resource -> loadPipelineConfig(module, resource))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toMap(TaskPipeline::getId, Function.identity())));
+    }
 
     private @Nullable TaskId createPipelineId(Module module, String filename)
     {
@@ -51,26 +61,6 @@ import java.util.Map;
 
         String name = filename.substring(0, filename.length() - PIPELINE_CONFIG_EXTENSION.length());
         return new TaskId(module.getName(), TaskId.Type.pipeline, name, 0);
-    }
-
-    @Override
-    public Map<TaskId, TaskPipeline> load(@Nullable Resource dir, Module module)
-    {
-        if (null == dir)
-            return Collections.emptyMap();
-
-        Map<TaskId, TaskPipeline> map = new HashMap<>();
-
-        dir.list().stream()
-            .filter(resource -> resource.isFile() && resource.getName().endsWith(PIPELINE_CONFIG_EXTENSION) && resource.getName().length() > PIPELINE_CONFIG_EXTENSION.length())
-            .forEach(resource -> {
-                TaskPipeline taskPipeline = loadPipelineConfig(module, resource);
-
-                if (null != taskPipeline)
-                    map.put(taskPipeline.getId(), taskPipeline);
-            });
-
-        return Collections.unmodifiableMap(map);
     }
 
     private @Nullable TaskPipeline loadPipelineConfig(Module module, Resource resource)
@@ -82,8 +72,8 @@ import java.util.Map;
 
         try
         {
-            // TODO: Should pass module in, but not taskId (read that from the resource!)
-            return FileAnalysisTaskPipelineImpl.create(taskId, resource);
+            // TODO: Should not pass in taskId (read that from the resource!)
+            return FileAnalysisTaskPipelineImpl.create(module, resource, taskId);
         }
         catch (IllegalArgumentException|IllegalStateException e)
         {
@@ -122,12 +112,17 @@ import java.util.Map;
 
             private void removeResource(java.nio.file.Path entry)
             {
-                // We aren't really removing the TaskPipeline since it only lives in this cache.
-                // We are calling removeTaskPipeline so any locally defined tasks will be cleaned up.
-                TaskId pipelineId = createPipelineId(module, entry.toString());
+                String name = entry.toString();
 
-                if (null != pipelineId)
-                    PipelineJobService.get().removeTaskPipeline(pipelineId);
+                if (getFilenameFilter(PIPELINE_CONFIG_EXTENSION).test(name))
+                {
+                    // We aren't really removing the TaskPipeline since it only lives in this cache.
+                    // We are calling removeTaskPipeline so any locally defined tasks will be cleaned up.
+                    TaskId pipelineId = createPipelineId(module, name);
+
+                    if (null != pipelineId)
+                        PipelineJobService.get().removeTaskPipeline(pipelineId);
+                }
             }
         };
     }

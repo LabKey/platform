@@ -50,6 +50,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceCaches.CacheId;
+import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
@@ -144,7 +145,8 @@ public class TransformManager implements DataIntegrationService
     private static final TransformManager INSTANCE = new TransformManager();
     private static final Logger LOG = Logger.getLogger(TransformManager.class);
     private static final String JOB_GROUP_NAME = "org.labkey.di.pipeline.ETLManager";
-    private static final ModuleResourceCache<Map<String, ScheduledPipelineJobDescriptor>> DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(DescriptorCacheHandler.DIR_NAME), new DescriptorCacheHandler(), "ETL job descriptors");
+    private static final String DIR_NAME = "etls";
+    private static final ModuleResourceCache<Map<String, ScheduledPipelineJobDescriptor>> DESCRIPTOR_CACHE = ModuleResourceCaches.create("ETL job descriptors", new DescriptorCacheHandler(), ResourceRootProvider.getStandard(new Path(DIR_NAME)));
     private static final String JOB_PENDING_MSG = "Not queuing job because ETL is already pending";
 
     private Map<String, StepProvider> _providers = new CaseInsensitiveHashMap<>();
@@ -293,14 +295,9 @@ public class TransformManager implements DataIntegrationService
         }
     }
 
-    boolean isConfigFile(String filename)
-    {
-        return filename.endsWith(".xml");
-    }
-
     String getConfigName(String filename)
     {
-        assert filename.endsWith(".xml") : "Configuration filename \"" + filename + "\" does not end with .xml";
+        assert filename.endsWith(DescriptorCacheHandler.DESCRIPTOR_EXTENSION) : "Configuration filename \"" + filename + "\" does not end with " + DescriptorCacheHandler.DESCRIPTOR_EXTENSION;
         return FileUtil.getBaseName(filename);
     }
 
@@ -1082,7 +1079,24 @@ public class TransformManager implements DataIntegrationService
         public void testModuleResourceCache()
         {
             // Load all the ETL descriptors to ensure no exceptions
-            ModuleLoader.getInstance().getModules().forEach(DESCRIPTOR_CACHE::getResourceMap);
+            int descriptorCount = ModuleLoader.getInstance().getModules().stream()
+                .map(DESCRIPTOR_CACHE::getResourceMap)
+                .mapToInt(Map::size)
+                .sum();
+
+            LOG.info(descriptorCount + " ETL descriptors defined in all modules");
+
+            // Make sure the cache retrieves the expected number of descriptors from a couple test modules, if present
+
+            Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
+
+            if (null != simpleTest)
+                assertEquals("ETL descriptors from the simpletest module", 2, DESCRIPTOR_CACHE.getResourceMap(simpleTest).size());
+
+            Module etlTest = ModuleLoader.getInstance().getModule("ETLTest");
+
+            if (null != etlTest)
+                assertEquals("ETL descriptors from the ETLTest module", 54, DESCRIPTOR_CACHE.getResourceMap(etlTest).size());
         }
     }
 

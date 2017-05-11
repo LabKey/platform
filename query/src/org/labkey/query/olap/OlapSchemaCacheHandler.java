@@ -27,26 +27,21 @@ import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.FileUtil;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 
 public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<Map<String, OlapSchemaDescriptor>>
 {
-    public static final String DIR_NAME = "olap";
-
     @Override
-    public Map<String, OlapSchemaDescriptor> load(@Nullable Resource dir, Module module)
+    public Map<String, OlapSchemaDescriptor> load(Stream<? extends Resource> resources, Module module)
     {
-        if (null == dir)
-            return Collections.emptyMap();
-
         Map<String, OlapSchemaDescriptor> map = new HashMap<>();
 
-        dir.list().stream()
-            .filter(resource -> resource.isFile() && resource.getName().endsWith(".xml"))
+        resources
+            .filter(getFilter(".xml"))
             .forEach(resource -> {
                 String configName = FileUtil.getBaseName(resource.getName());
                 String configId = createOlapCacheKey(module, configName);
@@ -54,8 +49,7 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<Map<St
                 map.put(configName, descriptor);
             });
 
-
-        return Collections.unmodifiableMap(map);
+        return unmodifiable(map);
     }
 
     @Nullable

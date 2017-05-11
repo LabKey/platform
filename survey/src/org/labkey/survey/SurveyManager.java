@@ -81,7 +81,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public class SurveyManager
@@ -436,7 +435,8 @@ public class SurveyManager
 
         for (SurveyListener l : _surveyListeners)
         {
-            try {
+            try
+            {
                 l.surveyBeforeDelete(c, user, survey);
             }
             catch (Throwable t)
@@ -454,7 +454,8 @@ public class SurveyManager
 
         for (SurveyListener l : _surveyListeners)
         {
-            try {
+            try
+            {
                 // delete the row in the responses table
                 deleteSurveyResponse(c, user, design, survey);
                 l.surveyDeleted(c, user, survey);
@@ -571,7 +572,8 @@ public class SurveyManager
 
         for (SurveyListener l : _surveyListeners)
         {
-            try {
+            try
+            {
                 l.surveyResponsesUpdated(c, user, survey, rowData);
             }
             catch (Throwable t)
@@ -635,24 +637,17 @@ public class SurveyManager
     private static class SurveyDesignResourceCacheHandler implements ModuleResourceCacheHandler<MultiValuedMap<String, SurveyDesign>>
     {
         @Override
-        public MultiValuedMap<String, SurveyDesign> load(Stream<Resource> roots, Module module)
+        public MultiValuedMap<String, SurveyDesign> load(Stream<? extends Resource> resources, Module module)
         {
             MultiValuedMap<String, SurveyDesign> mmap = new ArrayListValuedHashMap<>();
 
-            roots
-                .flatMap(root -> root.list().stream())
-                .filter(Resource::isFile)
-                .filter(getFilter())
+            resources
+                .filter(getFilter(MODULE_RESOURCE_FILE_EXTENSION))
                 .map(this::loadSurveyDesign)
                 .filter(Objects::nonNull)
                 .forEach(design -> mmap.put(design.getSchemaName(), design));
 
             return unmodifiable(mmap);
-        }
-
-        private Predicate<Resource> getFilter()
-        {
-            return resource -> StringUtils.endsWithIgnoreCase(resource.getName(), MODULE_RESOURCE_FILE_EXTENSION);
         }
 
         private @Nullable SurveyDesign loadSurveyDesign(Resource r)

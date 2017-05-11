@@ -79,8 +79,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -96,6 +94,7 @@ import java.util.Set;
 public class ModuleAssayProvider extends TsvAssayProvider
 {
     private static final Logger LOG = Logger.getLogger(ModuleAssayProvider.class);
+    private static final String DOMAINS_DIR_NAME = "domains";
 
     public static class ModuleAssayException extends RuntimeException
     {
@@ -116,8 +115,8 @@ public class ModuleAssayProvider extends TsvAssayProvider
     private static final String INVALID_SAVE_HANDLER_CLASS = "The specified saveHandler class specified does not exist";
     private static final String INVALID_SAVE_HANDLER_INTERFACE = "The specified saveHandler class does not implement the AssaySaveHandler interface";
 
-    private Resource basePath;
-    private String name;
+    private final Resource basePath;
+    private final String name;
     private String description;
     private Class saveHandlerClass;
 
@@ -333,7 +332,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     private DomainDescriptorType parseDomain(IAssayDomainType domainType) throws ModuleAssayException
     {
         // TODO: Shouldn't this use the cache? Looks like this isn't called too much... and unclear what we'd do if the domain definition changed midstream...
-        Resource domainFile = getDeclaringModule().getModuleResolver().lookup(basePath.getPath().append(ModuleAssayCacheHandler.DOMAINS_DIR_NAME, domainType.getName().toLowerCase() + ".xml"));
+        Resource domainFile = getDeclaringModule().getModuleResolver().lookup(basePath.getPath().append(DOMAINS_DIR_NAME, domainType.getName().toLowerCase() + ".xml"));
         if (domainFile == null || !domainFile.exists())
             return null;
 
@@ -715,12 +714,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 result.addAll(sortedModuleScripts);
 
                 // Add any remaining module-provided files in alphabetical order
-                Collections.sort(moduleScriptFiles, new Comparator<File>(){
-                    public int compare(File o1, File o2)
-                    {
-                        return o1.getName().compareToIgnoreCase(o2.getName());
-                    }
-                });
+                moduleScriptFiles.sort((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()));
                 result.addAll(moduleScriptFiles);
             }
         }

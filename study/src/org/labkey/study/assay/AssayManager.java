@@ -18,8 +18,11 @@ package org.labkey.study.assay;
 
 import gwt.client.org.labkey.study.StudyApplication;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ActionButton;
@@ -46,6 +49,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
@@ -114,15 +118,18 @@ import java.util.concurrent.TimeUnit;
  */
 public class AssayManager implements AssayService
 {
+    private static final Logger LOG = Logger.getLogger(AssayManager.class);
     private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
-    private static final ModuleResourceCache<Collection<ModuleAssayProvider>> PROVIDER_CACHE = ModuleResourceCaches.create(new Path(AssayService.ASSAY_DIR_NAME), new ModuleAssayCacheHandler(), "Module assay providers");
+    private static final ModuleResourceCache<Collection<ModuleAssayProvider>> PROVIDER_CACHE = ModuleResourceCaches.create("Module assay providers", new ModuleAssayCacheHandler(), ResourceRootProvider.getAssayProviders(Path.rootPath));
     private static final Object PROVIDER_LOCK = new Object();
 
     private final List<AssayProvider> _providers = new CopyOnWriteArrayList<>();
     private final List<AssayHeaderLinkProvider> _headerLinkProviders = new CopyOnWriteArrayList<>();
     private final List<AssayColumnInfoRenderer> _assayColumnInfoRenderers = new CopyOnWriteArrayList<>();
 
-    /** Synchronization lock object for ensuring that batch names are unique */
+    /**
+     * Synchronization lock object for ensuring that batch names are unique
+     */
     private static final Object BATCH_NAME_LOCK = new Object();
 
     public AssayManager()
@@ -167,13 +174,15 @@ public class AssayManager implements AssayService
         }
     }
 
-    @Override @Nullable
+    @Override
+    @Nullable
     public AssayProvider getProvider(String providerName)
     {
         return getProvider(providerName, getAssayProviders());
     }
 
-    private @Nullable AssayProvider getProvider(String providerName, Collection<AssayProvider> providers)
+    private @Nullable
+    AssayProvider getProvider(String providerName, Collection<AssayProvider> providers)
     {
         for (AssayProvider potential : providers)
         {
@@ -185,13 +194,15 @@ public class AssayManager implements AssayService
         return null;
     }
 
-    @Override @Nullable
+    @Override
+    @Nullable
     public AssayProvider getProvider(ExpProtocol protocol)
     {
         return Handler.Priority.findBestHandler(getAssayProviders(), protocol);
     }
 
-    @Override @Nullable
+    @Override
+    @Nullable
     public AssayProvider getProvider(ExpRun run)
     {
         ExpProtocol protocol = run.getProtocol();
@@ -202,7 +213,8 @@ public class AssayManager implements AssayService
         return getProvider(protocol);
     }
 
-    @Override @NotNull
+    @Override
+    @NotNull
     public Collection<AssayProvider> getAssayProviders()
     {
         // Add the statically registered providers first
@@ -329,7 +341,8 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public @NotNull List<AssayHeaderLinkProvider> getAssayHeaderLinkProviders()
+    public @NotNull
+    List<AssayHeaderLinkProvider> getAssayHeaderLinkProviders()
     {
         return Collections.unmodifiableList(_headerLinkProviders);
     }
@@ -362,7 +375,8 @@ public class AssayManager implements AssayService
         return new AssaySchemaImpl(user, container, targetStudy);
     }
 
-    public @NotNull List<ExpProtocol> getAssayProtocols(Container container)
+    public @NotNull
+    List<ExpProtocol> getAssayProtocols(Container container)
     {
         return PROTOCOL_CACHE.get(container, null, (c, argument) ->
         {
@@ -400,7 +414,8 @@ public class AssayManager implements AssayService
         });
     }
 
-    public @NotNull List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider)
+    public @NotNull
+    List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider)
     {
         // Take the full list
         List<ExpProtocol> allProtocols = getAssayProtocols(container);
@@ -422,7 +437,8 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public @Nullable ExpProtocol getAssayProtocolByName(Container container, String name)
+    public @Nullable
+    ExpProtocol getAssayProtocolByName(Container container, String name)
     {
         if (name != null)
         {
@@ -481,7 +497,8 @@ public class AssayManager implements AssayService
         return new StudyGWTView(new StudyApplication.AssayImporter(), properties);
     }
 
-    public @NotNull List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView)
+    public @NotNull
+    List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView)
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         assert provider != null : "Could not find a provider for protocol: " + protocol;
@@ -494,13 +511,13 @@ public class AssayManager implements AssayService
         // Always add the current container if we're looking at an assay and under the protocol
         if (!isStudyView &&
                 (currentContainer.equals(protocolContainer) ||
-                currentContainer.hasAncestor(protocolContainer) ||
-                protocolContainer.equals(ContainerManager.getSharedContainer())))
+                        currentContainer.hasAncestor(protocolContainer) ||
+                        protocolContainer.equals(ContainerManager.getSharedContainer())))
             containers.add(currentContainer);
 
 
         // Check for write permission
-        for (Iterator<Container> iter = containers.iterator(); iter.hasNext();)
+        for (Iterator<Container> iter = containers.iterator(); iter.hasNext(); )
         {
             Container container = iter.next();
             boolean hasPermission = container.hasPermission(user, InsertPermission.class);
@@ -519,7 +536,7 @@ public class AssayManager implements AssayService
         List<ActionButton> result = new ArrayList<>();
 
 
-        if(currentContainer.isWorkbook())
+        if (currentContainer.isWorkbook())
         {
             ActionButton button = new ActionButton(provider.getImportURL(currentContainer, protocol), AbstractAssayProvider.IMPORT_DATA_LINK_NAME);
             button.setActionType(ActionButton.Action.LINK);
@@ -527,7 +544,7 @@ public class AssayManager implements AssayService
         }
 
         //this is the previous assay btn
-        else if(!currentContainer.getFolderType().getForceAssayUploadIntoWorkbooks())
+        else if (!currentContainer.getFolderType().getForceAssayUploadIntoWorkbooks())
         {
             if (containers.size() == 1 && containers.iterator().next().equals(currentContainer))
             {
@@ -555,7 +572,7 @@ public class AssayManager implements AssayService
                         uploadButton.addMenuItem("Current Folder (" + currentContainer.getPath() + ")", url);
                     }
                 }
-                for(Container container : containers)
+                for (Container container : containers)
                 {
                     ActionURL url = provider.getImportURL(container, protocol);
                     uploadButton.addMenuItem(container.getPath(), url);
@@ -566,7 +583,8 @@ public class AssayManager implements AssayService
 
         else
         {
-            ActionButton button = new ActionButton(AbstractAssayProvider.IMPORT_DATA_LINK_NAME){
+            ActionButton button = new ActionButton(AbstractAssayProvider.IMPORT_DATA_LINK_NAME)
+            {
                 public void render(RenderContext ctx, Writer out) throws IOException
                 {
                     if (!shouldRender(ctx))
@@ -582,10 +600,10 @@ public class AssayManager implements AssayService
             button.setURL("javascript:void(0)");
             button.setActionType(ActionButton.Action.SCRIPT);
             button.setScript("Ext4.create('LABKEY.ext.ImportWizardWin', {" +
-                "controller: '" + provider.getImportURL(currentContainer, protocol).getController() + "'," +
-                "action: '" + provider.getImportURL(currentContainer, protocol).getAction() + "'," +
-                "urlParams: {rowId: " + protocol.getRowId() + "}" +
-                "}).show();");
+                    "controller: '" + provider.getImportURL(currentContainer, protocol).getController() + "'," +
+                    "action: '" + provider.getImportURL(currentContainer, protocol).getAction() + "'," +
+                    "urlParams: {rowId: " + protocol.getRowId() + "}" +
+                    "}).show();");
             result.add(button);
 
         }
@@ -644,7 +662,7 @@ public class AssayManager implements AssayService
 
     /**
      * Creates a single document per assay design/folder combo, with some simple assay info (name, description), plus
-     * the names and comments from all of the runs. 
+     * the names and comments from all of the runs.
      */
     public void indexAssays(SearchService.IndexTask task, Container c)
     {
@@ -749,7 +767,8 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public @NotNull List<Pair<Container, String>> getLocationOptions(Container container, User user)
+    public @NotNull
+    List<Pair<Container, String>> getLocationOptions(Container container, User user)
     {
         List<Pair<Container, String>> containers = new ArrayList<>();
 
@@ -841,5 +860,27 @@ public class AssayManager implements AssayService
     public void clearProtocolCache()
     {
         PROTOCOL_CACHE.clear();
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testModuleResourceCache()
+        {
+            // Load all the module assay providers to ensure no exceptions
+            int count = ModuleLoader.getInstance().getModules().stream()
+                .map(PROVIDER_CACHE::getResourceMap)
+                .mapToInt(Collection::size)
+                .sum();
+
+            LOG.info(count + " assay providers defined in all modules");
+
+            // Make sure the cache retrieves the expected number of descriptors from a couple test modules, if present
+
+            Module miniassay = ModuleLoader.getInstance().getModule("miniassay");
+
+            if (null != miniassay)
+                assertEquals("Assay providers from miniassay module", 1, PROVIDER_CACHE.getResourceMap(miniassay).size());
+        }
     }
 }
