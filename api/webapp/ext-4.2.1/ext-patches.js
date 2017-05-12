@@ -853,8 +853,9 @@ if (LABKEY.experimental.useExperimentalCoreUI)
              * @param paddingWidth - total width padding
              * @param paddingHeight - total height padding
              * @param offsetY - distance between bottom of page to bottom of component
+             * @param overrideMinWidth - true to set ext container's minWidth value to calculated width, default false
              */
-            resizeToParentContainer: function(extContainer, skipWidth, skipHeight, paddingWidth, paddingHeight, offsetY)
+            resizeToParentContainer: function(extContainer, skipWidth, skipHeight, paddingWidth, paddingHeight, offsetY, overrideMinWidth)
             {
                 if (!extContainer || !extContainer.rendered || (skipWidth && skipHeight))
                     return;
@@ -887,7 +888,11 @@ if (LABKEY.experimental.useExperimentalCoreUI)
                 };
 
                 if (skipWidth)
+                {
                     extContainer.setHeight(size.height);
+                    if (overrideMinWidth)
+                        extContainer.minWidth = size.width;
+                }
                 else if (skipHeight)
                     extContainer.setWidth(size.width);
                 else
@@ -913,9 +918,22 @@ if (LABKEY.experimental.useExperimentalCoreUI)
     Ext4.override(Ext4.window.Window, {
         constructor: function()
         {
+            var isAutoShow = this.autoShow || (arguments && arguments[0] ? arguments[0].autoShow : false);
+            if (isAutoShow)
+            {
+                // temporarily disable autoShow so that responsive configs are applied before show
+                this.autoShow = false;
+                if (arguments && arguments[0] && arguments[0].autoShow)
+                    arguments[0].autoShow = false;
+            }
             this.callParent(arguments);
             if (this.suppressResponsive || !this.modal)
             {
+                if (isAutoShow && !this.isContained)
+                {
+                    this.autoShow = true;
+                    this.show();
+                }
                 return;
             }
 
@@ -960,6 +978,12 @@ if (LABKEY.experimental.useExperimentalCoreUI)
                 };
                 this.clickOutParentCmp = parentCmp;
                 this.mon(this.clickOutParentCmp, 'click', this.clickOutHandler, this, { delegate: '.x4-mask' });
+            }
+
+            if (isAutoShow && !this.isContained)
+            {
+                this.autoShow = true;
+                this.show();
             }
         }
     });

@@ -112,7 +112,7 @@
         Ext4.apply(config, {
             allowSelection: false,
             expandUpload: false,
-            minWidth: 250,
+            minWidth: LABKEY.experimental.useExperimentalCoreUI ? undefined : 250,
             useServerActions: false,
             useServerFileProperties: false,
             showColumnHeaders: false,
@@ -148,7 +148,7 @@
             <%}%>
             if (LABKEY.experimental.useExperimentalCoreUI)
             {
-                LABKEY.ext4ResponsiveUtil.resizeToParentContainer(fb, false, <%=!bean.isAutoResize()%>, 0, 0, 80);
+                LABKEY.ext4ResponsiveUtil.resizeToParentContainer(fb, false, <%=!bean.isAutoResize()%>, 1 /*allow 1 px padding to avoid occasional border cutoff*/, 0, 80, true);
             }
             else
             {
