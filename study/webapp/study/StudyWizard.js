@@ -312,7 +312,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             layout: 'card',
             layoutConfig: {deferredRender:true},
             activeItem: 0,
-            bodyStyle : 'padding: 25px;',
+            bodyStyle : LABKEY.experimental.useExperimentalCoreUI ? '' : 'padding: 25px;',
+            bodyCssClass: LABKEY.experimental.useExperimentalCoreUI ? 'study-wizard-form' : '',
             flex: 1,
             items: this.steps,
             bbar: ['->', this.prevBtn, this.nextBtn]
@@ -381,7 +382,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             title: title,
             resizable: false,
             width: 875,
-            height: 600,
+            height: LABKEY.experimental.useExperimentalCoreUI ? 630: 600,
             autoScroll: false,
             closeAction:'close',
             border: false,
@@ -612,7 +613,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var studyLocation = new Ext.form.TextField({
             fieldLabel: 'Location',
             name: 'studyFolder',
-            flex: 1,
+            flex: LABKEY.experimental.useExperimentalCoreUI ? undefined: 1,
             readOnly: true,
             fieldClass: 'x-form-empty-field',
             value: this.info.dstPath,
@@ -898,7 +899,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var radioGroup = new Ext.form.RadioGroup({
             columns: 2,
             fieldLabel: '',
-            style:"padding-bottom: 10px;",
+            style: LABKEY.experimental.useExperimentalCoreUI ? '' : "padding-bottom: 10px;",
             labelWidth: 5,
             items: [
                 this.existingGroupRadio,
@@ -1123,7 +1124,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     }
                 }
             }),
-            style: 'padding-top: 10px;',
+            style: LABKEY.experimental.useExperimentalCoreUI ? '' : 'padding-top: 10px;',
             title : 'Hidden Datasets',
             viewConfig: {forceFit: true},
             loadMask:{msg:"Loading, please wait..."},
@@ -1221,7 +1222,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         {
             this.snapshotOptions = new Ext.form.FormPanel({
                 items: [radioGroup],
-                padding: '10px 0 0 0',
+                padding: LABKEY.experimental.useExperimentalCoreUI ? '0 0 0 0' : '10px 0 0 0',
                 border: false,
                 height: 85,
                 width : 300
@@ -1663,7 +1664,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var optionsPanel = new Ext.form.FormPanel({
             defaults: {labelSeparator: ''},
-            padding: '10px 0px',
+            padding: LABKEY.experimental.useExperimentalCoreUI ? '' : '10px 0px',
             border: false,
             labelWidth: 120,
             height: 200,

@@ -1769,6 +1769,11 @@ div span.labkey-main-menu-icon {
   cursor: default;
 }
 
+.study-wizard-form>.x-panel-noborder>.x-panel-bwrap
+{
+  padding: 25px;
+}
+
 @import "components/header";
 @import "components/navigation";
 @import "components/menu";
