@@ -2098,6 +2098,10 @@ boxPlot.render();
                 d3.select(event.srcElement).transition().duration(800).attr("stroke-width", 1).ease("elastic");
             };
 
+            if (config.properties.pointIdAttr) {
+                pointLayerConfig.aes.pointIdAttr = config.properties.pointIdAttr;
+            }
+
             return pointLayerConfig;
         };
 

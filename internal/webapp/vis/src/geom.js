@@ -180,6 +180,7 @@ LABKEY.vis.Geom.Point.prototype.render = function(renderer, grid, scales, data, 
     this.mouseOverFnAes = layerAes.mouseOverFn ? layerAes.mouseOverFn : parentAes.mouseOverFn;
     this.mouseOutFnAes = layerAes.mouseOutFn ? layerAes.mouseOutFn : parentAes.mouseOutFn;
     this.mouseUpFnAes = layerAes.mouseUpFn ? layerAes.mouseUpFn : parentAes.mouseUpFn;
+    this.pointIdAttrAes = layerAes.pointIdAttr ? layerAes.pointIdAttr : parentAes.pointIdAttr;
 
     renderer.renderPointGeom(data, this);
     return true;

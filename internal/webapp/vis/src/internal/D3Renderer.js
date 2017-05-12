@@ -2020,6 +2020,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         anchorSel.attr('xlink:title', hoverTextAcc);
         anchorSel.append('title').text(hoverTextAcc);
 
+        // allow the point id attribute to be added for automated testing purposes
+        if (geom.pointIdAttrAes) {
+            anchorSel.attr('id', geom.pointIdAttrAes.getValue);
+        }
+
         pointsSel = anchorSel.select('path');
         pointsSel.attr('d', shapeAcc)
                 .attr('fill', colorAcc)
