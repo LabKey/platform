@@ -178,3 +178,14 @@ a.x4-menu-item-link {
 a div.x4-menu-item-icon.fa-users {
   background-image: none;
 }
+
+//== Bootstrap-like modal
+.modal-content {
+  .x4-window-header-default {
+    padding: $lk-modal-title-padding;
+    border-bottom: 1px solid $lk-modal-header-border-color;
+  }
+  .x4-window-body-default {
+    border-width: 0;
+  }
+}

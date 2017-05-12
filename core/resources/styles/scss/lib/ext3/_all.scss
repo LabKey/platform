@@ -7590,3 +7590,37 @@ ul.x-tab-strip-top li {
 }
 //
 //== End FilterDialog
+
+//== Bootstrap-like modal
+.modal-content {
+  .x-window-tl {
+    padding: $lk-modal-title-padding !important;
+    border-bottom: 1px solid $lk-modal-header-border-color;
+  }
+  .x-window-ml {
+    background-color: $lk-modal-content-bg;
+    padding-left: 0 !important;
+  }
+  .x-window-mr {
+    background-color: $lk-modal-content-bg;
+    padding-right: 0 !important;
+  }
+  .x-window-bl {
+    background-color: $lk-modal-content-bg;
+    padding-left: 0 !important;
+  }
+  .x-window-br {
+    background-color: $lk-modal-content-bg;
+    padding-right: 0 !important;
+  }
+  .x-window-bc {
+    background-color: $lk-modal-content-bg;
+  }
+  .x-window-footer {
+    border-bottom-color: $lk-modal-content-bg;
+  }
+  .x-tab-panel-noborder .x-tab-panel-body-noborder {
+    padding-right: 0 !important;
+  }
+}
+//== End Bootstrap-like modal

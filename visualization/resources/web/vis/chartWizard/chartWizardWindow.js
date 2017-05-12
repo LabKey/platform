@@ -11,7 +11,6 @@ Ext4.define('LABKEY.vis.ChartWizardWindow', {
     resizable: false,
     closeAction: 'hide',
     panelToMask: null,
-    suppressResponsive: true, //TODO chart wizard doesn't work on small screen
     listeners: {
         show: function()
         {

@@ -247,3 +247,8 @@ $lk-well-border-color: darken($lk-well-bg-color, 15%) !default;
 //== Wizards
 //
 $lk-wizard-pill-active-bg-color: $lk-nav-pills-active-link-hover-bg !default;
+
+//== Modals
+$lk-modal-title-padding: 15px !default;
+$lk-modal-header-border-color: $lk-panel-default-border !default;
+$lk-modal-content-bg: $lk-panel-bg-color !default;
