@@ -1,5 +1,4 @@
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
-radeox-api.jar|Radeox|1.0b3|{link:Radeox|http://www.radeox.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Wiki renderer
-radeox.jar|Radeox|1.0b3|{link:Radeox|http://www.radeox.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Wiki renderer
+radeox-1.0-b2.jar|Radeox|1.0b3|{link:Radeox|http://www.radeox.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Wiki renderer
 {table}

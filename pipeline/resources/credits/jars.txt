@@ -1,16 +1,10 @@
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
 activemq-core-5.1.0.jar|Apache ActiveMQ|5.1.0|{link:Apache|http://activemq.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Java Message Service queuing
-commons-collections-3.2.2.jar|Commons Collections|3.2.2|{link:Apache|http://jakarta.apache.org/commons/collections/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Mule dependency
-commons-jxpath-1.2.jar|Commons JXPath|1.2|{link:Apache|http://commons.apache.org/jxpath/index.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Pipeline (Mule XPath filtering)
 commons-lang-2.6.jar|Commons Lang|2.6|{link:Apache|http://jakarta.apache.org/commons/lang/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Language helpers; older version required by Mule
-backport-util-concurrent-3.1.jar|JSR 166|3.1|{link:Emory|http://dcl.mathcs.emory.edu/util/backport-util-concurrent/}|{link:Public Domain|http://creativecommons.org/licenses/publicdomain/}|jeckels|Pipeline (Mule dependency)
 dom4j-1.4.jar|DOM4J|1.4|{link:DOM4J|http://www.dom4j.org/}|{link:BSD Style|http://www.dom4j.org/license.html}|jeckels|Pipeline (Mule XML parsing)
 geronimo-j2ee-connector_1.5_spec-1.0.1.jar|J2EE Connector API|1.0.1|{link:Apache Geronimo|http://geronimo.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|J2EE Connector API classes
-geronimo-j2ee-management_1.0_spec-1.0.jar|J2EE Management API|1.0|{link:Apache Geronimo|http://geronimo.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|J2EE Management API classes
-geronimo-jms_1.1_spec-1.0.1.jar|J2EE Java Message Service API|1.0.1|{link:Apache Geronimo|http://geronimo.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|J2EE Java Message Service API classes
-geronimo-jta_1.0.1B_spec-1.0.1.jar|J2EE Java Transaction API|1.0.1|{link:Apache Geronimo|http://geronimo.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|J2EE Java Transaction API classes
-jug-2.0.0-asl.jar|Jug|2.0.2|{link:Safehaus|http://jug.safehaus.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Java UUID generator
-mule-1.4.4-embedded.jar|Mule Enterprise Service Bus|1.4.4|{link:MuleSoft|http://www.mulesoft.org/}|{link:Common Public Attribution License Version 1.0|http://www.opensource.org/licenses/cpal_1.0}|jeckels|Enterprise service bus implementation 
-xpp3_min-1.1.3.4.O.jar|XML Pull|1.1.3.4.0|{link:XMLPull.org|http://www.xmlpull.org/}|{link:Public Domain|http://creativecommons.org/licenses/publicdomain/}|jeckels|Pipeline (Mule dependency)
+jug-2.0.0.jar|Jug|2.0.0|{link:Safehaus|http://jug.safehaus.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Java UUID generator
+mule-module-builders-1.4.4e.jar|Mule Enterprise Service Bus|1.4.4e|{link:MuleSoft|http://www.mulesoft.org/}|{link:Common Public Attribution License Version 1.0|http://www.opensource.org/licenses/cpal_1.0}|jeckels|Enterprise service bus implementation
+xstream-1.2.2.jar|XML Pull|1.1.3.4.0|{link:XMLPull.org|http://www.xmlpull.org/}|{link:Public Domain|http://creativecommons.org/licenses/publicdomain/}|jeckels|Pipeline (Mule dependency)
 {table}
