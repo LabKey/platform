@@ -98,14 +98,14 @@ $icon-font-svg-id:        "glyphicons_halflingsregular" !default;
 $padding-base-vertical:     $lk-padding-base-vertical;
 $padding-base-horizontal:   $lk-padding-base-horizontal;
 
-$padding-large-vertical:    10px !default;
-$padding-large-horizontal:  16px !default;
+$padding-large-vertical:    $lk-padding-large-vertical;
+$padding-large-horizontal:  $lk-padding-large-horizontal;
 
-$padding-small-vertical:    5px !default;
-$padding-small-horizontal:  10px !default;
+$padding-small-vertical:    $lk-padding-small-vertical;
+$padding-small-horizontal:  $lk-padding-small-horizontal;
 
-$padding-xs-vertical:       1px !default;
-$padding-xs-horizontal:     5px !default;
+$padding-xs-vertical:       $lk-padding-xs-vertical;
+$padding-xs-horizontal:     $lk-padding-xs-horizontal;
 
 $line-height-large:         1.3333333 !default; // extra decimals for Win 8.1 Chrome
 $line-height-small:         1.5 !default;
@@ -130,9 +130,9 @@ $caret-width-large:         5px !default;
 //## Customizes the `.table` component with basic values, each used across all table variations.
 
 //** Padding for `<th>`s and `<td>`s.
-$table-cell-padding:            8px !default;
+$table-cell-padding:            $lk-table-cell-padding;
 //** Padding for cells in `.table-condensed`.
-$table-condensed-cell-padding:  5px !default;
+$table-condensed-cell-padding:  $lk-table-condensed-cell-padding;
 
 //** Default background color used for all tables.
 $table-bg:                      transparent !default;

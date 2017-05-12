@@ -75,26 +75,57 @@ table.labkey-show-surrounding-border {
   }
 
   /* experimental -- support row highlighting. Expects class to be added to <tr> */
-  tr.labkey-row-hl > td {
+  tr.lk-row-hl > td {
     background-color: #ffc; //#fef5dd;
     //border-top: 2px solid #fbc02d !important;
     //border-bottom: 2px solid #fbc02d !important;
   }
+
+  tr.lk-row-over > td {
+    //background-color: #efefef;
+    background-color: #e2e2e2;
+  }
 }
 
-.labkey-drawer {
+.lk-region-bar {
+  padding-bottom: 10px;
+}
+
+.lk-region-context-action {
+  background-color: lighten($lk-accent-color, 15%);
+  border: 1px solid $lk-accent-color;
+  border-radius: 14px;
+  display: inline-block;
+  padding: 2px 7px;
+  position: relative;
+  margin: 0 5px 5px 0;
+  vertical-align: top;
+  white-space: pre-wrap;
+
+  i.fa {
+    color: $white;
+    padding-right: 5px;
+  }
+}
+
+.lk-region-drawer {
   //position: absolute;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.175);
   background-clip: padding-box;
   background-color: $white;
   top: 0;
   width: 100%;
   z-index: 20001;
+  margin-bottom: 10px;
 }
 
-.labkey-drawer-container {
+.lk-region-drawer-container {
   //display: none;
   position: relative;
+}
+
+.lk-region-section {
+  display: none;
 }
 
 //.labkey-data-region .labkey-col-header, .labkey-data-region .labkey-row-header,

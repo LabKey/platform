@@ -3,7 +3,6 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-
 (function ($)
 {
     /**
@@ -33,7 +32,7 @@
                         dataColumnNames = $.map(data.columnModel, function(col) { return col.dataIndex; }),
                         colIndex = regionColumnNames.indexOf(columnName);
 
-                    if (dataColumnNames.indexOf(columnName) == -1)
+                    if (dataColumnNames.indexOf(columnName) === -1)
                     {
                         console.warn('Could not find column "' + columnName + '" in "' + region.schemaName + '.' + region.queryName + '".');
                         return;
@@ -71,28 +70,28 @@
                         regionColumnNames = $.map(region.columns, function(c) { return c.name; }),
                         dataColumnNames = $.map(data.columnModel, function(col) { return col.dataIndex; }),
                         colIndex = regionColumnNames.indexOf(columnName),
-                        plot = null;
+                        plot;
 
-                    if (dataColumnNames.indexOf(columnName) == -1)
+                    if (dataColumnNames.indexOf(columnName) === -1)
                     {
                         console.warn('Could not find column "' + columnName + '" in "' + region.schemaName + '.' + region.queryName + '".');
                         return;
                     }
 
-                    if ($('#' + plotDivId).length == 0)
+                    if ($('#' + plotDivId).length === 0)
                         return;
 
-                    if (analyticsProviderName == 'VIS_BAR')
+                    if (analyticsProviderName === 'VIS_BAR')
                     {
                         plot = getColumnBarPlot(plotDivId, data.rows, columnName, region.columns[colIndex], true);
                         plot.render();
                     }
-                    else if (analyticsProviderName == 'VIS_PIE')
+                    else if (analyticsProviderName === 'VIS_PIE')
                     {
                         plot = getColumnPieChart(plotDivId, data.rows, columnName, region.columns[colIndex], true);
                     }
 
-                    if (plot != null)
+                    if (plot)
                     {
                         _handleAnalyticsProvidersForCustomView(region, plotDivId, regionViewName, colFieldKey, analyticsProviderName);
                     }
@@ -133,7 +132,7 @@
             if (min != null && max != null)
                 min = min - ((max - min) * 0.02);
 
-            if (dataArray.length == 0)
+            if (dataArray.length === 0)
             {
                 labels.x = {
                     value: 'No data to display',
@@ -287,7 +286,7 @@
             if (!validDataSize)
             {
                 chartData = [{label: '', value: 1}];
-                if (categoryData.length == 0)
+                if (categoryData.length === 0)
                     footerTxt = 'No data to display';
                 else
                     footerTxt = 'Too many categories to display';
@@ -399,12 +398,10 @@
         {
             // Issue 26594: get the base filter for the QueryView and any user applied URL filters
             // using the data region's selectAllURL. See QueryView.java getSettings().getBaseFilter().applyToURL().
-            var filterArray = LABKEY.Filter.getFiltersFromUrl(dataRegion.selectAllURL, 'query');
-
             var config = $.extend({}, dataRegion.getQueryConfig(), {
                 columns: colFieldKey,
                 ignoreFilter: LABKEY.ActionURL.getParameter(dataRegion.name + '.ignoreFilter'),
-                filterArray: filterArray,
+                filterArray: LABKEY.Filter.getFiltersFromUrl(dataRegion.selectAllURL, 'query'),
                 requiredVersion: '9.1',
                 maxRows: -1, // ALL
                 success: successCallback
@@ -413,15 +410,23 @@
             LABKEY.Query.selectRows(config);
         };
 
-        var _appendPlotDiv = function(dataRegion)
+        var _appendPlotDiv = function(region)
         {
             var plotDivId = LABKEY.Utils.id();
+            var html = '<div id="' + plotDivId + '" class="labkey-dataregion-msg-plot-analytic"></div>';
 
-            dataRegion.addMessage({
-                html: '<div id="' + plotDivId + '" class="labkey-dataregion-msg-plot-analytic"></div>',
-                part: 'plotAnalyticsProvider',
-                append: true
-            });
+            if (LABKEY.experimental.useExperimentalCoreUI) {
+                region.displaySection(html, {
+                    append: true
+                })
+            }
+            else {
+                region.addMessage({
+                    html: html,
+                    part: 'plotAnalyticsProvider',
+                    append: true
+                });
+            }
 
             return plotDivId;
         };
@@ -434,7 +439,7 @@
         var _getGenericChartWizardUrl = function(dataRegion, colFieldKey, analyticsProviderName)
         {
             var renderType = _getRenderTypeForAnalyticsProviderName(analyticsProviderName);
-            if (renderType != null)
+            if (renderType)
             {
                 var params = {
                     renderType: renderType,
@@ -449,11 +454,11 @@
 
         var _getRenderTypeForAnalyticsProviderName = function(name)
         {
-            if (name == 'VIS_BOX')
+            if (name === 'VIS_BOX')
                 return 'box_plot';
-            if (name == 'VIS_BAR')
+            if (name === 'VIS_BAR')
                 return 'bar_chart';
-            if (name == 'VIS_PIE')
+            if (name === 'VIS_PIE')
                 return 'pie_chart';
             return null;
         };

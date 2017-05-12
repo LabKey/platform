@@ -6,11 +6,16 @@
   border: 1px solid $lk-button-border-color;
   border-radius: $lk-button-border-radius;
   color: $lk-button-color;
-  margin-right: 5px;
+  display: inline-block;
+  letter-spacing: 0.5px;
+  //margin-right: 5px;
   padding: $lk-button-padding;
   font-size: $lk-font-size-small;
   font-weight: $lk-button-font-weight;
+  text-align: center;
   text-transform: $lk-button-text-transform;
+  touch-action: manipulation;
+  vertical-align: middle;
   white-space: nowrap;
 
   &:active,
@@ -37,7 +42,8 @@
   .labkey-button {
     border: 1px solid $lk-bar-button-border-color;
     color: $lk-bar-button-color;
-    vertical-align: middle;
+
+    margin-right: 5px;
 
     &.icon-only {
       padding: 4px 20px;

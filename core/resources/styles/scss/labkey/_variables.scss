@@ -91,6 +91,15 @@ $lk-screen-lg-min: 1200px !default;
 $lk-padding-base-vertical: 4px !default;
 $lk-padding-base-horizontal: 8px !default;
 
+$lk-padding-large-vertical: 10px !default;
+$lk-padding-large-horizontal: 16px !default;
+
+$lk-padding-small-vertical: 5px !default;
+$lk-padding-small-horizontal: 10px !default;
+
+$lk-padding-xs-vertical: 1px !default;
+$lk-padding-xs-horizontal: 5px !default;
+
 //== Body
 //
 $lk-body-bg-color: $lk-primary-bg-color !default;
@@ -231,6 +240,11 @@ $lk-panel-danger-text: $lk-state-danger-text !default;
 $lk-panel-danger-border: $lk-state-danger-border !default;
 $lk-panel-danger-heading-bg: $lk-state-danger-bg !default;
 
+//== Tables
+//
+$lk-table-cell-padding: 5px !default;
+$lk-table-condensed-cell-padding: 3px !default;
+
 //== TabStrips
 //
 $lk-active-tab-color: $black !default;
@@ -238,6 +252,10 @@ $lk-active-tab-bg-color: $white !default;
 $lk-active-tab-body-bg-color: $lk-active-tab-bg-color !default;
 $lk-inactive-tab-color: $black !default;
 $lk-inactive-tab-bg-color: #f4f4f4 !default;
+
+//== Tooltips
+//
+$lk-tooltip-opacity: 0.8 !default;
 
 //== Wells
 //
