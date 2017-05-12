@@ -1,7 +1,7 @@
 import org.labkey.gradle.util.BuildUtils
 
 apply plugin: 'java'
-apply plugin: 'org.labkey.simpleModule'
+apply plugin: 'org.labkey.javaModule'
 
 List spring = [
         "org.springframework:spring-aop:${springVersion}",
