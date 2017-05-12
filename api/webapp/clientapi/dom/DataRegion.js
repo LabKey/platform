@@ -19,6 +19,7 @@ if (!LABKEY.DataRegions) {
     var REPORTID_PREFIX = '.reportId';
     var SORT_PREFIX = '.sort', SORT_ASC = '+', SORT_DESC = '-';
     var OFFSET_PREFIX = '.offset';
+    var NEW_UI = LABKEY.experimental.useExperimentalCoreUI === true;
     var MAX_ROWS_PREFIX = '.maxRows', SHOW_ROWS_PREFIX = '.showRows';
     var CONTAINER_FILTER_NAME = '.containerFilterName';
     var CUSTOM_VIEW_PANELID = '~~customizeView~~';
@@ -450,7 +451,7 @@ if (!LABKEY.DataRegions) {
          * Non-configurable Options
          */
         this.selectionModified = false;
-        this.panelConfigurations = {}; // formerly, panelButtonContents
+        this.panelConfigurations = {};
 
         if (isQWP && this.renderTo) {
             _load(this);
@@ -790,6 +791,17 @@ if (!LABKEY.DataRegions) {
             me.selectPage.call(me, this.checked);
         });
         _getRowSelectors(this).on('click', function() { me.selectRow.call(me, this); });
+
+        if (NEW_UI) {
+            // experimental click row highlight
+            var rows = form.find('.labkey-data-region > tbody > tr');
+            rows.on('click', function(e) {
+                if (e.target && e.target.tagName.toLowerCase() === 'td') {
+                    $(this).siblings('tr').removeClass('lk-row-hl');
+                    $(this).addClass('lk-row-hl');
+                }
+            });
+        }
     };
 
     /**
@@ -1270,11 +1282,11 @@ if (!LABKEY.DataRegions) {
             }
 
             if (config.duration) {
-                var dr = this; var timeout = config.duration;
+                var dr = this;
                 setTimeout(function() {
                     dr.removeMessage(config.part || part);
                     _getHeaderSelector(dr).trigger('resize');
-                }, timeout);
+                }, config.duration);
             }
         }
     };
@@ -1302,6 +1314,12 @@ if (!LABKEY.DataRegions) {
      */
     LABKEY.DataRegion.prototype.hasMessage = function(part) {
         return this.msgbox && this.msgbox.hasMessage(part);
+    };
+
+    LABKEY.DataRegion.prototype.hideContext = function() {
+        if (NEW_UI) {
+            _getContextSelector(this).hide();
+        }
     };
 
     /**
@@ -1385,6 +1403,12 @@ if (!LABKEY.DataRegions) {
         this.addMessage('<div class="labkey-error">' + html + '</div>');
     };
 
+    LABKEY.DataRegion.prototype.showContext = function() {
+        if (NEW_UI) {
+            _getContextSelector(this).show();
+        }
+    };
+
     /**
      * Show a message in the header of this DataRegion.
      * @param msg the HTML source of the message to be shown
@@ -1399,6 +1423,30 @@ if (!LABKEY.DataRegions) {
     LABKEY.DataRegion.prototype.showMessageArea = function() {
         if (this.msgbox && this.msgbox.hasContent()) {
             this.msgbox.show();
+        }
+    };
+
+    //
+    // Sections
+    //
+
+    LABKEY.DataRegion.prototype.displaySection = function(content, options) {
+        var append = options && options.append === true;
+        var dir = options && options.dir ? options.dir : 'n';
+
+        var sec = _getSectionSelector(this, dir);
+        append ? sec.append(content) : sec.html(content);
+        sec.show();
+    };
+
+    LABKEY.DataRegion.prototype.hideSection = function(options) {
+        var dir = options && options.dir ? options.dir : 'n';
+        var sec = _getSectionSelector(this, dir);
+
+        sec.hide();
+
+        if (options.clear === true) {
+            sec.html('');
         }
     };
 
@@ -1477,7 +1525,7 @@ if (!LABKEY.DataRegions) {
     //
 
     var _initPaging = function() {
-        if (LABKEY.experimental.useExperimentalCoreUI) {
+        if (NEW_UI) {
             var ct = _getBarSelector(this).find('.labkey-pagination');
 
             if (ct && ct.length) {
@@ -1485,12 +1533,18 @@ if (!LABKEY.DataRegions) {
                 var hasTotal = $.isNumeric(this.totalRows);
 
                 // display the counts
-                if (hasOffset) {
+                if (hasOffset && hasTotal) {
+
+                    // small result set
+                    if (this.totalRows < 5) {
+                        return;
+                    }
+
                     var ofTotal = '';
                     var low = this.offset + 1;
                     var high = this.offset + this.rowCount;
 
-                    if (hasTotal && low <= this.totalRows && high <= this.totalRows) {
+                    if (low <= this.totalRows && high <= this.totalRows) {
                         ofTotal = ' of ' + this.totalRows;
                         ct.html('<span>' + low + ' - ' + high + ofTotal + '</span>').css('visibility', 'visible');
 
@@ -1582,9 +1636,7 @@ if (!LABKEY.DataRegions) {
      * Forces the grid to do paging based on the current maximum number of rows
      */
     LABKEY.DataRegion.prototype.showPaged = function() {
-        if (_beforeRowsChange(this, null)) { // lol, what? Handing in null is so lame
-            _removeParameters(this, [SHOW_ROWS_PREFIX]);
-        }
+        _removeParameters(this, [SHOW_ROWS_PREFIX]);
     };
 
     /**
@@ -1616,7 +1668,7 @@ if (!LABKEY.DataRegions) {
         // clear sibling parameters
         this.showRows = undefined;
 
-        if (rowOffset != undefined) {
+        if ($.isNumeric(rowOffset)) {
             _setParameter(this, OFFSET_PREFIX, rowOffset, [OFFSET_PREFIX, SHOW_ROWS_PREFIX]);
         }
         else {
@@ -1635,7 +1687,7 @@ if (!LABKEY.DataRegions) {
      * @param newmax the maximum number of rows to be shown
      */
     LABKEY.DataRegion.prototype.setMaxRows = function(newmax) {
-        var event = $.Event('beforemaxrowschange'); // Can't this just be a variant of _beforeRowsChange with an extra param?
+        var event = $.Event('beforemaxrowschange');
         $(this).trigger(event, [this, newmax]);
         if (event.isDefaultPrevented()) {
             return;
@@ -1704,11 +1756,11 @@ if (!LABKEY.DataRegions) {
                 paramValPairs.push([VIEWNAME_PREFIX, view]);
                 this.viewName = view;
             }
-            else if (view.type == 'report') {
+            else if (view.type === 'report') {
                 paramValPairs.push([REPORTID_PREFIX, view.reportId]);
                 this.reportId = view.reportId;
             }
-            else if (view.type == 'view' && view.viewName) {
+            else if (view.type === 'view' && view.viewName) {
                 paramValPairs.push([VIEWNAME_PREFIX, view.viewName]);
                 this.viewName = view.viewName;
             }
@@ -1721,7 +1773,7 @@ if (!LABKEY.DataRegions) {
 
             if (urlParameters.sort && urlParameters.sort.length > 0) {
                 $.each(urlParameters.sort, function(i, sort) {
-                    newSort.push((sort.dir == "+" ? "" : sort.dir) + sort.fieldKey);
+                    newSort.push((sort.dir === '+' ? '' : sort.dir) + sort.fieldKey);
                 });
                 paramValPairs.push([SORT_PREFIX, newSort.join(',')]);
             }
@@ -1784,8 +1836,7 @@ if (!LABKEY.DataRegions) {
      */
     LABKEY.DataRegion.prototype.hideCustomizeView = function() {
         if (this.activePanelId === CUSTOM_VIEW_PANELID) {
-            this.hidePanel();
-            this.showMessageArea();
+            this.hideButtonPanel();
         }
     };
 
@@ -1977,6 +2028,7 @@ if (!LABKEY.DataRegions) {
             return;
         }
 
+        this.hideContext();
         this.hideMessage(true);
 
         this.hidePanel(function() {
@@ -2156,6 +2208,7 @@ if (!LABKEY.DataRegions) {
      */
     LABKEY.DataRegion.prototype.hideButtonPanel = function() {
         this.hidePanel();
+        this.showContext();
         this.showMessageArea();
     };
 
@@ -2188,8 +2241,7 @@ if (!LABKEY.DataRegions) {
 
             // allow for toggling the state
             if (panelId === this.activePanelId) {
-                this.hidePanel();
-                this.showMessageArea();
+                this.hideButtonPanel();
             }
             else {
                 // determine if the content needs to be moved to the ribbon
@@ -2589,7 +2641,7 @@ if (!LABKEY.DataRegions) {
             });
         }
 
-        if (direction == SORT_ASC) { // Easier to read without the encoded + on the URL...
+        if (direction === SORT_ASC) { // Easier to read without the encoded + on the URL...
             direction = '';
         }
 
@@ -2598,15 +2650,6 @@ if (!LABKEY.DataRegions) {
         }
 
         return newSorts.join(',');
-    };
-
-    var _beforeRowsChange = function(region, rowChangeEnum) {
-        //var event = $.Event('beforeshowrowschange');
-        //$(region).trigger(event, [region, rowChangeEnum]);
-        //if (event.isDefaultPrevented()) {
-        //    return false;
-        //}
-        return true;
     };
 
     var _buildQueryString = function(region, pairs) {
@@ -2767,23 +2810,31 @@ if (!LABKEY.DataRegions) {
         return _getFormSelector(region).find('.lk-region-bar');
     };
 
+    var _getContextSelector = function(region) {
+        return $('#' + region.domId + '-ctxbar');
+    };
+
     var _getFormSelector = function(region) {
         var form = $('form#' + region.domId + '-form');
 
         // derived DataRegion's may not include the form id
-        if (form.length == 0) {
+        if (form.length === 0) {
             form = $('#' + region.domId).closest('form');
         }
 
         return form;
     };
 
+    var _getHeaderSelector = function(region) {
+        return $('#' + region.domId + '-header');
+    };
+
     var _getRowSelectors = function(region) {
         return _getFormSelector(region).find('.labkey-selectors input[type="checkbox"][name=".select"]');
     };
 
-    var _getHeaderSelector = function(region) {
-        return $('#' + region.domId + '-header');
+    var _getSectionSelector = function(region, dir) {
+        return $('#' + region.domId + '-section-' + dir);
     };
 
     // Formerly, LABKEY.DataRegion.getParamValPairsFromString / LABKEY.DataRegion.getParamValPairs
@@ -2856,8 +2907,8 @@ if (!LABKEY.DataRegions) {
     };
 
     var _getDrawerSelector = function(region) {
-        if (LABKEY.experimental.useExperimentalCoreUI) {
-            return $('.labkey-drawer'); // TODO: Adjust to work for more than one region
+        if (NEW_UI) {
+            return $('.lk-region-drawer'); // TODO: Adjust to work for more than one region
         }
 
         return _getHeaderSelector(region).find('.labkey-ribbon');
@@ -3078,14 +3129,11 @@ if (!LABKEY.DataRegions) {
     };
 
     var _showRows = function(region, showRowsEnum) {
-        if (_beforeRowsChange(region, showRowsEnum)) {
+        // clear sibling parameters, could we do this with events?
+        this.maxRows = undefined;
+        this.offset = 0;
 
-            // clear sibling parameters, could we do this with events?
-            this.maxRows = undefined;
-            this.offset = 0;
-
-            _setParameter(region, SHOW_ROWS_PREFIX, showRowsEnum, [OFFSET_PREFIX, MAX_ROWS_PREFIX, SHOW_ROWS_PREFIX]);
-        }
+        _setParameter(region, SHOW_ROWS_PREFIX, showRowsEnum, [OFFSET_PREFIX, MAX_ROWS_PREFIX, SHOW_ROWS_PREFIX]);
     };
 
     var _showSelectMessage = function(region, msg) {
@@ -3096,11 +3144,11 @@ if (!LABKEY.DataRegions) {
 
             msg += "&nbsp;" + "<span class='labkey-button select-none'>Select None</span>";
             var showOpts = [];
-            if (region.showRows != "all")
+            if (region.showRows !== 'all')
                 showOpts.push("<span class='labkey-button show-all'>Show All</span>");
-            if (region.showRows != "selected")
+            if (region.showRows !== 'selected')
                 showOpts.push("<span class='labkey-button show-selected'>Show Selected</span>");
-            if (region.showRows != "unselected")
+            if (region.showRows !== 'unselected')
                 showOpts.push("<span class='labkey-button show-unselected'>Show Unselected</span>");
             msg += "&nbsp;&nbsp;" + showOpts.join(" ");
         }
@@ -3119,7 +3167,7 @@ if (!LABKEY.DataRegions) {
             }
         });
 
-        _getAllRowSelectors(region).each(function() { this.checked = (checked == true)});
+        _getAllRowSelectors(region).each(function() { this.checked = checked === true; });
         return ids;
     };
 
@@ -3184,7 +3232,7 @@ if (!LABKEY.DataRegions) {
         }, 500);
 
         LABKEY.Ajax.request({
-            timeout: (region.timeout == undefined) ? DEFAULT_TIMEOUT : region.timeout,
+            timeout: region.timeout === undefined ? DEFAULT_TIMEOUT : region.timeout,
             url: LABKEY.ActionURL.buildURL('project', 'getWebPart.api', region.containerPath),
             method: 'POST',
             params: params,
@@ -3516,17 +3564,15 @@ if (!LABKEY.DataRegions) {
                 maxCount = parseInt(maxCount);
             }
 
-            var newUI = LABKEY.experimental.useExperimentalCoreUI;
-
             if (minCount <= selectedCount && (!maxCount || maxCount >= selectedCount)) {
                 el.removeClass('labkey-disabled-button');
-                if (!newUI) {
+                if (!NEW_UI) {
                     el.addClass('labkey-button');
                 }
             }
             else {
                 el.addClass('labkey-disabled-button');
-                if (!newUI) {
+                if (!NEW_UI) {
                     el.removeClass('labkey-button');
                 }
             }
@@ -4080,7 +4126,7 @@ if (!LABKEY.DataRegions) {
         var parent = $(this.parentSel);
 
         // ensure container div is present
-        if (parent.find('div.dataregion_msgbox_ct').length == 0) {
+        if (!NEW_UI && parent.find('div.dataregion_msgbox_ct').length === 0) {
             parent.find('td.labkey-dataregion-msgbox').append('<div class="dataregion_msgbox_ct"></div>');
         }
 
@@ -4099,14 +4145,13 @@ if (!LABKEY.DataRegions) {
             if (msg) {
 
                 partEl = parentCt.find('.' + partCls);
-                if (partEl.length == 0) {
-
+                if (partEl.length === 0) {
                     msgCls = 'labkey-dataregion-msg ' + partCls + (hasMsg ? ' labkey-dataregion-msg-sep' : '');
                     parentCt.append('<div class="' + msgCls + '">' + msg + '</div>');
                 }
-                else if (partToUpdate != undefined && partToUpdate == part) {
+                else if (partToUpdate !== undefined && partToUpdate === part) {
 
-                    if (appendMsg != undefined)
+                    if (appendMsg !== undefined)
                         partEl.append(appendMsg);
                     else
                         partEl.html(msg)

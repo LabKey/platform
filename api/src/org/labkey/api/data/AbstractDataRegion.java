@@ -117,7 +117,7 @@ public abstract class AbstractDataRegion extends DisplayElement
         return _allowHeaderLock && !PageFlowUtil.useExperimentalCoreUI();
     }
 
-    protected JSONObject getDataRegionJSON(RenderContext ctx, boolean showRecordSelectors)
+    protected JSONObject toJSON(RenderContext ctx)
     {
         JSONObject dataRegionJSON = new JSONObject();
         dataRegionJSON.put("domId", getDomId());
@@ -137,7 +137,7 @@ public abstract class AbstractDataRegion extends DisplayElement
 
     protected void renderHeaderScript(RenderContext ctx, Writer writer, Map<String, String> messages, boolean showRecordSelectors) throws IOException
     {
-        JSONObject dataRegionJSON = getDataRegionJSON(ctx, true);
+        JSONObject dataRegionJSON = toJSON(ctx);
 
         if (messages != null && !messages.isEmpty())
         {
@@ -154,7 +154,7 @@ public abstract class AbstractDataRegion extends DisplayElement
     }
 
     @Nullable
-    private SimpleFilter getValidFilter(RenderContext ctx)
+    protected SimpleFilter getValidFilter(RenderContext ctx)
     {
         SimpleFilter urlFilter = new SimpleFilter(ctx.getViewContext().getActionURL(), getName());
         for (FieldKey fk : ctx.getIgnoredFilterColumns())

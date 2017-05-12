@@ -87,7 +87,7 @@ public class DataRegion extends AbstractDataRegion
     private List<DisplayColumn> _displayColumns = new ArrayList<>();
     private List<AnalyticsProviderItem> _summaryStatsProviders = null;
     private Map<String, List<Aggregate.Result>> _aggregateResults = null;
-    private AggregateRowConfig _aggregateRowConfig = new AggregateRowConfig(false, true);
+    private AggregateRowConfig _aggregateRowConfig = new AggregateRowConfig(PageFlowUtil.useExperimentalCoreUI(), !PageFlowUtil.useExperimentalCoreUI());
     private TableInfo _table = null;
     private ActionURL _selectAllURL = null;
     private boolean _showRecordSelectors = false;
@@ -143,7 +143,7 @@ public class DataRegion extends AbstractDataRegion
     public static final String DEFAULTDATE = "Date";
     public static final String DEFAULTDATETIME = "DateTime";
 
-    private List<ContextAction> _contextActions;
+    private List<ContextAction> _contextActions = new ArrayList<>();
     private List<Message> _messages;
 
     private class GroupTable
@@ -230,6 +230,11 @@ public class DataRegion extends AbstractDataRegion
         public String getContent()
         {
             return _content;
+        }
+
+        public MessageType getType()
+        {
+            return _type;
         }
     }
 
@@ -1023,16 +1028,15 @@ public class DataRegion extends AbstractDataRegion
         // 4. render context bar
         _renderContextBar(ctx, out);
 
-        // 5. render north section
-
-        // 6. render table
+        // 5. render table
         if (!_errorCreatingResults)
             _renderDataTableNew(ctx, out, showRecordSelectors, renderers, colCount);
 
-        // 7. Bind the region code
+        // 6. Bind the region code
         renderHeaderScript(ctx, out, messages, showRecordSelectors);
+        renderAnalyticsProvidersScripts(ctx, out);
 
-        // 8. end form wrapper
+        // 7. end form wrapper
         renderFormEnd(ctx, out);
     }
 
@@ -1040,7 +1044,7 @@ public class DataRegion extends AbstractDataRegion
     {
         if (shouldRenderHeader(renderButtons))
         {
-            out.write("<div class=\"row bottom-spacing lk-region-bar\">");
+            out.write("<div class=\"row lk-region-bar\">");
             _renderButtonBarNew(ctx, out, renderButtons);
             _renderPaginationNew(ctx, out);
             out.write("</div>");
@@ -1060,25 +1064,43 @@ public class DataRegion extends AbstractDataRegion
 
     private void _renderDrawer(RenderContext ctx, Writer out) throws IOException
     {
-        out.write("<div class=\"labkey-drawer\"></div>");
+        out.write("<div class=\"lk-region-drawer\" style=\"display:none;\"></div>");
     }
 
     private void _renderContextBar(RenderContext ctx, Writer out) throws IOException
     {
-
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-ctxbar") + "\" class=\"lk-region-context-bar\">");
+        if (_contextActions != null)
+        {
+            for (ContextAction ca : _contextActions)
+            {
+                out.write("<div class=\"lk-region-context-action\" ");
+                if (ca.getTooltip() != null)
+                    out.write("data-toggle=\"tooltip\" data-placement=\"top\" title=\"" + PageFlowUtil.filter(ca.getTooltip()) + "\"");
+                out.write(">");
+                if (ca.getIconCls() != null)
+                    out.write("<i class=\"fa fa-" + PageFlowUtil.filter(ca.getIconCls()) + "\"></i>");
+                out.write("<span>" + PageFlowUtil.filter(ca.getCaption()) + "</span>");
+                out.write("</div>");
+            }
+        }
+        out.write("</div>");
     }
 
     private void _renderMessages(RenderContext ctx, Writer out) throws IOException
     {
-        if (_messages == null)
-            return;
-        else if (_messages.size() == 0)
-            return;
-
-        for (Message message : _messages)
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-msgbox") + "\">");
+        if (_messages != null)
         {
-            out.write("We have a message!");
+            for (Message message : _messages)
+            {
+                String alertCls = message.getType().equals(MessageType.ERROR) ? "error" : "info";
+                out.write("<div class=\"alert alert-" + alertCls + "\">");
+                out.write(PageFlowUtil.filter(message.getContent()));
+                out.write("</div>");
+            }
         }
+        out.write("</div>");
     }
 
     private void _renderPaginationNew(RenderContext ctx, Writer out) throws IOException
@@ -1112,10 +1134,12 @@ public class DataRegion extends AbstractDataRegion
 
     private void _renderDataTableNew(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
     {
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-n") + "\" class=\"lk-region-section\"></div>");
         out.write("<div class=\"table-responsive\">");
         out.write("<table class=\"table table-condensed " + (isShowBorders() ? "table-bordered" : "") + " labkey-data-region\">");
         _renderDataTable(ctx, out, showRecordSelectors, renderers, colCount);
         out.write("</table></div>");
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-s") + "\" class=\"lk-region-section\"></div>");
     }
 
     private void renderAnalyticsProvidersScripts(RenderContext ctx, Writer writer) throws IOException
@@ -1258,13 +1282,14 @@ public class DataRegion extends AbstractDataRegion
     }
 
     @Override
-    protected JSONObject getDataRegionJSON(RenderContext ctx, boolean showRecordSelectors)
+    protected JSONObject toJSON(RenderContext ctx)
     {
-        JSONObject dataRegionJSON = super.getDataRegionJSON(ctx, showRecordSelectors);
+        JSONObject dataRegionJSON = super.toJSON(ctx);
+        User user = ctx.getViewContext().getUser();
 
         if (ctx.getView() != null)
         {
-            dataRegionJSON.put("view", QueryService.get().getCustomViewProperties(ctx.getView(), ctx.getViewContext().getUser()));
+            dataRegionJSON.put("view", QueryService.get().getCustomViewProperties(ctx.getView(), user));
         }
 
         // 17021: Faceted Filtering does not respect container path.
@@ -1275,10 +1300,10 @@ public class DataRegion extends AbstractDataRegion
         TableInfo table = getTable();
         if (table != null)
         {
-            permissionJSON.put("insert", table.hasPermission(ctx.getViewContext().getUser(), InsertPermission.class));
-            permissionJSON.put("update", table.hasPermission(ctx.getViewContext().getUser(), UpdatePermission.class));
-            permissionJSON.put("delete", table.hasPermission(ctx.getViewContext().getUser(), DeletePermission.class));
-            permissionJSON.put("admin", table.hasPermission(ctx.getViewContext().getUser(), AdminPermission.class));
+            permissionJSON.put("insert", table.hasPermission(user, InsertPermission.class));
+            permissionJSON.put("update", table.hasPermission(user, UpdatePermission.class));
+            permissionJSON.put("delete", table.hasPermission(user, DeletePermission.class));
+            permissionJSON.put("admin", table.hasPermission(user, AdminPermission.class));
         }
         dataRegionJSON.put("permissions", permissionJSON);
 
@@ -1288,10 +1313,10 @@ public class DataRegion extends AbstractDataRegion
         dataRegionJSON.put("totalRows", _totalRows);
         dataRegionJSON.put("rowCount", _rowCount);
         dataRegionJSON.put("showRows", getShowRows().toString().toLowerCase());
-        dataRegionJSON.put("showRecordSelectors", showRecordSelectors);
+        dataRegionJSON.put("showRecordSelectors", true);
         dataRegionJSON.put("showSelectMessage", _showSelectMessage);
         dataRegionJSON.put("selectionKey", getSelectionKey());
-        dataRegionJSON.put("selectorCols", _recordSelectorValueColumns == null ? null : _recordSelectorValueColumns);
+        dataRegionJSON.put("selectorCols", _recordSelectorValueColumns);
         dataRegionJSON.put("selectedCount", ctx.getAllSelected().size());
         dataRegionJSON.put("selectAllURL", getSelectAllURL());
         dataRegionJSON.put("requestURL", ctx.getViewContext().getActionURL().toString());
@@ -1307,7 +1332,7 @@ public class DataRegion extends AbstractDataRegion
 
         VisualizationUrls visUrlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
         if (visUrlProvider != null)
-            dataRegionJSON.put("chartWizardURL", visUrlProvider.getGenericChartDesignerURL(ctx.getContainer(), ctx.getViewContext().getUser(), getSettings(), null));
+            dataRegionJSON.put("chartWizardURL", visUrlProvider.getGenericChartDesignerURL(ctx.getContainer(), user, getSettings(), null));
 
         // TODO: Don't get available container filters from render context.
         // 11082: Populate customize view with list of allowable container filters from the QueryView
@@ -1367,8 +1392,7 @@ public class DataRegion extends AbstractDataRegion
                 {
                     firstScript = false;
                     out.write("<script type=\"text/javascript\">\n");
-                    out.write("Ext.onReady(\n");
-                    out.write("function () {\n");
+                    out.write("+function($){$(function(){\n");
                 }
                 // We need to give any included scripts time to load, so wait for our desired function to available
                 // before invoking it.
@@ -1393,7 +1417,7 @@ public class DataRegion extends AbstractDataRegion
 
         if (!firstScript)
         {
-            out.write("});\n");
+            out.write("})}(jQuery);\n");
             out.write("</script>\n");
         }
     }
@@ -2691,6 +2715,25 @@ public class DataRegion extends AbstractDataRegion
         }
     }
 
+    private void prepareFilters(RenderContext ctx)
+    {
+        // TODO: Render erroneous un-applied filters using getFilterErrorMessage for context
+        if (isShowFilterDescription())
+        {
+            SimpleFilter filter = getValidFilter(ctx);
+
+            if (filter != null)
+            {
+                for (SimpleFilter.FilterClause clause : filter.getClauses())
+                {
+                    StringBuilder caption = new StringBuilder();
+                    clause.appendFilterText(caption, new SimpleFilter.ColumnNameFormatter());
+                    _contextActions.add(new ContextAction(caption.toString(), "filter", null, caption.toString()));
+                }
+            }
+        }
+    }
+
     protected Map<String, String> prepareMessages(RenderContext ctx) throws IOException
     {
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
@@ -2703,12 +2746,19 @@ public class DataRegion extends AbstractDataRegion
         if (headerMsg.length() > 0)
             addMessage(new Message(headerMsg.toString(), MessageType.INFO, MessagePart.header));
 
-        if (!_errorCreatingResults && !newUI)
+        //issue 13538: do not try to display filters if error, since this could result in a ConversionException
+        if (!_errorCreatingResults)
         {
-            //issue 13538: do not try to display filters if error, since this could result in a ConversionException
-            addFilterMessage(filterMsg, ctx, isShowFilterDescription());
-            if (filterMsg.length() > 0)
-                addMessage(new Message(filterMsg.toString(), MessageType.INFO, MessagePart.filter));
+            if (newUI)
+            {
+                prepareFilters(ctx);
+            }
+            else
+            {
+                addFilterMessage(filterMsg, ctx, isShowFilterDescription());
+                if (filterMsg.length() > 0)
+                    addMessage(new Message(filterMsg.toString(), MessageType.INFO, MessagePart.filter));
+            }
         }
 
         // don't generate a view message if this is the default view and the filter is empty
