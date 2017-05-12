@@ -247,9 +247,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
                 // sizing and styling
                 autoHeight: true,
-                bodyStyle: 'padding: 5px;',
+                bodyStyle: LABKEY.experimental.useExperimentalCoreUI ? 'margin: 0 5px;' : 'padding: 5px;',
                 border: true,
-                width: this.width - 5,
+                width: LABKEY.experimental.useExperimentalCoreUI ? undefined : this.width - 5,
                 items: views
             };
 

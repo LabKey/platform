@@ -908,14 +908,26 @@ if (LABKEY.experimental.useExperimentalCoreUI)
      *                              false to only take full width, default false.
      *      closableOnMaskClick: true to always support closing modal by click on mask regardless of screen size,
      *                            otherwise only closable on mask click for small screens, default false
+     *      useExtStyle: true to use ext style, false to use bootstrap-like style, default false
      */
     Ext4.override(Ext4.window.Window, {
         constructor: function()
         {
             this.callParent(arguments);
-            if (this.suppressResponsive)
+            if (this.suppressResponsive || !this.modal)
             {
                 return;
+            }
+
+            if (!this.useExtStyle)
+            {
+                if (!this.bodyCls)
+                    this.bodyCls = '';
+                this.bodyCls += ' modal-body';
+                if (!this.cls)
+                    this.cls = '';
+                this.cls += ' modal-content';
+                this.shadow = false;
             }
 
             var useMaxWidth = window.innerWidth < (this.smallScreenWidth ? this.smallScreenWidth : 481);
@@ -940,7 +952,7 @@ if (LABKEY.experimental.useExperimentalCoreUI)
             }
 
             var me = this;
-            if (this.closable && this.modal && (useMaxWidth || this.closableOnMaskClick))
+            if (this.closable && (useMaxWidth || this.closableOnMaskClick))
             {
                 var parentCmp = Ext4.getBody();
                 this.clickOutHandler = function(){

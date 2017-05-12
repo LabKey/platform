@@ -355,15 +355,25 @@ if (LABKEY.experimental.useExperimentalCoreUI)
      *                              false to only take full width, default false.
      *      closableOnMaskClick: true to always support closing closable modal by click on mask regardless of screen size,
      *                            otherwise only closable on mask click for small screens, default false
+     *      useExtStyle: true to use ext style, false to use bootstrap style, default false
      */
     Ext.override(Ext.Window, {
             initComponent: function()
             {
-                if (this.suppressResponsive)
+                if (this.suppressResponsive || !this.modal)
                 {
                     this.defaultInitComponent();
                     return;
                 }
+
+                if (!this.useExtStyle)
+                {
+                    if (!this.cls)
+                        this.cls = '';
+                    this.cls += ' modal-content';
+                    this.shadow = false;
+                }
+
                 var useMaxWidth = window.innerWidth < (this.smallScreenWidth ? this.smallScreenWidth : 481);
                 useMaxWidth = useMaxWidth || (this.width && (this.width > window.innerWidth)); // if configured width is large than available screen size.
                 useMaxWidth = useMaxWidth || (this.minWidth && (this.minWidth > window.innerWidth)); // if configured min-width is large than available screen size.
@@ -385,7 +395,7 @@ if (LABKEY.experimental.useExperimentalCoreUI)
                 }
 
                 var me = this;
-                if (this.closable && this.modal && (useMaxWidth || this.closableOnMaskClick))
+                if (this.closable && (useMaxWidth || this.closableOnMaskClick))
                 {
                     var parentCmp = Ext.getBody();
                     this.clickOutHandler = function(){
