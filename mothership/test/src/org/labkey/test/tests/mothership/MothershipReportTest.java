@@ -5,7 +5,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
-import org.labkey.test.TestProperties;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyB;
 import org.labkey.test.pages.mothership.ShowInstallationDetailPage;
@@ -67,7 +66,7 @@ public class MothershipReportTest extends BaseWebDriverTest
 
         _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.MEDIUM, true);
         ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
-        String distributionName = TestProperties.isTestRunningOnTeamCity() ? "test" : "localBuild";
+        String distributionName = "localBuild";
         assertEquals("Incorrect distribution name", distributionName, installDetail.getDistributionName());
         assertNotNull("Usage reporting level is empty", StringUtils.trimToNull(installDetail.getInstallationValue("Usage Reporting Level")));
         assertNotNull("Exception reporting level is empty", StringUtils.trimToNull(installDetail.getInstallationValue("Exception Reporting Level")));
