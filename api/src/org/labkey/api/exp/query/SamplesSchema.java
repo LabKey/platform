@@ -16,7 +16,6 @@
 
 package org.labkey.api.exp.query;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.ColumnInfo;
@@ -129,8 +128,8 @@ public class SamplesSchema extends AbstractExpSchema
      */
     public ForeignKey materialIdForeignKey(@Nullable final ExpSampleSet ss, @Nullable DomainProperty domainProperty)
     {
-        final String tableName = ss == null ? ExpSchema.TableType.Materials.toString() : ss.getName();
-        final String schemaName = ss == null ? ExpSchema.SCHEMA_NAME : SamplesSchema.SCHEMA_NAME;
+        final String tableName =  null == ss ? ExpSchema.TableType.Materials.toString() : ss.getName();
+        final String schemaName = null == ss ? ExpSchema.SCHEMA_NAME : SamplesSchema.SCHEMA_NAME;
 
         return new LookupForeignKey(null, null, schemaName, tableName, "RowId", null)
         {
