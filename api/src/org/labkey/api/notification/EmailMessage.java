@@ -31,13 +31,13 @@ import java.util.List;
  */
 public interface EmailMessage
 {
-    public enum contentType
+    enum contentType
     {
         PLAIN("text/plain"), HTML("text/html");
 
         private String _mimeType;
 
-        private contentType(String mimeType)
+        contentType(String mimeType)
         {
             _mimeType = mimeType;
         }

@@ -48,7 +48,7 @@ public interface EmailService
     EmailMessage createMessage(String from, String[] to, String[] cc, String subject, String message, List<File> attachments);
 
     /**
-     * Send the email message synchronously from the caller thread
+     * Sends an email message synchronously from the caller thread
      * @param msg message to send
      * @param user for auditing purposes, the user who is considered to have originated the message
      * @param c for auditing purposes, the container that is considered to have originated the message
@@ -56,12 +56,12 @@ public interface EmailService
     void sendMessage(EmailMessage msg, User user, Container c) throws MessagingException, ConfigurationException;
 
     /**
-     * Send the email message asynchronously in a background thread
+     * Sends multiple email messages asynchronously in a background thread
      * @param msgs messages to send
      * @param user for auditing purposes, the user who is considered to have originated the message
      * @param c for auditing purposes, the container that is considered to have originated the message
      */
-    void sendMessage(Collection<EmailMessage> msgs, User user, Container c);
+    void sendMessages(Collection<EmailMessage> msgs, User user, Container c);
 
     /**
      * Returns the email configuration for the user/container combination as described by
