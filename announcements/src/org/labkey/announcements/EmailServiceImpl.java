@@ -30,6 +30,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.MailHelper;
+import org.labkey.api.util.MailHelper.BulkEmailer;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
@@ -78,12 +79,23 @@ public class EmailServiceImpl implements EmailService
     }
 
     @Override
-    public void sendMessage(Collection<EmailMessage> msgs, User user, Container c)
+    public void sendMessages(Collection<EmailMessage> msgs, User user, Container c)
     {
         // send the email messages from a background thread
-        BulkEmailer emailer = new BulkEmailer(user, c);
+        BulkEmailer emailer = new BulkEmailer(user);
+
         for (EmailMessage msg : msgs)
-            emailer.addMessage(msg);
+        {
+            try
+            {
+                MimeMessage mm = msg.createMessage();
+                emailer.addMessage(msg.getFrom(), mm);
+            }
+            catch (MessagingException e)
+            {
+                _log.error("Failed to send message: " + msg.getSubject(), e);
+            }
+        }
 
         emailer.start();
     }
@@ -200,11 +212,12 @@ public class EmailServiceImpl implements EmailService
 
     private static class EmailMessageImpl implements EmailMessage
     {
-        private String _from;
-        private String _subject;
-        private Map<contentType, String> _contentMap = new HashMap<>();
-        private Map<String, String> _headers = new HashMap<>();
-        private Map<Message.RecipientType, String[]> _recipients = new HashMap<>();
+        private final String _from;
+        private final Map<Message.RecipientType, String[]> _recipients = new HashMap<>();
+        private final String _subject;
+        private final Map<contentType, String> _contentMap = new HashMap<>();
+        private final Map<String, String> _headers = new HashMap<>();
+
         private List<File> _files;
         private String _senderName;
 
@@ -344,7 +357,7 @@ public class EmailServiceImpl implements EmailService
 
                 for (Map.Entry<contentType, String> entry : _contentMap.entrySet())
                 {
-                    if (multipart && multiPartContent != null)
+                    if (multipart)
                     {
                         BodyPart body = new MimeBodyPart();
                         body.setContent(entry.getValue(), entry.getKey().getMimeType());
@@ -358,7 +371,7 @@ public class EmailServiceImpl implements EmailService
 
             if (_files != null && _files.size() > 0)
             {
-                for(File file : _files)
+                for (File file : _files)
                 {
                     BodyPart fileBodyPart = new MimeBodyPart();
                     DataSource source = new FileDataSource(file);
@@ -370,44 +383,6 @@ public class EmailServiceImpl implements EmailService
             }
 
             return msg;
-        }
-    }
-
-    // Sends one or more email messages in a background thread.  Add message(s) to the emailer, then call start().
-    public static class BulkEmailer extends Thread
-    {
-        private List<EmailMessage> _messages = new ArrayList<>();
-        private Container _container;
-        private User _user;
-
-        public BulkEmailer(User user, Container c)
-        {
-            _user = user;
-            _container = c;
-        }
-
-        public void addMessage(EmailMessage msg)
-        {
-            _messages.add(msg);
-        }
-
-        public void run()
-        {
-            for (EmailMessage msg : _messages)
-            {
-                try {
-                    Message m = msg.createMessage();
-                    MailHelper.send(m, _user, _container);
-                }
-                catch (MessagingException e)
-                {
-                    _log.error("Failed to send message: " + msg.getSubject(), e);
-                }
-                catch (ConfigurationException ex)
-                {
-                    _log.error("Unable to send email.", ex);
-                }
-            }
         }
     }
 

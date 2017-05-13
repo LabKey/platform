@@ -151,7 +151,7 @@ public final class ReportAndDatasetChangeDigestProviderImpl implements ReportAnd
                 }
 
                 if (!messages.isEmpty())
-                    emailService.sendMessage(messages, null, container);
+                    emailService.sendMessages(messages, null, container);
             }
         }
         catch (Exception e)

@@ -183,7 +183,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
                     messages.add(msg);
                 }
                 // send messages in bulk
-                svc.sendMessage(messages, null, c);
+                svc.sendMessages(messages, null, c);
             }
 
             AuditTypeEvent event = new AuditTypeEvent(FileSystemBatchAuditProvider.EVENT_TYPE, c, events.size() + " file modifications processed as batch for digest notifications");
