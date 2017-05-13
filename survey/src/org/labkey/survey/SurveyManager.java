@@ -19,8 +19,6 @@ package org.labkey.survey;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -30,6 +28,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.MultiValuedMapCollectors;
 import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
@@ -81,6 +80,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class SurveyManager
@@ -639,15 +639,11 @@ public class SurveyManager
         @Override
         public MultiValuedMap<String, SurveyDesign> load(Stream<? extends Resource> resources, Module module)
         {
-            MultiValuedMap<String, SurveyDesign> mmap = new ArrayListValuedHashMap<>();
-
-            resources
+            return unmodifiable(resources
                 .filter(getFilter(MODULE_RESOURCE_FILE_EXTENSION))
                 .map(this::loadSurveyDesign)
                 .filter(Objects::nonNull)
-                .forEach(design -> mmap.put(design.getSchemaName(), design));
-
-            return unmodifiable(mmap);
+                .collect(MultiValuedMapCollectors.of(SurveyDesign::getSchemaName, Function.identity())));
         }
 
         private @Nullable SurveyDesign loadSurveyDesign(Resource r)

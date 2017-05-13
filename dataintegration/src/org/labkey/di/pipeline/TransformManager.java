@@ -128,7 +128,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -381,23 +380,25 @@ public class TransformManager implements DataIntegrationService
     @NotNull
     public Collection<ScheduledPipelineJobDescriptor> getDescriptors(Container c)
     {
+        final Collection<ScheduledPipelineJobDescriptor> descriptors;
+
         if (!c.isRoot())
         {
-            return DESCRIPTOR_CACHE.getResourceMaps(c).stream()
+            descriptors = DESCRIPTOR_CACHE.getResourceMapStream(c)
                 .map(Map::values)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
         }
         else
         {
-            Collection<ScheduledPipelineJobDescriptor> descriptors = new LinkedList<>();
-            for (Module module : ModuleLoader.getInstance().getModules())
-            {
-                descriptors.addAll(DESCRIPTOR_CACHE.getResourceMap(module).values().stream().filter(ScheduledPipelineJobDescriptor::isSiteScope).collect(Collectors.toList()));
-            }
-
-            return Collections.unmodifiableCollection(descriptors);
+            descriptors = ModuleLoader.getInstance().getModules().stream()
+                .map(DESCRIPTOR_CACHE::getResourceMap)
+                .flatMap(map -> map.values().stream())
+                .filter(ScheduledPipelineJobDescriptor::isSiteScope)
+                .collect(Collectors.toList());
         }
+
+        return Collections.unmodifiableCollection(descriptors);
     }
 
     @Nullable

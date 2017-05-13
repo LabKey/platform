@@ -208,7 +208,7 @@ public class ServerManager
     {
         List<OlapSchemaDescriptor> ret = new ArrayList<>();
 
-        ret.addAll(MODULE_DESCRIPTOR_CACHE.getResourceMaps(c).stream()
+        ret.addAll(MODULE_DESCRIPTOR_CACHE.getResourceMapStream(c)
             .map(Map::values)
             .flatMap(Collection::stream)
             .filter(osd -> osd.isExposed(c))

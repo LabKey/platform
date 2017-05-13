@@ -120,7 +120,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -550,25 +549,11 @@ public class QueryServiceImpl implements QueryService
         modules.addAll(Arrays.asList(extraModules));
         modules = ModuleLoader.getInstance().orderModules(modules);
 
-        List<QueryDefinition> ret = new LinkedList<>();
-
-        for (Module module : modules)
-        {
-            MODULE_QUERY_DEF_CACHE.getResourceMap(module).get(path)
-                .stream()
-                .map(queryDef -> new ModuleCustomQueryDefinition(queryDef, SchemaKey.fromString(schemaName), user, container))
-                .forEach(ret::add);
-        }
-
-        List<QueryDefinition> ret2 = modules.stream()
+        return modules.stream()
             .map(module -> MODULE_QUERY_DEF_CACHE.getResourceMap(module).get(path))
             .flatMap(Collection::stream)
             .map(queryDef -> new ModuleCustomQueryDefinition(queryDef, SchemaKey.fromString(schemaName), user, container))
             .collect(Collectors.toList());
-
-        assert ret.size() == ret2.size();
-
-        return ret;
     }
 
     private static class QueryDefResourceCacheHandler implements ModuleResourceCacheHandler<MultiValuedMap<Path, ModuleQueryDef>>
@@ -663,23 +648,12 @@ public class QueryServiceImpl implements QueryService
             alwaysUseTitlesForLoadingCustomViews = false;
 
         // module query views have lower precedence, so add them first
-        Collection<Module> modules = container.getActiveModules();
         Set<String> moduleViewSchemas = new LinkedHashSet<>();
 
         // find out if there are any module custom views to deal with
-        Map<Module, Map<Path, Collection<ModuleCustomViewDef>>> moduleMap = new LinkedHashMap<>();
-        for (Module module : modules)
-        {
-            MultiValuedMap<Path, ModuleCustomViewDef> mmap = MODULE_CUSTOM_VIEW_CACHE.getResourceMap(module);
-            if (!mmap.isEmpty())
-                moduleMap.put(module, mmap.asMap());
-        }
-
-        for (Map.Entry<Module, Map<Path, Collection<ModuleCustomViewDef>>> moduleEntry : moduleMap.entrySet())
-        {
-            for (Map.Entry<Path, Collection<ModuleCustomViewDef>> queryEntry : moduleEntry.getValue().entrySet())
-            {
-                Path path = queryEntry.getKey();
+        MODULE_CUSTOM_VIEW_CACHE.getResourceMapStream(container)
+            .flatMap(mmap -> mmap.keys().stream())
+            .forEach(path -> {
                 if (AssayService.ASSAY_DIR_NAME.equals(path.get(0)) || AssayService.ASSAY_DIR_NAME.equals(path.get(1)))
                 {
                     moduleViewSchemas.add(AssayService.ASSAY_DIR_NAME);
@@ -697,37 +671,7 @@ public class QueryServiceImpl implements QueryService
                         moduleViewSchemas.add(schemaKey.toString());
                     }
                 }
-            }
-        }
-
-        // TODO: Switch to this simpler approach... no need to create moduleMap and iterate twice, we can just iterate the keys (Paths) in one step
-        Set<String> moduleViewSchemas2 = new LinkedHashSet<>();
-
-        // find out if there are any module custom views to deal with
-        modules.stream()
-            .map(MODULE_CUSTOM_VIEW_CACHE::getResourceMap)
-            .flatMap(mmap -> mmap.keys().stream())
-            .forEach(path -> {
-                if (AssayService.ASSAY_DIR_NAME.equals(path.get(0)) || AssayService.ASSAY_DIR_NAME.equals(path.get(1)))
-                {
-                    moduleViewSchemas2.add(AssayService.ASSAY_DIR_NAME);
-                }
-                else if (MODULE_QUERIES_DIRECTORY.equals(path.get(0)))
-                {
-                    // after the queries directory, paths should contain schema and query name information
-                    if (path.size() >= 3)
-                    {
-                        String[] parts = new String[path.size() - 2];
-                        for (int i=0; i < path.size()-2; i++)
-                            parts[i] = path.get(i+1);
-
-                        SchemaKey schemaKey = SchemaKey.fromParts(parts);
-                        moduleViewSchemas2.add(schemaKey.toString());
-                    }
-                }
             });
-
-        assert moduleViewSchemas.size() == moduleViewSchemas2.size() : "Different sizes " + moduleViewSchemas.size() + " vs. " + moduleViewSchemas2.size();
 
         Map<Path, CustomView> views = new HashMap<>();
 
