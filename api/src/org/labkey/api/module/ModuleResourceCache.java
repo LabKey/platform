@@ -128,10 +128,20 @@ public final class ModuleResourceCache<V>
      *  Return a collection of all resource maps managed by this cache that are defined in the active modules
      *  in the specified Container.
      */
+    @Deprecated // Unused... delete this!
     public @NotNull Collection<V> getResourceMaps(Container c)
     {
         List<V> list = c.getActiveModules().stream().map(this::getResourceMap).collect(Collectors.toList());
         return Collections.unmodifiableCollection(list);
+    }
+
+    /**
+     *  Return a stream of all resource maps managed by this cache that are defined in the active modules
+     *  in the specified Container.
+     */
+    public @NotNull Stream<V> getResourceMapStream(Container c)
+    {
+        return c.getActiveModules().stream().map(this::getResourceMap);
     }
 
     // Clear a single module's resource map from the cache

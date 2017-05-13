@@ -176,7 +176,7 @@ public class DomainTemplateGroup
 
     public static Map<String, DomainTemplateGroup> getAllGroups(Container c)
     {
-        return CACHE.getResourceMaps(c).stream() // Stream of Map<String, DomainTemplateGroup>
+        return CACHE.getResourceMapStream(c)     // Stream of Map<String, DomainTemplateGroup>
             .map(Map::entrySet)                  // Stream of Set<Entry<String, DomainTemplateGroup>>
             .flatMap(Collection::stream)         // Stream of Entry<String, DomainTemplateGroup>
             .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
@@ -184,7 +184,7 @@ public class DomainTemplateGroup
 
     public static Map<String, DomainTemplate> getAllTemplates(Container c)
     {
-        return CACHE.getResourceMaps(c).stream() // Stream of Map<String, DomainTemplateGroup>
+        return CACHE.getResourceMapStream(c)     // Stream of Map<String, DomainTemplateGroup>
             .map(Map::values)                    // Stream of Collection<DomainTemplateGroup>
             .flatMap(Collection::stream)         // Stream of DomainTemplateGroup
             .map(group -> group._templates)      // Stream of Collection<DomainTemplate>
