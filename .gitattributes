@@ -666,7 +666,6 @@ api/src/org/labkey/api/exp/xar/Replacer.java -text
 api/src/org/labkey/api/exp/xar/XarConstants.java -text
 api/src/org/labkey/api/files/FileContentDefaultEmailPref.java -text
 api/src/org/labkey/api/files/FileContentEmailPref.java -text
-api/src/org/labkey/api/files/FileContentEmailPrefFilter.java -text
 api/src/org/labkey/api/files/FileContentService.java -text
 api/src/org/labkey/api/files/FileListener.java -text
 api/src/org/labkey/api/files/FileSystemDirectoryListener.java -text
@@ -776,7 +775,6 @@ api/src/org/labkey/api/module/SpringModule.java -text
 api/src/org/labkey/api/nab/NabUrls.java -text
 api/src/org/labkey/api/notification/EmailMessage.java -text
 api/src/org/labkey/api/notification/EmailPref.java -text
-api/src/org/labkey/api/notification/EmailPrefFilter.java -text
 api/src/org/labkey/api/notification/EmailService.java -text
 api/src/org/labkey/api/notification/NotificationMenuView.java -text
 api/src/org/labkey/api/notification/notificationpanel.jsp -text

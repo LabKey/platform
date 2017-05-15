@@ -18,12 +18,8 @@ package org.labkey.api.notification;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.ConfigurationException;
 
-import javax.mail.MessagingException;
-import java.io.File;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * User: klum
@@ -32,28 +28,12 @@ import java.util.List;
  */
 public interface EmailService
 {
-    String EMAIL_PREF_CATEGORY = "EmailService.emailPrefs";
-
     static EmailService get()
     {
         return ServiceRegistry.get().getService(EmailService.class);
     }
 
     EmailMessage createMessage(String from, String[] to, String subject);
-
-    EmailMessage createMessage(String from, String[] to, String subject, String message);
-
-    EmailMessage createMessage(String from, String[] to, String[] cc, String subject, String message);
-
-    EmailMessage createMessage(String from, String[] to, String[] cc, String subject, String message, List<File> attachments);
-
-    /**
-     * Sends an email message synchronously from the caller thread
-     * @param msg message to send
-     * @param user for auditing purposes, the user who is considered to have originated the message
-     * @param c for auditing purposes, the container that is considered to have originated the message
-     */
-    void sendMessage(EmailMessage msg, User user, Container c) throws MessagingException, ConfigurationException;
 
     /**
      * Sends multiple email messages asynchronously in a background thread
@@ -80,11 +60,4 @@ public interface EmailService
     String getDefaultEmailPref(Container container, EmailPref pref);
 
     void setDefaultEmailPref(Container container, EmailPref pref, String value);
-
-    /**
-     * Returns an array of users that match the criteria in the EmailPrefFilter. The
-     * filter handles creating the initial list of users to be considered as well as
-     * whether a users preference setting matches the filter criteria.
-     */
-    User[] getUsersWithEmailPref(Container container, EmailPrefFilter filter);
 }

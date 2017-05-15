@@ -16,7 +16,6 @@
 package org.labkey.api.notification;
 
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -52,11 +51,11 @@ public interface EmailMessage
     String[] getTo();
     String getSubject();
 
+    // TODO: Unused... delete?
     void setHeader(String name, String value);
+    // TODO: Only used by tests... delete?
     void setFiles(List<File> files);
-    void addContent(String content);
     void addContent(contentType type, String content);
-    void addContent(contentType type, ViewContext context, HttpView view) throws Exception;
     void addContent(contentType type, HttpServletRequest request, HttpView view) throws Exception;
 
     /**
