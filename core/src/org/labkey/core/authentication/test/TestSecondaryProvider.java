@@ -53,7 +53,7 @@ public class TestSecondaryProvider implements SecondaryAuthenticationProvider
     @Override
     public String getDescription()
     {
-        return "Adds an annoying secondary authentication requirement (for test purposes only)";
+        return "Adds a trivial, insecure secondary authentication requirement (for test purposes only)";
     }
 
     @Override

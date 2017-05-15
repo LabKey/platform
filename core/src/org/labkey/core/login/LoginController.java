@@ -1430,14 +1430,10 @@ public class LoginController extends SpringActionController
     @Nullable
     private Project getTermsOfUseProject(LoginForm form) throws ServletException
     {
-        Container termsContainer = null;
-
-        if ((null != form.getTermsOfUseType()) && (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE))
-        {
+        if (null != form.getTermsOfUseType() && (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE))
             return null;
-        }
         else
-            return PageFlowUtil.getTermsOfUseProject(getContainer(), form.getReturnUrl() == null ? null : form.getReturnUrl().toString());
+            return PageFlowUtil.getTermsOfUseProject(getContainer(), form.getReturnUrl());
     }
 
 
