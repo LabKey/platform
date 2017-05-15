@@ -120,7 +120,7 @@ public interface AuthenticationProvider
     interface SecondaryAuthenticationProvider extends AuthenticationProvider
     {
         /**
-         *  Initiate secondary authentication process for the specified user. candidate has been authenticated via one of the primary providers,
+         *  Initiate secondary authentication process for the specified user. Candidate has been authenticated via one of the primary providers,
          *  but isn't officially authenticated until user successfully validates with all enabled SecondaryAuthenticationProviders as well.
          */
         ActionURL getRedirectURL(User candidate, Container c);
