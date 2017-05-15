@@ -337,13 +337,8 @@ public class DatasetQueryView extends StudyQueryView
         {
             MenuButton button = createViewButton(getViewItemFilter());
             bar.add(button);
-            bar.add(createReportButton());
 
-            MenuButton chartButton = createChartButton();
-            if (chartButton.getPopupMenu().getNavTree().getChildCount() > 0)
-            {
-                bar.add(chartButton);
-            }
+            populateChartsReports(bar);
         }
     }
 
@@ -369,23 +364,20 @@ public class DatasetQueryView extends StudyQueryView
         bar.add(createFilterButton());
         bar.add(createViewButton(getItemFilter()));
 
-        if (isShowReports())
-        {
-            bar.add(createReportButton());
-            MenuButton chartButton = createChartButton();
-            if (chartButton.getPopupMenu().getNavTree().getChildCount() > 0)
-            {
-                bar.add(chartButton);
-            }
-        }
+        populateChartsReports(bar);
+
         bar.add(ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), getDataRegionName(), _cohortFilter, true));
 
         if (StudyManager.getInstance().showQCStates(getContainer()))
             bar.add(createQCStateButton(_qcStateSet));
 
+
         bar.add(createExportButton(view.getDataRegion().getRecordSelectorValueColumns()));
-        bar.add(createPrintButton());
-        bar.add(createPageSizeMenuButton());
+        if (!PageFlowUtil.useExperimentalCoreUI())
+        {
+            bar.add(createPrintButton());
+            bar.add(createPageSizeMenuButton());
+        }
 
         User user = getUser();
         boolean canWrite = canWrite(_dataset, user);
@@ -483,6 +475,8 @@ public class DatasetQueryView extends StudyQueryView
                 bar.add(viewAssayButton);
             }
         }
+
+        bar.add(populateMoreMenu(view));
     }
 
     @Override
@@ -572,9 +566,7 @@ public class DatasetQueryView extends StudyQueryView
 
         public BindException bindParameters(PropertyValues params)
         {
-            BindException errors = BaseViewAction.springBindParameters(this, "form", params);
-
-            return errors;
+            return BaseViewAction.springBindParameters(this, "form", params);
         }
 
         public String getCohortFilterType()

@@ -18,7 +18,6 @@ package org.labkey.issue.actions;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.DataRegion;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.UserSchemaAction;

@@ -1,5 +1,15 @@
 @import "fonts";
 
+html {
+  /* required for footer -- see .footer-block */
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 50px;
+}
+
 input, select, textarea {
   background-color: $lk-input-bg-color;
   border: $lk-input-border-width $lk-input-border-style $lk-input-border-color;
@@ -619,11 +629,16 @@ table.wiki-table td, table.wiki-table th
   height: auto;
 }
 
-.footer-block
-{
-  display: table-row;
-  height: 1px;
-  width:100%;
+.footer-block {
+  /*
+  To always sit at at the bottom, regardless of content height, "html" is set
+  min-height: 100% and the "body" provides a margin at the bottom to display footer content.
+  */
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  overflow: hidden;
 }
 
 /* For the wizard template*/

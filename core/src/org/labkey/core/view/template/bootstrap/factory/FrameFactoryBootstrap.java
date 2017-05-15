@@ -29,17 +29,16 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
         switch ((WebPartView.FrameType) e)
         {
             case DIV:
-                return super.createFrame(e, context, config);
+            case LEFT_NAVIGATION:
+            case NONE:
+            case NOT_HTML:
+                break;
             case TITLE:
                 return new FrameTitleBootstrap(context, config);
             case PORTAL:
                 return new FramePortalBootstrap(context, config);
             case DIALOG:
                 return new FrameDialogBootstrap(context, config);
-            case LEFT_NAVIGATION:
-            case NONE:
-            case NOT_HTML:
-                return super.createFrame(e, context, config);
         }
 
         return super.createFrame(e, context, config);

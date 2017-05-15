@@ -69,7 +69,24 @@
     }
 %>
 <% me.include(me.getView("bodyTemplate"), out); %>
+<% if (null != me.getView("footer")) { %>
+<footer class="footer-block">
+    <div class="footer-content">
+    <% me.include(me.getView("footer"), out); %>
+    </div>
+</footer>
+<% } %>
+<%
+    String anchor = model.getAnchor(url);
+    if (null != anchor)
+    {
+%>
+<script type="text/javascript" for="window" event="onload">window.location.href = "#<%=h(anchor)%>"</script>
+<%
+    }
+%>
 <script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
 <!-- <%= h(request.getHeader("User-Agent")) %> -->
 <a href="<%= me.getPermaLink() %>" id="permalink" style="display: none;"></a>
 </body>
+</html>

@@ -18,7 +18,6 @@ package org.labkey.study.assay.query;
 
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.DataRegion;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.view.ActionURL;
@@ -36,21 +35,6 @@ public class AssayListPortalView extends AssayListQueryView
     public AssayListPortalView(ViewContext context, QuerySettings settings, BindException errors)
     {
         super(context, settings, errors);
-    }
-
-    protected DataRegion createDataRegion()
-    {
-        DataRegion rgn = super.createDataRegion();
-        rgn.setShowRecordSelectors(false);
-        return rgn;
-    }
-
-    @Override
-    public DataView createDataView()
-    {
-        DataView result = super.createDataView();
-        result.getDataRegion().setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
-        return result;
     }
 
     protected void populateButtonBar(DataView view, ButtonBar bar)
