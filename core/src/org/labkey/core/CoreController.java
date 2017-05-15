@@ -1819,7 +1819,10 @@ public class CoreController extends SpringActionController
         private boolean shouldExcludeStudyForDataspace()
         {
             Study study = StudyService.get().getStudy(getContainer());
-            return study == null || !study.allowExport(getUser());
+            if (study == null)
+                return false;
+
+            return !study.allowExport(getUser());
         }
     }
 
