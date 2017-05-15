@@ -2295,11 +2295,14 @@ public class ContainerManager
             assertEquals(ft, FolderType.NONE);
 
             Container newFolderFromCache = getForId(newFolder.getId());
+            assertNotNull(newFolderFromCache);
             assertEquals(newFolderFromCache.getFolderType(), FolderType.NONE);
             newFolder.setFolderType(folderType, TestContext.get().getUser());
 
             newFolderFromCache = getForId(newFolder.getId());
-            assertEquals(newFolderFromCache.getFolderType(), folderType);
+            assertNotNull(newFolderFromCache);
+            assertEquals(newFolderFromCache.getFolderType().getName(), folderType.getName());
+            assertEquals(newFolderFromCache.getFolderType().getDescription(), folderType.getDescription());
 
             deleteAll(newFolder, TestContext.get().getUser());          // There might be subfolders because of container tabs
             Container deletedContainer = getForId(newFolder.getId());
