@@ -1748,6 +1748,12 @@ public class QueryServiceImpl implements QueryService
     {
         if (null == schema)
             throw new NotFoundException("DB Schema does not exist.");
+
+        if (description == null)
+        {
+            description = schema.getDescription();
+        }
+
         return new SimpleUserSchema(name, description, user, container, schema);
     }
 
