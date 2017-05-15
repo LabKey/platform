@@ -18,22 +18,21 @@ package org.labkey.announcements;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailPref;
-import org.labkey.api.notification.EmailPrefFilter;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MailHelper.BulkEmailer;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -62,6 +61,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * User: klum
@@ -71,12 +71,7 @@ import java.util.Map;
 public class EmailServiceImpl implements EmailService
 {
     private static final Logger _log = Logger.getLogger(EmailService.class);
-
-    @Override
-    public void sendMessage(EmailMessage msg, User user, Container c) throws MessagingException, ConfigurationException
-    {
-        MailHelper.send(msg.createMessage(), user, c);
-    }
+    private static final String EMAIL_PREF_CATEGORY = "EmailService.emailPrefs";
 
     @Override
     public void sendMessages(Collection<EmailMessage> msgs, User user, Container c)
@@ -103,51 +98,13 @@ public class EmailServiceImpl implements EmailService
     @Override
     public EmailMessage createMessage(String from, String[] to, String subject)
     {
-        return createMessage(from, to, subject, null);
-    }
-
-    @Override
-    public EmailMessage createMessage(String from, String[] to, String subject, @Nullable String message)
-    {
-        EmailMessage msg = new EmailMessageImpl(from, to, subject);
-
-        if (message != null)
-            msg.addContent(message);
-
-        return msg;
-    }
-
-    @Override
-    public EmailMessage createMessage(String from, String[] to, String[] cc, String subject, String message)
-    {
-        EmailMessageImpl msg = new EmailMessageImpl(from, to, subject);
-
-        if (message != null)
-            msg.addContent(message);
-
-        if (cc.length > 0)
-            msg.setRecipients(Message.RecipientType.CC, cc);
-
-        return msg;
-    }
-
-    @Override
-    public EmailMessage createMessage(String from, String[] to, String[] cc, String subject, String message, List<File> attachments)
-    {
-        EmailMessage msg = createMessage(from, to, cc, subject, message);
-
-        if(attachments != null && attachments.size() > 0)
-        {
-            msg.setFiles(attachments);
-        }
-
-        return msg;
+        return new EmailMessageImpl(from, to, subject);
     }
 
     @Override
     public void setEmailPref(User user, Container container, EmailPref pref, String value)
     {
-        PropertyMap props = PropertyManager.getWritableProperties(user, container, EmailService.EMAIL_PREF_CATEGORY, true);
+        PropertyMap props = PropertyManager.getWritableProperties(user, container, EMAIL_PREF_CATEGORY, true);
         props.put(pref.getId(), value);
 
         props.save();
@@ -160,14 +117,14 @@ public class EmailServiceImpl implements EmailService
 
         if (defaultPref != null)
         {
-            Map<String, String> defaultProps = PropertyManager.getProperties(container, EmailService.EMAIL_PREF_CATEGORY);
+            Map<String, String> defaultProps = PropertyManager.getProperties(container, EMAIL_PREF_CATEGORY);
             if (defaultProps.containsKey(defaultPref.getId()))
                 defaultValue = defaultProps.get(defaultPref.getId());
             else
                 defaultValue = defaultPref.getDefaultValue();
         }
 
-        Map<String, String> props = PropertyManager.getProperties(user, container, EmailService.EMAIL_PREF_CATEGORY);
+        Map<String, String> props = PropertyManager.getProperties(user, container, EMAIL_PREF_CATEGORY);
         String value = defaultValue;
 
         if (props.containsKey(pref.getId()))
@@ -186,7 +143,7 @@ public class EmailServiceImpl implements EmailService
     @Override
     public String getDefaultEmailPref(Container container, EmailPref pref)
     {
-        Map<String, String> props = PropertyManager.getProperties(container, EmailService.EMAIL_PREF_CATEGORY);
+        Map<String, String> props = PropertyManager.getProperties(container, EMAIL_PREF_CATEGORY);
         String value = pref.getDefaultValue();
 
         if (props.containsKey(pref.getId()))
@@ -198,16 +155,10 @@ public class EmailServiceImpl implements EmailService
     @Override
     public void setDefaultEmailPref(Container container, EmailPref pref, String value)
     {
-        PropertyMap props = PropertyManager.getWritableProperties(container, EmailService.EMAIL_PREF_CATEGORY, true);
+        PropertyMap props = PropertyManager.getWritableProperties(container, EMAIL_PREF_CATEGORY, true);
         props.put(pref.getId(), value);
 
         props.save();
-    }
-
-    @Override
-    public User[] getUsersWithEmailPref(Container container, EmailPrefFilter filter)
-    {
-        return filter.filterUsers(container);
     }
 
     private static class EmailMessageImpl implements EmailMessage
@@ -247,11 +198,6 @@ public class EmailServiceImpl implements EmailService
             return new String[0];
         }
 
-        public void setRecipients(Message.RecipientType type, String[] emails)
-        {
-            _recipients.put(type, emails);
-        }
-
         public String getSubject()
         {
             return _subject;
@@ -278,21 +224,9 @@ public class EmailServiceImpl implements EmailService
         }
 
         @Override
-        public void addContent(String content)
-        {
-            _contentMap.put(contentType.PLAIN, content);
-        }
-
-        @Override
         public void addContent(contentType type, String content)
         {
             _contentMap.put(type, content);
-        }
-
-        @Override
-        public void addContent(contentType type, ViewContext context, HttpView view) throws Exception
-        {
-            addContent(type, context.getRequest(), view);
         }
 
         @Override
@@ -334,7 +268,7 @@ public class EmailServiceImpl implements EmailService
                 throw new MessagingException(e.getMessage(), e);
             }
 
-            for (Map.Entry<Message.RecipientType, String[]> entry : _recipients.entrySet())
+            for (Entry<Message.RecipientType, String[]> entry : _recipients.entrySet())
             {
                 List<InternetAddress> addresses = new ArrayList<>();
 
@@ -344,29 +278,22 @@ public class EmailServiceImpl implements EmailService
                 msg.setRecipients(entry.getKey(), addresses.toArray(new InternetAddress[addresses.size()]));
             }
 
-            if (!_headers.isEmpty())
-            {
-                for (Map.Entry<String, String> entry : _headers.entrySet())
-                    msg.setHeader(entry.getKey(), entry.getValue());
-            }
+            for (Entry<String, String> entry : _headers.entrySet())
+                msg.setHeader(entry.getKey(), entry.getValue());
 
             msg.setSubject(_subject);
 
-            if (!_contentMap.isEmpty())
+            for (Entry<contentType, String> entry : _contentMap.entrySet())
             {
-
-                for (Map.Entry<contentType, String> entry : _contentMap.entrySet())
+                if (multipart)
                 {
-                    if (multipart)
-                    {
-                        BodyPart body = new MimeBodyPart();
-                        body.setContent(entry.getValue(), entry.getKey().getMimeType());
+                    BodyPart body = new MimeBodyPart();
+                    body.setContent(entry.getValue(), entry.getKey().getMimeType());
 
-                        multiPartContent.addBodyPart(body);
-                    }
-                    else
-                        msg.setContent(entry.getValue(), entry.getKey().getMimeType());
+                    multiPartContent.addBodyPart(body);
                 }
+                else
+                    msg.setContent(entry.getValue(), entry.getKey().getMimeType());
             }
 
             if (_files != null && _files.size() > 0)
@@ -378,7 +305,9 @@ public class EmailServiceImpl implements EmailService
                     fileBodyPart.setDataHandler(new DataHandler(source));
                     fileBodyPart.setFileName(file.getName());
                     fileBodyPart.setDisposition(Part.ATTACHMENT);
-                    multiPartContent.addBodyPart(fileBodyPart);
+
+                    if (null != multiPartContent)
+                        multiPartContent.addBodyPart(fileBodyPart);
                 }
             }
 
@@ -388,14 +317,14 @@ public class EmailServiceImpl implements EmailService
 
     public static class TestCase extends Assert
     {
-        @org.junit.Rule
+        @Rule
         public ExpectedException exception = ExpectedException.none();
 
         private static final String PROTOCOL_ATTACHMENT_NAME = "Protocol.txt";
         private static final String NON_EXISTENT_ATTACHMENT_NAME = "fake_file.txt";
         private static final String FAKE_DIRECTORY_NAME = "/path/to/fake/directory";
 
-        @org.junit.Test
+        @Test
         public void testEmailAttachments() throws MessagingException, IOException
         {
             EmailMessage msg = getBaseMessage();
@@ -409,7 +338,6 @@ public class EmailServiceImpl implements EmailService
             List<String> lines = Files.readAllLines(Paths.get(attachment.toURI()), Charset.defaultCharset());
             msg.setFiles(new ArrayList<>(Arrays.asList(attachment)));
 
-
             String message = convertMessageToString(msg);
 
             assertTrue("Message did not contain attachment with name " + attachment.getName(),
@@ -422,26 +350,22 @@ public class EmailServiceImpl implements EmailService
             }
         }
 
-        @org.junit.Test
+        @Test
         public void testNonExistentFileAttachments() throws MessagingException, IOException
         {
-            EmailMessage msg = getBaseMessage();
-            File attachment = getAttachment(NON_EXISTENT_ATTACHMENT_NAME);
-
-            if (attachment == null)
-                return;
-
-            List<File> attachmentList = new ArrayList<>(Arrays.asList(attachment));
-
-            exception.expect(IllegalArgumentException.class);
-            msg.setFiles(attachmentList);
+            testAttachmentExceptions(NON_EXISTENT_ATTACHMENT_NAME);
         }
 
-        @org.junit.Test
+        @Test
         public void testDirectoryAttachment() throws MessagingException, IOException
         {
+            testAttachmentExceptions(FAKE_DIRECTORY_NAME);
+        }
+
+        private void testAttachmentExceptions(String name) throws MessagingException, IOException
+        {
             EmailMessage msg = getBaseMessage();
-            File attachment = getAttachment(FAKE_DIRECTORY_NAME);
+            File attachment = getAttachment(name);
 
             if (attachment == null)
                 return;
@@ -454,19 +378,22 @@ public class EmailServiceImpl implements EmailService
 
         private EmailMessage getBaseMessage()
         {
-            return EmailService.get().createMessage("test@example.com",
-                    new String[]{"to@example.com"},
-                    "JUnit Test Email",
-                    "This is a test email.");
+            EmailMessage msg = EmailService.get().createMessage("test@example.com",
+                new String[]{"to@example.com"},
+                "JUnit Test Email");
+            msg.addContent(EmailMessage.contentType.HTML, "This is a test email.");
+
+            return msg;
         }
 
         private File getAttachment(String fileName)
         {
             AppProps props = AppProps.getInstance();
-            if (!props.isDevMode()) // We can only run the test if we're in dev mode and have access to sampledata
+            String projectRootPath = props.getProjectRoot();
+
+            if (!props.isDevMode() || null == projectRootPath) // We can only run the test if we're in dev mode and have access to sampledata
                 return null;
 
-            String projectRootPath = props.getProjectRoot();
             return Paths.get(projectRootPath).resolve("sampledata/study").resolve(fileName).toFile();
         }
 
