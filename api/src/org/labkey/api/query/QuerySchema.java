@@ -54,6 +54,7 @@ public interface QuerySchema extends SchemaTreeNode
     /** @return a SchemaKey encoded name for this schema. */
     String getSchemaName();
 
+    /** @return short description of the content and purpose of the schema */
     @Nullable String getDescription();
 
     NavTree getSchemaBrowserLinks(User user);

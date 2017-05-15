@@ -63,6 +63,7 @@ public class DbSchema
     public static final String TEMP_SCHEMA_NAME = "temp";
 
     private final String _name;
+    private String _description;
     private final DbSchemaType _type;
     private final DbScope _scope;
     private final Map<String, SchemaTableInfoFactory> _tableInfoFactoryMap;  // Union of all table names from database and schema.xml
@@ -387,6 +388,18 @@ public class DbSchema
 
     void setTablesDocument(TablesDocument tablesDoc)
     {
+        String[] descriptions = tablesDoc.getTables().getDescriptionArray();
+        for (String description : descriptions)
+        {
+            if (_description == null)
+            {
+                _description = description;
+            }
+            else
+            {
+                _description += " " + description;
+            }
+        }
         TableType[] xmlTables = tablesDoc.getTables().getTableArray();
 
         for (TableType xmlTable : xmlTables)
@@ -419,6 +432,12 @@ public class DbSchema
     {
         // Scope holds cache for all its tables
         return _scope.getTable(options);
+    }
+
+    @Nullable
+    public String getDescription()
+    {
+        return _description;
     }
 
     /**
