@@ -2246,7 +2246,16 @@ public class QueryController extends SpringActionController
 
         public boolean handlePost(QueryForm form, BindException errors) throws Exception
         {
-            TableInfo table = form.getQueryDef().getTable(form.getSchema(), null, true);
+            QueryDefinition queryDef = form.getQueryDef();
+            if (queryDef == null)
+            {
+                throw new NotFoundException("Could not find query " + form.getQueryName());
+            }
+            TableInfo table = queryDef.getTable(form.getSchema(), null, true);
+            if (table == null)
+            {
+                throw new NotFoundException("Could not create table " + form.getQueryName());
+            }
 
             if (!table.hasPermission(getUser(), DeletePermission.class))
             {
