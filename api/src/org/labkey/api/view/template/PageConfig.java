@@ -166,9 +166,13 @@ public class PageConfig
         return _showPrintDialog;
     }
 
-    public String getAnchor()
+    @Nullable
+    public String getAnchor(URLHelper url)
     {
-        return _anchor;
+        String anchor = _anchor;
+        if (null == StringUtils.trimToNull(anchor))
+            anchor = StringUtils.trimToNull(url.getParameter("_anchor"));
+        return anchor;
     }
 
     public void setAnchor(String anchor)

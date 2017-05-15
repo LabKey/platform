@@ -42,6 +42,7 @@ public class Button
     private String onClick;
     private String id;
     private String attributes;
+    private String tooltip;
     private boolean disableOnClick;
     private boolean dropdown;
     private boolean enabled = true;
@@ -62,6 +63,7 @@ public class Button
         this.disableOnClick = builder.disableOnClick;
         this.enabled = builder.enabled;
         this.submit = builder.submit;
+        this.tooltip = builder.tooltip;
     }
 
     public String getCssClass()
@@ -220,9 +222,10 @@ public class Button
         sb.append(getAttributes() == null ? "" : getAttributes());
         //-- attributes
 
-        if (iconOnly && text != null)
+        String tip = tooltip != null ? tooltip : (iconOnly && text != null ? text : null);
+        if (tip != null)
         {
-            sb.append("data-toggle=\"tooltip\" data-placement=\"top\" title=\"").append(text).append("\" ");
+            sb.append("data-toggle=\"tooltip\" data-placement=\"top\" title=\"").append(tip).append("\" ");
         }
 
         sb.append(">");
@@ -250,6 +253,7 @@ public class Button
         private String href;
         private String onClick;
         private String attributes;
+        private String tooltip;
         private boolean disableOnClick;
         private boolean dropdown;
         private boolean enabled = true;
@@ -360,6 +364,12 @@ public class Button
         public ButtonBuilder textAsHTML(boolean textAsHTML)
         {
             this.textAsHTML = textAsHTML;
+            return this;
+        }
+
+        public ButtonBuilder tooltip(String tooltip)
+        {
+            this.tooltip = tooltip;
             return this;
         }
 

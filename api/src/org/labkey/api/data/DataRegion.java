@@ -1662,7 +1662,7 @@ public class DataRegion extends AbstractDataRegion
 
             if (showRecordSelectors)
             {
-                out.write("<td nowrap class='labkey-selectors'>&nbsp;</td>");
+                out.write("<td nowrap class=\"labkey-selectors\">&nbsp;</td>");
             }
 
             for (DisplayColumn renderer : renderers)
@@ -1671,7 +1671,7 @@ public class DataRegion extends AbstractDataRegion
                 {
                     out.write("<td nowrap ");
                     if (renderer.getTextAlign() != null)
-                        out.write(" align='" + renderer.getTextAlign() + "'");
+                        out.write(" align=\"" + renderer.getTextAlign() + "\"");
                     out.write(">");
 
                     ColumnInfo col = renderer.getColumnInfo();
@@ -1695,7 +1695,7 @@ public class DataRegion extends AbstractDataRegion
                                 statDescr = PageFlowUtil.helpPopup(type.getFullLabel(), type.getDescription(), true);
 
                             out.write("<div>");
-                            out.write("<span class='summary-stat-label'>" + statLabel + statDescr + ":</span>&nbsp;");
+                            out.write("<span class=\"summary-stat-label\">" + statLabel + statDescr + ":</span>&nbsp;");
                             out.write(r.getFormattedValue(renderer, ctx.getContainer()));
                             out.write("</div>");
                         }
@@ -1743,9 +1743,8 @@ public class DataRegion extends AbstractDataRegion
 
     protected String getRowClass(RenderContext ctx, int rowIndex)
     {
-        boolean isErrorRow = isErrorRow(ctx, rowIndex);
         String rowClass = _shadeAlternatingRows && rowIndex % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
-        if (isErrorRow)
+        if (isErrorRow(ctx, rowIndex))
             return rowClass + " " + "labkey-error-row";
         return rowClass;
     }
@@ -1832,11 +1831,11 @@ public class DataRegion extends AbstractDataRegion
         _recordSelectorValueColumns = Arrays.asList(columns);
     }
 
-    @Nullable
     /**
      * @return an override for the columns to be used for generating record selector checkbox form values. If null, the
      * primary key columns (if any) will be used.
      */
+    @Nullable
     public List<String> getRecordSelectorValueColumns()
     {
         return _recordSelectorValueColumns;
@@ -1844,6 +1843,8 @@ public class DataRegion extends AbstractDataRegion
 
     protected void renderRecordSelector(RenderContext ctx, Writer out, int rowIndex) throws IOException
     {
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+
         out.write("<td class=\"labkey-selectors\" nowrap>");
         out.write("<input type=\"checkbox\" title=\"Select/unselect row\" name=\"");
         out.write(getRecordSelectorName(ctx));
@@ -1873,11 +1874,17 @@ public class DataRegion extends AbstractDataRegion
 
         // When header locking is enabled, the first row is used to set the header column widths
         // so we need to write out a span matching the down arrow icon in .toggle header to ensure the header has a proper width.
-        if (rowIndex == 0)
+        if (!newUI && rowIndex == 0)
         {
             out.write("<span style=\"display: inline-block; width: 16px; height: 10px;\">&nbsp;</span>");
         }
 
+        // An example of what edit/details could look like
+//        if (newUI)
+//        {
+//            out.write("<i class=\"fa fa-pencil\" style=\"color: lightgray; padding: 0 3px;\"></i>");
+//            out.write("<i class=\"fa fa-gear\" style=\"color: lightgray; padding: 0 3px;\"></i>");
+//        }
         out.write("</td>");
     }
 

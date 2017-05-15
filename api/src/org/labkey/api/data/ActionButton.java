@@ -125,6 +125,7 @@ public class ActionButton extends DisplayElement implements Cloneable
     private StringExpression _title;
     private String _iconCls;
     private String _target;
+    private String _tooltip;
     private boolean _appendScript;
     protected boolean _requiresSelection;
     protected Integer _requiresSelectionMinCount;
@@ -401,6 +402,16 @@ public class ActionButton extends DisplayElement implements Cloneable
         _id = id;
     }
 
+    public String getTooltip()
+    {
+        return _tooltip;
+    }
+
+    public void setTooltip(String tooltip)
+    {
+        _tooltip = tooltip;
+    }
+
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         if (!shouldRender(ctx))
@@ -424,6 +435,7 @@ public class ActionButton extends DisplayElement implements Cloneable
 
         Button.ButtonBuilder button = PageFlowUtil.button(getCaption(ctx))
                 .iconCls(getIconCls())
+                .tooltip(getTooltip())
                 .id(_id);
 
         if (_actionType.equals(Action.POST) || _actionType.equals(Action.GET))

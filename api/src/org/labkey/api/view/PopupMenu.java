@@ -157,6 +157,7 @@ public class PopupMenu extends DisplayElement
             {
                 // set additional properties from the button
                 bldr.iconCls(button.getIconCls());
+                bldr.tooltip(button.getTooltip());
             }
 
             out.append(bldr.toString());

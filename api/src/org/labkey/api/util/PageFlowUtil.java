@@ -1341,7 +1341,7 @@ public class PageFlowUtil
     {
         String additions = getAttributes(properties);
 
-        return "<a class='labkey-text-link' " + additions + "href=\"" + filter(href) + "\"" +
+        return "<a class=\"labkey-text-link\" " + additions + "href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
                 ">" + filter(text) + "</a>";
@@ -1351,7 +1351,7 @@ public class PageFlowUtil
     {
         String additions = getAttributes(properties);
 
-        return "<a class='labkey-text-link' " + additions + "href=\"" + filter(url) + "\"" +
+        return "<a class=\"labkey-text-link\" " + additions + "href=\"" + filter(url) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
                 ">" + filter(text) + "</a>";

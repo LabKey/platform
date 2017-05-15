@@ -160,20 +160,14 @@
         </table>
     </div>
     <!--/content area-->
-        <%
-            if (null != me.getView("footer"))
-            {
-                out.println("<div class='footer-block'>");
-                me.include(me.getView("footer"),out);
-                out.println("</div>");
-            }
-        %>
+<% if (null != me.getView("footer")) { %>
+    <div class="footer-block">
+       <% me.include(me.getView("footer"), out); %>
+    </div>
+<% } %>
 </div>
 <%
-    String anchor = bean.getAnchor();
-    if (null == StringUtils.trimToNull(anchor))
-        anchor = StringUtils.trimToNull(request.getParameter("_anchor"));
-
+    String anchor = bean.getAnchor(url);
     if (null != anchor)
     {
 %>
@@ -181,7 +175,6 @@
 <%
     }
 %>
-
 <script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
 <!--
 <%= h(request.getHeader("User-Agent")) %>-->

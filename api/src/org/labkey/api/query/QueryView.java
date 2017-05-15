@@ -57,6 +57,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTrailConfig;
@@ -198,18 +199,15 @@ public class QueryView extends WebPartView<Object>
     private boolean _showReports = true;
     private ReportService.ItemFilter _itemFilter = DEFAULT_ITEM_FILTER;
 
-    public static ReportService.ItemFilter DEFAULT_ITEM_FILTER = new ReportService.ItemFilter()
+    public static ReportService.ItemFilter DEFAULT_ITEM_FILTER = (type, label) ->
     {
-        public boolean accept(String type, String label)
-        {
-            if (RReport.TYPE.equals(type)) return true;
-            if (QueryReport.TYPE.equals(type)) return true;
-            if (QuerySnapshotService.TYPE.equals(type)) return true;
-            if (CrosstabReport.TYPE.equals(type)) return true;
-            if (JavaScriptReport.TYPE.equals(type)) return true;
-            if (GenericChartReport.TYPE.equals(type)) return true;
-            return ChartQueryReport.TYPE.equals(type);
-        }
+        if (RReport.TYPE.equals(type)) return true;
+        if (QueryReport.TYPE.equals(type)) return true;
+        if (QuerySnapshotService.TYPE.equals(type)) return true;
+        if (CrosstabReport.TYPE.equals(type)) return true;
+        if (JavaScriptReport.TYPE.equals(type)) return true;
+        if (GenericChartReport.TYPE.equals(type)) return true;
+        return ChartQueryReport.TYPE.equals(type);
     };
 
     private TableInfo _table;
@@ -498,6 +496,7 @@ public class QueryView extends WebPartView<Object>
         return expr;
     }
 
+    @Nullable
     protected ActionURL urlFor(QueryAction action)
     {
         ActionURL ret = _schema.urlFor(action, getQueryDef());
@@ -651,10 +650,12 @@ public class QueryView extends WebPartView<Object>
         return actionButton;
     }
 
+    /**
+     * @deprecated Use {@link ButtonBar#add(DisplayElement...)}
+     */
+    @Deprecated
     protected void addButton(ButtonBar bar, ActionButton button)
     {
-        if (button == null)
-            return;
         bar.add(button);
     }
 
@@ -847,6 +848,7 @@ public class QueryView extends WebPartView<Object>
 
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         MenuButton queryButton = createQueryPickerButton("Query");
         queryButton.setVisible(getSettings().getAllowChooseQuery());
         bar.add(queryButton);
@@ -856,16 +858,7 @@ public class QueryView extends WebPartView<Object>
             bar.add(createViewButton(_itemFilter));
         }
 
-        // buttons can be hidden either through query settings or method overriding
-        if (getSettings().isShowReports() && isShowReports())
-        {
-            bar.add(createReportButton());
-            MenuButton chartButton = createChartButton();
-            if (chartButton.getPopupMenu().getNavTree().getChildCount() > 0)
-            {
-                bar.add(chartButton);
-            }
-        }
+        populateChartsReports(bar);
 
         if (canInsert() && (showInsertNewButton() || showImportDataButton()))
         {
@@ -902,13 +895,16 @@ public class QueryView extends WebPartView<Object>
                 }
                 bar.add(b);
             }
-            bar.add(createPrintButton());
+            if (!newUI)
+                bar.add(createPrintButton());
         }
 
-        if (view.getDataRegion().getShowPagination())
+        if (!newUI && view.getDataRegion().getShowPagination())
         {
-            addButton(bar, createPageSizeMenuButton());
+            bar.add(createPageSizeMenuButton());
         }
+
+        bar.add(populateMoreMenu(view));
     }
 
     @Nullable
@@ -916,9 +912,9 @@ public class QueryView extends WebPartView<Object>
     {
         ActionButton btn = null;
         ActionURL editMultipleURL = urlFor(QueryAction.updateQueryRows);
-        editMultipleURL.addParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY, _settings.getSelectionKey());
         if (editMultipleURL != null)
         {
+            editMultipleURL.addParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY, _settings.getSelectionKey());
             btn = new ActionButton(editMultipleURL, "Edit Multiple");
             btn.setActionType(ActionButton.Action.POST);
             btn.setDisplayPermission(UpdatePermission.class);
@@ -993,6 +989,7 @@ public class QueryView extends WebPartView<Object>
     public ActionButton createInsertMenuButton(ActionURL overrideInsertUrl, ActionURL overrideImportUrl)
     {
         MenuButton button = new MenuButton("Insert");
+        button.setTooltip("Insert data");
         button.setIconCls("plus");
         boolean hasInsertNewOption = false;
         boolean hasImportDataOption = false;
@@ -1367,7 +1364,7 @@ public class QueryView extends WebPartView<Object>
         return button;
     }
 
-    public MenuButton createReportButton()
+    protected MenuButton createReportButton()
     {
         MenuButton button = new MenuButton("Reports");
         NavTree menu = button.getNavTree();
@@ -1414,7 +1411,7 @@ public class QueryView extends WebPartView<Object>
         return button;
     }
 
-    public MenuButton createChartButton()
+    private MenuButton createChartButton()
     {
         MenuButton button = new MenuButton("Charts");
         button.setIconCls("area-chart");
@@ -1451,6 +1448,60 @@ public class QueryView extends WebPartView<Object>
         }
 
         return button;
+    }
+
+    protected void populateChartsReports(ButtonBar bar)
+    {
+        if (isShowReports())
+        {
+            MenuButton reportButton = createReportButton();
+            MenuButton chartButton = createChartButton();
+
+            if (PageFlowUtil.useExperimentalCoreUI())
+            {
+                if (reportButton.getNavTree().hasChildren())
+                {
+                    chartButton.setTooltip("Charts / Reports");
+                    NavTree chartMenu = chartButton.getNavTree();
+                    chartMenu.addSeparator();
+                    for (NavTree child : reportButton.getNavTree().getChildList())
+                        chartButton.addMenuItem(child);
+                }
+
+                if (chartButton.getNavTree().hasChildren())
+                    bar.add(chartButton);
+            }
+            else
+            {
+                bar.add(reportButton);
+                if (chartButton.getNavTree().hasChildren())
+                    bar.add(chartButton);
+            }
+        }
+    }
+
+    @Nullable
+    protected MenuButton populateMoreMenu(DataView view)
+    {
+        MenuButton moreMenu = null;
+
+        if (PageFlowUtil.useExperimentalCoreUI())
+        {
+            moreMenu = new MenuButton("More");
+
+            NavTree print = new NavTree("Print", urlFor(QueryAction.printRows));
+            print.setTarget("_blank");
+
+            moreMenu.addMenuItem(print);
+
+            if (view.getDataRegion().getShowPagination())
+            {
+                moreMenu.addSeparator();
+                moreMenu.addMenuItem(createPageSizeMenuButton().getNavTree());
+            }
+        }
+
+        return moreMenu;
     }
 
     public ReportService.ItemFilter getItemFilter()
@@ -1591,7 +1642,7 @@ public class QueryView extends WebPartView<Object>
         }
 
         // sort the grid view alphabetically, with default first (null name), then private views over public ones
-        Collections.sort(views, (o1, o2) ->
+        views.sort((o1, o2) ->
         {
             if (o1.getName() == null) return -1;
             if (o2.getName() == null) return 1;
@@ -1708,7 +1759,7 @@ public class QueryView extends WebPartView<Object>
             List<Report> reports = entry.getValue();
 
             // sort the list of reports within each type grouping
-            Collections.sort(reports, (o1, o2) ->
+            reports.sort((o1, o2) ->
             {
                 String n1 = StringUtils.defaultString(o1.getDescriptor().getReportName(), "");
                 String n2 = StringUtils.defaultString(o2.getDescriptor().getReportName(), "");
@@ -1766,7 +1817,7 @@ public class QueryView extends WebPartView<Object>
         {
             List<Report> charts = entry.getValue();
 
-            Collections.sort(charts, (o1, o2) ->
+            charts.sort((o1, o2) ->
             {
                 String n1 = StringUtils.defaultString(o1.getDescriptor().getReportName(), "");
                 String n2 = StringUtils.defaultString(o2.getDescriptor().getReportName(), "");
@@ -2033,14 +2084,7 @@ public class QueryView extends WebPartView<Object>
             rgn.setButtonBar(bb);
         }
 
-        if (isPrintView())
-        {
-            rgn.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
-        }
-        else
-        {
-            rgn.setButtonBarPosition(_buttonBarPosition);
-        }
+        rgn.setButtonBarPosition(isPrintView() ? DataRegion.ButtonBarPosition.NONE : _buttonBarPosition);
 
         if (getSettings() != null && getSettings().getShowRows() == ShowRows.ALL)
         {
@@ -2193,6 +2237,7 @@ public class QueryView extends WebPartView<Object>
     }
 
 
+    @Nullable
     public ResultSet getResultSet() throws SQLException, IOException
     {
         Results r = getResults();
@@ -2345,16 +2390,10 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-
         displayColumns = getExportColumns(displayColumns);
 
         // Need to remove special MV columns
-        for (Iterator<DisplayColumn> it = displayColumns.iterator(); it.hasNext(); )
-        {
-            DisplayColumn col = it.next();
-            if (col.getColumnInfo() instanceof RawValueColumn)
-                it.remove();
-        }
+        displayColumns.removeIf(col -> col.getColumnInfo() instanceof RawValueColumn);
         return new ExcelWriter(null, displayColumns);
     }
 
@@ -2687,6 +2726,7 @@ public class QueryView extends WebPartView<Object>
         return _table;
     }
 
+    @Nullable
     protected ContainerFilter getContainerFilter()
     {
         String filterName = _settings.getContainerFilterName();
@@ -2710,10 +2750,11 @@ public class QueryView extends WebPartView<Object>
 
     public List<DisplayColumn> getDisplayColumns()
     {
-        List<DisplayColumn> ret = new ArrayList<>();
         TableInfo table = getTable();
         if (table == null)
             return Collections.emptyList();
+
+        List<DisplayColumn> ret = new ArrayList<>();
         addDetailsAndUpdateColumns(ret, table);
 
         if (null == _queryDefDisplayColumns)
@@ -2732,7 +2773,10 @@ public class QueryView extends WebPartView<Object>
 
     protected void addDetailsAndUpdateColumns(List<DisplayColumn> ret, TableInfo table)
     {
-        if (_showDetailsColumn && !isPrintView() && !isExportView() && (table.hasDetailsURL() || isShowExperimentalGenericDetailsURL()))
+        if (isPrintView() || isExportView())
+            return;
+
+        if (_showDetailsColumn && (table.hasDetailsURL() || isShowExperimentalGenericDetailsURL()))
         {
             StringExpression urlDetails = urlExpr(QueryAction.detailsQueryRow);
 
@@ -2743,7 +2787,7 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        if (_showUpdateColumn && canUpdate() && !isPrintView() && !isExportView())
+        if (_showUpdateColumn && canUpdate())
         {
             StringExpression urlUpdate = urlExpr(QueryAction.updateQueryRow);
 
@@ -2917,7 +2961,8 @@ public class QueryView extends WebPartView<Object>
      */
     public boolean isShowReports()
     {
-        return _showReports;
+        // buttons can be hidden either through query settings or method overriding
+        return _showReports && getSettings().isShowReports();
     }
 
     public void setShowReports(boolean showReports)
