@@ -384,15 +384,14 @@ public class TransformManager implements DataIntegrationService
 
         if (!c.isRoot())
         {
-            descriptors = DESCRIPTOR_CACHE.getResourceMapStream(c)
+            descriptors = DESCRIPTOR_CACHE.streamResourceMaps(c)
                 .map(Map::values)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
         }
         else
         {
-            descriptors = ModuleLoader.getInstance().getModules().stream()
-                .map(DESCRIPTOR_CACHE::getResourceMap)
+            descriptors = DESCRIPTOR_CACHE.streamAllResourceMaps()
                 .flatMap(map -> map.values().stream())
                 .filter(ScheduledPipelineJobDescriptor::isSiteScope)
                 .collect(Collectors.toList());
@@ -1080,14 +1079,13 @@ public class TransformManager implements DataIntegrationService
         public void testModuleResourceCache()
         {
             // Load all the ETL descriptors to ensure no exceptions
-            int descriptorCount = ModuleLoader.getInstance().getModules().stream()
-                .map(DESCRIPTOR_CACHE::getResourceMap)
+            int descriptorCount = DESCRIPTOR_CACHE.streamAllResourceMaps()
                 .mapToInt(Map::size)
                 .sum();
 
             LOG.info(descriptorCount + " ETL descriptors defined in all modules");
 
-            // Make sure the cache retrieves the expected number of descriptors from a couple test modules, if present
+            // Make sure the cache retrieves the expected number of ETL descriptors from a couple test modules, if present
 
             Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
 

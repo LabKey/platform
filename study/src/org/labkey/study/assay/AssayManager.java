@@ -867,15 +867,14 @@ public class AssayManager implements AssayService
         @Test
         public void testModuleResourceCache()
         {
-            // Load all the module assay providers to ensure no exceptions
-            int count = ModuleLoader.getInstance().getModules().stream()
-                .map(PROVIDER_CACHE::getResourceMap)
+            // Load all the module assay providers to ensure no exceptions and get a count
+            int count = PROVIDER_CACHE.streamAllResourceMaps()
                 .mapToInt(Collection::size)
                 .sum();
 
             LOG.info(count + " assay providers defined in all modules");
 
-            // Make sure the cache retrieves the expected number of descriptors from a couple test modules, if present
+            // Make sure the cache retrieves the expected number of assay providers from the miniassay module, if present
 
             Module miniassay = ModuleLoader.getInstance().getModule("miniassay");
 

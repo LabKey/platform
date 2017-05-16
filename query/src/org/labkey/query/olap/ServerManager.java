@@ -208,7 +208,7 @@ public class ServerManager
     {
         List<OlapSchemaDescriptor> ret = new ArrayList<>();
 
-        ret.addAll(MODULE_DESCRIPTOR_CACHE.getResourceMapStream(c)
+        ret.addAll(MODULE_DESCRIPTOR_CACHE.streamResourceMaps(c)
             .map(Map::values)
             .flatMap(Collection::stream)
             .filter(osd -> osd.isExposed(c))
@@ -878,8 +878,7 @@ public class ServerManager
         public void testModuleResourceCache()
         {
             // Load all the OLAP descriptors to ensure no exceptions
-            int descriptorCount = ModuleLoader.getInstance().getModules().stream()
-                .map(MODULE_DESCRIPTOR_CACHE::getResourceMap)
+            int descriptorCount = MODULE_DESCRIPTOR_CACHE.streamAllResourceMaps()
                 .mapToInt(Map::size)
                 .sum();
 

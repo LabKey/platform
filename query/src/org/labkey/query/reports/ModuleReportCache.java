@@ -213,8 +213,7 @@ public class ModuleReportCache
         public void testModuleResourceCache()
         {
             // Load all the report descriptors to ensure no exceptions
-            int descriptorCount = ModuleLoader.getInstance().getModules().stream()
-                .map(MODULE_REPORT_DESCRIPTOR_CACHE::getResourceMap)
+            int descriptorCount = MODULE_REPORT_DESCRIPTOR_CACHE.streamAllResourceMaps()
                 .mapToInt(ReportCollections::size)
                 .sum();
 

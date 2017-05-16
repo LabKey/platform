@@ -960,15 +960,13 @@ public class PipelineJobServiceImpl extends PipelineJobService
         @Test
         public void testModuleCaches()
         {
-            int pipelineCount = ModuleLoader.getInstance().getModules().stream()
-                .map(module -> _impl.TASK_PIPELINE_CACHE.getResourceMap(module))
+            int pipelineCount = _impl.TASK_PIPELINE_CACHE.streamAllResourceMaps()
                 .mapToInt(Map::size)
                 .sum();
 
             LOG.info(pipelineCount + " task pipelines defined in all modules");
 
-            int factoryCount = ModuleLoader.getInstance().getModules().stream()
-                .map(module -> _impl.TASK_FACTORY_CACHE.getResourceMap(module))
+            int factoryCount = _impl.TASK_FACTORY_CACHE.streamAllResourceMaps()
                 .mapToInt(Map::size)
                 .sum();
 

@@ -549,8 +549,8 @@ public class QueryServiceImpl implements QueryService
         modules.addAll(Arrays.asList(extraModules));
         modules = ModuleLoader.getInstance().orderModules(modules);
 
-        return modules.stream()
-            .map(module -> MODULE_QUERY_DEF_CACHE.getResourceMap(module).get(path))
+        return MODULE_QUERY_DEF_CACHE.streamResourceMaps(modules)
+            .map(mmap -> mmap.get(path))
             .flatMap(Collection::stream)
             .map(queryDef -> new ModuleCustomQueryDefinition(queryDef, SchemaKey.fromString(schemaName), user, container))
             .collect(Collectors.toList());
@@ -651,7 +651,7 @@ public class QueryServiceImpl implements QueryService
         Set<String> moduleViewSchemas = new LinkedHashSet<>();
 
         // find out if there are any module custom views to deal with
-        MODULE_CUSTOM_VIEW_CACHE.getResourceMapStream(container)
+        MODULE_CUSTOM_VIEW_CACHE.streamResourceMaps(container)
             .flatMap(mmap -> mmap.keys().stream())
             .forEach(path -> {
                 if (AssayService.ASSAY_DIR_NAME.equals(path.get(0)) || AssayService.ASSAY_DIR_NAME.equals(path.get(1)))
@@ -889,8 +889,8 @@ public class QueryServiceImpl implements QueryService
         // TODO: Instead of caching a separate list for each module + query combination, we could cache the full list of views defined on this
         // query in ALL modules... and then filter for active at this level.
 
-        return currentModules.stream()
-            .map(module -> MODULE_CUSTOM_VIEW_CACHE.getResourceMap(module).get(path))
+        return MODULE_CUSTOM_VIEW_CACHE.streamResourceMaps(currentModules)
+            .map(mmap -> mmap.get(path))
             .flatMap(Collection::stream)
             .map(view -> new ModuleCustomView(qd, view))
             .collect(Collectors.toList());
@@ -3055,28 +3055,25 @@ public class QueryServiceImpl implements QueryService
             // Loads all custom views, queries, and query metadata overrides from all modules. This is a simple test of
             // the caching process that also ensures resources are valid.
 
-            int moduleCustomViewCount = ModuleLoader.getInstance().getModules().stream()
-                .map(MODULE_CUSTOM_VIEW_CACHE::getResourceMap)
+            int moduleCustomViewCount = MODULE_CUSTOM_VIEW_CACHE.streamAllResourceMaps()
                 .mapToInt(MultiValuedMap::size)
                 .sum();
 
             LOG.info(moduleCustomViewCount + " custom views defined in all modules");
 
-            int moduleQueryCount = ModuleLoader.getInstance().getModules().stream()
-                .map(MODULE_QUERY_DEF_CACHE::getResourceMap)
+            int moduleQueryCount = MODULE_QUERY_DEF_CACHE.streamAllResourceMaps()
                 .mapToInt(MultiValuedMap::size)
                 .sum();
 
             LOG.info(moduleQueryCount + " module queries defined in all modules");
 
-            int moduleQueryMetadataCount = ModuleLoader.getInstance().getModules().stream()
-                .map(MODULE_QUERY_METADATA_DEF_CACHE::getResourceMap)
+            int moduleQueryMetadataCount = MODULE_QUERY_METADATA_DEF_CACHE.streamAllResourceMaps()
                 .mapToInt(MultiValuedMap::size)
                 .sum();
 
             LOG.info(moduleQueryMetadataCount + " module query metadata overrides defined in all modules");
 
-            // Make sure the cache retrieves the expected number of report descriptors from a couple test modules, if present
+            // Make sure the cache retrieves the expected number of custom views, queries, and metadata overrides from the simpletest module, if present
 
             Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
 
