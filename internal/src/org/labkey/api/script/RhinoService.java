@@ -200,16 +200,14 @@ public final class RhinoService
         public void testModuleResourceCache()
         {
             // Load all the scripts to ensure no exceptions and get a count
-            int scriptCount = ModuleLoader.getInstance().getModules().stream()
-                .map(ScriptReferenceImpl.SCRIPT_CACHE::getResourceMap)
+            int scriptCount = ScriptReferenceImpl.SCRIPT_CACHE.streamAllResourceMaps()
                 .mapToInt(Map::size)
                 .sum();
 
             LOG.info(scriptCount + " scripts in all modules");
 
             // Load all the top-level script timestamps to ensure no exceptions and get a count
-            int timestampCount = ModuleLoader.getInstance().getModules().stream()
-                .map(LabKeyModuleSourceProvider.TOP_LEVEL_SCRIPT_CACHE::getResourceMap)
+            int timestampCount = LabKeyModuleSourceProvider.TOP_LEVEL_SCRIPT_CACHE.streamAllResourceMaps()
                 .mapToInt(Map::size)
                 .sum();
 

@@ -33,9 +33,7 @@ import org.labkey.api.resource.ResourceWrapper;
 import org.labkey.api.util.Path;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -74,10 +72,9 @@ public final class ModuleResourceCache<V>
     private final FileSystemWatcher _watcher = FileSystemWatchers.get();
     private final Set<String> _pathsWithListeners = new ConcurrentHashSet<>();
 
-    // Supports /resources/<path>, /assay/<provider>/<path>, and other layouts
     ModuleResourceCache(String description, ModuleResourceCacheHandler<V> handler, ResourceRootProvider provider, ResourceRootProvider... extraProviders)
     {
-        this(handler, description, new CacheLoader<Module, V>()
+        CacheLoader<Module, V> wrapper = new CacheLoader<Module, V>()
         {
             @Override
             public V load(Module module, Object argument)
@@ -110,11 +107,8 @@ public final class ModuleResourceCache<V>
             {
                 return "CacheLoader for \"" + description + "\" (" + handler.getClass().getName() + ")";
             }
-        });
-    }
+        };
 
-    private ModuleResourceCache(ModuleResourceCacheHandler<V> handler, String description, CacheLoader<Module, V> wrapper)
-    {
         _cache = CacheManager.getBlockingCache(Constants.getMaxModules(), CacheManager.DAY, description, wrapper);  // Cache is one entry per module
         _handler = handler;
     }
@@ -125,23 +119,28 @@ public final class ModuleResourceCache<V>
     }
 
     /**
-     *  Return a collection of all resource maps managed by this cache that are defined in the active modules
-     *  in the specified Container.
+     *  Return a stream of all resource maps managed by this cache that are defined in all modules
      */
-    @Deprecated // Unused... delete this!
-    public @NotNull Collection<V> getResourceMaps(Container c)
+    public @NotNull Stream<V> streamAllResourceMaps()
     {
-        List<V> list = c.getActiveModules().stream().map(this::getResourceMap).collect(Collectors.toList());
-        return Collections.unmodifiableCollection(list);
+        return streamResourceMaps(ModuleLoader.getInstance().getModules());
     }
 
     /**
      *  Return a stream of all resource maps managed by this cache that are defined in the active modules
      *  in the specified Container.
      */
-    public @NotNull Stream<V> getResourceMapStream(Container c)
+    public @NotNull Stream<V> streamResourceMaps(Container c)
     {
-        return c.getActiveModules().stream().map(this::getResourceMap);
+        return streamResourceMaps(c.getActiveModules());
+    }
+
+    /**
+     *  Return a stream of all resource maps managed by this cache that are defined in the specified modules
+     */
+    public @NotNull Stream<V> streamResourceMaps(Collection<Module> modules)
+    {
+        return modules.stream().map(this::getResourceMap);
     }
 
     // Clear a single module's resource map from the cache

@@ -1547,8 +1547,7 @@ public class Portal
         public void testModuleResourceCache()
         {
             // Load all the webpart definitions to ensure no exceptions
-            int viewCount = ModuleLoader.getInstance().getModules().stream()
-                .map(WEB_PART_FACTORY_CACHE::getResourceMap)
+            int viewCount = WEB_PART_FACTORY_CACHE.streamAllResourceMaps()
                 .mapToInt(Collection::size)
                 .sum();
 

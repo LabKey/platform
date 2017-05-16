@@ -294,8 +294,7 @@ public class FolderTypeManager
             FolderTypeManager manager = get();
 
             // Load all the folder types to ensure no exceptions
-            int folderTypeCount = ModuleLoader.getInstance().getModules().stream()
-                .map(manager.CACHE::getResourceMap)
+            int folderTypeCount = manager.CACHE.streamAllResourceMaps()
                 .mapToInt(Collection::size)
                 .sum();
 

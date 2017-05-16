@@ -192,8 +192,7 @@ public class ModuleHtmlView extends HtmlView
         public void testModuleResourceCache()
         {
             // Load all the HTML view definitions to ensure no exceptions
-            int viewCount = ModuleLoader.getInstance().getModules().stream()
-                .map(MODULE_HTML_VIEW_DEFINITION_CACHE::getResourceMap)
+            int viewCount = MODULE_HTML_VIEW_DEFINITION_CACHE.streamAllResourceMaps()
                 .mapToInt(Map::size)
                 .sum();
 

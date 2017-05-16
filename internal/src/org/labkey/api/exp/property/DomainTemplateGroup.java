@@ -176,7 +176,7 @@ public class DomainTemplateGroup
 
     public static Map<String, DomainTemplateGroup> getAllGroups(Container c)
     {
-        return CACHE.getResourceMapStream(c)     // Stream of Map<String, DomainTemplateGroup>
+        return CACHE.streamResourceMaps(c)     // Stream of Map<String, DomainTemplateGroup>
             .map(Map::entrySet)                  // Stream of Set<Entry<String, DomainTemplateGroup>>
             .flatMap(Collection::stream)         // Stream of Entry<String, DomainTemplateGroup>
             .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
@@ -184,7 +184,7 @@ public class DomainTemplateGroup
 
     public static Map<String, DomainTemplate> getAllTemplates(Container c)
     {
-        return CACHE.getResourceMapStream(c)     // Stream of Map<String, DomainTemplateGroup>
+        return CACHE.streamResourceMaps(c)     // Stream of Map<String, DomainTemplateGroup>
             .map(Map::values)                    // Stream of Collection<DomainTemplateGroup>
             .flatMap(Collection::stream)         // Stream of DomainTemplateGroup
             .map(group -> group._templates)      // Stream of Collection<DomainTemplate>
@@ -307,15 +307,14 @@ public class DomainTemplateGroup
         @Test
         public void testDomainTemplateCache()
         {
-            // Load all the DomainTemplateGroups to ensure no exceptions
-            int templateCount = ModuleLoader.getInstance().getModules().stream()
-                .map(CACHE::getResourceMap)
+            // Load all the DomainTemplateGroups to ensure no exceptions and get a count
+            int templateCount = CACHE.streamAllResourceMaps()
                 .mapToInt(Map::size)
                 .sum();
 
             LOG.info(templateCount + " domain templates defined in all modules");
 
-            // Make sure the cache retrieves the expected number of test models in this module
+            // Make sure the cache retrieves the expected number of domain templates in the simpletest module, if present
 
             Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
 
