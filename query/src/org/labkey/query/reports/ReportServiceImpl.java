@@ -529,14 +529,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
             if (report != null)
             {
-                // the descriptor is a securable resource, so it must have a non-null container id, since file-based
-                // module reports don't have a container associated, default to the current container security
-
-                // issue 14552 : there is a problem with the way file modules cache report descriptors, it could cause
-                // a situation where the module returns a descriptor for a folder that has been previously deleted.
-                if (descriptor.getContainerId() == null || ContainerManager.getForId(descriptor.getContainerId()) == null)
-                    descriptor.setContainerId(c.getId());
-
                 report.setDescriptor(descriptor);
                 reports.add(report);
             }
@@ -585,7 +577,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         {
             readableReports = reports
                 .stream()
-                .filter(report -> report.hasPermission(user, report.getDescriptor().getResourceContainer(), ReadPermission.class))
+                .filter(report -> report.getDescriptor().isModuleBased() || report.hasPermission(user, report.getDescriptor().getResourceContainer(), ReadPermission.class))
                 .collect(Collectors.toCollection(ArrayList::new));
         }
 
