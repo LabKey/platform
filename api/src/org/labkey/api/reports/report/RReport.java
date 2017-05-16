@@ -440,9 +440,9 @@ public class RReport extends ExternalScriptEngineReport
         String script = super.createScript(engine, context, outputSubst, inputDataTsv, inputParameters);
         File inputData = new File(getReportDir(context.getContainer().getId()), DATA_INPUT);
 
-        /**
-         * for each included script, the source script is processed for input/output replacements
-         * and the result copied into this scripts working directory so it can be loaded via the source command
+        /*
+          for each included script, the source script is processed for input/output replacements
+          and the result copied into this scripts working directory so it can be loaded via the source command
          */
         for (String includedReport : ((RReportDescriptor)getDescriptor()).getIncludedReports())
         {
@@ -565,6 +565,11 @@ public class RReport extends ExternalScriptEngineReport
     {
         if (report != null)
         {
+            if (report.getDescriptor().isModuleBased())
+            {
+                return true;
+            }
+
             if (canReadReport(context.getUser()))
             {
                 // if it's not in this container, check that it was shared

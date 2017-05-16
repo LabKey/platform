@@ -44,6 +44,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.ExceptionUtil;
@@ -597,8 +598,15 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     @Override
     public final boolean hasPermission(@NotNull UserPrincipal user, @NotNull Container c, @NotNull Class<? extends Permission> perm)
     {
+        ReportDescriptor descriptor = getDescriptor();
+
+        if (descriptor.isModuleBased())
+        {
+            return ReadPermission.class == perm;
+        }
+
         // only inherited reports can be viewed outside of its original folder
-        if (!c.getId().equals(getDescriptor().getContainerId()))
+        if (!c.getId().equals(descriptor.getContainerId()))
         {
             if (!ReportUtil.isReportInherited(c, this))
                 return false;
@@ -606,7 +614,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
 
         if (c.hasPermission(user, perm))
         {
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(getDescriptor(), false);
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(descriptor, false);
             if (!policy.isEmpty())
             {
                 return policy.hasPermission(user, perm);

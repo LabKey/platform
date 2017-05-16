@@ -234,12 +234,12 @@ public class ScriptReportBean extends ReportDesignBean
         setClientDependencies(srDescriptor.getClientDependencies());
         setScriptDependencies(srDescriptor.getScriptDependencies());
 
-        // Could be null, e.g., module-based report
-        Container c = descriptor.getResourceContainer();
-        if (null != c)
+        // Module-based report won't have a thumbnail (nor a container)
+        if (!descriptor.isModuleBased())
         {
+            Container c = descriptor.getResourceContainer();
             if (ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), c, "thumbnailType") != null)
-                setThumbnailType(ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "thumbnailType").toString());
+                setThumbnailType(ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), c, "thumbnailType").toString());
         }
     }
 
