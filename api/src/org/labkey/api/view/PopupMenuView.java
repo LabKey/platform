@@ -113,13 +113,20 @@ public class PopupMenuView extends HttpView<PopupMenu>
                         out.write(" class=\"disabled\" ");
                     out.write(">");
                     out.write("<a");
+                    if (null != child.getImageCls())
+                        out.write(" style=\"padding-left: 0 \"");
                     if (null != child.getScript())
                         out.write(" onclick=\"" + PageFlowUtil.filter(child.getScript()) +"\" ");
                     if (null != child.getHref())
                         out.write(" href=\"" + child.getHref() + "\" ");
                     if (null != child.getTarget())
                         out.write(" target=\"" + child.getTarget() + "\" ");
-                    out.write(" tabindex=\"0\">" + PageFlowUtil.filter(child.getText()) + "</a>");
+                    out.write(" tabindex=\"0\"");
+                    out.write(">");
+                    if (null != child.getImageCls())
+                        out.write("<i style=\"padding-left: .25em; padding-right: .25em\" class=\"" + child.getImageCls() + "\"></i>");
+                    out.write("<span>" + PageFlowUtil.filter(child.getText()) + "</span>");
+                    out.write("</a>");
                     out.write("</li>");
                 }
             }
