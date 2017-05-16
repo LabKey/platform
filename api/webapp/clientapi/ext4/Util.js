@@ -3,12 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-
-
 (function() {
-
-    // TODO: Some weird dependencies
-    // LABKEY.Utils
 
     Ext4.ns('LABKEY.ext4');
 
@@ -33,6 +28,68 @@
         a = String(a);
         b = String(b);
         return a.toLowerCase() == b.toLowerCase();
+    };
+
+    /**
+     * This method takes an object that is/extends an Ext4.Container (e.g. Panels, Toolbars, Viewports, Menus) and
+     * resizes it so the Container fits inside the its parent container.
+     * @param extContainer - (Required) outer container which is the target to be resized
+     * @param options - a set of options
+     * @param options.skipWidth - true to skip updating width, default false
+     * @param options.skipHeight - true to skip updating height, default false
+     * @param options.paddingWidth - total width padding
+     * @param options.paddingHeight - total height padding
+     * @param options.offsetY - distance between bottom of page to bottom of component
+     * @param options.overrideMinWidth - true to set ext container's minWidth value to calculated width, default false
+     */
+    var resizeToContainer = function(extContainer, options) {
+        var config = {
+            offsetY: 35,
+            overrideMinWidth: false,
+            paddingHeight: 0,
+            paddingWidth: 0,
+            skipHeight: false,
+            skipWidth: false
+        };
+
+        if (Ext4.isObject(arguments[1])) {
+            config = Ext4.apply(config, options);
+        }
+        // else ignore parameters
+
+        if (!extContainer || !extContainer.rendered || (config.skipWidth && config.skipHeight)) {
+            return;
+        }
+
+        var height = 0;
+        var width = 0;
+
+        if (!config.skipWidth) {
+            width = extContainer.el.parent().getBox().width;
+        }
+        if (!config.skipHeight) {
+            height = window.innerHeight - extContainer.el.getXY()[1];
+        }
+
+        var padding = [config.paddingWidth, config.paddingHeight];
+
+        var size = {
+            width  : Math.max(100, width - padding[0]),
+            height : Math.max(100, height - padding[1] - config.offsetY)
+        };
+
+        if (config.skipWidth) {
+            extContainer.setHeight(size.height);
+            if (config.overrideMinWidth)
+                extContainer.minWidth = size.width;
+        }
+        else if (config.skipHeight) {
+            extContainer.setWidth(size.width);
+        }
+        else {
+            extContainer.setSize(size);
+        }
+        extContainer.doLayout();
     };
 
     Ext4.apply(Util, {
@@ -116,14 +173,13 @@
         findJsonType: function(fieldObj) {
             var type = fieldObj.type || fieldObj.typeName;
 
-            if (type=='DateTime')
+            if (type === 'DateTime')
                 return 'date';
-            else if (type=='Double')
+            else if (type === 'Double')
                 return 'float';
-            else if (type=='Integer' || type=='int')
+            else if (type === 'Integer' || type === 'int')
                 return 'int';
-            else
-                return 'string';
+            return 'string';
         },
 
         /**
@@ -182,24 +238,23 @@
 
             var fields = store.model.getFields();
             var columns = store.getColumns();
-            var cols = new Array();
+            var cols = [];
 
-            var col;
-            Ext4.each(fields, function(field, idx){
+            Ext4.each(fields, function(field) {
                 var col;
 
-                if(field.shownInGrid === false)
+                if (field.shownInGrid === false)
                     return;
 
                 for (var i=0;i<columns.length;i++){
                     var c = columns[i];
-                    if(c.dataIndex == field.dataIndex){
+                    if (c.dataIndex == field.dataIndex) {
                         col = c;
                         break;
                     }
                 }
 
-                if(!col)
+                if (!col)
                     col = {dataIndex: field.dataIndex};
 
                 //NOTE: In Ext4.1 if your store does not provide a key field, Ext will create a new column called 'id'
@@ -223,7 +278,7 @@
         getColumnUrl: function(displayValue, value, col, meta, record) {
             //wrap in <a> if url is present in the record's original JSON
             var url;
-            if(meta.buildUrl)
+            if (meta.buildUrl) {
                 url = meta.buildUrl({
                     displayValue: displayValue,
                     value: value,
@@ -231,8 +286,10 @@
                     meta: meta,
                     record: record
                 });
-            else if(record.raw && record.raw[meta.name] && record.raw[meta.name].url)
+            }
+            else if (record.raw && record.raw[meta.name] && record.raw[meta.name].url) {
                 url = record.raw[meta.name].url;
+            }
             return Ext4.util.Format.htmlEncode(url);
         },
 
@@ -1003,6 +1060,11 @@
          */
         resizeToViewport: function(extContainer, width, height, paddingX, paddingY, offsetX, offsetY)
         {
+            if (LABKEY.experimental.useExperimentalCoreUI) {
+                resizeToContainer.apply(this, arguments);
+                return;
+            }
+
             if (!extContainer || !extContainer.rendered)
                 return;
 

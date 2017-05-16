@@ -183,6 +183,70 @@ LABKEY.ext.Utils = new function() {
         }
     };
 
+    /**
+     * This method takes an object that is/extends an Ext3.Container (e.g. Panels, Toolbars, Viewports, Menus) and
+     * resizes it so the Container fits inside the its parent container.
+     * @param extContainer - (Required) outer container which is the target to be resized
+     * @param options - The set of options
+     * @param options.skipWidth - true to skip updating width, default false
+     * @param options.skipHeight - true to skip updating height, default false
+     * @param options.paddingWidth - total width padding
+     * @param options.paddingHeight - total height padding
+     * @param options.offsetY - distance between bottom of page to bottom of component
+     */
+    var resizeToContainer = function(extContainer, options) {
+        var config = {
+            offsetY: 35,
+            paddingHeight: 0,
+            paddingWidth: 0,
+            skipHeight: false,
+            skipWidth: false
+        };
+
+        if (Ext.isObject(options)) {
+            config = Ext.apply(config, options);
+        }
+        // else ignore the parameters
+
+        if (!extContainer || !extContainer.rendered || (config.skipWidth && config.skipHeight)) {
+            return;
+        }
+
+        var height = 0;
+        var width = 0;
+
+        if (!config.skipWidth) {
+            width = extContainer.el.parent().getBox().width;
+        }
+
+
+        if (!config.skipHeight) {
+            height = window.innerHeight - extContainer.el.getXY()[1];
+        }
+
+        var padding = [
+            config.paddingWidth,
+            config.paddingHeight
+        ];
+
+        var size = {
+            width: Math.max(100, width - padding[0]),
+            height: Math.max(100, height - padding[1] - config.offsetY)
+        };
+
+        if (config.skipWidth) {
+            extContainer.setHeight(size.height);
+        }
+        else if (config.skipHeight) {
+            extContainer.setWidth(size.width);
+        }
+        else {
+            extContainer.setSize(size);
+        }
+
+        extContainer.doLayout();
+    };
+
     return {
         /**
          * Creates an Ext.data.Store that queries the LabKey Server database and can be used as the data source
@@ -306,6 +370,11 @@ LABKEY.ext.Utils = new function() {
          */
         resizeToViewport: function(extContainer, width, height, paddingX, paddingY, offsetX, offsetY)
         {
+            if (LABKEY.experimental.useExperimentalCoreUI) {
+                resizeToContainer.apply(this, arguments);
+                return;
+            }
+
             if (!extContainer || !extContainer.rendered)
                 return;
 
@@ -313,12 +382,12 @@ LABKEY.ext.Utils = new function() {
                 return;
 
             var padding = [];
-            if (offsetX == undefined || offsetX == null)
+            if (offsetX === undefined || offsetX === null)
                 offsetX = 35;
-            if (offsetY == undefined || offsetY == null)
+            if (offsetY === undefined || offsetY === null)
                 offsetY = 35;
 
-            if (paddingX !== undefined && paddingX != null)
+            if (paddingX !== undefined && paddingX !== null)
                 padding.push(paddingX);
             else
             {
@@ -336,15 +405,15 @@ LABKEY.ext.Utils = new function() {
                 else
                     padding.push(offsetX);
             }
-            if (paddingY !== undefined && paddingY != null)
+            if (paddingY !== undefined && paddingY !== null)
                 padding.push(paddingY);
             else
                 padding.push(offsetY);
 
             var xy = extContainer.el.getXY();
             var size = {
-                width  : Math.max(100,width-xy[0]-padding[0]),
-                height : Math.max(100,height-xy[1]-padding[1])
+                width  : Math.max(100, width - xy[0] - padding[0]),
+                height : Math.max(100, height - xy[1] - padding[1])
             };
 
             if (width < 0)

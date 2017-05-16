@@ -799,109 +799,7 @@ Ext4.define('Ext4.override.data.TreeStore', {
 });
 
 
-if (LABKEY.experimental.useExperimentalCoreUI)
-{
-    (function() {
-
-        Ext4.ns('LABKEY.ext4ResponsiveUtil');
-
-        /**
-         * @name LABKEY.ext4.ResponsiveUtil
-         * @class
-         * Ext4 responsive utilities, contains functions to support responsive ext4 components
-         */
-        LABKEY.ext4ResponsiveUtil = {};
-
-        var Util = LABKEY.ext4ResponsiveUtil;
-
-        Ext4.apply(Util, {
-            getHeaderAndNavHeight: function() {
-                var parent = Ext4.getBody();
-                var headerNavHeight = 0;
-                var header = parent.query("body>div.labkey-page-header");
-                if (header && header[0])
-                    headerNavHeight += header[0].offsetHeight;
-                var nav = parent.query("body>div.labkey-page-nav");
-                if (nav && nav[0])
-                    headerNavHeight += nav[0].offsetHeight;
-
-                return headerNavHeight;
-            },
-
-            getBodyContainerWidth: function () {
-                var containerWidth = window.innerWidth;
-                var parent = Ext4.getBody();
-                var container = parent.query(">div.container");
-                if (container && container[0])
-                    containerWidth = container[0].offsetWidth;
-                else {
-                    // if template is not body
-                    container = parent.query(">div>div.container");
-                    if (container && container[0])
-                        containerWidth = container[0].offsetWidth;
-                }
-
-                return containerWidth;
-            },
-
-            /**
-             * This method takes an object that is/extends an Ext4.Container (e.g. Panels, Toolbars, Viewports, Menus) and
-             * resizes it so the Container fits inside the its parent container.
-             * @param extContainer - (Required) outer container which is the target to be resized
-             * @param skipWidth - true to skip updating width, default false
-             * @param skipHeight - true to skip updating height, default false
-             * @param paddingWidth - total width padding
-             * @param paddingHeight - total height padding
-             * @param offsetY - distance between bottom of page to bottom of component
-             * @param overrideMinWidth - true to set ext container's minWidth value to calculated width, default false
-             */
-            resizeToParentContainer: function(extContainer, skipWidth, skipHeight, paddingWidth, paddingHeight, offsetY, overrideMinWidth)
-            {
-                if (!extContainer || !extContainer.rendered || (skipWidth && skipHeight))
-                    return;
-
-                var width = 0;
-                if (!skipWidth)
-                {
-                    var parent = extContainer.el.parent();
-                    width = parent.getBox().width;
-                }
-
-                var xy = extContainer.el.getXY();
-
-                var height = 0;
-                if (!skipHeight)
-                {
-                    height = window.innerHeight - xy[1];
-                }
-
-                var padding = [0, 0];
-                padding[0] = paddingWidth ? paddingWidth : 0;
-                padding[1] = paddingHeight ? paddingHeight : 0;
-
-                if (offsetY == undefined || offsetY == null)
-                    offsetY = 35;
-
-                var size = {
-                    width  : Math.max(100,width-padding[0]),
-                    height : Math.max(100,height-padding[1] - offsetY)
-                };
-
-                if (skipWidth)
-                {
-                    extContainer.setHeight(size.height);
-                    if (overrideMinWidth)
-                        extContainer.minWidth = size.width;
-                }
-                else if (skipHeight)
-                    extContainer.setWidth(size.width);
-                else
-                    extContainer.setSize(size);
-                extContainer.doLayout();
-            }
-        });
-
-    }());
+if (LABKEY.experimental.useExperimentalCoreUI) {
     /**
      * Patch to allow responsive modal interaction for Ext4 Ext.Window components.
      * At small screen width (user configurable), the popup will take full screen width.
@@ -913,32 +811,31 @@ if (LABKEY.experimental.useExperimentalCoreUI)
      *                              false to only take full width, default false.
      *      closableOnMaskClick: true to always support closing modal by click on mask regardless of screen size,
      *                            otherwise only closable on mask click for small screens, default false
-     *      useExtStyle: true to use ext style, false to use bootstrap-like style, default false
+     *      useExtStyle: true to use ext style, false to use bootstrap-like style, default true
      */
     Ext4.override(Ext4.window.Window, {
-        constructor: function()
-        {
+        constructor: function() {
             var isAutoShow = this.autoShow || (arguments && arguments[0] ? arguments[0].autoShow : false);
-            if (isAutoShow)
-            {
+            if (isAutoShow) {
                 // temporarily disable autoShow so that responsive configs are applied before show
                 this.autoShow = false;
                 if (arguments && arguments[0] && arguments[0].autoShow)
                     arguments[0].autoShow = false;
             }
+
             this.callParent(arguments);
-            if (this.suppressResponsive || !this.modal)
-            {
-                if (isAutoShow && !this.isContained)
-                {
+
+            if (this.suppressResponsive) {
+                if (isAutoShow && !this.isContained) {
                     this.autoShow = true;
                     this.show();
                 }
                 return;
             }
 
-            if (!this.useExtStyle)
-            {
+            // experimental, change look of windows
+            var useBootstrapStyle = this.useExtStyle === undefined ? false : !this.useExtStyle;
+            if (useBootstrapStyle) {
                 if (!this.bodyCls)
                     this.bodyCls = '';
                 this.bodyCls += ' modal-body';
@@ -952,16 +849,29 @@ if (LABKEY.experimental.useExperimentalCoreUI)
             useMaxWidth = useMaxWidth || (this.width && (this.width > window.innerWidth)); // if configured width is large than available screen size.
             useMaxWidth = useMaxWidth || (this.minWidth && (this.minWidth > window.innerWidth)); // if configured min-width is large than available screen size.
 
-            if (useMaxWidth)
-            {
-                if (this.maximizeOnSmallScreen)
-                {
+            if (useMaxWidth) {
+                if (this.maximizeOnSmallScreen) {
                     this.maximized = true;
                 }
-                else
-                {
+                else {
+                    var getBodyContainerWidth = function() {
+                        var containerWidth = window.innerWidth;
+                        var parent = Ext4.getBody();
+                        var container = parent.query("> div.container");
+                        if (container && container[0])
+                            containerWidth = container[0].offsetWidth;
+                        else {
+                            // if template is not body
+                            container = parent.query("> div > div.container");
+                            if (container && container[0])
+                                containerWidth = container[0].offsetWidth;
+                        }
+
+                        return containerWidth;
+                    };
+
                     var windowWidth = window.innerWidth;
-                    var containerWidth = LABKEY.ext4ResponsiveUtil.getBodyContainerWidth();
+                    var containerWidth = getBodyContainerWidth();
                     if (windowWidth - containerWidth < 30)
                         this.width = containerWidth - 20*2; // reserve extra padding for scrollbar
                     else
@@ -970,8 +880,7 @@ if (LABKEY.experimental.useExperimentalCoreUI)
             }
 
             var me = this;
-            if (this.closable && (useMaxWidth || this.closableOnMaskClick))
-            {
+            if (this.modal && this.closable && (useMaxWidth || this.closableOnMaskClick)) {
                 var parentCmp = Ext4.getBody();
                 this.clickOutHandler = function(){
                     me.close(me.closeAction);
@@ -980,8 +889,7 @@ if (LABKEY.experimental.useExperimentalCoreUI)
                 this.mon(this.clickOutParentCmp, 'click', this.clickOutHandler, this, { delegate: '.x4-mask' });
             }
 
-            if (isAutoShow && !this.isContained)
-            {
+            if (isAutoShow && !this.isContained) {
                 this.autoShow = true;
                 this.show();
             }

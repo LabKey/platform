@@ -146,14 +146,16 @@
                 var paddingX = 20;
                 var paddingY = 35;
             <%}%>
-            if (LABKEY.experimental.useExperimentalCoreUI)
-            {
-                LABKEY.ext4ResponsiveUtil.resizeToParentContainer(fb, false, <%=!bean.isAutoResize()%>, 1 /*allow 1 px padding to avoid occasional border cutoff*/, 0, 80, true);
-            }
-            else
-            {
-                LABKEY.ext4.Util.resizeToViewport(fb, w, h, paddingX, paddingY);
-            }
+            <% if (PageFlowUtil.useExperimentalCoreUI()) { %>
+            LABKEY.ext4.Util.resizeToViewport(fb, {
+                paddingWidth: 1, // allow 1 px padding to avoid occasional border cutoff
+                skipHeight: <%=!bean.isAutoResize()%>,
+                offsetY: 80,
+                overrideMinWidth: true
+            });
+            <% } else { %>
+            LABKEY.ext4.Util.resizeToViewport(fb, w, h, paddingX, paddingY);
+            <% } %>
             fb.detailCheck();
         };
 
