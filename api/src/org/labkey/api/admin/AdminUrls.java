@@ -42,6 +42,7 @@ public interface AdminUrls extends UrlProvider
     ActionURL getFolderManagementURL(Container c);
     ActionURL getFolderManagementFileURL(Container c);
     ActionURL getFolderManagementSettingsURL(Container c);
+    ActionURL getFolderManagementPropsURL(Container c);
     ActionURL getCreateProjectURL(@Nullable ActionURL returnURL);
     ActionURL getMemTrackerURL();
     ActionURL getProjectSettingsURL(Container c);

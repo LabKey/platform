@@ -116,7 +116,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private final Map<String, Class<? extends Controller>> _controllerNameToClass = new LinkedHashMap<>();
     private final Map<Class<? extends Controller>, String> _controllerClassToName = new HashMap<>();
     private final Set<String> _moduleDependencies = new CaseInsensitiveHashSet();
-    private final Map<String, ModuleProperty> _moduleProperties = new HashMap<>();
+    private final Map<String, ModuleProperty> _moduleProperties = new LinkedHashMap<>();
     private final LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
     private Collection<WebPartFactory> _webPartFactories;
@@ -1512,6 +1512,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return modules;
     }
 
+    @Override
     public Map<String, ModuleProperty> getModuleProperties()
     {
         return _moduleProperties;

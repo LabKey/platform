@@ -29,7 +29,11 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * User: bbimber
@@ -47,10 +51,35 @@ public class ModuleProperty
     private String _description = null;
     private boolean _showDescriptionInline = false;
     private int _inputFieldWidth = 300;
-
+    private InputType _inputType = InputType.text;
+    private List<Option> _options = null;
+    private OptionSupplier _optionsSupplier = null;
+    private boolean _optionsByContainer = false;
+    
     private List<Class<? extends Permission>> _editPermissions;
 
+    public enum InputType
+    {
+        text,
+        select {
+            @Override
+            boolean hasOptions() {return true;}
+        },
+        combo {
+            @Override
+            boolean hasOptions() {return true;}
+        },
+        checkbox;
+
+        boolean hasOptions() {return false;}
+    }
+
     public ModuleProperty(Module module, String name)
+    {
+        this(module, name, InputType.text);
+    }
+
+    public ModuleProperty(Module module, String name, InputType inputType)
     {
         _module = module;
         _name = name;
@@ -58,6 +87,8 @@ public class ModuleProperty
         //default to requiring admin permission
         _editPermissions = new ArrayList<>();
         _editPermissions.add(AdminPermission.class);
+
+        _inputType = inputType;
     }
 
     public String getCategory()
@@ -156,7 +187,47 @@ public class ModuleProperty
         _excludeFromClientContext = excludeFromClientContext;
     }
 
-    public JSONObject toJson()
+    public InputType getInputType()
+    {
+        return _inputType;
+    }
+
+    public void setInputType(InputType inputType)
+    {
+        _inputType = inputType;
+    }
+
+    public List<Option> getOptions()
+    {
+        return _options;
+    }
+
+    public void setOptions(List<Option> options)
+    {
+        _options = options;
+    }
+
+    public OptionSupplier getOptionsSupplier()
+    {
+        return _optionsSupplier;
+    }
+
+    public void setOptionsSupplier(OptionSupplier optionsSupplier)
+    {
+        _optionsSupplier = optionsSupplier;
+    }
+
+    public boolean isOptionsByContainer()
+    {
+        return _optionsByContainer;
+    }
+
+    public void setOptionsByContainer(boolean optionsByContainer)
+    {
+        _optionsByContainer = optionsByContainer;
+    }
+
+    public JSONObject toJson(Container c)
     {
         JSONObject ret = new JSONObject();
 
@@ -169,6 +240,18 @@ public class ModuleProperty
         ret.put("description", getDescription());
         ret.put("showDescriptionInline", isShowDescriptionInline());
         ret.put("inputFieldWidth", getInputFieldWidth());
+        ret.put("inputType", getInputType().toString());
+        if (getInputType().hasOptions())
+        {
+            if (null != _optionsSupplier && !_optionsByContainer)
+            {
+                ret.put("options", toOptionMaps(getOptionsSupplier().get(c)));
+            }
+            else if (null != _options)
+            {
+                ret.put("options", toOptionMaps(getOptions()));
+            }
+        }
         return ret;
     }
 
@@ -234,5 +317,40 @@ public class ModuleProperty
             value = getDefaultValue();
 
         return value;
+    }
+
+    public static List<Map<String, String>> toOptionMaps(List<Option> options)
+    {
+        return options.stream().map(Option::toMap).collect(Collectors.toList());
+    }
+
+    public static void sortOptions(List<Option> options)
+    {
+        options.sort(Comparator.comparing(o -> o._display));
+    }
+
+    public static class Option
+    {
+        final String _display;
+        final String _value;
+
+        public Option(@NotNull String display, @NotNull String value)
+        {
+            _display = display;
+            _value = value;
+        }
+
+        public Map<String, String> toMap()
+        {
+            Map<String, String> map = new HashMap<>();
+            map.put("display", _display);
+            map.put("value", _value);
+            return map;
+        }
+    }
+
+    public interface OptionSupplier
+    {
+        List<Option> get(Container c);
     }
 }
