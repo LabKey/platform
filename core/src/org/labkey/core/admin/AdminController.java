@@ -494,6 +494,12 @@ public class AdminController extends SpringActionController
             return AdminController.getFolderManagementURL(c, "settings");
         }
 
+        @Override
+        public ActionURL getFolderManagementPropsURL(Container c)
+        {
+            return AdminController.getFolderManagementURL(c, "props");
+        }
+
         public ActionURL getInitialFolderSettingsURL(Container c)
         {
             return new ActionURL(SetInitialFolderSettingsAction.class, c);

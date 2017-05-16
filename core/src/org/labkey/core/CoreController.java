@@ -153,6 +153,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1562,7 +1563,10 @@ public class CoreController extends SpringActionController
                             }
                         }
                         o.put("canEdit", canEdit);
-
+                        if (mp.isOptionsByContainer() && null != mp.getOptionsSupplier())
+                        {
+                            o.put("options", ModuleProperty.toOptionMaps(mp.getOptionsSupplier().get(ct)));
+                        }
                         containers.add(o);
                         ct = ct.getParent();
                     }
@@ -1577,10 +1581,10 @@ public class CoreController extends SpringActionController
 
             if(form.isIncludePropertyDescriptors())
             {
-                Map<String, JSONObject> pds = new HashMap<>();
+                Map<String, JSONObject> pds = new LinkedHashMap<>();
                 for (ModuleProperty mp : included)
                 {
-                    pds.put(mp.getName(), mp.toJson());
+                    pds.put(mp.getName(), mp.toJson(getContainer()));
                 }
 
                 ret.put("properties", pds);

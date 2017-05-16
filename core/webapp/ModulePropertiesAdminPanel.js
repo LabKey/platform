@@ -77,8 +77,9 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
             padding: '0 0 15px 0'
         }];
 
-        for(var module in this.propertyMap){
-            var childItems = []
+        var sortedModules = Ext4.Object.getKeys(this.propertyMap).sort(function(k1, k2) { return k1.localeCompare(k2); });
+        Ext4.each(sortedModules, function(module) {
+            var childItems = [];
             for(var p in this.propertyMap[module].properties){
                 childItems.push(this.getEditorForProperty(module, p));
             }
@@ -90,7 +91,7 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
                 bodyStyle: 'padding: 5px;',
                 items: childItems
             });
-        }
+        }, this);
         this.removeAll();
         this.add(toAdd);
     },
@@ -155,18 +156,50 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
         });
 
         Ext4.each(valueArray, function(v){
-            cfg.items[1].items.push({
+            var pd = this.propertyMap[module].properties[name];
+            var propertyItem = {
                 fieldLabel: v.container.name || "Site Default",
                 moduleName: module,
                 moduleProp: v,
                 propName: name,
                 containerPath: v.container.path,
-                xtype: (v.canEdit ? 'textfield' : 'displayfield'),
+                xtype: v.canEdit ? 'textfield' : 'displayField',
                 value: v.value
-            });
+            };
+            if (v.canEdit) {
+                switch (pd.inputType) {
+                    case 'checkbox':
+                        propertyItem.xtype = 'checkbox';
+                        propertyItem.checked = v.value == "true";
+                        break;
+                    case 'select':
+                        propertyItem.editable = false;
+                    case 'combo':
+                        propertyItem.xtype = 'combo';
+                        propertyItem.allowBlank = true;
+                        propertyItem.store = this.createOptionStore(v.options || pd.options);
+                        propertyItem.displayField = 'display';
+                        propertyItem.valueField = 'value';
+                        break;
+                    default:
+                }
+            }
+            else if (pd.inputType = 'checkbox') {
+                propertyItem.xtype = 'checkbox';
+                propertyItem.disabled = true;
+            }
+            cfg.items[1].items.push(propertyItem);
         }, this);
 
         return cfg;
+    },
+
+    createOptionStore: function(options) {
+        options.unshift({"display":"\xa0", "value":null});
+        return Ext4.create('Ext.data.Store', {
+            fields: ['display', 'value'],
+            data: options
+        })
     },
 
     onSubmit: function(btn){
