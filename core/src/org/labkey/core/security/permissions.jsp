@@ -144,15 +144,13 @@ Ext4.onReady(function(){
         }
     }, this, {single: true});
 
-    Ext4.EventManager.onWindowResize(function(w,h){
+    Ext4.EventManager.onWindowResize(function(w,h) {
         if (!editor.rendered || !editor.el)
             return;
-        if (LABKEY.experimental.useExperimentalCoreUI)
-        {
-            LABKEY.ext4ResponsiveUtil.resizeToParentContainer(editor, false, false, 0, 0, 80);
+        if (LABKEY.experimental.useExperimentalCoreUI) {
+            LABKEY.ext4.Util.resizeToViewport(editor, { offsetY: 80 });
         }
-        else
-        {
+        else {
             var xy = editor.el.getXY();
             editor.setSize(Math.max(400,w-xy[0]-60), Math.max(300,h-xy[1]-80));
         }

@@ -64,14 +64,9 @@
 
         var customizeForm = customizeMenu(submitFunction, cancelFunction, 'someUniqueElement2', bean);
 
-        var _resize = function(w, h) {
-            if (!customizeForm.rendered)
-                return;
-
+        Ext.EventManager.onWindowResize(function(w) {
             LABKEY.ext.Utils.resizeToViewport(customizeForm, Math.min(w, 800));
-        };
-
-        Ext.EventManager.onWindowResize(_resize);
+        });
         Ext.EventManager.fireWindowResize();
     });
 </script>

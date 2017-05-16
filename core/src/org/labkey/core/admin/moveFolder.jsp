@@ -25,7 +25,6 @@
 <%@ page import="org.labkey.core.admin.AdminController.MoveFolderTreeView" %>
 <%@ page import="org.springframework.validation.Errors" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
-<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -131,11 +130,9 @@
             items : [folderTree]
         });
 
-        var _resize = function(w, h) {
+        Ext.EventManager.onWindowResize(function(w, h) {
             LABKEY.ext.Utils.resizeToViewport(folderPanel, w, h);
-        };
-
-        Ext.EventManager.onWindowResize(_resize);
+        });
         Ext.EventManager.fireWindowResize();
 
         _init = true;
@@ -146,14 +143,13 @@
             actionType = actionType.toLowerCase();
             if (actionMap[actionType]) {
                 var params = {};
-                if (actionType == 'confirmmove'){
+                if (actionType === 'confirmmove') {
                     var addAlias = Ext.getDom('cb_move_folder_alias');
                     if (addAlias)
                         params['addAlias'] = addAlias.checked;
                     params['target'] = selectedNode.attributes.containerPath;
                 }
-                var url = LABKEY.ActionURL.buildURL('admin', actionMap[actionType], LABKEY.ActionURL.containerPath, params);
-                window.location = url;
+                window.location = LABKEY.ActionURL.buildURL('admin', actionMap[actionType], LABKEY.ActionURL.containerPath, params);
             }
             else {
                 console.error("'" + actionType + "' is not a valid action.");

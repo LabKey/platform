@@ -268,7 +268,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         if (LABKEY.experimental.useExperimentalCoreUI) {
             this.on('afterrender', function() {
                 Ext4.EventManager.onWindowResize(function() {
-                    LABKEY.ext4ResponsiveUtil.resizeToParentContainer(this, false, true);
+                    LABKEY.ext4.Util.resizeToViewport(this, {
+                        skipHeight: true
+                    });
                 }, this, {delay: 100});
             }, this, {single: true});
         }

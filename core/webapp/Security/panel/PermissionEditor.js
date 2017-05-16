@@ -7,12 +7,6 @@ Ext4.define('Security.panel.PermissionEditor', {
 
     extend : 'Ext.panel.Panel',
 
-//    requires : [
-//        'Security.panel.GroupPicker',
-//        'Security.panel.PolicyEditor',
-//        'Security.window.UserInfoPopup'
-//    ],
-
     initComponent : function() {
 
         if (!this.securityCache) {
@@ -23,21 +17,12 @@ Ext4.define('Security.panel.PermissionEditor', {
         }
 
         Ext4.apply(this, {
-            layout :'border',
-            bodyStyle : 'background-color: transparent;',
-            border :false,
-            items  : this.getItems()
+            layout: 'border',
+            bodyStyle: 'background-color: transparent;',
+            border: false,
+            minWidth: LABKEY.experimental.useExperimentalCoreUI ? undefined : 930,
+            items: this.getItems()
         });
-
-        if (!LABKEY.experimental.useExperimentalCoreUI){
-            Ext4.apply(this, {
-                minWidth  : 930
-            });
-        }
-
-//        if (!this.treeConfig) {
-//            console.warn('A treeConfig was not supplied. Unable to show Folder Tree.');
-//        }
 
         this.callParent();
     },
@@ -79,7 +64,7 @@ Ext4.define('Security.panel.PermissionEditor', {
                 split      : true,
                 border     : true,
                 listeners  : {
-                    load : function(store, node, recs) {
+                    load : function(store, node) {
                         Ext4.defer(function() {
                             // if we don't have a selected tree node, select the root node
                             var target = store.getRootNode().findChild('cls', "tree-node-selected", true);
@@ -141,7 +126,7 @@ Ext4.define('Security.panel.PermissionEditor', {
             // check if the response succeeded or has a confirmation message to show
             if (!response.success && response.needsConfirmation) {
                 Ext4.Msg.confirm("Confirm", response.message, function (btnId) {
-                    if (btnId == "yes") {
+                    if (btnId === 'yes') {
                         this.policy.confirm = true;
                         me.onSaveConfirm(onSuccess);
                     }
@@ -273,18 +258,19 @@ Ext4.define('Security.panel.PermissionEditor', {
                     width     : 396,
                     padding   : '10 10 10 0',
                     listeners : {
-                        afterrender : function(field) {
-                            var keymap = new Ext4.util.KeyMap(field.getEl(), [
-                                {
-                                    key  : Ext4.EventObject.ENTER,
-                                    fn   : function() {
+                        afterrender : {
+                            fn: function(field) {
+                                new Ext4.util.KeyMap(field.getEl(), [{
+                                    key: Ext4.EventObject.ENTER,
+                                    fn: function() {
                                         this.onCreateGroup(Ext4.getCmp(btnId), showPopup);
                                     },
                                     scope: this
-                                }
-                            ]);
-                        },
-                        scope : this
+                                }]);
+                            },
+                            single: true,
+                            scope: this
+                        }
                     }
                 },{
                     id    : btnId,

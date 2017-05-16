@@ -141,59 +141,48 @@
             metadataHelp : <%=PageFlowUtil.qh(new HelpTopic(metadataHelpTopic).toString())%>
         };
 
-        var activeTab = 0;
-        var hash = window.location.hash;
-        if (hash == "#source")
-            activeTab = 0;
-        else if (hash == "#data")
-            activeTab = 1;
-        else if (hash == "#metadata")
-            activeTab = 2;
+        var tabMap = {
+            source: 0,
+            data: 1,
+            metadata: 2
+        };
 
-        var clearStatus = function()
-        {
-            var elem = Ext.get("status");
-            elem.update("&nbsp;");
+        var hash = window.location.hash.replace('#', '').toLowerCase();
+        var activeTab = tabMap[hash] !== undefined ? tabMap[hash] : tabMap.source;
+
+        var clearStatus = function() {
+            var elem = Ext.get('status');
+            elem.update('&nbsp;');
             elem.setVisible(false);
         };
 
-        var setError = function(msg)
-        {
-            var elem = Ext.get("status");
+        var setError = function(msg) {
+            var elem = Ext.get('status');
             elem.update(msg);
-            elem.dom.className = "labkey-status-error";
+            elem.dom.className = 'labkey-status-error';
             elem.setVisible(true);
         };
 
-        var setStatus = function(msg, autoClear)
-        {
-            var elem = Ext.get("status");
+        var setStatus = function(msg, autoClear) {
+            var elem = Ext.get('status');
             elem.update(msg);
-            elem.dom.className = "labkey-status-info";
+            elem.dom.className = 'labkey-status-info';
             elem.setDisplayed(true);
             elem.setVisible(true);
-            if(autoClear) clearStatus.defer(5000);
-        };
-
-        var beforeSave = function(qep)
-        {
-            setStatus('Saving...');
-        };
-
-        var afterSave = function(qep, saved, json)
-        {
-            if (saved)
-            {
-                if (json && json.parseErrors)
-                    setStatus("Saved with parse errors", true);
-                else
-                    setStatus("Saved", true);
+            if (autoClear) {
+                clearStatus.defer(5000);
             }
-            else
-            {
-                var msg = "Failed to Save";
-                if (json && json.exception)
-                    msg += ": " + json.exception;
+        };
+
+        var afterSave = function(qep, saved, json) {
+            if (saved) {
+                setStatus(json && json.parseErrors ? 'Saved with parse errors' : 'Saved', true);
+            }
+            else {
+                var msg = 'Failed to Save';
+                if (json && json.exception) {
+                    msg += ': ' + json.exception;
+                }
                 setError(msg);
             }
         };
@@ -214,48 +203,40 @@
                 activeTab   : activeTab,
                 listeners: {
                     render: function(qep) {
-                        var onKeyDown = function(evt) {
+                        Ext.EventManager.addListener(document, 'keydown', function(evt) {
                             var handled = false;
 
-                            if(evt.ctrlKey && !evt.altKey && !evt.shiftKey) {
-                                if (83 == evt.getKey()) {  // s
+                            if (evt.ctrlKey && !evt.altKey && !evt.shiftKey) {
+                                var key = evt.getKey();
+                                if (83 === key) {  // s
                                     qep.getSourceEditor().save();
                                     handled = true;
                                 }
-                                if (69 == evt.getKey()) {  // e
+                                else if (69 === key) {  // e
                                     qep.openSourceEditor(true);
                                     handled = true;
                                 }
-                                if (13 == evt.getKey()) {  // enter
+                                else if (13 === key) {  // enter
                                     qep.getSourceEditor().execute(true);
                                     handled = true;
                                 }
                             }
 
-                            if(handled) {
+                            if (handled) {
                                 evt.preventDefault();
                                 evt.stopPropagation();
                             }
-                        };
-
-                        Ext.EventManager.addListener(document, "keydown", onKeyDown);
+                        });
                     },
-                    beforeSave: beforeSave,
+                    beforeSave: function() { setStatus('Saving...'); },
                     save: afterSave
                 }
             }]
         });
 
-        var _resize = function(w, h) {
-            if (LABKEY.experimental.useExperimentalCoreUI) {
-                LABKEY.ext3ResponsiveUtil.resizeToParentContainer(panel, false, false);
-            }
-            else  {
-                LABKEY.ext.Utils.resizeToViewport(panel, w, h, 40, 50);
-            }
-        };
-
-        Ext.EventManager.onWindowResize(_resize);
+        Ext.EventManager.onWindowResize(function(w, h) {
+            LABKEY.ext.Utils.resizeToViewport(panel, w, h, 40, 50);
+        });
         Ext.EventManager.fireWindowResize();
     });
 </script>
