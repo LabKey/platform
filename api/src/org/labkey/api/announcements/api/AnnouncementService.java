@@ -39,7 +39,7 @@ public interface AnnouncementService
     }
 
     // IRUD (Insert, Read, Update, Delete)
-    Announcement insertAnnouncement(Container container, User u, String title, String body);
+    Announcement insertAnnouncement(Container container, User u, String title, String body, boolean sendEmailNotification);
 
     // Get One
     Announcement getAnnouncement(Container container, User user, int RowId);
