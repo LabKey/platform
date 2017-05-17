@@ -6878,9 +6878,6 @@ internal/gwtsrc/org/labkey/api/gwt/client/util/PropertyUtil.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/util/ServiceUtil.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/util/StringProperty.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/util/StringUtils.java -text
-internal/lib/js-engine.jar -text
-internal/lib/js.jar -text
-internal/lib/rhino1_7R3.zip -text svneol=unset#application/zip
 internal/module.properties -text
 internal/resources/credits/jars.txt -text
 internal/src/META-INF/XMLProteinLoader.uniprot.properties -text
