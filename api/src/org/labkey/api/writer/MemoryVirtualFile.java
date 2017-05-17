@@ -147,7 +147,7 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     }
 
     @Override
-    public String[] list()
+    public List<String> list()
     {
         List<String> names = new ArrayList<>();
 
@@ -155,13 +155,13 @@ public class MemoryVirtualFile extends AbstractVirtualFile
         names.addAll(_textDocMap.keySet());
         names.addAll(_byteDocMap.keySet());
 
-        return names.toArray(new String[names.size()]);
+        return names;
     }
 
     @Override
-    public String[] listDirs()
+    public List<String> listDirs()
     {
-        return _folders.keySet().toArray(new String[_folders.size()]);
+        return new ArrayList<>(_folders.keySet());
     }
 
     @Override

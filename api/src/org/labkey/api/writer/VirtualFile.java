@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.util.List;
 
 /**
  * User: adam
@@ -42,9 +43,9 @@ public interface VirtualFile extends AutoCloseable
     InputStream getInputStream(String filename) throws IOException;
     String getRelativePath(String filename);
     /** @return all of the file children */
-    String[] list();
+    List<String> list();
     /** @return all of the directory children */
-    String[] listDirs();
+    List<String> listDirs();
     boolean delete(String filename);
 
     VirtualFile createZipArchive(String name) throws IOException;

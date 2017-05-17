@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -235,13 +236,13 @@ public class ZipFile extends AbstractVirtualFile
     }
 
     @Override
-    public String[] list()
+    public List<String> list()
     {
         throw new UnsupportedOperationException("The ZipFile class only supports write operations");
     }
 
     @Override
-    public String[] listDirs()
+    public List<String> listDirs()
     {
         throw new UnsupportedOperationException("The ZipFile class only supports write operations");
     }

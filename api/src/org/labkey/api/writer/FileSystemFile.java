@@ -26,7 +26,6 @@ import org.labkey.api.util.XmlValidationException;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -34,6 +33,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * User: adam
@@ -169,39 +172,19 @@ public class FileSystemFile extends AbstractVirtualFile
     }
 
     @Override
-    public String[] list()
+    public List<String> list()
     {
-        File[] files = _root.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File file)
-            {
-                return file.isFile();
-            }
-        });
-        String[] fileNames = new String[files.length];
-        int i=0;
-        for (File file : files)
-            fileNames[i++] = file.getName();
+        File[] files = _root.listFiles(File::isFile);
 
-        return fileNames;
+        return null == files ? Collections.emptyList() : Arrays.stream(files).map(File::getName).collect(Collectors.toList());
     }
 
     @Override
-    public String[] listDirs()
+    public List<String> listDirs()
     {
-        File[] dirs = _root.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File file)
-            {
-                return file.isDirectory();
-            }
-        });
-        String[] dirNames = new String[dirs.length];
-        int i=0;
-        for (File dir : dirs)
-            dirNames[i++] = dir.getName();
+        File[] dirs = _root.listFiles(File::isDirectory);
 
-        return dirNames;
+        return null == dirs ? Collections.emptyList() : Arrays.stream(dirs).map(File::getName).collect(Collectors.toList());
     }
 
     @Override
