@@ -89,13 +89,6 @@ public class MothershipModule extends DefaultModule
             bootstrap(moduleContext);
     }
 
-    @Nullable
-    @Override
-    public UpgradeCode getUpgradeCode()
-    {
-        return new MothershipUpgradeCode();
-    }
-
     private void bootstrap(ModuleContext moduleContext)
     {
         Container c = ContainerManager.ensureContainer(MothershipReport.CONTAINER_PATH);
