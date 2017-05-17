@@ -32,20 +32,26 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,8 +72,16 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
     {
         ExpProtocol protocol;
         AssayProvider provider;
-        AssayRunUploadContext<ProviderType> uploadContext;
+
         Integer batchId;
+        String name;
+        String comments;
+        Map<String, String> runProperties;
+        Map<String, String> batchProperties;
+        String targetStudy;
+        Integer reRunId;
+        String runFilePath;
+        String moduleName;
 
         // 'json' form field -- allows for multipart forms
         JSONObject json = form.getJson();
@@ -83,56 +97,22 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
             protocol = pp.first;
             provider = pp.second;
 
-            AssayRunUploadContext.Factory factory = provider.createRunUploadFactory(protocol, getViewContext());
-
             batchId = json.optInt(AssayJSONConverter.BATCH_ID);
-            String name = json.optString(ExperimentJSONConverter.NAME);
-            String comments = json.optString(ExperimentJSONConverter.COMMENT);
-            Map<String, String> runProperties = (Map)json.optJSONObject(ExperimentJSONConverter.PROPERTIES);
+            name = json.optString(ExperimentJSONConverter.NAME, null);
+            comments = json.optString(ExperimentJSONConverter.COMMENT, null);
+            runProperties = (Map)json.optJSONObject(ExperimentJSONConverter.PROPERTIES);
             if (runProperties != null)
                 runProperties = new CaseInsensitiveHashMap<>(runProperties);
 
-            Map<String, String> batchProperties = (Map)json.optJSONObject("batchProperties");
+            batchProperties = (Map)json.optJSONObject("batchProperties");
             if (batchProperties != null)
                 batchProperties = new CaseInsensitiveHashMap<>(batchProperties);
 
             // CONSIDER: Should we also look at the batch and run properties for the targetStudy?
-            String targetStudy = json.optString("targetStudy");
-            Integer reRunId = json.containsKey("reRunId") ? json.optInt("reRunId") : null;
-
-            String moduleName = json.optString("module");
-            if (moduleName != null)
-            {
-                Module m = ModuleLoader.getInstance().getModuleForSchemaName(moduleName);
-                if (m == null)
-                {
-                    throw new NotFoundException("Could not find module " + moduleName);
-                }
-
-                String runFilePath = json.optString("runFilePath");
-                if (runFilePath == null)
-                {
-                    throw new NotFoundException("\"runFilePath\" is required when importing from a module.");
-                }
-
-                Resource r = m.getModuleResource(runFilePath);
-
-                if (r == null || !r.exists())
-                {
-                    throw new NotFoundException("Could not find runFilePath \"" + runFilePath + "\". Note, this path should be relative to the module's resource directory.");
-                }
-
-                factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, ((FileResource) r).getFile()));
-            }
-
-            factory.setName(name)
-                   .setComments(comments)
-                   .setRunProperties(runProperties)
-                   .setBatchProperties(batchProperties)
-                   .setTargetStudy(targetStudy)
-                   .setReRunId(reRunId);
-
-            uploadContext = factory.create();
+            targetStudy = json.optString("targetStudy", null);
+            reRunId = json.containsKey("reRunId") ? json.optInt("reRunId") : null;
+            runFilePath = json.optString("runFilePath", null);
+            moduleName = json.optString("module", null);
         }
         else
         {
@@ -141,18 +121,67 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
             provider = pp.second;
 
             batchId = form.getBatchId();
-
-            AssayRunUploadContext.Factory factory = provider.createRunUploadFactory(protocol, getViewContext());
-
-            factory.setName(form.getName())
-                    .setComments(form.getComment())
-                    .setRunProperties(form.getProperties())
-                    .setBatchProperties(form.getBatchProperties())
-                    .setTargetStudy(form.getTargetStudy())
-                    .setReRunId(form.getReRunId());
-
-            uploadContext = factory.create();
+            name = form.getName();
+            comments = form.getComment();
+            runProperties = form.getProperties();
+            batchProperties = form.getBatchProperties();
+            targetStudy = form.getTargetStudy();
+            reRunId = form.getReRunId();
+            runFilePath = form.getRunFilePath();
+            moduleName = form.getModule();
         }
+
+        // Import the file at runFilePath if it is available, otherwise AssayRunUploadContextImpl.getUploadedData() will use the multi-part form POSTed file
+        File file = null;
+        if (runFilePath != null && runFilePath.length() > 0)
+        {
+            // Resolve file under module resources
+            if (moduleName != null && moduleName.length() > 0)
+            {
+                Module m = ModuleLoader.getInstance().getModuleForSchemaName(moduleName);
+                if (m == null)
+                    throw new NotFoundException("Could not find module " + moduleName);
+
+                Resource r = m.getModuleResource(runFilePath);
+                if (r == null || !r.exists())
+                    throw new NotFoundException("Could not find runFilePath \"" + runFilePath + "\". Note, this path should be relative to the module's resource directory.");
+
+                file = ((FileResource)r).getFile();
+            }
+            else
+            {
+                // Resolve file under pipeline root
+                PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                if (root == null)
+                    throw new NotFoundException("Pipeline root not configured");
+
+                if (!root.hasPermission(getContainer(), getUser(), ReadPermission.class))
+                    throw new UnauthorizedException();
+
+                // Attempt absolute path first, then relative path from pipeline root
+                File f = new File(runFilePath);
+                if (!root.isUnderRoot(f))
+                    f = root.resolvePath(runFilePath);
+
+                if (f == null || !NetworkDrive.exists(f) || !root.isUnderRoot(f))
+                    throw new NotFoundException("File not found: " + runFilePath);
+
+                file = f;
+            }
+        }
+
+        AssayRunUploadContext.Factory factory = provider.createRunUploadFactory(protocol, getViewContext());
+        factory.setName(name)
+                .setComments(comments)
+                .setRunProperties(runProperties)
+                .setBatchProperties(batchProperties)
+                .setTargetStudy(targetStudy)
+                .setReRunId(reRunId);
+
+        if (file != null)
+            factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, file));
+
+        AssayRunUploadContext<ProviderType> uploadContext = factory.create();
 
         try
         {
@@ -200,6 +229,8 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         private String _targetStudy;
         private Map<String, String> _properties = new HashMap<>();
         private Map<String, String> _batchProperties = new HashMap<>();
+        private String _runFilePath;
+        private String _module;
 
         public JSONObject getJson()
         {
@@ -289,6 +320,26 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         public void setBatchProperties(Map<String, String> properties)
         {
             _batchProperties = properties;
+        }
+
+        public String getRunFilePath()
+        {
+            return _runFilePath;
+        }
+
+        public void setRunFilePath(String runFilePath)
+        {
+            _runFilePath = runFilePath;
+        }
+
+        public String getModule()
+        {
+            return _module;
+        }
+
+        public void setModule(String module)
+        {
+            _module = module;
         }
     }
 

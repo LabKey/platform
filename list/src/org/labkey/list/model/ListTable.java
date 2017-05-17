@@ -209,7 +209,8 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                         {
                             // The column in the physical table has a "_MVIndicator" suffix, but we want to expose
                             // it with a "MVIndicator" suffix (no underscore)
-                            ColumnInfo mvColumn = new AliasedColumn(this, col.getName() + MvColumn.MV_INDICATOR_SUFFIX, getRealTable().getColumn(PropertyStorageSpec.getMvIndicatorStorageColumnName(pd)));
+                            ColumnInfo mvColumn = new AliasedColumn(this, col.getName() + MvColumn.MV_INDICATOR_SUFFIX,
+                                                                    StorageProvisioner.getMvIndicatorColumn(getRealTable(), pd, "No MV column found for '" + pd.getName() + "' in list '" + getName() + "'"));
                             // MV indicators are strings
                             mvColumn.setLabel(col.getLabel() + " MV Indicator");
                             mvColumn.setSqlTypeName("VARCHAR");
