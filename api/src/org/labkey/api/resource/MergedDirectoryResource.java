@@ -185,6 +185,11 @@ public class MergedDirectoryResource extends AbstractResourceCollection
         return new ArrayList<>(getChildren().keySet());
     }
 
+    public List<File> getContents()
+    {
+        return _dirs != null ? _dirs : Collections.emptyList();
+    }
+
     private class MergedDirectoryResourceListener implements FileSystemDirectoryListener
     {
         @Override
