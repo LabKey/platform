@@ -1,0 +1,4 @@
+Use the **Shared** project, a project created by default on all sites, for global, site-wide resources.\\
+
+Examples of resources that can be defined in this **Shared** project, to be used in any project or
+folder you create, include assay designs, wikis, and lookup lists.

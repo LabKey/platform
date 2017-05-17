@@ -124,27 +124,29 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     {
         Container supportContainer = ContainerManager.createDefaultSupportContainer();
         Container homeContainer = ContainerManager.getHomeContainer();
+        Container sharedContainer = ContainerManager.getSharedContainer();
 
-        FolderType collaborationType = FolderTypeManager.get().getFolderType(CollaborationFolderType.TYPE_NAME);
+        FolderType collaborationType = new CollaborationFolderType(Collections.emptyList());
         homeContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
-        supportContainer.setFolderType(new CollaborationFolderType(Collections.emptyList()), moduleContext.getUpgradeUser());
+        supportContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
 
         String defaultPageName = "default";
         loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt", WikiRendererType.HTML);
         loadWikiContent(supportContainer,  moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Support", "/org/labkey/wiki/supportWiki.txt", WikiRendererType.RADEOX);
+        loadWikiContent(sharedContainer,  moduleContext.getUpgradeUser(), defaultPageName, "Shared Resources", "/org/labkey/wiki/sharedWiki.txt", WikiRendererType.RADEOX);
 
-        Map<String, String> homeProps = new HashMap<>();
-        homeProps.put("webPartContainer", homeContainer.getId());
-        homeProps.put("name", defaultPageName);
-        addWebPart(WEB_PART_NAME, homeContainer, HttpView.BODY, homeProps);
-
+        Map<String, String> wikiProps = new HashMap<>();
+        wikiProps.put("webPartContainer", homeContainer.getId());
+        wikiProps.put("name", defaultPageName);
+        addWebPart(WEB_PART_NAME, homeContainer, HttpView.BODY, 0, wikiProps);
         addWebPart("Projects", homeContainer, HttpView.BODY, 1);
 
-        Map<String, String> supportProps = new HashMap<>();
-        supportProps.put("webPartContainer", supportContainer.getId());
-        supportProps.put("name", defaultPageName);
-        addWebPart(WEB_PART_NAME, supportContainer, HttpView.BODY, 0, supportProps);
+        wikiProps.put("webPartContainer", supportContainer.getId());
+        addWebPart(WEB_PART_NAME, supportContainer, HttpView.BODY, 0, wikiProps);
         addWebPart("Messages", supportContainer, HttpView.BODY, 1);
+
+        wikiProps.put("webPartContainer", sharedContainer.getId());
+        addWebPart(WEB_PART_NAME, sharedContainer, HttpView.BODY, 0, wikiProps);
     }
 
     @NotNull
