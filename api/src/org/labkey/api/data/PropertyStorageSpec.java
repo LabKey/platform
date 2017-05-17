@@ -20,9 +20,11 @@ import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -379,6 +381,14 @@ public class PropertyStorageSpec
     public static String getMvIndicatorStorageColumnName(PropertyDescriptor rootProp)
     {
         return rootProp.getStorageColumnName() + "_" + MvColumn.MV_INDICATOR_SUFFIX;
+    }
+
+    public static List<String> getLegacyMvIndicatorStorageColumnNames(PropertyDescriptor rootProp)
+    {
+        List<String> columnNames = new ArrayList<>();
+        columnNames.add(rootProp.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX);
+        columnNames.add(rootProp.getName().substring(0, Math.min(rootProp.getName().length(), 60)) + "_MV");
+        return columnNames;
     }
 
     public static String getMvIndicatorColumnName(String rootName)          // Only for display name, not storage

@@ -471,12 +471,14 @@ LABKEY.Assay = new function()
          * @param {String} [config.containerPath] The path to the container in which the assay run will be imported,
          *       if different than the current container. If not supplied, the current container's path will be used.
          * @param {String} [config.name] The name of a run to create. If not provided, the run will be given the same name as the uploaded file or "[Untitled]".
-         * @param {String} [config.comments] Run comments.
+         * @param {String} [config.comment] Run comments.
          * @param {Object} [config.properties] JSON formatted run properties.
          * @param {Number} [config.batchId] The id of an existing {LABKEY.Exp.RunGroup} to add this run into.
          * @param {Object} [config.batchProperties] JSON formatted batch properties.
          * Only used if batchId is not provided when creating a new batch.
-         * @param {Array} config.files Array of <a href='https://developer.mozilla.org/en-US/docs/DOM/File'><code>File</code></a> objects
+         * @param {String} [config.runFilePath] Absolute or relative path to assay data file to be imported.
+         * The file must exist under the file or pipeline root of the container.
+         * @param {Array} [config.files] Array of <a href='https://developer.mozilla.org/en-US/docs/DOM/File'><code>File</code></a> objects
          * or form file input elements to import.
          * @param {Function} config.success The success callback function will be called with the following arguments:
          * <ul>
@@ -501,6 +503,18 @@ LABKEY.Assay = new function()
          *         </ul>
          *     </li>
          * <li><b>response:</b> the XMLHttpResponseObject used to submit the request.</li>
+         *
+         * @example Import a file that has been previously uploaded to the server:
+         *         LABKEY.Assay.importRun({
+         *             assayId: 3,
+         *             name: "new run",
+         *             runFilePath: "assaydata/2017-05-10/datafile.tsv",
+         *             success: function (json, response) {
+         *                 window.location = json.successurl;
+         *             },
+         *             failure: error (json, response) {
+         *             }
+         *         });
          *
          * @example Here is an example of retrieving one or more File objects from a form <code>&lt;input&gt;</code>
          * element and submitting them together to create a new run.
@@ -540,6 +554,9 @@ LABKEY.Assay = new function()
             if (!window.FormData)
                 throw new Error("modern browser required");
 
+            if (!config.assayId)
+                throw new Error("assayId required");
+
             var files = [];
             if (config.files) {
                 for (var i = 0; i < config.files.length; i++) {
@@ -555,13 +572,15 @@ LABKEY.Assay = new function()
                 }
             }
 
-            if (files.length == 0)
-                throw new Error("At least one file is required");
+            if (files.length == 0 && !config.runFilePath)
+                throw new Error("At least one file or runFilePath is required");
 
             var formData = new FormData();
             formData.append("assayId", config.assayId);
-            formData.append("name", config.name);
-            formData.append("comment", config.comment);
+            if (config.name)
+                formData.append("name", config.name);
+            if (config.comment)
+                formData.append("comment", config.comment);
             if (config.batchId)
                 formData.append("batchId", config.batchId);
 
@@ -575,9 +594,14 @@ LABKEY.Assay = new function()
                     formData.append("batchProperties['" + key + "']", config.batchProperties[key]);
             }
 
-            formData.append("file", files[0]);
-            for (var i = 1; i < files.length; i++) {
-                formData.append("file" + i, files[i]);
+            if (config.runFilePath)
+                formData.append("runFilePath", config.runFilePath);
+
+            if (files && files.length > 0) {
+                formData.append("file", files[0]);
+                for (var i = 1; i < files.length; i++) {
+                    formData.append("file" + i, files[i]);
+                }
             }
 
             LABKEY.Ajax.request({

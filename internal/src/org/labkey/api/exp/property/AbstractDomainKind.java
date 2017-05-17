@@ -17,17 +17,22 @@ package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.User;
@@ -174,8 +179,10 @@ public abstract class AbstractDomainKind extends DomainKind
             nonBlankRowsSQL.append(" IS NOT NULL");
             if (prop.isMvEnabled())
             {
+                TableInfo storageTable = DbSchema.get(getStorageSchemaName(), DbSchemaType.Provisioned).getTable(table);
+                ColumnInfo mvColumn = StorageProvisioner.getMvIndicatorColumn(storageTable, prop.getPropertyDescriptor(), "No MV column found for" + prop.getName());
                 nonBlankRowsSQL.append(" OR x.");
-                nonBlankRowsSQL.append(PropertyStorageSpec.getMvIndicatorStorageColumnName(prop.getPropertyDescriptor()).toLowerCase());
+                nonBlankRowsSQL.append(mvColumn.getName().toLowerCase());
                 nonBlankRowsSQL.append(" IS NOT NULL");
             }
         }

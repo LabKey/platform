@@ -197,6 +197,13 @@ public class StorageProvisioner
         return new PropertyStorageSpec(property.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX, JdbcType.VARCHAR, 50);
     }
 
+    @NotNull
+    private static PropertyStorageSpec getPropStorageSpecForMvColumn(TableInfo storageTable, PropertyDescriptor mainProp, String errMessage)
+    {
+        ColumnInfo mvColumn = getMvIndicatorColumn(storageTable, mainProp, errMessage);
+        return new PropertyStorageSpec(mvColumn.getName(), mvColumn.getJdbcType(), mvColumn.getScale());
+    }
+
     public static void drop(Domain domain)
     {
         if (null == domain)
@@ -352,10 +359,12 @@ public class StorageProvisioner
         assert getScope(domain).isTransactionActive();
 
         TableChange change = new TableChange(domain, ChangeType.DropColumns);
+        TableInfo storageTable = DbSchema.get(domain.getDomainKind().getStorageSchemaName(), DbSchemaType.Provisioned).getTable(domain.getStorageTableName());
 
         for (DomainProperty prop : props)
         {
-            change.addColumn(makeMvColumn(prop));
+            change.addColumn(getPropStorageSpecForMvColumn(storageTable, prop.getPropertyDescriptor(),
+                                                           "No MV column found for '" + prop.getName() + "' in table '" + domain.getName() + "'"));
         }
 
         change.execute();
@@ -482,11 +491,31 @@ public class StorageProvisioner
             // of the column doesn't have MV enabled
             if (rename.getValue().isMvEnabled())
             {
-                renamePropChange.addColumnRename(PropertyStorageSpec.getMvIndicatorStorageColumnName(oldPropDescriptor), PropertyStorageSpec.getMvIndicatorStorageColumnName(newPropDescriptor));
+                TableInfo storageTable = DbSchema.get(domain.getDomainKind().getStorageSchemaName(), DbSchemaType.Provisioned).getTable(domain.getStorageTableName());
+                ColumnInfo mvColumn = getMvIndicatorColumn(storageTable, oldPropDescriptor, "No MV column found for '" + oldPropDescriptor.getName() + "' in table '" + domain.getName() + "'");
+                renamePropChange.addColumnRename(mvColumn.getName(), PropertyStorageSpec.getMvIndicatorStorageColumnName(newPropDescriptor));
             }
         }
 
         renamePropChange.execute();
+    }
+
+    @NotNull
+    public static ColumnInfo getMvIndicatorColumn(TableInfo storageTable, PropertyDescriptor prop, String errMessage)
+    {
+        ColumnInfo mvColumn = storageTable.getColumn(PropertyStorageSpec.getMvIndicatorStorageColumnName(prop));
+        if (null == mvColumn)
+        {
+            for(String mvColumnName : PropertyStorageSpec.getLegacyMvIndicatorStorageColumnNames(prop))
+            {
+                mvColumn = storageTable.getColumn(mvColumnName);
+                if (null != mvColumn)
+                    break;
+            }
+            if (null == mvColumn)
+                throw new IllegalStateException(errMessage);
+        }
+        return mvColumn;
     }
 
     /**
@@ -1093,16 +1122,12 @@ public class StorageProvisioner
             {
                 c.setDisplayColumnFactory(new MVDisplayColumnFactory());
 
-                ColumnInfo mvColumn = ti.getColumn(PropertyStorageSpec.getMvIndicatorStorageColumnName(p.getPropertyDescriptor()));
-                assert mvColumn != null : "No MV column found for " + p.getName();
-                if (mvColumn != null)
-                {
-                    c.setMvColumnName(mvColumn.getFieldKey());
-                    mvColumn.setMvIndicatorColumn(true);
-                    // The UI for the main column will include MV input as well, so no need for another column in insert/update views
-                    mvColumn.setShownInUpdateView(false);
-                    mvColumn.setShownInInsertView(false);
-                }
+                ColumnInfo mvColumn = getMvIndicatorColumn(ti, p.getPropertyDescriptor(), "No MV column found for '" + p.getName() + "' in table '" + domain.getName() + "'");
+                c.setMvColumnName(mvColumn.getFieldKey());
+                mvColumn.setMvIndicatorColumn(true);
+                // The UI for the main column will include MV input as well, so no need for another column in insert/update views
+                mvColumn.setShownInUpdateView(false);
+                mvColumn.setShownInInsertView(false);
             }
             c.setScale(p.getScale());
         }
