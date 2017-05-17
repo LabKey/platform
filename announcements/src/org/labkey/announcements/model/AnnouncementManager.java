@@ -219,6 +219,11 @@ public class AnnouncementManager
 
     public static AnnouncementModel insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files) throws IOException, MessagingException
     {
+        return insertAnnouncement(c, user, insert, files, true);
+    }
+
+    public static AnnouncementModel insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files, boolean sendEmailNotifications) throws IOException, MessagingException
+    {
         // If no srcIdentifier is set and this is a parent message, set its source to the container
         if (insert.getDiscussionSrcIdentifier() == null && insert.getParent() == null)
         {
@@ -237,7 +242,7 @@ public class AnnouncementManager
         indexThread(insert);
 
         // Send email if there's body text or an attachment.
-        if (null != insert.getBody() || !insert.getAttachments().isEmpty())
+        if (sendEmailNotifications && (null != insert.getBody() || !insert.getAttachments().isEmpty()))
         {
             String rendererTypeName = ann.getRendererType();
             WikiRendererType currentRendererType = (null == rendererTypeName ? null : WikiRendererType.valueOf(rendererTypeName));

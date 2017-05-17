@@ -1,10 +1,10 @@
 <p>To learn more about using the platform, please visit one of the community resources freely available on
 <a href="http://www.labkey.org">labkey.org</a>:</p>
 <ul>
-    <li><a href="https://www.labkey.org/Project/home/Documentation/begin.view">Documentation</a></li>
-    <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=tutorials">Tutorials</a></li>
-    <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=dev">Developer Guide</a></li>
-    <li><a href="https://www.labkey.org/wiki/home/page.view?name=support">Community Forums</a></li>
+    <li><a href="https://www.labkey.org/Documentation/project-begin.view?">Documentation</a></li>
+    <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=tutorials">Tutorials</a></li>
+    <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=dev">Developer Guide</a></li>
+    <li><a href="https://www.labkey.org/project/home/Support/begin.view?">Community Forums</a></li>
 </ul>
 
 <p>

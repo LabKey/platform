@@ -16,6 +16,7 @@
 
 package org.labkey.wiki.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.MultiPortalFolderType;
@@ -27,6 +28,7 @@ import org.labkey.wiki.WikiTOCFactory;
 import org.labkey.wiki.WikiWebPartFactory;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * User: Mark Igra
@@ -39,14 +41,23 @@ public class CollaborationFolderType extends MultiPortalFolderType
 
     public CollaborationFolderType()
     {
+        this(Arrays.asList(new WikiWebPartFactory().createWebPart(),
+            new WikiTOCFactory().createWebPart(),
+            Portal.getPortalPart("Messages").createWebPart())
+        );
+    }
+
+    public CollaborationFolderType(@Nullable List<Portal.WebPart> preferredParts)
+    {
         super(TYPE_NAME,
-                "Build a web site for publishing and exchanging information. " +
-                        "Your tools include Message Boards, Issue Trackers and Wikis. Share information within your own group, across groups or with the public by configuring user permissions.",
-              null,
-              Arrays.asList(new WikiWebPartFactory().createWebPart(),
-                      new WikiTOCFactory().createWebPart(),
-                      Portal.getPortalPart("Messages").createWebPart()),
-                      getDefaultModuleSet(), null);
+            "Build a web site for publishing and exchanging information. " +
+                    "Your tools include Message Boards, Issue Trackers and Wikis. Share information within your own " +
+                    "group, across groups or with the public by configuring user permissions.",
+            null,
+            preferredParts,
+            getDefaultModuleSet(),
+            null
+        );
     }
 
     @Override

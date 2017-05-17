@@ -43,7 +43,7 @@ import java.util.List;
 public class AnnouncementServiceImpl implements AnnouncementService
 {
     @Override
-    public Announcement insertAnnouncement(Container c, User u, String title, String body)
+    public Announcement insertAnnouncement(Container c, User u, String title, String body, boolean sendEmailNotification)
     {
         DiscussionService.Settings settings = AnnouncementsController.getSettings(c);
         Permissions perm = AnnouncementsController.getPermissions(c, u, settings);
@@ -61,7 +61,7 @@ public class AnnouncementServiceImpl implements AnnouncementService
 
         try
         {
-            AnnouncementManager.insertAnnouncement(c, u, insert, files);
+            AnnouncementManager.insertAnnouncement(c, u, insert, files, sendEmailNotification);
         }
         catch (MessagingException | IOException e)
         {

@@ -53,6 +53,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -125,14 +126,12 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         Container homeContainer = ContainerManager.getHomeContainer();
 
         FolderType collaborationType = FolderTypeManager.get().getFolderType(CollaborationFolderType.TYPE_NAME);
-
-        supportContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
         homeContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
+        supportContainer.setFolderType(new CollaborationFolderType(Collections.emptyList()), moduleContext.getUpgradeUser());
 
         String defaultPageName = "default";
-
         loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt", WikiRendererType.HTML);
-        loadWikiContent(supportContainer,  moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey support", "/org/labkey/wiki/supportWiki.txt", WikiRendererType.RADEOX);
+        loadWikiContent(supportContainer,  moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Support", "/org/labkey/wiki/supportWiki.txt", WikiRendererType.RADEOX);
 
         Map<String, String> homeProps = new HashMap<>();
         homeProps.put("webPartContainer", homeContainer.getId());
@@ -144,7 +143,8 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         Map<String, String> supportProps = new HashMap<>();
         supportProps.put("webPartContainer", supportContainer.getId());
         supportProps.put("name", defaultPageName);
-        addWebPart(WEB_PART_NAME, supportContainer, HttpView.BODY, supportProps);
+        addWebPart(WEB_PART_NAME, supportContainer, HttpView.BODY, 0, supportProps);
+        addWebPart("Messages", supportContainer, HttpView.BODY, 1);
     }
 
     @NotNull
