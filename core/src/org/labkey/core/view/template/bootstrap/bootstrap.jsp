@@ -51,7 +51,6 @@
 <%
     HttpView me = HttpView.currentView();
     PageConfig pageConfig = (PageConfig) me.getModelBean();
-    String pageTitle = pageConfig.getAppBar() == null ? pageConfig.getTitle() : pageConfig.getAppBar().getFolderTitle();
 
     boolean showRight = me.getView(WebPartFactory.LOCATION_RIGHT) instanceof HttpView && ((HttpView) me.getView(WebPartFactory.LOCATION_RIGHT)).isVisible();
     ActionURL url = new ActionURL(AdminController.ExperimentalFeaturesAction.class, ContainerManager.getRoot());
@@ -62,7 +61,7 @@
         <strong>Under construction!</strong>
         This layout is under development. <a href="<%=h(url.getLocalURIString())%>" class="alert-link">Turn it off here</a> by disabling the "Core UI Migration" feature.
     </div>
-    <% if (pageTitle != null && !pageTitle.equalsIgnoreCase(getContainer().getName())) { %>
+    <% if (pageConfig.showHeader() != PageConfig.TrueFalse.False) { %>
     <div class="col-md-12" style="margin-bottom: 20px;">
         <%
             if (null != pageConfig.getAppBar())
