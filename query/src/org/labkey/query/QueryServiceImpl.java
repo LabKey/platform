@@ -928,8 +928,8 @@ public class QueryServiceImpl implements QueryService
         HttpServletRequest request = new MockHttpServletRequest();
 
         int count = 0;
-        String[] viewXmlFileNames = viewDir.list();
-        for (String viewFileName : viewXmlFileNames)
+
+        for (String viewFileName : viewDir.list())
         {
             // skip over any files that don't end with the expected extension
             if (!viewFileName.endsWith(CustomViewXmlReader.XML_FILE_EXTENSION))

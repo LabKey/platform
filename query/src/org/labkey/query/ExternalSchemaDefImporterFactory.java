@@ -28,6 +28,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.User;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.externalSchema.ExportedSchemaType;
@@ -46,6 +47,7 @@ import org.labkey.query.persist.QueryManager;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * User: cnathe
@@ -84,7 +86,7 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
                     job.setStatus("IMPORT " + getDescription());
                 ctx.getLogger().info("Loading " + getDescription());
 
-                String[] schemaXmlFileNames = externalSchemaDir.list();
+                List<String> schemaXmlFileNames = externalSchemaDir.list();
 
                 for (String schemaFileName : schemaXmlFileNames)
                 {
@@ -92,7 +94,7 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
                         importSchema(ctx, root, externalSchemaDir, schemaFileName);
                 }
 
-                ctx.getLogger().info(schemaXmlFileNames.length + " external schema definition" + (schemaXmlFileNames.length > 1 ? "s" : "") + " imported");
+                ctx.getLogger().info(StringUtilsLabKey.pluralize(schemaXmlFileNames.size(), "external schema definition") + " imported");
                 ctx.getLogger().info("Done importing " + getDescription());
 
                 ExternalSchemaDefCache.uncache(ctx.getContainer()); // issue 25498

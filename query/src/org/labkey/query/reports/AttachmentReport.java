@@ -413,19 +413,19 @@ public class AttachmentReport extends BaseRedirectReport
     // returns the name of the attachment file
     private String getAttachmentFile(VirtualFile reportDir)
     {
-        String[] attachments = reportDir.list();
+        List<String> attachments = reportDir.list();
         String attachmentName = null;
 
-        // verify on import that we only alow two thumbnails (thumbnail and icon) and the
-        // attachment.  The Thumbnail and Icon files are optional
-        if (attachments.length > 0)
+        // verify on import that we only allow two thumbnails (thumbnail and icon) and the
+        // attachment. The Thumbnail and Icon files are optional
+        if (!attachments.isEmpty())
         {
             for (String attachment : attachments)
             {
                 if (!ThumbnailService.ImageFilenames.contains(attachment))
                 {
                     if (attachmentName != null)
-                        throw new IllegalStateException("Only one attchment file is expected for an attachment report");
+                        throw new IllegalStateException("Only one attachment file is expected for an attachment report");
 
                     attachmentName = attachment;
                 }

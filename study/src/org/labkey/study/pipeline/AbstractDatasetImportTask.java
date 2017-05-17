@@ -105,7 +105,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
             return Collections.emptyList();
 
         // If a directory and dataset file have been specified then make sure the file exists, #17208
-        if (!Arrays.asList(datasetsDirectory.list()).contains(datasetsFileName))
+        if (!datasetsDirectory.list().contains(datasetsFileName))
         {
             ctx.getLogger().error("Dataset file \"" + datasetsFileName + "\" not found");
             return Collections.emptyList();

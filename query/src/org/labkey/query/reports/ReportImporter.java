@@ -31,6 +31,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 
@@ -70,8 +71,8 @@ public class ReportImporter implements FolderImporter
             ctx.getLogger().info("Loading " + getDescription());
 
             int count = 0;
-            String[] reportFileNames = reportsDir.list();
-            for (String reportFileName : reportFileNames)
+
+            for (String reportFileName : reportsDir.list())
             {
                 // skip over any files that don't end with the expected extension
                 if (!reportFileName.endsWith(".report.xml"))
@@ -93,7 +94,7 @@ public class ReportImporter implements FolderImporter
                 }
             }
 
-            ctx.getLogger().info(count + " report" + (1 == count ? "" : "s") + " imported");
+            ctx.getLogger().info(StringUtilsLabKey.pluralize(count, "report") + " imported");
             ctx.getLogger().info("Done importing " + getDescription());
         }
     }

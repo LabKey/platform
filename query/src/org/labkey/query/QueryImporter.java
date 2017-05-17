@@ -82,10 +82,10 @@ public class QueryImporter implements FolderImporter
             ctx.getLogger().info("Loading " + getDescription());
 
             // get the list of files and split them into sql and xml file name arrays
-            String[] queryFileNames = queriesDir.list();
             ArrayList<String> sqlFileNames = new ArrayList<>();
             Map<String, QueryDocument> metaFilesMap = new HashMap<>();
-            for (String fileName : queryFileNames)
+
+            for (String fileName : queriesDir.list())
             {
                 if (fileName.endsWith(QueryWriter.FILE_EXTENSION))
                 {

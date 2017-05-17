@@ -2062,7 +2062,7 @@ public class ReportsController extends SpringActionController
 
                 //
                 // if the user has provided an attachment, then remove previous and add new
-                // otherwise, keep the existing attachment.  There is no way to "clear" an attchment.  An
+                // otherwise, keep the existing attachment.  There is no way to "clear" an attachment.  An
                 // attachment report must either specify a local or server attachment.
                 //
                 if (attachments != null && attachments.size() > 0)

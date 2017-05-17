@@ -102,7 +102,7 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
                 for (SubfolderType subfolderNode : document.getSubfolders().getSubfolderArray())
                 {
                     String subfolderName = subfoldersDir.makeLegalName(subfolderNode.getName());
-                    if (Arrays.asList(subfoldersDir.listDirs()).indexOf(subfolderName) == -1)
+                    if (!subfoldersDir.listDirs().contains(subfolderName))
                     {
                         ctx.getLogger().error("Could not find content directory for subfolder: " + getFilePath(subfoldersDir, subfolderName));
                     }

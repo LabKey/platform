@@ -107,7 +107,7 @@ public class DatasetImportRunnable implements Runnable
 
         if (null == _tsvName)
             errors.add("No file specified");
-        else if (!Arrays.asList(_root.list()).contains(_tsvName))
+        else if (!_root.list().contains(_tsvName))
             errors.add("File does not exist: " + _tsvName);
     }
 

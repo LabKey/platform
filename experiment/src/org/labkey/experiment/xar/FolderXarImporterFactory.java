@@ -83,7 +83,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
             ctx.getLogger().info("Loading " + getDescription());
 
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(ctx.getContainer());
-            if(pipeRoot == null)
+            if (pipeRoot == null)
             {
                 throw new NotFoundException("PipelineRoot not found for container " + ctx.getContainer().getPath());
             }
@@ -100,13 +100,13 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
             }
 
             File xarFile = xarSourceWrapper.getXarFile();
-            if(xarFile == null)
+            if (xarFile == null)
             {
                 ctx.getLogger().error("Could not find a xar file in the xar directory.");
                 throw new NotFoundException("Could not find a xar file in the xar directory.");
             }
 
-            if(job == null)
+            if (job == null)
             {
                 // Create a new job, if we were not given one.  This will happen if we are creating a new folder
                 // from a template folder.
@@ -176,16 +176,14 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
 
         public void init() throws IOException, ImportException
         {
-            if(_xarDir == null)
+            if (_xarDir == null)
             {
                 throw new IllegalStateException("Xar directory is null");
             }
 
-            String[] files = _xarDir.list();
-
-            for(String file: files)
+            for (String file: _xarDir.list())
             {
-                if(file.toLowerCase().endsWith(".xar"))
+                if (file.toLowerCase().endsWith(".xar"))
                 {
                     _xarFile = new File(_xarDir.getLocation(), file);
                     break;
@@ -200,7 +198,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
 
         public CompressedXarSource getXarSource(PipelineJob job)
         {
-            if(_xarSource == null)
+            if (_xarSource == null)
             {
                 _xarSource =  new CompressedXarSource(
                         getXarFile(),
