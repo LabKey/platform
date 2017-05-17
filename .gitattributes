@@ -158,7 +158,6 @@ core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationResultList.java -
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationService.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidatorDescriptor.java -text
 core/build.gradle -text
-core/build.xml -text
 core/module.properties -text
 core/postcss.config.js -text
 core/resources/credits/executables.txt -text
@@ -1297,7 +1296,6 @@ mothership/test/src/org/labkey/test/tests/mothership/MothershipReportTest.java -
 mothership/test/src/org/labkey/test/tests/mothership/MothershipTest.java -text
 mothership/test/src/org/labkey/test/util/mothership/MothershipHelper.java -text
 pipeline/build.gradle -text
-pipeline/build.xml -text
 pipeline/gradle.properties -text
 pipeline/lib/activemq-core-5.1.0-sources.jar -text
 pipeline/lib/activemq-core-5.1.0.jar -text
@@ -1457,7 +1455,6 @@ pipeline/webapp/pipeline/images/folder.gif -text
 pipeline/webapp/pipeline/images/folder_open.gif -text
 pipeline/webapp/pipeline/importAdvancedOptions.lib.xml -text
 query/build.gradle -text
-query/build.xml -text
 query/gradle.properties -text
 query/gwtsrc/org/labkey/query/metadata/MetadataEditor.gwt.xml -text
 query/gwtsrc/org/labkey/query/metadata/client/GWTColumnInfo.java -text
@@ -3203,7 +3200,6 @@ visualization/webapp/visualization/report/box_plot.gif -text
 visualization/webapp/visualization/report/scatter_plot.gif -text
 visualization/webapp/visualization/report/timechart.gif -text
 wiki/build.gradle -text
-wiki/build.xml -text
 wiki/lib/radeox-api.jar -text
 wiki/lib/radeox.jar -text
 wiki/module.properties -text
