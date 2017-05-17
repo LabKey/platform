@@ -193,30 +193,17 @@ public class ContainerTable extends FilteredTable<UserSchema>
         }
     }
 
-    private static class ActiveModulesDisplayColumn extends DataColumn
+    private static class ActiveModulesDisplayColumn extends AbstractValueTransformingDisplayColumn<Integer, String>
     {
         public ActiveModulesDisplayColumn(ColumnInfo rowIdCol)
         {
-            super(rowIdCol);
+            super(rowIdCol, String.class);
         }
 
         @Override
-        public boolean isSortable()
+        protected String transformValue(Integer rawValue)
         {
-            return false;
-        }
-
-        @Override
-        public boolean isFilterable()
-        {
-            return false;
-        }
-
-        @NotNull
-        @Override
-        public String getFormattedValue(RenderContext ctx)
-        {
-            int rowId = (Integer)super.getValue(ctx);
+            int rowId = rawValue.intValue();
             Container c = ContainerManager.getForRowId(rowId);
             if (c == null)
                 return "";
