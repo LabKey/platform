@@ -593,12 +593,21 @@ public class AssayPublishManager implements AssayPublishService
 
     public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, @Nullable Integer datasetId, boolean isDemographicData, ExpProtocol protocol)
     {
-        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, protocol);
+        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, protocol, false);
     }
 
-    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, @Nullable Integer datasetId, boolean isDemographicData, String type, @Nullable Integer categoryId, ExpProtocol protocol)
+    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, @Nullable Integer datasetId,
+                                                boolean isDemographicData, ExpProtocol protocol, boolean useTimeKeyField)
+    {
+        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, protocol, useTimeKeyField);
+    }
+
+    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, @Nullable Integer datasetId,
+                                                boolean isDemographicData, String type, @Nullable Integer categoryId, ExpProtocol protocol, boolean useTimeKeyField)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
+        if (useTimeKeyField && (isDemographicData || keyPropertyName != null))
+            throw new IllegalStateException("UseTimeKeyField not compatible with iDemographic or other key field.");
         try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
         {
             if (null == datasetId)
@@ -612,6 +621,7 @@ public class AssayPublishManager implements AssayPublishService
             if (keyPropertyName != null)
                 newDataset.setKeyPropertyName(keyPropertyName);
             newDataset.setDemographicData(isDemographicData);
+            newDataset.setUseTimeKeyField(useTimeKeyField);
             if (protocol != null)
                 newDataset.setProtocolId(protocol.getRowId());
 

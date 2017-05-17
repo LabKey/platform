@@ -5171,6 +5171,7 @@ public class StudyController extends BaseStudyController
                 String additionalKey = null;
                 DatasetDefinition.KeyManagementType keyManagementType = Dataset.KeyManagementType.None;
                 boolean isDemographicData = false;
+                boolean useTimeKeyField = false;
                 List<ColumnInfo> columnsToProvision = new ArrayList<>();
 
                 if (datasetId != -1)
@@ -5181,6 +5182,7 @@ public class StudyController extends BaseStudyController
                         additionalKey = sourceDef.getKeyPropertyName();
                         keyManagementType = sourceDef.getKeyManagementType();
                         isDemographicData = sourceDef.isDemographicData();
+                        useTimeKeyField = sourceDef.getUseTimeKeyField();
 
                         // make sure we provision any managed key fields
                         if ((additionalKey != null) && (keyManagementType != Dataset.KeyManagementType.None))
@@ -5193,7 +5195,7 @@ public class StudyController extends BaseStudyController
                     }
                 }
                 DatasetDefinition def = AssayPublishManager.getInstance().createAssayDataset(getUser(),
-                        study, form.getSnapshotName(), additionalKey, null, isDemographicData, null);
+                        study, form.getSnapshotName(), additionalKey, null, isDemographicData, null, useTimeKeyField);
 
                 if (def != null)
                 {
@@ -7392,7 +7394,7 @@ public class StudyController extends BaseStudyController
                     case importFromFile:
                     case defineManually:
                         def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
-                                null, null, false, Dataset.TYPE_STANDARD, categoryId, null);
+                                null, null, false, Dataset.TYPE_STANDARD, categoryId, null, false);
 
                         if (def != null)
                         {
@@ -7409,7 +7411,7 @@ public class StudyController extends BaseStudyController
                         break;
                     case placeHolder:
                         def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
-                                null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null);
+                                null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null, false);
                         if (def != null)
                         {
                             def.provisionTable();
