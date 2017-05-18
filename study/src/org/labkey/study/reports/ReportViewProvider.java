@@ -152,7 +152,7 @@ public class ReportViewProvider implements DataViewProvider
                 User author = authorId != null ? UserManager.getUser(((Double)authorId).intValue()) : null;
                 boolean inherited = descriptor.isInherited(c);
 
-                DefaultViewInfo info = new DefaultViewInfo(TYPE, descriptor.getEntityId(), descriptor.getReportName(), descriptor.lookupContainer());
+                DefaultViewInfo info = new DefaultViewInfo(TYPE, descriptor.getEntityId(), descriptor.getReportName(), descriptor.isModuleBased() ? c : descriptor.lookupContainer());
 
                 String query = descriptor.getProperty(ReportDescriptor.Prop.queryName);
                 String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
