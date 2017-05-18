@@ -342,13 +342,13 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
 
         public void renderPortalMenu(PrintWriter out, String title)
         {
-            NavTree[] links = null==config._portalLinks ? new NavTree[0] : config._portalLinks.getChildren();
+            NavTree[] links = null == config._portalLinks ? new NavTree[0] : config._portalLinks.getChildren();
             String sep = "";
 
             // Add Custom link
             NavTree nMenu = config._navMenu;
             if (nMenu == null)
-                nMenu = new NavTree("More");  // // 11730 : Customize link missing on many webparts
+                nMenu = new NavTree("More");  // 11730 : Customize link missing on many webparts
 
             if (config._customize != null)
             {
@@ -356,7 +356,7 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
                 nMenu.addChild(config._customize);
             }
 
-            if (config._webpart != null && context.getUser().isSiteAdmin())
+            if (config._webpart != null && context.getUser().isInSiteAdminGroup())
             {
                 Portal.WebPart webPart = config._webpart;
                 String permissionString = null;
@@ -382,19 +382,11 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
 
             if (config._location != null && config._location.equals(WebPartFactory.LOCATION_RIGHT))
             {
-
-                // Collapse all items into one drop-down
-                // Render the navigation menu
-                if (nMenu == null)
-                    nMenu = new NavTree("More");
-
                 // Portal
                 if (links.length > 0)
                 {
-//                            NavTree portal = new NavTree("Layout");
                     for (NavTree link : links)
                         nMenu.addChild(link);
-//                            nMenu.addChild(portal);
                 }
 
                 if (nMenu.hasChildren())
@@ -449,7 +441,7 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
 
                 out.print("&nbsp;");
 
-                if (nMenu != null && nMenu.hasChildren())
+                if (nMenu.hasChildren())
                 {
                     renderPortalMenuIcon(title, nMenu, out, "fa fa-caret-down");
                 }
