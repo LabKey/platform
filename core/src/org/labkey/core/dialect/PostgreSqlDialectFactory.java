@@ -16,6 +16,7 @@
 
 package org.labkey.core.dialect;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -58,6 +59,11 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     {
         if (!PRODUCT_NAME.equals(dataBaseProductName))
             return null;
+
+        int betaIdx = databaseProductVersion.indexOf("beta");
+
+        if (-1 != betaIdx)
+            databaseProductVersion = StringUtils.left(databaseProductVersion, betaIdx);
 
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
 
