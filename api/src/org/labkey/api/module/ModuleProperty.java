@@ -57,7 +57,7 @@ public class ModuleProperty
     private int _inputFieldWidth = 300;
     private InputType _inputType = InputType.text;
     private List<Option> _options = null;
-    // optionsSupplier is intentionally omitted from module.xsd as it is intended to be backed by java code
+    // optionsSupplier is intentionally omitted from module.xsd as it must be backed by java code
     private OptionSupplier _optionsSupplier = null;
     // Will the options list potentially be different for different containers? Only relevant if optionsSupplier is set.
     // Omitted from module.xsd as optionsSupplier is not used there either.
@@ -219,19 +219,15 @@ public class ModuleProperty
         return _optionsSupplier;
     }
 
-    public void setOptionsSupplier(OptionSupplier optionsSupplier)
+    public void setOptionsSupplier(OptionSupplier optionsSupplier, boolean optionsByContainer)
     {
         _optionsSupplier = optionsSupplier;
+        _optionsByContainer = optionsByContainer;
     }
 
     public boolean isOptionsByContainer()
     {
         return _optionsByContainer;
-    }
-
-    public void setOptionsByContainer(boolean optionsByContainer)
-    {
-        _optionsByContainer = optionsByContainer;
     }
 
     public JSONObject toJson(Container c)
@@ -331,11 +327,19 @@ public class ModuleProperty
         return options.stream().map(Option::toMap).collect(Collectors.toList());
     }
 
+    /**
+     * Convenience method to sort an Option list by the displayed field
+     * @param options List to sort
+     */
     public static void sortOptions(List<Option> options)
     {
         options.sort(Comparator.comparing(o -> o._display));
     }
 
+    /**
+     * Simple bean for an option in a combobox. Provided as the js store is expecting properties called "display" and "value"
+     * to use as the display and value fields.
+     */
     public static class Option
     {
         final String _display;
@@ -356,6 +360,9 @@ public class ModuleProperty
         }
     }
 
+    /**
+     * Functional interface to provide a dynamic list of options generated at runtime.
+     */
     public interface OptionSupplier
     {
         List<Option> get(Container c);
