@@ -65,6 +65,7 @@ import org.labkey.data.xml.PermissionType;
 import org.labkey.moduleProperties.xml.DependencyType;
 import org.labkey.moduleProperties.xml.ModuleDocument;
 import org.labkey.moduleProperties.xml.ModuleType;
+import org.labkey.moduleProperties.xml.OptionsListType;
 import org.labkey.moduleProperties.xml.PropertyType;
 import org.labkey.moduleProperties.xml.RequiredModuleType;
 import org.springframework.beans.BeansException;
@@ -1058,12 +1059,31 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                         else
                             continue;
 
+                        if (pt.isSetLabel())
+                            mp.setLabel(pt.getLabel());
                         if (pt.isSetCanSetPerContainer())
                             mp.setCanSetPerContainer(pt.getCanSetPerContainer());
+                        if (pt.isSetExcludeFromClientContext())
+                            mp.setExcludeFromClientContext(pt.getExcludeFromClientContext());
                         if (pt.isSetDefaultValue())
                             mp.setDefaultValue(pt.getDefaultValue());
                         if (pt.isSetDescription())
                             mp.setDescription(pt.getDescription());
+                        if (pt.isSetShowDescriptionInline())
+                            mp.setShowDescriptionInline(pt.getShowDescriptionInline());
+                        if (pt.isSetInputFieldWidth())
+                            mp.setInputFieldWidth(pt.getInputFieldWidth());
+                        if (pt.isSetInputType())
+                            mp.setInputType(ModuleProperty.InputType.valueOf(pt.getInputType().toString()));
+                        if (pt.isSetOptions())
+                        {
+                            List<ModuleProperty.Option> options = new ArrayList<>();
+                            for (OptionsListType.Option option : pt.getOptions().getOptionArray())
+                            {
+                                options.add(new ModuleProperty.Option(option.getDisplay(), option.getValue()));
+                            }
+                            mp.setOptions(options);
+                        }
                         if (pt.isSetEditPermissions() && pt.getEditPermissions() != null && pt.getEditPermissions().getPermissionArray() != null)
                         {
                             List<Class<? extends Permission>> editPermissions = new ArrayList<>();

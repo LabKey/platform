@@ -42,6 +42,10 @@ import java.util.stream.Collectors;
  */
 public class ModuleProperty
 {
+    /*
+    Note that module properties can be defined in module.xml files, so if adding property options here, they should also
+    be added to propertyType in module.xsd and wired through in DefaultModule.loadXmlFile()
+     */
     private Module _module;
     private String _name;
     private String _label;
@@ -53,7 +57,10 @@ public class ModuleProperty
     private int _inputFieldWidth = 300;
     private InputType _inputType = InputType.text;
     private List<Option> _options = null;
+    // optionsSupplier is intentionally omitted from module.xsd as it is intended to be backed by java code
     private OptionSupplier _optionsSupplier = null;
+    // Will the options list potentially be different for different containers? Only relevant if optionsSupplier is set.
+    // Omitted from module.xsd as optionsSupplier is not used there either.
     private boolean _optionsByContainer = false;
     
     private List<Class<? extends Permission>> _editPermissions;
