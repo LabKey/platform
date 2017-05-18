@@ -166,14 +166,17 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
                 xtype: v.canEdit ? 'textfield' : 'displayField',
                 value: v.value
             };
+
+            var validateValue = false;
             if (v.canEdit) {
                 switch (pd.inputType) {
                     case 'checkbox':
                         propertyItem.xtype = 'checkbox';
-                        propertyItem.checked = v.value == "true";
+                        propertyItem.checked = v.value === "true";
                         break;
                     case 'select':
                         propertyItem.editable = false;
+                        validateValue = true;
                     case 'combo':
                         propertyItem.xtype = 'combo';
                         propertyItem.allowBlank = true;
@@ -182,6 +185,20 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
                         propertyItem.valueField = 'value';
                         break;
                     default:
+                }
+
+                if (validateValue && v.value && v.value.length > 0) {
+                    var valid = false;
+                    propertyItem.store.each(function(item) {
+                       if (item.get('value') === v.value) {
+                           valid = true;
+                           return false;
+                       }
+                    });
+
+                    if (!valid) {
+                        window.alert("Warning: the saved value '" + v.value + "' for the " + name + " property in the " + module + " module is not a valid option at folder level '" + propertyItem.fieldLabel + "'");
+                    }
                 }
             }
             else if (pd.inputType = 'checkbox') {
