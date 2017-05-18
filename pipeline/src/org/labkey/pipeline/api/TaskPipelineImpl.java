@@ -112,33 +112,15 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
         if (settings.getProtocolName() != null)
             _protocolShortDescription = settings.getProtocolName();
 
-        parseWorkflowProcessKey(settings);
+        if (settings.getWorkflowProcessKey() != null)
+            _workflowProcessKey = settings.getWorkflowProcessKey();
+
+        if (settings.getWorkflowProcessModule() != null)
+            _workflowProcessModule = settings.getWorkflowProcessModule();
 
         _useUniqueAnalysisDirectory = settings.isUseUniqueAnalysisDirectory();
 
         return this;
-    }
-
-    private void parseWorkflowProcessKey(SettingsType settings)
-    {
-        // This is an optional setting that will either be of the form "processKey" or "moduleName:processKey"
-        if (settings.getWorkflowProcessKey() != null)
-        {
-            String[] workflowProcessDef = settings.getWorkflowProcessKey().split(":", 2);
-            if (workflowProcessDef.length == 2)
-            {
-                _workflowProcessKey = workflowProcessDef[1];
-                _workflowProcessModule = workflowProcessDef[0];
-            }
-            else
-            {
-                _workflowProcessKey = workflowProcessDef[0];
-                if (_declaringModule != null)
-                {
-                    _workflowProcessModule = _declaringModule.getName();
-                }
-            }
-        }
     }
 
     public String getName()
