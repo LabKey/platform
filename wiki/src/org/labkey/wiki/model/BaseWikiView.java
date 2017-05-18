@@ -49,13 +49,13 @@ public abstract class BaseWikiView extends JspView<Object>
     public boolean hasInsertPermission;
     public boolean folderHasWikis;
 
-    public ActionURL insertURL = null;
-    public ActionURL newURL = null;
-    public ActionURL versionsURL = null;
-    public ActionURL updateContentURL = null;
-    public ActionURL manageURL = null;
-    public ActionURL customizeURL = null;
-    public ActionURL printURL = null;
+    public ActionURL insertURL;
+    public ActionURL newURL;
+    public ActionURL versionsURL;
+    public ActionURL updateContentURL;
+    public ActionURL manageURL;
+    public ActionURL customizeURL;
+    public ActionURL printURL;
 
     protected WikiVersion wikiVersion = null; // TODO: Used internally only?  Pass to init()?
 
@@ -83,13 +83,10 @@ public abstract class BaseWikiView extends JspView<Object>
 
         if (isWebPart())
             title = "Wiki Web Part";
+        else if (folderHasWikis)
+            title = name;
         else
-        {
-            if (folderHasWikis)
-                title = name;
-            else
-                title ="Wiki";
-        }
+            title = "Wiki";
 
         if (name == null)
         {
@@ -123,7 +120,7 @@ public abstract class BaseWikiView extends JspView<Object>
                 }
                 catch (Exception e)
                 {
-                    html = "<p class='labkey-error'>Error rendering page: " + e.getMessage() + "<p>";
+                    html = "<p class=\"labkey-error\">Error rendering page: " + e.getMessage() + "<p>";
                 }
             }
             else
@@ -185,13 +182,9 @@ public abstract class BaseWikiView extends JspView<Object>
             setTitleHref(WikiController.getPageURL(wiki, c));
         }
 
-        if (!isWebPart() || perms.allowInsert())
+        if (null == context.getRequest().getParameter("_print"))
         {
-            if (null == context.getRequest().getParameter("_print"))
-            {
-                printURL = wiki.getPageURL();
-                printURL.addParameter("_print", 1);
-            }
+            printURL = wiki.getPageURL().addParameter("_print", 1);
         }
 
         // Initialize Custom Menus
