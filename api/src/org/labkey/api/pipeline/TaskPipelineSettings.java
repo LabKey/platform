@@ -47,6 +47,8 @@ public class TaskPipelineSettings
 
     private String _workflowProcessKey;
 
+    private String _workflowProcessModule;
+
     private boolean _useUniqueAnalysisDirectory = false;
 
     public TaskPipelineSettings(TaskId id)
@@ -136,6 +138,7 @@ public class TaskPipelineSettings
             throw new IllegalStateException("Declaring module already set");
 
         _declaringModule = declaringModule;
+        parseWorkflowProcessKey();
     }
 
     public Module getDeclaringModule()
@@ -158,6 +161,16 @@ public class TaskPipelineSettings
         _workflowProcessKey = workflowProcessKey;
     }
 
+    public String getWorkflowProcessModule()
+    {
+        return _workflowProcessModule;
+    }
+
+    public void setWorkflowProcessModule(String workflowProcessModule)
+    {
+        _workflowProcessModule = workflowProcessModule;
+    }
+
     /**
      *
      * @return When true, move the input files into a unique directory (with timestamped name) before the analysis
@@ -170,5 +183,24 @@ public class TaskPipelineSettings
     public void setUseUniqueAnalysisDirectory(boolean useUniqueAnalysisDirectory)
     {
         _useUniqueAnalysisDirectory = useUniqueAnalysisDirectory;
+    }
+
+    private void parseWorkflowProcessKey()
+    {
+        // This is an optional setting that will either be of the form "processKey" or "moduleName:processKey"
+        if (_workflowProcessKey != null)
+        {
+            String[] workflowProcessDef = _workflowProcessKey.split(":", 2);
+            if (workflowProcessDef.length == 2)
+            {
+                _workflowProcessKey = workflowProcessDef[1];
+                _workflowProcessModule = workflowProcessDef[0];
+            }
+            else
+            {
+                _workflowProcessKey = workflowProcessDef[0];
+                _workflowProcessModule = _declaringModule.getName();
+            }
+        }
     }
 }
