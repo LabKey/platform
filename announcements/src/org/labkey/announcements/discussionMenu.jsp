@@ -121,7 +121,7 @@ var discussionMenu = {};
         if (isAdmin)
         {
             %><%=text(comma)%>{text:'Email admin',href:discussionMenu.adminEmailUrl}
-            ,{text:'Customize',href:discussionMenu.customizeUrl}<%
+            ,{text:'Admin',href:discussionMenu.customizeUrl}<%
             comma = ",";
         }
         %>]
