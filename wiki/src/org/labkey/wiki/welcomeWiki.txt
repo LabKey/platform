@@ -1,5 +1,5 @@
 <p>To learn more about using the platform, please visit one of the community resources freely available on
-<a href="http://www.labkey.org">labkey.org</a>:</p>
+<b><a href="http://www.labkey.org">labkey.org</a></b>:</p>
 <ul>
     <li><a href="https://www.labkey.org/Documentation/project-begin.view?">Documentation</a></li>
     <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=tutorials">Tutorials</a></li>
@@ -8,7 +8,7 @@
 </ul>
 
 <p>
-If you need further assistance, <a href="http://www.labkey.com">LabKey</a> provides professional support,
+If you need further assistance, <b><a href="http://www.labkey.com">LabKey</a></b> provides professional support,
 customization and development. Please <a href="https://www.labkey.com/company/contact-us">contact us</a>.
 </p>
 

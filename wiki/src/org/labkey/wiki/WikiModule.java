@@ -132,8 +132,8 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         String defaultPageName = "default";
         loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt", WikiRendererType.HTML);
-        loadWikiContent(supportContainer,  moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Support", "/org/labkey/wiki/supportWiki.txt", WikiRendererType.RADEOX);
-        loadWikiContent(sharedContainer,  moduleContext.getUpgradeUser(), defaultPageName, "Shared Resources", "/org/labkey/wiki/sharedWiki.txt", WikiRendererType.RADEOX);
+        loadWikiContent(supportContainer,  moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Support", "/org/labkey/wiki/supportWiki.txt", WikiRendererType.HTML);
+        loadWikiContent(sharedContainer,  moduleContext.getUpgradeUser(), defaultPageName, "Shared Resources", "/org/labkey/wiki/sharedWiki.txt", WikiRendererType.HTML);
 
         Map<String, String> wikiProps = new HashMap<>();
         wikiProps.put("webPartContainer", homeContainer.getId());
