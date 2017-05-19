@@ -62,7 +62,7 @@ public class ScriptReorderer
         else
         {
             TABLE_NAME_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "(?:\\w+))";
-            TABLE_NAME_NO_UNDERSCORE_REGEX = "(" + SCHEMA_NAME_REGEX + "(?:[[a-zA-Z0-9]]+))";
+            TABLE_NAME_NO_UNDERSCORE_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "(?:[[a-zA-Z0-9]]+))";
             STATEMENT_ENDING_REGEX = ";(\\s*?)((--)[^\\n]*)?$(\\s*)";
         }
 
@@ -88,7 +88,7 @@ public class ScriptReorderer
         patterns.add(new SqlPattern(getRegExWithPrefix("UPDATE (?:ON )?"), Type.Table, Operation.AlterRows));
         patterns.add(new SqlPattern(getRegExWithPrefix("DELETE FROM "), Type.Table, Operation.AlterRows));
 
-        patterns.add(new SqlPattern("CREATE (?:UNIQUE )?(?:CLUSTERED )?INDEX \\w+? ON " + TABLE_NAME_REGEX + ".+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+        patterns.add(new SqlPattern("CREATE (?:UNIQUE )?(?:(NON)CLUSTERED )?INDEX \\w+? ON " + TABLE_NAME_REGEX + ".+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
         patterns.add(new SqlPattern(getRegExWithPrefix("CREATE TABLE "), Type.Table, Operation.Other));
 
         if (_schema.getSqlDialect().isSqlServer())
@@ -101,19 +101,21 @@ public class ScriptReorderer
 
             // All other sp_renames
             patterns.add(new SqlPattern("(?:EXEC )?sp_rename (?:@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + ".*?'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("EXEC core\\.fn_dropifexists '(\\w+)', '(?<schema>\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("EXEC core\\.fn_dropifexists '(?<table>\\w+)', '(?<schema>\\w+)', '(TABLE|INDEX|DEFAULT|CONSTRAINT)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("EXEC core\\.fn_dropifexists '(\\w+)', '(?<schema>\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
 
             // Index names are prefixed with their associated table names on SQL Server
             patterns.add(new SqlPattern(getRegExWithPrefix("DROP INDEX "), Type.Table, Operation.Other));
 
-            patterns.add(new SqlPattern("CREATE PROCEDURE .+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
+            patterns.add(new SqlPattern("(CREATE|ALTER) PROCEDURE .+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
         }
         else
         {
             patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " RENAME TO " + TABLE_NAME2_REGEX + STATEMENT_ENDING_REGEX, Type.Table, Operation.RenameTable));
             patterns.add(new SqlPattern(getRegExWithPrefix("DROP TABLE (?:IF EXISTS )?"), Type.Table, Operation.Other));
             patterns.add(new SqlPattern(getRegExWithPrefix("CREATE (?:TEMPORARY )?TABLE "), Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(\\w+)', '(?<schema>\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(?<table>\\w+)', '(?<schema>\\w+)', '(TABLE|INDEX|DEFAULT|CONSTRAINT)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(\\w+)', '(?<schema>\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
             patterns.add(new SqlPattern("SELECT SETVAL\\('" + TABLE_NAME_NO_UNDERSCORE_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
             patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER \\w+ ON "), Type.Table, Operation.Other));   // e.g. CLUSTER PK_Keyword ON flow.Keyword
             patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER "), Type.Table, Operation.Other));
@@ -122,7 +124,7 @@ public class ScriptReorderer
             // Can't prefix index names with table name on PostgreSQL... find table name based on our naming conventions.
             patterns.add(new SqlPattern("(?:DROP|ALTER) INDEX " + SCHEMA_NAME_REGEX + "(?:IX_|IDX_)" + TABLE_NAME_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
 
-            patterns.add(new SqlPattern("CREATE (?:OR REPLACE )?FUNCTION .+? RETURNS \\w+ AS (.+?) (?:.+?) \\1 LANGUAGE plpgsql" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
+            patterns.add(new SqlPattern("CREATE (?:OR REPLACE )?FUNCTION .+? RETURNS \\w+ AS (.+?) (?:.+?) \\1 LANGUAGE (plpgsql|SQL)( STRICT)?( IMMUTABLE)?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
             patterns.add(new SqlPattern(getRegExWithPrefix("COMMENT ON TABLE "), Type.Table, Operation.Other));
         }
 
@@ -183,7 +185,7 @@ public class ScriptReorderer
                         else
                             schemaName = _schema.getName();
 
-                        tableName = schemaName + "." + m.group(1);
+                        tableName = schemaName + "." + tableName;
                     }
 
                     String tableName2 = null;
@@ -264,7 +266,7 @@ public class ScriptReorderer
         if (unrecognized.length() > 0)
             _endingStatements.add(unrecognized.toString());
 
-        // Uncomment this code to list all the detected table name, which can help debug the table/schema parsing patterns
+        // Uncomment this code to list all the detected table names, which can help debug the table/schema parsing patterns
 //        for (Map<String, Collection<Statement>> statementList : _statementLists)
 //        {
 //            if (isHtml)
