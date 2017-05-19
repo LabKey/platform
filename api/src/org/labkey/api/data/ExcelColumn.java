@@ -37,6 +37,8 @@ import org.apache.poi.xssf.usermodel.XSSFAnchor;
 import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 import org.apache.poi.xssf.usermodel.XSSFPicture;
 import org.apache.poi.xssf.usermodel.XSSFShape;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 
@@ -153,6 +155,15 @@ public class ExcelColumn extends RenderColumn
     private void setSimpleType(DisplayColumn dc)
     {
         Class valueClass = dc.getDisplayValueClass();
+
+        /**
+         * Temporary fix for: Issue 30264: Assay excel export for file columns containing images don't embed image
+         * This work around should be removed when the underlying issue is fixed:
+         *      Issue 25323: Fields in tables using Attachment or File datatype appear as String when viewed in Schema Browser's Metadata section
+         */
+        if (dc instanceof FileLinkDisplayColumn)
+            valueClass = PropertyType.FILE_LINK.getJavaType();
+
         if (Integer.class.isAssignableFrom(valueClass) || Integer.TYPE.isAssignableFrom(valueClass) ||
                 Long.class.isAssignableFrom(valueClass) || Long.TYPE.isAssignableFrom(valueClass))
             _simpleType = TYPE_INT;
