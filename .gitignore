@@ -10,4 +10,3 @@ core/resources/scripts/labkey/Report.js
 core/resources/scripts/labkey/Security.js
 core/resources/scripts/labkey/SecurityPolicy.js
 core/resources/scripts/labkey/Utils.js
-search/lib/bcmail-jdk15-144.jar
