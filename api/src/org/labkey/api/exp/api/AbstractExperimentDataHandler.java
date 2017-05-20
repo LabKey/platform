@@ -25,7 +25,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.NetworkDrive;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
