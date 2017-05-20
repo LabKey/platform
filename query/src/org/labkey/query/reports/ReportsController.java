@@ -2905,13 +2905,7 @@ public class ReportsController extends SpringActionController
             if (form.includeData())
             {
                 int startingDefaultDisplayOrder = 0;
-                Set<String> defaultCategories = new TreeSet<>(new Comparator<String>(){
-                    @Override
-                    public int compare(String s1, String s2)
-                    {
-                        return s1.compareToIgnoreCase(s2);
-                    }
-                });
+                Set<String> defaultCategories = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
                 getViewContext().put("returnUrl", form.getReturnUrl());
 
@@ -3087,13 +3081,7 @@ public class ReportsController extends SpringActionController
             List<DataViewProvider.Type> visibleDataTypes = getVisibleDataTypes(form);
 
             int startingDefaultDisplayOrder = 0;
-            Set<String> defaultCategories = new TreeSet<>(new Comparator<String>(){
-                @Override
-                public int compare(String s1, String s2)
-                {
-                    return s1.compareToIgnoreCase(s2);
-                }
-            });
+            Set<String> defaultCategories = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
             if (null != form.getReturnUrl())
                 getViewContext().put("returnUrl", form.getReturnUrl());
@@ -3148,24 +3136,20 @@ public class ReportsController extends SpringActionController
 
         private JSONObject buildTree(List<DataViewInfo> views)
         {
-            Comparator<ViewCategory> t = new Comparator<ViewCategory>()
+            Comparator<ViewCategory> t = (c1, c2) ->
             {
-                @Override
-                public int compare(ViewCategory c1, ViewCategory c2)
-                {
-                    int order = ((Integer) c1.getDisplayOrder()).compareTo(c2.getDisplayOrder());
-                    if (order == 0)
-                        return c1.getLabel().compareToIgnoreCase(c2.getLabel());
-                    else if (c1.getLabel().equalsIgnoreCase("Uncategorized"))
-                        return 1;
-                    else if (c2.getLabel().equalsIgnoreCase("Uncategorized"))
-                        return -1;
-                    else if (c1.getDisplayOrder() == 0)
-                        return 1;
-                    else if (c2.getDisplayOrder() == 0)
-                        return -1;
-                    return order;
-                }
+                int order = ((Integer) c1.getDisplayOrder()).compareTo(c2.getDisplayOrder());
+                if (order == 0)
+                    return c1.getLabel().compareToIgnoreCase(c2.getLabel());
+                else if (c1.getLabel().equalsIgnoreCase("Uncategorized"))
+                    return 1;
+                else if (c2.getLabel().equalsIgnoreCase("Uncategorized"))
+                    return -1;
+                else if (c1.getDisplayOrder() == 0)
+                    return 1;
+                else if (c2.getDisplayOrder() == 0)
+                    return -1;
+                return order;
             };
 
             // Get all categories -- group views by them
@@ -3464,23 +3448,11 @@ public class ReportsController extends SpringActionController
                     categoriesWithoutDisplayOrder.add(c);
             }
 
-            Collections.sort(categoriesWithDisplayOrder, new Comparator<ViewCategory>(){
-                @Override
-                public int compare(ViewCategory c1, ViewCategory c2)
-                {
-                    return c1.getDisplayOrder() - c2.getDisplayOrder();
-                }
-            });
+            categoriesWithDisplayOrder.sort(Comparator.comparingInt(ViewCategory::getDisplayOrder));
 
             if (!categoriesWithoutDisplayOrder.isEmpty())
             {
-                Collections.sort(categoriesWithoutDisplayOrder, new Comparator<ViewCategory>(){
-                    @Override
-                    public int compare(ViewCategory c1, ViewCategory c2)
-                    {
-                        return c1.getLabel().compareToIgnoreCase(c2.getLabel());
-                    }
-                });
+                categoriesWithoutDisplayOrder.sort(Comparator.comparing(ViewCategory::getLabel, String.CASE_INSENSITIVE_ORDER));
             }
             for (ViewCategory vc : categoriesWithDisplayOrder)
                 categoryList.add(vc.toJSON(getUser()));
