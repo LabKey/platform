@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -31,8 +32,8 @@ import java.util.regex.Pattern;
 
 public class ScriptReorderer
 {
-    public static final String COMMENT_REGEX = "((/\\*.+?\\*/)|(^[ \\t]*--.+?$))\\s*";   // Single-line or block comment, followed by white space
-    private static final String SCHEMA_NAME_REGEX = "(?:(?:\\w+)\\.)?";
+    public static final String COMMENT_REGEX = "((/\\*.+?\\*/)|(^[ \\t]*--.*?$))\\s*";   // Single-line or block comment, followed by white space
+    private static final String SCHEMA_NAME_REGEX = "((\\w+)\\.)?";
 
     private final List<Map<String, Collection<Statement>>> _statementLists = new LinkedList<>();
     private final List<String> _endingStatements = new LinkedList<>();
@@ -55,14 +56,14 @@ public class ScriptReorderer
 
         if (_schema.getSqlDialect().isSqlServer())
         {
-            TABLE_NAME_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "(?:#?\\w+))";  // # allows for temp table names
+            TABLE_NAME_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "(#?\\w+))";  // # allows for temp table names
             TABLE_NAME_NO_UNDERSCORE_REGEX = null;
             STATEMENT_ENDING_REGEX = "((; GO\\s*$)|(;\\s*$)|( GO\\s*$))\\s*";       // Semicolon, GO, or both
         }
         else
         {
-            TABLE_NAME_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "(?:\\w+))";
-            TABLE_NAME_NO_UNDERSCORE_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "(?:[[a-zA-Z0-9]]+))";
+            TABLE_NAME_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "(\\w+))";
+            TABLE_NAME_NO_UNDERSCORE_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "([[a-zA-Z0-9]]+))";
             STATEMENT_ENDING_REGEX = ";(\\s*?)((--)[^\\n]*)?$(\\s*)";
         }
 
@@ -81,14 +82,14 @@ public class ScriptReorderer
     {
         List<SqlPattern> patterns = new LinkedList<>();
 
-        patterns.add(new SqlPattern("INSERT (?:INTO )?" + TABLE_NAME_REGEX + " \\([^\\)]+?\\) VALUES \\([^\\)]+?\\)\\s*(" + STATEMENT_ENDING_REGEX + "|$(\\s*))", Type.Table, Operation.InsertRows));
-        patterns.add(new SqlPattern("INSERT (?:INTO )?" + TABLE_NAME_REGEX + " \\([^\\)]+?\\) SELECT .+?"+ STATEMENT_ENDING_REGEX, Type.Table, Operation.InsertRows));
+        patterns.add(new SqlPattern("INSERT (INTO )?" + TABLE_NAME_REGEX + " \\([^\\)]+?\\) VALUES \\([^\\)]+?\\)\\s*(" + STATEMENT_ENDING_REGEX + "|$(\\s*))", Type.Table, Operation.InsertRows));
+        patterns.add(new SqlPattern("INSERT (INTO )?" + TABLE_NAME_REGEX + " \\([^\\)]+?\\) SELECT .+?"+ STATEMENT_ENDING_REGEX, Type.Table, Operation.InsertRows));
         patterns.add(new SqlPattern(getRegExWithPrefix("INSERT INTO "), Type.Table, Operation.InsertRows));
 
-        patterns.add(new SqlPattern(getRegExWithPrefix("UPDATE (?:ON )?"), Type.Table, Operation.AlterRows));
+        patterns.add(new SqlPattern(getRegExWithPrefix("UPDATE (ON )?"), Type.Table, Operation.AlterRows));
         patterns.add(new SqlPattern(getRegExWithPrefix("DELETE FROM "), Type.Table, Operation.AlterRows));
 
-        patterns.add(new SqlPattern("CREATE (?:UNIQUE )?(?:(NON)CLUSTERED )?INDEX \\w+? ON " + TABLE_NAME_REGEX + ".+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+        patterns.add(new SqlPattern("CREATE (UNIQUE )?((NON)CLUSTERED )?INDEX \\w+? ON " + TABLE_NAME_REGEX + ".+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
         patterns.add(new SqlPattern(getRegExWithPrefix("CREATE TABLE "), Type.Table, Operation.Other));
 
         if (_schema.getSqlDialect().isSqlServer())
@@ -97,12 +98,12 @@ public class ScriptReorderer
             patterns.add(new SqlPattern(getRegExWithPrefix("CREATE TABLE "), Type.Table, Operation.Other));
 
             // Specific sp_rename pattern for table rename
-            patterns.add(new SqlPattern("(?:EXEC )?sp_rename (?:@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + "', '" + TABLE_NAME2_REGEX + "'" + STATEMENT_ENDING_REGEX, Type.Table, Operation.RenameTable));
+            patterns.add(new SqlPattern("(EXEC )?sp_rename (@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + "',\\s*'" + TABLE_NAME2_REGEX + "'" + STATEMENT_ENDING_REGEX, Type.Table, Operation.RenameTable));
 
             // All other sp_renames
-            patterns.add(new SqlPattern("(?:EXEC )?sp_rename (?:@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + ".*?'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("EXEC core\\.fn_dropifexists '(?<table>\\w+)', '(?<schema>\\w+)', '(TABLE|INDEX|DEFAULT|CONSTRAINT)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("EXEC core\\.fn_dropifexists '(\\w+)', '(?<schema>\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
+            patterns.add(new SqlPattern("(EXEC )?sp_rename (@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + ".*?'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("EXEC core\\.fn_dropifexists\\s*'(?<table>\\w+)',\\s*'(?<schema>\\w+)',\\s*'(TABLE|INDEX|DEFAULT|CONSTRAINT)'.*?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("EXEC core\\.fn_dropifexists\\s*'(\\w+)',\\s*'(?<schema>\\w+)'.*?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
 
             // Index names are prefixed with their associated table names on SQL Server
             patterns.add(new SqlPattern(getRegExWithPrefix("DROP INDEX "), Type.Table, Operation.Other));
@@ -112,25 +113,25 @@ public class ScriptReorderer
         else
         {
             patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " RENAME TO " + TABLE_NAME2_REGEX + STATEMENT_ENDING_REGEX, Type.Table, Operation.RenameTable));
-            patterns.add(new SqlPattern(getRegExWithPrefix("DROP TABLE (?:IF EXISTS )?"), Type.Table, Operation.Other));
-            patterns.add(new SqlPattern(getRegExWithPrefix("CREATE (?:TEMPORARY )?TABLE "), Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(?<table>\\w+)', '(?<schema>\\w+)', '(TABLE|INDEX|DEFAULT|CONSTRAINT)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(\\w+)', '(?<schema>\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
+            patterns.add(new SqlPattern(getRegExWithPrefix("DROP TABLE (IF EXISTS )?"), Type.Table, Operation.Other));
+            patterns.add(new SqlPattern(getRegExWithPrefix("CREATE (TEMPORARY )?TABLE "), Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(?<table>\\w+)',\\s*'(?<schema>\\w+)',\\s*'(TABLE|INDEX|DEFAULT|CONSTRAINT)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(\\w+)',\\s*'(?<schema>\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
             patterns.add(new SqlPattern("SELECT SETVAL\\('" + TABLE_NAME_NO_UNDERSCORE_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
             patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER \\w+ ON "), Type.Table, Operation.Other));   // e.g. CLUSTER PK_Keyword ON flow.Keyword
             patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER "), Type.Table, Operation.Other));
             patterns.add(new SqlPattern(getRegExWithPrefix("ANALYZE "), Type.Table, Operation.Other));
 
             // Can't prefix index names with table name on PostgreSQL... find table name based on our naming conventions.
-            patterns.add(new SqlPattern("(?:DROP|ALTER) INDEX " + SCHEMA_NAME_REGEX + "(?:IX_|IDX_)" + TABLE_NAME_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("(DROP|ALTER) INDEX " + SCHEMA_NAME_REGEX + "(IX_|IDX_)" + TABLE_NAME_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
 
-            patterns.add(new SqlPattern("CREATE (?:OR REPLACE )?FUNCTION .+? RETURNS \\w+ AS (.+?) (?:.+?) \\1 LANGUAGE (plpgsql|SQL)( STRICT)?( IMMUTABLE)?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
+            patterns.add(new SqlPattern("CREATE (OR REPLACE )?FUNCTION .+? RETURNS \\w+ AS (.+?) (.+?) \\1 LANGUAGE (plpgsql|SQL)( STRICT)?( IMMUTABLE)?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
             patterns.add(new SqlPattern(getRegExWithPrefix("COMMENT ON TABLE "), Type.Table, Operation.Other));
         }
 
         patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " ADD CONSTRAINT \\w+ FOREIGN KEY \\([^\\)]+?\\) REFERENCES " + TABLE_NAME2_REGEX + " \\([^\\)]+?\\)" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
         // Put this at the end to catch all other ALTER TABLE statements (i.e., not RENAMEs)
-        patterns.add(new SqlPattern(getRegExWithPrefix("ALTER TABLE (?:IF EXISTS )?(?:ONLY )?"), Type.Table, Operation.Other));
+        patterns.add(new SqlPattern(getRegExWithPrefix("ALTER TABLE (IF EXISTS )?(ONLY )?"), Type.Table, Operation.Other));
 
         Pattern commentPattern = compile(COMMENT_REGEX);
 
@@ -310,19 +311,13 @@ public class ScriptReorderer
     private void addStatement(String tableName, @Nullable String tableName2, String statement)
     {
         // If there's a second table in the statement that's referenced later in the script then associate the statement
-        // with the second table. For example, an FK definition will end up after BOTH tables have been referenced.
+        // with the second table. For example, an FK definition will end up after BOTH tables have been created.
         if (null != tableName2 && index(tableName2) > index(tableName))
             tableName = tableName2;
 
         String key = tableName.toLowerCase();
 
-        Collection<Statement> tableStatements = _currentStatements.get(key);
-
-        if (null == tableStatements)
-        {
-            tableStatements = new LinkedList<>();
-            _currentStatements.put(key, tableStatements);
-        }
+        Collection<Statement> tableStatements = _currentStatements.computeIfAbsent(key, k -> new LinkedList<>());
 
         tableStatements.add(new Statement(tableName, statement));
     }
@@ -373,31 +368,25 @@ public class ScriptReorderer
         String sql = PageFlowUtil.filter(statement.getSql(), true);
         String tableName = statement.getTableName();
 
-        // If we have a table name then try to highlight the first occurence in statement
+        // If we have a table name then try to highlight the first occurrence in statement
         if (null != tableName)
         {
-            int tableNameIndex = StringUtils.indexOfIgnoreCase(sql, tableName);
+            String schemaName = null;
+            boolean containsTableName = StringUtils.containsIgnoreCase(sql, tableName);
 
-            if (-1 == tableNameIndex)
+            if (!containsTableName && tableName.contains("."))
             {
-                int dotIndex = tableName.indexOf('.');
-
-                if (-1 != dotIndex)
-                {
-                    tableName = tableName.substring(dotIndex + 1);
-                    tableNameIndex = StringUtils.indexOfIgnoreCase(sql, tableName);
-                }
+                String[] parts = tableName.split("\\.");
+                tableName = parts[0];
+                schemaName = parts[1];
+                containsTableName = StringUtils.containsIgnoreCase(sql, tableName);
             }
 
-            if (-1 != tableNameIndex)
+            if (containsTableName)
             {
-                sb.append(sql.substring(0, tableNameIndex));
-                sb.append("<b>");
-                sb.append(sql.substring(tableNameIndex, tableNameIndex + tableName.length()));
-                sb.append("</b>");
-                sb.append(sql.substring(tableNameIndex + tableName.length()));
-
-                return;
+                sql = StringUtilsLabKey.replaceFirstIgnoreCase(sql, tableName, "<b>" + tableName + "</b>");
+                if (null != schemaName)
+                    sql = StringUtilsLabKey.replaceFirstIgnoreCase(sql, schemaName, "<b>" + schemaName + "</b>");
             }
         }
 
@@ -411,7 +400,7 @@ public class ScriptReorderer
     {
         private final Pattern _pattern;
         private final Type _type;
-        private Operation _operation;
+        private final Operation _operation;
 
         private SqlPattern(String regex, Type type, Operation operation)
         {
