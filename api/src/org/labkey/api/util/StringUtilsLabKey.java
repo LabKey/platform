@@ -139,6 +139,28 @@ public class StringUtilsLabKey
     }
 
 
+    /**
+     * <p>Replaces all occurrences of a String within another String, ignoring case.</p>
+     *
+     * @return String with replacements
+     */
+    public static String replaceIgnoreCase(final String text, final String searchString, final String replacement)
+    {
+        return text.replaceAll("(?i)" + Pattern.quote(searchString), replacement);
+    }
+
+
+    /**
+     * <p>Replaces first occurrence of a String within another String, ignoring case.</p>
+     *
+     * @return String with replacements
+     */
+    public static String replaceFirstIgnoreCase(final String text, final String searchString, final String replacement)
+    {
+        return text.replaceFirst("(?i)" + Pattern.quote(searchString), replacement);
+    }
+
+
     // Outputs a formatted count and a noun that's pluralized (by simply adding "s")
     public static String pluralize(long count, String singular)
     {
