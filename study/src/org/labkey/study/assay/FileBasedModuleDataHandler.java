@@ -18,7 +18,6 @@ package org.labkey.study.assay;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -68,14 +67,5 @@ public class FileBasedModuleDataHandler extends AbstractExperimentDataHandler
     public void runMoved(ExpData newData, Container container, Container targetContainer, String oldRunLSID, String newRunLSID, User user, int oldDataRowID) throws ExperimentException
     {
         // We don't import these data files directly so no need to delete them
-    }
-
-    public Priority getPriority(ExpData data)
-    {
-        if (RAW_DATA_TYPE.matches(new Lsid(data.getLSID())))
-        {
-            return Priority.HIGH;
-        }
-        return null;
     }
 }
