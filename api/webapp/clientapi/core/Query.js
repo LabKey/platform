@@ -63,14 +63,6 @@ LABKEY.Query = new function()
         return LABKEY.Ajax.request(requestConfig);
     }
 
-    function getContentType(response)
-    {
-        //The response object is not actually the XMLHttpRequest object
-        //it's a 'synthesized' object provided by Ext to help on IE 6
-        //http://extjs.com/forum/showthread.php?t=27190&highlight=getResponseHeader
-        return response && response.getResponseHeader ? response.getResponseHeader('Content-Type') : null;
-    }
-
     function getSuccessCallbackWrapper(callbackFn, stripHiddenCols, scope, requiredVersion)
     {
         if (requiredVersion && (requiredVersion === 13.2 || requiredVersion === "13.2" || requiredVersion === 16.2 || requiredVersion === 17.1)) {
