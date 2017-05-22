@@ -658,8 +658,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             buttonCfg: { cls: "labkey-button"},
             listeners: {
                 "fileselected": function (fb, v) {
-                    var i = Math.max(v.lastIndexOf('/'), v.lastIndexOf('\\'));
-                    var name = v.substring(i+1); //this code was taken from fileBrowser.js line 3570.
                     this.info.protocolDoc = v;
                 },
                 scope: this

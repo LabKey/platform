@@ -606,7 +606,6 @@ core/webapp/createFolder.css -text
 core/webapp/editInPlaceElement.css -text
 core/webapp/editInPlaceElement.js -text
 core/webapp/fileAddRemoveIcon.css -text
-core/webapp/fileBrowser.js -text
 core/webapp/fonts/Roboto/LICENSE.txt -text
 core/webapp/fonts/Roboto/Roboto-Bold.ttf -text
 core/webapp/fonts/Roboto/Roboto-Regular.ttf -text
