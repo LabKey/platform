@@ -600,7 +600,6 @@ core/webapp/Security/window/UserInfoPopup.js -text
 core/webapp/SecurityAdmin.css -text
 core/webapp/SecurityAdmin.js -text
 core/webapp/admin/FolderManagementPanel.js -text
-core/webapp/config.rb -text
 core/webapp/core/ExpandableTextDisplayColumn.css -text
 core/webapp/core/ExpandableTextDisplayColumn.js -text
 core/webapp/createFolder.css -text
