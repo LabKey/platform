@@ -2370,7 +2370,7 @@ Ext4.define('File.panel.Browser', {
                 '<tpl if="size != undefined && size">' +
                     '<tr><th>Size:</th><td>{size:this.renderSize}</td></tr>' +
                 '</tpl>' +
-                '<tr><th>WebDav URL:</th><td colspan="3"><a target="_blank" href="{[values.href||values.uri]}">{[values.href||values.uri]}</a></td></tr>' +
+                '<tr><th>WebDav URL:</th><td colspan="3"><a target="_blank" href="{[Ext.util.Format.htmlEncode(values.href||values.uri)]}">{[Ext.util.Format.htmlEncode(values.href||values.uri)]}</a></td></tr>' +
            '</table>',
         {
             renderDate : function(d) {
