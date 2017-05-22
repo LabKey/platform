@@ -131,12 +131,6 @@
         <servlet-class>org.labkey.api.attachments.ImageServlet</servlet-class>
     </servlet>
 
-
-    <servlet>
-        <servlet-name>ScssServlet</servlet-name>
-        <servlet-class>org.labkey.api.scss.ScssServlet</servlet-class>
-    </servlet>
-
     <servlet>
         <servlet-name>static</servlet-name>
         <servlet-class>org.labkey.core.webdav.WebdavServlet</servlet-class>
@@ -198,11 +192,6 @@
     <servlet-mapping>
         <servlet-name>FileServlet</servlet-name>
         <url-pattern>/files/*</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>ScssServlet</servlet-name>
-        <url-pattern>*.scss</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
