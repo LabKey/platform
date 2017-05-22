@@ -1584,6 +1584,7 @@ boxPlot.render();
  * @param {String} [config.properties.xTickLabel] The data property name for the x-axis tick label.
  * @param {Number} [config.properties.xTickTagIndex] (Optional) The index/value of the x-axis label to be tagged (i.e. class="xticktag").
  * @param {Boolean} [config.properties.showTrendLine] (Optional) Whether or not to show a line connecting the data points. Default false.
+ * @param {Boolean} [config.properties.showDataPoints] (Optional) Whether or not to show the individual data points. Default true.
  * @param {Boolean} [config.properties.disableRangeDisplay] (Optional) Whether or not to show the control ranges in the plot. Defaults to false.
  *                          For LeveyJennings, the range is +/- 3 standard deviations from a mean.
  *                          For MovingRange, the range is [0, 3.268*mean(mR)].
@@ -1632,27 +1633,26 @@ boxPlot.render();
             if (config.properties.value == null) {
                 throw new Error("Unable to create " + plotTypeLabel + " plot, value object not specified. "
                         + "Required: value, xTickLabel. Optional: mean, stdDev, color, colorRange, hoverTextFn, mouseOverFn, "
-                        + "pointClickFn, showTrendLine, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
+                        + "pointClickFn, showTrendLine, showDataPoints, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
             }
         }
         else if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM) {
             if (config.properties.positiveValue == null || config.properties.negativeValue == null) {
                 throw new Error("Unable to create " + plotTypeLabel + " plot."
                         + "Required: positiveValue, negativeValue, xTickLabel. Optional: positiveValueRight, negativeValueRight, "
-                        + "xTickTagIndex, showTrendLine, disableRangeDisplay, xTick, yAxisScale, color, colorRange.");
+                        + "xTickTagIndex, showTrendLine, showDataPoints, disableRangeDisplay, xTick, yAxisScale, color, colorRange.");
             }
         }
         else if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.MovingRange) {
             if (config.properties.valueMR == null) {
                 throw new Error("Unable to create " + plotTypeLabel + " plot, value object not specified. "
                         + "Required: value, xTickLabel. Optional: meanMR, color, colorRange, hoverTextFn, mouseOverFn, "
-                        + "pointClickFn, showTrendLine, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
+                        + "pointClickFn, showTrendLine, showDataPoints, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
             }
         }
         else {
             throw new Error(plotTypeLabel + " plot type is not supported!");
         }
-
 
         // get a sorted array of the unique x-axis labels
         var uniqueXAxisKeys = {}, uniqueXAxisLabels = [];
@@ -2105,44 +2105,41 @@ boxPlot.render();
             return pointLayerConfig;
         };
 
-        if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM)
-        {
-            if (hasYRightMetric)
-            {
-                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.negativeValue, 1)));
-                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.negativeValueRight, 0)));
-                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.positiveValue, 1)));
-                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.positiveValueRight, 0)));
+        if (config.properties.showDataPoints == undefined) {
+            config.properties.showDataPoints = true;
+        }
 
+        if (config.properties.showDataPoints) {
+            if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM) {
+                if (hasYRightMetric) {
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.negativeValue, 1)));
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.negativeValueRight, 0)));
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.positiveValue, 1)));
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.positiveValueRight, 0)));
+
+                }
+                else {
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.negativeValue)));
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.positiveValue)));
+                }
             }
-            else
-            {
-                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.negativeValue)));
-                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.positiveValue)));
+            else if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.MovingRange) {
+                if (hasYRightMetric) {
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.valueMR, 0)));
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.valueRightMR, 1)));
+                }
+                else {
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.valueMR)));
+                }
             }
-        }
-        else if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.MovingRange)
-        {
-            if (hasYRightMetric)
-            {
-                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.valueMR, 0)));
-                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.valueRightMR, 1)));
-            }
-            else
-            {
-                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.valueMR)));
-            }
-        }
-        else
-        {
-            if (hasYRightMetric)
-            {
-                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.value, 0)));
-                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.valueRight, 1)));
-            }
-            else
-            {
-                config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.value)));
+            else {
+                if (hasYRightMetric) {
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.value, 0)));
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.valueRight, 1)));
+                }
+                else {
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.value)));
+                }
             }
         }
 
