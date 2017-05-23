@@ -163,7 +163,7 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
                 moduleProp: v,
                 propName: name,
                 containerPath: v.container.path,
-                xtype: v.canEdit ? 'textfield' : 'displayField',
+                xtype: v.canEdit ? 'textfield' : 'displayfield',
                 value: v.value
             };
 
@@ -201,7 +201,7 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
                     }
                 }
             }
-            else if (pd.inputType = 'checkbox') {
+            else if (pd.inputType === 'checkbox') {
                 propertyItem.xtype = 'checkbox';
                 propertyItem.disabled = true;
             }
