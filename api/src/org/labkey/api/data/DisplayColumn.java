@@ -652,8 +652,17 @@ public abstract class DisplayColumn extends RenderColumn
 
         renderTitle(ctx, out);
 
-        out.write("<img src=\"" + ctx.getRequest().getContextPath() + "/_.gif\" class=\"labkey-grid-filter-icon\"/>");
-        out.write("<img src=\"" + ctx.getRequest().getContextPath() + "/_.gif\" class=\"labkey-column-header-sort-icon\"/>");
+        if (newUI)
+        {
+            out.write("<span class=\"fa fa-filter\"></span>");
+            out.write("<span class=\"fa fa-sort-up\"></span>");
+            out.write("<span class=\"fa fa-sort-down\"></span>");
+        }
+        else
+        {
+            out.write("<img src=\"" + ctx.getRequest().getContextPath() + "/_.gif\" class=\"labkey-grid-filter-icon\"/>");
+            out.write("<img src=\"" + ctx.getRequest().getContextPath() + "/_.gif\" class=\"labkey-column-header-sort-icon\"/>");
+        }
 
         out.write("</div>");
 

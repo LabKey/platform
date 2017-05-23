@@ -1134,12 +1134,40 @@ public class DataRegion extends AbstractDataRegion
 
     private void _renderDataTableNew(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
     {
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-n") + "\" class=\"lk-region-section\"></div>");
-        out.write("<div class=\"table-responsive\">");
-        out.write("<table class=\"table table-condensed " + (isShowBorders() ? "table-bordered" : "") + " labkey-data-region\">");
+        out.write("<div class=\"lk-region-ct\">");
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-n") + "\" class=\"lk-region-section north\"></div>");
+
+        // table wrapper
+        out.write("<div class=\"table-responsive lk-region-section center\" style=\"display: block;\">");
+
+        // declare table
+        out.write("<table id=\"" + PageFlowUtil.filter(getDomId()) + "\"");
+
+        String name = getName();
+        String tableCls = "table table-condensed labkey-data-region";
+        if (name != null)
+            out.write(" lk-region-name=\"" + PageFlowUtil.filter(name) + "\"");
+
+        if (_fixedWidthColumns)
+            tableCls += " lk-region-fixed";
+        if (isShowBorders())
+            tableCls += " table-bordered";
+
+        out.write("class=\"" + tableCls + "\">");
+
+        // table content
         _renderDataTable(ctx, out, showRecordSelectors, renderers, colCount);
-        out.write("</table></div>");
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-s") + "\" class=\"lk-region-section\"></div>");
+
+        out.write("</table>");
+        // end declare table
+
+        out.write("</div>");
+        // end table wrapper
+
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-w") + "\" class=\"lk-region-section west\"></div>");
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-e") + "\" class=\"lk-region-section east\"></div>");
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-s") + "\" class=\"lk-region-section south\"></div>");
+        out.write("</div>");
     }
 
     private void renderAnalyticsProvidersScripts(RenderContext ctx, Writer writer) throws IOException

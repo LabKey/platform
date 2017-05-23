@@ -34,7 +34,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     constructor : function(config) {
 
         if (!config.dataRegion) {
-            console.error('A DataRegion object must be provided for Faceted Search.');
+            LABKEY.Utils.alert('Error', 'A DataRegion object must be provided for Faceted Search.');
             return;
         }
 
@@ -43,6 +43,12 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         var renderTarget = config.dataRegion.domId + '-facet';
         var topEl = this.getContainerEl(config.dataRegion);
         var tableEl = this.getDataRegionTableEl(config.dataRegion);
+
+        if (!tableEl) {
+            LABKEY.Utils.alert('Error', 'Could not locate DataRegion table element. Unable to display faceted search.');
+            return;
+        }
+
         tableEl.setWidth(tableEl.getBox().width);
         if (topEl) {
             var targetHTML = '<div id="' + renderTarget + '" style="float: left;" lk-region-facet-name="' + config.dataRegion.name + '"></div>';
@@ -143,6 +149,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
     getDataRegionTableEl : function(dr) {
         if (dr && dr.name) {
+            console.log('domId', dr.domId);
             return Ext4.get(dr.domId);
         }
     },
