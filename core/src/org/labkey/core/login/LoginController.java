@@ -310,12 +310,12 @@ public class LoginController extends SpringActionController
         return new LoginUrlsImpl();
     }
 
-    private static boolean authenticate(LoginForm form, BindException errors, HttpServletRequest request, boolean logFailures)
+    private static boolean authenticate(LoginForm form, BindException errors, HttpServletRequest request)
     {
         try
         {
             // Attempt authentication with all active form providers
-            PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, form.getEmail(), form.getPassword(), form.getReturnURLHelper(), logFailures);
+            PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, form.getEmail(), form.getPassword(), form.getReturnURLHelper(), true);
 
             switch (result.getStatus())
             {
@@ -617,7 +617,7 @@ public class LoginController extends SpringActionController
                 }
             }
 
-            boolean success = authenticate(form, errors, request, true);
+            boolean success = authenticate(form, errors, request);
 
             if (success)
             {
@@ -727,7 +727,7 @@ public class LoginController extends SpringActionController
             }
 
             ApiSimpleResponse response = null;
-            boolean success = authenticate(form, errors, request, true);
+            boolean success = authenticate(form, errors, request);
 
             // TODO: Handle errors? Handle setPassword? SSO? Update profile?
 
@@ -775,7 +775,7 @@ public class LoginController extends SpringActionController
             {
                 // keep the redirectUrl if the authenticate fail included a redirect URL which happens when the password has expired
                 AuthenticationManager.AuthenticationResult authResult = AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer());
-                if (null != authResult && null != authResult.getRedirectURL() && !authResult.getRedirectURL().getPath().isEmpty())
+                if (null != authResult.getRedirectURL() && !authResult.getRedirectURL().getPath().isEmpty())
                 {
                     URLHelper redirectUrl = authResult.getRedirectURL();
                     response = new ApiSimpleResponse();
