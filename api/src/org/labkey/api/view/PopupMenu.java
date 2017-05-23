@@ -120,17 +120,27 @@ public class PopupMenu extends DisplayElement
 
     public void renderMenuButton(@Nullable RenderContext ctx, Writer out, boolean requiresSelection, @Nullable ActionButton button) throws IOException
     {
+        boolean usingNewUI = PageFlowUtil.useExperimentalCoreUI();
+
         if (null == _navTree.getText())
             return;
 
         if (_singletonMenu && StringUtils.isNotEmpty(_navTree.getId()))
             _safeID = _navTree.getId();
 
-        // Issue 11392: DataRegion name escaping in button menus. Menu id is double-escaped. Once here, once when rendering.
-        String onClickScript = "showMenu(this, " + PageFlowUtil.qh(_safeID) + ",'" + _align.getExtPosition() + "');";
-
         Map<String, String> attributes = new HashMap<>();
-        attributes.put("lk-menu-id", _safeID);
+        String onClickScript = null;
+
+        if (usingNewUI)
+        {
+            out.append("<span class=\"lk-menu-drop dropdown\" >");
+            attributes.put("data-toggle", "dropdown");
+        }
+        else
+        {
+            onClickScript = "showMenu(this, " + PageFlowUtil.qh(_safeID) + ",'" + _align.getExtPosition() + "');";
+            attributes.put("lk-menu-id", _safeID);
+        }
 
         String dataRegionName = null;
 
@@ -183,7 +193,23 @@ public class PopupMenu extends DisplayElement
                         onClickScript, _navTree.getImageSrc(), _imageId, _navTree.getImageHeight(), _navTree.getImageWidth()));
             }
         }
+
+        if (usingNewUI)
+        {
+            out.append("<ul class=\"dropdown-menu dropdown-menu-left \" >");
+            try
+            {
+                PopupMenuView.renderTree(_navTree, out);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+            out.append("</ul>");
+            out.append("</span>");
+        }
     }
+
 
     public void renderMenuScript(Writer out) throws IOException
     {
