@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.FormattedError;
 import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
@@ -79,6 +80,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 /**
  * User: adam
@@ -251,8 +254,7 @@ public class AuthenticationManager
                     return HttpView.redirect(result.getRedirectURL());
                 }
 
-                // TODO: Temporary -- need to generalize the error message generation in LoginController.authenticate() so we can use it here, #28665
-                errors.addError(new LabkeyError("Something went wrong: " + primaryResult.getStatus()));
+                primaryResult.getStatus().addUserErrorMessage(errors, primaryResult);
             }
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
@@ -457,7 +459,93 @@ public class AuthenticationManager
         return set;
     }
 
-    public enum AuthenticationStatus {Success, BadCredentials, InactiveUser, LoginDisabled, LoginPaused, UserCreationError, UserCreationNotAllowed, PasswordExpired, Complexity}
+    public enum AuthenticationStatus
+    {
+        Success
+        {
+            @Override
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            {
+                throw new IllegalStateException("Shouldn't be adding an error message in success case");
+            }
+        },
+        BadCredentials
+        {
+            @Override
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            {
+                errors.reject(ERROR_MSG, "The e-mail address and password you entered did not match any accounts on file.\nNote: Passwords are case sensitive; make sure your Caps Lock is off.");
+            }
+        },
+        InactiveUser
+        {
+            @Override
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            {
+                errors.addError(new FormattedError("Your account has been deactivated. " + AppProps.getInstance().getAdministratorContactHTML() + " if you need to reactivate this account."));
+            }
+        },
+        LoginDisabled
+        {
+            @Override
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            {
+                String errorMessage = result.getMessage() == null ? "Due to the number of recent failed login attempts, authentication has been temporarily paused.\nTry again in one minute." : result.getMessage();
+                errors.reject(ERROR_MSG, errorMessage);
+            }
+        },
+        LoginPaused
+        {
+            @Override
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            {
+                errors.reject(ERROR_MSG, "Due to the number of recent failed login attempts, authentication has been temporarily paused.\nTry again in one minute.");
+            }
+        },
+        UserCreationError
+        {
+            @Override
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            {
+                errors.addError(new FormattedError("The server could not create your account. " + AppProps.getInstance().getAdministratorContactHTML() + " for assistance."));
+            }
+        },
+        UserCreationNotAllowed
+        {
+            @Override
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            {
+                errors.addError(new FormattedError(AppProps.getInstance().getAdministratorContactHTML() + " to have your account created."));
+            }
+        },
+
+        PasswordExpired
+        {
+            @Override
+            public boolean requiresRedirect()
+            {
+                return true;
+            }
+        },
+        Complexity
+        {
+            @Override
+            public boolean requiresRedirect()
+            {
+                return true;
+            }
+        };
+
+        // Add an appropriate error message to display to the user
+        public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+        {
+        }
+
+        public boolean requiresRedirect()
+        {
+            return false;
+        }
+    }
 
     public static class PrimaryAuthenticationResult
     {
