@@ -26,11 +26,9 @@ import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.validation.FieldError;
 import org.springframework.validation.MapBindingResult;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -127,7 +125,7 @@ public class IssueValidation
         for (String username : StringUtils.split(StringUtils.trimToEmpty(form.getNotifyList()), ";\n"))
         {
             // NOTE: this "username" should be a user id but may be a psuedo-username (an assumed user which has default domain appended)
-            //       or in the other special case this is an e-mail address
+            //       or in the other special case this is an email address
             username = username.trim();
 
             // Ignore lines of all whitespace, otherwise show an error.
