@@ -26,7 +26,6 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.security.Group;
-import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.MemberType;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
@@ -37,15 +36,11 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
-import org.labkey.issue.CustomColumnConfiguration;
-import org.labkey.issue.model.CustomColumn;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issues.client.GWTIssueDefinition;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -174,6 +169,8 @@ public class IssueServiceAction extends GWTServiceAction
                     }
                 }
             }
+
+            users.sort(Comparator.comparing(map -> map.get("name"), String.CASE_INSENSITIVE_ORDER));
             return users;
         }
 
