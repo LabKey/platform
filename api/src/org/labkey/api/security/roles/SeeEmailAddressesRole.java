@@ -31,7 +31,7 @@ public class SeeEmailAddressesRole extends AbstractRootContainerRole
 {
     public SeeEmailAddressesRole()
     {
-        super("See Email Addresses", "Allows non-administrators to see e-mail addresses",
+        super("See Email Addresses", "Allows non-administrators to see email addresses",
                 SeeUserEmailAddressesPermission.class);
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));

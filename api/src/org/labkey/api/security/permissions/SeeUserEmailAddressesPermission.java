@@ -24,6 +24,6 @@ public class SeeUserEmailAddressesPermission extends AbstractPermission
 {
     public SeeUserEmailAddressesPermission()
     {
-        super("See E-Mail Addresses", "Allows non-administrators to see e-mail addresses of other users.");
+        super("See Email Addresses", "Allows non-administrators to see email addresses of other users.");
     }
 }

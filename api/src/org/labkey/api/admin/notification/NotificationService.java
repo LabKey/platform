@@ -51,7 +51,7 @@ public interface NotificationService
      */
     Notification addNotification(Container container, User user, @NotNull Notification notification) throws ValidationException;
 
-    /* backward compatible version of addNotification(), send e-mail as well */
+    /* backward compatible version of addNotification(), send email as well */
     Notification sendMessage(Container c, User createdByUser, User notifyUser, MailHelper.MultipartMessage m,
                              String linkText, String linkURL, String id, String type, boolean useSubjectAsContent)
         throws IOException, MessagingException, ValidationException;
