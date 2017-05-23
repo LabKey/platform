@@ -208,13 +208,10 @@ public class AuthenticationManager
             LinkFactory factory = provider.getLinkFactory();
             String link = factory.getLink(currentURL, prefix);
 
-            if (null != link)
-            {
-                if (html.length() > 0)
-                    html.append("&nbsp;");
+            if (html.length() > 0)
+                html.append("&nbsp;");
 
-                html.append(link);
-            }
+            html.append(link);
         }
 
         return html.toString();
@@ -238,23 +235,29 @@ public class AuthenticationManager
             // Show validation error(s), if any
             if (errors.hasErrors() || !response.isAuthenticated())
             {
-                getPageConfig().setTemplate(PageConfig.Template.Dialog);
-
                 if (!errors.hasErrors())
                     errors.addError(new LabkeyError("Bad credentials"));
+            }
+            else
+            {
+                HttpServletRequest request = getViewContext().getRequest();
+                PrimaryAuthenticationResult primaryResult = AuthenticationManager.finalizePrimaryAuthentication(request, response);
 
-                return new SimpleErrorView(errors, false);
+                if (null != primaryResult.getUser())
+                {
+                    AuthenticationManager.setPrimaryAuthenticationResult(request, primaryResult);
+                    AuthenticationResult result = AuthenticationManager.handleAuthentication(request, getContainer());
+
+                    return HttpView.redirect(result.getRedirectURL());
+                }
+
+                // TODO: Temporary -- need to generalize the error message generation in LoginController.authenticate() so we can use it here, #28665
+                errors.addError(new LabkeyError("Something went wrong: " + primaryResult.getStatus()));
             }
 
-            HttpServletRequest request = getViewContext().getRequest();
-            PrimaryAuthenticationResult primaryResult = AuthenticationManager.finalizePrimaryAuthentication(request, response);
+            getPageConfig().setTemplate(PageConfig.Template.Dialog);
 
-            if (null != primaryResult.getUser())
-                AuthenticationManager.setPrimaryAuthenticationResult(request, primaryResult);
-
-            AuthenticationResult result = AuthenticationManager.handleAuthentication(request, getContainer());
-
-            return HttpView.redirect(result.getRedirectURL());
+            return new SimpleErrorView(errors, false);
         }
 
         @Override
@@ -753,8 +756,8 @@ public class AuthenticationManager
     private static final Cache<Integer, RateLimiter> userLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "user limiter");
     private static final Cache<Integer, RateLimiter> pwdLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "password limiter");
     private static final CacheLoader<Integer, RateLimiter> addrLoader = (key, request) -> new RateLimiter("Addr limiter: " + String.valueOf(key), new Rate(60,TimeUnit.MINUTES));
-    static final CacheLoader<Integer, RateLimiter> pwdLoader = (key, request) -> new RateLimiter("Pwd limiter: " + String.valueOf(key), new Rate(20,TimeUnit.MINUTES));
-    static final CacheLoader<Integer, RateLimiter> userLoader = (key, request) -> new RateLimiter("User limiter: " + String.valueOf(key), new Rate(20,TimeUnit.MINUTES));
+    private static final CacheLoader<Integer, RateLimiter> pwdLoader = (key, request) -> new RateLimiter("Pwd limiter: " + String.valueOf(key), new Rate(20,TimeUnit.MINUTES));
+    private static final CacheLoader<Integer, RateLimiter> userLoader = (key, request) -> new RateLimiter("User limiter: " + String.valueOf(key), new Rate(20,TimeUnit.MINUTES));
 
 
     private static Integer _toKey(String s)
@@ -1052,7 +1055,7 @@ public class AuthenticationManager
     }
 
 
-    public static AuthenticationResult handleAuthentication(HttpServletRequest request, Container c)
+    public static @NotNull AuthenticationResult handleAuthentication(HttpServletRequest request, Container c)
     {
         HttpSession session = request.getSession(true);
         PrimaryAuthenticationResult primaryAuthResult = AuthenticationManager.getPrimaryAuthenticationResult(session);
@@ -1176,13 +1179,13 @@ public class AuthenticationManager
             _providerName = provider.getName(); // Just for convenience
         }
 
-        private String getLink(ActionURL returnURL, String prefix)
+        private @NotNull String getLink(ActionURL returnURL, String prefix)
         {
             String img = getImg(prefix);
 
             if (null == img)
             {
-                if(LOGIN_PAGE_LOGO_PREFIX.equals(prefix))
+                if (LOGIN_PAGE_LOGO_PREFIX.equals(prefix))
                     return "<a href=\"" + PageFlowUtil.filter(getURL(returnURL)) + "\"><font size=\"4\">" + _providerName + "</font></a>";
                 else
                     return "<a href=\"" + PageFlowUtil.filter(getURL(returnURL)) + "\"><font size=\"2\" color=\"yellow\">" + _providerName + "</font></a>";
@@ -1207,10 +1210,10 @@ public class AuthenticationManager
                 {
                     String img = "<img src=\"" + AppProps.getInstance().getContextPath() + "/" + prefix + _providerName + ".image?revision=" + AppProps.getInstance().getLookAndFeelRevision() + "\" alt=\"Sign in using " + _providerName + "\"";
 
-                    if(HEADER_LOGO_PREFIX.equals(prefix))
+                    if (HEADER_LOGO_PREFIX.equals(prefix))
                         img += " height=\"16px\"";
 
-                    else if(LOGIN_PAGE_LOGO_PREFIX.equals(prefix))
+                    else if (LOGIN_PAGE_LOGO_PREFIX.equals(prefix))
                         img += " height=\"32px\"";
 
                     img += ">";
