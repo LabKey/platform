@@ -1642,6 +1642,7 @@ public class CoreController extends SpringActionController
         }
     }
 
+    //Note: ModuleProperty.saveValue() performs additional permissions check
     @RequiresPermission(ReadPermission.class) @RequiresLogin
     public class SaveModulePropertiesAction extends ApiAction<SaveModulePropertiesForm>
     {
