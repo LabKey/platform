@@ -38,6 +38,7 @@ import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.ExperimentRunType;
+import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.LsidType;
@@ -4620,13 +4621,7 @@ public class ExperimentController extends SpringActionController
                     throw new NotFoundException("No material with RowId " + rowId);
                 }
             }
-            Collections.sort(result, new Comparator<ExpMaterial>()
-            {
-                public int compare(ExpMaterial o1, ExpMaterial o2)
-                {
-                    return o1.getName().compareTo(o2.getName());
-                }
-            });
+            result.sort(Comparator.comparing(Identifiable::getName));
             return result;
         }
 

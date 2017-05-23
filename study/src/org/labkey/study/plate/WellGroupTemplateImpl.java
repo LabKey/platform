@@ -52,15 +52,12 @@ public class WellGroupTemplateImpl extends PropertySetImpl implements WellGroupT
     private static List<? extends Position> sortPositions(List<? extends Position> positions)
     {
         List<? extends Position> sortedPositions = new ArrayList<>(positions);
-        Collections.sort(sortedPositions, new Comparator<Position>()
+        sortedPositions.sort((Comparator<Position>) (first, second) ->
         {
-            public int compare(Position first, Position second)
-            {
-                int comp = first.getColumn() - second.getColumn();
-                if (comp == 0)
-                    comp = first.getRow() - second.getRow();
-                return comp;
-            }
+            int comp = first.getColumn() - second.getColumn();
+            if (comp == 0)
+                comp = first.getRow() - second.getRow();
+            return comp;
         });
         return sortedPositions;
     }

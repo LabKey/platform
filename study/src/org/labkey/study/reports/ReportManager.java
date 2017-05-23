@@ -111,7 +111,8 @@ public class ReportManager implements DatasetManager.DatasetListener
                 .collect(Collectors.toList()));
         }
 
-        Collections.sort(labels, (o1, o2) -> {
+        labels.sort((o1, o2) ->
+        {
             if (o1.getKey() == null && o2.getKey() == null) return 0;
             if (o1.getKey() == null) return -1;
             if (o2.getKey() == null) return 1;

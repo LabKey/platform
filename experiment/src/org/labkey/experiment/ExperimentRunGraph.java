@@ -47,7 +47,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -203,10 +202,10 @@ public class ExperimentRunGraph
                     // add starting inputs to graph if they need grouping
                     Map<ExpMaterial, String> materialRoles = run.getMaterialInputs();
                     List<ExpMaterial> inputMaterials = new ArrayList<>(materialRoles.keySet());
-                    Collections.sort(inputMaterials, new RoleAndNameComparator<>(materialRoles));
+                    inputMaterials.sort(new RoleAndNameComparator<>(materialRoles));
                     Map<ExpData, String> dataRoles = run.getDataInputs();
                     List<ExpData> inputDatas = new ArrayList<>(dataRoles.keySet());
-                    Collections.sort(inputDatas, new RoleAndNameComparator<>(dataRoles));
+                    inputDatas.sort(new RoleAndNameComparator<>(dataRoles));
                     if (!run.getProtocolApplications().isEmpty())
                     {
                         int groupId = run.getProtocolApplications().get(0).getRowId();
@@ -396,8 +395,8 @@ public class ExperimentRunGraph
             List<ExpMaterialImpl> outputMaterials = protApp.getOutputMaterials();
             List<ExpDataImpl> outputDatas = protApp.getOutputDatas();
 
-            Collections.sort(inputMaterials, new RoleAndNameComparator<>(runMaterialInputs));
-            Collections.sort(inputDatas, new RoleAndNameComparator<>(runDataInputs));
+            inputMaterials.sort(new RoleAndNameComparator<>(runMaterialInputs));
+            inputDatas.sort(new RoleAndNameComparator<>(runDataInputs));
 
             if (sequence != prevseq)
             {

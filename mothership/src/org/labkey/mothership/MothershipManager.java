@@ -38,7 +38,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserDisplayNameComparator;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -46,11 +45,12 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static org.labkey.api.security.UserManager.USER_DISPLAY_NAME_COMPARATOR;
 
 /**
  * User: jeckels
@@ -583,7 +583,7 @@ public class MothershipManager
                 list.add(user);
             }
         }
-        Collections.sort(list, new UserDisplayNameComparator());
+        list.sort(USER_DISPLAY_NAME_COMPARATOR);
         return list;
     }
 }

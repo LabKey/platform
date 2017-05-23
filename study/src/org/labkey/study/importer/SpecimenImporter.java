@@ -1878,7 +1878,7 @@ public class SpecimenImporter
                                 break;
                             }
                         }
-                        Collections.sort(dateOrderedEvents, eventComparator);
+                        dateOrderedEvents.sort(eventComparator);
 
                         _iTimer.setPhase(ImportPhases.GetProcessingLocationId);
                         Integer processingLocation = SpecimenManager.getInstance().getProcessingLocationId(dateOrderedEvents);

@@ -287,7 +287,8 @@ public class DatasetFileReader
         }
 
         _runnables = new ArrayList<>(jobMap.values());
-        Collections.sort(_runnables, (j1, j2) -> {
+        _runnables.sort((j1, j2) ->
+        {
             String name1 = j1.getFileName();
             String name2 = j2.getFileName();
             if (name1 != null && name2 != null)

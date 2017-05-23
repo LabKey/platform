@@ -190,7 +190,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
         StringBuilder label = new StringBuilder();
         String delim = "";
         String labelDelim = "";
-        String[] labelsForDescription = new String[parts.length];
+        Object[] labelsForDescription = new String[parts.length];
         int i = 0;
         for (NameLabelPair part : parts)
         {

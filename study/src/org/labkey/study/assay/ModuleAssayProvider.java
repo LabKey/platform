@@ -79,6 +79,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -714,7 +715,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 result.addAll(sortedModuleScripts);
 
                 // Add any remaining module-provided files in alphabetical order
-                moduleScriptFiles.sort((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()));
+                moduleScriptFiles.sort(Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
                 result.addAll(moduleScriptFiles);
             }
         }

@@ -29,7 +29,7 @@
 <%@ page import="org.labkey.di.view.DataIntegrationController" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="java.util.Collections" %>
+<%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
@@ -442,7 +442,7 @@ function onTruncateAndReset(el, id)
 
 int row = 0;
 List<ScheduledPipelineJobDescriptor> sortedDescriptors = new ArrayList<>(descriptorsMap.values());
-Collections.sort(sortedDescriptors, (o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()));
+sortedDescriptors.sort(Comparator.comparing(ScheduledPipelineJobDescriptor::getName, String.CASE_INSENSITIVE_ORDER));
 for (ScheduledPipelineJobDescriptor descriptor : sortedDescriptors)
 {
     row++;

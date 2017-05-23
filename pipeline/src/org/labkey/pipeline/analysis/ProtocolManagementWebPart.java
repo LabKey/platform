@@ -29,6 +29,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -114,7 +115,7 @@ public class ProtocolManagementWebPart extends GridView
 
         PipelineJobService.get().getTaskPipelines(getViewContext().getContainer(), FileAnalysisTaskPipeline.class).stream()
                 .filter(tp -> tp.getProtocolFactoryName() != null)
-                .sorted((tp1, tp2) -> tp1.getDescription().compareToIgnoreCase(tp2.getDescription()))
+                .sorted(Comparator.comparing(TaskPipeline::getDescription, String.CASE_INSENSITIVE_ORDER))
                 .forEach(tp ->
                 {
                     protocols.addAll(getTaskPipelineProtocols(root, tp, false));

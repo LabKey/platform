@@ -327,7 +327,7 @@ public class AdminController extends SpringActionController
             assert null != (asserts = "enabled");
             userEmail = user.getEmail();
             modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
-            Collections.sort(modules, (o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()));
+            modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
         }
     }
 
@@ -667,13 +667,7 @@ public class AdminController extends SpringActionController
 
             FolderType folderType = c.getFolderType();
             List<Module> allModules = new ArrayList<>(ModuleLoader.getInstance().getModules());
-            Collections.sort(allModules, new Comparator<Module>()
-            {
-                public int compare(Module o1, Module o2)
-                {
-                    return o1.getTabName(getViewContext()).compareToIgnoreCase(o2.getTabName(getViewContext()));
-                }
-            });
+            allModules.sort(Comparator.comparing(module -> module.getTabName(getViewContext()), String.CASE_INSENSITIVE_ORDER));
 
             //note: this has been altered to use Container.getRequiredModules() instead of FolderType
             //this is b/c a parent container must consider child workbooks when determining the set of requiredModules
@@ -765,7 +759,8 @@ public class AdminController extends SpringActionController
             List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
 
             // DefaultModule and CoreModule compareTo() implementations claim to cooperate to put Core first in the sort order... but it doesn't work
-            Collections.sort(modules, (m1, m2) -> {
+            modules.sort((m1, m2) ->
+            {
                 if (m1.getName().equalsIgnoreCase(m2.getName()))
                     return 0;
                 else if (CoreModule.CORE_MODULE_NAME.equalsIgnoreCase(m1.getName()))
@@ -1978,7 +1973,7 @@ public class AdminController extends SpringActionController
         {
             stackTraces =  Thread.getAllStackTraces();
             threads = new ArrayList<>(stackTraces.keySet());
-            threads.sort((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()));
+            threads.sort(Comparator.comparing(Thread::getName, String.CASE_INSENSITIVE_ORDER));
 
             spids = new HashMap<>();
 
@@ -5372,14 +5367,7 @@ public class AdminController extends SpringActionController
         private List<Map.Entry<String, Integer>> sortByCounts(RequestInfo requestInfo)
         {
             List<Map.Entry<String, Integer>> objects = new ArrayList<>(requestInfo.getObjects().entrySet());
-            Collections.sort(objects, new Comparator<Map.Entry<String, Integer>>()
-            {
-                @Override
-                public int compare(Map.Entry<String, Integer> o1, Map.Entry<String, Integer> o2)
-                {
-                    return o1.getValue().compareTo(o2.getValue()) * -1;
-                }
-            });
+            objects.sort(Comparator.comparing(Map.Entry::getValue, Comparator.reverseOrder()));
             return objects;
         }
     }
@@ -5715,7 +5703,7 @@ public class AdminController extends SpringActionController
             {
                 super(FrameType.PORTAL);
                 List<ModuleContext> sorted = new ArrayList<>(contexts);
-                Collections.sort(sorted, (mc1, mc2) -> mc1.getName().compareToIgnoreCase(mc2.getName()));
+                sorted.sort(Comparator.comparing(ModuleContext::getName, String.CASE_INSENSITIVE_ORDER));
 
                 _contexts = sorted;
                 _type = type;

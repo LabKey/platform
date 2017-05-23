@@ -258,20 +258,13 @@ public class Olap4JCachedCubeFactory
     {
         for (_Member m : list)
             if (null != m.childMembers)
-                Collections.sort(m.childMembers,ORDINAL_COMPARATOR);
+                m.childMembers.sort(ORDINAL_COMPARATOR);
     }
-
 
 
     static final NamedList<NamedSet> emptyNamedSetList = (new _EmptyNamedList<NamedSet>()).recast();
 
-    static final Comparator<Member> ORDINAL_COMPARATOR = new Comparator<Member>(){
-        @Override
-        public int compare(Member o1, Member o2)
-        {
-            return o1.getOrdinal() - o2.getOrdinal();
-        }
-    };
+    static final Comparator<Member> ORDINAL_COMPARATOR = Comparator.comparingInt(Member::getOrdinal);
 
 
     static class MemberComparator implements Comparator<_Member>

@@ -58,6 +58,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyEntity;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
@@ -136,14 +137,7 @@ public class AssayPublishManager implements AssayPublishService
         Set<? extends Study> studies = StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, permission);
 
         // Sort based on full container path
-        Set<Study> result = new TreeSet<>(new Comparator<Study>()
-        {
-            @Override
-            public int compare(Study s1, Study s2)
-            {
-                return s1.getContainer().compareTo(s2.getContainer());
-            }
-        });
+        Set<Study> result = new TreeSet<>(Comparator.comparing(StudyEntity::getContainer));
         result.addAll(studies);
         return result;
     }

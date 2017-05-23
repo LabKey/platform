@@ -204,14 +204,7 @@ public abstract class QueryRelation
     public final Set<RelationColumn> getOrderedSuggestedColumns(Set<RelationColumn> selected)
     {
         Set<RelationColumn> suggested = getSuggestedColumns(selected);
-        TreeSet ret = new TreeSet(new Comparator<RelationColumn>()
-        {
-            @Override
-            public int compare(RelationColumn o1, RelationColumn o2)
-            {
-                return o1.getAlias().compareTo(o2.getAlias());
-            }
-        });
+        TreeSet<RelationColumn> ret = new TreeSet<>(Comparator.comparing(RelationColumn::getAlias));
 
         ret.addAll(suggested);
 

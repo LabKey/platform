@@ -23,6 +23,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;
 import org.labkey.study.SpecimenManager;
+import org.labkey.study.SpecimenManager.SpecimenRequestInput;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.SpecimenRequestActor;
@@ -50,7 +51,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -439,8 +439,8 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         ctx.getLogger().info("Importing specimen request forms");
         // try to merge with any existing request forms, even though there doesn't seem to be the notion of a duplicate value
         Set<String> currentInputs = new HashSet<>();
-        List<SpecimenManager.SpecimenRequestInput> inputs = new ArrayList<>();
-        for (SpecimenManager.SpecimenRequestInput input : SpecimenManager.getInstance().getNewSpecimenRequestInputs(ctx.getContainer(), false))
+        List<SpecimenRequestInput> inputs = new ArrayList<>();
+        for (SpecimenRequestInput input : SpecimenManager.getInstance().getNewSpecimenRequestInputs(ctx.getContainer(), false))
         {
             inputs.add(input);
             currentInputs.add(input.getTitle());
@@ -456,7 +456,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                 {
                     if (!currentInputs.contains(form.getTitle()))
                     {
-                        SpecimenManager.SpecimenRequestInput input = new SpecimenManager.SpecimenRequestInput(
+                        SpecimenRequestInput input = new SpecimenRequestInput(
                                 form.getTitle(),
                                 form.getHelpText(),
                                 form.getDisplayOrder(),
@@ -469,15 +469,8 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                     else
                         ctx.getLogger().info("There is currently a form with the same title: " + form.getTitle() + ", skipping this from import");
                 }
-                Collections.sort(inputs, new Comparator<SpecimenManager.SpecimenRequestInput>()
-                {
-                    @Override
-                    public int compare(SpecimenManager.SpecimenRequestInput o1, SpecimenManager.SpecimenRequestInput o2)
-                    {
-                        return o1.getDisplayOrder() - o2.getDisplayOrder();
-                    }
-                });
-                SpecimenManager.getInstance().saveNewSpecimenRequestInputs(ctx.getContainer(), inputs.toArray(new SpecimenManager.SpecimenRequestInput[inputs.size()]));
+                inputs.sort(Comparator.comparingInt(SpecimenRequestInput::getDisplayOrder));
+                SpecimenManager.getInstance().saveNewSpecimenRequestInputs(ctx.getContainer(), inputs.toArray(new SpecimenRequestInput[inputs.size()]));
             }
         }
     }

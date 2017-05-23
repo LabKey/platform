@@ -993,13 +993,7 @@ public class AnnouncementsController extends SpringActionController
         Set<Class<? extends Permission>> perms = Collections.singleton(InsertPermission.class);
         List<User> possibleAssignedTo = SecurityManager.getUsersWithPermissions(c, perms);
 
-        Collections.sort(possibleAssignedTo, new Comparator<User>()
-        {
-            public int compare(User u1, User u2)
-            {
-                return u1.getDisplayName(currentUser).compareToIgnoreCase(u2.getDisplayName(currentUser));
-            }
-        });
+        possibleAssignedTo.sort(Comparator.comparing(user -> user.getDisplayName(currentUser), String.CASE_INSENSITIVE_ORDER));
 
         // TODO: Should merge all this with IssuesManager.getAssignedToList()
         StringBuilder select = new StringBuilder("    <select name=\"" + name + "\">\n");

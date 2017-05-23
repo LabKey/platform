@@ -30,10 +30,8 @@
 <%@ page import="org.labkey.query.persist.QueryManager" %>
 <%@ page import="org.labkey.query.view.CustomViewSetKey" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.Collections" %>
-<%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Objects" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -76,30 +74,27 @@
         views.addAll(CustomViewSetKey.getCustomViewsFromSession(getViewContext().getRequest(), c, queryName).values());
     }
 
-    Collections.sort(views, new Comparator<CstmView>()
+    views.sort((o1, o2) ->
     {
-        public int compare(CstmView o1, CstmView o2)
+        if (o1 == o2)
+            return 0;
+        Integer owner1 = o1.getCustomViewOwner();
+        Integer owner2 = o2.getCustomViewOwner();
+        if (!Objects.equals(owner1, owner2))
         {
-            if (o1 == o2)
-                return 0;
-            Integer owner1 = o1.getCustomViewOwner();
-            Integer owner2 = o2.getCustomViewOwner();
-            if (owner1 != owner2)
-            {
-                if (owner1 == null)
-                    return -1;
-                if (owner2 == null)
-                    return 1;
-                return owner1 - owner2;
-            }
-            int ret = StringUtils.trimToEmpty(o1.getSchema()).compareToIgnoreCase(StringUtils.trimToEmpty(o2.getSchema()));
-            if (ret != 0)
-                return ret;
-            ret = StringUtils.trimToEmpty(o1.getQueryName()).compareToIgnoreCase(StringUtils.trimToEmpty(o2.getQueryName()));
-            if (ret != 0)
-                return ret;
-            return StringUtils.trimToEmpty(o1.getName()).compareToIgnoreCase(StringUtils.trimToEmpty(o2.getName()));
+            if (owner1 == null)
+                return -1;
+            if (owner2 == null)
+                return 1;
+            return owner1 - owner2;
         }
+        int ret = StringUtils.trimToEmpty(o1.getSchema()).compareToIgnoreCase(StringUtils.trimToEmpty(o2.getSchema()));
+        if (ret != 0)
+            return ret;
+        ret = StringUtils.trimToEmpty(o1.getQueryName()).compareToIgnoreCase(StringUtils.trimToEmpty(o2.getQueryName()));
+        if (ret != 0)
+            return ret;
+        return StringUtils.trimToEmpty(o1.getName()).compareToIgnoreCase(StringUtils.trimToEmpty(o2.getName()));
     });
 %>
 <p>This page is for troubleshooting custom grid views. It is not intended for general use.

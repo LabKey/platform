@@ -33,11 +33,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.security.permissions.AbstractActionPermissionTest;
-import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.stats.BaseAggregatesAnalyticsProvider;
-import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.view.AuditChangesView;
@@ -63,6 +58,8 @@ import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
@@ -71,7 +68,10 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.stats.BaseAggregatesAnalyticsProvider;
+import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -4407,12 +4407,7 @@ public static class ExportSqlForm
             MultiValuedMap<Container, Container> containerTree = ContainerManager.getContainerTree(_c.getProject());
             Set<Container> adminContainers = ContainerManager.getContainerSet(containerTree, user, AdminPermission.class);
 
-            SortedSet<Container> sortedContainers = new TreeSet<>(new Comparator<Container>() {
-                    public int compare(Container o1, Container o2)
-                    {
-                        return o1.getPath().compareTo(o2.getPath());
-                    }
-            });
+            SortedSet<Container> sortedContainers = new TreeSet<>(Comparator.comparing(Container::getPath));
             sortedContainers.addAll(adminContainers);
 
             // Add initial container if it isn't in the project tree
@@ -4435,7 +4430,6 @@ public static class ExportSqlForm
                 _sourcesAndSchemasIncludingSystem.put(source, schemaNames);
             }
         }
-
     }
 
     public static class ExternalSchemaBean extends BaseExternalSchemaBean<ExternalSchemaDef>

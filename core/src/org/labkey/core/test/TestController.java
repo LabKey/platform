@@ -49,6 +49,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -173,7 +174,7 @@ public class TestController extends SpringActionController
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
             List<ActionDescriptor> descriptors = new ArrayList<>(_actionResolver.getActionDescriptors());
-            Collections.sort(descriptors, (ad1, ad2) -> ad1.getPrimaryName().compareTo(ad2.getPrimaryName()));
+            descriptors.sort(Comparator.comparing(ActionDescriptor::getPrimaryName));
 
             for (ActionDescriptor ad : descriptors)
             {

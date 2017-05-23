@@ -46,12 +46,14 @@ import org.labkey.api.webdav.WebdavService;
 
 import java.io.File;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -232,7 +234,7 @@ public class DavCrawler implements ShutdownListener
     }
 
 
-    LinkedList<Pair<String, Date>> _recent = new LinkedList<>();
+    private final LinkedList<Pair<String, Date>> _recent = new LinkedList<>();
 
     
     class IndexDirectoryJob implements Runnable, SearchService.TaskListener
@@ -655,18 +657,14 @@ public class DavCrawler implements ShutdownListener
         SearchService ss = getSearchService();
         boolean paused = !ss.isRunning();
 
-        Pair<String,Date>[] recent;
+        List<Pair<String, Date>> recent;
+
         synchronized(_recent)
         {
-            recent = new Pair[_recent.size()];
-            _recent.toArray(recent);
-            Arrays.sort(recent, new Comparator<Pair<String,Date>>(){
-                public int compare(Pair<String,Date> o1, Pair<String,Date> o2)
-                {
-                    return o2.second.compareTo(o1.second);
-                }
-            });
+            recent = new ArrayList<>(_recent);
         }
+
+        recent.sort(Comparator.comparing(Pair::getValue, Comparator.reverseOrder()));
 
         StringBuilder activity = new StringBuilder("<table cellpadding=1 cellspacing=0>"); //<tr><td><img width=80 height=1 src='" + AppProps.getInstance().getContextPath() + "/_.gif'></td><td><img width=300 height=1 src='" + AppProps.getInstance().getContextPath() + "/_.gif'></td></tr>");
         String last = "";
@@ -674,7 +672,8 @@ public class DavCrawler implements ShutdownListener
         long cutoff = now - (paused ? 60000 : 5*60000);
         now = now - (now % 1000);
         long newest = 0;
-        for (Pair<String,Date> p : recent)
+
+        for (Pair<String, Date> p : recent)
         {
             String text  = p.first;
             long time = p.second.getTime();
@@ -682,7 +681,7 @@ public class DavCrawler implements ShutdownListener
             newest = Math.max(newest,time);
             long dur = Math.max(0,now - (time-(time%1000)));
             String ago = DateUtil.formatDuration(dur) + "&nbsp;ago";
-            activity.append("<tr><td align=right color=#c0c0c0>" + (ago.equals(last)?"":ago) + "&nbsp;</td><td>" + PageFlowUtil.filter(text) + "</td></tr>\n");
+            activity.append("<tr><td align=right color=#c0c0c0>").append(ago.equals(last) ? "" : ago).append("&nbsp;</td><td>").append(PageFlowUtil.filter(text)).append("</td></tr>\n");
             last = ago;
         }
         if (paused)

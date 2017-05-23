@@ -47,8 +47,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -384,15 +382,11 @@ public class SimpleSpecimenImporter extends SpecimenImporter
                 maps.add(m);
             }
 
-            Collections.sort(maps, new Comparator<Map<String, Object>>()
+            maps.sort((a, b) ->
             {
-                @Override
-                public int compare(Map<String, Object> a, Map<String, Object> b)
-                {
-                    Integer aId = (Integer)a.get(tsvIdCol);
-                    Integer bId = (Integer)b.get(tsvIdCol);
-                    return aId.compareTo(bId);
-                }
+                Integer aId = (Integer) a.get(tsvIdCol);
+                Integer bId = (Integer) b.get(tsvIdCol);
+                return aId.compareTo(bId);
             });
 
             return maps;

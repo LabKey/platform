@@ -92,7 +92,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -704,35 +703,31 @@ public class DatasetQueryView extends StudyQueryView
 
         try
         {
-            Collections.sort(labels, new Comparator<String>()
+            labels.sort((o1, o2) ->
             {
-                @Override
-                public int compare(String o1, String o2)
+                Matcher m = alphaNumPattern.matcher(o1);
+                boolean matches = m.matches();
+                assert matches;
+                String prefix1 = m.groupCount() > 0 ? m.group(1) : "";
+                String number1 = m.groupCount() > 1 ? m.group(2) : "";
+                String suffix1 = m.groupCount() > 2 ? m.group(3) : "";
+
+                m = alphaNumPattern.matcher(o2);
+                matches = m.matches();
+                assert matches;
+                String prefix2 = m.groupCount() > 0 ? m.group(1) : "";
+                String number2 = m.groupCount() > 1 ? m.group(2) : "";
+                String suffix2 = m.groupCount() > 2 ? m.group(3) : "";
+
+                if (0 == prefix1.compareTo(prefix2) && StringUtils.isNotEmpty(number1) && StringUtils.isNotEmpty(number2))
                 {
-                    Matcher m = alphaNumPattern.matcher(o1);
-                    boolean matches = m.matches();
-                    assert matches;
-                    String prefix1 = m.groupCount() > 0 ? m.group(1) : "";
-                    String number1 = m.groupCount() > 1 ? m.group(2) : "";
-                    String suffix1 = m.groupCount() > 2 ? m.group(3) : "";
-
-                    m = alphaNumPattern.matcher(o2);
-                    matches = m.matches();
-                    assert matches;
-                    String prefix2 = m.groupCount() > 0 ? m.group(1) : "";
-                    String number2 = m.groupCount() > 1 ? m.group(2) : "";
-                    String suffix2 = m.groupCount() > 2 ? m.group(3) : "";
-
-                    if (0 == prefix1.compareTo(prefix2) && StringUtils.isNotEmpty(number1) && StringUtils.isNotEmpty(number2))
-                    {
-                        long i1 = Long.parseLong(number1);
-                        long i2 = Long.parseLong(number2);
-                        if (i1 != i2)
-                            return i1 > i2 ? 1 : -1;
-                        return suffix1.compareTo(suffix2);
-                    }
-                    return o1.compareTo(o2);
+                    long i1 = Long.parseLong(number1);
+                    long i2 = Long.parseLong(number2);
+                    if (i1 != i2)
+                        return i1 > i2 ? 1 : -1;
+                    return suffix1.compareTo(suffix2);
                 }
+                return o1.compareTo(o2);
             });
         }
         catch (IllegalStateException x)

@@ -87,12 +87,11 @@ import java.util.Set;
  */
 public class PlateManager implements PlateService
 {
-    private List<PlateService.PlateDetailsResolver> _detailsLinkResolvers = new ArrayList<>();
     private final Object TEMPLATE_NAME_SYNC_OBJ = new Object();
+
+    private List<PlateService.PlateDetailsResolver> _detailsLinkResolvers = new ArrayList<>();
     private Set<String> _distinctTemplateNames;
     private boolean _lsidHandlersRegistered = false;
-
-
     private Map<String, PlateTypeHandler> _plateTypeHandlers = new HashMap<>();
 
     public PlateManager()
@@ -360,7 +359,7 @@ public class PlateManager implements PlateService
             sortedGroups.add(wellgroup);
         }
 
-        Collections.sort(sortedGroups, new WellGroupTemplateComparator());
+        sortedGroups.sort(new WellGroupTemplateComparator());
 
         for (WellGroupTemplateImpl group : sortedGroups)
             plate.addWellGroup(group);
@@ -595,13 +594,7 @@ public class PlateManager implements PlateService
     public List<PlateTypeHandler> getPlateTypeHandlers()
     {
         List<PlateTypeHandler> result = new ArrayList<>(_plateTypeHandlers.values());
-        Collections.sort(result, new Comparator<PlateTypeHandler>()
-        {
-            public int compare(PlateTypeHandler o1, PlateTypeHandler o2)
-            {
-                return o1.getAssayType().toLowerCase().compareTo(o2.getAssayType().toLowerCase());
-            }
-        });
+        result.sort(Comparator.comparing(PlateTypeHandler::getAssayType, String.CASE_INSENSITIVE_ORDER));
         return result;
     }
 

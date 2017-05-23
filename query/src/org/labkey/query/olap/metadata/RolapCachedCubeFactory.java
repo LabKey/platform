@@ -32,7 +32,6 @@ import org.olap4j.metadata.Member;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 
 import static org.labkey.query.olap.rolap.RolapCubeDef.DimensionDef;
@@ -303,7 +302,7 @@ public class RolapCachedCubeFactory
         {
             if (null == m.childMembers || m.childMembers.isEmpty())
                 continue;
-            Collections.sort(m.childMembers, MEMBER_COMPARATOR);
+            m.childMembers.sort(MEMBER_COMPARATOR);
             // We also create a map using the KEY value
             JdbcType childType = ((CachedCube._Member) m.childMembers.get(0)).level.jdbcType;
             m._keyMap = CachedCube.KeyMap.create(childType, m.childMembers);

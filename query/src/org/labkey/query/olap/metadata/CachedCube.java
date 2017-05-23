@@ -842,7 +842,7 @@ public class CachedCube extends MetadataElementBase implements Cube
             if (readonly)
                 throw new IllegalStateException();
             indexMap = null;
-            Collections.sort(this, c);
+            sort(c);
         }
 
 

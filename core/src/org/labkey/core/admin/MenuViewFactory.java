@@ -214,14 +214,7 @@ public class MenuViewFactory
             containersTemp = adjustedContainers;
         }
 
-        Collections.sort(containersTemp, new Comparator<Container>()
-        {
-            @Override
-            public int compare(Container container1, Container container2)
-            {
-                return container1.compareTo(container2);
-            }
-        });
+        Collections.sort(containersTemp);
 
         final Collection<Container> containers = containersTemp;
 

@@ -20,7 +20,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -67,12 +66,7 @@ public class JunitManager
 
             if (!moduleClazzes.isEmpty())
             {
-                Collections.sort(moduleClazzes, new Comparator<Class>(){
-                    public int compare(Class c1, Class c2)
-                    {
-                        return c1.getName().compareTo(c2.getName());
-                    }
-                });
+                moduleClazzes.sort(Comparator.comparing(Class::getName));
 
                 _testCases.put(module.getName(), moduleClazzes);
             }

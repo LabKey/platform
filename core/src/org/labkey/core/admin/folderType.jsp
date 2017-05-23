@@ -28,7 +28,6 @@
 <%@ page import="org.labkey.core.admin.FolderManagementAction" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
@@ -46,7 +45,7 @@
 
 <script>
 var requiredModules = new Object();
-var defaultModules = new Object();
+var defaultModules = new Object();  <% // This is used... Java code below generates JavaScript that references defaultModules[] %>
 <% //Generate javascript objects...
     FolderManagementAction.FolderManagementForm form = (FolderManagementAction.FolderManagementForm) HttpView.currentModel();
     final ViewContext context = getViewContext();
@@ -54,13 +53,7 @@ var defaultModules = new Object();
     boolean userHasEnableRestrictedModulesPermission = c.hasEnableRestrictedModules(getUser());
     Collection<FolderType> allFolderTypes = FolderTypeManager.get().getFolderTypes(userHasEnableRestrictedModulesPermission);
     List<Module> allModules = new ArrayList<>(ModuleLoader.getInstance().getModules(userHasEnableRestrictedModulesPermission));
-    Collections.sort(allModules, new Comparator<Module>()
-    {
-        public int compare(Module o1, Module o2)
-        {
-        return o1.getTabName(context).compareToIgnoreCase(o2.getTabName(context));
-        }
-    });
+    allModules.sort(Comparator.comparing(module -> module.getTabName(context), String.CASE_INSENSITIVE_ORDER));
     Set<Module> activeModules = c.getActiveModules();
     Set<Module> requiredModules = c.getRequiredModules();
     Map<String, Set<String>> dependencyMap = c.getModuleDependencyMap();

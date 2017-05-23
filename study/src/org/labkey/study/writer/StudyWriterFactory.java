@@ -17,9 +17,9 @@ package org.labkey.study.writer;
 
 import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.BaseFolderWriter;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
@@ -30,8 +30,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedList;
 
 
@@ -127,24 +125,19 @@ public class StudyWriterFactory implements FolderWriterFactory
 
             if (sort)
             {
-                Collections.sort(children, new Comparator<Writer>()
+                children.sort((o1, o2) ->
                 {
-                    @Override
-                    public int compare(Writer o1, Writer o2)
-                    {
-                        String str1 = o1.getDataType();
-                        String str2 = o2.getDataType();
+                    String str1 = o1.getDataType();
+                    String str2 = o2.getDataType();
 
-                        if (str1 == null && str2 == null) return 0;
-                        if (str1 == null) return 1;
-                        if (str2 == null) return -1;
+                    if (str1 == null && str2 == null) return 0;
+                    if (str1 == null) return 1;
+                    if (str2 == null) return -1;
 
-                        return str1.compareToIgnoreCase(str2);
-                    }
+                    return str1.compareToIgnoreCase(str2);
                 });
             }
             return children;
         }
-
     }
 }

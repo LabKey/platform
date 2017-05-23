@@ -18,15 +18,15 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.DbScope" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="org.labkey.query.controllers.QueryController.QueryUrlsImpl" %>
 <%@ page import="org.labkey.query.persist.ExternalSchemaDef" %>
 <%@ page import="org.labkey.query.persist.LinkedSchemaDef" %>
 <%@ page import="org.labkey.query.persist.QueryManager" %>
-<%@ page import="java.util.Collections" %>
+<%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <h2>External Schemas</h2>
@@ -52,7 +52,7 @@
 <% }
 else
 {
-    Collections.sort(defs, (def1, def2) -> def1.getUserSchemaName().compareToIgnoreCase(def2.getUserSchemaName()));
+    defs.sort(Comparator.comparing(ExternalSchemaDef::getUserSchemaName, String.CASE_INSENSITIVE_ORDER));
 
     String reloadedSchema = StringUtils.trimToNull(request.getParameter("reloadedSchema"));
 
@@ -149,7 +149,7 @@ else
 <% }
 else
 {
-    Collections.sort(linkedSchemas, (def1, def2) -> def1.getUserSchemaName().compareToIgnoreCase(def2.getUserSchemaName())); %>
+    linkedSchemas.sort(Comparator.comparing(LinkedSchemaDef::getUserSchemaName, String.CASE_INSENSITIVE_ORDER)); %>
 
     <table class='labkey-data-region labkey-show-borders'>
         <tr>

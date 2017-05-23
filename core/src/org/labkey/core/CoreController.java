@@ -1874,7 +1874,7 @@ public class CoreController extends SpringActionController
 
             List<FolderImporter> registeredImporters = new ArrayList<>(registry.getRegisteredFolderImporters());
             if (form.isSortAlpha())
-                Collections.sort(registeredImporters, new ImporterAlphaComparator());
+                registeredImporters.sort(new ImporterAlphaComparator());
 
             List<Map<String, Object>> selectableImporters = new ArrayList<>();
             for (FolderImporter importer : registeredImporters)

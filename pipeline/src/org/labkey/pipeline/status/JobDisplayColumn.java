@@ -119,13 +119,7 @@ public class JobDisplayColumn extends SimpleDisplayColumn
             // Make a copy of the immutable list so we can sort as needed
             _jobStatus = new ArrayList<>(_jobStatus);
 
-            Collections.sort(_jobStatus, new Comparator<PipelineStatusFile>()
-            {
-                public int compare(PipelineStatusFile sf1, PipelineStatusFile sf2)
-                {
-                    return sf1.getDescription().compareToIgnoreCase(sf2.getDescription());
-                }
-            });
+            _jobStatus.sort(Comparator.comparing(PipelineStatusFile::getDescription, String.CASE_INSENSITIVE_ORDER));
         }
 
         return _jobStatus;

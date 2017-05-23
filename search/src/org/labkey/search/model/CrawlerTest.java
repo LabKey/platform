@@ -221,7 +221,7 @@ public class CrawlerTest extends Assert
             return ret;
         }
 
-        public synchronized boolean updateFile(Path path, Date lastIndexed, Date modified)
+        public synchronized boolean updateFile(@NotNull Path path, @NotNull Date lastIndexed, Date modified)
         {
             files.put(path, new DavCrawler.ResourceInfo(lastIndexed,modified));
             return true;

@@ -55,19 +55,19 @@ import org.labkey.study.model.SpecimenRequestActor;
 import org.labkey.study.model.SpecimenRequestEvent;
 import org.labkey.study.model.SpecimenRequestRequirement;
 import org.labkey.study.model.SpecimenRequestStatus;
-import org.labkey.study.model.Vial;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.Vial;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.security.permissions.ManageRequestsPermission;
+import org.labkey.study.security.permissions.RequestSpecimensPermission;
+import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
 import org.labkey.study.specimen.notifications.ActorNotificationRecipientSet;
 import org.labkey.study.specimen.notifications.DefaultRequestNotification;
 import org.labkey.study.specimen.notifications.NotificationRecipientSet;
 import org.labkey.study.specimen.settings.RepositorySettings;
 import org.labkey.study.specimen.settings.RequestNotificationSettings;
-import org.labkey.study.security.permissions.ManageRequestsPermission;
-import org.labkey.study.security.permissions.RequestSpecimensPermission;
-import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
 import org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
@@ -83,7 +83,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -356,25 +355,22 @@ public class SpecimenUtils
                 addIfNotPresent(actor, null, possibleNotifications);
         }
 
-        Collections.sort(possibleNotifications, new Comparator<ActorNotificationRecipientSet>()
+        possibleNotifications.sort((first, second) ->
         {
-            public int compare(ActorNotificationRecipientSet first, ActorNotificationRecipientSet second)
+            String firstSite = first.getLocation() != null ? first.getLocation().getLabel() : "";
+            String secondSite = second.getLocation() != null ? second.getLocation().getLabel() : "";
+            int comp = firstSite.compareToIgnoreCase(secondSite);
+            if (comp == 0)
             {
-                String firstSite = first.getLocation() != null ? first.getLocation().getLabel() : "";
-                String secondSite = second.getLocation() != null ? second.getLocation().getLabel() : "";
-                int comp = firstSite.compareToIgnoreCase(secondSite);
-                if (comp == 0)
-                {
-                    String firstActorLabel = first.getActor().getLabel();
-                    if (firstActorLabel == null)
-                        firstActorLabel = "";
-                    String secondActorLabel = second.getActor().getLabel();
-                    if (secondActorLabel == null)
-                        secondActorLabel = "";
-                    comp = firstActorLabel.compareToIgnoreCase(secondActorLabel);
-                }
-                return comp;
+                String firstActorLabel = first.getActor().getLabel();
+                if (firstActorLabel == null)
+                    firstActorLabel = "";
+                String secondActorLabel = second.getActor().getLabel();
+                if (secondActorLabel == null)
+                    secondActorLabel = "";
+                comp = firstActorLabel.compareToIgnoreCase(secondActorLabel);
             }
+            return comp;
         });
         return possibleNotifications;
     }

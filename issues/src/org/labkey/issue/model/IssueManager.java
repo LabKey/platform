@@ -16,7 +16,6 @@
 package org.labkey.issue.model;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.collections4.comparators.ReverseComparator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -51,7 +50,6 @@ import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.MemberType;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserDisplayNameComparator;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -110,6 +108,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import static org.labkey.api.search.SearchService.PROPERTY.categories;
+import static org.labkey.api.security.UserManager.USER_DISPLAY_NAME_COMPARATOR;
 
 /**
  * User: mbellew
@@ -288,16 +287,16 @@ public class IssueManager
         // Add all current issue comments
         commentLinkedList.addAll(issue.getComments());
 
-        Comparator<Issue.Comment> comparator = (c1, c2) -> c1.getCreated().compareTo(c2.getCreated());
+        Comparator<Issue.Comment> comparator = Comparator.comparing(Entity::getCreated);
         // Respect the configuration's sorting order - issue 23524
         Container issueContainer = issue.lookupContainer();
         IssueListDef issueListDef = IssueManager.getIssueListDef(issue);
         if (Sort.SortDirection.DESC == getCommentSortDirection(issueContainer, issueListDef.getName()))
         {
-            comparator = new ReverseComparator<>(comparator);
+            comparator = comparator.reversed();
         }
 
-        Collections.sort(commentLinkedList, comparator);
+        commentLinkedList.sort(comparator);
         return commentLinkedList;
     }
 
@@ -735,8 +734,6 @@ public class IssueManager
     }
 
 
-    private static final Comparator<User> USER_COMPARATOR = new UserDisplayNameComparator();
-
     public static @NotNull Collection<User> getAssignedToList(Container c, @Nullable String issueDefName, @Nullable Issue issue)
     {
         Collection<User> initialAssignedTo = getInitialAssignedToList(c, issueDefName);
@@ -748,7 +745,7 @@ public class IssueManager
 
             if (createdByUser != null && !createdByUser.isGuest() && !initialAssignedTo.contains(createdByUser) && canAssignTo(c, createdByUser))
             {
-                Set<User> modifiedAssignedTo = new TreeSet<>(USER_COMPARATOR);
+                Set<User> modifiedAssignedTo = new TreeSet<>(USER_DISPLAY_NAME_COMPARATOR);
                 modifiedAssignedTo.addAll(initialAssignedTo);
                 modifiedAssignedTo.add(createdByUser);
                 return Collections.unmodifiableSet(modifiedAssignedTo);
@@ -792,7 +789,7 @@ public class IssueManager
 
     private static Set<User> createAssignedToList(Container c, Collection<User> candidates)
     {
-        Set<User> assignedTo = new TreeSet<>(USER_COMPARATOR);
+        Set<User> assignedTo = new TreeSet<>(USER_DISPLAY_NAME_COMPARATOR);
 
         for (User candidate : candidates)
             if (canAssignTo(c, candidate))

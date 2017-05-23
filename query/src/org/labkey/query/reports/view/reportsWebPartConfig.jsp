@@ -65,7 +65,7 @@
             reportNames.add(reportName);
         }
     }
-    Collections.sort(reportNames, String.CASE_INSENSITIVE_ORDER);
+    reportNames.sort(String.CASE_INSENSITIVE_ORDER);
 
     String sectionName = Report.renderParam.showSection.name();
     String showTabs = Report.renderParam.showTabs.name();

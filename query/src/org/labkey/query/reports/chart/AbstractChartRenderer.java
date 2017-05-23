@@ -38,7 +38,6 @@ import org.labkey.api.view.DataView;
 
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -153,12 +152,7 @@ public abstract class AbstractChartRenderer implements ChartRenderer
             }
         }
 
-        Collections.sort(columns, new Comparator<ColumnInfo>(){
-            public int compare(ColumnInfo o1, ColumnInfo o2)
-            {
-                return o1.getLabel().compareTo(o2.getLabel());
-            }
-        });
+        columns.sort(Comparator.comparing(ColumnInfo::getLabel));
 
         Map<String, String> displayColumns = new LinkedHashMap<>();
         for (ColumnInfo col : columns)

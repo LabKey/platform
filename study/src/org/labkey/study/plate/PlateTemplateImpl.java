@@ -110,7 +110,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         {
             List<WellGroupTemplateImpl> sortedWellGroups = new ArrayList<>();
             sortedWellGroups.addAll(templatesByType.values());
-            Collections.sort(sortedWellGroups, new PlateManager.WellGroupTemplateComparator());
+            sortedWellGroups.sort(new PlateManager.WellGroupTemplateComparator());
             templatesByType.clear();
             for (WellGroupTemplateImpl wellGroup : sortedWellGroups)
                 templatesByType.put(wellGroup.getName(), wellGroup);

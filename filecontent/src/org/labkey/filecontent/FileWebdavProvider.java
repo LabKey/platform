@@ -186,7 +186,7 @@ public class FileWebdavProvider implements WebdavService.Provider
                     _map.put(dir.getLabel(), dir);
                     _names.add(dir.getLabel());
                 }
-            Collections.sort(_names, String.CASE_INSENSITIVE_ORDER);
+            _names.sort(String.CASE_INSENSITIVE_ORDER);
         }
 
         @Override

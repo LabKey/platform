@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -357,14 +356,7 @@ public class Issue extends Entity implements Serializable, Cloneable
         List<Issue.Comment> result = new ArrayList<>(_comments);
         IssueListDef issueListDef = IssueManager.getIssueListDef(this);
         final Sort.SortDirection sort = IssueManager.getCommentSortDirection(ContainerManager.getForId(getContainerId()), issueListDef != null ? issueListDef.getName() : IssueListDef.DEFAULT_ISSUE_LIST_NAME);
-        Collections.sort(result, new Comparator<Comment>()
-        {
-            @Override
-            public int compare(Comment o1, Comment o2)
-            {
-                return o1.getCreated().compareTo(o2.getCreated()) * (sort == Sort.SortDirection.ASC ? 1 : -1);
-            }
-        });
+        result.sort((o1, o2) -> o1.getCreated().compareTo(o2.getCreated()) * (sort == Sort.SortDirection.ASC ? 1 : -1));
         return result;
     }
 

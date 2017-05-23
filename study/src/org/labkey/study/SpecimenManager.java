@@ -152,27 +152,9 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             }
         }, AdditiveType.class);
 */
-        _requestEventHelper = new QueryHelper<>(new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoSampleRequestEvent();
-            }
-        }, SpecimenRequestEvent.class);
-        _requestHelper = new QueryHelper<>(new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoSampleRequest();
-            }
-        }, SpecimenRequest.class);
-        _requestStatusHelper = new QueryHelper<>(new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoSampleRequestStatus();
-            }
-        }, SpecimenRequestStatus.class);
+        _requestEventHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoSampleRequestEvent(), SpecimenRequestEvent.class);
+        _requestHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoSampleRequest(), SpecimenRequest.class);
+        _requestStatusHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoSampleRequestStatus(), SpecimenRequestStatus.class);
 
         initGroupedValueAllowedColumnMap();
 
@@ -399,7 +381,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         if (events == null || events.isEmpty())
             return eventList;
         eventList.addAll(events);
-        Collections.sort(eventList, getSpecimenEventDateComparator());
+        eventList.sort(getSpecimenEventDateComparator());
         return eventList;
     }
 
@@ -410,12 +392,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
         for (SpecimenEvent event : allEvents)
         {
-            List<SpecimenEvent> vialEvents = vialIdToEvents.get(event.getVialId());
-            if (vialEvents == null)
-            {
-                vialEvents = new ArrayList<>();
-                vialIdToEvents.put(event.getVialId(), vialEvents);
-            }
+            List<SpecimenEvent> vialEvents = vialIdToEvents.computeIfAbsent(event.getVialId(), k -> new ArrayList<>());
             vialEvents.add(event);
         }
 
@@ -425,7 +402,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         {
             List<SpecimenEvent> events = vialIdToEvents.get(vial.getRowId());
             if (events != null && events.size() > 0)
-                Collections.sort(events, getSpecimenEventDateComparator());
+                events.sort(getSpecimenEventDateComparator());
             else
                 events = Collections.emptyList();
             results.put(vial, events);
@@ -2562,18 +2539,15 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     private Set<LocationImpl> getSitesWithIdSql(final Container container, final String idColumnName, SQLFragment sql)
     {
-        final Set<LocationImpl> locations = new TreeSet<>(new Comparator<LocationImpl>()
+        final Set<LocationImpl> locations = new TreeSet<>((s1, s2) ->
         {
-            public int compare(LocationImpl s1, LocationImpl s2)
-            {
-                if (s1 == null && s2 == null)
-                    return 0;
-                if (s1 == null)
-                    return -1;
-                if (s2 == null)
-                    return 1;
-                return s1.getLabel().compareTo(s2.getLabel());
-            }
+            if (s1 == null && s2 == null)
+                return 0;
+            if (s1 == null)
+                return -1;
+            if (s2 == null)
+                return 1;
+            return s1.getLabel().compareTo(s2.getLabel());
         });
 
         new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
@@ -3292,24 +3266,20 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             groupedValues.add(groupedValue);
         }
 
-        Collections.sort(groupedValues, new Comparator<Map<String, Object>>()
+        groupedValues.sort((o, o1) ->
         {
-            @Override
-            public int compare(Map<String, Object> o, Map<String, Object> o1)
+            String str = (String) o.get("label");
+            String str1 = (String) o1.get("label");
+            if (null == str)
             {
-                String str = (String)o.get("label");
-                String str1 = (String)o1.get("label");
-                if (null == str)
-                {
-                    if (null == str1)
-                        return 0;
-                    else
-                        return 1;
-                }
-                else if (null == str1)
-                    return -1;
-                return (str.compareTo(str1));
+                if (null == str1)
+                    return 0;
+                else
+                    return 1;
             }
+            else if (null == str1)
+                return -1;
+            return (str.compareTo(str1));
         });
 
         Map<String, Object> groupedValue = new HashMap<>(2);

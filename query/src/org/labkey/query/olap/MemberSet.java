@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -328,16 +327,8 @@ public class MemberSet extends AbstractSet<Member>
 
         // sort levels by depth
         List<LevelMemberSet> list = new ArrayList<>();
-        for (LevelMemberSet l : levelMap.values())
-            list.add(l);
-        Collections.sort(list, new Comparator<LevelMemberSet>()
-        {
-            @Override
-            public int compare(LevelMemberSet s1, LevelMemberSet s2)
-            {
-                return s2._level.getDepth() - s1._level.getDepth();
-            }
-        });
+        list.addAll(levelMap.values());
+        list.sort((s1, s2) -> s2._level.getDepth() - s1._level.getDepth());
         List<Iterator<? extends Member>> iterators = new ArrayList<>();
         for (LevelMemberSet s : list)
             iterators.add(s.iterator());

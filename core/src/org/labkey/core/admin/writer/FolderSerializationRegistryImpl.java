@@ -23,7 +23,6 @@ import org.labkey.api.admin.FolderWriterFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -81,14 +80,7 @@ public class FolderSerializationRegistryImpl implements FolderSerializationRegis
         factories.addAll(IMPORTER_FACTORIES);
 
         // sort the factories by priority in ascending order
-        Collections.sort(factories, new Comparator<FolderImporterFactory>()
-        {
-            @Override
-            public int compare(FolderImporterFactory o1, FolderImporterFactory o2)
-            {
-                return o1.getPriority() - o2.getPriority();
-            }
-        });
+        factories.sort(Comparator.comparingInt(FolderImporterFactory::getPriority));
 
         return factories;
     }

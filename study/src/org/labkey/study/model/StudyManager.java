@@ -2486,26 +2486,22 @@ public class StudyManager
         }
 
         // sort by display order, category, and dataset ID
-        Collections.sort(combined, new Comparator<DatasetDefinition>()
+        combined.sort((o1, o2) ->
         {
-            @Override
-            public int compare(DatasetDefinition o1, DatasetDefinition o2)
-            {
-                if (o1.getDisplayOrder() != 0 || o2.getDisplayOrder() != 0)
-                    return o1.getDisplayOrder() - o2.getDisplayOrder();
+            if (o1.getDisplayOrder() != 0 || o2.getDisplayOrder() != 0)
+                return o1.getDisplayOrder() - o2.getDisplayOrder();
 
-                if (StringUtils.equals(o1.getCategory(), o2.getCategory()))
-                    return o1.getDatasetId() - o2.getDatasetId();
-
-                if (o1.getCategory() != null && o2.getCategory() == null)
-                    return -1;
-                if (o1.getCategory() == null && o2.getCategory() != null)
-                    return 1;
-                if (o1.getCategory() != null && o2.getCategory() != null)
-                    return o1.getCategory().compareTo(o2.getCategory());
-
+            if (StringUtils.equals(o1.getCategory(), o2.getCategory()))
                 return o1.getDatasetId() - o2.getDatasetId();
-            }
+
+            if (o1.getCategory() != null && o2.getCategory() == null)
+                return -1;
+            if (o1.getCategory() == null && o2.getCategory() != null)
+                return 1;
+            if (o1.getCategory() != null && o2.getCategory() != null)
+                return o1.getCategory().compareTo(o2.getCategory());
+
+            return o1.getDatasetId() - o2.getDatasetId();
         });
 
         return Collections.unmodifiableList(combined);

@@ -125,18 +125,19 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
 
                     //get built-in queries
                     List<String> queryNames = new ArrayList<>(form.isShowHidden() ? uschema.getTableNames() : uschema.getVisibleTableNames());
-                    Collections.sort(queryNames, String::compareToIgnoreCase);
+                    queryNames.sort(String.CASE_INSENSITIVE_ORDER);
 
-                    for (int i = 0; i < queryNames.size(); i++)
+                    for (String qname : queryNames)
                     {
-                        String qname = queryNames.get(i);
                         TableInfo tinfo = null;
                         try
                         {
                             // Try to get the TableInfo so we can send back its description
                             tinfo = uschema.getTable(qname);
                         }
-                        catch (QueryException ignored) {}
+                        catch (QueryException ignored)
+                        {
+                        }
 
                         String label = qname;
                         if (null != tinfo && tinfo instanceof DatasetTable)
@@ -150,11 +151,10 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     //get user-defined queries
                     Map<String, QueryDefinition> queryDefMap = uschema.getQueryDefs();
                     queryNames = new ArrayList<>(queryDefMap.keySet());
-                    Collections.sort(queryNames, String::compareToIgnoreCase);
+                    queryNames.sort(String.CASE_INSENSITIVE_ORDER);
 
-                    for (int i = 0; i < queryNames.size(); i++)
+                    for (String qname : queryNames)
                     {
-                        String qname = queryNames.get(i);
                         QueryDefinition qdef = queryDefMap.get(qname);
                         if (!qdef.isTemporary())
                         {

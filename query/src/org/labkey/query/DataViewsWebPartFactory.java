@@ -37,7 +37,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -86,16 +85,9 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
                 }
             }
 
-            Comparator<ReportService.DesignerInfo> comparator = new Comparator<ReportService.DesignerInfo>()
-            {
-                @Override
-                public int compare(ReportService.DesignerInfo o1, ReportService.DesignerInfo o2)
-                {
-                    return o1.getLabel().compareTo(o2.getLabel());
-                }
-            };
-            Collections.sort(reportDesigners, comparator);
-            Collections.sort(chartDesigners, comparator);
+            Comparator<ReportService.DesignerInfo> comparator = Comparator.comparing(ReportService.DesignerInfo::getLabel);
+            reportDesigners.sort(comparator);
+            chartDesigners.sort(comparator);
 
             NavTree reportMenu = new NavTree("Add Report");
             for (ReportService.DesignerInfo info : reportDesigners)

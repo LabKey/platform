@@ -25,7 +25,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -125,41 +124,32 @@ public class PipelineDirectoryImpl implements PipelineDirectory
             File[] f = a.getFiles();
             if (null != f && f.length > 1)
             {
-                Arrays.sort(f, new Comparator<File>()
-                {
-                    public int compare(File f1, File f2)
-                    {
-                        return f1.getPath().compareToIgnoreCase(f2.getPath());
-                    }
-                });
+                Arrays.sort(f, Comparator.comparing(File::getPath, String.CASE_INSENSITIVE_ORDER));
             }
         }
 
         // Sort the list of actions by size, label then first File
-        Collections.sort(_actions, new Comparator<PipelineAction>()
+        _actions.sort((action1, action2) ->
         {
-            public int compare(PipelineAction action1, PipelineAction action2)
-            {
-                int rc;
-                if (action1.equals(action2))
-                    return 0;
-                File[] files1 = action1.getFiles();
-                File[] files2 = action2.getFiles();
-                if (files1 == files2)
-                    return 0;
-                if (files1 == null || files1.length == 0)
-                    return -1;
-                if (files2 == null || files2.length == 0)
-                    return 1;
-                rc = files2.length - files1.length;
-                if (rc != 0)
-                    return rc;
-                rc = files1[0].getPath().compareToIgnoreCase(files2[0].getPath());
-                if (rc != 0)
-                    return rc;
-                rc = action1.getLabel().compareToIgnoreCase(action2.getLabel());
+            int rc;
+            if (action1.equals(action2))
+                return 0;
+            File[] files1 = action1.getFiles();
+            File[] files2 = action2.getFiles();
+            if (files1 == files2)
+                return 0;
+            if (files1 == null || files1.length == 0)
+                return -1;
+            if (files2 == null || files2.length == 0)
+                return 1;
+            rc = files2.length - files1.length;
+            if (rc != 0)
                 return rc;
-            }
+            rc = files1[0].getPath().compareToIgnoreCase(files2[0].getPath());
+            if (rc != 0)
+                return rc;
+            rc = action1.getLabel().compareToIgnoreCase(action2.getLabel());
+            return rc;
         });
     }
 

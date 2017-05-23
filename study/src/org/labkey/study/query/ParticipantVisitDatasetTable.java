@@ -41,8 +41,6 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.visitmanager.VisitManager;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -112,13 +110,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable
                     visitList.add(visit);
             }
             //Resort the visit list
-            Collections.sort(visitList, new Comparator<VisitImpl>() {
-
-                public int compare(VisitImpl v1, VisitImpl v2)
-                {
-                    return v1.getDisplayOrder() != v2.getDisplayOrder() ? v1.getDisplayOrder() - v2.getDisplayOrder() : (int) (v1.getSequenceNumMin() - v2.getSequenceNumMin());
-                }
-            });
+            visitList.sort((v1, v2) -> v1.getDisplayOrder() != v2.getDisplayOrder() ? v1.getDisplayOrder() - v2.getDisplayOrder() : (int) (v1.getSequenceNumMin() - v2.getSequenceNumMin()));
         }
 
         // duplicate label check a) two visits with same label b) two sequences with same visit

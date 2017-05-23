@@ -112,6 +112,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -2842,9 +2843,7 @@ public class WikiController extends SpringActionController
         {
             Container c = getContainer();
             MultiValuedMap<String, Wiki> mmap = new ArrayListValuedHashMap<>();
-            Map<Wiki, Collection<String>> unusedAttachments = new TreeMap<>((w1, w2) -> {
-                return w1.getName().compareToIgnoreCase(w2.getName());
-            });
+            Map<Wiki, Collection<String>> unusedAttachments = new TreeMap<>(Comparator.comparing(Wiki::getName, String.CASE_INSENSITIVE_ORDER));
             Set<WikiTree> trees = WikiSelectManager.getWikiTrees(c);
             WikiManager mgr = getWikiManager();
 

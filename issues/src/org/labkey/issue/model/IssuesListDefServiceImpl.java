@@ -27,6 +27,7 @@ import org.labkey.api.security.User;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +36,10 @@ import java.util.stream.Collectors;
 
 public class IssuesListDefServiceImpl implements IssuesListDefService
 {
-    private Map<String, IssuesListDefProvider> _issuesListDefProviders = new ConcurrentHashMap<>();
-    private List<IssueDetailHeaderLinkProvider> _headerLinkProviders = new ArrayList<>();
+    private final Map<String, IssuesListDefProvider> _issuesListDefProviders = new ConcurrentHashMap<>();
+    private final List<IssueDetailHeaderLinkProvider> _headerLinkProviders = new ArrayList<>();
+
+    private static final Comparator<IssuesListDefProvider> ISSUES_LIST_DEF_PROVIDER_COMPARATOR = Comparator.comparing(IssuesListDefProvider::getLabel, String.CASE_INSENSITIVE_ORDER);
 
     @Override
     public void registerIssuesListDefProvider(IssuesListDefProvider provider)
@@ -55,7 +58,7 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         return Collections.unmodifiableList(
                 _issuesListDefProviders.values()
                         .stream()
-                        .sorted((o1, o2) -> (o1.getLabel().compareToIgnoreCase(o2.getLabel())))
+                        .sorted(ISSUES_LIST_DEF_PROVIDER_COMPARATOR)
                         .collect(Collectors.toList())
         );
     }
@@ -67,7 +70,7 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
                 _issuesListDefProviders.values()
                         .stream()
                         .filter(provider -> provider.isEnabled(container))
-                        .sorted((o1, o2) -> (o1.getLabel().compareToIgnoreCase(o2.getLabel())))
+                        .sorted(ISSUES_LIST_DEF_PROVIDER_COMPARATOR)
                         .collect(Collectors.toList())
         );
     }

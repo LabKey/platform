@@ -1769,7 +1769,8 @@ public class DavController extends SpringActionController
                         try
                         {
                             // Sort
-                            Collections.sort(resources, (o1, o2) -> {
+                            resources.sort((o1, o2) ->
+                            {
                                 if (o1 == null && o2 == null) return 0;
                                 if (o1 == null) return 1;
                                 if (o2 == null) return -1;
@@ -1779,7 +1780,8 @@ public class DavController extends SpringActionController
 
                                 if (o1Collection && o2Collection || (!o1Collection && !o2Collection))
                                 {
-                                    try {
+                                    try
+                                    {
                                         return doCompare(o1, o2);
                                     }
                                     catch (IOException e)
@@ -1956,14 +1958,14 @@ public class DavController extends SpringActionController
         void beginResponse(WebdavResponse response) throws Exception;
         void endResponse() throws Exception;
 
-        public void writeProperty(String propertyName, Object propertyValue);
+        void writeProperty(String propertyName, Object propertyValue);
 
         /**
          * @param type             Propfind type
          * @param propertiesVector If the propfind type is find properties by
          *                         name, then this Vector contains those properties
          */
-        public void writeProperties(WebdavResource resource, Find type, List<String> propertiesVector) throws Exception;
+        void writeProperties(WebdavResource resource, Find type, List<String> propertiesVector) throws Exception;
 
         /**
          * @param path             Path of the current resource
@@ -1971,7 +1973,7 @@ public class DavController extends SpringActionController
          * @param propertiesVector If the propfind type is find properties by
          *                         name, then this Vector contains those properties
          */
-        public void writeLockNullProperties(Path path, Find type, List<String> propertiesVector) throws Exception;
+        void writeLockNullProperties(Path path, Find type, List<String> propertiesVector) throws Exception;
 
         void sendData() throws Exception;
     }

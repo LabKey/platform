@@ -35,7 +35,6 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -230,7 +229,8 @@ public final class ReportAndDatasetChangeDigestProviderImpl implements ReportAnd
     private List<NotificationInfo> sortNotificationInfoList(List<NotificationInfo> notificationInfos)
     {
         // It's ok to sort in place
-        Collections.sort(notificationInfos, (o1, o2) -> {
+        notificationInfos.sort((o1, o2) ->
+        {
             int ret = o1.getDisplayOrder() - o2.getDisplayOrder();
             if (0 == ret)
                 ret = o1.getName().compareToIgnoreCase(o2.getName());

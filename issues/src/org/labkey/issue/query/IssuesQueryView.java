@@ -170,7 +170,7 @@ public class IssuesQueryView extends QueryView
 
         // sort the grid view alphabetically, with private views over public ones
         List<CustomView> views = new ArrayList<>(getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest(), false, false).values());
-        Collections.sort(views, (o1, o2) ->
+        views.sort((o1, o2) ->
         {
             if (!o1.isShared() && o2.isShared()) return -1;
             if (o1.isShared() && !o2.isShared()) return 1;

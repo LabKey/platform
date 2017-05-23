@@ -160,13 +160,7 @@ else
 
     java.util.List<Role> possibleRoles = new ArrayList<>();
     List<DatasetDefinition> datasets = new ArrayList<>(study.getDatasets());
-    Collections.sort(datasets, new Comparator<DatasetDefinition>(){
-        @Override
-        public int compare(DatasetDefinition o1, DatasetDefinition o2)
-        {
-            return o1.getLabel().toLowerCase().compareTo(o2.getLabel().toLowerCase());
-        }
-    });
+    datasets.sort(Comparator.comparing(DatasetDefinition::getLabel, String.CASE_INSENSITIVE_ORDER));
 
     if (!datasets.isEmpty())
     {
