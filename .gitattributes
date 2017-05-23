@@ -2802,7 +2802,6 @@ study/test/src/org/labkey/test/tests/study/TargetStudyTest.java -text
 study/test/src/org/labkey/test/tests/study/TruncationTest.java -text
 study/test/src/org/labkey/test/tests/study/VaccineProtocolTest.java -text
 study/webapp/WEB-INF/study/studyContext.xml -text
-study/webapp/sampleRequest.js -text
 study/webapp/study/MeasurePicker.js -text
 study/webapp/study/ParticipantFilter.lib.xml -text
 study/webapp/study/ParticipantFilterPanel.js -text
@@ -2819,6 +2818,7 @@ study/webapp/study/StudyWizard.js -text
 study/webapp/study/assay/SampleLookupTemplate.xls -text
 study/webapp/study/dataset.png -text
 study/webapp/study/redesignUtils.js -text
+study/webapp/study/sampleRequest.js -text
 study/webapp/study/tools/participant_list.png -text
 study/webapp/study/tools/participant_report.png -text
 study/webapp/study/tools/settings.png -text

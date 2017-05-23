@@ -16,9 +16,17 @@
      */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("Ext4");
+        dependencies.add("query/olap.js");
+    }
+%>
 <%
-    String contextPath = request.getContextPath();
     String configId = "Study:/specimens";
     String schemaName = "Study";
     String cubeName = "SpecimenCube";
@@ -26,9 +34,7 @@
     String pivotDesignerId = "pivotDesigner" + uid;
     String cellsetId = "cellset" + uid;
 %>
-<script src="<%=h(contextPath)%>/query/olap.js"></script>
-
-<script>
+<script type="text/javascript">
 var cube;
 var starttime;
 

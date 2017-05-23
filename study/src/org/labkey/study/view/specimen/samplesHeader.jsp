@@ -33,7 +33,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("clientapi/ext3");
-        dependencies.add("sampleRequest.js");
+        dependencies.add("study/sampleRequest.js");
     }
 %>
 <%

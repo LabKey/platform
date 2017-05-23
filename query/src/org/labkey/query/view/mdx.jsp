@@ -20,15 +20,16 @@
 <%@ page import="org.labkey.query.controllers.OlapController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%
-    OlapController.OlapForm form = (OlapController.OlapForm)HttpView.currentModel();
-%>
 <%!
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("Ext4");
+        dependencies.add("query/olap.js");
     }
+%>
+<%
+    OlapController.OlapForm form = (OlapController.OlapForm)HttpView.currentModel();
 %>
 <labkey:errors/>
 <labkey:form action="#">
@@ -37,7 +38,6 @@
 </labkey:form>
 <p>&nbsp;</p>
 <div id=cellset></div>
-<script src="<%=h(request.getContextPath())%>/query/olap.js"></script>
 <script type="text/javascript">
 
     var connection = null;

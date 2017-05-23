@@ -1,3 +1,33 @@
+.lk-region-ct {
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+
+  -webkit-flex-flow: row wrap;
+  flex-flow: row wrap;
+
+  & > * {
+    flex: 1 100%;
+  }
+
+  .lk-region-fixed {
+    table-layout: fixed;
+  }
+
+  .lk-region-section {
+
+    display: none;
+
+    // 12-based flex pattern
+    &.west   { order: 1; flex: 1 auto; }
+    &.center { order: 2; flex: 10 0; }
+    &.east   { order: 3; flex: 1 auto; }
+    &.south  { order: 4; }
+  }
+}
+
 .labkey-data-region-auth {
   display: inline-block;
   border: 1px solid #DDDDDD;
@@ -124,18 +154,6 @@ table.labkey-show-surrounding-border {
   position: relative;
 }
 
-.lk-region-section {
-  display: none;
-}
-
-//.labkey-data-region .labkey-col-header, .labkey-data-region .labkey-row-header,
-//.labkey-data-region .labkey-col-total, .labkey-data-region .labkey-row-total,
-//.labkey-data-region .labkey-col-total td, .labkey-data-region .labkey-col-header th
-//{
-//  font-weight: bold;
-//  background-color: #EEEEEE;
-//}
-
 .labkey-data-region-header-container {
   background-color: $lk-grid-ct-bg-color;
   border: 1px solid #b4b4b4;
@@ -144,30 +162,6 @@ table.labkey-show-surrounding-border {
     border: 0;
   }
 }
-
-// Nick: Preferred to use table-bordered instead
-/* Use this in the table class tag if you want your data region to have borders */
-//table.labkey-show-borders
-//{
-//  border: 1px solid #DDDDDD;
-//
-//  td {
-//    /* Safari gives precedence to the color drawn last for borders, which means
-//    the borders usually win bottom and right over top and left (It is supposed to be
-//    the opposite, which is how Firefox correctly does it. So we use a
-//    combination of table borders and cell borders for Safari and Firefox*/
-//    border-top: 0;
-//    border-left: 0;
-//    border-right: solid 1px #DDDDDD;
-//    border-bottom: solid 1px #DDDDDD;
-//  }
-//
-//  /* These classes are used in Cross Tab data regions and for aggregate rows */
-//  th, .labkey-col-total, .labkey-row-total, .labkey-col-header,
-//  .labkey-row-header, .labkey-col-header th, .labkey-stat-title, .labkey-col-total td {
-//    border: solid 1px #AAAAAA;
-//  }
-//}
 
 table.labkey-fixed-width-columns {
   table-layout: fixed;
@@ -241,37 +235,27 @@ td.labkey-blank-cell, th.labkey-blank-cell {
   }
 }
 
-/* Used for the little icon on the column filter headers */
-img.labkey-grid-filter-icon
-{
-  background-repeat: no-repeat;
-  display: none;
-  height: 8px;
-  width: 11px;
-  margin-left:2px;
-  vertical-align: middle;
-}
+.labkey-column-header {
+  span {
+    display: none;
+    padding-left: 5px;
+  }
 
-.labkey-filtered .labkey-grid-filter-icon {
-  background-image: url('#{$internal-images-dir}/filter_on.gif');
-  display: inline;
-}
+  &.labkey-filtered {
+    span.fa-filter {
+      display: inline;
+    }
+  }
 
-.labkey-column-header-sort-icon {
-  background-repeat: no-repeat;
-  display: none;
-  height: 4px;
-  width: 13px;
-  margin-left:3px;
-  vertical-align: middle;
-}
+  &.labkey-sort-asc {
+    span.fa-sort-up {
+      display: inline;
+    }
+  }
 
-.labkey-sort-asc .labkey-column-header-sort-icon {
-  background-image:url('#{$ext3-images-dir}/default/grid/sort_asc.gif');
-  display: inline;
-}
-
-.labkey-sort-desc .labkey-column-header-sort-icon {
-  background-image:url('#{$ext3-images-dir}/default/grid/sort_desc.gif');
-  display: inline;
+  &.labkey-sort-desc {
+    span.fa-sort-down {
+      display: inline;
+    }
+  }
 }

@@ -17,15 +17,21 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.experiment.controllers.property.PropertyController" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("internal/jQuery");
+        dependencies.add("Experiment/domainTemplate.js");
+    }
+%>
 <%
-
     HttpView<PropertyController.CompareWithTemplateModel> me = HttpView.currentView();
     PropertyController.CompareWithTemplateModel model = me.getModelBean();
-    ViewContext context = me.getViewContext();
 %>
-<style>
+<style type="text/css">
     DIV.comparetemplate TH
     {
         text-align:left;
@@ -43,11 +49,8 @@
         min-width:80pt;
     }
 </style>
-<div id="updateDomainDiv">
-
-</div>
-<script src="<%=getContextPath()%>/Experiment/domainTemplate.js"></script>
-<script>
+<div id="updateDomainDiv"></div>
+<script type="text/javascript">
 (function($)
 {
     var schemaName = <%=  q(model.schemaName) %>;
