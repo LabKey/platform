@@ -23,7 +23,6 @@ import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.FormattedError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -47,6 +46,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
@@ -119,6 +119,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Map;
+
+import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
 
 /**
  * User: adam
@@ -312,72 +314,52 @@ public class LoginController extends SpringActionController
 
     private static boolean authenticate(LoginForm form, BindException errors, HttpServletRequest request)
     {
-        try
+        if (null == form.getEmail() || null == form.getPassword())
         {
-            // Attempt authentication with all active form providers
-            PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, form.getEmail(), form.getPassword(), form.getReturnURLHelper(), true);
-
-            switch (result.getStatus())
-            {
-                case Success:
-                    AuthenticationManager.setPrimaryAuthenticationResult(request, result);
-                    return true;   // Only success case... everything else returns false
-                case InactiveUser:
-                    errors.addError(new FormattedError("Your account has been deactivated. " + AppProps.getInstance().getAdministratorContactHTML() + " if you need to reactivate this account."));
-                    break;
-                case BadCredentials:
-                    if (null != form.getEmail() || null != form.getPassword())
-                    {
-                        // Email & password were specified, but authentication failed...
-                        // display either invalid email address error or generic "couldn't authenticate" message
-                        new ValidEmail(form.getEmail());
-                        errors.reject(ERROR_MSG, "The e-mail address and password you entered did not match any accounts on file.\nNote: Passwords are case sensitive; make sure your Caps Lock is off.");
-                    }
-                    break;
-                case LoginDisabled:
-                    if (null != form.getEmail() || null != form.getPassword())
-                    {
-                        new ValidEmail(form.getEmail());
-                        String errorMessage = result.getMessage() == null ? "Due to the number of recent failed login attempts, authentication has been temporarily paused.\nTry again in one minute." : result.getMessage();
-                        errors.reject(ERROR_MSG, errorMessage);
-                    }
-                    break;
-                case LoginPaused:
-                    if (null != form.getEmail() || null != form.getPassword())
-                    {
-                        new ValidEmail(form.getEmail());
-                        errors.reject(ERROR_MSG, "Due to the number of recent failed login attempts, authentication has been temporarily paused.\nTry again in one minute.");
-                    }
-                    break;
-                case UserCreationError:
-                    errors.addError(new FormattedError("The server could not create your account. " + AppProps.getInstance().getAdministratorContactHTML() + " for assistance."));
-                    break;
-                case UserCreationNotAllowed:
-                    errors.addError(new FormattedError(AppProps.getInstance().getAdministratorContactHTML() + " to have your account created."));
-                    break;
-                case PasswordExpired:
-                     AuthenticationManager.setLoginReturnProperties(request, new LoginReturnProperties(result.getRedirectURL(), form.getUrlhash(), form.getSkipProfile()));
-                    break;
-                case Complexity:
-                    AuthenticationManager.setLoginReturnProperties(request, new LoginReturnProperties(result.getRedirectURL(), form.getUrlhash(), form.getSkipProfile()));
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown authentication status: " + result.getStatus());
-            }
+            errors.reject(ERROR_MSG, "Please sign in using your email address and password");
         }
-        catch (InvalidEmailException e)
+        else
         {
-            String defaultDomain = ValidEmail.getDefaultDomain();
-            StringBuilder sb = new StringBuilder();
-            sb.append("Please sign in using your full email address, for example: ");
-            if (defaultDomain != null && defaultDomain.length() > 0)
+            try
             {
-                sb.append("employee@");
-                sb.append(defaultDomain);
-                sb.append(" or ");
+                // Attempt authentication with all active form providers
+                PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, form.getEmail(), form.getPassword(), form.getReturnURLHelper(), true);
+                AuthenticationStatus status = result.getStatus();
+
+                if (Success == status)
+                {
+                    AuthenticationManager.setPrimaryAuthenticationResult(request, result);
+                    return true;   // Only success case... all other cases return false
+                }
+                else
+                {
+                    // Explicit test for valid email
+                    new ValidEmail(form.getEmail());
+
+                    if (status.requiresRedirect())
+                    {
+                        AuthenticationManager.setLoginReturnProperties(request, new LoginReturnProperties(result.getRedirectURL(), form.getUrlhash(), form.getSkipProfile()));
+                    }
+                    else
+                    {
+                        status.addUserErrorMessage(errors, result);
+                    }
+                }
             }
-            sb.append("employee@domain.com");
-            errors.reject(ERROR_MSG, sb.toString());
+            catch (InvalidEmailException e)
+            {
+                String defaultDomain = ValidEmail.getDefaultDomain();
+                StringBuilder sb = new StringBuilder();
+                sb.append("Please sign in using your full email address, for example: ");
+                if (defaultDomain != null && defaultDomain.length() > 0)
+                {
+                    sb.append("employee@");
+                    sb.append(defaultDomain);
+                    sb.append(" or ");
+                }
+                sb.append("employee@domain.com");
+                errors.reject(ERROR_MSG, sb.toString());
+            }
         }
 
         return false;
@@ -734,11 +716,21 @@ public class LoginController extends SpringActionController
             if (success)
             {
                 AuthenticationManager.AuthenticationResult authResult = AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer());
-                // gerUser will return null if authentication is incomplete as is the case when secondary authentication is required
+                // getUser will return null if authentication is incomplete as is the case when secondary authentication is required
                 User user = authResult.getUser();
                 URLHelper redirectUrl = authResult.getRedirectURL();
                 response = new ApiSimpleResponse();
                 response.put("success", true);
+
+                if (form.isApprovedTermsOfUse())
+                {
+                    if (form.getTermsOfUseType() == TermsOfUseType.PROJECT_LEVEL)
+                        WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), termsProject, true);
+                    else if (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE)
+                        WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), null, true);
+                    response.put("approvedTermsOfUse", true);
+                }
+
                 if (null != user)
                 {
                     response.put("user", User.getUserProps(user, getContainer()));
@@ -746,34 +738,17 @@ public class LoginController extends SpringActionController
                         response.put("returnUrl", redirectUrl.toString());
                     else
                         response.put("returnUrl", StringUtils.defaultIfEmpty(form.getReturnUrl(),  AppProps.getInstance().getHomePageActionURL().getPath()));
-
-                    if (form.isApprovedTermsOfUse())
-                    {
-                        if (form.getTermsOfUseType() == TermsOfUseType.PROJECT_LEVEL)
-                            WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), termsProject, true);
-                        else if (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE)
-                            WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), null, true);
-                        response.put("approvedTermsOfUse", true);
-                    }
                 }
                 else
                 {
                     // AuthenticationResult returned by AuthenticationManager.handleAuthentication indicated that a secondary authentication is needed
-                    if (form.isApprovedTermsOfUse())
-                    {
-                        if (form.getTermsOfUseType() == TermsOfUseType.PROJECT_LEVEL)
-                            WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), termsProject, true);
-                        else if (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE)
-                            WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), null, true);
-                        response.put("approvedTermsOfUse", true);
-                    }
                     // in the ajax response inform js handler to load page from secondary authenticator url
                     response.put("returnUrl", redirectUrl.toString());
                 }
             }
-            else
+            else if (!errors.hasErrors())
             {
-                // keep the redirectUrl if the authenticate fail included a redirect URL which happens when the password has expired
+                // If no errors and failure includes a redirect URL then send it to the client -- for example, password is expired or fails complexity test
                 AuthenticationManager.AuthenticationResult authResult = AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer());
                 if (null != authResult.getRedirectURL() && !authResult.getRedirectURL().getPath().isEmpty())
                 {
@@ -906,7 +881,7 @@ public class LoginController extends SpringActionController
             {
                 PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, _email.getEmailAddress(), password, form.getReturnURLHelper(), true);
 
-                if (result.getStatus() == AuthenticationManager.AuthenticationStatus.Success)
+                if (result.getStatus() == Success)
                 {
                     // This user has passed primary authentication
                     AuthenticationManager.setPrimaryAuthenticationResult(request, result);
@@ -1743,7 +1718,7 @@ public class LoginController extends SpringActionController
             {
                 PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, _email.getEmailAddress(), password, form.getReturnURLHelper(), true);
 
-                if (result.getStatus() == AuthenticationManager.AuthenticationStatus.Success)
+                if (result.getStatus() == Success)
                 {
                     // This user has passed primary authentication
                     AuthenticationManager.setPrimaryAuthenticationResult(request, result);
