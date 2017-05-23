@@ -65,7 +65,7 @@ public class SecurityPolicy implements HasPermission
     protected final String _containerId;
     protected final String _resourceClass;
 
-    protected Date _modified;
+    protected Date _modified; // Updated in MutableSecurityPolicy subclass
 
     public SecurityPolicy(@NotNull String resourceId, @NotNull String resourceClass, @NotNull String containerId, @NotNull Collection<RoleAssignment> assignments, @Nullable Date lastModified)
     {
