@@ -279,7 +279,7 @@ public class DateUtil
         list.addAll(Arrays.asList(Weekday.values()));
         list.addAll(Arrays.asList(TZ.values()));
         list.addAll(Arrays.asList(ISO.values()));
-        Collections.sort(list, (e1, e2) -> e1.name().compareTo(e2.name()));
+        list.sort(Comparator.comparing(Enum::name));
         parts = list.toArray(new Enum[list.size()]);
     }
 

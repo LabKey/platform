@@ -163,16 +163,14 @@ class QueryTracker
     public void renderStackTraces(PrintWriter out)
     {
         // Descending order by occurrences (the value)
-        Set<Pair<String, AtomicInteger>> set = new TreeSet<>(new Comparator<Pair<String, AtomicInteger>>() {
-            public int compare(Pair<String, AtomicInteger> e1, Pair<String, AtomicInteger> e2)
-            {
-                int compare = e2.getValue().intValue() - e1.getValue().intValue();
+        Set<Pair<String, AtomicInteger>> set = new TreeSet<>((e1, e2) ->
+        {
+            int compare = e2.getValue().intValue() - e1.getValue().intValue();
 
-                if (0 == compare)
-                    compare = e2.getKey().compareTo(e1.getKey());
+            if (0 == compare)
+                compare = e2.getKey().compareTo(e1.getKey());
 
-                return compare;
-            }
+            return compare;
         });
 
         // Save the stacktraces separately to find common prefix

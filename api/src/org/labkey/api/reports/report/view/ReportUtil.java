@@ -542,13 +542,7 @@ public class ReportUtil
         for (ReportService.UIProvider provider : ReportService.get().getUIProviders())
             designers.addAll(provider.getDesignerInfo(context));
 
-        Collections.sort(designers, new Comparator<ReportService.DesignerInfo>(){
-            @Override
-            public int compare(ReportService.DesignerInfo o1, ReportService.DesignerInfo o2)
-            {
-                return o1.getLabel().compareTo(o2.getLabel());
-            }
-        });
+        designers.sort(Comparator.comparing(ReportService.DesignerInfo::getLabel));
 
         JSONArray json = new JSONArray();
 

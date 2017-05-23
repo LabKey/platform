@@ -31,6 +31,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,7 +80,7 @@ public interface AuditLogService
     {
         List<AuditTypeProvider> providers = new ArrayList<>(_auditTypeProviders.values());
 
-        providers.sort((o1, o2) -> (o1.getLabel().compareToIgnoreCase(o2.getLabel())));
+        providers.sort(Comparator.comparing(AuditTypeProvider::getLabel, String.CASE_INSENSITIVE_ORDER));
         return Collections.unmodifiableList(providers);
     }
 

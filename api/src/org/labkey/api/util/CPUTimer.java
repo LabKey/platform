@@ -114,13 +114,7 @@ public class CPUTimer
 			Set<CPUTimer> set = timers.keySet();
 			CPUTimer[] a = set.toArray(new CPUTimer[set.size()]);
 
-			Arrays.sort(a, new Comparator<CPUTimer>()
-            {
-				public int compare(CPUTimer o1, CPUTimer o2)
-                {
-					return o1._name.compareTo(o2._name);
-                }
-            });
+			Arrays.sort(a, Comparator.comparing(o -> o._name));
 
             StringBuilder sb = new StringBuilder();
             sb.append("TIMER SUMMARY: ").append(new Date().toString()).append("\n");

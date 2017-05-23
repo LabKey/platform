@@ -499,7 +499,8 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
     public static void sortViewCategories(List<ViewCategory> categories)
     {
-        Collections.sort(categories, (o1, o2) -> {
+        categories.sort((o1, o2) ->
+        {
             int ret = o1.getDisplayOrder() - o2.getDisplayOrder();
             if (0 == ret)
                 ret = o1.getLabel().compareToIgnoreCase(o2.getLabel());

@@ -245,7 +245,7 @@ public class FilesAdminOptions
         }
 
         List<FilesTbarBtnOption> result = new ArrayList<>(configs);
-        Collections.sort(result, TBAR_BTN_COMPARATOR);
+        result.sort(TBAR_BTN_COMPARATOR);
         return result;
     }
 

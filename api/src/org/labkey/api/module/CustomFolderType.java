@@ -189,13 +189,7 @@ public class CustomFolderType implements FolderType
             else
                 sortedModuleList.add(module);
         }
-        Collections.sort(sortedModuleList, new Comparator<Module>()
-        {
-            public int compare(Module moduleOne, Module moduleTwo)
-            {
-                return moduleOne.getName().compareToIgnoreCase(moduleTwo.getName());
-            }
-        });
+        sortedModuleList.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
         if (portal != null)
             sortedModuleList.add(0, portal);
 

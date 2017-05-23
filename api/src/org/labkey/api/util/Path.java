@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -128,7 +129,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
     }
 
     @Override
-    public int compareTo(Object o)
+    public int compareTo(@NotNull Object o)
     {
         if (this == o)
             return 0;
@@ -478,6 +479,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
     }
 
 
+    @NotNull
     public Iterator<String> iterator()
     {
         return new ArrayIterator<>(_path, 0, _length);

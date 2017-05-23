@@ -16,7 +16,6 @@
 
 package org.labkey.api.util;
 
-import org.apache.commons.collections4.map.AbstractReferenceMap;
 import org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength;
 import org.apache.commons.collections4.map.ReferenceIdentityMap;
 import org.jetbrains.annotations.NotNull;
@@ -425,15 +424,7 @@ public class MemTracker
             if (obj != null)
                 refs.add(new HeldReference(entry.getKey(), entry.getValue()));
         }
-        Collections.sort(refs, new Comparator<HeldReference>()
-        {
-            public int compare(HeldReference o1, HeldReference o2)
-            {
-                String class1 = o1.getClassName();
-                String class2 = o2.getClassName();
-                return class1.compareToIgnoreCase(class2);
-            }
-        });
+        refs.sort(Comparator.comparing(HeldReference::getClassName, String.CASE_INSENSITIVE_ORDER));
         return refs;
     }
 

@@ -813,13 +813,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         // Rely on the assay provider to return a list of default domains in the right order (Collections.sort() is
         // stable so that domains that haven't been inserted and have id 0 stay in the same order), and rely on the fact
         // that they get inserted in the same order, so they will have ascending ids.
-        Collections.sort(domains, new Comparator<Pair<Domain, Map<DomainProperty, Object>>>(){
-
-            public int compare(Pair<Domain, Map<DomainProperty, Object>> dom1, Pair<Domain, Map<DomainProperty, Object>> dom2)
-            {
-                return new Integer(dom1.getKey().getTypeId()).compareTo(dom2.getKey().getTypeId());
-            }
-        });
+        domains.sort(Comparator.comparingInt(pair -> pair.getKey().getTypeId()));
     }
 
     public Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> getAssayTemplate(User user, Container targetContainer, ExpProtocol toCopy)

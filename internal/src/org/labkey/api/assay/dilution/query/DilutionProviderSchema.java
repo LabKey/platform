@@ -31,7 +31,6 @@ import org.labkey.api.study.assay.AssayProviderSchema;
 import org.labkey.api.study.assay.AssayService;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,13 +68,7 @@ public class DilutionProviderSchema extends AssayProviderSchema
 
     protected Set<String> getTableNames(boolean visible)
     {
-        Set<String> names = new TreeSet<>(new Comparator<String>()
-        {
-            public int compare(String o1, String o2)
-            {
-                return o1.compareToIgnoreCase(o2);
-            }
-        });
+        Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
         names.add(SAMPLE_PREPARATION_METHOD_TABLE_NAME);
         names.add(CURVE_FIT_METHOD_TABLE_NAME);

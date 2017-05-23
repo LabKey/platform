@@ -78,7 +78,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
                     continue;
                 list.add(c.getPath());
             }
-            Collections.sort(list, String.CASE_INSENSITIVE_ORDER);
+            list.sort(String.CASE_INSENSITIVE_ORDER);
             return list;
         }
         catch (RuntimeException x)

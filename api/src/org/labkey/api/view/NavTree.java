@@ -26,6 +26,7 @@ import org.labkey.api.util.URLHelper;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -254,7 +255,7 @@ public class NavTree implements Collapsible
     // Sort children by name, case-insensitive
     public void sort()
     {
-        Collections.sort(_children, (a, b) -> a.getText().compareToIgnoreCase(b.getText()));
+        _children.sort(Comparator.comparing(NavTree::getText, String.CASE_INSENSITIVE_ORDER));
     }
 
 

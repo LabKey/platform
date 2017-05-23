@@ -100,7 +100,7 @@ public class SpringAttachmentFile implements AttachmentFile
     {
         List<AttachmentFile> files = new ArrayList<>(fileMap.size());
         ArrayList<String> keys = new ArrayList<>(fileMap.keySet());
-        Collections.sort(keys, String.CASE_INSENSITIVE_ORDER);
+        keys.sort(String.CASE_INSENSITIVE_ORDER);
 
         for (String fileKey : keys)
         {

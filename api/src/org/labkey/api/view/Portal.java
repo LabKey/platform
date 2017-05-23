@@ -413,14 +413,7 @@ public class Portal
         // Note: This does not ignore stealth pages. Use getTabPages for that.
         Map<String, PortalPage> pages = WebPartCache.getPages(c, showHidden);
         ArrayList<Portal.PortalPage> sortedPages = new ArrayList<>(pages.values());
-        Collections.sort(sortedPages, new Comparator<Portal.PortalPage>()
-        {
-            @Override
-            public int compare(Portal.PortalPage o1, Portal.PortalPage o2)
-            {
-                return o1.getIndex() - o2.getIndex();
-            }
-        });
+        sortedPages.sort(Comparator.comparingInt(PortalPage::getIndex));
 
         return Collections.unmodifiableList(sortedPages);
     }
@@ -797,13 +790,7 @@ public class Portal
             pageId = page.getPageId();
 
         // make sure indexes are unique
-        Arrays.sort(newParts, new Comparator<WebPart>()
-        {
-            public int compare(WebPart w1, WebPart w2)
-            {
-                return w1.index - w2.index;
-            }
-        });
+        Arrays.sort(newParts, Comparator.comparingInt(w -> w.index));
 
         for (int i = 0; i < newParts.length; i++)
         {

@@ -20,7 +20,6 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -31,11 +30,7 @@ import java.util.List;
  */
 public class MultisetRateAccumulator<E> extends RateAccumulator<Multiset<E>, E>
 {
-    private Comparator<Entry<E>> OCCURENCE_COMPARATOR = new Comparator<Entry<E>>() {
-   		public int compare(Entry<E> e1, Entry<E> e2) {
-   			return e2.getCount() - e1.getCount() ;
-   		}
-   	};
+    private final Comparator<Entry<E>> OCCURRENCE_COMPARATOR = Comparator.comparing(Entry::getCount, Comparator.reverseOrder());
 
     public MultisetRateAccumulator(long start)
     {
@@ -63,7 +58,7 @@ public class MultisetRateAccumulator<E> extends RateAccumulator<Multiset<E>, E>
     public List<Entry<E>> getSortedEntries()
     {
     	List<Entry<E>> sortedByCount = new ArrayList<>(_counter.entrySet());
-    	Collections.sort(sortedByCount, OCCURENCE_COMPARATOR);
+    	sortedByCount.sort(OCCURRENCE_COMPARATOR);
 
     	return sortedByCount;
     }

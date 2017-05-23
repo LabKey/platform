@@ -20,14 +20,26 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelColumn;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Stats;
+import org.labkey.api.view.Stats.StatDefinition;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: migra
@@ -38,32 +50,33 @@ public class Crosstab
 {
     public static final String TOTAL_COLUMN = "CROSSTAB_TOTAL_COLUMN";
     public static final String TOTAL_ROW = "CROSSTAB_TOTAL_ROW";
-    private Set<Stats.StatDefinition> statSet;
-    private FieldKey _rowFieldKey;
-    private FieldKey _colFieldKey;
-    private FieldKey _statFieldKey;
-    private Results _results;
-    private StatType _statType = StatType.unknown;
 
-    List colHeaders = new  ArrayList<Object>();
-
+    private final Set<StatDefinition> _statSet;
+    private final Results _results;
+    private final FieldKey _rowFieldKey;
+    private final FieldKey _colFieldKey;
+    private final FieldKey _statFieldKey;
+    private final List<Object> _colHeaders = new ArrayList<>();
 
     //TODO: This should be an arbitrary number of groupings in any combination!!
     //TODO: Improve memory usage
-    Map<Object, Map<Object, List<Object>>> crossTab = new LinkedHashMap<>();
-    Map<Object, List<Object>> rowDatasets = new HashMap<>();
-    Map<Object, List<Object>> colDatasets = new HashMap<>();
-    List<Object> grandTotalDataset = new ArrayList<>();
+    private final Map<Object, Map<Object, List<Object>>> _crossTab = new LinkedHashMap<>();
+    private final Map<Object, List<Object>> _rowDatasets = new HashMap<>();
+    private final Map<Object, List<Object>> _colDatasets = new HashMap<>();
+    private final List<Object> _grandTotalDataset = new ArrayList<>();
 
-    public enum StatType {
+    private StatType _statType = StatType.unknown;
+
+    public enum StatType
+    {
         numeric,
         string,
         unknown,
     }
 
-    public Crosstab(Results results, FieldKey rowFieldKey, FieldKey colFieldKey, FieldKey statFieldKey, Set<Stats.StatDefinition> statSet) throws SQLException
+    public Crosstab(Results results, FieldKey rowFieldKey, FieldKey colFieldKey, FieldKey statFieldKey, Set<StatDefinition> statSet) throws SQLException
     {
-        this.statSet = statSet;
+        _statSet = statSet;
         _results = results;
         _rowFieldKey = rowFieldKey;
         _colFieldKey = colFieldKey;
@@ -105,15 +118,15 @@ public class Crosstab
                 if (0 != rowFieldIndex)
                 {
                     rowVal = _results.getObject(rowFieldIndex);
-                    Map<Object, List<Object>> rowMap = crossTab.get(rowVal);
+                    Map<Object, List<Object>> rowMap = _crossTab.get(rowVal);
                     if (null == rowMap)
                     {
                         rowMap = new HashMap<>();
-                        crossTab.put(rowVal, rowMap);
+                        _crossTab.put(rowVal, rowMap);
                         if (0 == colFieldIndex)
                             rowMap.put(statCol, new ArrayList<>());
 
-                        rowDatasets.put(rowVal, new ArrayList<>());
+                        _rowDatasets.put(rowVal, new ArrayList<>());
                     }
 
                     cellValues = null;
@@ -126,15 +139,15 @@ public class Crosstab
                         {
                             cellValues = new ArrayList<>();
                             rowMap.put(colVal, cellValues);
-                            if (!colHeaders.contains(colVal))
+                            if (!_colHeaders.contains(colVal))
                             {
-                                colHeaders.add(colVal);
+                                _colHeaders.add(colVal);
                                 colDataset = new ArrayList<>();
-                                colDatasets.put(colVal, colDataset);
+                                _colDatasets.put(colVal, colDataset);
                             }
                         }
 
-                        colDataset = colDatasets.get(colVal);
+                        colDataset = _colDatasets.get(colVal);
                     }
                 }
 
@@ -151,11 +164,11 @@ public class Crosstab
                 if (null != colDataset)
                     colDataset.add(statFieldVal);
 
-                Collections.sort(colHeaders, new GenericComparator());
+                _colHeaders.sort(new GenericComparator());
 
-                grandTotalDataset.add(statFieldVal);
+                _grandTotalDataset.add(statFieldVal);
                 if (0 != rowFieldIndex)
-                    rowDatasets.get(rowVal).add(statFieldVal);
+                    _rowDatasets.get(rowVal).add(statFieldVal);
             }
         }
         finally
@@ -171,9 +184,9 @@ public class Crosstab
 
     public String getDescription()
     {
-        Stats.StatDefinition stat = null;
+        StatDefinition stat = null;
         if (getStatSet().size() == 1)
-            stat = getStatSet().toArray(new Stats.StatDefinition[1])[0];
+            stat = getStatSet().toArray(new StatDefinition[1])[0];
 
         String statFieldLabel = getFieldLabel(getStatField());
         String rowFieldLabel = getFieldLabel(getRowField());
@@ -200,14 +213,14 @@ public class Crosstab
 
     public List<Object> getRowHeaders()
     {
-        List<Object> l = new ArrayList(crossTab.keySet());
-        Collections.sort(l, new GenericComparator());
+        List<Object> l = new ArrayList(_crossTab.keySet());
+        l.sort(new GenericComparator());
         return l;
     }
 
     public List<Object> getColHeaders()
     {
-        return colHeaders;
+        return _colHeaders;
     }
 
     private static class GenericComparator implements Comparator
@@ -236,23 +249,23 @@ public class Crosstab
         if (TOTAL_COLUMN.equals(colHeader))
         {
             if (TOTAL_ROW.equals(rowHeader))
-                return createStat(grandTotalDataset, statSet);
+                return createStat(_grandTotalDataset, _statSet);
             else
-                return createStat(rowDatasets.get(rowHeader), statSet);
+                return createStat(_rowDatasets.get(rowHeader), _statSet);
         }
         else if (TOTAL_ROW.equals(rowHeader))
         {
-            return createStat(colDatasets.get(colHeader), statSet);
+            return createStat(_colDatasets.get(colHeader), _statSet);
         }
         else
         {
-            Map<Object, List<Object>> rowMap = crossTab.get(rowHeader);
+            Map<Object, List<Object>> rowMap = _crossTab.get(rowHeader);
             List<Object> data = rowMap.get(colHeader);
-            return createStat(data, statSet);
+            return createStat(data, _statSet);
         }
     }
 
-    private Stats createStat(List<Object> data, Set<Stats.StatDefinition> statSet)
+    private Stats createStat(List<Object> data, Set<StatDefinition> statSet)
     {
         Object[] statData;
         StatType type = getStatType();
@@ -277,9 +290,9 @@ public class Crosstab
         return Stats.getStats(statData, statSet);
     }
 
-    public Set<Stats.StatDefinition> getStatSet()
+    public Set<StatDefinition> getStatSet()
     {
-        return statSet;
+        return _statSet;
     }
 
     public FieldKey getRowField()
@@ -364,7 +377,7 @@ public class Crosstab
 
             for (Object rowValue : _crosstab.getRowHeaders())
             {
-                for (Stats.StatDefinition rowStat : _crosstab.getStatSet())
+                for (StatDefinition rowStat : _crosstab.getStatSet())
                 {
                     if (_crosstab.getStatSet().size() > 1)
                     {
@@ -380,7 +393,7 @@ public class Crosstab
             }
 
             // stat totals
-            for (Stats.StatDefinition rowStat : _crosstab.getStatSet())
+            for (StatDefinition rowStat : _crosstab.getStatSet())
             {
                 if (_crosstab.getStatSet().size() > 1)
                 {
@@ -395,7 +408,7 @@ public class Crosstab
             }
         }
 
-        private Map<String, Object> mapRow(Object rowValue, Stats.StatDefinition rowStat, Map<String, Object> rowMap)
+        private Map<String, Object> mapRow(Object rowValue, StatDefinition rowStat, Map<String, Object> rowMap)
         {
             for (Object colVal : _crosstab.getColHeaders())
             {

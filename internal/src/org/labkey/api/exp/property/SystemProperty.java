@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.property;
 
+import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -112,12 +113,7 @@ public class SystemProperty
         for (SystemProperty property : _systemProperties.values())
             properties.add(property._pd);
 
-        Collections.sort(properties, new Comparator<PropertyDescriptor>() {
-            public int compare(PropertyDescriptor o1, PropertyDescriptor o2)
-            {
-                return o1.getPropertyURI().compareTo(o2.getPropertyURI());
-            }
-        });
+        properties.sort(Comparator.comparing(ColumnRenderProperties::getPropertyURI));
         return Collections.unmodifiableList(properties);
     }
 

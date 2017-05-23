@@ -23,8 +23,6 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.view.NotFoundException;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -97,19 +95,16 @@ public class EmailTemplateService
             }
         }
 
-        Collections.sort(templates, new Comparator<EmailTemplate>(){
+        templates.sort((o1, o2) ->
+        {
+            if (o1 == null && o2 == null) return 0;
+            if (o1 == null) return 1;
+            if (o2 == null) return -1;
 
-            public int compare(EmailTemplate o1, EmailTemplate o2)
-            {
-                if (o1 == null && o2 == null) return 0;
-                if (o1 == null) return 1;
-                if (o2 == null) return -1;
-
-                int ret = o1.getPriority() - o2.getPriority();
-                if (0 == ret && null != o1.getName() && null != o2.getName())
-                    ret = o1.getName().compareToIgnoreCase(o2.getName());
-                return ret;
-            }
+            int ret = o1.getPriority() - o2.getPriority();
+            if (0 == ret)
+                ret = o1.getName().compareToIgnoreCase(o2.getName());
+            return ret;
         });
 
         return templates;
