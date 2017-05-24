@@ -97,7 +97,7 @@ public class Portal
         ModuleResourceCaches.create("File-based webpart definitions", new SimpleWebPartFactoryCacheHandler(), ResourceRootProvider.getStandard(ModuleHtmlView.VIEWS_PATH));
 
     private static Map<String, WebPartFactory> _viewMap = null;
-
+    private static List<WebPartFactory> _homeWebParts = new ArrayList<>();
 
     public static DbSchema getSchema()
     {
@@ -1352,6 +1352,16 @@ public class Portal
         {
             WebPartCache.remove(ContainerManager.getForId(page.getContainer()));
         }
+    }
+
+    public static void registerHomeProjectInitWebpart(WebPartFactory webPartFactory)
+    {
+        _homeWebParts.add(webPartFactory);
+    }
+
+    public static List<WebPartFactory> getHomeProjectInitWebparts()
+    {
+        return _homeWebParts;
     }
 
     public static class PortalPage implements Cloneable
