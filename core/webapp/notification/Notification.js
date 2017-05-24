@@ -349,6 +349,70 @@
             }
         };
 
+        var _notificationsUpdatedCallbacks = [];
+
+        var _refreshFromServer = function()
+        {
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('notification', 'getUserNotificationsForPanel.api'),
+                success: LABKEY.Utils.getCallbackWrapper(function (response)
+                {
+                    if (response.success)
+                    {
+                        console.log(JSON.stringify(response));
+                        LABKEY.notifications = response.notifications;
+                        _notificationsUpdatedCallbacks.forEach(function(cb){cb();});
+                    }
+                }),
+                failure: function(response)
+                {
+                    console.log(responseText.exception);
+                }
+            });
+        };
+
+        /** Add a listener specifically for notification changes */
+        var onChange = function(cb)
+        {
+            try
+            {
+                if (0 === _notificationsUpdatedCallbacks.length) {
+                    addServerEventListener("org.labkey.api.admin.notification.NotificationService",
+                            function () {
+                                _refreshFromServer()
+                            });
+                }
+                _notificationsUpdatedCallbacks.push(cb);
+            }
+            catch (ex)
+            {
+                console.log(ex);
+            }
+        };
+
+
+        var _websocket = null;
+        var _callbacks = {};
+
+        /** Add a general purpose listener for server events */
+        var addServerEventListener = function(event, cb)
+        {
+            if (LABKEY.user.id && null === _websocket && 'WebSocket' in window)
+            {
+                _websocket = new WebSocket("ws://" + window.location.host + LABKEY.contextPath + "/_websocket/notifications");
+                _websocket.onmessage = function(evt)
+                {
+                    var json = JSON.parse(evt.data);
+                    var event = json.event;
+                    var list = _callbacks[event] || [];
+                    list.forEach(function(cb){cb(json)});
+                };
+                var list = _callbacks[event] || [];
+                list.push(cb);
+                _callbacks[event] = list;
+            }
+        };
+
         return {
             setElementIds: setElementIds,
             updateUnreadCount: updateUnreadCount,
@@ -359,7 +423,9 @@
             deleteNotification: deleteNotification,
             clearAllUnread: clearAllUnread,
             goToActionLink: goToActionLink,
-            goToViewAll: goToViewAll
+            goToViewAll: goToViewAll,
+            onChange: onChange,
+            addServerEventListener: addServerEventListener
         };
     };
 

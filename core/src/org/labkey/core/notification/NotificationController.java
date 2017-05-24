@@ -15,6 +15,7 @@
  */
 package org.labkey.core.notification;
 
+import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -33,7 +34,9 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.springframework.validation.BindException;
@@ -247,6 +250,19 @@ public class NotificationController extends SpringActionController
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("notifications", notificationList);
+            response.put("success", true);
+            return response;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
+    public class GetUserNotificationsForPanelAction extends ApiAction<Object>
+    {
+        @Override
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("notifications", PageFlowUtil.getNotificationJson(getUser()));
             response.put("success", true);
             return response;
         }

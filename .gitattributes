@@ -497,6 +497,7 @@ core/src/org/labkey/core/login/register.jsp -text
 core/src/org/labkey/core/login/resetPassword.jsp -text
 core/src/org/labkey/core/login/setPassword.jsp -text
 core/src/org/labkey/core/notification/NotificationController.java -text
+core/src/org/labkey/core/notification/NotificationEndpoint.java -text
 core/src/org/labkey/core/notification/NotificationServiceImpl.java -text
 core/src/org/labkey/core/notification/userNotifications.jsp -text
 core/src/org/labkey/core/portal/PortalJUnitTest.java -text

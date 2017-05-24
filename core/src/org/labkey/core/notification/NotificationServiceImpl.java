@@ -134,7 +134,11 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
         }
 
         notification.setContainer(container.getEntityId());
-        return Table.insert(user, getTable(), notification);
+        Notification ret = Table.insert(user, getTable(), notification);
+
+        NotificationEndpoint.sendEvent(notification.getUserId(), NotificationService.class);
+
+        return ret;
     }
 
     @Override
@@ -214,6 +218,8 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
             transaction.commit();
         }
 
+        NotificationEndpoint.sendEvent(notifyUserId, NotificationService.class);
+
         return notifications.size();
     }
 
@@ -239,6 +245,8 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
             transaction.commit();
         }
 
+        NotificationEndpoint.sendEvent(user.getUserId(), NotificationService.class);
+
         return notifications.size();
     }
 
@@ -247,14 +255,19 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     public int removeNotifications(Container container, @Nullable String objectId, @NotNull List<String> types, int notifyUserId)
     {
         SimpleFilter filter = getNotificationUpdateFilter(container, objectId, types, notifyUserId);
-        return Table.delete(getTable(), filter);
+        int ret = Table.delete(getTable(), filter);
+        if (ret > 0)
+            NotificationEndpoint.sendEvent(notifyUserId, NotificationService.class);
+        return ret;
     }
 
     @Override
     public int removeNotificationsByType(Container container, @Nullable String objectId, @NotNull List<String> types)
     {
         SimpleFilter filter = getNotificationUpdateFilter(container, objectId, types, null);
-        return Table.delete(getTable(), filter);
+        int ret = Table.delete(getTable(), filter);
+        /* TODO ? notify everyone, or don't worry about it? */
+        return ret;
     }
 
     private SimpleFilter getNotificationUpdateFilter(Container container, @Nullable String objectId, @NotNull List<String> types, @Nullable Integer notifyUserId)
@@ -311,6 +324,20 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
         else
             return "fa-bell";
     }
+
+
+    @Override
+    public void sendServerEvent(int userId, Class clazz)
+    {
+        NotificationEndpoint.sendEvent(userId, clazz);
+    }
+
+    @Override
+    public void sendServerEvent(int userId, Enum e)
+    {
+        NotificationEndpoint.sendEvent(userId, e);
+    }
+
 
     private TableInfo getTable()
     {
