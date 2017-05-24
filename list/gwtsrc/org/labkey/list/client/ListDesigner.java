@@ -27,19 +27,50 @@ import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.CheckBox;
+import com.google.gwt.user.client.ui.FlexTable;
+import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.HTMLTable;
 import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.InlineHTML;
 import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.ListBox;
+import com.google.gwt.user.client.ui.Panel;
+import com.google.gwt.user.client.ui.RadioButton;
+import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
+import com.google.gwt.user.client.ui.Widget;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.ui.*;
+import org.labkey.api.gwt.client.ui.BoundCheckBox;
+import org.labkey.api.gwt.client.ui.BoundListBox;
+import org.labkey.api.gwt.client.ui.BoundRadioButton;
+import org.labkey.api.gwt.client.ui.BoundTextAreaBox;
+import org.labkey.api.gwt.client.ui.BoundTextBox;
+import org.labkey.api.gwt.client.ui.DirtyCallback;
+import org.labkey.api.gwt.client.ui.HelpPopup;
+import org.labkey.api.gwt.client.ui.ImageButton;
+import org.labkey.api.gwt.client.ui.LookupServiceAsync;
+import org.labkey.api.gwt.client.ui.PropertiesEditor;
+import org.labkey.api.gwt.client.ui.Saveable;
+import org.labkey.api.gwt.client.ui.Tooltip;
+import org.labkey.api.gwt.client.ui.WebPartPanel;
+import org.labkey.api.gwt.client.ui.WindowUtil;
 import org.labkey.api.gwt.client.ui.domain.DomainImporter;
 import org.labkey.api.gwt.client.ui.domain.DomainImporterService;
 import org.labkey.api.gwt.client.ui.domain.DomainImporterServiceAsync;
-import org.labkey.api.gwt.client.util.*;
+import org.labkey.api.gwt.client.util.BooleanProperty;
+import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
+import org.labkey.api.gwt.client.util.IntegerProperty;
+import org.labkey.api.gwt.client.util.PropertyUtil;
+import org.labkey.api.gwt.client.util.ServiceUtil;
+import org.labkey.api.gwt.client.util.StringProperty;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: matthewb
@@ -377,6 +408,8 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     {
         if (null == _root)
             return;
+
+        d.setProtectedNotAllowedFieldNames(Collections.singleton(_list.getKeyPropertyName()));
 
         _domain = d;
         _domain.setSchemaName("lists");

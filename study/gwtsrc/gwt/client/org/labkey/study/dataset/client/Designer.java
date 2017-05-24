@@ -61,6 +61,7 @@ import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -223,6 +224,11 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
     {
         if (null != _domain && null != _dataset)
         {
+            if (_dataset.getKeyPropertyName() != null)
+            {
+                _domain.setProtectedNotAllowedFieldNames(Collections.singleton(_dataset.getKeyPropertyName()));
+                _propTable.init(new GWTDomain(_domain));
+            }
             _root.remove(_loading);
             _root.add(_buttons);
 
@@ -829,6 +835,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                 {
                     _dataset.setKeyPropertyManaged(false);
                     _dataset.setKeyPropertyName(((BoundListBox)widget).getSelectedValue());
+                    onAdditionalKeyFieldChanged();
                 }
             });
             DOM.setElementAttribute(dataFieldsBox.getElement(), "id", "list_dataField");
@@ -853,6 +860,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                 {
                     _dataset.setKeyPropertyManaged(true);
                     _dataset.setKeyPropertyName(((BoundListBox)widget).getSelectedValue());
+                    onAdditionalKeyFieldChanged();
                 }
             });
             DOM.setElementAttribute(managedFieldsBox.getElement(), "id", "list_managedField");
@@ -900,6 +908,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                         _dataset.setKeyPropertyManaged(false);
                         dataFieldsBox.setEnabled(false);
                         managedFieldsBox.setEnabled(false);
+                        onAdditionalKeyFieldChanged();
                     }
                     else if (sender == dataFieldButton)
                     {
@@ -907,7 +916,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                         _dataset.setKeyPropertyManaged(false);
                         dataFieldsBox.setEnabled(true);
                         managedFieldsBox.setEnabled(false);
-
+                        onAdditionalKeyFieldChanged();
                     }
                     else if (sender == managedButton)
                     {
@@ -915,6 +924,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                         _dataset.setKeyPropertyManaged(true);
                         dataFieldsBox.setEnabled(false);
                         managedFieldsBox.setEnabled(true);
+                        onAdditionalKeyFieldChanged();
                     }
                 }
             };
@@ -1001,6 +1011,25 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             _table.setWidget(row, 0, panel);
             cellFormatter.setStyleName(row, 0, labelStyleName);
             _table.setWidget(row++, 1, showByDefault);
+        }
+
+        private void onAdditionalKeyFieldChanged()
+        {
+            String keyPropertyName = _dataset.getKeyPropertyName();
+            if (keyPropertyName != null)
+            {
+                _propTable.getDomain().setProtectedNotAllowedFieldNames(Collections.singleton(keyPropertyName));
+                GWTPropertyDescriptor prop = _propTable.getProperty(keyPropertyName);
+                if (prop != null)
+                {
+                    prop.setProtected(false);
+                }
+            }
+            else
+            {
+                _propTable.getDomain().setProtectedNotAllowedFieldNames(Collections.emptySet());
+            }
+            _propTable.refresh();
         }
 
         private void setCheckboxId(Element e, String id)
