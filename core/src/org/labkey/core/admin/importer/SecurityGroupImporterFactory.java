@@ -69,14 +69,14 @@ public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(@Nullable PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
+            if (!isValidForImportArchive(ctx))
+                return;
+
             if (!ctx.getContainer().isProject())
             {
                 ctx.getLogger().warn("Import of groups outside of project context not supported.");
                 return;
             }
-
-            if (!isValidForImportArchive(ctx))
-                return;
 
             GroupsType groups = ctx.getXml().getGroups();
 
