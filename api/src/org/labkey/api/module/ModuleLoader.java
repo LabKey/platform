@@ -1858,6 +1858,11 @@ public class ModuleLoader implements Filter
         return module.getModuleResource(path);
     }
 
+    public Resource getResource(String moduleName, Path path)
+    {
+        return getModule(moduleName).getModuleResource(path);
+    }
+
     public Module getCurrentModule()
     {
         return ModuleLoader.getInstance().getModuleForController(HttpView.getRootContext().getActionURL().getController());
