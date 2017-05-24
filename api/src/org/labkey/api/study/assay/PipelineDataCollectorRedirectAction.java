@@ -15,7 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
-import org.labkey.api.action.LabkeyError;
+import org.labkey.api.action.LabKey_Error;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.Container;
@@ -28,7 +28,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
@@ -37,7 +36,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -135,7 +133,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
             ExpData data = ExperimentService.get().getExpDataByURL(file, getContainer());
             if (data != null && data.getRun() != null)
             {
-                errors.addError(new LabkeyError("The file " + file.getAbsolutePath() + " has already been imported"));
+                errors.addError(new LabKey_Error("The file " + file.getAbsolutePath() + " has already been imported"));
             }
         }
         return files;

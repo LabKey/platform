@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.FormattedError;
-import org.labkey.api.action.LabkeyError;
+import org.labkey.api.action.LabKey_Error;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.attachments.Attachment;
@@ -239,7 +239,7 @@ public class AuthenticationManager
             if (errors.hasErrors() || !response.isAuthenticated())
             {
                 if (!errors.hasErrors())
-                    errors.addError(new LabkeyError("Bad credentials"));
+                    errors.addError(new LabKey_Error("Bad credentials"));
             }
             else
             {

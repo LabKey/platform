@@ -26,7 +26,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.ValidationError;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LabKey_ScriptEngineManager;
 import org.labkey.api.reports.RScriptEngine;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -114,8 +114,8 @@ public class RReport extends ExternalScriptEngineReport
     {
         ScriptEngineManager mgr = ServiceRegistry.get().getService(ScriptEngineManager.class);
 
-        if (mgr instanceof LabkeyScriptEngineManager)
-            return ((LabkeyScriptEngineManager)mgr).getEngineByExtension("r", requestRemote());
+        if (mgr instanceof LabKey_ScriptEngineManager)
+            return ((LabKey_ScriptEngineManager)mgr).getEngineByExtension("r", requestRemote());
 
         // bypass the normal discovery mechanism
         return mgr.getEngineByExtension("r");

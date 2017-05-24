@@ -18,21 +18,21 @@ package org.labkey.api.action;
 
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
-import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.ObjectError;
 
 /**
  * User: jeckels
  * Date: May 2, 2008
  */
-public class LabkeyError extends ObjectError
+// TODO: Rename to remove _ from name. Wonky name was used temporarily to avoid a case-only rename on SVN.
+public class LabKey_Error extends ObjectError
 {
-    public LabkeyError(Throwable t)
+    public LabKey_Error(Throwable t)
     {
         this(t.getMessage() == null ? t.getClass().getName() : t.getMessage());
     }
 
-    public LabkeyError(String message)
+    public LabKey_Error(String message)
     {
         super("main", new String[] { "Error" }, new Object[] { message }, message);
     }

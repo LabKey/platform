@@ -23,7 +23,7 @@ import org.labkey.api.view.ViewContext;
  * User: Matthew
  * Date: Feb 5, 2009
  */
-public class FormattedError extends LabkeyError
+public class FormattedError extends LabKey_Error
 {
     public FormattedError(String message)
     {

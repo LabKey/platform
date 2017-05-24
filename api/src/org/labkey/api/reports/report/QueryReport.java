@@ -18,7 +18,7 @@ package org.labkey.api.reports.report;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.LabkeyError;
+import org.labkey.api.action.LabKey_Error;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
@@ -40,8 +40,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
-
-import java.util.List;
 
 /**
  * User: Karl Lum
@@ -133,9 +131,9 @@ public class QueryReport extends AbstractReport
         String dataRegionName = StringUtils.defaultString(getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName), QueryView.DATAREGIONNAME_DEFAULT) + "_" + getReportId().toString();
 
         if (schemaName == null)
-            errors.addError(new LabkeyError("schema name cannot be empty"));
+            errors.addError(new LabKey_Error("schema name cannot be empty"));
         if (queryName == null)
-            errors.addError(new LabkeyError("query name cannot be empty"));
+            errors.addError(new LabKey_Error("query name cannot be empty"));
 
         UserSchema schema = getSchema(context, schemaName);
 
@@ -166,7 +164,7 @@ public class QueryReport extends AbstractReport
             return view;
         }
         else
-            errors.addError(new LabkeyError("unable to create the schema for this query configuration"));
+            errors.addError(new LabKey_Error("unable to create the schema for this query configuration"));
 
         return null;
     }

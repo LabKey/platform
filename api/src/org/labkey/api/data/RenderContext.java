@@ -20,7 +20,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.LabkeyError;
+import org.labkey.api.action.LabKey_Error;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.query.CustomView;
@@ -828,9 +828,9 @@ public class RenderContext implements Map<String, Object>, Serializable
         for (Object m : list)
         {
             String errStr = null;
-            if (m instanceof LabkeyError)
+            if (m instanceof LabKey_Error)
             {
-                errStr = ((LabkeyError) m).renderToHTML(getViewContext());
+                errStr = ((LabKey_Error) m).renderToHTML(getViewContext());
             }
             else
             {

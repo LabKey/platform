@@ -26,7 +26,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.action.LabkeyError;
+import org.labkey.api.action.LabKey_Error;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.GroupAuditProvider;
@@ -2989,21 +2989,21 @@ public class SecurityManager
                 }
                 catch (ConfigurationException | MessagingException e)
                 {
-                    errors.addError(new LabkeyError(new Exception("Failed to send email due to: " + e.getMessage(), e)));
+                    errors.addError(new LabKey_Error(new Exception("Failed to send email due to: " + e.getMessage(), e)));
                     UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
                 }
             }
             catch (SecurityManager.UserManagementException e)
             {
 
-                errors.addError(new LabkeyError(new Exception("Failed to reset password due to: " + e.getMessage(), e)));
+                errors.addError(new LabKey_Error(new Exception("Failed to reset password due to: " + e.getMessage(), e)));
                 UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " attempted to " + infinitiveVerb + " the password, but the " + infinitiveVerb + " failed: " + e.getMessage());
             }
         }
         catch (ValidEmail.InvalidEmailException e)
         {
             //Should be caught in api validation
-            errors.addError(new LabkeyError(new Exception("Invalid email address." + e.getMessage(), e)));
+            errors.addError(new LabKey_Error(new Exception("Invalid email address." + e.getMessage(), e)));
         }
     }
 }

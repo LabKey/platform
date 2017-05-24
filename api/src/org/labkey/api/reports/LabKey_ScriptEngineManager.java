@@ -45,9 +45,10 @@ import java.util.Map;
 * Date: Dec 12, 2008
 * Time: 12:52:28 PM
 */
-public class LabkeyScriptEngineManager extends ScriptEngineManager
+// TODO: Rename to remove _ from name. Wonky name was used temporarily to avoid a case-only rename on SVN.
+public class LabKey_ScriptEngineManager extends ScriptEngineManager
 {
-    private static final Logger LOG = Logger.getLogger(LabkeyScriptEngineManager.class);
+    private static final Logger LOG = Logger.getLogger(LabKey_ScriptEngineManager.class);
 
     private static final String SCRIPT_ENGINE_MAP = "ExternalScriptEngineMap";
     private static final String ENGINE_DEF_MAP_PREFIX = "ScriptEngineDefinition_";
@@ -75,7 +76,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
 
     ScriptEngineFactory rhino = null;
 
-    public LabkeyScriptEngineManager()
+    public LabKey_ScriptEngineManager()
     {
         super();
 
