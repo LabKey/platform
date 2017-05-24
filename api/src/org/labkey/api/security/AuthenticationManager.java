@@ -474,7 +474,7 @@ public class AuthenticationManager
             @Override
             public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
             {
-                errors.reject(ERROR_MSG, "The e-mail address and password you entered did not match any accounts on file.\nNote: Passwords are case sensitive; make sure your Caps Lock is off.");
+                errors.reject(ERROR_MSG, "The email address and password you entered did not match any accounts on file.\nNote: Passwords are case sensitive; make sure your Caps Lock is off.");
             }
         },
         InactiveUser
