@@ -23,7 +23,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LabKey_ScriptEngineManager;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
@@ -173,7 +173,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         for (ScriptEngineFactory factory : manager.getEngineFactories())
         {
             // don't add an entry for R, since we have a specific report type above.
-            if (canCreateScript && LabkeyScriptEngineManager.isFactoryEnabled(factory) && !factory.getLanguageName().equalsIgnoreCase("R"))
+            if (canCreateScript && LabKey_ScriptEngineManager.isFactoryEnabled(factory) && !factory.getLanguageName().equalsIgnoreCase("R"))
             {
                 ScriptReportBean bean = new ScriptReportBean(settings);
                 bean.setRedirectUrl(returnUrl.getLocalURIString());

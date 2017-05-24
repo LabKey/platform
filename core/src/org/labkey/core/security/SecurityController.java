@@ -27,7 +27,7 @@ import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.FormattedError;
-import org.labkey.api.action.LabkeyError;
+import org.labkey.api.action.LabKey_Error;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -666,7 +666,7 @@ public class SecurityController extends SpringActionController
                     //if this is the site admins group and user is attempting to remove all site admins, display error.
                     if (_group.getUserId() == Group.groupAdministrators && removeNames.length == userMembers.size())
                     {
-                        errors.addError(new LabkeyError("The Site Administrators group must always contain at least one member. You cannot remove all members of this group."));
+                        errors.addError(new LabKey_Error("The Site Administrators group must always contain at least one member. You cannot remove all members of this group."));
                     }
                     //if this is site or project admins group and user is removing themselves, display warning.
                     else if (_group.getName().compareToIgnoreCase("Administrators") == 0

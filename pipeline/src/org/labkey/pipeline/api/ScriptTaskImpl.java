@@ -28,7 +28,7 @@ import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LabKey_ScriptEngineManager;
 import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -154,9 +154,9 @@ public class ScriptTaskImpl extends CommandTaskImpl
             // Rserve has been enabled
             //
             if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING) &&
-                    mgr instanceof LabkeyScriptEngineManager)
+                    mgr instanceof LabKey_ScriptEngineManager)
             {
-                engine = ((LabkeyScriptEngineManager) mgr).getEngineByExtension(extension, true /*requestRemote*/);
+                engine = ((LabKey_ScriptEngineManager) mgr).getEngineByExtension(extension, true /*requestRemote*/);
             }
             else
             {

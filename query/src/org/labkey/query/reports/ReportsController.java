@@ -75,7 +75,7 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LabKey_ScriptEngineManager;
 import org.labkey.api.reports.RConnectionHolder;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportContentEmailManager;
@@ -548,7 +548,7 @@ public class ReportsController extends SpringActionController
 
                 boolean isExternal = factory instanceof ExternalScriptEngineFactory;
                 record.put("external", String.valueOf(isExternal));
-                record.put("enabled", String.valueOf(LabkeyScriptEngineManager.isFactoryEnabled(factory)));
+                record.put("enabled", String.valueOf(LabKey_ScriptEngineManager.isFactoryEnabled(factory)));
 
 
                 if (isExternal)
@@ -556,9 +556,9 @@ public class ReportsController extends SpringActionController
                     // extra metadata for external engines
                     ExternalScriptEngineDefinition def = ((ExternalScriptEngineFactory)factory).getDefinition();
 
-                    if (def instanceof LabkeyScriptEngineManager.EngineDefinition)
+                    if (def instanceof LabKey_ScriptEngineManager.EngineDefinition)
                     {
-                        record.put("key", ((LabkeyScriptEngineManager.EngineDefinition)def).getKey());
+                        record.put("key", ((LabKey_ScriptEngineManager.EngineDefinition)def).getKey());
                         record.put("remote", def.isRemote());
                     }
 
@@ -590,10 +590,10 @@ public class ReportsController extends SpringActionController
 
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ScriptEnginesSaveAction extends ExtFormAction<LabkeyScriptEngineManager.EngineDefinition>
+    public class ScriptEnginesSaveAction extends ExtFormAction<LabKey_ScriptEngineManager.EngineDefinition>
     {
         @Override
-        public void validateForm(LabkeyScriptEngineManager.EngineDefinition def, Errors errors)
+        public void validateForm(LabKey_ScriptEngineManager.EngineDefinition def, Errors errors)
         {
             // validate definition
             if (StringUtils.isEmpty(def.getName()))
@@ -631,9 +631,9 @@ public class ReportsController extends SpringActionController
             }
         }
 
-        public ApiResponse execute(LabkeyScriptEngineManager.EngineDefinition def, BindException errors) throws Exception
+        public ApiResponse execute(LabKey_ScriptEngineManager.EngineDefinition def, BindException errors) throws Exception
         {
-            LabkeyScriptEngineManager.saveDefinition(def);
+            LabKey_ScriptEngineManager.saveDefinition(def);
 
             return new ApiSimpleResponse("success", true);
         }
@@ -641,11 +641,11 @@ public class ReportsController extends SpringActionController
 
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ScriptEnginesDeleteAction extends ApiAction<LabkeyScriptEngineManager.EngineDefinition>
+    public class ScriptEnginesDeleteAction extends ApiAction<LabKey_ScriptEngineManager.EngineDefinition>
     {
-        public ApiResponse execute(LabkeyScriptEngineManager.EngineDefinition def, BindException errors) throws Exception
+        public ApiResponse execute(LabKey_ScriptEngineManager.EngineDefinition def, BindException errors) throws Exception
         {
-            LabkeyScriptEngineManager.deleteDefinition(def);
+            LabKey_ScriptEngineManager.deleteDefinition(def);
             return new ApiSimpleResponse("success", true);
         }
     }
