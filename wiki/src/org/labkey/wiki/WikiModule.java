@@ -34,6 +34,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.wiki.WikiRendererType;
@@ -136,17 +137,27 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         loadWikiContent(sharedContainer,  moduleContext.getUpgradeUser(), defaultPageName, "Shared Resources", "/org/labkey/wiki/sharedWiki.txt", WikiRendererType.HTML);
 
         Map<String, String> wikiProps = new HashMap<>();
-        wikiProps.put("webPartContainer", homeContainer.getId());
-        wikiProps.put("name", defaultPageName);
-        addWebPart(WEB_PART_NAME, homeContainer, HttpView.BODY, 0, wikiProps);
-        addWebPart("Projects", homeContainer, HttpView.BODY, 1);
-
         wikiProps.put("webPartContainer", supportContainer.getId());
         addWebPart(WEB_PART_NAME, supportContainer, HttpView.BODY, 0, wikiProps);
         addWebPart("Messages", supportContainer, HttpView.BODY, 1);
 
         wikiProps.put("webPartContainer", sharedContainer.getId());
         addWebPart(WEB_PART_NAME, sharedContainer, HttpView.BODY, 0, wikiProps);
+
+        // if any modules have registered webparts to show on the home page, use those
+        // otherwise default to the initial set below
+        if (!Portal.getHomeProjectInitWebparts().isEmpty())
+        {
+            for (WebPartFactory webPartFactory : Portal.getHomeProjectInitWebparts())
+                addWebPart(webPartFactory.getName(), homeContainer, HttpView.BODY);
+        }
+        else
+        {
+            wikiProps.put("webPartContainer", homeContainer.getId());
+            wikiProps.put("name", defaultPageName);
+            addWebPart(WEB_PART_NAME, homeContainer, HttpView.BODY, 0, wikiProps);
+            addWebPart("Projects", homeContainer, HttpView.BODY, 1);
+        }
     }
 
     @NotNull
