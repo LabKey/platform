@@ -384,19 +384,27 @@ public class SecurityManager
     }
 
 
+    public static User getSessionUser(HttpSession session)
+    {
+        User sessionUser = null;
+
+        Integer userId = null == session ? null : (Integer) session.getAttribute(USER_ID_KEY);
+
+        if (null != userId)
+            sessionUser = UserManager.getUser(userId);
+
+        return sessionUser;
+    }
+
+
     public static User getAuthenticatedUser(HttpServletRequest request)
     {
         User u = (User) request.getUserPrincipal();
 
         if (null == u)
         {
-            User sessionUser = null;
             HttpSession session = request.getSession(false);
-
-            Integer userId = null == session ? null : (Integer) session.getAttribute(USER_ID_KEY);
-
-            if (null != userId)
-                sessionUser = UserManager.getUser(userId);
+            User sessionUser = getSessionUser(session);
 
             if (null != sessionUser)
             {

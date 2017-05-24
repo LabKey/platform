@@ -2102,7 +2102,7 @@ public class PageFlowUtil
         return tourProps;
     }
 
-    private static JSONObject getNotificationJson(User user)
+    public static JSONObject getNotificationJson(User user)
     {
         Map<Integer, Map<String, Object>> notificationsPropMap = new HashMap<>();
         Map<String, List<Integer>> notificationGroupingsMap = new TreeMap<>();

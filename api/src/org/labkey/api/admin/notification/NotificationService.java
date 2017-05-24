@@ -118,4 +118,13 @@ public interface NotificationService
      * Get the registered font-awesome icon class for a given notification type String. Default "fa-bell".
      */
     String getNotificationTypeIconCls(@NotNull String type);
+
+    /*
+     * send event to browser
+     */
+    void sendServerEvent(int userId, Class clazz);
+    /*
+     * send event to browser
+     */
+    void sendServerEvent(int userId, Enum e);
 }
