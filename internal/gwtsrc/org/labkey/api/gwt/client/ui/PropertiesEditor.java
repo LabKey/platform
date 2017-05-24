@@ -580,8 +580,19 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         fireChangeEvent();
     }
 
+    public FieldType getProperty(String name)
+    {
+        for (Row row : _rows)
+        {
+            if (row.edit.getName().equalsIgnoreCase(name))
+            {
+                return row.edit;
+            }
+        }
+        return null;
+    }
 
-    void refresh()
+    public void refresh()
     {
         while (_table.getRowCount() >= _rows.size() + 2)
             _table.removeRow(_table.getRowCount() - 1);

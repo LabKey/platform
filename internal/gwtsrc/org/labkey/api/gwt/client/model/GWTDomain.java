@@ -51,6 +51,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private Set<String> mandatoryPropertyDescriptorNames = new HashSet<String>();
 
     private Set<String> reservedFieldNames = new HashSet<String>();
+    private Set<String> protectedNotAllowedFieldNames = new HashSet<String>();
 
     private Set<String> excludeFromExportFieldNames = new HashSet<String>();
     private boolean provisioned = false;
@@ -112,6 +113,11 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.schemaName = src.schemaName;
         this.queryName = src.queryName;
         this.templateDescription = src.templateDescription;
+
+        if (src.getProtectedNotAllowedFieldNames() != null)
+        {
+            this.getProtectedNotAllowedFieldNames().addAll(src.getProtectedNotAllowedFieldNames());
+        }
     }
 
     //  String representation of database _ts (rowversion) column
@@ -272,6 +278,14 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     }
 
     /**
+     * @return  Indicates that the property is not allowed to be set as "Protected"
+     */
+    public boolean allowsProtected(FieldType field)
+    {
+        return !(isMandatoryField(field) || (getProtectedNotAllowedFieldNames() != null && getProtectedNotAllowedFieldNames().contains(field.getName().toLowerCase())));
+    }
+
+    /**
      * @param mandatoryFieldNames names of property descriptors that must be present in this domain.  Does not indicate that they must be non-nullable.
      */
     public void setMandatoryFieldNames(Set<String> mandatoryFieldNames)
@@ -335,6 +349,20 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
             return false;
         }
         return excludeFromExportFieldNames.contains(field.getName().toLowerCase());
+    }
+
+    public Set<String> getProtectedNotAllowedFieldNames()
+    {
+        return protectedNotAllowedFieldNames;
+    }
+
+    public void setProtectedNotAllowedFieldNames(Set<String> protectedNotAllowedFieldNames)
+    {
+        this.protectedNotAllowedFieldNames = new HashSet<String>();
+        for (String fieldName : protectedNotAllowedFieldNames)
+        {
+            this.protectedNotAllowedFieldNames.add(fieldName.toLowerCase());
+        }
     }
 
     public DefaultValueType getDefaultDefaultValueType()

@@ -58,4 +58,19 @@ public class ProtectedItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     {
         checkbox.setValue(getFieldValue(field));
     }
+
+    @Override
+    public void showPropertyDescriptor(DomainType domain, FieldType field)
+    {
+        updateEnabledState(domain, field);
+        super.showPropertyDescriptor(domain, field);
+    }
+
+    private void updateEnabledState(DomainType domain, FieldType currentField)
+    {
+        if (!domain.allowsProtected(currentField))
+            setFieldValue(currentField, false);
+
+        setCanEnable(domain.allowsProtected(currentField));
+    }
 }
