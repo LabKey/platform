@@ -36,8 +36,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("internal/jQuery");
-        dependencies.add("Ext4"); // required for completion.js
-        dependencies.add("completion.js");
+        dependencies.add("completion");
     }
 %>
 <%

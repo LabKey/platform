@@ -462,20 +462,18 @@ public abstract class DisplayColumn extends RenderColumn
 
     public static String getJsonTypeName(Class valueClass)
     {
-        if(String.class.isAssignableFrom(valueClass))
+        if (String.class.isAssignableFrom(valueClass))
             return "string";
-        else if(Boolean.class.isAssignableFrom(valueClass) || boolean.class.isAssignableFrom(valueClass))
+        else if (Boolean.class.isAssignableFrom(valueClass) || boolean.class.isAssignableFrom(valueClass))
             return "boolean";
-        else if(Integer.class.isAssignableFrom(valueClass) || int.class.isAssignableFrom(valueClass))
+        else if (Integer.class.isAssignableFrom(valueClass) || int.class.isAssignableFrom(valueClass))
             return "int";
-        else if(Double.class.isAssignableFrom(valueClass) || double.class.isAssignableFrom(valueClass)
+        else if (Double.class.isAssignableFrom(valueClass) || double.class.isAssignableFrom(valueClass)
                 || Float.class.isAssignableFrom(valueClass) || float.class.isAssignableFrom(valueClass))
             return "float";
-        else if(Date.class.isAssignableFrom(valueClass))
+        else if (Date.class.isAssignableFrom(valueClass))
             return "date";
-        else
-            return "string";
-
+        return "string";
     }
 
     public static Class getClassFromJsonTypeName(String typeName)

@@ -168,42 +168,6 @@ public class DataRegion extends AbstractDataRegion
     }
     private List<GroupTable> _groupTables = new ArrayList<>();
 
-    private class ContextAction
-    {
-        private String _caption;
-        private String _iconCls;
-        private String _onClick;
-        private String _tooltip;
-
-        public ContextAction(String caption, String iconCls, String onClick, String tooltip)
-        {
-            _caption = caption;
-            _iconCls = iconCls;
-            _onClick = onClick;
-            _tooltip = tooltip;
-        }
-
-        public String getCaption()
-        {
-            return _caption;
-        }
-
-        public String getIconCls()
-        {
-            return _iconCls;
-        }
-
-        public String getOnClick()
-        {
-            return _onClick;
-        }
-
-        public String getTooltip()
-        {
-            return _tooltip;
-        }
-    }
-
     private class Message
     {
         private String _area;
@@ -1073,16 +1037,7 @@ public class DataRegion extends AbstractDataRegion
         if (_contextActions != null)
         {
             for (ContextAction ca : _contextActions)
-            {
-                out.write("<div class=\"lk-region-context-action\" ");
-                if (ca.getTooltip() != null)
-                    out.write("data-toggle=\"tooltip\" data-placement=\"top\" title=\"" + PageFlowUtil.filter(ca.getTooltip()) + "\"");
-                out.write(">");
-                if (ca.getIconCls() != null)
-                    out.write("<i class=\"fa fa-" + PageFlowUtil.filter(ca.getIconCls()) + "\"></i>");
-                out.write("<span>" + PageFlowUtil.filter(ca.getCaption()) + "</span>");
-                out.write("</div>");
-            }
+                out.write(ca.toString());
         }
         out.write("</div>");
     }
@@ -2761,9 +2716,22 @@ public class DataRegion extends AbstractDataRegion
             {
                 for (SimpleFilter.FilterClause clause : filter.getClauses())
                 {
+                    List<FieldKey> fieldKeys = clause.getFieldKeys();
+                    if (fieldKeys == null || fieldKeys.size() != 1)
+                        continue;
                     StringBuilder caption = new StringBuilder();
                     clause.appendFilterText(caption, new SimpleFilter.ColumnNameFormatter());
-                    _contextActions.add(new ContextAction(caption.toString(), "filter", null, caption.toString()));
+
+                    String fieldKey = fieldKeys.get(0).toString();
+                    String region = "LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "]";
+                    ContextAction.Builder action = new ContextAction.Builder()
+                            .iconCls("filter")
+                            // TODO: Only allow open if the column is available to the region...new scenario for UX
+                            .onClick(region + "._openFilter(" + PageFlowUtil.jsString(fieldKey) + "); return false;")
+                            .onClose(region + ".clearFilter(" + PageFlowUtil.jsString(fieldKey) + "); return false;")
+                            .text(caption.toString())
+                            .tooltip(caption.toString());
+                    _contextActions.add(action.build());
                 }
             }
         }

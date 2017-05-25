@@ -272,6 +272,7 @@ api/src/org/labkey/api/data/ContainerForeignKey.java -text
 api/src/org/labkey/api/data/ContainerManager.java -text
 api/src/org/labkey/api/data/ContainerService.java -text
 api/src/org/labkey/api/data/ContainerTable.java -text
+api/src/org/labkey/api/data/ContextAction.java -text
 api/src/org/labkey/api/data/CoreSchema.java -text
 api/src/org/labkey/api/data/CrosstabAxis.java -text
 api/src/org/labkey/api/data/CrosstabDataRegion.java -text
@@ -7387,6 +7388,7 @@ internal/webapp/codemirror-4.2/util.js -text
 internal/webapp/codemirror.lib.xml -text
 internal/webapp/color_functions.js -text
 internal/webapp/completion.js -text
+internal/webapp/completion.lib.xml -text
 internal/webapp/dataregion/filter/Base.js -text
 internal/webapp/dataregion/filter/Faceted.js -text
 internal/webapp/dataregion/filter/Model.js -text

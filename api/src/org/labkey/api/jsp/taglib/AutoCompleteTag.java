@@ -81,19 +81,15 @@ public abstract class AutoCompleteTag extends SimpleTagBase
         StringBuilder sb = new StringBuilder();
 
         sb.append("<script type=\"text/javascript\">");
-        sb.append("LABKEY.requiresExt4Sandbox();\n");
-        sb.append("LABKEY.requiresScript('completion.js');\n");
-
+        sb.append("LABKEY.requiresScript('completion',function(){\n");
         sb.append("Ext4.onReady(function(){\n" +
             "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
-            "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
-            "            completionUrl   : " + PageFlowUtil.jsString(getUrl()) + ",\n");
+            "            renderTo: " + PageFlowUtil.jsString(renderId) + ",\n" +
+            "            completionUrl: " + PageFlowUtil.jsString(getUrl()) + ",\n");
         sb.append(getTagConfig());
-        sb.append("  });\n" +
-            "    });\n");
-
+        sb.append("})})});\n");
         sb.append("</script>\n");
-        sb.append("<div id='").append(renderId).append("'></div>");
+        sb.append("<div id=\"").append(renderId).append("\"></div>");
 
         JspWriter out = getOut();
         out.write(sb.toString());

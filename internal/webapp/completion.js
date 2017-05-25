@@ -70,7 +70,6 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
                 Ext4.EventManager.addListener(this.fieldId, 'keydown', this.onKeyDown, this);
                 Ext4.EventManager.addListener(this.fieldId, 'keyup', this.onKeyUp, this);
                 Ext4.EventManager.addListener(this.fieldId, 'blur', function(){this.hideCompletionTask.delay(250);}, this);
-                //Ext4.EventManager.addListener(this.fieldId, 'change', function(){console.log('onChange');LABKEY.setDirty(true);});
 
             }, scope : this}
         };
@@ -148,7 +147,6 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
                 keynum == Ext4.EventObject.UP ||
                 keynum == Ext4.EventObject.ENTER ||
                 keynum == Ext4.EventObject.TAB ||
-                //keynum == Ext4.EventObject.BACKSPACE ||
                 keynum == Ext4.EventObject.ESC);
     },
 
@@ -179,11 +177,6 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
                 this.hideCompletionDiv();
                 stopEvent = true;
                 break;
-/*
-            case Ext4.EventObject.BACKSPACE:
-                this.hideCompletionDiv();
-                break;
-*/
         }
 
         if (stopEvent)
@@ -300,7 +293,6 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
         if (this.completionDiv.isVisible())
             return;
 
-        var div = this.completionDiv.dom;
         var posLeft = 0;
         var posTop = 0;
         var offsetElem = elem;
@@ -331,25 +323,6 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
 
         posLeft += this.completionField.getX();
         posTop += this.completionField.getY();
-        //posTop += elem.offsetHeight;
-
-/*
-        while (offsetElem && offsetElem.tagName != "BODY")
-        {
-            posLeft += offsetElem.offsetLeft;
-            posTop += offsetElem.offsetTop;
-            offsetElem = offsetElem.offsetParent;
-        }
-        if (!offsetElem)
-            return false;
-
-        //posTop += elem.offsetHeight;
-*/
-/*
-        div.style.top = posTop + 'px';
-        div.style.left = posLeft + 'px';
-*/
-        //div.style.display = "block";
         this.completionDiv.setLeftTop(posLeft, posTop);
         this.completionDiv.setVisible(true, true);
         return false;
