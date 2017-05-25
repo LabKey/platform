@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-/* core-0.00-12.30.sql */
-
 CREATE SCHEMA core;
+GO
+CREATE SCHEMA temp;
 GO
 
 EXEC sp_addtype 'ENTITYID', 'UNIQUEIDENTIFIER';
@@ -126,7 +126,7 @@ CREATE TABLE core.Modules
     InstalledVersion FLOAT,
     Enabled BIT DEFAULT 1,
     AutoUninstall BIT NOT NULL DEFAULT 0,   -- TRUE means LabKey should uninstall this module (drop schemas, delete SqlScripts rows, delete Modules rows), if it no longer exists
-    Schemas NVARCHAR(100) NULL,             -- Schemas managed by this module; LabKey will drop these schemas when a module marked AutoUninstall = TRUE is missing
+    Schemas NVARCHAR(4000) NULL,            -- Schemas managed by this module; LabKey will drop these schemas when a module marked AutoUninstall = TRUE is missing
 
     CONSTRAINT PK_Modules PRIMARY KEY (Name)
 );
@@ -191,9 +191,13 @@ CREATE TABLE core.Report
     Flags INT NOT NULL DEFAULT 0,
     CategoryId INT,
     DisplayOrder INT NOT NULL DEFAULT 0,
+    ContentModified DATETIME NOT NULL,
 
-    CONSTRAINT PK_Report PRIMARY KEY (RowId)
+    CONSTRAINT PK_Report PRIMARY KEY (RowId),
+    CONSTRAINT FK_Report_ContainerId FOREIGN KEY (ContainerId) REFERENCES core.Containers (EntityId)
 );
+
+CREATE INDEX IDX_Report_ContainerId ON core.Report(ContainerId);
 
 CREATE TABLE core.ContainerAliases
 (
@@ -252,7 +256,7 @@ CREATE TABLE core.PortalPages
     EntityId ENTITYID NOT NULL,
     Container ENTITYID NOT NULL,
     PageId VARCHAR(50) NOT NULL,
-    "index" INTEGER NOT NULL DEFAULT 0,
+    "index" INTEGER NOT NULL,
     Caption VARCHAR(64),
     Hidden BIT NOT NULL DEFAULT 0,
     Type VARCHAR(20), -- 'portal', 'folder', 'action'
@@ -264,7 +268,8 @@ CREATE TABLE core.PortalPages
     Properties TEXT,
 
     CONSTRAINT PK_PortalPages PRIMARY KEY CLUSTERED (Container, PageId),
-    CONSTRAINT FK_PortalPages_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId)
+    CONSTRAINT FK_PortalPages_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
+    CONSTRAINT UQ_PortalPage UNIQUE (Container, [Index])
 );
 CREATE INDEX IX_PortalPages_EntityId ON core.PortalPages(EntityId);
 
@@ -278,10 +283,13 @@ CREATE TABLE core.PortalWebParts
     Location VARCHAR(16),    -- 'body', 'left', 'right'
     Properties TEXT,    -- url encoded properties
     Permanent BIT NOT NULL DEFAULT 0,
+    Permission VARCHAR(256) NULL,
+    PermissionContainer ENTITYID NULL,
 
     CONSTRAINT PK_PortalWebParts PRIMARY KEY (RowId),
     CONSTRAINT FK_PortalWebParts_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
-    CONSTRAINT FK_PortalWebPartPages FOREIGN KEY (Container, PageId) REFERENCES core.PortalPages (Container, PageId)
+    CONSTRAINT FK_PortalWebPartPages FOREIGN KEY (Container, PageId) REFERENCES core.PortalPages (Container, PageId),
+    CONSTRAINT FK_PortalWebParts_PermissionContainer FOREIGN KEY (PermissionContainer) REFERENCES core.Containers (EntityId) ON UPDATE NO ACTION ON DELETE SET NULL
 );
 
 -- Add an index and FK on the Container column
@@ -300,248 +308,12 @@ CREATE TABLE core.ViewCategory
     Label NVARCHAR(200) NOT NULL,
     DisplayOrder INT NOT NULL DEFAULT 0,
 
+    Parent INT,
+
     CONSTRAINT pk_viewCategory PRIMARY KEY (RowId),
-    CONSTRAINT uq_container_label UNIQUE (Container, Label)
+    CONSTRAINT uq_container_label_parent UNIQUE (Container, Label, Parent),
+    CONSTRAINT FK_ViewCategory_Parent FOREIGN KEY (Parent) REFERENCES core.ViewCategory(RowId)
 );
-
--- Procedure to safely drop tables, views, indexes, constraints, schemas, and unnamed default constraints
--- Rewritten in 12.10 so SCHEMA and DEFAULT options use the SQL Server 2005 system tables, #13762.
-
-GO
-
-CREATE PROCEDURE core.fn_dropifexists (@objname VARCHAR(250), @objschema VARCHAR(50), @objtype VARCHAR(50), @subobjname VARCHAR(250) = NULL)
-AS
-BEGIN
-DECLARE @ret_code INTEGER
-DECLARE @print_cmds CHAR(1)
-SELECT @print_cmds ='F'
-DECLARE @fullname VARCHAR(300)
-SELECT @ret_code = 0
-SELECT @fullname = (LOWER(@objschema) + '.' + LOWER(@objname))
-IF (UPPER(@objtype)) = 'TABLE'
-BEGIN
-    IF OBJECTPROPERTY(OBJECT_ID(@fullname), 'IsTable') =1
-    BEGIN
-        EXEC('DROP TABLE ' + @fullname )
-        SELECT @ret_code = 1
-    END
-        ELSE IF @objname LIKE '##%' AND OBJECT_ID('tempdb.dbo.' + @objname) IS NOT NULL
-    BEGIN
-        EXEC('DROP TABLE ' + @objname )
-        SELECT @ret_code = 1
-    END
-END
-ELSE IF (UPPER(@objtype)) = 'VIEW'
-BEGIN
-    IF OBJECTPROPERTY(OBJECT_ID(@fullname),'IsView') =1
-    BEGIN
-        EXEC('DROP VIEW ' + @fullname )
-        SELECT @ret_code =1
-    END
-END
-ELSE IF (UPPER(@objtype)) = 'INDEX'
-BEGIN
-    DECLARE @fullername VARCHAR(500)
-    SELECT @fullername = @fullname + '.' + @subobjname
-    IF INDEXPROPERTY(OBJECT_ID(@fullname), @subobjname, 'IndexID') IS NOT NULL
-    BEGIN
-        EXEC('DROP INDEX ' + @fullername )
-        SELECT @ret_code =1
-    END
-    ELSE IF EXISTS (SELECT * FROM sys.indexes si
-            WHERE si.name = @subobjname
-            AND OBJECT_NAME(si.object_id) <> @objname)
-    BEGIN
-              RAISERROR ('Index does not belong to specified table ' , 16, 1)
-              RETURN @ret_code
-    END
-END
-ELSE IF (UPPER(@objtype)) = 'CONSTRAINT'
-BEGIN
-    IF OBJECTPROPERTY(OBJECT_ID(LOWER(@objschema) + '.' + LOWER(@subobjname)), 'IsConstraint') = 1
-    BEGIN
-        EXEC('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @subobjname)
-        SELECT @ret_code =1
-    END
-END
-ELSE IF (UPPER(@objtype)) = 'DEFAULT'
-BEGIN
-    DECLARE @DEFAULT sysname
-    SELECT 	@DEFAULT = s.name
-        FROM sys.objects s
-        join sys.columns c ON s.object_id = c.default_object_id
-        WHERE
-        s.type = 'D'
-		and c.object_id = OBJECT_ID(@fullname)
-        and c.name = @subobjname
-
-    IF @DEFAULT IS NOT NULL AND OBJECTPROPERTY(OBJECT_ID(LOWER(@objschema) + '.' + LOWER(@DEFAULT)), 'IsConstraint') = 1
-    BEGIN
-        EXEC('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @DEFAULT)
-        if (@print_cmds='T') PRINT('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @DEFAULT)
-		SELECT @ret_code =1
-    END
-END
-ELSE IF (UPPER(@objtype)) = 'SCHEMA'
-BEGIN
-	    DECLARE @schemaid INT, @principalid int
-
-	    SELECT @schemaid=schema_id, @principalid=principal_id
-	    FROM sys.schemas
-	    WHERE name = LOWER(@objschema)
-
-	    IF @schemaid IS NOT NULL
-	    BEGIN
-			IF (@objname is NOT NULL AND @objname NOT IN ('', '*'))
-				BEGIN
-			        RAISERROR ('Invalid @objname for @objtype of SCHEMA   must be either "*" (to drop all dependent objects) or NULL (for dropping empty schema )' , 16, 1)
-					RETURN @ret_code
-				END
-			ELSE IF (@objname = '*' )
-	        BEGIN
-	        	DECLARE @fkConstName sysname, @fkTableName sysname, @fkSchema sysname
-	            DECLARE fkCursor CURSOR for
-				      SELECT object_name(sfk.object_id) as fk_constraint_name, object_name(sfk.parent_object_id) as fk_table_name,
-						schema_name(sfk.schema_id) as fk_schema_name
-					    FROM sys.foreign_keys sfk
-						INNER JOIN sys.objects fso ON (sfk.referenced_object_id = fso.object_id)
-						WHERE fso.schema_id=@schemaid
-						AND sfk.type = 'F'
-
-				OPEN fkCursor
-	            FETCH NEXT FROM fkCursor INTO @fkConstName, @fkTableName, @fkSchema
-	            WHILE @@fetch_status = 0
-					BEGIN
-						SELECT @fullname = @fkSchema + '.' +@fkTableName
-						EXEC('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @fkConstName)
-						if (@print_cmds='T') PRINT('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @fkConstName)
-
-						FETCH NEXT FROM fkCursor INTO @fkConstName, @fkTableName, @fkSchema
-					END  -- ...of while @@fetch_status = 0
-		         CLOSE fkCursor
-		         DEALLOCATE fkCursor
-
-	        	DECLARE @soName sysname, @parent INT, @type CHAR(2), @fkschemaid int
-	            DECLARE soCursor CURSOR for
-					SELECT so.name, so.type, so.parent_object_id, so.schema_id
-					FROM sys.objects so
-					WHERE (so.schema_id=@schemaid)
-                        ORDER BY (CASE  WHEN so.type='V' THEN 1
-                                WHEN so.type='P' THEN 2
-                                WHEN so.type='U' THEN 3
-                                ELSE 4
-                              END)
-	            OPEN soCursor
-	            FETCH NEXT FROM soCursor INTO @soName, @type, @parent, @fkschemaid
-	            WHILE @@fetch_status = 0
-				BEGIN
-	                SELECT @fullname = @objschema + '.' + @soName
-	                IF (@type = 'V')
-						BEGIN
-							EXEC('DROP VIEW ' + @fullname)
-							if (@print_cmds='T') PRINT('DROP VIEW ' + @fullname)
-						END
-	                ELSE IF (@type = 'P')
-						BEGIN
-		                    EXEC('DROP PROCEDURE ' + @fullname)
-							if (@print_cmds='T') PRINT('DROP PROCEDURE ' + @fullname)
-						END
-					ELSE IF (@type = 'U')
-						BEGIN
-							EXEC('DROP TABLE ' + @fullname)
-							if (@print_cmds='T') PRINT('DROP TABLE ' + @fullname)
-						END
-					ELSE
-						BEGIN
-							DECLARE @msg NVARCHAR(255)
-							SELECT @msg=' Found object of type: ' + @type + ' name: ' + @fullname + ' in this schema.  Schema not dropped. '
-					        RAISERROR (@msg, 16, 1)
-							RETURN @ret_code
-						END
-	            FETCH NEXT FROM soCursor INTO @soName, @type, @parent, @fkschemaid
-	            END  -- ...of while @@fetch_status = 0
-	         CLOSE soCursor
-	         DEALLOCATE soCursor
-		END   -- done deleteing the objects in the schema
-
-		-- handle old style and new style schemas
-		DECLARE @approlename sysname
-		SELECT @approlename = name
-			FROM sys.database_principals
-			WHERE principal_id=@principalid AND type='A'
-
-		IF (@approlename IS NOT NULL)
-			BEGIN
-				EXEC sp_dropapprole @approlename
-				if (@print_cmds='T') PRINT ('sp_dropapprole '+ @approlename)
-			END
-		ELSE
-			BEGIN
-				EXEC('DROP SCHEMA ' + @objschema)
-				if (@print_cmds='T') PRINT('DROP SCHEMA ' + @objschema)
-			END
-		SELECT @ret_code =1
-        END
-	END
-ELSE
-    RAISERROR('Invalid object type - %s   Valid values are TABLE, VIEW, INDEX, CONSTRAINT, DEFAULT, SCHEMA ', 16,1, @objtype )
-
-RETURN @ret_code;
-END
-
-GO
-
--- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
--- script runner to invoke the specified method at this point in the script running process.  See usages of the
--- UpgradeCode interface for more details.
-
-CREATE PROCEDURE core.executeJavaUpgradeCode(@Name VARCHAR(255)) AS
-BEGIN
-    DECLARE @notice VARCHAR(255)
-    SET @notice = 'Empty function that signals script runner to execute Java code.  See usages of UpgradeCode.java.'
-END;
-
-GO
-
-/* core-12.30-13.10.sql */
-
-ALTER TABLE core.ViewCategory
-	ADD Parent INT;
-
-GO
-
-ALTER TABLE core.ViewCategory
-	ADD CONSTRAINT FK_ViewCategory_Parent FOREIGN KEY (RowId) REFERENCES core.ViewCategory(RowId);
-
-ALTER TABLE core.ViewCategory DROP CONSTRAINT uq_container_label;
-ALTER TABLE core.ViewCategory ADD CONSTRAINT uq_container_label_parent UNIQUE (Container, Label, Parent);
-
-ALTER TABLE core.PortalWebParts
-  ADD Permission VARCHAR(256) NULL;
-
-ALTER TABLE core.PortalWebParts
-  ADD PermissionContainer ENTITYID NULL;
-
-ALTER TABLE core.PortalWebParts
-    ADD CONSTRAINT FK_PortalWebParts_PermissionContainer FOREIGN KEY (PermissionContainer) REFERENCES  core.Containers (EntityId);
-
-ALTER TABLE core.PortalWebParts
-    DROP CONSTRAINT FK_PortalWebParts_PermissionContainer;
-
-ALTER TABLE core.PortalWebParts
-    ADD CONSTRAINT FK_PortalWebParts_PermissionContainer FOREIGN KEY (PermissionContainer)
-        REFERENCES  core.Containers (EntityId)
-        ON UPDATE NO ACTION ON DELETE SET NULL;
-
--- clean up orphaned categories
-DELETE FROM core.viewcategory WHERE parent IN
-	(SELECT vcp.parent FROM (SELECT DISTINCT parent FROM core.viewcategory WHERE parent IS NOT NULL) vcp LEFT JOIN core.viewcategory vc ON vcp.parent = vc.rowid WHERE rowid IS NULL);
-
--- correct the fk constraint
-ALTER TABLE core.viewcategory DROP CONSTRAINT FK_ViewCategory_Parent;
-ALTER TABLE core.viewcategory ADD CONSTRAINT FK_ViewCategory_Parent FOREIGN KEY (parent) REFERENCES core.viewcategory(rowid);
-
-/* core-13.10-13.20.sql */
 
 CREATE TABLE core.DbSequences
 (
@@ -554,24 +326,6 @@ CREATE TABLE core.DbSequences
     CONSTRAINT PK_DbSequences PRIMARY KEY (RowId),
     CONSTRAINT UQ_DbSequences_Container_Name_Id UNIQUE (Container, Name, Id)
 );
-
-GO
-
-CREATE SCHEMA temp;
-GO
-
-EXEC core.fn_dropifexists 'PortalPages', 'core', 'DEFAULT', 'Index';
-ALTER TABLE core.PortalPages ADD CONSTRAINT UQ_PortalPage UNIQUE (Container, [Index]);
-
-/* core-13.20-13.30.sql */
-
--- Support longer lists of module schemas (which now may include data source prefixes)
-ALTER TABLE core.Modules
-    ALTER COLUMN Schemas NVARCHAR(4000) NULL;
-
--- We no longer invoke GROUP_CONCAT installation via a script. Instead, we ensure GROUP_CONCAT in CoreModule.afterUpdate(), see #18979
-
-/* core-13.30-14.10.sql */
 
 CREATE TABLE core.ShortURL
 (
@@ -589,23 +343,18 @@ CREATE TABLE core.ShortURL
     CONSTRAINT UQ_ShortURL_ShortURL UNIQUE (ShortURL)
 );
 
-/* core-14.20-14.30.sql */
-
-ALTER TABLE core.Report ADD ContentModified DATETIME;
-GO
-UPDATE core.Report SET ContentModified = Modified;
-ALTER TABLE core.Report ALTER COLUMN ContentModified DATETIME NOT NULL;
-
--- delete any orphaned reports
-DELETE FROM core.Report WHERE ContainerId NOT IN (SELECT EntityId FROM core.Containers);
-
-ALTER TABLE core.Report
-ADD CONSTRAINT FK_Report_ContainerId FOREIGN KEY (ContainerId) REFERENCES core.Containers (EntityId);
-
-CREATE INDEX IDX_Report_ContainerId ON core.Report(ContainerId);
 GO
 
-/* core-14.30-14.31.sql */
+-- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
+-- script runner to invoke the specified method at this point in the script running process.  See usages of the
+-- UpgradeCode interface for more details.
+CREATE PROCEDURE core.executeJavaUpgradeCode(@Name VARCHAR(255)) AS
+BEGIN
+    DECLARE @notice VARCHAR(255)
+    SET @notice = 'Empty function that signals script runner to execute Java code.  See usages of UpgradeCode.java.'
+END;
+
+GO
 
 -- An empty stored procedure (similar to executeJavaUpgradeCode) that, when detected by the script runner,
 -- imports a tabular data file (TSV, XLSX, etc.) into the specified table.
@@ -616,8 +365,6 @@ BEGIN
 END;
 
 GO
-
-/* core-14.31-14.32.sql */
 
 CREATE FUNCTION core.fnCalculateAge(@startDate DATETIME, @endDate DATETIME) RETURNS INT
 AS
@@ -642,223 +389,13 @@ AS
       END
 
     RETURN @age
-  END
-GO
-
-ALTER PROCEDURE core.fn_dropifexists (@objname VARCHAR(250), @objschema VARCHAR(50), @objtype VARCHAR(50), @subobjname VARCHAR(250) = NULL)
-AS
-BEGIN
-  DECLARE @ret_code INTEGER
-  DECLARE @print_cmds CHAR(1)
-  SELECT @print_cmds ='F'
-  DECLARE @fullname VARCHAR(300)
-  SELECT @ret_code = 0
-  SELECT @fullname = (LOWER(@objschema) + '.' + LOWER(@objname))
-  IF (UPPER(@objtype)) = 'TABLE'
-    BEGIN
-      IF OBJECTPROPERTY(OBJECT_ID(@fullname), 'IsTable') =1
-        BEGIN
-          EXEC('DROP TABLE ' + @fullname )
-          SELECT @ret_code = 1
-        END
-      ELSE IF @objname LIKE '##%' AND OBJECT_ID('tempdb.dbo.' + @objname) IS NOT NULL
-        BEGIN
-          EXEC('DROP TABLE ' + @objname )
-          SELECT @ret_code = 1
-        END
-    END
-  ELSE IF (UPPER(@objtype)) = 'VIEW'
-    BEGIN
-      IF OBJECTPROPERTY(OBJECT_ID(@fullname),'IsView') =1
-        BEGIN
-          EXEC('DROP VIEW ' + @fullname )
-          SELECT @ret_code =1
-        END
-    END
-  ELSE IF (UPPER(@objtype)) = 'INDEX'
-    BEGIN
-      DECLARE @fullername VARCHAR(500)
-      SELECT @fullername = @fullname + '.' + @subobjname
-      IF INDEXPROPERTY(OBJECT_ID(@fullname), @subobjname, 'IndexID') IS NOT NULL
-        BEGIN
-          EXEC('DROP INDEX ' + @fullername )
-          SELECT @ret_code =1
-        END
-      ELSE IF EXISTS (SELECT * FROM sys.indexes si
-      WHERE si.name = @subobjname
-            AND OBJECT_NAME(si.object_id) <> @objname)
-        BEGIN
-          RAISERROR ('Index does not belong to specified table ' , 16, 1)
-          RETURN @ret_code
-        END
-    END
-  ELSE IF (UPPER(@objtype)) = 'CONSTRAINT'
-    BEGIN
-      IF OBJECTPROPERTY(OBJECT_ID(LOWER(@objschema) + '.' + LOWER(@subobjname)), 'IsConstraint') = 1
-        BEGIN
-          EXEC('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @subobjname)
-          SELECT @ret_code =1
-        END
-    END
-  ELSE IF (UPPER(@objtype)) = 'DEFAULT'
-    BEGIN
-      DECLARE @DEFAULT sysname
-      SELECT 	@DEFAULT = s.name
-      FROM sys.objects s
-        join sys.columns c ON s.object_id = c.default_object_id
-      WHERE
-        s.type = 'D'
-        and c.object_id = OBJECT_ID(@fullname)
-        and c.name = @subobjname
-
-      IF @DEFAULT IS NOT NULL AND OBJECTPROPERTY(OBJECT_ID(LOWER(@objschema) + '.' + LOWER(@DEFAULT)), 'IsConstraint') = 1
-        BEGIN
-          EXEC('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @DEFAULT)
-          if (@print_cmds='T') PRINT('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @DEFAULT)
-          SELECT @ret_code =1
-        END
-    END
-  ELSE IF (UPPER(@objtype)) = 'SCHEMA'
-    BEGIN
-      DECLARE @schemaid INT, @principalid int
-
-      SELECT @schemaid=schema_id, @principalid=principal_id
-      FROM sys.schemas
-      WHERE name = LOWER(@objschema)
-
-      IF @schemaid IS NOT NULL
-        BEGIN
-          IF (@objname is NOT NULL AND @objname NOT IN ('', '*'))
-            BEGIN
-              RAISERROR ('Invalid @objname for @objtype of SCHEMA   must be either "*" (to drop all dependent objects) or NULL (for dropping empty schema )' , 16, 1)
-              RETURN @ret_code
-            END
-          ELSE IF (@objname = '*' )
-            BEGIN
-              DECLARE @fkConstName sysname, @fkTableName sysname, @fkSchema sysname
-              DECLARE fkCursor CURSOR for
-                SELECT object_name(sfk.object_id) as fk_constraint_name, object_name(sfk.parent_object_id) as fk_table_name,
-                       schema_name(sfk.schema_id) as fk_schema_name
-                FROM sys.foreign_keys sfk
-                  INNER JOIN sys.objects fso ON (sfk.referenced_object_id = fso.object_id)
-                WHERE fso.schema_id=@schemaid
-                      AND sfk.type = 'F'
-
-              OPEN fkCursor
-              FETCH NEXT FROM fkCursor INTO @fkConstName, @fkTableName, @fkSchema
-              WHILE @@fetch_status = 0
-                BEGIN
-                  SELECT @fullname = @fkSchema + '.' +@fkTableName
-                  EXEC('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @fkConstName)
-                  if (@print_cmds='T') PRINT('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @fkConstName)
-
-                  FETCH NEXT FROM fkCursor INTO @fkConstName, @fkTableName, @fkSchema
-                END  -- ...of while @@fetch_status = 0
-              CLOSE fkCursor
-              DEALLOCATE fkCursor
-
-              DECLARE @soName sysname, @parent INT, @type CHAR(2), @fkschemaid int
-              DECLARE soCursor CURSOR for
-                SELECT so.name, so.type, so.parent_object_id, so.schema_id
-                FROM sys.objects so
-                WHERE (so.schema_id=@schemaid)
-                ORDER BY (CASE  WHEN so.type='V' THEN 1
-                          WHEN so.type='P' THEN 2
-                          WHEN so.type='U' THEN 3
-                          ELSE 4
-                          END)
-              OPEN soCursor
-              FETCH NEXT FROM soCursor INTO @soName, @type, @parent, @fkschemaid
-              WHILE @@fetch_status = 0
-                BEGIN
-                  SELECT @fullname = @objschema + '.' + @soName
-                  IF (@type = 'V')
-                    BEGIN
-                      EXEC('DROP VIEW ' + @fullname)
-                      if (@print_cmds='T') PRINT('DROP VIEW ' + @fullname)
-                    END
-                  ELSE IF (@type = 'P')
-                    BEGIN
-                      EXEC('DROP PROCEDURE ' + @fullname)
-                      if (@print_cmds='T') PRINT('DROP PROCEDURE ' + @fullname)
-                    END
-                  ELSE IF (@type = 'U')
-                    BEGIN
-                      EXEC('DROP TABLE ' + @fullname)
-                      if (@print_cmds='T') PRINT('DROP TABLE ' + @fullname)
-                    END
-                  ELSE
-                    BEGIN
-                      DECLARE @msg NVARCHAR(255)
-                      SELECT @msg=' Found object of type: ' + @type + ' name: ' + @fullname + ' in this schema.  Schema not dropped. '
-                      RAISERROR (@msg, 16, 1)
-                      RETURN @ret_code
-                    END
-                  FETCH NEXT FROM soCursor INTO @soName, @type, @parent, @fkschemaid
-                END  -- ...of while @@fetch_status = 0
-              CLOSE soCursor
-              DEALLOCATE soCursor
-            END   -- done deleteing the objects in the schema
-
-		-- handle old style and new style schemas
-          DECLARE @approlename sysname
-          SELECT @approlename = name
-          FROM sys.database_principals
-          WHERE principal_id=@principalid AND type='A'
-
-          IF (@approlename IS NOT NULL)
-            BEGIN
-              EXEC sp_dropapprole @approlename
-              if (@print_cmds='T') PRINT ('sp_dropapprole '+ @approlename)
-            END
-          ELSE
-            BEGIN
-              EXEC('DROP SCHEMA ' + @objschema)
-              if (@print_cmds='T') PRINT('DROP SCHEMA ' + @objschema)
-            END
-          SELECT @ret_code =1
-        END
-    END
-  ELSE IF (UPPER(@objtype)) = 'PROCEDURE'
-    BEGIN
-      IF (@objschema = 'sys')
-        BEGIN
-          RAISERROR ('Invalid @objschema, not attempting to drop sys object', 16, 1)
-          RETURN @ret_code
-        END
-      IF OBJECTPROPERTY(OBJECT_ID(@fullname),'IsProcedure') =1
-        BEGIN
-          EXEC('DROP PROCEDURE ' + @fullname )
-          SELECT @ret_code =1
-        END
-    END
-  ELSE IF (UPPER(@objtype)) = 'FUNCTION'
-    BEGIN
-      IF EXISTS (SELECT 1 FROM sys.objects o JOIN sys.schemas s ON o.schema_id = s.schema_id WHERE s.name = @objschema AND o.name = @objname AND o.type IN ('FN', 'IF', 'TF', 'FS', 'FT'))
-        BEGIN
-          EXEC('DROP FUNCTION ' + @fullname )
-          SELECT @ret_code =1
-        END
-    END
-  ELSE IF (UPPER(@objtype)) = 'AGGREGATE'
-    BEGIN
-      IF EXISTS (SELECT 1 FROM sys.objects o JOIN sys.schemas s ON o.schema_id = s.schema_id WHERE s.name = @objschema AND o.name = @objname AND o.type IN ('AF'))
-        BEGIN
-          EXEC('DROP AGGREGATE ' + @fullname )
-          SELECT @ret_code =1
-        END
-    END
-  ELSE
-    RAISERROR('Invalid object type - %s   Valid values are TABLE, VIEW, INDEX, CONSTRAINT, DEFAULT, SCHEMA, PROCEDURE, FUNCTION, AGGREGATE ', 16,1, @objtype )
-
-  RETURN @ret_code;
-END
+  END;
 
 GO
 
-/* core-14.33-14.34.sql */
-
-ALTER PROCEDURE core.fn_dropifexists (@objname VARCHAR(250), @objschema VARCHAR(50), @objtype VARCHAR(50), @subobjname VARCHAR(250) = NULL)
+-- Procedure to safely drop tables, views, indexes, constraints, schemas, and unnamed default constraints
+-- Rewritten in 12.10 so SCHEMA and DEFAULT options use the SQL Server 2005 system tables, #13762.
+CREATE PROCEDURE core.fn_dropifexists (@objname VARCHAR(250), @objschema VARCHAR(50), @objtype VARCHAR(50), @subobjname VARCHAR(250) = NULL)
 AS
 BEGIN
   DECLARE @ret_code INTEGER
@@ -1079,6 +616,6 @@ BEGIN
     RAISERROR('Invalid object type - %s   Valid values are TABLE, VIEW, INDEX, CONSTRAINT, DEFAULT, SCHEMA, PROCEDURE, FUNCTION, AGGREGATE ', 16,1, @objtype )
 
   RETURN @ret_code;
-END
+END;
 
 GO

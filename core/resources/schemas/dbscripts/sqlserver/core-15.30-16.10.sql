@@ -15,7 +15,7 @@
  */
 /* core-15.31-15.32.sql */
 
-EXEC core.fn_dropifexists 'bulkImport', 'core', 'PROCEDURE'
+EXEC core.fn_dropifexists 'bulkImport', 'core', 'PROCEDURE';
 GO
 -- An empty stored procedure (similar to executeJavaUpgradeCode) that, when detected by the script runner,
 -- imports a tabular data file (TSV, XLSX, etc.) into the specified table.

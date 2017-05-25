@@ -14,8 +14,6 @@
  * limitations under the License.
  */
  
-/* core-0.00-12.30.sql */
-
 CREATE DOMAIN public.UNIQUEIDENTIFIER AS VARCHAR(36);
 CREATE DOMAIN public.ENTITYID AS VARCHAR(36);
 CREATE DOMAIN public.USERID AS INT;
@@ -128,7 +126,7 @@ CREATE TABLE core.Modules
     InstalledVersion FLOAT8,
     Enabled BOOLEAN DEFAULT '1',
     AutoUninstall BOOLEAN NOT NULL DEFAULT FALSE,  -- TRUE means LabKey should uninstall this module (drop schemas, delete SqlScripts rows, delete Modules rows), if it no longer exists
-    Schemas VARCHAR(100) NULL,                     -- Schemas managed by this module; LabKey will drop these schemas when a module marked AutoUninstall = TRUE is missing
+    Schemas VARCHAR(4000) NULL,                    -- Schemas managed by this module; LabKey will drop these schemas when a module marked AutoUninstall = TRUE is missing
 
     CONSTRAINT PK_Modules PRIMARY KEY (Name)
 );
@@ -193,9 +191,13 @@ CREATE TABLE core.Report
     Flags INT NOT NULL DEFAULT 0,
     CategoryId Integer,
     DisplayOrder Integer NOT NULL DEFAULT 0,
+    ContentModified TIMESTAMP NOT NULL,
 
-    CONSTRAINT PK_Report PRIMARY KEY (RowId)
+    CONSTRAINT PK_Report PRIMARY KEY (RowId),
+    CONSTRAINT FK_Report_ContainerId FOREIGN KEY (ContainerId) REFERENCES core.Containers (EntityId)
 );
+
+CREATE INDEX IDX_Report_ContainerId ON core.Report(ContainerId);
 
 CREATE TABLE core.ContainerAliases
 (
@@ -253,7 +255,7 @@ CREATE TABLE core.PortalPages
     EntityId ENTITYID NOT NULL,
     Container ENTITYID NOT NULL,
     PageId VARCHAR(50) NOT NULL,
-    Index INTEGER NOT NULL DEFAULT 0,
+    Index INTEGER NOT NULL,
     Caption VARCHAR(64),
     Hidden BOOLEAN NOT NULL DEFAULT false,
     Type VARCHAR(20), -- 'portal', 'folder', 'action'
@@ -265,7 +267,8 @@ CREATE TABLE core.PortalPages
     Properties TEXT,
 
     CONSTRAINT PK_PortalPages PRIMARY KEY (Container, PageId),
-    CONSTRAINT FK_PortalPages_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId)
+    CONSTRAINT FK_PortalPages_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
+    CONSTRAINT UQ_PortalPage UNIQUE (Container, Index)
 );
 
 CLUSTER PK_PortalPages ON core.PortalPages;
@@ -281,10 +284,13 @@ CREATE TABLE core.PortalWebParts
     Location VARCHAR(16),    -- 'body', 'left', 'right'
     Properties TEXT,    -- url encoded properties
     Permanent BOOLEAN NOT NULL DEFAULT FALSE,
+    Permission VARCHAR(256),
+    PermissionContainer ENTITYID,
 
     CONSTRAINT PK_PortalWebParts PRIMARY KEY (RowId),
     CONSTRAINT FK_PortalWebParts_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
-    CONSTRAINT FK_PortalWebPartPages FOREIGN KEY (Container, PageId) REFERENCES core.PortalPages (Container, PageId)
+    CONSTRAINT FK_PortalWebPartPages FOREIGN KEY (Container, PageId) REFERENCES core.PortalPages (Container, PageId),
+    CONSTRAINT FK_PortalWebParts_PermissionContainer FOREIGN KEY (PermissionContainer) REFERENCES core.containers (EntityId) MATCH SIMPLE ON UPDATE NO ACTION ON DELETE SET NULL
 );
 
 CREATE INDEX IX_PortalWebParts ON core.PortalWebParts(Container);
@@ -303,160 +309,14 @@ CREATE TABLE core.ViewCategory
     Label VARCHAR(200) NOT NULL,
     DisplayOrder Integer NOT NULL DEFAULT 0,
 
+    Parent INTEGER,
+
     CONSTRAINT PK_ViewCategory PRIMARY KEY (RowId),
-    CONSTRAINT UQ_Container_Label UNIQUE (Container, Label)
+    CONSTRAINT FK_ViewCategory_Parent FOREIGN KEY (Parent) REFERENCES core.ViewCategory(RowId)
 );
 
--- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
--- script runner to invoke the specified method at this point in the script running process.  See usages of the
--- UpgradeCode interface for more details.
-CREATE FUNCTION core.executeJavaUpgradeCode(text) RETURNS void AS $$
-    DECLARE note TEXT := 'Empty function that signals script runner to execute Java code.  See usages of UpgradeCode.java.';
-    BEGIN
-    END
-$$ LANGUAGE plpgsql;
-
--- Use to drop TABLE, VIEW, INDEX, CONSTRAINT, DEFAULT, or SCHEMA if it exists
-CREATE FUNCTION core.fn_dropifexists (text, text, text, text) RETURNS INTEGER AS $$
-DECLARE
-    objname ALIAS FOR $1;
-    objschema ALIAS FOR $2;
-    objtype ALIAS FOR $3;
-    subobjname ALIAS FOR $4;
-    ret_code INTEGER;
-    fullname TEXT;
-    tempschema TEXT;
-    BEGIN
-    ret_code := 0;
-    fullname := (LOWER(objschema) || '.' || LOWER(objname));
-        IF (UPPER(objtype)) = 'TABLE' THEN
-        BEGIN
-            IF EXISTS( SELECT * FROM pg_tables WHERE tablename = LOWER(objname) AND schemaname = LOWER(objschema) )
-            THEN
-                EXECUTE 'DROP TABLE ' || fullname;
-                ret_code = 1;
-            ELSE
-                BEGIN
-                    SELECT INTO tempschema schemaname FROM pg_tables WHERE tablename = LOWER(objname) AND schemaname LIKE '%temp%';
-                    IF (tempschema IS NOT NULL)
-                    THEN
-                        EXECUTE 'DROP TABLE ' || tempschema || '.' || objname;
-                        ret_code = 1;
-                    END IF;
-                END;
-            END IF;
-        END;
-        ELSEIF (UPPER(objtype)) = 'VIEW' THEN
-        BEGIN
-            IF EXISTS( SELECT * FROM pg_views WHERE viewname = LOWER(objname) AND schemaname = LOWER(objschema) )
-            THEN
-            EXECUTE 'DROP VIEW ' || fullname;
-            ret_code = 1;
-            END IF;
-        END;
-        ELSEIF (UPPER(objtype)) = 'INDEX' THEN
-        BEGIN
-            fullname := LOWER(objschema) || '.' || LOWER(subobjname);
-            IF EXISTS( SELECT * FROM pg_indexes WHERE tablename = LOWER(objname) AND indexname = LOWER(subobjname) AND schemaname = LOWER(objschema) )
-            THEN
-            EXECUTE 'DROP INDEX ' || fullname;
-            ret_code = 1;
-            ELSE
-            IF EXISTS( SELECT * FROM pg_indexes WHERE indexname = LOWER(subobjname) AND schemaname = LOWER(objschema) )
-                THEN RAISE EXCEPTION 'INDEX - % defined on a different table.', subobjname;
-            END IF;
-            END IF;
-        END;
-        ELSEIF (UPPER(objtype)) = 'CONSTRAINT' THEN
-        BEGIN
-            IF EXISTS( SELECT * FROM pg_class LEFT JOIN pg_constraint ON conrelid = pg_class.oid INNER JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace
-                WHERE relkind = 'r' AND contype IS NOT NULL AND nspname = LOWER(objschema) AND relname = LOWER(objname) AND conname = LOWER(subobjname) )
-            THEN
-                EXECUTE 'ALTER TABLE ' || fullname || ' DROP CONSTRAINT ' || subobjname;
-                ret_code = 1;
-            END IF;
-        END;
-        ELSEIF (UPPER(objtype)) = 'DEFAULT' THEN
-        BEGIN
-            EXECUTE 'ALTER TABLE ' || fullname || ' ALTER COLUMN ' || subobjname || ' DROP DEFAULT';
-            ret_code = 1;
-        END;
-        ELSEIF (UPPER(objtype)) = 'SCHEMA' THEN
-        BEGIN
-            IF EXISTS( SELECT * FROM pg_namespace WHERE nspname = LOWER(objschema))
-            THEN
-            IF objname = '*' THEN
-                EXECUTE 'DROP SCHEMA ' || LOWER(objschema) || ' CASCADE';
-                ret_code = 1;
-            ELSEIF (objname = '' OR objname IS NULL) THEN
-                EXECUTE 'DROP SCHEMA ' || LOWER(objschema) || ' RESTRICT';
-                ret_code = 1;
-            ELSE
-                RAISE EXCEPTION 'Invalid objname for objtype of SCHEMA;  must be either "*" (for DROP SCHEMA CASCADE) or NULL (for DROP SCHEMA RESTRICT)';
-            END IF;
-            END IF;
-        END;
-        ELSE
-        RAISE EXCEPTION 'Invalid object type - %;  Valid values are TABLE, VIEW, INDEX, CONSTRAINT, SCHEMA ', objtype;
-        END IF;
-
-    RETURN ret_code;
-    END;
-$$ LANGUAGE plpgsql;
-
-CREATE AGGREGATE core.array_accum (anyelement)
-(
-    sfunc = array_append,
-    stype = anyarray,
-    initcond = '{}'
-);
-
-CREATE FUNCTION core.sort(anyarray)
-RETURNS anyarray AS $$
-SELECT ARRAY(SELECT $1[i] from generate_series(array_lower($1,1),
-array_upper($1,1)) g(i) ORDER BY 1)
-$$ LANGUAGE SQL STRICT IMMUTABLE;
-
-CREATE AGGREGATE core.array_accum(text) (
-    SFUNC = array_append,
-    STYPE = text[],
-    INITCOND = '{}',
-    SORTOP = >
-);
-
-/* core-12.30-13.10.sql */
-
-ALTER TABLE core.viewcategory
-    ADD COLUMN Parent int4,
-    ADD CONSTRAINT fk_viewcategory_parent FOREIGN KEY (rowid) REFERENCES core.viewcategory(rowid) ON DELETE CASCADE;
-
-ALTER TABLE core.ViewCategory DROP CONSTRAINT uq_container_label;
-ALTER TABLE core.ViewCategory ADD CONSTRAINT uq_container_label_parent UNIQUE (Container, Label, Parent);
-
-ALTER TABLE core.portalwebparts
-  ADD COLUMN permission character varying(256),
-  ADD COLUMN permissioncontainer entityid,
-  ADD CONSTRAINT fk_portalwebparts_permissioncontainer FOREIGN KEY (permissioncontainer)
-      REFERENCES core.containers (entityid) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION;
-
-ALTER TABLE core.portalwebparts
-  DROP CONSTRAINT fk_portalwebparts_permissioncontainer;
-
-ALTER TABLE core.portalwebparts
-  ADD CONSTRAINT fk_portalwebparts_permissioncontainer FOREIGN KEY (permissioncontainer)
-    REFERENCES core.containers (entityid) MATCH SIMPLE
-    ON UPDATE NO ACTION ON DELETE SET NULL;
-
--- clean up orphaned categories
-DELETE FROM core.viewcategory WHERE parent IN
-	(SELECT vcp.parent FROM (SELECT DISTINCT parent FROM core.viewcategory WHERE parent IS NOT NULL) vcp LEFT JOIN core.viewcategory vc ON vcp.parent = vc.rowid WHERE rowid IS NULL);
-
--- correct the fk constraint
-ALTER TABLE core.viewcategory DROP CONSTRAINT fk_viewcategory_parent;
-ALTER TABLE core.viewcategory ADD CONSTRAINT fk_viewcategory_parent FOREIGN KEY (parent) REFERENCES core.viewcategory(rowid);
-
-/* core-13.10-13.20.sql */
+-- Make unique index case-insensitive and treat null as a unique value, see #21698
+CREATE UNIQUE INDEX uq_container_label_parent ON core.ViewCategory (Container, LOWER(Label), COALESCE(Parent, -1));
 
 CREATE TABLE core.DbSequences
 (
@@ -469,17 +329,6 @@ CREATE TABLE core.DbSequences
     CONSTRAINT PK_DbSequences PRIMARY KEY (RowId),
     CONSTRAINT UQ_DbSequences_Container_Name_Id UNIQUE (Container, Name, Id)
 );
-
-SELECT core.fn_dropifexists ('PortalPages', 'core', 'DEFAULT', 'Index');
-ALTER TABLE core.PortalPages ADD CONSTRAINT UQ_PortalPage UNIQUE (Container, Index);
-
-/* core-13.20-13.30.sql */
-
--- Support longer lists of module schemas (which now may include data source prefixes)
-ALTER TABLE core.Modules
-    ALTER COLUMN Schemas TYPE VARCHAR(4000);
-
-/* core-13.30-14.10.sql */
 
 CREATE TABLE core.ShortURL
 (
@@ -497,26 +346,32 @@ CREATE TABLE core.ShortURL
     CONSTRAINT UQ_ShortURL_ShortURL UNIQUE (ShortURL)
 );
 
-/* core-14.20-14.30.sql */
+-- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
+-- script runner to invoke the specified method at this point in the script running process.  See usages of the
+-- UpgradeCode interface for more details.
+CREATE FUNCTION core.executeJavaUpgradeCode(text) RETURNS void AS $$
+    DECLARE note TEXT := 'Empty function that signals script runner to execute Java code.  See usages of UpgradeCode.java.';
+    BEGIN
+    END
+$$ LANGUAGE plpgsql;
 
-ALTER TABLE core.Report ADD COLUMN ContentModified TIMESTAMP;
-UPDATE core.Report SET ContentModified = Modified;
-ALTER TABLE core.Report ALTER COLUMN ContentModified SET NOT NULL;
+CREATE AGGREGATE core.array_accum (anyelement)
+(
+    sfunc = array_append,
+    stype = anyarray,
+    initcond = '{}'
+);
 
--- delete any orphaned reports
-DELETE FROM core.Report WHERE ContainerId NOT IN (SELECT EntityId FROM core.Containers);
+CREATE FUNCTION core.sort(anyarray) RETURNS anyarray AS $$
+    SELECT ARRAY(SELECT $1[i] FROM generate_series(array_lower($1,1), array_upper($1,1)) g(i) ORDER BY 1)
+$$ LANGUAGE SQL STRICT IMMUTABLE;
 
-ALTER TABLE core.Report
-ADD CONSTRAINT FK_Report_ContainerId FOREIGN KEY (ContainerId) REFERENCES core.Containers (EntityId);
-
-CREATE INDEX IDX_Report_ContainerId ON core.Report(ContainerId);
-
-ALTER TABLE core.ViewCategory DROP CONSTRAINT uq_container_label_parent;
-
--- Make unique index case-insensitive and treat null as a unique value, see #21698
-CREATE UNIQUE INDEX uq_container_label_parent ON core.ViewCategory (Container, LOWER(Label), COALESCE(Parent, -1));
-
-/* core-14.30-14.31.sql */
+CREATE AGGREGATE core.array_accum(text) (
+    SFUNC = array_append,
+    STYPE = text[],
+    INITCOND = '{}',
+    SORTOP = >
+);
 
 -- An empty stored procedure (similar to executeJavaUpgradeCode) that, when detected by the script runner,
 -- imports a tabular data file (TSV, XLSX, etc.) into the specified table.
@@ -525,8 +380,6 @@ CREATE FUNCTION core.bulkImport(text, text, text) RETURNS void AS $$
     BEGIN
     END
 $$ LANGUAGE plpgsql;
-
-/* core-14.31-14.32.sql */
 
 CREATE FUNCTION core.fnCalculateAge (startDate timestamp, endDate timestamp) RETURNS INTEGER AS $$
 DECLARE
@@ -548,7 +401,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Use to drop TABLE, VIEW, INDEX, CONSTRAINT, DEFAULT, SCHEMA, PROCEDURE, FUNCTION, OR AGGREGATE if it exists
-CREATE OR REPLACE FUNCTION core.fn_dropifexists (text, text, text, text) RETURNS INTEGER AS $$
+CREATE FUNCTION core.fn_dropifexists (text, text, text, text) RETURNS INTEGER AS $$
 DECLARE
   /*
     As Postgres supports function overloads, to drop a function or an aggregate, you must include the argument list as the subobjname (4th parameter).
