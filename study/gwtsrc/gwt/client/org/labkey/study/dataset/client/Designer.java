@@ -1016,7 +1016,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
         private void onAdditionalKeyFieldChanged()
         {
             String keyPropertyName = _dataset.getKeyPropertyName();
-            if (keyPropertyName != null)
+            if (keyPropertyName != null && keyPropertyName.length() != 0)
             {
                 _propTable.getDomain().setProtectedNotAllowedFieldNames(Collections.singleton(keyPropertyName));
                 GWTPropertyDescriptor prop = _propTable.getProperty(keyPropertyName);
