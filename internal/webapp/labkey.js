@@ -229,12 +229,9 @@ if (typeof LABKEY == "undefined")
         {
             if (configs.demoMode)
             {
-                return new Array(id.length + 1 ).join("*");
+                return new Array(id.length + 1).join("*");
             }
-            else
-            {
-                return id;
-            }
+            return id;
         };
 
         var init = function(config)
@@ -404,7 +401,7 @@ if (typeof LABKEY == "undefined")
 
         var requestedCssFiles = function()
         {
-            var ret = (arguments.length > 0 && _requestedCssFiles[arguments[0]]) ? true : false;
+            var ret = arguments.length > 0 && _requestedCssFiles[arguments[0]];
             for (var i=0; i < arguments.length ; i++)
                 _requestedCssFiles[arguments[i]] = true;
             return ret;

@@ -50,13 +50,10 @@ function showHelpDiv(elem, titleText, bodyText, width)
     document.getElementById("helpDivTitle").innerHTML = titleText;
     document.getElementById("helpDivBody").innerHTML = bodyText;
 
-    var bd = Ext4.get(document.body);
-    var sz = bd.getViewSize();
-    var viewportWidth = sz.width;
-    var viewportHeight = sz.height;
-    var pos = bd.getScroll();
-    var leftScroll = pos.left;
-    var topScroll = pos.top;
+    var $ = jQuery;
+    var bd = $(document);
+    var sz = { height: bd.height(), width: bd.width() };
+    var pos = { left: bd.scrollLeft(), top: bd.scrollTop() };
     div.style.top = posTop + "px";
     div.style.display = "block";
     div.style.zIndex = "1050";
@@ -67,15 +64,15 @@ function showHelpDiv(elem, titleText, bodyText, width)
 
     var maxWidth = table.offsetWidth;
 
-    if (viewportWidth + leftScroll < maxWidth + posLeft + 10)
+    if (sz.width + pos.left < maxWidth + posLeft + 10)
     {
-        posLeft = viewportWidth + leftScroll - maxWidth - 25;
+        posLeft = sz.width + pos.left - maxWidth - 25;
     }
 
     var maxHeight = table.clientHeight;
-    if (maxHeight && (viewportHeight + topScroll < maxHeight + posTop + 10))
+    if (maxHeight && (sz.height + pos.top < maxHeight + posTop + 10))
     {
-        posTop = viewportHeight + topScroll - maxHeight - 25;
+        posTop = sz.height + pos.top - maxHeight - 25;
         div.style.top = posTop + "px";
     }
     div.style.left = posLeft + "px";
@@ -116,18 +113,24 @@ function helpDivHideHandler(e)
     }
 }
 
-/** Element is anything that can be resolved using Ext.get() - an element, an id, etc */
-function showPathname(filechooser, element)
+function showPathname(filechooser, elementId)
 {
+    var $ = jQuery;
     var pathname = filechooser.value;
-    var filename;
-    if (pathname.indexOf('/') > -1)
-         filename = pathname.substring(pathname.lastIndexOf('/')+1,pathname.length);
-    else
-         filename = pathname.substring(pathname.lastIndexOf('\\')+1,pathname.length);
+    var slash = pathname.indexOf('/') > -1 ? '/' : '\\';
+    var filename = pathname.substring(pathname.lastIndexOf(slash) + 1, pathname.length);
+
     // As of issue 18142, don't show an icon if no file is selected
-    Ext4.get(element).dom.innerHTML = "<table><tr><td>" + (filename == '' ? "" : ("<img src=\"" + LABKEY.Utils.getFileIconUrl(filename) + "\"/>")) + "</td><td>" + Ext4.htmlEncode(filename) + "</td></tr></table>";
-    return(true);
+    $('#' + elementId).html([
+        '<table>',
+            '<tr>',
+                '<td>' + filename == '' ? '' : ('<img src=\"' + LABKEY.Utils.getFileIconUrl(filename) + '\"/>') + '</td>',
+                '<td>' + filename + '</td>',
+            '</tr>',
+        '</table>'
+    ].join(''));
+
+    return true;
 }
 
 // This index increases on every add, but doesn't decrease on remove.  Indexes will be sparse if rows are removed from
@@ -208,6 +211,10 @@ function handleTabsInTextArea()
 }
 
 function showMenu(parent, menuElementId, align) {
+    if (LABKEY.experimental.useExperimentalCoreUI) {
+        console.error('A menu still exists that is attempting to use showMenu(). Element id: ' + menuElementId);
+    }
+
     if (!align)
     {
         align = "tl-bl?";

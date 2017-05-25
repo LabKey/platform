@@ -18,6 +18,7 @@ package org.labkey.api.view;
 
 import org.labkey.api.util.PageFlowUtil;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 
@@ -83,7 +84,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
         return getNavTree().hasChildren();
     }
 
-    public static void renderTree(NavTree tree, Writer out) throws Exception
+    public static void renderTree(NavTree tree, Writer out) throws IOException
     {
         if (tree == null || !PageFlowUtil.useExperimentalCoreUI())
             return;
@@ -102,33 +103,32 @@ public class PopupMenuView extends HttpView<PopupMenu>
                 out.write("</ul>");
                 out.write("</li>");
             }
+            else if ("-".equals(child.getText()))
+                out.write("<li class=\"divider\"></li>");
             else
             {
-                if ("-".equals(child.getText()))
-                    out.write("<li class=\"divider\"></li>");
-                else
-                {
-                    out.write("<li");
-                    if (child.isDisabled())
-                        out.write(" class=\"disabled\" ");
-                    out.write(">");
-                    out.write("<a");
-                    if (null != child.getImageCls())
-                        out.write(" style=\"padding-left: 0 \"");
-                    if (null != child.getScript())
-                        out.write(" onclick=\"" + PageFlowUtil.filter(child.getScript()) +"\" ");
-                    if (null != child.getHref())
-                        out.write(" href=\"" + child.getHref() + "\" ");
-                    if (null != child.getTarget())
-                        out.write(" target=\"" + child.getTarget() + "\" ");
-                    out.write(" tabindex=\"0\"");
-                    out.write(">");
-                    if (null != child.getImageCls())
-                        out.write("<i style=\"padding-left: .25em; padding-right: .25em\" class=\"" + child.getImageCls() + "\"></i>");
-                    out.write("<span>" + PageFlowUtil.filter(child.getText()) + "</span>");
-                    out.write("</a>");
-                    out.write("</li>");
-                }
+                out.write("<li");
+                if (child.isDisabled())
+                    out.write(" class=\"disabled\" ");
+                out.write(">");
+                out.write("<a");
+                if (null != child.getImageCls())
+                    out.write(" style=\"padding-left: 0;\"");
+                if (null != child.getScript())
+                    out.write(" onclick=\"" + PageFlowUtil.filter(child.getScript()) +"\" ");
+                if (null != child.getHref())
+                    out.write(" href=\"" + child.getHref() + "\"");
+                if (null != child.getTarget())
+                    out.write(" target=\"" + child.getTarget() + "\"");
+                if (null != child.getDescription())
+                    out.write(" title=\"" + PageFlowUtil.filter(child.getDescription()) + "\"");
+                out.write(" tabindex=\"0\"");
+                out.write(">");
+                if (null != child.getImageCls())
+                    out.write("<i class=\"" + child.getImageCls() + "\"></i>");
+                out.write(PageFlowUtil.filter(child.getText()));
+                out.write("</a>");
+                out.write("</li>");
             }
         }
     }

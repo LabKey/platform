@@ -32,6 +32,7 @@ import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;
+import org.labkey.api.view.PopupMenuView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -578,12 +579,13 @@ public abstract class DisplayColumn extends RenderColumn
         String baseId = ctx.getCurrentRegion().getName() + ":" + columnName;
         baseId = PageFlowUtil.filter(baseId);
 
-        NavTree navtree = getPopupNavTree(ctx, baseId, sort, filtered);
-        PopupMenu popup = new PopupMenu(navtree, PopupMenu.Align.LEFT, PopupMenu.ButtonStyle.TEXTBUTTON);
-        boolean hasMenu = navtree != null;
+        NavTree navTree = getPopupNavTree(ctx, baseId, sort, filtered);
+        boolean hasMenu = navTree != null;
 
         out.write(newUI ? "<th " : "<td ");
         out.write("class=\"labkey-column-header ");
+        if (newUI && hasMenu)
+            out.write("dropdown dropdown-rollup "); // TODO: add an in-place div to fill the <th> and use it to mount the dropdown
         out.write(getGridHeaderClass());
         if (sortField != null)
         {
@@ -602,9 +604,11 @@ public abstract class DisplayColumn extends RenderColumn
         {
             out.write(" " + _displayClass);
         }
-        out.write("\"");
+        out.write("\""); // end of "class"
 
         out.write(" style=\"");
+        if (newUI)
+            out.write("position:relative;");
         out.write(getDefaultHeaderStyle());
         out.write("\"");
 
@@ -636,7 +640,7 @@ public abstract class DisplayColumn extends RenderColumn
 
         // Issue 11392: id is double html filtered: once for the baseId of the popupmenu and again for rendering into the attribute value.
         String safeHeaderId = "column-header-" + UniqueID.getServerSessionScopedUID();
-        if (hasMenu)
+        if (!newUI && hasMenu)
         {
             out.write(" id=\"");
             out.write(PageFlowUtil.filter(safeHeaderId));
@@ -648,7 +652,10 @@ public abstract class DisplayColumn extends RenderColumn
         out.write("\"");
 
         out.write(">\n");
-        out.write("<div>");
+        if (newUI && hasMenu)
+            out.write("<div class=\"dropdown-toggle\" data-toggle=\"dropdown\">");
+        else
+            out.write("<div>");
 
         renderTitle(ctx, out);
 
@@ -668,22 +675,32 @@ public abstract class DisplayColumn extends RenderColumn
 
         if (hasMenu)
         {
-            popup.renderMenuScript(out);
+            if (newUI)
+            {
+                out.write("<ul class=\"dropdown-menu dropdown-menu-right\">");
+                PopupMenuView.renderTree(navTree, out);
+                out.write("</ul>");
+            }
+            else
+            {
+                PopupMenu popup = new PopupMenu(navTree, PopupMenu.Align.LEFT, PopupMenu.ButtonStyle.TEXTBUTTON);
+                popup.renderMenuScript(out);
 
-            out.write("<script type=\"text/javascript\">\n");
-            out.write("Ext4.onReady(function () {\n");
-            out.write("var header = Ext4.get(");
-            out.write(PageFlowUtil.jsString(safeHeaderId));
-            out.write(");\n");
-            out.write("if (header) {\n");
-            out.write("  header.on('click', function (evt, el, o) {\n");
-            out.write("    showMenu(el, ");
-            out.write(PageFlowUtil.qh(popup.getSafeID()));
-            out.write(", null);\n");
-            out.write("  });\n");
-            out.write("}\n");
-            out.write("});\n");
-            out.write("</script>\n");
+                out.write("<script type=\"text/javascript\">\n");
+                out.write("Ext4.onReady(function () {\n");
+                out.write("var header = Ext4.get(");
+                out.write(PageFlowUtil.jsString(safeHeaderId));
+                out.write(");\n");
+                out.write("if (header) {\n");
+                out.write("  header.on('click', function (evt, el, o) {\n");
+                out.write("    showMenu(el, ");
+                out.write(PageFlowUtil.qh(popup.getSafeID()));
+                out.write(", null);\n");
+                out.write("  });\n");
+                out.write("}\n");
+                out.write("});\n");
+                out.write("</script>\n");
+            }
         }
 
         out.write(newUI ? "</th>" : "</td>");

@@ -1601,7 +1601,11 @@ public class PageFlowUtil
 
             // Always include clientapi and internal
             resources.add(ClientDependency.fromPath("clientapi"));
-            resources.add(ClientDependency.fromPath("internal"));
+
+            if (PageFlowUtil.useExperimentalCoreUI())
+                resources.add(ClientDependency.fromPath("util.js"));
+            else
+                resources.add(ClientDependency.fromPath("internal"));
         }
 
         if (extraResources != null)
