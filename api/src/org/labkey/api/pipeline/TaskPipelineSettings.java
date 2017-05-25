@@ -185,7 +185,7 @@ public class TaskPipelineSettings
         _useUniqueAnalysisDirectory = useUniqueAnalysisDirectory;
     }
 
-    private void parseWorkflowProcessKey()
+    protected void parseWorkflowProcessKey()
     {
         // This is an optional setting that will either be of the form "processKey" or "moduleName:processKey"
         if (_workflowProcessKey != null)
