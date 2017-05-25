@@ -1291,14 +1291,16 @@ public class AnnouncementsController extends SpringActionController
             {
                 AnnouncementManager.updateAnnouncement(getUser(), update, files);
             }
-            catch (AttachmentService.DuplicateFilenameException e)
+            catch (RuntimeValidationException e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
                 return false;
             }
-            catch (RuntimeValidationException e)
+            catch (IOException e)
             {
-                errors.reject(ERROR_MSG, e.getMessage());
+                errors.reject(ERROR_MSG, "Your changes have been saved, though some file attachments were not:");
+                errors.reject(ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
+                form._selectedAnnouncementModel = null; // Force reload of the changes that were saved
                 return false;
             }
 
@@ -1319,8 +1321,8 @@ public class AnnouncementsController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).appendNavTrail(root)
-                             .addChild(_ann.getTitle(), "thread.view?rowId=" + _ann.getRowId())
-                             .addChild("Respond to " + getSettings().getConversationName());
+                .addChild(_ann.getTitle(), "thread.view?rowId=" + _ann.getRowId())
+                .addChild("Respond to " + getSettings().getConversationName());
             return root;
         }
     }

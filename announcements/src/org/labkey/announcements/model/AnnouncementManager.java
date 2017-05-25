@@ -232,27 +232,41 @@ public class AnnouncementManager
         insert.beforeInsert(user, c.getId());
         AnnouncementModel ann = Table.insert(user, _comm.getTableInfoAnnouncements(), insert);
 
-        List<Integer> userIds = ann.getMemberListIds();
-
-        // Always attach member list to initial message
-        int first = (null == ann.getParent() ? ann.getRowId() : getParentRowId(ann));
-        insertMemberList(user, userIds, first);
-
-        AttachmentService.get().addAttachments(insert, files, user);
-        indexThread(insert);
-
-        // Send email if there's body text or an attachment.
-        if (sendEmailNotifications && (null != insert.getBody() || !insert.getAttachments().isEmpty()))
+        try
         {
-            String rendererTypeName = ann.getRendererType();
-            WikiRendererType currentRendererType = (null == rendererTypeName ? null : WikiRendererType.valueOf(rendererTypeName));
-            if (null == currentRendererType)
+            List<Integer> userIds = ann.getMemberListIds();
+
+            // Always attach member list to initial message
+            int first = (null == ann.getParent() ? ann.getRowId() : getParentRowId(ann));
+            insertMemberList(user, userIds, first);
+        }
+        catch (Exception e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
+        }
+
+        try
+        {
+            AttachmentService.get().addAttachments(insert, files, user);
+        }
+        finally
+        {
+            // If addAttachment() throws, still send emails and index, #30178
+            // Send email if there's body text or an attachment.
+            if (sendEmailNotifications && (null != insert.getBody() || !insert.getAttachments().isEmpty()))
             {
-                WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
-                if (null != wikiService)
-                    currentRendererType = wikiService.getDefaultMessageRendererType();
+                String rendererTypeName = ann.getRendererType();
+                WikiRendererType currentRendererType = (null == rendererTypeName ? null : WikiRendererType.valueOf(rendererTypeName));
+                if (null == currentRendererType)
+                {
+                    WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+                    if (null != wikiService)
+                        currentRendererType = wikiService.getDefaultMessageRendererType();
+                }
+                sendNotificationEmails(insert, currentRendererType, c, user);
             }
-            sendNotificationEmails(insert, currentRendererType, c, user);
+
+            indexThread(insert);
         }
 
         return ann;
@@ -401,8 +415,15 @@ public class AnnouncementManager
         int first = (null == result.getParent() ? result.getRowId() : getParentRowId(result));
         insertMemberList(user, result.getMemberListIds(), first);
 
-        AttachmentService.get().addAttachments(update, files, user);
-        indexThread(update);
+        try
+        {
+            AttachmentService.get().addAttachments(update, files, user);
+        }
+        finally
+        {
+            indexThread(update);
+        }
+
         return result;
     }
 
