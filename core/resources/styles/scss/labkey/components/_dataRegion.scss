@@ -39,27 +39,6 @@
   border-bottom-width: 0;
 }
 
-div.facet_header {
-  height: 34px;
-  border-color: #DDDDDD;
-  background: $lk-grid-color none;
-  box-shadow: none;
-  border-bottom: 1px solid black;
-}
-
-.facet-wrap {
-  float: left;
-}
-
-.region-wrap {
-  float: right;
-}
-
-/* Used to draw a border around the entire data region table when showBorders = false */
-table.labkey-show-surrounding-border {
-  border: 1px solid #DDDDDD;
-}
-
 .labkey-data-region {
   thead tr {
     background-color: $white;
@@ -104,15 +83,23 @@ table.labkey-show-surrounding-border {
     width: 80px;
   }
 
-  /* experimental -- support row highlighting. Expects class to be added to <tr> */
+  /* TODO: Make this the same as "danger" */
+  tr.labkey-error-row {
+
+    & > td {
+      background: #ffdddd;
+    }
+
+    &.labkey-alternate-row > td {
+      background: #ffbbbb;
+    }
+  }
+
   tr.lk-row-hl > td {
-    background-color: #ffc; //#fef5dd;
-    //border-top: 2px solid #fbc02d !important;
-    //border-bottom: 2px solid #fbc02d !important;
+    background-color: #ffc;
   }
 
   tr.lk-row-over > td {
-    //background-color: #efefef;
     background-color: #e2e2e2;
   }
 }
@@ -139,7 +126,6 @@ table.labkey-show-surrounding-border {
 }
 
 .lk-region-drawer {
-  //position: absolute;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.175);
   background-clip: padding-box;
   background-color: $white;
@@ -150,7 +136,6 @@ table.labkey-show-surrounding-border {
 }
 
 .lk-region-drawer-container {
-  //display: none;
   position: relative;
 }
 
@@ -190,19 +175,6 @@ table.labkey-fixed-width-columns {
 /* Used for the shaded alternate rows and alternate columns (for pivot queries) */
 .labkey-alternate-row .labkey-alternate-col td, .labkey-alternate-row .labkey-alternate-col th, tr.labkey-alternate-row .labkey-alternate-col, td.labkey-alternate-row .labkey-alternate-col, th.labkey-alternate-row .labkey-alternate-col {
   background: #F0F0F0;
-}
-
-/* Used for the normal rows in data regions, sometimes these rows are not given a class */
-.labkey-error-row td, .labkey-error-row th, tr.labkey-error-row, td.labkey-error-row {
-  border-top: 1px solid #990000;
-  border-bottom: 1px solid #990000;
-  background: #FFDDDD;
-  border-collapse: separate;
-}
-
-/* Used for the shaded alternate rows */
-.labkey-error-row.labkey-alternate-row td, .labkey-error-row.labkey-alternate-row th, tr.labkey-error-row.labkey-alternate-row, td.labkey-error-row.labkey-alternate-row, th.labkey-error-row.labkey-alternate-row {
-  background: #FFBBBB;
 }
 
 .labkey-col-header-filter {

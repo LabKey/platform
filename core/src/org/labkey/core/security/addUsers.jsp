@@ -23,15 +23,20 @@
 <%@ page import="org.labkey.core.security.SecurityController.AddUsersForm" %>
 <%@ page import="org.labkey.core.user.UserController" %>
 <%@ page import="org.labkey.core.user.UserController.UserUrlsImpl" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("Ext4"); // required for completion.js
+        dependencies.add("completion.js");
+    }
+%>
 <%
     AddUsersForm form = (AddUsersForm)HttpView.currentModel();
 %>
-<script type="text/javascript">
-    LABKEY.requiresExt4Sandbox();
-    LABKEY.requiresScript('completion.js');
-</script>
 <script type="text/javascript">
     document.addEventListener("DOMContentLoaded", function() {
         if (LABKEY.ActionURL.getParameter('provider')) {

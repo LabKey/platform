@@ -70,8 +70,7 @@ public class SummaryStatisticsAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public void addClientDependencies(Set<ClientDependency> dependencies)
     {
-        dependencies.add(ClientDependency.fromPath("query/ColumnSummaryStatistics.js"));
-        dependencies.add(ClientDependency.fromPath("query/ColumnSummaryStatistics.css"));
+        dependencies.add(ClientDependency.fromPath("query/ColumnSummaryStatistics"));
     }
 
     @Override

@@ -1,8 +1,14 @@
+// Links within the dropdown menu
 .dropdown-menu > li > a {
+  padding: $lk-dropdown-link-padding;
   position: relative; /* to contain the submenu */
 
   &:hover {
     cursor: pointer;
+  }
+
+  & > i.fa {
+    padding: 0 8px;
   }
 }
 
@@ -29,7 +35,7 @@
 
   & > li > a {
     display: block;
-    padding: 3px 20px;
+    padding: $lk-dropdown-link-padding;
     clear: both;
     line-height: 1.42857;
     color: $lk-dropdown-link-color;
@@ -41,6 +47,14 @@
       color: $lk-dropdown-link-hover-color;
       background-color: $lk-dropdown-link-hover-bg;
       cursor: pointer;
+    }
+
+    &.subcollapse {
+      padding: 3px 4px;
+    }
+
+    & > i.fa {
+      padding: 0 8px;
     }
 
     & > i.fa-chevron-circle-left {

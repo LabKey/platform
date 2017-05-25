@@ -29,7 +29,15 @@
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("Ext4");
+    }
+%>
 <%
     DiscussionServiceImpl.PickerView me = (DiscussionServiceImpl.PickerView) HttpView.currentView();
     Container c = getContainer();
@@ -139,7 +147,7 @@ var discussionMenu = {};
     Ext4.onReady(function(){Ext4.get("discussionMenuToggle").on("click", onShow)});
 })();
 </script>
-<span id=discussionMenuToggle><%
+<span id="discussionMenuToggle"><%
     if (!discussions.isEmpty() && me.allowMultipleDiscussions)
     {
         %><%=PageFlowUtil.textLink("see discussions (" + discussions.size() + ")", "#", "return false;", "")%><%

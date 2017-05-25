@@ -26,45 +26,34 @@
     MaintenanceBean bean = ((JspView<MaintenanceBean>)HttpView.currentView()).getModelBean();
 %>
 <labkey:errors/>
-
 <%=text(bean.content)%>
-
 <% if (bean.loginURL != null) { %>
 <p><%= button("Site Admin Login").href(bean.loginURL) %></p>
 <% } %>
-
 <script type="text/javascript">
-(function () {
-    // initial delay of 0.5 second
-    var delay = 500;
-
-    // grab the returnURL, if present
-    var returnURL = LABKEY.ActionURL.getParameter("returnUrl");
-
-    // loginURL is set if the current user is guest
-    var loginURL = <%=q(bean.loginURL == null ? null : bean.loginURL.toString())%>;
-
-    // if we have a returnURL or loginURL, check for startup complete and redirect.
-    var nextURL = returnURL || loginURL;
-    if (nextURL)
-    {
-        function checkStartupComplete()
-        {
-            Ext4.Ajax.request({
+(function() {
+    // grab the returnUrl if present, otherwise set to loginURL
+    var nextURL = LABKEY.ActionURL.getParameter('returnUrl') || <%=q(bean.loginURL == null ? null : bean.loginURL.toString())%>;
+    if (nextURL) {
+        var delay = 500;
+        // if we have a URL, check for startup complete and redirect
+        function checkStartupComplete() {
+            LABKEY.Ajax.request({
                 url: <%=q(new ActionURL(AdminController.StartupStatusAction.class, getContainer()).toString())%>,
                 success: function (response) {
-                    var json = Ext4.decode(response.responseText);
+                    var json = JSON.parse(response.responseText);
                     if (json && json.startupComplete && !json.adminOnly) {
                         window.location = nextURL;
                     }
                     else {
-                        if (json.adminOnly)
+                        if (json.adminOnly) {
                             delay += 1000;
+                        }
                         setTimeout(checkStartupComplete, delay);
                     }
                 },
-                failure: function (response) {
-                    delay *= 2;
+                failure: function() {
+                    delay *= 2; // what is the purpose of this?
                 }
             });
         }

@@ -1763,6 +1763,7 @@ query/webapp/dataviews.lib.xml -text
 query/webapp/query/ColumnQueryAnalytics.js -text
 query/webapp/query/ColumnSummaryStatistics.css -text
 query/webapp/query/ColumnSummaryStatistics.js -text
+query/webapp/query/ColumnSummaryStatistics.lib.xml -text
 query/webapp/query/ExportTablePanel.js -text
 query/webapp/query/QueryEditorPanel.js -text
 query/webapp/query/browser.lib.xml -text

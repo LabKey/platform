@@ -1,0 +1,9 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="query/ColumnSummaryStatistics.css"/>
+        <script path="query/ColumnSummaryStatistics.js"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext4"/>
+    </dependencies>
+</libraries>

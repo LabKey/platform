@@ -49,7 +49,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.NavTree;
@@ -57,7 +56,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.UpdateView;
-import org.labkey.api.view.VBox;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.study.StudyModule;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.QCStateSet;
@@ -124,7 +123,6 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         }
 
         // we want to use the actual user schema table, since it implements UpdateService and permissions checks
-//        TableInfo datasetTable = _ds.getTableInfo(getViewContext().getUser());
         TableInfo datasetTable = getQueryTable();
 
         // if this is our cohort assignment dataset, we may want to display drop-downs for cohort, rather
@@ -216,9 +214,12 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         buttonBar.add(btnSubmit);
         buttonBar.add(btnCancel);
         buttonBar.setStyle(ButtonBar.Style.separateButtons);
-
         dataRegion.setButtonBar(buttonBar);
-        return new VBox(new HtmlView("<script type=\"text/javascript\">LABKEY.requiresScript(\"completion.js\");</script>"), view);
+
+        view.addClientDependency(ClientDependency.fromPath("Ext4"));
+        view.addClientDependency(ClientDependency.fromPath("completion.js"));
+
+        return view;
     }
 
     public NavTree appendNavTrail(NavTree root)

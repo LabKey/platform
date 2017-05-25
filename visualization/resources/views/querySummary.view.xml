@@ -3,7 +3,6 @@
         <dependency path="vis/vis"/>
         <dependency path="vis/ColumnVisualizationAnalytics.js"/>
         <dependency path="vis/ColumnVisualizationAnalytics.css"/>
-        <dependency path="query/ColumnSummaryStatistics.js"/>
-        <dependency path="query/ColumnSummaryStatistics.css"/>
+        <dependency path="query/ColumnSummaryStatistics"/>
     </dependencies>
 </view>
