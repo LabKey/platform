@@ -30,6 +30,8 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.PopupMenuView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -70,22 +72,84 @@
 }
 
 --></style>
-<script type="text/javascript">
-if (discussionMenu)
-    discussionMenu.menu.destroy();
 
-var discussionMenu = {};
-(function(){
-    discussionMenu.pageUrl = <%=PageFlowUtil.jsString(pageURL.clone().deleteScopeParameters("discussion").getLocalURIString())%>;
-    discussionMenu.emailUrl = 'mailto:?subject=<%=PageFlowUtil.encode(me.title)%>&body=<%=PageFlowUtil.encode(me.pageURL.getURIString())%>';
-    discussionMenu.emailPreferencesUrl = <%=PageFlowUtil.jsString(me.emailPreferencesURL.getLocalURIString())%>;
-    discussionMenu.adminEmailUrl = <%=PageFlowUtil.jsString(me.adminEmailURL.getLocalURIString())%>;
-    discussionMenu.customizeUrl = <%=PageFlowUtil.jsString(me.customizeURL.getLocalURIString())%>;
-    discussionMenu.hideUrl = <%=PageFlowUtil.jsString(pageURL.deleteScopeParameters("discussion").addParameter("discussion.hide", "true").getLocalURIString())%>
-    discussionMenu.config =
+<%
+    if (PageFlowUtil.useExperimentalCoreUI())
     {
-        id:'menuDiscussionMenu',
-        items:[<%
+        String pageUrl = pageURL.clone().deleteScopeParameters("discussion").getLocalURIString();
+        String emailUrl = "mailto:?subject=" + PageFlowUtil.encode(me.title) + "&body=" + PageFlowUtil.encode(me.pageURL.getURIString());
+        String emailPreferencesUrl = me.emailPreferencesURL.getLocalURIString();
+        String adminEmailUrl = me.adminEmailURL.getLocalURIString();
+        String customizeUrl = me.customizeURL.getLocalURIString();
+        String hideUrl = pageURL.deleteScopeParameters("discussion").addParameter("discussion.hide", "true").getLocalURIString();
+
+        NavTree menu = new NavTree();
+        if (me.allowMultipleDiscussions)
+        {
+            for (AnnouncementModel a : discussions)
+            {
+                String title = a.getTitle();
+                menu.addChild(title, pageUrl + "&discussion.id=" + a.getRowId() + "#discussionArea");
+            }
+        }
+        else if (!discussions.isEmpty())
+        {
+            if (me.isDiscussionVisible)
+            {
+                menu.addChild("Hide discussion", hideUrl);
+            }
+            else
+            {
+                AnnouncementModel a = discussions.get(0);
+                menu.addChild("Show discussion", pageUrl + "&discussion.id=" + a.getRowId() + "#discussionArea");
+            }
+        }
+        if ((me.allowMultipleDiscussions || discussions.isEmpty()) && canInsert)
+        {
+            menu.addChild("Start" + (me.allowMultipleDiscussions ? " new " : "") + "discussion", pageUrl + "&discussion.start=true#discussionArea", null, "fa fa-comments");
+        }
+        menu.addChild("Start email discussion", emailUrl, null, "fa fa-envelope");
+        menu.addSeparator();
+
+        if (!isGuest)
+        {
+            menu.addChild("Email preferences", emailPreferencesUrl);
+        }
+        if (isAdmin)
+        {
+            menu.addChild("Email Admin", adminEmailUrl);
+            menu.addChild("Admin", customizeUrl);
+        }
+%>
+    <div id="discussionMenuToggle" class="lk-menu-drop dropdown">
+        <a class="labkey-link labkey-text-link" data-toggle="dropdown">Discussions</a>
+<%
+    out.write("<ul class=\"dropdown-menu dropdown-menu-right\">");
+    PopupMenuView.renderTree(menu, out);
+    out.write("</ul>");
+%>
+    </div>
+<%
+    }
+    else
+    {
+%>
+<script type="text/javascript">
+    if (discussionMenu)
+        discussionMenu.menu.destroy();
+
+    var discussionMenu = {};
+    (function(){
+        discussionMenu.pageUrl = <%=PageFlowUtil.jsString(pageURL.clone().deleteScopeParameters("discussion").getLocalURIString())%>;
+        discussionMenu.emailUrl = 'mailto:?subject=<%=PageFlowUtil.encode(me.title)%>&body=<%=PageFlowUtil.encode(me.pageURL.getURIString())%>';
+        discussionMenu.emailPreferencesUrl = <%=PageFlowUtil.jsString(me.emailPreferencesURL.getLocalURIString())%>;
+        discussionMenu.adminEmailUrl = <%=PageFlowUtil.jsString(me.adminEmailURL.getLocalURIString())%>;
+        discussionMenu.customizeUrl = <%=PageFlowUtil.jsString(me.customizeURL.getLocalURIString())%>;
+        discussionMenu.hideUrl = <%=PageFlowUtil.jsString(pageURL.deleteScopeParameters("discussion").addParameter("discussion.hide", "true").getLocalURIString())%>
+                discussionMenu.config =
+                        {
+                            id:'menuDiscussionMenu',
+                            items:[<%
 
         String comma = "";
         if (me.allowMultipleDiscussions)
@@ -150,10 +214,14 @@ var discussionMenu = {};
 <span id="discussionMenuToggle"><%
     if (!discussions.isEmpty() && me.allowMultipleDiscussions)
     {
-        %><%=PageFlowUtil.textLink("see discussions (" + discussions.size() + ")", "#", "return false;", "")%><%
+%><%=PageFlowUtil.textLink("see discussions (" + discussions.size() + ")", "#", "return false;", "")%><%
     }
     else
     {
-        %><%=PageFlowUtil.textLink("discussion", "#", "return false;", "")%><%
+%><%=PageFlowUtil.textLink("discussion", "#", "return false;", "")%><%
     }
 %></span>
+<%
+    }
+%>
+
