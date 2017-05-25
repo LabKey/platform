@@ -28,7 +28,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("Ext3");
+        dependencies.add("internal/jQuery");
     }
 
     private String getTitle(String pref, Container c, String title)
@@ -107,10 +107,12 @@
         notifyStart.disabled = false;
     }
 
-    Ext.onReady(updateSuccessNotifyInterval);
-    Ext.onReady(updateFailureNotifyInterval);
-
-
+    +function($) {
+        $(function() {
+            updateSuccessNotifyInterval();
+            updateFailureNotifyInterval();
+        });
+    }(jQuery)
 </script>
 
 <labkey:form action="<%=h(buildURL(PipelineController.UpdateEmailNotificationAction.class))%>" method="post">

@@ -123,6 +123,12 @@
     color: $white;
     padding-right: 5px;
   }
+
+  &.selectable {
+    &:hover {
+      cursor: pointer;
+    }
+  }
 }
 
 .lk-region-drawer {

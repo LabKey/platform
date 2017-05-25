@@ -438,9 +438,9 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
             StringBuilder sb = new StringBuilder();
 
+            // TODO: Use the same code as AutoCompleteTag.java
             sb.append("<script type=\"text/javascript\">");
-            sb.append("LABKEY.requiresExt4Sandbox();\n");
-            sb.append("LABKEY.requiresScript('completion.js');\n");
+            sb.append("LABKEY.requiresScript('completion',function(){\n");
 
             sb.append("Ext4.onReady(function(){\n" +
                 "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
@@ -456,9 +456,9 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
                 "                autocomplete : 'off'\n" +
                 "            }\n" +
                 "        });\n" +
-                "      });\n");
+                "      })});\n");
             sb.append("</script>\n");
-            sb.append("<div id='").append(renderId).append("'></div>");
+            sb.append("<div id=\"").append(renderId).append("\"></div>");
 
             builder.append(sb.toString());
         }

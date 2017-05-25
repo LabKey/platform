@@ -216,8 +216,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         buttonBar.setStyle(ButtonBar.Style.separateButtons);
         dataRegion.setButtonBar(buttonBar);
 
-        view.addClientDependency(ClientDependency.fromPath("Ext4"));
-        view.addClientDependency(ClientDependency.fromPath("completion.js"));
+        view.addClientDependency(ClientDependency.fromPath("completion"));
 
         return view;
     }

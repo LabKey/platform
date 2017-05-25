@@ -34,6 +34,14 @@
 <%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("Ext4");
+        dependencies.add("completion");
+    }
+%>
 <%
     GroupView.GroupBean bean = ((JspView<GroupView.GroupBean>)HttpView.currentView()).getModelBean();
     Container c = getContainer();
@@ -41,22 +49,12 @@
     ActionURL completionUrl = new ActionURL(SecurityController.CompleteMemberAction.class, c);
     completionUrl.addParameter("groupId", bean.group.getUserId());
 %>
-<%!
-    @Override
-    public void addClientDependencies(ClientDependencies dependencies)
-    {
-        dependencies.add("Ext4");
-    }
-%>
-
 <style type="text/css">
     .lowlight {
         color: #999999
     }
 </style>
 <script type="text/javascript">
-    LABKEY.requiresScript('completion.js');
-
     var form;
     
     function selectAllCheckboxes(form, value)
