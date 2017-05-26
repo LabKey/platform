@@ -35,6 +35,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
@@ -432,4 +433,16 @@ public interface QueryService
     void saveNamedSet(String setName, List<String> setList);
     void deleteNamedSet(String setName);
     List<String> getNamedSet(String setName);
+
+    /**
+     * Add a passthrough method to the whitelist for the primary LabKey database type. This enables modules to create
+     * and enable custom database functions, for example.
+     */
+    void registerPassthroughMethod(String name, JdbcType returnType, int minArguments, int maxArguments);
+
+    /**
+     * Add a passthrough method to the whitelist for a particular database type. This enables modules to create
+     * and enable custom database functions, for example.
+     */
+    void registerPassthroughMethod(String name, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect);
 }
