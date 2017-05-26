@@ -22,30 +22,30 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="java.io.Writer" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    private void renderTrail(List<NavTree> trees, Writer out) throws Exception
+    @Nullable
+    private String renderTrail(List<NavTree> trees)
     {
-        if (trees == null)
-            return;
-        else if (trees.isEmpty())
-            return;
+        if (trees == null || trees.isEmpty())
+            return null;
 
-        out.write("<ol class=\"breadcrumb\" style=\"background-color: transparent; padding: 0; margin-bottom: 8px;\">");
+        String trail = "<ol class=\"breadcrumb\" style=\"background-color: transparent; padding: 0; margin-bottom: 8px;\">";
 
         for (NavTree child : trees)
         {
-            out.write("<li>");
+            trail += "<li>";
             if (child.getHref() != null)
-                out.write("<a href=\"" + h(child.getHref()) + "\">" + h(child.getText()) + "</a>");
+                trail += "<a href=\"" + h(child.getHref()) + "\">" + h(child.getText()) + "</a>";
             else
-                out.write(h(child.getText()));
-            out.write("</li>");
+                trail += h(child.getText());
+            trail += "</li>";
         }
 
-        out.write("</ol>");
+        trail += "</ol>";
+        return trail;
     }
 %>
 <%
@@ -61,25 +61,33 @@
         <strong>Under construction!</strong>
         This layout is under development. <a href="<%=h(url.getLocalURIString())%>" class="alert-link">Turn it off here</a> by disabling the "Core UI Migration" feature.
     </div>
-    <% if (pageConfig.showHeader() != PageConfig.TrueFalse.False) { %>
-    <div class="col-md-12" style="margin-bottom: 20px;">
-        <%
-            if (null != pageConfig.getAppBar())
-            {
-                renderTrail(pageConfig.getAppBar().getNavTrail(), out);
+    <% if (pageConfig.showHeader() != PageConfig.TrueFalse.False)
+       {
+           if (null != pageConfig.getAppBar())
+           {
+               String trail = renderTrail(pageConfig.getAppBar().getNavTrail());
+               String pageTitle = pageConfig.getAppBar().getPageTitle();
+
+               if (pageTitle == null)
+                   pageTitle = pageConfig.getAppBar().getFolderTitle();
+
+               boolean showTrail = trail != null;
+               boolean showTitle = pageTitle != null && !pageTitle.equalsIgnoreCase(getContainer().getName());
+               if (showTrail || showTitle)
+               {
         %>
-            <% if (pageConfig.getAppBar().getPageTitle() != null) { %>
-            <h3 style="margin: 0;"><%= h(pageConfig.getAppBar().getPageTitle()) %></h3>
-            <% } else if (pageConfig.getAppBar().getFolderTitle() != null) { %>
-            <h3 style="margin: 0;"><%= h(pageConfig.getAppBar().getFolderTitle()) %></h3>
-            <% }
-            }%>
+    <div class="col-md-12" style="margin-bottom: 20px;">
+        <% if (showTrail) { %><%= text(trail) %><% } %>
+        <% if (showTitle) { %><h3 style="margin: 0;"><%= h(pageTitle)%></h3><% } %>
     </div>
-    <% } %>
+        <%
+               }
+           }
+       }
+    %>
     <div class="<%= h(showRight ? "col-md-9" : "col-md-12" ) %>">
         <% me.include(me.getBody(), out); %>
     </div>
-
     <% if (showRight) { %>
     <div class="col-md-3">
         <% me.include(me.getView(WebPartFactory.LOCATION_RIGHT), out); %>
