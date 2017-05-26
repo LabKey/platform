@@ -61,12 +61,21 @@
             }
         });
 
+        <%
+        // check here to make sure the relativePath used to populate rootOffset does not include the root itself
+        // because the rootPath will have the root. See issue 29993
+        Path resourcePath = listpage.resource.getPath();
+        Path relativePath = resourcePath;
+        if (resourcePath.startsWith(listpage.root))
+            relativePath = resourcePath.subpath(listpage.root.size(),relativePath.size());
+        %>
+
+        // the rootPath here is encoded but the rootOffset is not (but may have already been) - not sure if this is what we want
         var fileSystem = Ext4.create('File.system.Webdav', {
             rootPath: <%=q(Path.parse(request.getContextPath()).append(listpage.root).encode("/",null))%>,
-            rootOffset: <%=q(listpage.resource.getPath().toString())%>,
+            rootOffset: <%=q(relativePath.toString("/","/"))%>,
             rootName: <%=q(app.getServerName())%>
         });
-
         Ext4.create('Ext.container.Viewport', {
             layout : 'fit',
             items : [{
