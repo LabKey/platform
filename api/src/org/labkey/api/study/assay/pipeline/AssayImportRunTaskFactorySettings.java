@@ -17,7 +17,6 @@ package org.labkey.api.study.assay.pipeline;
 
 import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.TaskId;
-import org.labkey.api.study.assay.pipeline.AssayImportRunTaskId;
 
 /**
  * User: kevink

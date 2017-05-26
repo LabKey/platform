@@ -16,6 +16,8 @@
 
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.*;
@@ -36,6 +38,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.BufferedReader;
 import java.util.Map;
@@ -122,15 +125,8 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                         Map<String, String> paramMap = new HashMap<>();
 
                         paramMap.put(RUN_INFO_REPLACEMENT, runInfo.getAbsolutePath().replaceAll("\\\\", "/"));
-                        File srcDir = scriptFile.getParentFile();
-                        if (srcDir != null && srcDir.exists())
-                            paramMap.put(SRC_DIR_REPLACEMENT, srcDir.getAbsolutePath().replaceAll("\\\\", "/"));
-                        paramMap.put(R_SESSIONID_REPLACEMENT, getSessionInfo(context, transformSessionId));
-                        paramMap.put(SESSION_COOKIE_NAME_REPLACEMENT, getSessionCookieName(context));
-                        paramMap.put(SESSION_ID_REPLACEMENT, getSessionId(context, transformSessionId));
-                        paramMap.put(BASE_SERVER_URL_REPLACEMENT, AppProps.getInstance().getBaseServerUrl()
-                                                                    + AppProps.getInstance().getContextPath());
-                        paramMap.put(CONTAINER_PATH, context.getContainer().getPath());
+
+                        addStandardParameters(context.getRequest(), context.getContainer(), scriptFile, transformSessionId, paramMap);
 
                         bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
 
@@ -202,9 +198,22 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
         return result;
     }
 
-    private String getSessionCookieName(AssayRunUploadContext<ProviderType> context)
+    public static void addStandardParameters(@Nullable HttpServletRequest request, Container container, File scriptFile, String transformSessionId, Map<String, String> paramMap)
     {
-        if (context.getRequest() != null)
+        File srcDir = scriptFile.getParentFile();
+        if (srcDir != null && srcDir.exists())
+            paramMap.put(SRC_DIR_REPLACEMENT, srcDir.getAbsolutePath().replaceAll("\\\\", "/"));
+        paramMap.put(R_SESSIONID_REPLACEMENT, getSessionInfo(request, transformSessionId));
+        paramMap.put(SESSION_COOKIE_NAME_REPLACEMENT, getSessionCookieName(request));
+        paramMap.put(SESSION_ID_REPLACEMENT, getSessionId(request, transformSessionId));
+        paramMap.put(BASE_SERVER_URL_REPLACEMENT, AppProps.getInstance().getBaseServerUrl()
+                                                    + AppProps.getInstance().getContextPath());
+        paramMap.put(CONTAINER_PATH, container.getPath());
+    }
+
+    private static String getSessionCookieName(@Nullable HttpServletRequest request)
+    {
+        if (request != null)
         {
             return CSRFUtil.SESSION_COOKIE_NAME;
         }
@@ -244,17 +253,17 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
     /**
      * Creates the session information string
      */
-    private String getSessionInfo(AssayRunUploadContext<ProviderType> context, String transformSessionId)
+    private static String getSessionInfo(@Nullable HttpServletRequest request, String transformSessionId)
     {
-        return "labkey.sessionCookieName = \"" + getSessionCookieName(context) + "\"\n" +
-               "labkey.sessionCookieContents = \"" + getSessionId(context, transformSessionId) + "\"\n";
+        return "labkey.sessionCookieName = \"" + getSessionCookieName(request) + "\"\n" +
+               "labkey.sessionCookieContents = \"" + getSessionId(request, transformSessionId) + "\"\n";
     }
 
-    private String getSessionId(AssayRunUploadContext<ProviderType> context, String transformSessionId)
+    private static String getSessionId(@Nullable HttpServletRequest request, String transformSessionId)
     {
-        if (context.getRequest() != null)
+        if (request != null)
         {
-            return PageFlowUtil.getCookieValue(context.getRequest().getCookies(), CSRFUtil.SESSION_COOKIE_NAME, "");
+            return PageFlowUtil.getCookieValue(request.getCookies(), CSRFUtil.SESSION_COOKIE_NAME, "");
         }
         return transformSessionId;
     }

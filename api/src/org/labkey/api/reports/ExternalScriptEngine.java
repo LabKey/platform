@@ -223,7 +223,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine
 
                 // process the script file replacement
                 boolean specifiedScript = false;
-                if (cmd.indexOf(PARAM_SCRIPT) != -1)
+                if (cmd.contains(PARAM_SCRIPT))
                 {
                     specifiedScript = true;
                     cmd = ParamReplacementSvc.get().processInputReplacement(cmd, PARAM_SCRIPT, scriptFilePath.replaceAll("\\\\", "/"));
