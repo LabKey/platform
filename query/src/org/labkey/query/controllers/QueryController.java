@@ -483,11 +483,6 @@ public class QueryController extends SpringActionController
             UserSchema schema = form.getSchema();
             return schema != null && schema.getTable(form.getQueryName()) != null;
         }
-        catch (QueryParseException x)
-        {
-            // exists with errors
-            return true;
-        }
         catch (QueryException x)
         {
             // exists with errors
@@ -2246,16 +2241,8 @@ public class QueryController extends SpringActionController
 
         public boolean handlePost(QueryForm form, BindException errors) throws Exception
         {
-            QueryDefinition queryDef = form.getQueryDef();
-            if (queryDef == null)
-            {
-                throw new NotFoundException("Could not find query " + form.getQueryName());
-            }
-            TableInfo table = queryDef.getTable(form.getSchema(), null, true);
-            if (table == null)
-            {
-                throw new NotFoundException("Could not create table " + form.getQueryName());
-            }
+            ensureQueryExists(form);
+            TableInfo table = form.getQueryDef().getTable(form.getSchema(), null, true);
 
             if (!table.hasPermission(getUser(), DeletePermission.class))
             {

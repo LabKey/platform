@@ -219,7 +219,7 @@ public class CoreQuerySchema extends UserSchema
         }
         users.setName(SITE_USERS_TABLE_NAME);
         users.setDescription("Contains all users who have accounts on the server regardless of whether they are members of the current project or not." +
-        " The data in this table are available only to site administrators. All other users will see no rows.");
+        " The data in this table are available only to site administrators. All other users will see only the row for their own account.");
 
         addGroupsColumn(users);
         addAvatarColumn(users);
@@ -292,7 +292,7 @@ public class CoreQuerySchema extends UserSchema
         //filter for container is null or container = current-container
         principals.addCondition(new SQLFragment("Container IS NULL or Container=?", getContainer().getProject()));
 
-        //only non-guest users may see the principals
+        //only admins may see the principals
         if (!getContainer().hasPermission(getUser(), AdminPermission.class))
             addNullSetFilter(principals);
 
@@ -330,7 +330,7 @@ public class CoreQuerySchema extends UserSchema
         });
         members.addColumn(col);
 
-        //if user is guest, add a null-set filter
+        //if user isn't an admin, add a null-set filter
         if (!getContainer().hasPermission(getUser(), AdminPermission.class))
         {
             addNullSetFilter(members);
@@ -351,8 +351,7 @@ public class CoreQuerySchema extends UserSchema
         defCols.add(FieldKey.fromParts("GroupId"));
         members.setDefaultVisibleColumns(defCols);
 
-        members.setDescription("Contains rows indicating which users are in which groups in the current project." +
-            " By default, the data in this table are available only to administrators. The \"See Email Addresses\" role can be explicitly granted to other users and groups.");
+        members.setDescription("Contains rows indicating which users are in which groups in the current project. The data in this table are available only to administrators.");
 
         return members;
     }
@@ -407,7 +406,7 @@ public class CoreQuerySchema extends UserSchema
             addAvatarColumn(users);
         }
 
-        users.setDescription("Contains all users who are members of the current project." +
+        users.setDescription("Contains all users who are members of the current project, based on being added to a project group or assigned permission directly within the project." +
         " The data in this table are available only to users who are signed-in (not guests). Guests will see no rows." +
         " All signed-in users will see the columns UserId, EntityId, DisplayName, Email, FirstName, LastName, Description, Created, Modified," +
         " although non-administrator users must be added to the \"See Email Addresses\" role to see values in the Email column." +
