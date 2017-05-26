@@ -18,6 +18,7 @@ package org.labkey.pipeline.api;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -30,8 +31,10 @@ import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabKey_ScriptEngineManager;
 import org.labkey.api.reports.RserveScriptEngine;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.assay.DefaultDataTransformer;
 import org.labkey.api.util.LogPrintWriter;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.pipeline.analysis.CommandTaskImpl;
@@ -72,7 +75,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
      * to generate the script before executing it.  The replaced paths will be
      * resolved to paths in the work directory.
      */
-    private Map<String, String> createReplacements(ScriptEngine engine) throws IOException
+    private Map<String, String> createReplacements(ScriptEngine engine, @Nullable File scriptFile, String transformSessionId) throws IOException
     {
         Map<String, String> replacements = new HashMap<>();
 
@@ -141,6 +144,8 @@ public class ScriptTaskImpl extends CommandTaskImpl
         String taskOutputParamsRelativePath = _wd.getRelativePath(taskOutputParamsFile);
         replacements.put(PipelineJob.PIPELINE_TASK_OUTPUT_PARAMS_PARAM, taskOutputParamsRelativePath);
 
+        DefaultDataTransformer.addStandardParameters(null, getJob().getContainer(), scriptFile, transformSessionId, replacements);
+
         return replacements;
     }
 
@@ -183,10 +188,12 @@ public class ScriptTaskImpl extends CommandTaskImpl
         if (_engine == null)
             throw new PipelineJobException("Script engine not found: " + extension);
 
+        final String transformSessionId = SecurityManager.beginTransformSession(getJob().getUser());
+
         try
         {
-            File scriptFile = null;
-            String scriptSource = null;
+            @Nullable File scriptFile = null;
+            String scriptSource;
             if (factory._scriptInline != null)
             {
                 scriptSource = factory._scriptInline;
@@ -244,7 +251,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
 
             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, _wd.getDir().getPath());
 
-            Map<String, String> replacements = createReplacements(_engine);
+            Map<String, String> replacements = createReplacements(_engine, scriptFile, transformSessionId);
             bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, replacements);
 
             // Write task properties file into the work directory
@@ -313,6 +320,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
         }
         finally
         {
+            SecurityManager.endTransformSession(transformSessionId);
             _engine = null;
         }
     }
