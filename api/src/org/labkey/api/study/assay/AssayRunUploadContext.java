@@ -65,6 +65,9 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     @NotNull
     Container getContainer();
 
+    /**
+     * @return null if we're operating in a background thread, divorced from an in-process HTTP request
+     */
     @Nullable
     HttpServletRequest getRequest();
 
@@ -104,6 +107,14 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     Logger getLogger();
 
     default void init() throws ExperimentException {}
+
+    /**
+     * For files that already existed on the server's file system prior to import, and which have been copied
+     * to a temporary directory for processing, the original path to the primary data file.
+     * @return null if the file was uploaded as part of the import
+     */
+    @Nullable
+    default File getOriginalFileLocation() { return null; }
 
     /**
      * Builder pattern for creating a AssayRunUploadContext instance.

@@ -16,6 +16,7 @@
 package org.labkey.api.study.assay.pipeline;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ExperimentException;
@@ -71,6 +72,8 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     private Set<Integer> _domainIds = new HashSet<>();
     private Integer _reRunId;
 
+    private File _originalFileLocation;
+
     // Cached values that aren't serializable
     private transient User _user;
     private transient ExpProtocol _protocol;
@@ -100,6 +103,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         _actionURL = originalContext.getActionURL();
         _uploadedData = originalContext.getUploadedData();
         _reRunId = originalContext.getReRunId();
+        _originalFileLocation = originalContext.getOriginalFileLocation();
 
         _batchProperties = originalContext.getBatchProperties();
         _batchPropertiesById = convertPropertiesToIds(_batchProperties);
@@ -367,6 +371,13 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     public Logger getLogger()
     {
         return _logger;
+    }
+
+    @Nullable
+    @Override
+    public File getOriginalFileLocation()
+    {
+        return _originalFileLocation;
     }
 
     public void setLogger(Logger logger)

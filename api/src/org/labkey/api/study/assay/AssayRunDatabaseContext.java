@@ -163,6 +163,21 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
         return result;
     }
 
+    @Nullable
+    @Override
+    public File getOriginalFileLocation()
+    {
+        for (ExpData data : _run.getOutputDatas(_provider.getDataType()))
+        {
+            File f = data.getFile();
+            if (f != null)
+            {
+                return f.getParentFile();
+            }
+        }
+        return null;
+    }
+
     @NotNull
     @Override
     public Map<Object, String> getInputDatas()

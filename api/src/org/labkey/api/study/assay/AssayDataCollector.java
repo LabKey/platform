@@ -31,21 +31,23 @@ import java.util.Map;
  * implementations gather the file(s) through different mechanisms - from a directory that already exists
  * on the server's file system, via a HTML textarea that the user has copy/pasted data into, etc.
  *
+ * Instances will be associated with a single request and/or upload attempt, and so will be short-lived and can hold state.
+ *
  * User: jeckels
  * Date: Jul 12, 2007
  */
 public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
 {
-    public static final String PRIMARY_FILE = "__primaryFile__";
+    String PRIMARY_FILE = "__primaryFile__";
 
     /** Indicates if there are (or might be) additional files that queued up to be consumed by more runs */
-    public enum AdditionalUploadType
+    enum AdditionalUploadType
     {
         Disallowed(null), AlreadyUploaded("Save and Import Next File"), UploadRequired("Save and Import Another Run");
 
         private String _buttonText;
 
-        private AdditionalUploadType(String buttonText)
+        AdditionalUploadType(String buttonText)
         {
             _buttonText = buttonText;
         }
@@ -57,24 +59,31 @@ public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
     }
 
     /** @return the UI to plug into the import wizard for the user to somehow select/upload the file */
-    public HttpView getView(ContextType context) throws ExperimentException;
+    HttpView getView(ContextType context) throws ExperimentException;
 
     /** @return the name for this AssayDataCollector. Needs to be unique within the set of data collectors for any given import attempt */
-    public String getShortName();
+    String getShortName();
 
-    public String getDescription(ContextType context);
+    String getDescription(ContextType context);
 
     /** Map of original file name to file on disk */
-    @NotNull
-    public Map<String, File> createData(ContextType context) throws IOException, ExperimentException;
+    @NotNull Map<String, File> createData(ContextType context) throws IOException, ExperimentException;
 
-    public boolean isVisible();
+    boolean isVisible();
 
     Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException;
 
-    public AdditionalUploadType getAdditionalUploadType(ContextType context);
+    AdditionalUploadType getAdditionalUploadType(ContextType context);
 
     default void initDir(ContextType context) throws ExperimentException {}
 
     File getRoot(@Nullable ExpRun run, @Nullable File data);
+
+    /**
+     * For files that already existed on the server's file system prior to import, and which have been copied
+     * to a temporary directory for processing, the original path to the primary data file.
+     * @return null if the file was uploaded as part of the import
+     */
+    @Nullable
+    default File getOriginalFileLocation() { return null; }
 }

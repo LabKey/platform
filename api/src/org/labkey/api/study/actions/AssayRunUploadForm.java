@@ -22,6 +22,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -215,6 +216,19 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         return _collectors;
     }
 
+    @Nullable
+    @Override
+    public File getOriginalFileLocation()
+    {
+        AssayDataCollector collector = getSelectedDataCollector();
+        if (collector != null)
+        {
+            return collector.getOriginalFileLocation();
+        }
+        return null;
+    }
+
+    @Nullable
     public AssayDataCollector getSelectedDataCollector()
     {
         List<AssayDataCollector> collectors = getDataCollectors();

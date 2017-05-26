@@ -43,11 +43,13 @@ import java.util.Map;
  * User: jeckels
  * Date: Jan 2, 2008
  */
-    public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AbstractTempDirDataCollector<ContextType>
+public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AbstractTempDirDataCollector<ContextType>
 {
     public PipelineDataCollector()
     {
     }
+
+    private File _originalFileLocation = null;
 
     public HttpView getView(ContextType context) throws ExperimentException
     {
@@ -160,7 +162,19 @@ import java.util.Map;
             throw new FileNotFoundException("No files from the pipeline directory have been selected");
         }
 
-        return savePipelineFiles(context, files.get(0));
+        Map<String, File> currentFiles = files.get(0);
+        if (!currentFiles.isEmpty())
+        {
+            _originalFileLocation = currentFiles.values().iterator().next().getParentFile();
+        }
+        return savePipelineFiles(context, currentFiles);
+    }
+
+    @Nullable
+    @Override
+    public File getOriginalFileLocation()
+    {
+        return _originalFileLocation;
     }
 
     public boolean isVisible()

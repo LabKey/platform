@@ -80,7 +80,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         errorsFile,
         transformedRunPropertiesFile,
         severityLevel,
-        maximumSeverity
+        maximumSeverity,
+        originalFileLocation;
     }
     public enum errLevel {
         NONE,
@@ -371,6 +372,11 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         map.put(Props.protocolId.name(), String.valueOf(context.getProtocol().getRowId()));
         map.put(Props.protocolDescription.name(), StringUtils.defaultString(context.getProtocol().getDescription()));
         map.put(Props.protocolLsid.name(), context.getProtocol().getLSID());
+        File originalFileLocation = context.getOriginalFileLocation();
+        if (originalFileLocation != null)
+        {
+            map.put(Props.originalFileLocation.name(), originalFileLocation.getPath());
+        }
 
         return map;
     }
@@ -1099,6 +1105,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         @Override
         public Logger getLogger()
+        {
+            return null;
+        }
+
+        @Nullable
+        @Override
+        public File getOriginalFileLocation()
         {
             return null;
         }
