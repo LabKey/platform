@@ -458,6 +458,23 @@ public abstract class Method
         }
     }
 
+    public static void addPassthroughMethod(String name, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
+    {
+        PassthroughMethod m = new PassthroughMethod(name, returnType, minArguments, maxArguments);
+        if (dialect.isPostgreSQL())
+        {
+            postgresMethods.put(name, m);
+        }
+        if (dialect.isSqlServer())
+        {
+            mssqlMethods.put(name, m);
+        }
+        if (dialect.isOracle())
+        {
+            oracleMethods.put(name, m);
+        }
+    }
+
 
     static class JdbcMethodInfoImpl extends AbstractQueryMethodInfo
     {

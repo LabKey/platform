@@ -86,6 +86,7 @@ import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QuerySnapshotDef;
+import org.labkey.query.sql.Method;
 import org.labkey.query.sql.QExpr;
 import org.labkey.query.sql.QField;
 import org.labkey.query.sql.QIfDefined;
@@ -2034,6 +2035,18 @@ public class QueryServiceImpl implements QueryService
             throw new InvalidNamedSetException("Named set not found in cache: " + setName);
 
         return Collections.unmodifiableList(namedSet);
+    }
+
+    @Override
+    public void registerPassthroughMethod(String name, JdbcType returnType, int minArguments, int maxArguments)
+    {
+        registerPassthroughMethod(name, returnType, minArguments, maxArguments, DbSchema.get("query", DbSchemaType.Module).getSqlDialect());
+    }
+
+    @Override
+    public void registerPassthroughMethod(String name, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
+    {
+        Method.addPassthroughMethod(name, returnType, minArguments, maxArguments, dialect);
     }
 
     @Override
