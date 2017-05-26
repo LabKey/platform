@@ -17,6 +17,7 @@
 package org.labkey.core.admin.sql;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -579,7 +580,7 @@ public class SqlScriptController extends SpringActionController
                 File scriptDir = ((FileSqlScriptProvider)firstScript.getProvider()).getScriptDirectory(firstScript.getSchema().getSqlDialect());
                 File moduleDir = scriptDir.getParentFile().getParentFile().getParentFile().getParentFile();
 
-                if (!new File(moduleDir, ".git").isDirectory())
+                if (!new File(moduleDir, ".git").exists())
                 {
                     String firstFilename = firstScript.getDescription();
 
@@ -587,7 +588,7 @@ public class SqlScriptController extends SpringActionController
 
                     sb.append("cd ").append(scriptDir).append("\n");
                     sb.append("svn copy ").append(firstFilename).append(" ").append(consolidatedFilename).append("\n");
-                    sb.append("del ").append(consolidatedFilename).append("\n\n");
+                    sb.append(SystemUtils.IS_OS_MAC ? "rm " : "del ").append(consolidatedFilename).append("\n\n");
                 }
             }
 
