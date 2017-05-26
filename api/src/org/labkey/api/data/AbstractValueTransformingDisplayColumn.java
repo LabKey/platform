@@ -13,7 +13,7 @@ public abstract class AbstractValueTransformingDisplayColumn<RawDataType, Transf
 {
     protected final Class<TransformedDataType> _dataTypeClass;
     protected final boolean _sortable;
-        protected final boolean _filterable;
+    protected final boolean _filterable;
 
     /** Default to not being sortable or filterable, since we've significantly transformed the underlying value */
     public AbstractValueTransformingDisplayColumn(ColumnInfo col, Class<TransformedDataType> dataTypeClass)

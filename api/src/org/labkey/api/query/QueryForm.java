@@ -307,7 +307,8 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
             return null;
         return getQuerySettings() != null ? getQuerySettings().getQueryName() : _queryName;
     }
-    
+
+    @Nullable
     public QueryDefinition getQueryDef()
     {
         if (getQueryName() == null)
