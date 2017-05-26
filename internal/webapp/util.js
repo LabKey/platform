@@ -120,15 +120,20 @@ function showPathname(filechooser, elementId)
     var slash = pathname.indexOf('/') > -1 ? '/' : '\\';
     var filename = pathname.substring(pathname.lastIndexOf(slash) + 1, pathname.length);
 
-    // As of issue 18142, don't show an icon if no file is selected
-    $('#' + elementId).html([
-        '<table>',
-            '<tr>',
-                '<td>' + filename == '' ? '' : ('<img src=\"' + LABKEY.Utils.getFileIconUrl(filename) + '\"/>') + '</td>',
-                '<td>' + filename + '</td>',
-            '</tr>',
-        '</table>'
-    ].join(''));
+    // backwards compatibility for elementId being an actual element
+    var el = LABKEY.Utils.isString(elementId) ? $('#' + elementId) : $(elementId);
+
+    if (el.length) {
+        // As of issue 18142, don't show an icon if no file is selected
+        el.html([
+            '<table>',
+                '<tr>',
+                    '<td>' + filename == '' ? '' : ('<img src=\"' + LABKEY.Utils.getFileIconUrl(filename) + '\"/>') + '</td>',
+                    '<td>' + filename + '</td>',
+                '</tr>',
+            '</table>'
+        ].join(''));
+    }
 
     return true;
 }
