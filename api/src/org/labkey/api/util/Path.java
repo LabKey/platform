@@ -26,6 +26,8 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * User: matthewb
@@ -75,6 +77,19 @@ public class Path implements Serializable, Comparable, Iterable<String>
         this._hash = hash;
         this._isAbsolute = abs;
         this._isDirectory = dir;
+    }
+
+    // Create an instance from a java.nio.file.Path
+    public Path(java.nio.file.Path nioPath)
+    {
+        this(getNames(nioPath));
+    }
+
+    private static Collection<String> getNames(Iterable<java.nio.file.Path> it)
+    {
+        return StreamSupport.stream(it.spliterator(), false)
+            .map(java.nio.file.Path::toString)
+            .collect(Collectors.toList());
     }
 
     public Path(Collection<String> names)

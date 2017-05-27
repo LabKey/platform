@@ -96,9 +96,10 @@ public class ModuleResourceResolver implements Resolver
 
     private void remove(final String fullPath)
     {
-        CACHE.removeUsingFilter(key -> {
-            String moduleName = _module.getName();
+        String moduleName = _module.getName();
 
+        CACHE.removeUsingFilter(key ->
+        {
             if (key.startsWith(moduleName))
             {
                 String shortPath = key.substring(moduleName.length() + 1);
@@ -197,14 +198,14 @@ public class ModuleResourceResolver implements Resolver
         public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
         {
             LOG.debug(entry + " created");
-            remove(directory.resolve(entry).toString());
+            remove(new Path(directory.resolve(entry)).toString());
         }
 
         @Override
         public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
         {
             LOG.debug(entry + " deleted");
-            remove(directory.resolve(entry).toString());
+            remove(new Path(directory.resolve(entry)).toString());
         }
 
         @Override
