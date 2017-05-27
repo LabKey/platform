@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.Converter;
 import org.apache.commons.beanutils.converters.FileConverter;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
@@ -28,6 +29,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayDataType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
@@ -38,6 +40,8 @@ import org.labkey.api.webdav.WebdavService;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * User: jeckels
@@ -47,7 +51,7 @@ public class ExpDataFileConverter implements Converter
 {
     private static final Converter FILE_CONVERTER = new FileConverter();
 
-    public static ExpData resolveExpData(JSONObject dataObject, Container container, User user)
+    public static ExpData resolveExpData(JSONObject dataObject, Container container, User user, @NotNull Collection<AssayDataType> knownTypes)
     {
         ExperimentService expSvc = ExperimentService.get();
 
@@ -104,7 +108,7 @@ public class ExpDataFileConverter implements Converter
 
                 //create a new one
                 String name = dataObject.optString(ExperimentJSONConverter.NAME, pipelinePath);
-                DataType type = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
+                DataType type = getDataType(file, knownTypes);
                 String lsid = expSvc.generateLSID(container, type, name);
                 data = expSvc.createData(container, name, lsid);
                 data.setDataFileURI(uri);
@@ -141,7 +145,7 @@ public class ExpDataFileConverter implements Converter
             {
                 f = FileUtil.getAbsoluteCaseSensitiveFile(f);
                 String name = dataObject.optString(ExperimentJSONConverter.NAME, f.getName());
-                DataType type = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
+                DataType type = getDataType(f, knownTypes);
                 String lsid = expSvc.generateLSID(container, type, name);
                 data = expSvc.createData(container, name, lsid);
                 data.setDataFileURI(f.toURI());
@@ -151,6 +155,19 @@ public class ExpDataFileConverter implements Converter
         }
         else
             throw new IllegalArgumentException("Data must have an id, LSID, pipelinePath, dataFileURL, or absolutePath property. " + dataObject);
+    }
+
+    /** Check for the first matching data type, defaulting to RELATED_FILE_DATA_TYPE if none match */
+    private static DataType getDataType(@NotNull File file, @NotNull Collection<AssayDataType> knownTypes)
+    {
+        for (AssayDataType knownType : knownTypes)
+        {
+            if (knownType.getFileType().isType(file))
+            {
+                return knownType;
+            }
+        }
+        return AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
     }
 
     @Override
@@ -171,7 +188,7 @@ public class ExpDataFileConverter implements Converter
             if (value instanceof JSONObject)
             {
                 // Assume the same structure as the saveBatch and getBatch APIs work with
-                ExpData data = resolveExpData((JSONObject)value, null, null);
+                ExpData data = resolveExpData((JSONObject)value, null, null, Collections.emptyList());
                 if (data != null && data.getFile() != null)
                 {
                     return data.getFile();

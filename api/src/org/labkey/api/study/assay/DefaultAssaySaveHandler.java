@@ -588,7 +588,13 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
     @Override
     public ExpData handleData(ViewContext context, JSONObject dataObject) throws ValidationException
     {
-        ExpData data = ExpDataFileConverter.resolveExpData(dataObject, context.getContainer(), context.getUser());
+        List<AssayDataType> knownTypes = new ArrayList<>();
+        if (getProvider().getDataType() != null)
+        {
+            knownTypes.add(getProvider().getDataType());
+        }
+        knownTypes.addAll(getProvider().getRelatedDataTypes());
+        ExpData data = ExpDataFileConverter.resolveExpData(dataObject, context.getContainer(), context.getUser(), knownTypes);
 
         handleProperties(context, data, Collections.emptyList(), dataObject);
         return data;
