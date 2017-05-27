@@ -1078,10 +1078,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         List<File> dirs = super.getStaticFileDirectories();
         if (AppProps.getInstance().isDevMode())
         {
-            if (null != getSourcePath())
+            if (null != getSourcePath() && !getSourcePath().isEmpty())
             {
-                dirs.add(0, new File(getSourcePath(), "../../internal/webapp"));
-                dirs.add(0, new File(getSourcePath(), "../../api/webapp"));
+                dirs.add(0, new File(AppProps.getInstance().getProjectRoot(), "server/internal/webapp"));
+                dirs.add(0, new File(AppProps.getInstance().getProjectRoot(), "server/api/webapp"));
             }
         }
         return dirs;
