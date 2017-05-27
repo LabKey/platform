@@ -556,10 +556,10 @@ public class ModuleLoader implements Filter
     private void setProjectRoot(Module core)
     {
         List<String> possibleRoots = new ArrayList<>();
-        if (null != core.getSourcePath())
-            possibleRoots.add(core.getSourcePath() + "/../../..");
         if (null != System.getProperty("project.root"))
             possibleRoots.add(System.getProperty("project.root"));
+        if (null != core.getSourcePath() && !core.getSourcePath().isEmpty())
+            possibleRoots.add(core.getSourcePath() + "/../../..");
 
         for (String root : possibleRoots)
         {
