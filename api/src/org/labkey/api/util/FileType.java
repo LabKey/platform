@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Vector;
 
 /**
  * <code>FileType</code>
@@ -212,7 +211,7 @@ public class FileType implements Serializable
         supportGZ(doSupportGZ);
         _defaultSuffix = defaultSuffix;
         _dir = Boolean.valueOf(dir);
-        _antiTypes = new Vector<>(0);
+        _antiTypes = new ArrayList<>(0);
         if (!suffixes.contains(defaultSuffix))
         {
             throw new IllegalArgumentException("List of suffixes " + _suffixes + " does not contain the preferred suffix:" + _defaultSuffix);
@@ -279,7 +278,7 @@ public class FileType implements Serializable
      */
     public int addSuffix(String newsuffix)
     {
-        Vector<String> s = new Vector<>(_suffixes.size()+1);
+        List<String> s = new ArrayList<>(_suffixes.size()+1);
         for (String suffix : _suffixes)
         {
             s.add(suffix);
@@ -294,7 +293,7 @@ public class FileType implements Serializable
      */
     public int addAntiFileType(FileType anti)
     {
-        Vector<FileType> s = new Vector<>(_antiTypes.size()+1);
+        List<FileType> s = new ArrayList<>(_antiTypes.size()+1);
         for (FileType a : _antiTypes)
         {
             s.add(a);
