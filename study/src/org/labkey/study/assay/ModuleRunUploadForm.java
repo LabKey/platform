@@ -145,11 +145,25 @@ public class ModuleRunUploadForm extends AssayRunUploadForm<TsvAssayProvider> im
         insertedDatas.addAll(outputDatas.keySet());
         List<Map<String, Object>> rawData = getRawData();
 
-        for (ExpData insertedData : insertedDatas)
+        ExpData primaryData = null;
+        // Decide which file to treat as the primary, to which the data rows will be attached
+        for (Map.Entry<ExpData, String> entry : outputDatas.entrySet())
+        {
+            if ("Data".equalsIgnoreCase(entry.getValue()))
+            {
+                primaryData = entry.getKey();
+            }
+        }
+        if (primaryData == null && !insertedDatas.isEmpty())
+        {
+            primaryData = insertedDatas.get(0);
+        }
+
+        if (primaryData != null)
         {
             TsvDataHandler dataHandler = new TsvDataHandler();
             dataHandler.setAllowEmptyData(true);
-            dataHandler.importRows(insertedData, getUser(), run, getProtocol(), getProvider(), rawData, null);
+            dataHandler.importRows(primaryData, getUser(), run, getProtocol(), getProvider(), rawData, null);
         }
     }
 

@@ -644,9 +644,16 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             ExpData data = getData(ctx);
             if (data != null)
             {
-                out.write(PageFlowUtil.textLink("View File", ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true)));
-                out.write("<br>");
-                out.write(PageFlowUtil.textLink("Download", ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, false)));
+                if (data.isFileOnDisk())
+                {
+                    out.write(PageFlowUtil.textLink("View File", ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true)));
+                    out.write("<br>");
+                    out.write(PageFlowUtil.textLink("Download", ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, false)));
+                }
+                else
+                {
+                    out.write("File not available");
+                }
             }
         }
     }
