@@ -25,8 +25,8 @@ import java.util.HashSet;
  */
 public class FileNameUniquifier
 {
-    private Set<String> _previous = new HashSet<>();
-    private boolean _preserveExtension;
+    private final Set<String> _previous = new HashSet<>();
+    private final boolean _preserveExtension;
 
     public FileNameUniquifier()
     {

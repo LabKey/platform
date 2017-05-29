@@ -68,10 +68,9 @@ public class Tuple3<T1, T2, T3> extends Pair<T1, T2> implements Serializable
         return s.substring(0, s.length()-1) + "," + String.valueOf(third) + ")";
     }
 
-    public static <T1, T2, T3> Tuple3 of(T1 t1, T2 t2, T3 t3)
+    public static <T1, T2, T3> Tuple3<T1, T2, T3> of(T1 t1, T2 t2, T3 t3)
     {
         return new Tuple3<>(t1, t2, t3);
     }
-
 }
 

@@ -42,6 +42,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -453,7 +454,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
      */
     private void writeJobInfoTSV(File file) throws IOException
     {
-        RowMapFactory<Object> factory = new RowMapFactory<>("Name", "Value", "Type");
+        RowMapFactory<Object> factory = new RowMapFactory<>(Arrays.asList("Name", "Value", "Type"));
         List<Map<String, Object>> rows = new ArrayList<>();
 
         rows.add(factory.getRowMap("protocolName", getProtocolName(), "java.lang.String"));

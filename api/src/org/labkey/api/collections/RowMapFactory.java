@@ -31,12 +31,12 @@ public class RowMapFactory<V>
 
     public RowMapFactory()
     {
-        _findMap = new ArrayListMap.FindMap<>(new CaseInsensitiveHashMap<Integer>());
+        _findMap = new ArrayListMap.FindMap<>(new CaseInsensitiveHashMap<>());
     }
 
     public RowMapFactory(int columns)
     {
-        _findMap = new ArrayListMap.FindMap<>(new CaseInsensitiveHashMap<Integer>(2 * columns));
+        _findMap = new ArrayListMap.FindMap<>(new CaseInsensitiveHashMap<>(2 * columns));
     }
 
     public RowMapFactory(ArrayListMap.FindMap<String> findMap)
@@ -54,14 +54,6 @@ public class RowMapFactory<V>
             _findMap.put(key, i);
             i++;
         }
-    }
-
-    public RowMapFactory(String... keys)
-    {
-        this(keys.length);
-
-        for (int i = 0; i < keys.length; i++)
-            _findMap.put(keys[i], i);
     }
 
     public RowMap<V> getRowMap()
