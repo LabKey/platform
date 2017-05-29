@@ -94,13 +94,6 @@ public class DatasetDataWriter implements InternalStudyWriter
 
             TableInfo ti = schema.getTable(def.getName());
             Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false, ctx.isRemoveProtected());
-            // need to make sure the SequenceNum column is included for visit based demographic datasets, issue #16146
-            if (def.isDemographicData())
-            {
-                ColumnInfo seqNumCol = ti.getColumn("SequenceNum");
-                if (seqNumCol != null && !columns.contains(seqNumCol))
-                    columns.add(seqNumCol);
-            }
             // Sort the data rows by PTID & sequence, #11261
             Sort sort = new Sort(StudyService.get().getSubjectColumnName(ctx.getContainer()) + ", SequenceNum");
 
@@ -347,6 +340,13 @@ public class DatasetDataWriter implements InternalStudyWriter
             }
         }
 
+        // need to make sure the SequenceNum column is included for visit based demographic datasets, issue #16146
+        if (def.isDemographicData())
+        {
+            ColumnInfo seqNumCol = tinfo.getColumn("SequenceNum");
+            if (seqNumCol != null && !outColumns.contains(seqNumCol))
+                outColumns.add(seqNumCol);
+        }
         return outColumns;
     }
 
