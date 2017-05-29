@@ -74,6 +74,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -463,7 +464,7 @@ public class SqlScriptController extends SpringActionController
         }
 
         // Order by schema name
-        consolidators.sort((sc1, sc2) -> sc1.getSchemaName().compareTo(sc2.getSchemaName()));
+        consolidators.sort(Comparator.comparing(ScriptConsolidator::getSchemaName));
 
         return consolidators;
     }
@@ -708,16 +709,8 @@ public class SqlScriptController extends SpringActionController
         private String _module;
         private String _schema;
         private double _fromVersion = Constants.getPreviousReleaseVersion();
-        private double _toVersion = getToVersion(_fromVersion);
+        private double _toVersion = Constants.getNextReleaseVersion();
         private boolean _includeSingleScripts = false;
-
-        private static double getToVersion(double fromVersion)
-        {
-            int from = (int)Math.round(fromVersion * 10.0); // 153 or 161 or 172
-            int fractional = from % 10;  // [1, 2, 3]
-
-            return (from + (3 == fractional ? 8 : 1))/10.0;
-        }
 
         public String getModule()
         {
