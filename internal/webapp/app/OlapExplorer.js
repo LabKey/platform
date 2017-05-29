@@ -156,6 +156,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                         onRows: [{hierarchy: uniqueName, members:'members'}],
                         showEmpty: me.showEmpty,
                         success: function(qr) {
+                            me.setTotalHierarchyMembers(uniqueName, qr);
                             me.totals[uniqueName] = me.processMaxCount.call(me, qr);
                             me.requestDimension(hierarchy, selections, distinctLevel, altRequestDimNamedFilters);
                         }
@@ -178,6 +179,13 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
             }
         }
     },
+
+    /**
+     * A function to allow preprocessing the requested hierarchy with its full cube members.
+     * @param hierarchyUniqueName
+     * @param cubeResult The query result of the hierarchy with no filters passed in (except container filter)
+     */
+    setTotalHierarchyMembers:  Ext.emptyFn, //Subclass to override.
 
     requestDimension : function(hierarchy, selections, distinctLevel, altRequestDimNamedFilters) {
         // Asks for the Gray area
@@ -335,6 +343,9 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 isGroup = true;
             }
 
+            if (!this.shouldIncludeMember(hierarchy.getUniqueName(), subPosition.level.uniqueName, subPosition.uniqueName))
+                continue;
+
             target = {
                 label: LABKEY.app.model.Filter.getMemberLabel(subPosition.name),
                 uniqueName: subPosition.uniqueName,
@@ -403,6 +414,17 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
         if (response.useSelection) {
             this.fireEvent('selectrequest');
         }
+    },
+
+    /**
+     * Determine if a member should be included or filtered out. False return value will skip the member.
+     * @param hierarchyUniqName
+     * @param levelUniquName
+     * @param memberName
+     * @returns {boolean}
+     */
+    shouldIncludeMember: function(hierarchyUniqName, levelUniquName, memberName) {
+        return true; //subclass to override
     },
 
     /**

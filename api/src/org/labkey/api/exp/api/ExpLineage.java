@@ -62,6 +62,9 @@ public class ExpLineage
         return _materials;
     }
 
+    /**
+     * Create map from node LSID to ExpObject.
+     */
     private Map<String, ExpObject> processNodes()
     {
         Map<String, ExpObject> nodes = new HashMap<>();
@@ -80,6 +83,9 @@ public class ExpLineage
         return nodes;
     }
 
+    /**
+     * Create map from node LSID to the set of (parent, child) edges.
+     */
     private Map<String, Pair<Set<Edge>, Set<Edge>>> processEdges()
     {
         Map<String, Pair<Set<Edge>, Set<Edge>>> nodes = new HashMap<>();
@@ -271,6 +277,10 @@ public class ExpLineage
             if (expObject instanceof ExpProtocolOutput)
             {
                 cpasType = ((ExpProtocolOutput) expObject).getCpasType();
+            }
+            else if (expObject instanceof ExpRun)
+            {
+                cpasType = ((ExpRun)expObject).getProtocol().getLSID();
             }
 
             json.put("name", expObject.getName());

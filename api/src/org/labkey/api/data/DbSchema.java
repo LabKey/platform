@@ -32,6 +32,7 @@ import org.labkey.api.query.TableSorter;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -502,6 +503,7 @@ public class DbSchema
     }
 
     @TestWhen(TestWhen.When.BVT)
+    @TestTimeout(240)
     public static class TableSelectTestCase extends Assert
     {
         // Do a simple select from every table in every module schema. This ends up invoking validation code

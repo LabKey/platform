@@ -118,6 +118,9 @@ Ext.define('LABKEY.app.store.OlapExplorer2', {
                 isGroup = true;
             }
 
+            if (!this.shouldIncludeMember(hierarchy.getUniqueName(), subPosition.level.uniqueName, subPosition.uniqueName))
+                continue;
+
             target = {
                 label: LABKEY.app.model.Filter.getMemberLabel(subPosition.name),
                 uniqueName: subPosition.uniqueName,
