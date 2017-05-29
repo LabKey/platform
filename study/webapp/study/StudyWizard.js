@@ -906,10 +906,12 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         var afterRenderFunc = function() {
-            if (this.settings && this.settings.participants == null)
-                radioGroup.setValue('all');
-            else
-                radioGroup.setValue('existing');
+            if (this.settings) {
+                if (this.settings.participants == null)
+                    radioGroup.setValue('all');
+                else
+                    radioGroup.setValue('existing');
+            }
         };
 
         radioGroup.on('afterrender', afterRenderFunc, this);
