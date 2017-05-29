@@ -31,7 +31,7 @@ $NODES$ AS
 
  	UNION ALL
 
-	SELECT container, CAST('ExperimentRun' AS $VARCHAR$(50)) AS exptype, CAST(NULL AS $VARCHAR$(200)) AS cpastype, name, lsid, rowid, 'r'||CAST(rowid AS VARCHAR) as pathpart
+	SELECT container, CAST('ExperimentRun' AS $VARCHAR$(50)) AS exptype, CAST(protocollsid AS $VARCHAR$(200)) AS cpastype, name, lsid, rowid, 'r'||CAST(rowid AS VARCHAR) as pathpart
 	FROM exp.ExperimentRun
 ),
 
@@ -109,6 +109,7 @@ $PARENTS_INNER$ AS
 		CAST(_Graph.path || _Edges.parent_pathpart || '/' AS VARCHAR(8000)) AS path
 	FROM $EDGES$ _Edges INNER JOIN $SELF$ _Graph ON _Edges.child_lsid = _Graph.parent_lsid
 	WHERE _Graph.path NOT LIKE ('%/' || _Edges.parent_pathpart || '/%')
+	$AND_STUFF$
 ),
 
 /* CTE */
@@ -158,6 +159,7 @@ $CHILDREN_INNER$ AS
 		CAST(_Graph.path || _Edges.child_pathpart || '/' AS VARCHAR(8000)) AS path
 	FROM $EDGES$ _Edges INNER JOIN $SELF$ _Graph ON _Edges.parent_lsid = _Graph.child_lsid
 	WHERE _Graph.path NOT LIKE ('%/' || _Edges.child_pathpart || '/%')
+	$AND_STUFF$
 ),
 
 /* CTE */

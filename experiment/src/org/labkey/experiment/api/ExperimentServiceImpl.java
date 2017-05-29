@@ -1873,7 +1873,9 @@ public class ExperimentServiceImpl implements ExperimentService
             Integer parentRowId = (Integer)m.get("parent_rowid");
             Integer childRowId = (Integer)m.get("child_rowid");
 
-            edges.add(new ExpLineage.Edge(parentLSID, childLSID, (String)m.get("role")));
+            String role = (String)m.get("role");
+
+            edges.add(new ExpLineage.Edge(parentLSID, childLSID, role));
 
             // process parents
             if ("Data".equals(parentExpType))
@@ -1931,7 +1933,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     /* return <ParentsQuery,ChildrenQuery> */
-    private Pair<String,String> getRunGraphCommonTableExpressions(SQLFragment ret, SqlDialect d, SQLFragment lsidsFrag, boolean forLookup)
+    private Pair<String,String> getRunGraphCommonTableExpressions(SQLFragment ret, SQLFragment lsidsFrag, boolean forLookup, Integer depth)
     {
         String sourceSQL = forLookup ? exp_graph_sql_for_lookup : exp_graph_sql;
 
@@ -1973,6 +1975,14 @@ public class ExperimentServiceImpl implements ExperimentService
         String parentsInnerSelect = map.get("$PARENTS_INNER$");
         parentsInnerSelect = StringUtils.replace(parentsInnerSelect, "$SEED$", seedToken);
         parentsInnerSelect = StringUtils.replace(parentsInnerSelect, "$EDGES$", edgesToken);
+        // NOTE: Adding depth clause to the inner recursive CTE makes it more efficient, but does mean it won't be shared if we have a lookup by a different depth in the query
+        String parentDepth = "";
+        if (depth != null && depth != 0)
+        {
+            int d = depth < 0 ? depth : (-1 * depth);
+            parentDepth = "AND _Graph.depth - 1 >= " + d;
+        }
+        parentsInnerSelect = StringUtils.replace(parentsInnerSelect, "$AND_STUFF$", parentDepth);
         String parentsInnerToken = ret.addCommonTableExpression(parentsInnerSelect, "org_lk_exp_PARENTS_INNER", new SQLFragment(parentsInnerSelect), recursive);
 
         String parentsSelect = map.get("$PARENTS$");
@@ -1983,6 +1993,13 @@ public class ExperimentServiceImpl implements ExperimentService
         String childrenInnerSelect = map.get("$CHILDREN_INNER$");
         childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$SEED$", seedToken);
         childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$EDGES$", edgesToken);
+        // NOTE: Adding depth clause to the inner recursive CTE makes it more efficient, but does mean it won't be shared if we have a lookup by a different depth in the query
+        String childrenDepth = "";
+        if (depth != null && depth != 0)
+        {
+            childrenDepth = "AND _Graph.depth + 1 <= " + depth;
+        }
+        childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$AND_STUFF$", childrenDepth);
         String childrenInnerToken = ret.addCommonTableExpression(childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", new SQLFragment(childrenInnerSelect), recursive);
 
         String childrenSelect = map.get("$CHILDREN$");
@@ -2100,7 +2117,7 @@ public class ExperimentServiceImpl implements ExperimentService
     public SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
     {
         SQLFragment sqlf = new SQLFragment();
-        Pair<String,String> tokens = getRunGraphCommonTableExpressions(sqlf, getExpSchema().getSqlDialect(), lsidsFrag, options.isForLookup());
+        Pair<String,String> tokens = getRunGraphCommonTableExpressions(sqlf, lsidsFrag, options.isForLookup(), options.getDepth());
         boolean up = options.isParents();
         boolean down = options.isChildren();
 
@@ -2217,6 +2234,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     children.append(and).append("depth <= ").append(options.getDepth());
                     and = "\nAND ";
                 }
+
                 if (options.isForLookup())
                 {
                     children.append("\nGROUP BY self_lsid, lsid");

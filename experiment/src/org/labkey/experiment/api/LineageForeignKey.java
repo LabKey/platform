@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
@@ -76,11 +77,12 @@ class LineageForeignKey extends LookupForeignKey
             //addLevelColumn("Runs", "Run", ...
             addLevelColumn("Data", "Data", () -> ExperimentService.get().getDataClasses(_userSchema.getContainer(), _userSchema.getUser(), true));
             addLevelColumn("Materials", "Material", () -> ExperimentService.get().getSampleSets(_userSchema.getContainer(), _userSchema.getUser(), true));
+            addLevelColumn("Runs", "ExperimentRun", () -> ExperimentServiceImpl.get().getExpProtocolsForRunsInContainer(_userSchema.getContainer()));
 
             return this;
         }
 
-        private ColumnInfo addLevelColumn(String name, String expType, Supplier<List<? extends ExpObject>> items)
+        private ColumnInfo addLevelColumn(@NotNull String name, @NotNull String expType, @NotNull Supplier<List<? extends ExpObject>> items)
         {
             SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".lsid");
             ColumnInfo col = new ExprColumn(this, FieldKey.fromParts(name), sql, JdbcType.VARCHAR);
@@ -126,10 +128,10 @@ class LineageForeignKey extends LookupForeignKey
 
     private class ByTypeLineageForeignKey extends LookupForeignKey
     {
-        private final String _expType;
-        private final Supplier<List<? extends ExpObject>> _items;
+        private final @NotNull String _expType;
+        private final @NotNull Supplier<List<? extends ExpObject>> _items;
 
-        ByTypeLineageForeignKey(LineageForeignKeyLookupTable table, String expType, Supplier<List<? extends ExpObject>> items)
+        ByTypeLineageForeignKey(LineageForeignKeyLookupTable table, @NotNull String expType, @NotNull Supplier<List<? extends ExpObject>> items)
         {
             super("lsid", "Name");
             _expType = expType;
@@ -151,10 +153,10 @@ class LineageForeignKey extends LookupForeignKey
     
     private class ByTypeLineageForeignKeyLookupTable extends LineageForeignKeyLookupTable
     {
-        private final String _expType;
-        private final Supplier<List<? extends ExpObject>> _items;
+        private final @NotNull String _expType;
+        private final @NotNull Supplier<List<? extends ExpObject>> _items;
 
-        ByTypeLineageForeignKeyLookupTable(String name, UserSchema schema, String expType, Supplier<List<? extends ExpObject>> items)
+        ByTypeLineageForeignKeyLookupTable(String name, UserSchema schema, @NotNull String expType, @NotNull Supplier<List<? extends ExpObject>> items)
         {
             super(name, schema);
             _expType = expType;
@@ -164,6 +166,15 @@ class LineageForeignKey extends LookupForeignKey
         protected TableInfo init()
         {
             addLineageColumn("All", _parents, null, _expType, null);
+            // TODO: Nearest
+
+            // First level children or parents
+            // NOTE: We currently only add the LineageForeignKey to exp.Data and exp.Material tables
+            // NOTE: so the first generation in the lineage will always be an experiment run.  To get
+            // NOTE: the first data or material generation, we must skip the run generation -- hence depth of 2.
+            // NOTE: If we ever add the magic Inputs and Outputs columns to the Runs table, we'll need to change the depths.
+            int depth = _expType.equals("ExperimentRuns") ? 1 : 2;
+            addLineageColumn("First", _parents, depth, _expType, null);
 
             for (ExpObject item : _items.get())
             {

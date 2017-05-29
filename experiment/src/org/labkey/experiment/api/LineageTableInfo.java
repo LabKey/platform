@@ -26,15 +26,20 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpLineageOptions;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.DataClassUserSchema;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.study.assay.AssayProtocolSchema;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.StringExpression;
 
 /**
@@ -169,6 +174,33 @@ public class LineageTableInfo extends VirtualTable
             };
         }
 
+        ExpProtocol protocol = ExperimentService.get().getExpProtocol(cpasType);
+        if (protocol != null)
+        {
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            return new LookupForeignKey("lsid", "Name")
+            {
+                @Override
+                public TableInfo getLookupTableInfo()
+                {
+                    if (provider != null)
+                    {
+                        AssayProtocolSchema schema = provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), protocol, null);
+                        if (schema != null)
+                            return schema.createRunsTable();
+                    }
+
+                    return new ExpSchema(getUserSchema().getUser(), getUserSchema().getContainer()).getTable(ExpSchema.TableType.Runs.toString());
+                }
+
+                @Override
+                public StringExpression getURL(ColumnInfo parent)
+                {
+                    return super.getURL(parent, true);
+                }
+            };
+        }
+
         return null;
     }
 
@@ -234,6 +266,18 @@ public class LineageTableInfo extends VirtualTable
         @Override
         public SQLFragment getFromSQL()
         {
+            // Attempt to use materialized nodes table
+            ExperimentServiceImpl impl = ExperimentServiceImpl.get();
+            synchronized (impl.initEdgesLock)
+            {
+                if (impl.materializedEdges != null)
+                {
+                    SQLFragment temp = impl.materializedNodes.getFromSql(null, null);
+                    return new SQLFragment("SELECT * FROM ").append(temp);
+                }
+            }
+
+            // Fallback to giant union query
             SQLFragment sql = new SQLFragment();
             sql.append(
                     "SELECT container, CAST('Data' AS VARCHAR(50)) AS exptype, CAST(cpastype AS VARCHAR(200)) AS cpastype, name, lsid, rowid\n" +
