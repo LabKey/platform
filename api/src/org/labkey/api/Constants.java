@@ -15,6 +15,9 @@
  */
 package org.labkey.api;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 /**
  * This class provides a single place to update system-wide constants used for sizing caches and other purposes.
  *
@@ -34,6 +37,28 @@ public class Constants
     }
 
     /**
+     * The next official release version number, based on LabKey's standard release numbering sequence, for example:
+     * <p>
+     * 17.10, 17.20, 17.30, 18.10, 18.20...
+     * <p>
+     * This is used in the script consolidation process.
+     *
+     * @return The next official release version number
+     */
+    public static double getNextReleaseVersion()
+    {
+        return incrementVersion(getPreviousReleaseVersion());
+    }
+
+    private static double incrementVersion(double previous)
+    {
+        int round = (int) Math.round(previous * 10.0); // 163 or 171 or 182
+        int fractional = round % 10;  // [1, 2, 3]
+
+        return (round + (3 == fractional ? 8 : 1)) / 10.0;
+    }
+
+    /**
      * @return The maximum number of modules supported by the system
      */
     public static int getMaxModules()
@@ -47,5 +72,21 @@ public class Constants
     public static int getMaxContainers()
     {
         return 100_000;
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testVersions()
+        {
+            double version = 16.20;
+
+            for (double expected : new double[]{16.30, 17.10, 17.20, 17.30, 18.10, 18.20})
+            {
+                version = incrementVersion(version);
+                assertEquals(expected, version, 0);
+            }
+        }
     }
 }
