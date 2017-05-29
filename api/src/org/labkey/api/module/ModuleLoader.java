@@ -146,6 +146,7 @@ public class ModuleLoader implements Filter
     private static ModuleLoader _instance = null;
     private static Throwable _startupFailure = null;
     private static boolean _newInstall = false;
+    private static TomcatVersion _tomcatVersion = TomcatVersion.UNKNOWN;
 
     private static final String BANNER = "\n" +
             "   __                                   \n" +
@@ -288,7 +289,7 @@ public class ModuleLoader implements Filter
 
         AppProps.getInstance().setContextPath(_servletContext.getContextPath());
 
-        verifyTomcatVersion();
+        setTomcatVersion();
 
         _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(servletCtx.getRealPath("")));
 
@@ -843,14 +844,13 @@ public class ModuleLoader implements Filter
     }
 
     /**
-     * Returns running Tomcat version (if servlet container is recognized and supported) or null if not recognized.
+     * Sets the running Tomcat version, if servlet container is recognized and supported. Otherwise, version is left UNKNOWN.
      *
      * Warnings for deprecated Tomcat versions are specified here: {@link TemplateHeaderView#buildWarningMessageList}
      *
-     * @return Tomcat version
      * @throws ConfigurationException if Tomcat version is not supported
      */
-    private @Nullable Integer verifyTomcatVersion()
+    private void setTomcatVersion()
     {
         String serverInfo = ModuleLoader.getServletContext().getServerInfo();
 
@@ -862,11 +862,13 @@ public class ModuleLoader implements Filter
             if (majorVersion < 7)
                 throw new ConfigurationException("Unsupported Tomcat version: " + serverInfo + ". LabKey Server requires Apache Tomcat 7 or 8.");
 
-            return majorVersion;
+            _tomcatVersion = TomcatVersion.get(majorVersion);
         }
+    }
 
-        // Unknown version... good luck
-        return null;
+    public TomcatVersion getTomcatVersion()
+    {
+        return _tomcatVersion;
     }
 
     // Enumerate each jdbc DataSource in labkey.xml and tell DbScope to initialize them
