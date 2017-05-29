@@ -214,8 +214,8 @@ public class ExpDataFileConverter implements Converter
             {
             }
 
-            // toss in here an additonal check, if starts with HTTP then try to use _webdav to resolve it
-            // MAKE sure that the secuirty is in place - figure out what container it is in
+            // toss in here an additional check, if starts with HTTP then try to use _webdav to resolve it
+            // MAKE sure that the security is in place - figure out what container it is in
             String webdav = value.toString();
             if (null != StringUtils.trimToNull(webdav))
             {
