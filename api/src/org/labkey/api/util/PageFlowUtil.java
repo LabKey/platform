@@ -1357,6 +1357,17 @@ public class PageFlowUtil
                 ">" + filter(text) + "</a>";
     }
 
+    public static String iconLink(String iconCls, String tooltip, String url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
+    {
+        String additions = getAttributes(properties);
+
+        return "<a class=\"" + iconCls + "\" " + additions + "href=\"" + filter(url) + "\"" +
+                (id != null ? " id=\"" + id + "\"" : "") +
+                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
+                (tooltip != null ? "data-toggle=\"tooltip\" data-placement=\"top\" title data-original-title=\"" + tooltip + "\"" : "") +
+                ">" + "</a>";
+    }
+
     // TODO: Why no HTML filtering?
     private static String getAttributes(Map<String, String> properties)
     {

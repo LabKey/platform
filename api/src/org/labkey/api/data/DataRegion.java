@@ -1510,7 +1510,10 @@ public class DataRegion extends AbstractDataRegion
             out.write("<thead>");
         out.write("\n<tr id=\"" + PageFlowUtil.filter(getDomId() + "-column-header-row") + "\" " + (newUI ? "class=\"labkey-col-header-row\"" : "") + ">");
 
-        if (showRecordSelectors)
+        DisplayColumn detailsColumn = newUI ? getDetailsUpdateColumn(ctx, renderers, true) : null;
+        DisplayColumn updateColumn = newUI ? getDetailsUpdateColumn(ctx, renderers, false) : null;;
+
+        if (showRecordSelectors || (newUI && (detailsColumn != null || updateColumn != null)))
         {
             out.write(newUI ? "<th " : "<td ");
             out.write("valign=\"top\" class=\"labkey-column-header labkey-selectors labkey-col-header-filter\"");
@@ -1519,74 +1522,77 @@ public class DataRegion extends AbstractDataRegion
             out.write(PageFlowUtil.filter(headerId));
             out.write("\">");
 
-            out.write("<input type=\"checkbox\" title=\"Select/unselect all on current page\" name=\"");
-            out.write(TOGGLE_CHECKBOX_NAME);
-            out.write("\" ");
-            out.write(">");
-
-            // TODO: move inline style to stylesheet
-            out.write("<span style=\"display:inline-block; background: url('");
-            out.write(ctx.getViewContext().getContextPath());
-            out.write("/_images/arrow_down.png') right no-repeat; width: 16px; height: 10px;\"");
-            out.write("></span>");
-
-            NavTree navtree = new NavTree();
-
-            NavTree selectAll = new NavTree("Select All");
-            selectAll.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].selectAll();");
-            navtree.addChild(selectAll);
-
-            NavTree selectNone = new NavTree("Select None");
-            selectNone.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].selectNone();");
-            navtree.addChild(selectNone);
-
-            navtree.addSeparator();
-
-            if (getShowRows() != ShowRows.PAGINATED)
+            if (showRecordSelectors)
             {
-                NavTree showPaginated = new NavTree("Show Paginated");
-                showPaginated.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showPaged();");
-                navtree.addChild(showPaginated);
+                out.write("<input type=\"checkbox\" title=\"Select/unselect all on current page\" name=\"");
+                out.write(TOGGLE_CHECKBOX_NAME);
+                out.write("\" ");
+                out.write(">");
+
+                // TODO: move inline style to stylesheet
+                out.write("<span style=\"display:inline-block; background: url('");
+                out.write(ctx.getViewContext().getContextPath());
+                out.write("/_images/arrow_down.png') right no-repeat; width: 16px; height: 10px;\"");
+                out.write("></span>");
+
+                NavTree navtree = new NavTree();
+
+                NavTree selectAll = new NavTree("Select All");
+                selectAll.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].selectAll();");
+                navtree.addChild(selectAll);
+
+                NavTree selectNone = new NavTree("Select None");
+                selectNone.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].selectNone();");
+                navtree.addChild(selectNone);
+
+                navtree.addSeparator();
+
+                if (getShowRows() != ShowRows.PAGINATED)
+                {
+                    NavTree showPaginated = new NavTree("Show Paginated");
+                    showPaginated.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showPaged();");
+                    navtree.addChild(showPaginated);
+                }
+
+                if (getShowRows() != ShowRows.SELECTED)
+                {
+                    NavTree showSelected = new NavTree("Show Selected");
+                    showSelected.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showSelected();");
+                    navtree.addChild(showSelected);
+                }
+
+                if (getShowRows() != ShowRows.UNSELECTED)
+                {
+                    NavTree showUnselected = new NavTree("Show Unselected");
+                    showUnselected.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showUnselected();");
+                    navtree.addChild(showUnselected);
+                }
+
+                if (getShowRows() != ShowRows.ALL)
+                {
+                    NavTree showAll = new NavTree("Show All");
+                    showAll.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showAll();");
+                    navtree.addChild(showAll);
+                }
+
+                PopupMenu popup = new PopupMenu(navtree, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.TEXT);
+                popup.renderMenuScript(out);
+
+                out.write("<script type=\"text/javascript\">\n");
+                out.write("Ext4.onReady(function () {\n");
+                out.write("var header = Ext4.get(");
+                out.write(PageFlowUtil.jsString(headerId));
+                out.write(");\n");
+                out.write("if (header) {\n");
+                out.write("  header.on('click', function (evt, el, o) {\n");
+                out.write("    showMenu(el, ");
+                out.write(PageFlowUtil.qh(popup.getSafeID()));
+                out.write(", null);\n");
+                out.write("  });\n");
+                out.write("}\n");
+                out.write("});\n");
+                out.write("</script>\n");
             }
-
-            if (getShowRows() != ShowRows.SELECTED)
-            {
-                NavTree showSelected = new NavTree("Show Selected");
-                showSelected.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showSelected();");
-                navtree.addChild(showSelected);
-            }
-
-            if (getShowRows() != ShowRows.UNSELECTED)
-            {
-                NavTree showUnselected = new NavTree("Show Unselected");
-                showUnselected.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showUnselected();");
-                navtree.addChild(showUnselected);
-            }
-
-            if (getShowRows() != ShowRows.ALL)
-            {
-                NavTree showAll = new NavTree("Show All");
-                showAll.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showAll();");
-                navtree.addChild(showAll);
-            }
-
-            PopupMenu popup = new PopupMenu(navtree, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.TEXT);
-            popup.renderMenuScript(out);
-
-            out.write("<script type=\"text/javascript\">\n");
-            out.write("Ext4.onReady(function () {\n");
-            out.write("var header = Ext4.get(");
-            out.write(PageFlowUtil.jsString(headerId));
-            out.write(");\n");
-            out.write("if (header) {\n");
-            out.write("  header.on('click', function (evt, el, o) {\n");
-            out.write("    showMenu(el, ");
-            out.write(PageFlowUtil.qh(popup.getSafeID()));
-            out.write(", null);\n");
-            out.write("  });\n");
-            out.write("}\n");
-            out.write("});\n");
-            out.write("</script>\n");
 
             out.write(newUI ? "</th>" : "</td>");
         }
@@ -1595,6 +1601,9 @@ public class DataRegion extends AbstractDataRegion
         {
             if (renderer.isVisible(ctx))
             {
+                if (newUI && (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn))
+                    continue;
+
                 renderer.renderGridHeaderCell(ctx, out);
             }
         }
@@ -1741,22 +1750,43 @@ public class DataRegion extends AbstractDataRegion
     // CONSIDER: Separate as renderTableRow and renderTableRowContents?
     protected void renderTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
     {
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+
         out.write("<tr");
         String rowClass = getRowClass(ctx, rowIndex);
         if (rowClass != null)
             out.write(" class=\"" + rowClass + "\"");
         out.write(">");
 
-        if (showRecordSelectors)
-            renderRecordSelector(ctx, out, rowIndex);
+        DisplayColumn detailsColumn = newUI ? getDetailsUpdateColumn(ctx, renderers, true) : null;
+        DisplayColumn updateColumn = newUI ? getDetailsUpdateColumn(ctx, renderers, false) : null;;
+
+        if (showRecordSelectors || (newUI && (detailsColumn != null || updateColumn != null)))
+            renderActionColumn(ctx, out, rowIndex, showRecordSelectors, updateColumn, detailsColumn);
 
         for (DisplayColumn renderer : renderers)
             if (renderer.isVisible(ctx))
+            {
+                if (newUI && (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn))
+                        continue;
+
                 renderer.renderGridDataCell(ctx, out);
+            }
 
         out.write("</tr>\n");
     }
 
+    protected DisplayColumn getDetailsUpdateColumn(RenderContext ctx, List<DisplayColumn> renderers, boolean getDetailsCol)
+    {
+        for (DisplayColumn renderer : renderers)
+            if (renderer.isVisible(ctx))
+            {
+                if ((renderer instanceof DetailsColumn && getDetailsCol)
+                        || (renderer instanceof UpdateColumn && !getDetailsCol))
+                    return renderer;
+            }
+        return null;
+    }
 
     protected void renderFormHeader(RenderContext ctx, Writer out, int mode) throws IOException
     {
@@ -1826,9 +1856,6 @@ public class DataRegion extends AbstractDataRegion
 
     protected void renderRecordSelector(RenderContext ctx, Writer out, int rowIndex) throws IOException
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
-
-        out.write("<td class=\"labkey-selectors\" nowrap>");
         out.write("<input type=\"checkbox\" title=\"Select/unselect row\" name=\"");
         out.write(getRecordSelectorName(ctx));
         out.write("\" ");
@@ -1857,18 +1884,55 @@ public class DataRegion extends AbstractDataRegion
 
         // When header locking is enabled, the first row is used to set the header column widths
         // so we need to write out a span matching the down arrow icon in .toggle header to ensure the header has a proper width.
-        if (!newUI && rowIndex == 0)
+        if (!PageFlowUtil.useExperimentalCoreUI() && rowIndex == 0)
         {
             out.write("<span style=\"display: inline-block; width: 16px; height: 10px;\">&nbsp;</span>");
         }
 
+    }
+
+    protected void renderActionColumn(RenderContext ctx, Writer out, int rowIndex, boolean showRecordSelectors, @Nullable DisplayColumn updateColumn, @Nullable DisplayColumn detailsColumn) throws IOException
+    {
+        if (!showRecordSelectors && updateColumn == null && detailsColumn == null)
+            return;
+
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+
+        out.write("<td class=\"labkey-selectors\" nowrap>");
+
+        if (showRecordSelectors)
+            renderRecordSelector(ctx, out, rowIndex);
+
         // An example of what edit/details could look like
-//        if (newUI)
-//        {
-//            out.write("<i class=\"fa fa-pencil\" style=\"color: lightgray; padding: 0 3px;\"></i>");
-//            out.write("<i class=\"fa fa-gear\" style=\"color: lightgray; padding: 0 3px;\"></i>");
-//        }
+        if (newUI)
+        {
+            if (updateColumn != null)
+                renderGridCellContents(ctx, out, updateColumn, "fa fa-pencil lk-dr-action-icon");
+            if (detailsColumn != null)
+                renderGridCellContents(ctx, out, detailsColumn, "fa fa-gear lk-dr-action-icon");
+        }
         out.write("</td>");
+    }
+
+    public void renderGridCellContents(RenderContext ctx, Writer out, DisplayColumn column, String iconCls) throws IOException
+    {
+        Object value = column.getValue(ctx);
+        String url = column.renderURL(ctx);
+
+        if (value != null && url != null)
+        {
+            Map<String, String> props;
+            if (column.getLinkTarget() != null)
+            {
+                props = Collections.singletonMap("target", column.getLinkTarget());
+            }
+            else
+            {
+                props = Collections.emptyMap();
+            }
+
+            out.write(PageFlowUtil.iconLink(iconCls, value.toString(), url, null, null, props));
+        }
     }
 
     protected String getRecordSelectorName(RenderContext ctx)

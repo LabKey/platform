@@ -801,6 +801,13 @@ if (!LABKEY.DataRegions) {
                     $(this).addClass('lk-row-hl');
                 }
             });
+            rows.on('mouseenter', function(e) {
+                $(this).siblings('tr').removeClass('lk-row-over');
+                $(this).addClass('lk-row-over');
+            });
+            rows.on('mouseleave', function(e) {
+                $(this).removeClass('lk-row-over');
+            });
         }
     };
 
