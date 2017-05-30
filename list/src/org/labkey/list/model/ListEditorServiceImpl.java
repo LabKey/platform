@@ -17,10 +17,13 @@ package org.labkey.list.model;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.OntologyManager;
@@ -32,8 +35,11 @@ import org.labkey.api.exp.list.ListDefinition.IndexSetting;
 import org.labkey.api.exp.list.ListDefinition.KeyType;
 import org.labkey.api.exp.list.ListDefinition.TitleSetting;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -44,9 +50,11 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.list.client.GWTList;
 import org.labkey.list.client.ListEditorService;
+import org.labkey.list.view.ListItemAttachmentParent;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -313,6 +321,36 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
                 list.setKeyPropertyName(newKey.getName());
         }
 
+        // Note attachment columns that are getting removed
+        Domain domain = PropertyService.get().getDomain(getContainer(), orig.getDomainURI());
+        ListDefinition listDefinition = ListService.get().getList(getContainer(), list.getListId());
+        TableInfo table = listDefinition.getTable(getUser());
+        if (null == domain || null == table)
+            throw new IllegalArgumentException("Expected domain and table for list: " + list.getName());
+
+        Map<String, ColumnInfo> modifiedAttachmentColumns = new CaseInsensitiveHashMap<>();
+        for (DomainProperty oldProp : domain.getProperties())
+        {
+            if (PropertyType.ATTACHMENT.equals(oldProp.getPropertyDescriptor().getPropertyType()))
+            {
+                GWTPropertyDescriptor newGWTProp = findField(oldProp.getPropertyId(), dd.getFields());
+                if (null == newGWTProp || !PropertyType.ATTACHMENT.equals(PropertyType.getFromURI(newGWTProp.getConceptURI(), newGWTProp.getRangeURI(), null)))
+                {
+                    ColumnInfo column = table.getColumn(oldProp.getPropertyDescriptor().getName());
+                    if (null != column)
+                        modifiedAttachmentColumns.put(oldProp.getPropertyDescriptor().getName(), column);
+                }
+            }
+        }
+
+        Collection<Map<String, Object>> attachmentMapCollection = null;
+        if (!modifiedAttachmentColumns.isEmpty())
+        {
+            List<ColumnInfo> columns = new ArrayList<>(modifiedAttachmentColumns.values());
+            columns.add(table.getColumn("entityId"));
+            attachmentMapCollection = new TableSelector(table, columns, null, null).getMapCollection();
+        }
+
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             List<String> errors;
@@ -337,9 +375,20 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
 
             try
             {
+                // Remove attachments from any attachment columns that are removed or no longer attachment columns
+                if (null != attachmentMapCollection)
+                    for (Map<String, Object> map : attachmentMapCollection)
+                    {
+                        String entityId = (String)map.get("entityId");
+                        ListItemAttachmentParent parent = new ListItemAttachmentParent(entityId, getContainer());
+                        for (Map.Entry<String, Object> entry : map.entrySet())
+                            if (null != entry.getValue() && modifiedAttachmentColumns.containsKey(entry.getKey()))
+                                AttachmentService.get().deleteAttachment(parent, entry.getValue().toString(), getUser());
+                    }
+
                 errors = super.updateDomainDescriptor(orig, dd);  //Triggers search indexing during Domain refresh
             }
-            catch(RuntimeSQLException x)
+            catch (RuntimeSQLException x)
             {
                 // issue 19202 - check for null value exceptions in case provided file data not contain the column
                 // and return a better error message

@@ -576,10 +576,10 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         }
     }
 
-    @Override
     /**
      * Get Domain from list definition, unless null then get from super
      */
+    @Override
     protected Domain getDomain()
     {
         return _list != null?
