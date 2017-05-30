@@ -55,6 +55,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.PopupMenu;
+import org.labkey.api.view.PopupMenuView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.VisualizationUrls;
 
@@ -1517,13 +1518,25 @@ public class DataRegion extends AbstractDataRegion
         {
             out.write(newUI ? "<th " : "<td ");
             out.write("valign=\"top\" class=\"labkey-column-header labkey-selectors labkey-col-header-filter\"");
-            out.write("id=\"");
+
+            if (newUI)
+                out.write(" style=\"position:relative;\"");
+
             String headerId = "column-header-" + UniqueID.getServerSessionScopedUID();
-            out.write(PageFlowUtil.filter(headerId));
+            if (!newUI)
+            {
+                out.write("id=\"");
+                out.write(PageFlowUtil.filter(headerId));
+            }
+
             out.write("\">");
 
             if (showRecordSelectors)
             {
+                if (newUI)
+                    out.write("<div class=\"dropdown-toggle\" data-toggle=\"dropdown\">");
+                else
+                    out.write("<div>");
                 out.write("<input type=\"checkbox\" title=\"Select/unselect all on current page\" name=\"");
                 out.write(TOGGLE_CHECKBOX_NAME);
                 out.write("\" ");
@@ -1534,6 +1547,7 @@ public class DataRegion extends AbstractDataRegion
                 out.write(ctx.getViewContext().getContextPath());
                 out.write("/_images/arrow_down.png') right no-repeat; width: 16px; height: 10px;\"");
                 out.write("></span>");
+                out.write("</div>");
 
                 NavTree navtree = new NavTree();
 
@@ -1575,26 +1589,35 @@ public class DataRegion extends AbstractDataRegion
                     navtree.addChild(showAll);
                 }
 
-                PopupMenu popup = new PopupMenu(navtree, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.TEXT);
-                popup.renderMenuScript(out);
+                if (newUI)
+                {
+                    out.write("<ul class=\"dropdown-menu dropdown-menu-left\">");
+                    PopupMenuView.renderTree(navtree, out);
+                    out.write("</ul>");
+                    out.write("</th>");
+                }
+                else
+                {
+                    PopupMenu popup = new PopupMenu(navtree, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.TEXT);
+                    popup.renderMenuScript(out);
 
-                out.write("<script type=\"text/javascript\">\n");
-                out.write("Ext4.onReady(function () {\n");
-                out.write("var header = Ext4.get(");
-                out.write(PageFlowUtil.jsString(headerId));
-                out.write(");\n");
-                out.write("if (header) {\n");
-                out.write("  header.on('click', function (evt, el, o) {\n");
-                out.write("    showMenu(el, ");
-                out.write(PageFlowUtil.qh(popup.getSafeID()));
-                out.write(", null);\n");
-                out.write("  });\n");
-                out.write("}\n");
-                out.write("});\n");
-                out.write("</script>\n");
+                    out.write("<script type=\"text/javascript\">\n");
+                    out.write("Ext4.onReady(function () {\n");
+                    out.write("var header = Ext4.get(");
+                    out.write(PageFlowUtil.jsString(headerId));
+                    out.write(");\n");
+                    out.write("if (header) {\n");
+                    out.write("  header.on('click', function (evt, el, o) {\n");
+                    out.write("    showMenu(el, ");
+                    out.write(PageFlowUtil.qh(popup.getSafeID()));
+                    out.write(", null);\n");
+                    out.write("  });\n");
+                    out.write("}\n");
+                    out.write("});\n");
+                    out.write("</script>\n");
+                    out.write("</td>");
+                }
             }
-
-            out.write(newUI ? "</th>" : "</td>");
         }
 
         for (DisplayColumn renderer : renderers)
