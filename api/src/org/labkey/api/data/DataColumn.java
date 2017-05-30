@@ -729,7 +729,7 @@ public class DataColumn extends DisplayColumn
     @Override
     public String getSortHandler(RenderContext ctx, Sort.SortDirection sort)
     {
-        if (_sortColumns == null || _sortColumns.size() == 0)
+        if (_displayColumn == null || _sortColumns == null || _sortColumns.size() == 0)
             return "";
 
         String regionName = ctx.getCurrentRegion().getName();
