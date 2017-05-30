@@ -103,12 +103,13 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
 
                     // study design tables
                     List<String> studyDesignTableNames = new ArrayList<>();
-
                     studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME);
                     studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME);
                     studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
-                    studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME);
                     studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
+                    // this table was added in 16.3, so any archive created prior to that will not have this tsv file to import
+                    if (ctx.getArchiveVersion() >= 16.3)
+                        studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME);
 
                     for (String studyDesignTableName : studyDesignTableNames)
                     {
@@ -133,8 +134,12 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     importTableData(ctx, vf, productAntigenTablePackage, _productAntigenTableMapBuilder, transformHelperComp);
 
                     // dose and route table, we can reuse the product antigen transform since we are doing the same operation : productId translation
-                    StudyQuerySchema.TablePackage doseAndRouteTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.DOSE_AND_ROUTE_TABLE_NAME);
-                    importTableData(ctx, vf, doseAndRouteTablePackage, null, new TransformHelperComposition(Collections.singletonList(_productAntigenTableTransform)));
+                    // this table was added in 16.3, so any archive created prior to that will not have this tsv file to import
+                    if (ctx.getArchiveVersion() >= 16.3)
+                    {
+                        StudyQuerySchema.TablePackage doseAndRouteTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.DOSE_AND_ROUTE_TABLE_NAME);
+                        importTableData(ctx, vf, doseAndRouteTablePackage, null, new TransformHelperComposition(Collections.singletonList(_productAntigenTableTransform)));
+                    }
 
                     StudyQuerySchema.TablePackage treatmentTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_TABLE_NAME);
                     importTableData(ctx, vf, treatmentTablePackage, _treatmentTableMapBuilder, null);
