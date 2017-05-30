@@ -37,7 +37,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -283,7 +282,8 @@ public class DateUtil
         parts = list.toArray(new Enum[list.size()]);
     }
 
-    static Comparator compEnum = (Comparator<Object>) (o1, o2) -> ((Enum)o1).name().compareTo((String)o2);
+    // Yes, this compares Enum to String, on purpose. Only used for binarySearch() below.
+    private static final Comparator compEnum = (Comparator<Object>) (o1, o2) -> ((Enum)o1).name().compareTo((String)o2);
 
     static Enum resolveDatePartEnum(String s)
     {

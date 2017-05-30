@@ -18,8 +18,8 @@ package org.labkey.api.dataiterator;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-import org.apache.tools.ant.filters.StringInputStream;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -37,6 +37,7 @@ import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 
 import java.io.File;
 import java.io.IOException;
@@ -427,7 +428,7 @@ public class DataIteratorUtil
 
         DataIterator data() throws Exception
         {
-            DataLoader dl = new TabLoader.CsvFactory().createLoader(new StringInputStream(csv),true);
+            DataLoader dl = new TabLoader.CsvFactory().createLoader(IOUtils.toInputStream(csv, StringUtilsLabKey.DEFAULT_CHARSET),true);
             DataIteratorContext c = new DataIteratorContext();
             return dl.getDataIterator(c);
         }

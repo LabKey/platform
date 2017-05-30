@@ -2,6 +2,7 @@ package org.labkey.api;
 
 import com.google.common.collect.ImmutableSet;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.view.WebPartFactory;
@@ -35,6 +36,9 @@ public class ApiModule extends CodeOnlyModule
     @Override
     public @NotNull Set<Class> getUnitTests()
     {
-        return ImmutableSet.of(Constants.TestCase.class);
+        return ImmutableSet.of(
+            Constants.TestCase.class,
+            DataIteratorUtil.TestCase.class
+        );
     }
 }
