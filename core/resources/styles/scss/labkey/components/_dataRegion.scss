@@ -95,13 +95,29 @@
     }
   }
 
-  tr.lk-row-hl > td {
-    background-color: #ffc;
+  tr.lk-row-hl, tr.lk-row-hl.lk-row-over {
+    & > td {
+      background-color: #ffc;
+    }
   }
 
   tr.lk-row-over > td {
     background-color: #e2e2e2;
   }
+
+  .lk-dr-action-icon {
+    color:$lk-link-color;
+    padding-left: 5px;
+    padding-right: 5px;
+    opacity: 0;
+  }
+
+  tr.lk-row-hl, .lk-row-over {
+    .lk-dr-action-icon {
+      opacity: 1;
+    }
+  }
+
 }
 
 .lk-region-bar {
