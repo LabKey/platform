@@ -167,7 +167,7 @@ Ext4.onReady(function() {
         frame: false,
         header : false,
         buttonAlign: 'left',
-        emptyText: 'No ' + config.noun.toLowerCase() + 's to display',
+        emptyText: (LABKEY.Security.currentUser.isGuest ? 'Please log in to view the ' + config.noun.toLowerCase() + ' list.' : 'No ' + config.noun.toLowerCase() + 's to display.'),
         deferEmptyText: false,
         store: store
     };
