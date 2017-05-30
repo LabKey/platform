@@ -37,7 +37,10 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("Ext4");
+        if (!PageFlowUtil.useExperimentalCoreUI())
+        {
+            dependencies.add("Ext4");
+        }
     }
 %>
 <%
