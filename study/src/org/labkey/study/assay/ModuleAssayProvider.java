@@ -51,7 +51,6 @@ import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AssayDataType;
 import org.labkey.api.study.assay.AssayPipelineProvider;
 import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.study.assay.AssaySaveHandler;
 import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.study.assay.AssayUrls;
@@ -282,12 +281,6 @@ public class ModuleAssayProvider extends TsvAssayProvider
         {
             return super.getSaveHandler();
         }
-    }
-
-    @Override
-    public AssayRunUploadContext.Factory createRunUploadFactory(ExpProtocol protocol, ViewContext context)
-    {
-        return new ModuleRunUploadForm.Factory(protocol, this, context);
     }
 
     @Override @NotNull

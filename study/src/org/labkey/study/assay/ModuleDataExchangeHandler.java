@@ -23,7 +23,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.qc.TsvDataExchangeHandler;
-import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.study.assay.TsvDataHandler;
@@ -42,12 +41,12 @@ import java.util.Set;
 public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
 {
     @Override
-    protected Set<File> writeRunData(AssayRunUploadContext form, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
+    protected Set<File> writeRunData(AssayRunUploadContext context, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
     {
-        if (form instanceof ModuleRunUploadForm)
+        List<Map<String, Object>> data = context.getRawData();
+        if (data != null)
         {
             Set<File> result = new HashSet<>();
-            ModuleRunUploadForm context = (ModuleRunUploadForm)form;
 
             for (ExpData expData : run.getDataInputs().keySet())
             {
@@ -63,7 +62,6 @@ public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
             if (dataType == null)
                 dataType = TsvDataHandler.RELATED_TRANSFORM_FILE_DATA_TYPE;
 
-            List<Map<String, Object>> data = context.getRawData();
             if (data.size() > 0)
             {
                 File runData = new File(scriptDir, RUN_DATA_FILE);
@@ -98,7 +96,7 @@ public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
         else
         {
             // this is the codepath for module assays without a custom upload page
-            return _writeRunData(form, run, scriptDir, pw);
+            return _writeRunData(context, run, scriptDir, pw);
         }
     }
 }

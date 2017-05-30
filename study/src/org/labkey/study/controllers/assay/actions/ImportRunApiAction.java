@@ -16,6 +16,7 @@
 
 package org.labkey.study.controllers.assay.actions;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -26,6 +27,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.AssayJSONConverter;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -43,6 +45,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.assay.DefaultAssayRunCreator;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -54,6 +57,7 @@ import org.springframework.validation.BindException;
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.labkey.api.study.assay.AssayDataCollector.PRIMARY_FILE;
@@ -82,6 +86,14 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         Integer reRunId;
         String runFilePath;
         String moduleName;
+        List<Map<String, Object>> rawData = null;
+
+        // TODO: support additional input/output data/materials
+        Map<Object, String> inputData = new HashMap<>();
+        Map<Object, String> outputData = new HashMap<>();
+        Map<Object, String> inputMaterial = new HashMap<>();
+        Map<Object, String> outputMaterial = new HashMap<>();
+
 
         // 'json' form field -- allows for multipart forms
         JSONObject json = form.getJson();
@@ -113,6 +125,9 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
             reRunId = json.containsKey("reRunId") ? json.optInt("reRunId") : null;
             runFilePath = json.optString("runFilePath", null);
             moduleName = json.optString("module", null);
+            JSONArray dataRows = json.optJSONArray(AssayJSONConverter.DATA_ROWS);
+            if (dataRows != null)
+                rawData = dataRows.toMapList();
         }
         else
         {
@@ -129,6 +144,9 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
             reRunId = form.getReRunId();
             runFilePath = form.getRunFilePath();
             moduleName = form.getModule();
+            JSONArray dataRows = form.getDataRows();
+            if (dataRows != null)
+                rawData = dataRows.toMapList();
         }
 
         // Import the file at runFilePath if it is available, otherwise AssayRunUploadContextImpl.getUploadedData() will use the multi-part form POSTed file
@@ -178,8 +196,27 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
                 .setTargetStudy(targetStudy)
                 .setReRunId(reRunId);
 
+        if (file != null && rawData != null)
+            throw new ExperimentException("Either file or " + AssayJSONConverter.DATA_ROWS + " is allowed, but not both");
+
         if (file != null)
+        {
+            factory.setRawData(null);
             factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, file));
+        }
+        else if (rawData != null)
+        {
+            factory.setRawData(rawData);
+            factory.setUploadedData(Collections.emptyMap());
+
+            // Create an ExpData for the results if none exists in the outputData map
+            ExpData newData = DefaultAssayRunCreator.generateResultData(getUser(), getContainer(), provider, rawData, outputData);
+        }
+
+        factory.setInputDatas(inputData)
+                .setOutputDatas(outputData)
+                .setInputMaterials(inputMaterial)
+                .setOutputMaterials(outputMaterial);
 
         AssayRunUploadContext<ProviderType> uploadContext = factory.create();
 
@@ -229,6 +266,7 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         private String _targetStudy;
         private Map<String, String> _properties = new HashMap<>();
         private Map<String, String> _batchProperties = new HashMap<>();
+        private JSONArray _dataRows;
         private String _runFilePath;
         private String _module;
 
@@ -320,6 +358,16 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         public void setBatchProperties(Map<String, String> properties)
         {
             _batchProperties = properties;
+        }
+
+        public JSONArray getDataRows()
+        {
+            return _dataRows;
+        }
+
+        public void setDataRows(JSONArray dataRows)
+        {
+            _dataRows = dataRows;
         }
 
         public String getRunFilePath()
