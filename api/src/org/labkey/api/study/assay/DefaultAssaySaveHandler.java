@@ -32,7 +32,6 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.AssayJSONConverter;
-import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -321,26 +320,6 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         }
     }
 
-    protected ExpData generateResultData(ViewContext context, ExpRun run, JSONArray dataArray, Map<ExpData, String> outputData)
-    {
-        ExpData newData = null;
-
-        // Don't create an empty result data file if there are other outputs from this run, or if the user didn't
-        // include any data rows
-        if (dataArray.length() > 0 && outputData.isEmpty())
-        {
-            DataType dataType = getProvider().getDataType();
-            if (dataType == null)
-                dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
-
-            newData = DefaultAssayRunCreator.createData(run.getContainer(), null, "Analysis Results", dataType, true);
-            newData.save(context.getUser());
-            outputData.put(newData, ExpDataRunInput.DEFAULT_ROLE);
-        }
-
-        return newData;
-    }
-
     protected Map<ExpData, String> getInputData(ViewContext context, JSONArray inputDataArray) throws ValidationException
     {
         Map<ExpData, String> inputData = new HashMap<>();
@@ -401,7 +380,8 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             outputData.put(handleData(context, dataObject), dataObject.optString(ExperimentJSONConverter.ROLE, ExpDataRunInput.DEFAULT_ROLE));
         }
 
-        ExpData newData = generateResultData(context, run, dataArray, outputData);
+        List<Map<String, Object>> dataRows = dataArray.toMapList();
+        ExpData newData = DefaultAssayRunCreator.generateResultData(context.getUser(), run.getContainer(), getProvider(), dataRows, (Map)outputData);
 
         Map<ExpMaterial, String> outputMaterial = new HashMap<>();
         for (int i=0; i < outputMaterialArray.length(); i++)
@@ -412,6 +392,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
                 outputMaterial.put(material, materialObject.optString(ExperimentJSONConverter.ROLE, "Material"));
         }
 
+        // CONSIDER: Is this block still needed?
         ExpData tsvData = newData;
         // Try to find a data object to attach our data rows to
         if (tsvData == null && !outputData.isEmpty())
@@ -428,9 +409,9 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             }
         }
 
-        if (tsvData != null && dataArray != null)
+        if (tsvData != null && dataRows != null)
         {
-            AssayRunUploadContext uploadContext = createRunUploadContext(context, protocol, runJsonObject, dataArray,
+            AssayRunUploadContext uploadContext = createRunUploadContext(context, protocol, runJsonObject, dataRows,
                     inputData, outputData, inputMaterial, outputMaterial);
 
             saveExperimentRun(uploadContext, batch, run);
@@ -438,26 +419,27 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
     }
 
     @Nullable
-    protected AssayRunUploadContext createRunUploadContext(ViewContext context, ExpProtocol protocol, JSONObject runJsonObject, JSONArray runDataArray,
+    protected AssayRunUploadContext createRunUploadContext(ViewContext context, ExpProtocol protocol, JSONObject runJsonObject, List<Map<String, Object>> dataRows,
                                                            Map<ExpData, String> inputData, Map<ExpData, String> outputData,
                                                            Map<ExpMaterial, String> inputMaterial, Map<ExpMaterial, String> outputMaterial)
     {
-        if (runDataArray != null)
+        if (dataRows != null)
         {
             AssayRunUploadContext.Factory factory = createRunUploadContext(protocol, context);
             factory.setInputDatas(inputData);
 
-            if (factory instanceof ModuleRunUploadContext.Factory)
+            if (runJsonObject != null && runJsonObject.has(ExperimentJSONConverter.PROPERTIES))
             {
-                ModuleRunUploadContext.Factory moduleContextFactory = (ModuleRunUploadContext.Factory)factory;
-                moduleContextFactory.setJsonObject(runJsonObject);
-                moduleContextFactory.setRawData(runDataArray.toMapList());
-
-                // TODO: Move the .setOutputDatas and materials to the AssayRunUploadContext.Factory
-                moduleContextFactory.setOutputDatas(outputData);
-                moduleContextFactory.setInputMaterials(inputMaterial);
-                moduleContextFactory.setOutputMaterials(outputMaterial);
+                Map<String, Object> runProperties = runJsonObject.getJSONObject(ExperimentJSONConverter.PROPERTIES);
+                factory.setRunProperties(runProperties);
+                // BUGBUG?: The original ModuleRunUploadForm sets batch properties from the runJsonObject ?!! maybe we shouldn't do that
+                factory.setBatchProperties(runProperties);
             }
+            factory.setUploadedData(Collections.emptyMap());
+            factory.setRawData(dataRows);
+            factory.setOutputDatas(outputData);
+            factory.setInputMaterials(inputMaterial);
+            factory.setOutputMaterials(outputMaterial);
 
             return factory.create();
         }

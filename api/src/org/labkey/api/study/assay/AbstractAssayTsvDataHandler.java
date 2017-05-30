@@ -420,6 +420,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
     protected abstract boolean shouldAddInputMaterials();
 
+    // NOTE: Calls filterColumns which mutates rawData in-place
     private void checkColumns(Domain dataDomain, Set<String> actual, List<String> missing, List<String> unexpected, List<Map<String, Object>> rawData, boolean strict)
     {
         Set<String> checkSet = new CaseInsensitiveHashSet();
@@ -466,6 +467,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
+    // NOTE: Mutates the rawData list in-place
     private void filterColumns(Domain domain, Set<String> actual, List<Map<String, Object>> rawData)
     {
         Map<String,String> expectedKey2ActualKey = new HashMap<>();
@@ -494,6 +496,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
     /**
      * TODO: Replace with a DataIterator pipeline
+     * NOTE: Mutates the rawData list in-place
      * @return the set of materials that are inputs to this run
      */
     private Map<ExpMaterial, String> checkData(Container container, User user, ContainerFilterable dataTable, Domain dataDomain, List<Map<String, Object>> rawData, DataLoaderSettings settings, ParticipantVisitResolver resolver) throws IOException, ValidationException, ExperimentException
@@ -944,6 +947,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
     /** Wraps each map in a version that can be queried based on on any of the aliases (name, property URI, import
      * aliases, etc for a given property */
+    // NOTE: Mutates the rawData list in place
     protected List<Map<String, Object>> convertPropertyNamesToURIs(List<Map<String, Object>> dataMaps, Domain domain)
     {
         // Get the mapping of different names to the set of domain properties

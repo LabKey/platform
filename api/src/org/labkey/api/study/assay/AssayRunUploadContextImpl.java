@@ -17,10 +17,12 @@ package org.labkey.api.study.assay;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.qc.TransformResult;
@@ -33,7 +35,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableMap;
 
 /**
  * User: kevink
@@ -58,7 +64,11 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final Integer _reRunId;
     private final Map<String, String> _rawRunProperties;
     private final Map<String, String> _rawBatchProperties;
+    private final List<Map<String, Object>> _rawData;
     private final Map<Object, String> _inputDatas;
+    private final Map<Object, String> _inputMaterials;
+    private final Map<Object, String> _outputDatas;
+    private final Map<Object, String> _outputMaterials;
 
     // Lazily created fields
     private Map<String, File> _uploadedData;
@@ -80,20 +90,16 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         _name = factory._name;
         _comments = factory._comments;
 
-        if (factory._rawRunProperties == null)
-            _rawRunProperties = Collections.emptyMap();
-        else
-            _rawRunProperties = Collections.unmodifiableMap(factory._rawRunProperties);
+        _rawRunProperties = factory._rawRunProperties == null ? emptyMap() : unmodifiableMap(factory._rawRunProperties);
+        _rawBatchProperties = factory._rawBatchProperties == null ? emptyMap() : unmodifiableMap(factory._rawBatchProperties);
 
-        if (factory._rawBatchProperties == null)
-            _rawBatchProperties = Collections.emptyMap();
-        else
-            _rawBatchProperties = Collections.unmodifiableMap(factory._rawBatchProperties);
+        _inputDatas = factory._inputDatas == null ? emptyMap() : unmodifiableMap(factory._inputDatas);
+        _inputMaterials = factory._inputMaterials == null ? emptyMap() : unmodifiableMap(factory._inputMaterials);
+        _outputDatas = factory._outputDatas == null ? emptyMap() : unmodifiableMap(factory._outputDatas);
+        _outputMaterials = factory._outputMaterials == null ? emptyMap() : unmodifiableMap(factory._outputMaterials);
 
-        if (factory._inputDatas == null)
-            _inputDatas = Collections.emptyMap();
-        else
-            _inputDatas = Collections.unmodifiableMap(factory._inputDatas);
+        // TODO: Wrap the rawData in an unmodifiableList -- unfortunately, AbstractAssayTsvDataHandler.checkData mutates the list items in-place
+        _rawData = factory._rawData;
 
         _uploadedData = factory._uploadedData;
 
@@ -144,21 +150,8 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     {
         if (_runProperties == null)
         {
-            Map<DomainProperty, String> properties = new HashMap<>();
-            if (_rawRunProperties != null)
-            {
-                for (DomainProperty prop : _provider.getRunDomain(_protocol).getProperties())
-                {
-                    String value;
-                    if (_rawRunProperties.containsKey(prop.getName()))
-                        value = _rawRunProperties.get(prop.getName());
-                    else
-                        value = _rawRunProperties.get(prop.getPropertyURI());
-                    properties.put(prop, value);
-                }
-
-            }
-            _runProperties = properties;
+            Domain runDomain = _provider.getRunDomain(_protocol);
+            _runProperties = propertiesFromRawValues(runDomain, getContainer(), _rawRunProperties);
         }
         return _runProperties;
     }
@@ -167,23 +160,29 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     {
         if (_batchProperties == null)
         {
-            Map<DomainProperty, String> properties = new HashMap<>();
-            if (_rawBatchProperties != null)
-            {
-                for (DomainProperty prop : _provider.getBatchDomain(_protocol).getProperties())
-                {
-                    String value;
-                    if (_rawBatchProperties.containsKey(prop.getName()))
-                        value = _rawBatchProperties.get(prop.getName());
-                    else
-                        value = _rawBatchProperties.get(prop.getPropertyURI());
-                    properties.put(prop, value);
-                }
-
-            }
-            _batchProperties = properties;
+            Domain batchDomain = _provider.getBatchDomain(_protocol);
+            _batchProperties = propertiesFromRawValues(batchDomain, getContainer(), _rawBatchProperties);
         }
         return _batchProperties;
+    }
+
+    private static Map<DomainProperty, String> propertiesFromRawValues(Domain domain, Container c, Map<String, String> rawProperties)
+    {
+        Map<DomainProperty, String> properties = new HashMap<>();
+        if (rawProperties != null && !rawProperties.isEmpty())
+        {
+            for (DomainProperty prop : domain.getProperties())
+            {
+                String value;
+                if (rawProperties.containsKey(prop.getName()))
+                    value = rawProperties.get(prop.getName());
+                else
+                    value = rawProperties.get(prop.getPropertyURI());
+                properties.put(prop, value);
+            }
+        }
+
+        return unmodifiableMap(properties);
     }
 
     public String getComments()
@@ -232,7 +231,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         {
             try
             {
-                AssayDataCollector<AssayRunUploadContextImpl<?>> collector = new FileUploadDataCollector<>(1, Collections.emptyMap(), FILE_INPUT_NAME);
+                AssayDataCollector<AssayRunUploadContextImpl<?>> collector = new FileUploadDataCollector<>(1, emptyMap(), FILE_INPUT_NAME);
                 Map<String, File> files = collector.createData(this);
                 // HACK: rekey the map using PRIMARY_FILE instead of FILE_INPUT_NAME
                 _uploadedData = Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, files.get(FILE_INPUT_NAME));
@@ -245,11 +244,39 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         return _uploadedData;
     }
 
+    @Nullable
+    @Override
+    public List<Map<String, Object>> getRawData()
+    {
+        return _rawData;
+    }
+
     @NotNull
     @Override
     public Map<Object, String> getInputDatas()
     {
         return _inputDatas;
+    }
+
+    @NotNull
+    @Override
+    public Map<Object, String> getOutputDatas()
+    {
+        return _outputDatas;
+    }
+
+    @NotNull
+    @Override
+    public Map<Object, String> getInputMaterials()
+    {
+        return _inputMaterials;
+    }
+
+    @NotNull
+    @Override
+    public Map<Object, String> getOutputMaterials()
+    {
+        return _outputMaterials;
     }
 
     public ProviderType getProvider()

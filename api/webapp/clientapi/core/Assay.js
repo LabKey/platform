@@ -477,9 +477,10 @@ LABKEY.Assay = new function()
          * @param {Object} [config.batchProperties] JSON formatted batch properties.
          * Only used if batchId is not provided when creating a new batch.
          * @param {String} [config.runFilePath] Absolute or relative path to assay data file to be imported.
-         * The file must exist under the file or pipeline root of the container.
+         * The file must exist under the file or pipeline root of the container.  Only one of 'files', 'runFilePath', or 'dataRows' can be provided.
          * @param {Array} [config.files] Array of <a href='https://developer.mozilla.org/en-US/docs/DOM/File'><code>File</code></a> objects
-         * or form file input elements to import.
+         * or form file input elements to import.  Only one of 'files', 'runFilePath', or 'dataRows' can be provided.
+         * @param {Array} [config.dataRows] Array of assay results to import.  Only one of 'files', 'runFilePath', or 'dataRows' can be provided.
          * @param {Function} config.success The success callback function will be called with the following arguments:
          * <ul>
          *     <li><b>json</b>: The success response object contains two properties:
@@ -509,6 +510,24 @@ LABKEY.Assay = new function()
          *             assayId: 3,
          *             name: "new run",
          *             runFilePath: "assaydata/2017-05-10/datafile.tsv",
+         *             success: function (json, response) {
+         *                 window.location = json.successurl;
+         *             },
+         *             failure: error (json, response) {
+         *             }
+         *         });
+         *
+         * @example Import JSON array of data rows:
+         *         LABKEY.Assay.importRun({
+         *             assayId: 3,
+         *             name: "new run",
+         *             dataRows: [{
+         *                  sampleId: "S-1",
+         *                  dataField: 100
+         *             },{
+         *                  sampleId: "S-2",
+         *                  dataField: 200
+         *             }]
          *             success: function (json, response) {
          *                 window.location = json.successurl;
          *             },
@@ -572,8 +591,11 @@ LABKEY.Assay = new function()
                 }
             }
 
-            if (files.length == 0 && !config.runFilePath)
-                throw new Error("At least one file or runFilePath is required");
+            if (files.length == 0 && !config.runFilePath && !config.dataRows)
+                throw new Error("At least one of 'file', 'runFilePath', or 'dataRows' is required");
+
+            if ((files.length > 0 ? 1 : 0) + (config.runFilePath ? 1 : 0) + (config.dataRows ? 1 : 0) > 1)
+                throw new Error("Only one of 'file', 'runFilePath', or 'dataRows' is allowed");
 
             var formData = new FormData();
             formData.append("assayId", config.assayId);
@@ -593,6 +615,9 @@ LABKEY.Assay = new function()
                 for (var key in config.batchProperties)
                     formData.append("batchProperties['" + key + "']", config.batchProperties[key]);
             }
+
+            if (config.dataRows)
+                formData.append("dataRows", JSON.stringify(config.dataRows));
 
             if (config.runFilePath)
                 formData.append("runFilePath", config.runFilePath);

@@ -242,44 +242,52 @@ public class ExperimentJSONConverter
         return jsonObject;
     }
 
-    public static Map<DomainProperty, Object> convertProperties(JSONObject propertiesJsonObject, List<? extends DomainProperty> dps, Container container, boolean ignoreMissingProperties)
+    public static Map<DomainProperty, Object> convertProperties(Map<String, ? extends Object> propertiesJsonObject, List<? extends DomainProperty> dps, Container container, boolean ignoreMissingProperties)
     {
         Map<DomainProperty, Object> properties = new HashMap<>();
         for (DomainProperty dp : dps)
         {
-            if (propertiesJsonObject.has(dp.getName()))
+            if (propertiesJsonObject.containsKey(dp.getName()))
             {
-                Class javaType = dp.getPropertyDescriptor().getPropertyType().getJavaType();
-                Object convertedValue = ConvertUtils.lookup(javaType).convert(javaType, propertiesJsonObject.get(dp.getName()));
-
-                // We need to special case Files to apply extra checks based on the context from which they're being
-                // referenced
-                if (javaType.equals(File.class) && convertedValue instanceof File)
-                {
-                    File f = (File)convertedValue;
-                    PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
-                    FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
-                    File fileRoot = fileService == null ? null : fileService.getFileRoot(container);
-                    boolean acceptableFile = (root != null && root.isUnderRoot((File)convertedValue)) || (fileRoot != null && URIUtil.isDescendant(fileRoot.toURI(), f.toURI()));
-                    if (!acceptableFile)
-                    {
-                        // Don't let an assay reference a file that doesn't fall under this container's file root
-                        // and/or pipeline root.
-                        // This would be a security problem.
-                        convertedValue = null;
-                    }
-                }
-                
-                properties.put(dp, convertedValue);
+                Object value = convertProperty(propertiesJsonObject.get(dp.getName()), dp, container);
+                properties.put(dp, value);
             }
-            else
+            else if (propertiesJsonObject.containsKey(dp.getPropertyURI()))
             {
-                if (!ignoreMissingProperties)
-                {
-                    properties.put(dp, null);
-                }
+                Object value = convertProperty(propertiesJsonObject.get(dp.getPropertyURI()), dp, container);
+                properties.put(dp, value);
+            }
+            else if (!ignoreMissingProperties)
+            {
+                properties.put(dp, null);
             }
         }
         return properties;
+    }
+
+    private static Object convertProperty(Object value, DomainProperty dp, Container container)
+    {
+        Class javaType = dp.getPropertyDescriptor().getPropertyType().getJavaType();
+        Object convertedValue = ConvertUtils.lookup(javaType).convert(javaType, value);
+
+        // We need to special case Files to apply extra checks based on the context from which they're being
+        // referenced
+        if (javaType.equals(File.class) && convertedValue instanceof File)
+        {
+            File f = (File)convertedValue;
+            PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
+            FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
+            File fileRoot = fileService == null ? null : fileService.getFileRoot(container);
+            boolean acceptableFile = (root != null && root.isUnderRoot((File)convertedValue)) || (fileRoot != null && URIUtil.isDescendant(fileRoot.toURI(), f.toURI()));
+            if (!acceptableFile)
+            {
+                // Don't let an assay reference a file that doesn't fall under this container's file root
+                // and/or pipeline root.
+                // This would be a security problem.
+                convertedValue = null;
+            }
+        }
+
+        return convertedValue;
     }
 }

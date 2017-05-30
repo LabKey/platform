@@ -32,6 +32,8 @@ import org.labkey.api.writer.ContainerUser;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -79,6 +81,12 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     @NotNull
     Map<String, File> getUploadedData() throws ExperimentException;
 
+    @Nullable
+    default List<Map<String, Object>> getRawData()
+    {
+        return null;
+    }
+
     /**
      * Map of inputs to roles that will be attached to the assay run.
      * The map key will be converted into an ExpData object using {@link org.labkey.api.data.ExpDataFileConverter}
@@ -89,6 +97,24 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
      */
     @NotNull
     Map<Object, String> getInputDatas();
+
+    @NotNull
+    default Map<Object, String> getOutputDatas()
+    {
+        return Collections.emptyMap();
+    }
+
+    @NotNull
+    default Map<? extends Object, String> getInputMaterials() throws ExperimentException
+    {
+        return Collections.emptyMap();
+    }
+
+    @NotNull
+    default Map<Object, String> getOutputMaterials()
+    {
+        return Collections.emptyMap();
+    }
 
     ProviderType getProvider();
 
@@ -119,7 +145,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     /**
      * Builder pattern for creating a AssayRunUploadContext instance.
      */
-    public static abstract class Factory<ProviderType extends AssayProvider, FACTORY extends Factory<ProviderType, FACTORY>>
+    abstract class Factory<ProviderType extends AssayProvider, FACTORY extends Factory<ProviderType, FACTORY>>
     {
         // Required fields
         protected final ExpProtocol _protocol;
@@ -137,6 +163,10 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected Map<String, String> _rawRunProperties;
         protected Map<String, String> _rawBatchProperties;
         protected Map<Object, String> _inputDatas;
+        protected Map<Object, String> _outputDatas;
+        protected Map<Object, String> _inputMaterials;
+        protected Map<Object, String> _outputMaterials;
+        protected List<Map<String, Object>> _rawData;
         protected Map<String, File> _uploadedData;
 
         public Factory(
@@ -222,14 +252,45 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
             return self();
         }
 
+        public FACTORY setOutputDatas(Map<Object, String> outputDatas)
+        {
+            _outputDatas = outputDatas;
+            return self();
+        }
+
+        public FACTORY setInputMaterials(Map<Object, String> inputMaterials)
+        {
+            _inputMaterials = inputMaterials;
+            return self();
+        }
+
+        public FACTORY setOutputMaterials(Map<Object, String> outputMaterials)
+        {
+            _outputMaterials = outputMaterials;
+            return self();
+        }
+
         /**
          * Map of file name to uploaded file that will be parsed and imported by the assay's DataHandler.
+         * One of either uploadedData or rawData can be used, not both.
          */
         public final FACTORY setUploadedData(Map<String, File> uploadedData)
         {
             _uploadedData = uploadedData;
             return self();
         }
+
+        /**
+         * Result data to import.
+         * One of either uploadedData or rawData can be used, not both.
+         */
+        public FACTORY setRawData(List<Map<String, Object>> rawData)
+        {
+            _rawData = rawData;
+            return self();
+        }
+
+
 
         /** FACTORY and self() make it easier to chain setters while returning the correct subclass type. */
         public abstract FACTORY self();
