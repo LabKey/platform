@@ -282,7 +282,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
      */
     public boolean allowsProtected(FieldType field)
     {
-        return !(isMandatoryField(field) || (getProtectedNotAllowedFieldNames() != null && field.getName() != null && getProtectedNotAllowedFieldNames().contains(field.getName().toLowerCase())));
+        return !(getProtectedNotAllowedFieldNames() != null && field.getName() != null && getProtectedNotAllowedFieldNames().contains(field.getName().toLowerCase()));
     }
 
     /**
