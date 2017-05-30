@@ -285,7 +285,7 @@ function verifySelected(form, url, method, pluralNoun, pluralConfirmText, singul
     }
     else
     {
-        LABKEY.Utils.alert('Please select one or more ' + pluralNoun + '.');
+        LABKEY.Utils.alert('Error', 'Please select one or more ' + pluralNoun + '.');
         return false;
     }
 }
