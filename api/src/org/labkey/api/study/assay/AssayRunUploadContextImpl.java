@@ -173,12 +173,12 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         {
             for (DomainProperty prop : domain.getProperties())
             {
-                String value;
+                Object value;
                 if (rawProperties.containsKey(prop.getName()))
                     value = rawProperties.get(prop.getName());
                 else
                     value = rawProperties.get(prop.getPropertyURI());
-                properties.put(prop, value);
+                properties.put(prop, value == null ? null : String.valueOf(value));
             }
         }
 
