@@ -21,8 +21,13 @@ dependencies {
     external group: 'org.apache.geronimo.specs', name: 'geronimo-j2ee-connector_1.5_spec', version: geronimoJ2eeConnector15SpecVersion
 //    external group: 'org.apache.geronimo.specs', name: 'geronimo-j2ee-management_1.0_spec', version: geronimoJ2eeManagement10SpecVersion
     external group: 'org.safehaus.jug', name: 'jug', version: jugVersion
-    external group: 'dom4j', name: 'dom4j', version: dom4jVersion
-
+    external("dom4j:dom4j:${dom4jVersion}")
+        {
+            // dom4j and jaxen don't play well together for tomcat versions higher than 7.0.33 apparently 
+            // (but seem OK for tomcat8).  We excluee jaxen since that doesn't seem to be required for our purposes
+            // Another possibility here would be to upgrade to jaxen-1.1.6 and dom4j-1.6.1
+            exclude group:"jaxen", module: "jaxen"
+        }
 
 
     BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: ":server:modules:core", depProjectConfig: 'apiCompile')
