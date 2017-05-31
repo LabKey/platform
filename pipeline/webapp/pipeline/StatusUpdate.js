@@ -17,8 +17,7 @@
  * limitations under the License.
  * <p/>
  */
-
-Ext.namespace('LABKEY', 'LABKEY.pipeline');
+Ext4.ns('LABKEY.pipeline');
 
 /**
   * @description Status class for retrieving pipeline status data region.
@@ -63,7 +62,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
 
     var setStatusFailure = function(b, msg)
     {
-        var el = Ext.get('statusFailureDiv');
+        var el = Ext4.get('statusFailureDiv');
         if (el)
         {
             if (b)
@@ -86,9 +85,9 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
             url = url + "&" + document.location.search.substring(1);
         }
 
-        Ext.Ajax.request({
-            url : url,
-            method : 'GET',
+        LABKEY.Ajax.request({
+            url: url,
+            method: 'GET',
             success: onUpdateSuccess,
             failure: onUpdateFailure
         });
@@ -103,10 +102,10 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
         }
 
         // get div to update
-        var el = Ext.get('statusRegionDiv');
+        var el = Ext4.get('statusRegionDiv');
 
         // fail if there were any problems
-        if(el && response && response.responseText)
+        if (el && response && response.responseText)
         {
             if (response.responseText.indexOf('StatusFiles') < 0)
             {
@@ -114,7 +113,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
             }
             else
             {
-                var newText = Ext.util.Format.stripTags(Ext.util.Format.stripScripts(response.responseText));
+                var newText = Ext4.util.Format.stripTags(Ext4.util.Format.stripScripts(response.responseText));
                 if (_lastUpdate != newText)
                 {
                     var dr = LABKEY.DataRegions["StatusFiles"];
@@ -148,7 +147,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
         start : function()
         {
             if (_dt == null)
-                _dt = new Ext.util.DelayedTask(update);
+                _dt = new Ext4.util.DelayedTask(update);
             nextUpdate(0);
         }
     }

@@ -76,10 +76,9 @@ public class StatusDataRegion extends DataRegion
         String action = SpringActionController.getActionName(_apiAction);
 
         out.write("<script type=\"text/javascript\">\n" +
-                "LABKEY.requiresExt3(function() {\n" +
+                "LABKEY.requiresExt4Sandbox(function() {\n" +
                     "LABKEY.requiresScript('pipeline/StatusUpdate.js', function(){\n" +
-                        "var su = new LABKEY.pipeline.StatusUpdate(" + PageFlowUtil.jsString(controller) + "," + PageFlowUtil.jsString(action) + "," + PageFlowUtil.jsString(_returnURL.toString()) + ");\n" +
-                        "su.start();\n" +
+                        "new LABKEY.pipeline.StatusUpdate(" + PageFlowUtil.jsString(controller) + "," + PageFlowUtil.jsString(action) + "," + PageFlowUtil.jsString(_returnURL.toString()) + ").start();\n" +
                     "});\n" +
                 "});\n" +
                 "</script>\n");
