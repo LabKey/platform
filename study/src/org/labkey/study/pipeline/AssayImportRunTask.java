@@ -46,7 +46,6 @@ import org.labkey.api.study.assay.AssayDataCollector;
 import org.labkey.api.study.assay.AssayDataType;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunUploadContext;
-import org.labkey.api.study.assay.AssayRunUploadContextImpl;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.pipeline.AssayImportRunTaskFactorySettings;
 import org.labkey.api.study.assay.pipeline.AssayImportRunTaskId;
@@ -300,7 +299,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
     }
 
     // Get the inputs and roles of the first action in the job sequence
-    private Map<File, String> getInputs(PipelineJob job) throws PipelineJobException
+    private Map<?, String> getInputs(PipelineJob job) throws PipelineJobException
     {
         RecordedActionSet actionSet = job.getActionSet();
         List<RecordedAction> actions = new ArrayList<>(actionSet.getActions());
@@ -356,10 +355,10 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
     }
 
     // CONSIDER: Add <runProperties> and <batchProperties> elements to the AssayImportRunTaskType in pipelineTasks.xsd instead of the prefix naming convention.
-    private Map<String, String> getPrefixedProperties(String prefix)
+    private Map<String, Object> getPrefixedProperties(String prefix)
     {
         Map<String, String> params = getJob().getParameters();
-        Map<String, String> props = new HashMap<>();
+        Map<String, Object> props = new HashMap<>();
         for (String key : params.keySet())
         {
             if (key.startsWith(prefix))
@@ -373,12 +372,12 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         return props;
     }
 
-    private Map<String, String> getBatchProperties()
+    private Map<String, Object> getBatchProperties()
     {
         return getPrefixedProperties("assay batch property, ");
     }
 
-    private Map<String, String> getRunProperties()
+    private Map<String, Object> getRunProperties()
     {
         return getPrefixedProperties("assay run property, ");
     }
@@ -427,7 +426,8 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             User user = getJob().getUser();
             Container container = getJob().getContainer();
 
-            AssayRunUploadContextImpl.Factory factory = new AssayRunUploadContextImpl.Factory(protocol, provider, user, container);
+            AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> factory
+                    = provider.createRunUploadFactory(protocol, user, container);
 
             factory.setName(getName());
 

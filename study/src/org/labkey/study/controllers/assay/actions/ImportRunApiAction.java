@@ -69,7 +69,7 @@ import static org.labkey.api.study.assay.AssayDataCollector.PRIMARY_FILE;
 @ActionNames("importRun")
 @RequiresPermission(InsertPermission.class)
 @ApiVersion(12.3)
-public class ImportRunApiAction<ProviderType extends AssayProvider> extends MutatingApiAction<ImportRunApiAction.ImportRunApiForm>
+public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.ImportRunApiForm>
 {
     @Override
     public ApiResponse execute(ImportRunApiForm form, BindException errors) throws Exception
@@ -80,8 +80,8 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         Integer batchId;
         String name;
         String comments;
-        Map<String, String> runProperties;
-        Map<String, String> batchProperties;
+        Map<String, Object> runProperties;
+        Map<String, Object> batchProperties;
         String targetStudy;
         Integer reRunId;
         String runFilePath;
@@ -112,11 +112,11 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
             batchId = json.optInt(AssayJSONConverter.BATCH_ID);
             name = json.optString(ExperimentJSONConverter.NAME, null);
             comments = json.optString(ExperimentJSONConverter.COMMENT, null);
-            runProperties = (Map)json.optJSONObject(ExperimentJSONConverter.PROPERTIES);
+            runProperties = json.optJSONObject(ExperimentJSONConverter.PROPERTIES);
             if (runProperties != null)
                 runProperties = new CaseInsensitiveHashMap<>(runProperties);
 
-            batchProperties = (Map)json.optJSONObject("batchProperties");
+            batchProperties = json.optJSONObject("batchProperties");
             if (batchProperties != null)
                 batchProperties = new CaseInsensitiveHashMap<>(batchProperties);
 
@@ -188,7 +188,8 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
             }
         }
 
-        AssayRunUploadContext.Factory factory = provider.createRunUploadFactory(protocol, getViewContext());
+        AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> factory
+                = provider.createRunUploadFactory(protocol, getViewContext());
         factory.setName(name)
                 .setComments(comments)
                 .setRunProperties(runProperties)
@@ -218,7 +219,7 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
                 .setInputMaterials(inputMaterial)
                 .setOutputMaterials(outputMaterial);
 
-        AssayRunUploadContext<ProviderType> uploadContext = factory.create();
+        AssayRunUploadContext<? extends AssayProvider> uploadContext = factory.create();
 
         try
         {
@@ -264,8 +265,8 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         private String _name;
         private Integer _reRunId;
         private String _targetStudy;
-        private Map<String, String> _properties = new HashMap<>();
-        private Map<String, String> _batchProperties = new HashMap<>();
+        private Map<String, Object> _properties = new HashMap<>();
+        private Map<String, Object> _batchProperties = new HashMap<>();
         private JSONArray _dataRows;
         private String _runFilePath;
         private String _module;
@@ -340,22 +341,22 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
             _reRunId = reRunId;
         }
 
-        public Map<String, String> getProperties()
+        public Map<String, Object> getProperties()
         {
             return _properties;
         }
 
-        public void setProperties(Map<String, String> properties)
+        public void setProperties(Map<String, Object> properties)
         {
             _properties = properties;
         }
 
-        public Map<String, String> getBatchProperties()
+        public Map<String, Object> getBatchProperties()
         {
             return _batchProperties;
         }
 
-        public void setBatchProperties(Map<String, String> properties)
+        public void setBatchProperties(Map<String, Object> properties)
         {
             _batchProperties = properties;
         }
