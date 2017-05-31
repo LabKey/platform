@@ -233,6 +233,11 @@ td.labkey-blank-cell, th.labkey-blank-cell {
   span {
     display: none;
     padding-left: 5px;
+
+    &.fa-chevron-circle-down {
+      color: lightgray;
+      display: inline;
+    }
   }
 
   &.labkey-filtered {

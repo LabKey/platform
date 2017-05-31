@@ -55,10 +55,11 @@ public class SummaryStatisticsAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public String getScript(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        return "LABKEY.ColumnSummaryStatistics.showDialogFromDataRegion(" +
+        // Consider: Base provider could wrap any getScript() result with addClientDependencies() set
+        return "LABKEY.requiresScript('query/ColumnSummaryStatistics',function(){LABKEY.ColumnSummaryStatistics.showDialogFromDataRegion(" +
             PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "," +
             PageFlowUtil.jsString(col.getFieldKey().toString()) +
-        ");";
+        ");});";
     }
 
     @Override

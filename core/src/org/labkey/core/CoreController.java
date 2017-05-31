@@ -2107,6 +2107,7 @@ public class CoreController extends SpringActionController
                     if (ClientDependency.TYPE.lib.equals(cd.getPrimaryType()))
                     {
                         Set<String> dependencies = cd.getCssPaths(getContainer());
+                        dependencies.addAll(PageFlowUtil.getExtJSStylesheets(getContainer(), Collections.singleton(cd)));
                         dependencies.addAll(cd.getJsPaths(getContainer()));
 
                         resources = new JSONArray(dependencies);

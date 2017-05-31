@@ -158,6 +158,7 @@ public class PipelineQueryView extends QueryView
                 ActionURL deleteURL = new ActionURL(StatusController.DeleteStatusAction.class, getContainer());
                 deleteURL.addParameter(ActionURL.Param.returnUrl, _returnURL.toString());
                 ActionButton deleteStatus = new ActionButton(deleteURL, "Delete");
+                deleteStatus.setIconCls("trash");
                 deleteStatus.setRequiresSelection(true);
                 deleteStatus.setActionType(ActionButton.Action.POST);
                 deleteStatus.setDisplayPermission(DeletePermission.class);
