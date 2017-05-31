@@ -425,8 +425,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
     {
         if (dataRows != null)
         {
-            AssayRunUploadContext.Factory factory = createRunUploadContext(protocol, context);
-            factory.setInputDatas(inputData);
+            AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> factory = createRunUploadContext(protocol, context);
 
             if (runJsonObject != null && runJsonObject.has(ExperimentJSONConverter.PROPERTIES))
             {
@@ -437,6 +436,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             }
             factory.setUploadedData(Collections.emptyMap());
             factory.setRawData(dataRows);
+            factory.setInputDatas(inputData);
             factory.setOutputDatas(outputData);
             factory.setInputMaterials(inputMaterial);
             factory.setOutputMaterials(outputMaterial);
@@ -447,7 +447,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
     }
 
     @NotNull
-    protected AssayRunUploadContext.Factory createRunUploadContext(ExpProtocol protocol, ViewContext context)
+    protected AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadContext(ExpProtocol protocol, ViewContext context)
     {
         AssayProvider provider = getProvider();
         return provider.createRunUploadFactory(protocol, context);

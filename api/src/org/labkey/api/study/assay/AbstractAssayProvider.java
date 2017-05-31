@@ -1281,9 +1281,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public AssayRunUploadContext.Factory createRunUploadFactory(ExpProtocol protocol, ViewContext context)
+    public AssayRunUploadContext.Factory<? extends AbstractAssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, ViewContext context)
     {
         return new AssayRunUploadContextImpl.Factory<>(protocol, this, context);
+    }
+
+    @Override
+    public AssayRunUploadContext.Factory<? extends AbstractAssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, User user, Container c)
+    {
+        return new AssayRunUploadContextImpl.Factory<>(protocol, this, user, c);
     }
 
     protected Boolean getBooleanProperty(ExpProtocol protocol, String propertySuffix)

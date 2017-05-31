@@ -82,6 +82,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Collections.unmodifiableCollection;
+
 /**
  * User: jeckels
  * Date: Oct 12, 2011
@@ -392,10 +394,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 if (targetStudyId != null && targetStudyId.length() > 0)
                     targetStudy = ContainerManager.getForId(targetStudyId);
 
-                resolver = resolverType.createResolver(Collections.unmodifiableCollection(inputMaterials.keySet()),
-                        Collections.unmodifiableCollection(inputDatas.keySet()),
-                        Collections.unmodifiableCollection(outputMaterials.keySet()),
-                        Collections.unmodifiableCollection(outputDatas.keySet()),
+                resolver = resolverType.createResolver(
+                        unmodifiableCollection(inputMaterials.keySet()),
+                        unmodifiableCollection(inputDatas.keySet()),
+                        unmodifiableCollection(outputMaterials.keySet()),
+                        unmodifiableCollection(outputDatas.keySet()),
                         context.getContainer(),
                         targetStudy, context.getUser());
             }
@@ -511,22 +514,22 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             // Use the DomainProperty name as the role
             String role = dp.getName();
 
+            String value = entry.getValue();
             if (pt.getJdbcType().isText())
             {
-                String sampleName = entry.getValue();
-                addMaterialByName(context, inputMaterials, sampleName, role, searchContainers, ss);
+                addMaterialByName(context, inputMaterials, value, role, searchContainers, ss);
             }
             else if (pt.getJdbcType().isInteger())
             {
                 try
                 {
-                    int sampleRowId = Integer.parseInt(entry.getValue());
+                    int sampleRowId = Integer.parseInt(value);
                     addMaterialById(context, inputMaterials, sampleRowId, role, searchContainers, ss);
                 }
                 catch (NumberFormatException ex)
                 {
                     Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
-                    logger.warn("Failed to parse sample lookup '" + entry.getValue() + "' as integer.");
+                    logger.warn("Failed to parse sample lookup '" + value + "' as integer.");
                 }
             }
         }
@@ -569,17 +572,17 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     protected void addInputDatas(AssayRunUploadContext<ProviderType> context, @NotNull Map<ExpData, String> inputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException
     {
-        Map<Object, String> inputs = context.getInputDatas();
+        Map<?, String> inputs = context.getInputDatas();
         addDatas(context.getContainer(), inputDatas, inputs);
     }
 
     // CONSIDER: Move this to ExperimentService
     // Resolve submitted values into ExpData objects
-    protected void addDatas(Container c, @NotNull Map<ExpData, String> resolved, @NotNull Map<Object, String> unresolved)
+    protected void addDatas(Container c, @NotNull Map<ExpData, String> resolved, @NotNull Map<?, String> unresolved)
     {
         ExpDataFileConverter expDataFileConverter = new ExpDataFileConverter();
 
-        for (Map.Entry<Object, String> entry : unresolved.entrySet())
+        for (Map.Entry<?, String> entry : unresolved.entrySet())
         {
             Object o = entry.getKey();
             String role = entry.getValue();
@@ -670,9 +673,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     // CONSIDER: Move this to ExperimentService
     // Resolve submitted values into ExpMaterial objects
-    protected void addMaterials(AssayRunUploadContext<ProviderType> context, @NotNull Map<ExpMaterial, String> resolved, @NotNull Map<? extends Object, String> unresolved, @NotNull Set<Container> searchContainers) throws ExperimentException
+    protected void addMaterials(AssayRunUploadContext<ProviderType> context, @NotNull Map<ExpMaterial, String> resolved, @NotNull Map<?, String> unresolved, @NotNull Set<Container> searchContainers) throws ExperimentException
     {
-        for (Map.Entry<? extends Object, String> entry : unresolved.entrySet())
+        for (Map.Entry<?, String> entry : unresolved.entrySet())
         {
             Object o = entry.getKey();
             String role = entry.getValue();
@@ -760,7 +763,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             addRelatedOutputDatas(context, inputDatas, outputDatas, primaryFile);
         }
 
-        Map<Object, String> outputs = context.getOutputDatas();
+        Map<?, String> outputs = context.getOutputDatas();
         addDatas(context.getContainer(), outputDatas, outputs);
     }
 

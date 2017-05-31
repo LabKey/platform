@@ -298,6 +298,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /**
      * Create a factory to build an AssayRunUploadContext for importing an run.
      */
-    AssayRunUploadContext.Factory createRunUploadFactory(ExpProtocol protocol, ViewContext context);
+    AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, ViewContext context);
+    AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, User user, Container c);
 
 }

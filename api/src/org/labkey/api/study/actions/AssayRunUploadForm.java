@@ -78,6 +78,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * User: brittp
 * Date: Jul 11, 2007
@@ -212,7 +214,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private List<AssayDataCollector> getDataCollectors()
     {
         if (_collectors == null)
-            _collectors = getProvider().getDataCollectors(Collections.emptyMap(), this);
+            _collectors = getProvider().getDataCollectors(emptyMap(), this);
         return _collectors;
     }
 
@@ -274,7 +276,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 }
                 return _uploadedData;
             }
-            return Collections.emptyMap();
+            return emptyMap();
         }
         return _uploadedData;
     }
@@ -356,16 +358,16 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 }
             }
             else
-                _additionalFiles = Collections.emptyMap();
+                _additionalFiles = emptyMap();
         }
         return _additionalFiles;
     }
 
     @NotNull
     @Override
-    public Map<Object, String> getInputDatas()
+    public Map<?, String> getInputDatas()
     {
-        return Collections.emptyMap();
+        return emptyMap();
     }
 
     @NotNull
@@ -674,7 +676,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             _uploadedData = collector.uploadComplete(this, run);
         }
 
-        TsvDataExchangeHandler.removeWorkingDirectory((AssayRunUploadContext)this);
+        TsvDataExchangeHandler.removeWorkingDirectory(this);
     }
 
     @Override

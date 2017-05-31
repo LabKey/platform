@@ -32,9 +32,10 @@ import org.labkey.api.writer.ContainerUser;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.Collections.emptyMap;
 
 /**
  * Provides information needed for assay import attempts, such as the values of batch and run fields, the container
@@ -52,10 +53,10 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     @NotNull
     ExpProtocol getProtocol();
 
-    /** @return values of run fields to be inserted as part of the import */
+    /** @return string values of run fields to be inserted as part of the import.  Values will need to be converted into the target type. */
     Map<DomainProperty, String> getRunProperties() throws ExperimentException;
 
-    /** @return values of batch fields to be inserted as part of the import */
+    /** @return string values of batch fields to be inserted as part of the import.  Values will need to be converted into the target type. */
     Map<DomainProperty, String> getBatchProperties() throws ExperimentException;
 
     String getComments();
@@ -96,24 +97,24 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
      * NOTE: These files will not be parsed or imported by the assay's DataHandler -- use {@link #getUploadedData()} instead.
      */
     @NotNull
-    Map<Object, String> getInputDatas();
+    Map<?, String> getInputDatas();
 
     @NotNull
-    default Map<Object, String> getOutputDatas()
+    default Map<?, String> getOutputDatas()
     {
-        return Collections.emptyMap();
+        return emptyMap();
     }
 
     @NotNull
-    default Map<? extends Object, String> getInputMaterials() throws ExperimentException
+    default Map<?, String> getInputMaterials() throws ExperimentException
     {
-        return Collections.emptyMap();
+        return emptyMap();
     }
 
     @NotNull
-    default Map<Object, String> getOutputMaterials()
+    default Map<?, String> getOutputMaterials()
     {
-        return Collections.emptyMap();
+        return emptyMap();
     }
 
     ProviderType getProvider();
@@ -160,12 +161,12 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected String _name;
         protected String _targetStudy;
         protected Integer _reRunId;
-        protected Map<String, String> _rawRunProperties;
-        protected Map<String, String> _rawBatchProperties;
-        protected Map<Object, String> _inputDatas;
-        protected Map<Object, String> _outputDatas;
-        protected Map<Object, String> _inputMaterials;
-        protected Map<Object, String> _outputMaterials;
+        protected Map<String, Object> _rawRunProperties;
+        protected Map<String, Object> _rawBatchProperties;
+        protected Map<?, String> _inputDatas;
+        protected Map<?, String> _outputDatas;
+        protected Map<?, String> _inputMaterials;
+        protected Map<?, String> _outputMaterials;
         protected List<Map<String, Object>> _rawData;
         protected Map<String, File> _uploadedData;
 
@@ -226,13 +227,19 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
             return self();
         }
 
-        public final FACTORY setBatchProperties(Map<String, String> rawProperties)
+        /**
+         * HTML form POSTed or JSON submitted batch property values.
+         */
+        public final FACTORY setBatchProperties(Map<String, Object> rawProperties)
         {
             _rawBatchProperties = rawProperties;
             return self();
         }
 
-        public final FACTORY setRunProperties(Map<String, String> rawProperties)
+        /**
+         * HTML form POSTed or JSON submitted run property values.
+         */
+        public final FACTORY setRunProperties(Map<String, Object> rawProperties)
         {
             _rawRunProperties = rawProperties;
             return self();
@@ -246,25 +253,25 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
          *
          * NOTE: These files will not be parsed or imported by the assay's DataHandler -- use {@link #getUploadedData()} instead.
          */
-        public final FACTORY setInputDatas(Map<Object, String> inputDatas)
+        public final FACTORY setInputDatas(Map<?, String> inputDatas)
         {
             _inputDatas = inputDatas;
             return self();
         }
 
-        public FACTORY setOutputDatas(Map<Object, String> outputDatas)
+        public final FACTORY setOutputDatas(Map<?, String> outputDatas)
         {
             _outputDatas = outputDatas;
             return self();
         }
 
-        public FACTORY setInputMaterials(Map<Object, String> inputMaterials)
+        public final FACTORY setInputMaterials(Map<?, String> inputMaterials)
         {
             _inputMaterials = inputMaterials;
             return self();
         }
 
-        public FACTORY setOutputMaterials(Map<Object, String> outputMaterials)
+        public final FACTORY setOutputMaterials(Map<?, String> outputMaterials)
         {
             _outputMaterials = outputMaterials;
             return self();

@@ -165,7 +165,7 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
         inputMaterials.putAll(newMaterials);
     }
 
-    private Map<ExpMaterial, String> createDerivedMaterials(AssayRunUploadContext context, Map<String, ExpMaterial> originalMaterials,
+    private Map<ExpMaterial, String> createDerivedMaterials(AssayRunUploadContext<?> context, Map<String, ExpMaterial> originalMaterials,
                                         Map<String, Map<DomainProperty, String>> materialProperties) throws ExperimentException
     {
         Map<ExpMaterial, String> derivedMaterials = new HashMap<>();

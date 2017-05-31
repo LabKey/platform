@@ -55,6 +55,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableMap;
+
 /*
 * User: Karl Lum
 * Date: Jan 7, 2009
@@ -324,7 +327,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         _sampleProperties.put(propertyName, rows);
     }
 
-    protected void writeRunProperties(AssayRunUploadContext context, Map<DomainProperty, String> runProperties, File scriptDir, PrintWriter pw, TSVWriter writer) throws ValidationException
+    protected void writeRunProperties(AssayRunUploadContext<? extends AssayProvider> context, Map<DomainProperty, String> runProperties, File scriptDir, PrintWriter pw, TSVWriter writer) throws ValidationException
     {
         // serialize the run properties to a tsv
         for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
@@ -347,9 +350,9 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
     }
 
-    public Map<DomainProperty, String> getRunProperties(AssayRunUploadContext context) throws ExperimentException
+    public Map<DomainProperty, String> getRunProperties(AssayRunUploadContext<? extends AssayProvider> context) throws ExperimentException
     {
-        Map<DomainProperty, String> runProperties = new HashMap<DomainProperty, String>(context.getRunProperties());
+        Map<DomainProperty, String> runProperties = new HashMap<>(context.getRunProperties());
         for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
             _formFields.put(entry.getKey().getName(), entry.getValue());
 
@@ -1003,23 +1006,25 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         public Map<DomainProperty, String> getRunProperties() throws ExperimentException
         {
             AssayProvider provider = AssayService.get().getProvider(_protocol);
-            Map<DomainProperty, String> runProperties = new HashMap<>();
-
-            for (DomainProperty prop : provider.getRunDomain(_protocol).getProperties())
-                runProperties.put(prop, getSampleValue(prop));
-
-            return runProperties;
+            return createDomainProperties(provider != null ? provider.getRunDomain(_protocol) : null);
         }
 
         public Map<DomainProperty, String> getBatchProperties()
         {
             AssayProvider provider = AssayService.get().getProvider(_protocol);
-            Map<DomainProperty, String> runProperties = new HashMap<>();
+            return createDomainProperties(provider != null ? provider.getBatchDomain(_protocol) : null);
+        }
 
-            for (DomainProperty prop : provider.getBatchDomain(_protocol).getProperties())
-                runProperties.put(prop, getSampleValue(prop));
+        private Map<DomainProperty, String> createDomainProperties(Domain d)
+        {
+            if (d == null)
+                return emptyMap();
 
-            return runProperties;
+            Map<DomainProperty, String> properties = new HashMap<>();
+            for (DomainProperty prop : d.getProperties())
+                properties.put(prop, getSampleValue(prop));
+
+            return unmodifiableMap(properties);
         }
 
         public String getComments()
@@ -1060,14 +1065,14 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         @NotNull
         public Map<String, File> getUploadedData() throws ExperimentException
         {
-            return Collections.emptyMap();
+            return emptyMap();
         }
 
         @NotNull
         @Override
         public Map<Object, String> getInputDatas()
         {
-            return Collections.emptyMap();
+            return emptyMap();
         }
 
         public AssayProvider getProvider()

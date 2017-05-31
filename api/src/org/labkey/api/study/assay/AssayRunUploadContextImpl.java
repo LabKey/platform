@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
@@ -62,13 +63,13 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final String _name;
     private final String _targetStudy;
     private final Integer _reRunId;
-    private final Map<String, String> _rawRunProperties;
-    private final Map<String, String> _rawBatchProperties;
+    private final Map<String, Object> _rawRunProperties;
+    private final Map<String, Object> _rawBatchProperties;
     private final List<Map<String, Object>> _rawData;
-    private final Map<Object, String> _inputDatas;
-    private final Map<Object, String> _inputMaterials;
-    private final Map<Object, String> _outputDatas;
-    private final Map<Object, String> _outputMaterials;
+    private final Map<?, String> _inputDatas;
+    private final Map<?, String> _inputMaterials;
+    private final Map<?, String> _outputDatas;
+    private final Map<?, String> _outputMaterials;
 
     // Lazily created fields
     private Map<String, File> _uploadedData;
@@ -151,7 +152,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         if (_runProperties == null)
         {
             Domain runDomain = _provider.getRunDomain(_protocol);
-            _runProperties = propertiesFromRawValues(runDomain, getContainer(), _rawRunProperties);
+            _runProperties = propertiesFromRawValues(runDomain, _rawRunProperties);
         }
         return _runProperties;
     }
@@ -161,12 +162,12 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         if (_batchProperties == null)
         {
             Domain batchDomain = _provider.getBatchDomain(_protocol);
-            _batchProperties = propertiesFromRawValues(batchDomain, getContainer(), _rawBatchProperties);
+            _batchProperties = propertiesFromRawValues(batchDomain, _rawBatchProperties);
         }
         return _batchProperties;
     }
 
-    private static Map<DomainProperty, String> propertiesFromRawValues(Domain domain, Container c, Map<String, String> rawProperties)
+    private static Map<DomainProperty, String> propertiesFromRawValues(Domain domain, Map<String, Object> rawProperties)
     {
         Map<DomainProperty, String> properties = new HashMap<>();
         if (rawProperties != null && !rawProperties.isEmpty())
@@ -178,7 +179,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
                     value = rawProperties.get(prop.getName());
                 else
                     value = rawProperties.get(prop.getPropertyURI());
-                properties.put(prop, value == null ? null : String.valueOf(value));
+                properties.put(prop, Objects.toString(value, null));
             }
         }
 
@@ -253,28 +254,28 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
 
     @NotNull
     @Override
-    public Map<Object, String> getInputDatas()
+    public Map<? extends Object, String> getInputDatas()
     {
         return _inputDatas;
     }
 
     @NotNull
     @Override
-    public Map<Object, String> getOutputDatas()
+    public Map<? extends Object, String> getOutputDatas()
     {
         return _outputDatas;
     }
 
     @NotNull
     @Override
-    public Map<Object, String> getInputMaterials()
+    public Map<? extends Object, String> getInputMaterials()
     {
         return _inputMaterials;
     }
 
     @NotNull
     @Override
-    public Map<Object, String> getOutputMaterials()
+    public Map<? extends Object, String> getOutputMaterials()
     {
         return _outputMaterials;
     }
