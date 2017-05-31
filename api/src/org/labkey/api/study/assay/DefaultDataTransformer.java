@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
@@ -198,11 +199,14 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
         return result;
     }
 
-    public static void addStandardParameters(@Nullable HttpServletRequest request, Container container, File scriptFile, String transformSessionId, Map<String, String> paramMap)
+    public static void addStandardParameters(@Nullable HttpServletRequest request, Container container, @Nullable File scriptFile, String transformSessionId, @NotNull Map<String, String> paramMap)
     {
-        File srcDir = scriptFile.getParentFile();
-        if (srcDir != null && srcDir.exists())
-            paramMap.put(SRC_DIR_REPLACEMENT, srcDir.getAbsolutePath().replaceAll("\\\\", "/"));
+        if (scriptFile != null)
+        {
+            File srcDir = scriptFile.getParentFile();
+            if (srcDir != null && srcDir.exists())
+                paramMap.put(SRC_DIR_REPLACEMENT, srcDir.getAbsolutePath().replaceAll("\\\\", "/"));
+        }
         paramMap.put(R_SESSIONID_REPLACEMENT, getSessionInfo(request, transformSessionId));
         paramMap.put(SESSION_COOKIE_NAME_REPLACEMENT, getSessionCookieName(request));
         paramMap.put(SESSION_ID_REPLACEMENT, getSessionId(request, transformSessionId));
