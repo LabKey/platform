@@ -24,6 +24,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.tests.issues.IssuesTest;
 import org.labkey.test.tests.study.StudyTest;
+import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.IssuesHelper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PortalHelper;
@@ -37,7 +38,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.labkey.test.util.PermissionsHelper.MemberType.group;
+import static org.labkey.test.util.SearchHelper.getUnsearchableValue;
 
 public abstract class SearchTest extends StudyTest
 {
@@ -239,6 +242,8 @@ public abstract class SearchTest extends StudyTest
     {
         clickProject(getProjectName());
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), FOLDER_B, "None", null);
+
+        _searchHelper.enqueueSearchItem("Banana", Locator.linkWithText("Folder -- " + FOLDER_B));
     }
 
     @LogMethod
@@ -309,12 +314,12 @@ public abstract class SearchTest extends StudyTest
         clickFolder(getFolderName());
         portalHelper.addWebPart("Wiki");
         _wikiHelper.createWikiPage(WIKI_NAME, "RADEOX", WIKI_TITLE, WIKI_CONTENT, attachedFile);
+        waitForElement(Locator.linkContainingText(attachedFile.getName()));
         portalHelper.addWebPart("Wiki");
         //Issue 9454: Don't index option for wiki page
-        _wikiHelper.createWikiPage(WIKI_NAME + "UNSEARCHABLE", "RADEOX", WIKI_TITLE, WIKI_CONTENT, false, null, true);
+        _wikiHelper.createWikiPage(WIKI_NAME + " " + getUnsearchableValue(), "RADEOX", WIKI_TITLE + " " + getUnsearchableValue(), WIKI_CONTENT + " " + getUnsearchableValue(), false, null, true);
 
         _searchHelper.enqueueSearchItem(WIKI_NAME, Locator.linkWithText(WIKI_TITLE));
-        _searchHelper.enqueueSearchItem(WIKI_NAME + "UNSEARCHABLE");
         _searchHelper.enqueueSearchItem(WIKI_TITLE, Locator.linkWithText(WIKI_TITLE));
         _searchHelper.enqueueSearchItem(WIKI_CONTENT, Locator.linkWithText(WIKI_TITLE));
         _searchHelper.enqueueSearchItem("Sample", Locator.linkWithText(String.format("\"%s\" attached to page \"%s\"", attachedFile.getName(), WIKI_TITLE))); // some text from attached file
@@ -323,9 +328,9 @@ public abstract class SearchTest extends StudyTest
     @LogMethod
     private void addSearchableIssues()
     {
-        _permissionsHelper.createPermissionsGroup(GROUP_NAME, USER1);
-        _securityHelper.setProjectPerm(GROUP_NAME, "Editor");
-        clickButton("Save and Finish");
+        ApiPermissionsHelper apiPermissionsHelper = new ApiPermissionsHelper(this);
+        apiPermissionsHelper.createPermissionsGroup(GROUP_NAME, USER1);
+        apiPermissionsHelper.addMemberToRole(GROUP_NAME, "Editor", group, getProjectName());
         clickFolder(getFolderName());
 
         IssuesHelper issuesHelper = new IssuesHelper(this);
@@ -351,7 +356,7 @@ public abstract class SearchTest extends StudyTest
         setFormElement(Locator.id("comment"), ISSUE_BODY);
         selectOptionByText(Locator.name("assignedTo"), displayNameFromEmail(USER1));
         click(Locator.linkWithText("Attach a file"));
-        File file = new File(TestFileUtils.getLabKeyRoot() + "/common.properties");
+        File file = TestFileUtils.getSampleData("fileTypes/tsv_sample.tsv");
         setFormElement(Locator.name("formFiles[00]"), file);
         clickButton("Save");
 
@@ -360,7 +365,8 @@ public abstract class SearchTest extends StudyTest
         _searchHelper.enqueueSearchItem(displayNameFromEmail(USER1), Locator.linkContainingText(ISSUE_TITLE));
         _searchHelper.enqueueSearchItem("Area51", Locator.linkContainingText(ISSUE_TITLE));
         _searchHelper.enqueueSearchItem("UFO", Locator.linkContainingText(ISSUE_TITLE));
-        //_searchHelper.enqueueSearchItem("Override", Locator.linkWithText("\"common.properties\" attached to issue \"" + ISSUE_TITLE + "\"")); // some text from attached file
+        // TODO: 9583: Index issue attachments
+        //_searchHelper.enqueueSearchItem("Background", Locator.linkWithText(String.format("\"%s\" attached to issue \"%s\"", file.getName(), ISSUE_TITLE))); // some text from attached file
     }
 
     @LogMethod
@@ -372,7 +378,7 @@ public abstract class SearchTest extends StudyTest
         setFormElement(Locator.name("title"), MESSAGE_TITLE);
         setFormElement(Locator.id("body"), MESSAGE_BODY);
         click(Locator.linkWithText("Attach a file"));
-        File file = new File(TestFileUtils.getLabKeyRoot() + "/sampledata/dataloading/excel/fruits.tsv");
+        File file = TestFileUtils.getSampleData("dataloading/excel/fruits.tsv");
         setFormElement(Locator.name("formFiles[0]"), file);
         clickButton("Submit");
 
@@ -386,9 +392,9 @@ public abstract class SearchTest extends StudyTest
     {
         clickFolder(getFolderName());
         goToModule("FileContent");
-        File file = new File(TestFileUtils.getLabKeyRoot() + "/sampledata/security", "InlineFile.html");
+        File file = TestFileUtils.getSampleData("security/InlineFile.html");
         _fileBrowserHelper.uploadFile(file);
-        File MLfile = new File(TestFileUtils.getLabKeyRoot() + "/sampledata/mzxml", "test_nocompression.mzXML");
+        File MLfile = TestFileUtils.getSampleData("mzxml/test_nocompression.mzXML");
         _fileBrowserHelper.uploadFile(MLfile);
 
         _searchHelper.enqueueSearchItem("antidisestablishmentarianism", true, Locator.linkWithText(file.getName()));
