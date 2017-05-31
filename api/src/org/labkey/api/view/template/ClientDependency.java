@@ -58,7 +58,8 @@ public class ClientDependency
 {
     private static final Logger _log = Logger.getLogger(ClientDependency.class);
 
-    public enum TYPE {
+    public enum TYPE
+    {
         js(".js"),
         css(".css"),
         sass(".sass"),
@@ -309,7 +310,7 @@ public class ClientDependency
     private void processScript(Path filePath)
     {
         TYPE type = TYPE.fromPath(filePath);
-        if(type == null)
+        if (type == null)
         {
             _log.warn("Invalid file type for resource: " + filePath);
             return;
@@ -319,14 +320,6 @@ public class ClientDependency
         {
             processLib(filePath);
         }
-//        else if (TYPE.jsb2.equals(type))
-//        {
-//            //NYI
-//        }
-//        else if (TYPE.sass.equals(type))
-//        {
-//            //NYI
-//        }
         else
         {
             if(!_mode.equals(ModeTypeEnum.PRODUCTION))

@@ -1437,12 +1437,13 @@ if (!LABKEY.DataRegions) {
     // Sections
     //
 
-    LABKEY.DataRegion.prototype.displaySection = function(content, options) {
-        var append = options && options.append === true;
+    LABKEY.DataRegion.prototype.displaySection = function(options) {
         var dir = options && options.dir ? options.dir : 'n';
 
         var sec = _getSectionSelector(this, dir);
-        append ? sec.append(content) : sec.html(content);
+        if (options && options.content) {
+            options.append === true ? sec.append(content) : sec.html(content);            
+        }
         sec.show();
     };
 
@@ -1452,9 +1453,17 @@ if (!LABKEY.DataRegions) {
 
         sec.hide();
 
-        if (options.clear === true) {
+        if (options && options.clear === true) {
             sec.html('');
         }
+    };
+
+    LABKEY.DataRegion.prototype.writeSection = function(content, options) {
+        var append = options && options.append === true;
+        var dir = options && options.dir ? options.dir : 'n';
+
+        var sec = _getSectionSelector(this, dir);
+        append ? sec.append(content) : sec.html(content);
     };
 
     //

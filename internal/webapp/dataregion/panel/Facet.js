@@ -7,7 +7,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
     extend : 'Ext.Panel',
 
-    width : 260,
+    width: LABKEY.experimental.useExperimentalCoreUI === true ? 230 : 260,
 
     statics : {
         LOADED : true,
@@ -29,6 +29,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     bodyStyle : 'overflow-x: hidden !important;',
     cls : 'labkey-data-region-facet',
     minHeight : 450,
+    newUI: LABKEY.experimental.useExperimentalCoreUI === true,
     style: 'padding-right: 5px;',
 
     constructor : function(config) {
@@ -41,25 +42,35 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         this.dataRegion = config.dataRegion;
         this.dataRegion.async = true;
         var renderTarget = config.dataRegion.domId + '-facet';
-        var topEl = this.getContainerEl(config.dataRegion);
-        var tableEl = this.getDataRegionTableEl(config.dataRegion);
 
-        if (!tableEl) {
-            LABKEY.Utils.alert('Error', 'Could not locate DataRegion table element. Unable to display faceted search.');
-            return;
+        if (this.newUI) {
+            this.dataRegion.writeSection('<div id="' + renderTarget + '"></div>', {dir: 'w'});
+            Ext4.apply(config, {
+                renderTo: renderTarget,
+                regionName: config.dataRegion.name
+            })
         }
+        else {
+            var topEl = this.getContainerEl(config.dataRegion);
+            var tableEl = this.getDataRegionTableEl(config.dataRegion);
 
-        tableEl.setWidth(tableEl.getBox().width);
-        if (topEl) {
-            var targetHTML = '<div id="' + renderTarget + '" style="float: left;" lk-region-facet-name="' + config.dataRegion.name + '"></div>';
-            topEl.insertHtml('beforeBegin', targetHTML);
+            if (!tableEl) {
+                LABKEY.Utils.alert('Error', 'Could not locate DataRegion table element. Unable to display faceted search.');
+                return;
+            }
+
+            tableEl.setWidth(tableEl.getBox().width);
+            if (topEl) {
+                var targetHTML = '<div id="' + renderTarget + '" style="float: left;" lk-region-facet-name="' + config.dataRegion.name + '"></div>';
+                topEl.insertHtml('beforeBegin', targetHTML);
+            }
+
+            Ext4.apply(config, {
+                renderTo: renderTarget,
+                regionName: config.dataRegion.name,
+                height: tableEl.getBox().height
+            });
         }
-
-        Ext4.apply(config, {
-            renderTo: renderTarget,
-            regionName: config.dataRegion.name,
-            height: tableEl.getBox().height
-        });
 
         Ext4.applyIf(config, {
             header: {
@@ -149,18 +160,23 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
     getDataRegionTableEl : function(dr) {
         if (dr && dr.name) {
-            console.log('domId', dr.domId);
             return Ext4.get(dr.domId);
         }
     },
 
     _beforeShow : function() {
         var region = this.getDataRegion();
-        var el = this.getContainerEl(region);
-        if (el) {
-            var reqWidth = this.getRequiredWidth(region);
-            if (el.getBox().width < reqWidth) {
-                el.setWidth(reqWidth);
+
+        if (this.newUI) {
+            region.displaySection({dir: 'w'});
+        }
+        else {
+            var el = this.getContainerEl(region);
+            if (el) {
+                var reqWidth = this.getRequiredWidth(region);
+                if (el.getBox().width < reqWidth) {
+                    el.setWidth(reqWidth);
+                }
             }
         }
     },
@@ -169,6 +185,12 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         var el = this.getContainerEl(this.getDataRegion());
         if (el) {
             el.setWidth(null);
+        }
+        if (this.newUI) {
+            var region = this.getDataRegion();
+            if (region) {
+                region.hideSection({dir: 'w'});
+            }
         }
     },
 

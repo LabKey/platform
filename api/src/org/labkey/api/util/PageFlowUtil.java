@@ -1649,61 +1649,20 @@ public class PageFlowUtil
         Formatter F = new Formatter(sb);
         String link = "    <link href=\"%s\" type=\"text/css\" rel=\"stylesheet\">\n";
 
-        boolean devMode = AppProps.getInstance().isDevMode();
-        Set<String> preIncludedCss = new HashSet<>();
-        String newThemeName = useExperimentalCoreUI() ? LookAndFeelProperties.getInstance(c).getThemeName() : theme.getFriendlyName();
-
         /* Stylesheets for Ext 3.x, 4.x -- order matters as overrides are in stylesheet.css and themeStylesheet.view */
-        if (null != resources)
-        {
-            boolean ext3Included = false;
-            boolean ext4Included = false;
-
-            for (ClientDependency resource : resources)
-            {
-                for (String paths : resource.getJsPaths(c, devMode))
-                {
-                    if (!ext3Included && paths.startsWith("ext-3.4.1/ext-all"))
-                    {
-                        ext3Included = true;
-                        String cssPath;
-                        if (useExperimentalCoreUI())
-                            cssPath = "/core/css/ext3_" + newThemeName + ".css";
-                        else
-                            cssPath = extJsRoot() + "/resources/css/ext-all.css";
-
-                        preIncludedCss.add(cssPath);
-                        F.format(link, Path.parse(staticResourceUrl(cssPath)));
-                    }
-
-                    if (!ext4Included && paths.startsWith("ext-4.2.1/ext-all"))
-                    {
-                        ext4Included = true;
-                        String cssPath;
-                        if (useExperimentalCoreUI())
-                            cssPath = "/core/css/ext4_" + newThemeName + ".css";
-                        else
-                            cssPath = ext4ThemeRoot() + "/" + resolveThemeName(c) + "/ext-all.css";
-
-                        preIncludedCss.add(cssPath);
-                        F.format(link, staticResourceUrl(cssPath));
-                    }
-
-                    if (ext3Included && ext4Included)
-                        break;
-                }
-            }
-        }
+        Set<String> preIncludedCss = getExtJSStylesheets(c, resources);
+        for (String cssPath : preIncludedCss)
+            F.format(link, staticResourceUrl(cssPath));
 
         if (includeDefaultResources)
         {
             if (useExperimentalCoreUI())
             {
-                F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/" + newThemeName + ".css")));
+                F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/" + resolveThemeName(c) + ".css")));
             }
             else
             {
-                String fontAwesomeCss = devMode ? "font-awesome.css" : "font-awesome.min.css";
+                String fontAwesomeCss = AppProps.getInstance().isDevMode() ? "font-awesome.css" : "font-awesome.min.css";
                 F.format(link, PageFlowUtil.filter(staticResourceUrl("/internal/font-awesome-4.4.0/css/" + fontAwesomeCss)));
 
                 F.format(link, PageFlowUtil.filter(staticResourceUrl(theme.getStyleSheet())));
@@ -1753,6 +1712,57 @@ public class PageFlowUtil
             writeCss(c, sb, resources, preIncludedCss);
 
         return sb.toString();
+    }
+
+    @NotNull
+    public static Set<String> getExtJSStylesheets(Container c, Set<ClientDependency> resources)
+    {
+        // TODO: After the UX Refresh is permanently in place this could be refactored to exist within ClientDependency
+        // getCssPaths(). Currently, the stylesheet ordering still matters so it is easier to just make this accessible
+        // here.
+        Set<String> extCSS = new HashSet<>();
+
+        if (null != resources)
+        {
+            boolean ext3Included = false;
+            boolean ext4Included = false;
+            String themeName = resolveThemeName(c);
+
+            for (ClientDependency resource : resources)
+            {
+                for (String paths : resource.getJsPaths(c, AppProps.getInstance().isDevMode()))
+                {
+                    if (!ext3Included && paths.startsWith("ext-3.4.1/ext-all"))
+                    {
+                        ext3Included = true;
+                        String cssPath;
+                        if (useExperimentalCoreUI())
+                            cssPath = "/core/css/ext3_" + themeName + ".css";
+                        else
+                            cssPath = extJsRoot() + "/resources/css/ext-all.css";
+
+                        extCSS.add(cssPath);
+                    }
+
+                    if (!ext4Included && paths.startsWith("ext-4.2.1/ext-all"))
+                    {
+                        ext4Included = true;
+                        String cssPath;
+                        if (useExperimentalCoreUI())
+                            cssPath = "/core/css/ext4_" + themeName + ".css";
+                        else
+                            cssPath = ext4ThemeRoot() + "/" + themeName + "/ext-all.css";
+
+                        extCSS.add(cssPath);
+                    }
+
+                    if (ext3Included && ext4Included)
+                        break;
+                }
+            }
+        }
+
+        return extCSS;
     }
 
     private static void writeCss(Container c, StringBuilder sb, LinkedHashSet<ClientDependency> resources, Set<String> preIncludedCss)
@@ -1822,6 +1832,9 @@ public class PageFlowUtil
 
     private static String resolveThemeName(Container c)
     {
+        if (useExperimentalCoreUI())
+            return LookAndFeelProperties.getInstance(c).getThemeName();
+
         String themeName = WebTheme.DEFAULT.getFriendlyName();
 
         if (c != null)

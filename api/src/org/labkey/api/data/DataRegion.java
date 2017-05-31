@@ -1045,6 +1045,7 @@ public class DataRegion extends AbstractDataRegion
 
     private void _renderMessages(RenderContext ctx, Writer out) throws IOException
     {
+        // The container <div> is written regardless of _messages being available
         out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-msgbox") + "\">");
         if (_messages != null)
         {
@@ -1052,7 +1053,7 @@ public class DataRegion extends AbstractDataRegion
             {
                 String alertCls = message.getType().equals(MessageType.ERROR) ? "error" : "info";
                 out.write("<div class=\"alert alert-" + alertCls + "\">");
-                out.write(PageFlowUtil.filter(message.getContent()));
+                out.write(message.getContent());
                 out.write("</div>");
             }
         }
@@ -1819,6 +1820,11 @@ public class DataRegion extends AbstractDataRegion
         if (name != null)
         {
             out.write(" lk-region-form=\"" + PageFlowUtil.filter(name) + "\" ");
+        }
+
+        if (PageFlowUtil.useExperimentalCoreUI())
+        {
+            out.write(" class=\"form-horizontal\" ");
         }
 
         String actionAttr = null == getFormActionUrl() ? "" : getFormActionUrl().getLocalURIString();

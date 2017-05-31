@@ -662,6 +662,9 @@ public abstract class DisplayColumn extends RenderColumn
             out.write("<span class=\"fa fa-filter\"></span>");
             out.write("<span class=\"fa fa-sort-up\"></span>");
             out.write("<span class=\"fa fa-sort-down\"></span>");
+
+            if (hasMenu)
+                out.write("<span class=\"fa fa-chevron-circle-down\"></span>");
         }
         else
         {

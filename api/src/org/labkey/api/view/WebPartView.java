@@ -102,6 +102,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             implicitCssScripts.addAll(d.getCssPaths(container));
             implicitCssScripts.addAll(d.getCssPaths(container, !AppProps.getInstance().isDevMode()));
         }
+        implicitCssScripts.addAll(PageFlowUtil.getExtJSStylesheets(container, dependencies));
 
         getViewContext().getResponse().setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
 

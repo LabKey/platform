@@ -437,13 +437,6 @@ if (typeof LABKEY == "undefined")
             }
             else
             {
-                var cssRoot = configs.extJsRoot + '/resources/css/ext-all.css';
-                if (LABKEY.experimental && LABKEY.experimental.useExperimentalCoreUI === true)
-                {
-                    // TODO: replace extThemeName_42 with themeName
-                    cssRoot = 'core/css/ext3_' + LABKEY.extThemeName_42 + '.css';
-                }
-                requiresCss(cssRoot);
                 requiresLib('Ext3', callback, scope);
             }
         };
@@ -493,12 +486,6 @@ if (typeof LABKEY == "undefined")
             }
             else
             {
-                var cssRoot = configs.extThemeRoot_42 + "/" + configs.extThemeName_42 + "/ext-all.css";
-                if (LABKEY.experimental && LABKEY.experimental.useExperimentalCoreUI === true)
-                {
-                    cssRoot = 'core/css/ext4_seattle.css';
-                }
-                requiresCss(cssRoot);
                 requiresLib('Ext4', callback, scope);
             }
         };
@@ -600,7 +587,11 @@ if (typeof LABKEY == "undefined")
                 var requestedLength = file.length;
                 var loaded = 0;
 
-                if (inOrder)
+                if (requestedLength === 0)
+                {
+                    handle(callback, scope);
+                }
+                else if (inOrder)
                 {
                     var chain = function()
                     {
@@ -651,7 +642,7 @@ if (typeof LABKEY == "undefined")
                 {
                     requiresExt3(callback, scope);
                 }
-                if (file === 'Ext4')
+                else if (file === 'Ext4')
                 {
                     requiresExt4Sandbox(callback, scope);
                 }

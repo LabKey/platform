@@ -862,9 +862,7 @@ public class QueryView extends WebPartView<Object>
 
         if (canInsert() && (showInsertNewButton() || showImportDataButton()))
         {
-            ActionButton insertButton = createInsertMenuButton();
-            if (insertButton != null)
-                bar.add(insertButton);
+            bar.add(createInsertMenuButton());
         }
 
 //        if (/* showUpdateButton() && */canUpdate())
@@ -876,9 +874,7 @@ public class QueryView extends WebPartView<Object>
 
         if (showDeleteButton() && canDelete())
         {
-            ActionButton deleteButton = createDeleteButton();
-            if (deleteButton != null)
-                bar.add(deleteButton);
+            bar.add(createDeleteButton());
         }
 
         if (showExportButtons())
@@ -923,6 +919,7 @@ public class QueryView extends WebPartView<Object>
         return btn;
     }
 
+    @Nullable
     public ActionButton createDeleteButton()
     {
         ActionURL urlDelete = urlFor(QueryAction.deleteQueryRows);
