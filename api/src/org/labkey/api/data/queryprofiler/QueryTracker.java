@@ -17,6 +17,7 @@ package org.labkey.api.data.queryprofiler;
 
 import org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength;
 import org.apache.commons.collections4.map.ReferenceMap;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ByteArrayHashKey;
@@ -32,7 +33,6 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 
 import java.io.PrintWriter;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -251,9 +251,6 @@ class QueryTracker
         out.print("</td><td class=\"labkey-column-header\" style=\"padding-left:10;\">");
         out.print("SQL");
         out.print("</td>");
-//        out.print("<td class="labkey-column-header">");
-//        out.print("SQL&nbsp;With&nbsp;Parameters");
-//        out.print("</td>");
         out.println("</tr>");
     }
 
@@ -290,8 +287,6 @@ class QueryTracker
 
         out.print(tab);
         out.print("SQL\n");
-//        out.print(tab);
-//        out.print("SQL With Parameters\n");
     }
 
     public void renderRow(PrintWriter out, String className, QueryProfiler.ActionURLFactory factory)
@@ -300,12 +295,12 @@ class QueryTracker
 
         for (QueryTrackerSet set : QueryProfiler.getInstance().getTrackerSets())
             if (set.shouldDisplay())
-                out.println("<td valign=top align=right>" + ((QueryTrackerComparator) set.comparator()).getFormattedPrimaryStatistic(this) + "</td>");
+                out.println("<td style=\"text-align:right;vertical-align:top;\">" + ((QueryTrackerComparator) set.comparator()).getFormattedPrimaryStatistic(this) + "</td>");
 
         ActionURL url = factory.getActionURL(getSql());
-        out.println("<td valign=top align=right><a href=\"" + PageFlowUtil.filter(url.getLocalURIString()) + "\">" + Formats.commaf0.format(getStackTraceCount()) + "</a></td>");
-        out.println("<td style=\"padding-left:10;\">" + PageFlowUtil.filter(getSql(), true) + "</td>");
-//        out.println("<td style=\"padding-left:10;\">" + PageFlowUtil.filter(getSqlAndParameters(), true) + "</td>");
+        out.println("<td style=\"text-align:right;vertical-align:top;\"><a href=\"" + PageFlowUtil.filter(url.getLocalURIString()) + "\">" + Formats.commaf0.format(getStackTraceCount()) + "</a></td>");
+        // In the full grid view, limit SQL to 2,000 characters (before encoding). Individual detail view still shows full SQL with and without parameters. See #29642.
+        out.println("<td style=\"padding-left:10;\">" + PageFlowUtil.filter(StringUtils.abbreviate(getSql(), 2000), true) + "</td>");
         out.println("</tr>");
     }
 
@@ -323,7 +318,6 @@ class QueryTracker
         }
 
         out.print(tab + getSql().trim().replaceAll("(\\s)+", " "));
-//        out.print(tab + getSqlAndParameters().trim().replaceAll("(\\s)+", " "));
         out.print('\n');
     }
 }

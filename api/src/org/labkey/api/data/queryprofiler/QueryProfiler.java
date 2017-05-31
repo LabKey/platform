@@ -274,24 +274,24 @@ public class QueryProfiler
                     {
                         int requests = ViewServlet.getRequestCount() - _requestCountAtLastReset;
 
-                        out.println("  <tr><td>" + _buttonHTML + "</td></tr>");
+                        out.println("  <tr><td colspan=5>" + _buttonHTML + "</td></tr>");
 
-                        out.println("  <tr><td style=\"border-top:1px solid\" colspan=5 align=center>Queries Executed Within HTTP Requests</td></tr>");
-                        out.println("  <tr><td>Query Count:</td><td align=\"right\">" + Formats.commaf0.format(_requestQueryCount) + "</td>");
-                        out.println("<td width=10>&nbsp;</td>");
-                        out.println("<td>Query Time:</td><td align=\"right\">" + Formats.commaf0.format(_requestQueryTime) + "</td>");
+                        out.println("  <tr><td style=\"border-top:1px solid;text-align:center\" colspan=5>Queries Executed Within HTTP Requests</td></tr>");
+                        out.println("  <tr><td>Query Count:</td><td style=\"text-align:right\">" + Formats.commaf0.format(_requestQueryCount) + "</td>");
+                        out.println("<td style=\"width:10px\">&nbsp;</td>");
+                        out.println("<td>Query Time:</td><td style=\"text-align:right\">" + Formats.commaf0.format(_requestQueryTime) + "</td>");
                         out.println("</tr>\n  <tr>");
-                        out.println("<td>Queries per Request:</td><td align=\"right\">" + Formats.f1.format((double) _requestQueryCount / requests) + "</td>");
-                        out.println("<td width=10>&nbsp;</td>");
-                        out.println("<td>Query Time per Request:</td><td align=\"right\">" + Formats.f1.format((double) _requestQueryTime / requests) + "</td>");
+                        out.println("<td>Queries per Request:</td><td style=\"text-align:right\">" + Formats.f1.format((double) _requestQueryCount / requests) + "</td>");
+                        out.println("<td style=\"width:10px\">&nbsp;</td>");
+                        out.println("<td>Query Time per Request:</td><td style=\"text-align:right\">" + Formats.f1.format((double) _requestQueryTime / requests) + "</td>");
                         out.println("</tr>\n  <tr>");
-                        out.println("<td>" + (_hasBeenReset ? "Request Count Since Last Reset" : "Request Count") + ":</td><td align=\"right\">" + Formats.commaf0.format(requests) + "</td></tr>");
+                        out.println("<td>" + (_hasBeenReset ? "Request Count Since Last Reset" : "Request Count") + ":</td><td style=\"text-align:right\">" + Formats.commaf0.format(requests) + "</td><td colspan=3></td></tr>");
                         out.println("  <tr><td style=\"border-top:1px solid\" colspan=5>&nbsp;</td></tr>");
 
-                        out.println("  <tr><td style=\"border-top:1px solid\" colspan=5 align=center>Queries Executed Within Background Threads</td></tr>");
-                        out.println("  <tr><td>Query Count:</td><td align=\"right\">" + Formats.commaf0.format(_backgroundQueryCount) + "</td>");
-                        out.println("<td width=10>&nbsp;</td>");
-                        out.println("<td>Query Time:</td><td align=\"right\">" + Formats.commaf0.format(_backgroundQueryTime) + "</td>");
+                        out.println("  <tr><td style=\"border-top:1px solid;text-align:center\" colspan=5>Queries Executed Within Background Threads</td></tr>");
+                        out.println("  <tr><td>Query Count:</td><td style=\"text-align:right\">" + Formats.commaf0.format(_backgroundQueryCount) + "</td>");
+                        out.println("<td style=\"width:10px\">&nbsp;</td>");
+                        out.println("<td>Query Time:</td><td style=\"text-align:right\">" + Formats.commaf0.format(_backgroundQueryTime) + "</td>");
                         out.println("</tr>");
                         out.println("  <tr><td style=\"border-top:1px solid\" colspan=5>&nbsp;</td></tr>");
                         out.println("  <tr><td colspan=5>&nbsp;</td></tr>");
@@ -301,15 +301,15 @@ public class QueryProfiler
                         if (_uniqueQueryCountEstimate > QueryTrackerSet.STANDARD_LIMIT)
                             out.println(" (Estimate)");
 
-                        out.println(":</td><td align=\"right\">" + Formats.commaf0.format(_uniqueQueryCountEstimate) + "</td>");
-                        out.println("<td width=10>&nbsp;</td>");
+                        out.println(":</td><td style=\"text-align:right\">" + Formats.commaf0.format(_uniqueQueryCountEstimate) + "</td>");
+                        out.println("<td style=\"width:10px\">&nbsp;</td>");
 
                         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
                         if (runtimeBean != null)
                         {
                             long upTime = runtimeBean.getUptime() - _upTimeAtLastReset;
                             upTime = upTime - (upTime % 1000);
-                            out.println("<td>" + (_hasBeenReset ? "Elapsed Time Since Last Reset" : "Server Uptime") + ":</td><td align=\"right\">" + DateUtil.formatDuration(upTime) + "</td>");
+                            out.println("<td>" + (_hasBeenReset ? "Elapsed Time Since Last Reset" : "Server Uptime") + ":</td><td style=\"text-align:right\">" + DateUtil.formatDuration(upTime) + "</td>");
                         }
                         out.println("</tr>");
                         out.println("</table><br><br>");

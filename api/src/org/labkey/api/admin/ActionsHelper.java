@@ -37,7 +37,7 @@ public class ActionsHelper
             Map<String, Map<String, SpringActionController.ActionStats>> controllerMap = new LinkedHashMap<>();
             moduleMap.put(module.getName(), controllerMap);
             Map<String, Class<? extends Controller>> pageFlows = module.getControllerNameToClass();
-            Set<Class> controllerClasses = new HashSet<Class>(pageFlows.values());
+            Set<Class> controllerClasses = new HashSet<>(pageFlows.values());
 
             for (Class controllerClass : controllerClasses)
             {
@@ -62,5 +62,5 @@ public class ActionsHelper
     }
 
 
-    private static Comparator<SpringActionController.ActionDescriptor> comp = (ad1, ad2) -> ad1.getPrimaryName().compareTo(ad2.getPrimaryName());
+    private static Comparator<SpringActionController.ActionDescriptor> comp = Comparator.comparing(SpringActionController.ActionDescriptor::getPrimaryName);
 }
