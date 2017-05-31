@@ -19,17 +19,15 @@ package org.labkey.api.query;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.LookupColumn;
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,10 +36,10 @@ import java.util.Set;
  * by name through a {@link QuerySchema}. Lazily initialized as much as possible to prevent perf hit creating schemas
  * tables that aren't actually needed.
  */
-public class QueryForeignKey implements ForeignKey
+public class QueryForeignKey extends AbstractForeignKey
 {
     TableInfo _table;
-    String _schemaName;
+
     /** The configured container for this lookup. Null if it should use the current container */
     @Nullable
     Container _lookupContainer;
@@ -49,9 +47,6 @@ public class QueryForeignKey implements ForeignKey
     @NotNull
     Container _effectiveContainer;
     User _user;
-    String _tableName;
-    String _lookupKey;
-    String _displayField;
     QuerySchema _schema;
     boolean _useRawFKValue;
     LookupColumn.JoinType _joinType = LookupColumn.JoinType.leftOuter;
@@ -63,13 +58,10 @@ public class QueryForeignKey implements ForeignKey
 
     public QueryForeignKey(@NotNull String schemaName, @NotNull Container effectiveContainer, @Nullable Container lookupContainer, User user, String tableName, @Nullable String lookupKey, @Nullable String displayField, boolean useRawFKValue)
     {
-        _schemaName = schemaName;
+        super(schemaName, tableName, lookupKey, displayField);
         _effectiveContainer = effectiveContainer;
         _lookupContainer = lookupContainer;
         _user = user;
-        _tableName = tableName;
-        _lookupKey = lookupKey;
-        _displayField = displayField;
         _useRawFKValue = useRawFKValue;
     }
 
@@ -84,12 +76,9 @@ public class QueryForeignKey implements ForeignKey
      */
     public QueryForeignKey(QuerySchema schema, @Nullable Container lookupContainer, String tableName, @Nullable String lookupKey, @Nullable String displayField, boolean useRawFKValue)
     {
+        super(schema.getSchemaName(), tableName, lookupKey, displayField);
         _schema = schema;
-        _schemaName = schema.getSchemaName();
         _lookupContainer = lookupContainer;
-        _tableName = tableName;
-        _lookupKey = lookupKey;
-        _displayField = displayField;
         _useRawFKValue = useRawFKValue;
     }
 
@@ -108,11 +97,9 @@ public class QueryForeignKey implements ForeignKey
      */
     public QueryForeignKey(TableInfo table, @Nullable Container lookupContainer, @Nullable String lookupKey, @Nullable String displayField)
     {
+        super(null, table.getName(), lookupKey, displayField);
         _table = table;
         _lookupContainer = lookupContainer;
-        _tableName = table.getName();
-        _lookupKey = lookupKey;
-        _displayField = displayField;
     }
 
     @Override
@@ -141,7 +128,7 @@ public class QueryForeignKey implements ForeignKey
             {
                 return foreignKey;
             }
-            displayField = _displayField;
+            displayField = _displayColumnName;
             if (displayField == null)
             {
                 displayField = lookupTable.getTitleColumn();
@@ -150,7 +137,7 @@ public class QueryForeignKey implements ForeignKey
                 return null;
         }
 
-        return LookupColumn.create(foreignKey, lookupTable.getColumn(getLookupColumnName(lookupTable)), lookupTable.getColumn(displayField), false, _joinType);
+        return LookupColumn.create(foreignKey, lookupTable.getColumn(getLookupColumnName()), lookupTable.getColumn(displayField), false, _joinType);
     }
 
     @Nullable
@@ -172,18 +159,12 @@ public class QueryForeignKey implements ForeignKey
 
     private QuerySchema getSchema()
     {
-        if (_schema == null && _user != null && _schemaName != null)
+        if (_schema == null && _user != null && _lookupSchemaName != null)
         {
-            _schema = QueryService.get().getUserSchema(_user, _effectiveContainer , _schemaName);
+            _schema = QueryService.get().getUserSchema(_user, _effectiveContainer , _lookupSchemaName);
         }
         return _schema;
 
-    }
-
-    @Override
-    public String getLookupSchemaName()
-    {
-        return _schemaName;
     }
 
     @Override
@@ -192,56 +173,7 @@ public class QueryForeignKey implements ForeignKey
         TableInfo table = getLookupTableInfo();
         if (table == null)
             return null;
-        return LookupForeignKey.getDetailsURL(parent, table, getLookupColumnName(table));
-    }
-
-    @Override
-    public String getLookupTableName()
-    {
-        return _tableName;
-    }
-
-    @Override
-    public String getLookupColumnName()
-    {
-        return getLookupColumnName(null);
-    }
-
-    public String getLookupColumnName(@Nullable TableInfo tableInfo)
-    {
-        if (_lookupKey == null)
-        {
-            if (tableInfo == null)
-            {
-                tableInfo = getLookupTableInfo();
-            }
-
-            if (tableInfo != null)
-            {
-                List<String> pkColumnNames = tableInfo.getPkColumnNames();
-                if (pkColumnNames.size() == 1)
-                {
-                    _lookupKey = pkColumnNames.get(0);
-                }
-            }
-        }
-        return _lookupKey;
-    }
-
-    @Override
-    public String getLookupDisplayName()
-    {
-        return _displayField;
-    }
-
-    @Override
-    public NamedObjectList getSelectList(RenderContext ctx)
-    {
-        TableInfo lookupTable = getLookupTableInfo();
-        if (lookupTable == null)
-            return new NamedObjectList();
-
-        return lookupTable.getSelectList(getLookupColumnName());
+        return LookupForeignKey.getDetailsURL(parent, table, getLookupColumnName());
     }
 
     @Override
