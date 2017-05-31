@@ -30,6 +30,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.Specimen;
+import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.ChartHelper;
 import org.labkey.test.util.DataRegionExportHelper;
@@ -99,6 +100,11 @@ public class StudyTest extends StudyBaseTest
     protected void setDatasetLink(int datasetCount)
     {
         datasetLink =  datasetCount + " datasets";
+    }
+
+    protected String getDemographicsDescription()
+    {
+        return "This is the demographics dataset, dammit. Here are some \u2018special symbols\u2019 - they help test that we're roundtripping in UTF-8.";
     }
 
     protected boolean isManualTest = false;
@@ -595,108 +601,111 @@ public class StudyTest extends StudyBaseTest
     @LogMethod
     protected void verifyStudyAndDatasets(boolean isVisitBased)
     {
-        goToProjectHome();
-        verifyDemographics();
-        if(isVisitBased)verifyVisitMapPage();
-        verifyManageDatasetsPage();
-
-        if (isQuickTest())
+        if(isVisitBased)
         {
-            verifyParticipantVisitDay();
-            verifyAliasReplacement();
-            return;
-        }
+            goToProjectHome();
+            verifyDemographics();
+            if (isVisitBased) verifyVisitMapPage();
+            verifyManageDatasetsPage();
 
-        if (!isManualTest)
-            verifyAlternateIDs();
+            if (isQuickTest())
+            {
+                verifyParticipantVisitDay();
+                verifyAliasReplacement();
+                return;
+            }
 
-        verifyHiddenVisits();
-        verifyVisitImportMapping();
-        verifyCohorts();
+            if (!isManualTest)
+                verifyAlternateIDs();
 
-        // configure QC state management before importing duplicate data
-        clickFolder(getFolderName());
-        clickAndWait(Locator.linkWithText("Manage Study"));
-        clickAndWait(Locator.linkWithText("Manage Dataset QC States"));
-        setFormElement(Locator.name("newLabel"), "unknown QC");
-        setFormElement(Locator.name("newDescription"), "Unknown data is neither clean nor dirty.");
-        click(Locator.checkboxById("dirty_public"));
-        click(Locator.checkboxByName("newPublicData"));
-        clickButton("Save");
-        selectOptionByText(Locator.name("defaultDirectEntryQCState"), "unknown QC");
-        selectOptionByText(Locator.name("showPrivateDataByDefault"), "Public data");
-        clickButton("Save");
+            verifyHiddenVisits();
+            verifyVisitImportMapping();
+            verifyCohorts();
 
-        // return to dataset import page
-        clickFolder(getFolderName());
-        clickAndWait(Locator.linkWithText(datasetLink));
-        clickAndWait(Locator.linkWithText("verifyAssay"));
-        assertTextPresent("QC State");
-        assertTextNotPresent("1234_B");
-        _extHelper.clickMenuButton("QC State", "All data");
-        clickButton("QC State", 0);
-        assertTextPresent("unknown QC", "1234_B");
+            // configure QC state management before importing duplicate data
+            clickFolder(getFolderName());
+            clickAndWait(Locator.linkWithText("Manage Study"));
+            clickAndWait(Locator.linkWithText("Manage Dataset QC States"));
+            setFormElement(Locator.name("newLabel"), "unknown QC");
+            setFormElement(Locator.name("newDescription"), "Unknown data is neither clean nor dirty.");
+            click(Locator.checkboxById("dirty_public"));
+            click(Locator.checkboxByName("newPublicData"));
+            clickButton("Save");
+            selectOptionByText(Locator.name("defaultDirectEntryQCState"), "unknown QC");
+            selectOptionByText(Locator.name("showPrivateDataByDefault"), "Public data");
+            clickButton("Save");
 
-        // Issue 21234: Dataset import no longer merges rows during import
-        DataRegionTable.findDataRegion(this).clickImportBulkDataDropdown();
-        _tsv = "mouseid\tsequencenum\tvisitdate\tSampleId\tDateField\tNumberField\tTextField\treplace\n" +
-                "999321234\t1\t1/1/2006\t1234_A\t2/1/2006\t5000\tnew text\tTRUE\n" +
-                "999321234\t1\t1/1/2006\t1234_B\t2/1/2006\t5000\tnew text\tTRUE\n";
-        setFormElement(Locator.id("tsv3"), _tsv);
-        _listHelper.submitImportTsv_error("Duplicate dataset row");
-
-        // Update a row and check the QC flag is defaulted to the study default 'unknown QC'
-        {
-            // Verify current state
+            // return to dataset import page
+            clickFolder(getFolderName());
+            clickAndWait(Locator.linkWithText(datasetLink));
             clickAndWait(Locator.linkWithText("verifyAssay"));
+            assertTextPresent("QC State");
+            assertTextNotPresent("1234_B");
             _extHelper.clickMenuButton("QC State", "All data");
+            clickButton("QC State", 0);
+            assertTextPresent("unknown QC", "1234_B");
+
+            // Issue 21234: Dataset import no longer merges rows during import
+            DataRegionTable.findDataRegion(this).clickImportBulkDataDropdown();
+            _tsv = "mouseid\tsequencenum\tvisitdate\tSampleId\tDateField\tNumberField\tTextField\treplace\n" +
+                    "999321234\t1\t1/1/2006\t1234_A\t2/1/2006\t5000\tnew text\tTRUE\n" +
+                    "999321234\t1\t1/1/2006\t1234_B\t2/1/2006\t5000\tnew text\tTRUE\n";
+            setFormElement(Locator.id("tsv3"), _tsv);
+            _listHelper.submitImportTsv_error("Duplicate dataset row");
+
+            // Update a row and check the QC flag is defaulted to the study default 'unknown QC'
+            {
+                // Verify current state
+                clickAndWait(Locator.linkWithText("verifyAssay"));
+                _extHelper.clickMenuButton("QC State", "All data");
+                _customizeViewsHelper.openCustomizeViewPanel();
+                _customizeViewsHelper.addCustomizeViewColumn("QCState", "QC State");
+                _customizeViewsHelper.addCustomizeViewSort("SampleId", "Ascending");
+                _customizeViewsHelper.applyCustomView();
+                DataRegionTable table = new DataRegionTable("Dataset", this);
+                assertEquals(Arrays.asList("1234_A", "1234_B"), table.getColumnDataAsText("SampleId"));
+                assertEquals(Arrays.asList(" ", " "), table.getColumnDataAsText("QCState"));
+                List<String> numberField = table.getColumnDataAsText("NumberField");
+                List<String> textField = table.getColumnDataAsText("TextField");
+
+                // Update the first row
+                String newText = "more new text";
+                clickAndWait(Locator.linkWithText("edit").index(0));
+                setFormElement(Locator.input("quf_TextField"), newText);
+                clickButton("Submit");
+                List<String> updatedTextField = Arrays.asList(newText, textField.get(0));
+
+                // Verify new state
+                table = new DataRegionTable("Dataset", this);
+                assertEquals(Arrays.asList("1234_A", "1234_B"), table.getColumnDataAsText("SampleId"));
+                assertEquals(Arrays.asList("unknown QC?", " "), table.getColumnDataAsText("QCState"));
+                assertEquals(numberField, table.getColumnDataAsText("NumberField"));
+                assertEquals(updatedTextField, table.getColumnDataAsText("TextField"));
+            }
+
+            // Test Bad Field Names -- #13607
+            clickButton("Manage");
+            clickButton("Edit Definition");
+            Locator.XPathLocator nameField = Locator.xpath("//input[starts-with(@name, 'ff_name')]");
+            waitForElement(nameField);
+            int newFieldIndex = getElementCount(nameField);
+            _listHelper.addField("Dataset Fields", "Bad Name", "Bad Name", ListHelper.ListColumnType.String);
+            clickButton("Save");
+            clickButton("View Data");
             _customizeViewsHelper.openCustomizeViewPanel();
-            _customizeViewsHelper.addCustomizeViewColumn("QCState", "QC State");
-            _customizeViewsHelper.addCustomizeViewSort("SampleId", "Ascending");
+            _customizeViewsHelper.addCustomizeViewColumn("Bad Name", "Bad Name");
             _customizeViewsHelper.applyCustomView();
-            DataRegionTable table = new DataRegionTable("Dataset", this);
-            assertEquals(Arrays.asList("1234_A", "1234_B"), table.getColumnDataAsText("SampleId"));
-            assertEquals(Arrays.asList(" ", " "), table.getColumnDataAsText("QCState"));
-            List<String> numberField = table.getColumnDataAsText("NumberField");
-            List<String> textField = table.getColumnDataAsText("TextField");
-
-            // Update the first row
-            String newText = "more new text";
+            _extHelper.clickMenuButton("QC State", "All data");
             clickAndWait(Locator.linkWithText("edit").index(0));
-            setFormElement(Locator.input("quf_TextField"), newText);
+            setFormElement(Locator.input("quf_Bad Name"), "Updatable Value");
             clickButton("Submit");
-            List<String> updatedTextField = Arrays.asList(newText, textField.get(0));
-
-            // Verify new state
-            table = new DataRegionTable("Dataset", this);
-            assertEquals(Arrays.asList("1234_A", "1234_B"), table.getColumnDataAsText("SampleId"));
-            assertEquals(Arrays.asList("unknown QC?", " "), table.getColumnDataAsText("QCState"));
-            assertEquals(numberField, table.getColumnDataAsText("NumberField"));
-            assertEquals(updatedTextField, table.getColumnDataAsText("TextField"));
+            assertTextPresent("Updatable Value");
+            clickAndWait(Locator.linkWithText("edit").index(0));
+            assertFormElementEquals(Locator.input("quf_Bad Name"), "Updatable Value");
+            setFormElement(Locator.input("quf_Bad Name"), "Updatable Value11");
+            clickButton("Submit");
+            assertTextPresent("Updatable Value11");
         }
-
-        // Test Bad Field Names -- #13607
-        clickButton("Manage");
-        clickButton("Edit Definition");
-        Locator.XPathLocator nameField = Locator.xpath("//input[starts-with(@name, 'ff_name')]");
-        waitForElement(nameField);
-        int newFieldIndex = getElementCount(nameField);
-        _listHelper.addField("Dataset Fields", "Bad Name", "Bad Name", ListHelper.ListColumnType.String);
-        clickButton("Save");
-        clickButton("View Data");
-        _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addCustomizeViewColumn("Bad Name", "Bad Name");
-        _customizeViewsHelper.applyCustomView();
-        _extHelper.clickMenuButton("QC State", "All data");
-        clickAndWait(Locator.linkWithText("edit").index(0));
-        setFormElement(Locator.input("quf_Bad Name"), "Updatable Value");
-        clickButton("Submit");
-        assertTextPresent("Updatable Value");
-        clickAndWait(Locator.linkWithText("edit").index(0));
-        assertFormElementEquals(Locator.input("quf_Bad Name"), "Updatable Value");
-        setFormElement(Locator.input("quf_Bad Name"), "Updatable Value11");
-        clickButton("Submit");
-        assertTextPresent("Updatable Value11");
     }
 
     @LogMethod
@@ -706,7 +715,7 @@ public class StudyTest extends StudyBaseTest
         clickAndWait(Locator.linkWithText("Alt ID mapping"));
         waitForElement(Locator.tagContainingText("div", "Contains up to one row of Alt ID mapping data for each "));
         DataRegionTable.findDataRegion(this).clickImportBulkDataDropdown();
-        waitForElement(Locator.tagWithText("div", "This is the Alias Dataset. You do not need to include information for the date column."));
+        //waitForElement(Locator.tagWithText("div", "This is the Alias Dataset. You do not need to include information for the date column."));
 
         //the crawler should be paused (this is done in create) to verify
         log("Verify searching for alternate ID returns participant page");
@@ -907,7 +916,7 @@ public class StudyTest extends StudyBaseTest
         clickAndWait(Locator.linkWithText("24"));
         //assertTextPresent(DEMOGRAPHICS_DESCRIPTION, "Male", "African American or Black");
         clickAndWait(Locator.linkWithText("999320016"));
-        waitAndClick(Locator.linkWithText("125: EVC-1: Enrollment Vaccination"));
+        waitAndClick(Locator.linkContainingText("EVC-1: Enrollment Vaccination"));
         assertTextPresent("right deltoid");
 
         verifyDemoCustomizeOptions();
@@ -927,12 +936,12 @@ public class StudyTest extends StudyBaseTest
 
         DataRegionTable auditTable =  new DataRegionTable("query", this);
         String[][] columnAndValues = new String[][] {{"Created By", getDisplayName()},
-                {"Project", PROJECT_NAME}, {"Container", STUDY_NAME}, {"SchemaName", "study"},
+                {"Project", getProjectName()}, {"Container", STUDY_NAME}, {"SchemaName", "study"},
                 {"QueryName", "DEM-1"}, {"Comment", "Exported to TSV"}};
         for(String[] columnAndValue : columnAndValues)
         {
             log("Checking column: "+ columnAndValue[0]);
-            assertEquals(columnAndValue[1], auditTable.getDataAsText(0, columnAndValue[0]));
+            assertEquals(columnAndValue[1], auditTable.getDataAsText(0, columnAndValue[0]).replace(": Demographics",""));
         }
         clickAndWait(Locator.linkContainingText("details"));
 
@@ -996,15 +1005,16 @@ public class StudyTest extends StudyBaseTest
         clickTab("Manage");
         clickAndWait(Locator.linkWithText("Manage Datasets"));
 
-        clickAndWait(Locator.linkWithText("489"));
-        assertTextPresent("ESIdt", "Form Completion Date");
+        clickAndWait(Locator.linkWithText("AE-1:(VTN) AE Log"));
+        DatasetPropertiesPage propertiesPage = new DatasetPropertiesPage(getDriver());
+        assertTextPresent("AE subsumed", "SAE number");
         assertTableCellTextEquals("details", 4, 1, "false");     // "Demographics Data" should be false
 
         // Verify that "Demographics Data" is checked and description is set
         clickAndWait(Locator.linkWithText("Manage Datasets"));
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
         assertTableCellTextEquals("details", 4, 1, "true");
-        assertTableCellTextEquals("details", 4, 3, DEMOGRAPHICS_DESCRIPTION);
+        assertTableCellTextEquals("details", 4, 3, getDemographicsDescription());
 
         // "Demographics Data" bit needs to be false for the rest of the test
         setDemographicsBit("DEM-1: Demographics", false);
@@ -1013,11 +1023,11 @@ public class StudyTest extends StudyBaseTest
         clickButtonContainingText("View Data");
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.showHiddenItems();
-        assertTrue("Could not find column \"MouseVisit/DEM-1\"", _customizeViewsHelper.isColumnPresent("MouseVisit/DEM-1"));
+        assertTrue("Could not find column \"MouseVisit/Alt ID mapping\"", _customizeViewsHelper.isColumnPresent("MouseVisit/Alt ID mapping"));
     }
 
     @LogMethod
-    private void verifyHiddenVisits()
+    protected void verifyHiddenVisits()
     {
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText("Study Navigator"));
@@ -1031,7 +1041,7 @@ public class StudyTest extends StudyBaseTest
     }
 
     @LogMethod
-    private void verifyVisitImportMapping()
+    protected void verifyVisitImportMapping()
     {
         clickAndWait(Locator.linkWithText("Manage Study"));
         clickAndWait(Locator.linkWithText("Manage Visits"));

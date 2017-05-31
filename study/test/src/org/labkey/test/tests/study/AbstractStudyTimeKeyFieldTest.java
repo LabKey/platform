@@ -36,6 +36,12 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
     protected static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
     protected static final String DEFAULT_DATETIME_FORMAT = "yyyy-MM-dd HH:mm";
 
+    @Override
+    protected String getDemographicsDescription()
+    {
+        return "Contains up to one row of DEM-1: Demographics data for each mouse.";
+    }
+
     protected void testCannotInsertExactDuplicateNoTimeKey(Map<String,String> kvp, String dataset,String folder)
     {
         ViewDatasetDataPage dataPage = goToDataset(folder,dataset);
@@ -171,6 +177,18 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         Assert.assertFalse("Additional Key Managed Field should not be enabled for a demographics dataset", editDatasetDefinitionPage.isAdditionalKeyManagedEnabled());
         dismissAllAlerts();
     }
+
+    @Override
+    protected void verifyHiddenVisits(){};
+
+    @Override
+    protected void verifyVisitImportMapping(){};
+
+    @Override
+    protected void verifyCohorts(){};
+
+    @Override
+    protected void verifyStudyAndDatasets(){};
 
     protected ViewDatasetDataPage goToDataset(String folder, String datasetName)
     {
