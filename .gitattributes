@@ -2767,6 +2767,7 @@ study/test/src/org/labkey/test/tests/search/SearchTestDefault.java -text
 study/test/src/org/labkey/test/tests/search/SearchTestMMap.java -text
 study/test/src/org/labkey/test/tests/search/SearchTestNIOFS.java -text
 study/test/src/org/labkey/test/tests/search/SearchTestSimpleFS.java -text
+study/test/src/org/labkey/test/tests/study/AbstractStudyTimeKeyFieldTest.java -text
 study/test/src/org/labkey/test/tests/study/AncillaryStudyTest.java -text
 study/test/src/org/labkey/test/tests/study/AssayTest.java -text
 study/test/src/org/labkey/test/tests/study/CohortTest.java -text
@@ -2778,11 +2779,13 @@ study/test/src/org/labkey/test/tests/study/SharedStudyTest.java -text
 study/test/src/org/labkey/test/tests/study/SpecimenMergeTest.java -text
 study/test/src/org/labkey/test/tests/study/SpecimenReplaceTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyCohortExportTest.java -text
+study/test/src/org/labkey/test/tests/study/StudyContinuousTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyDatasetImportFieldsTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyDatasetIndexTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyDatasetReloadTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyDatasetsTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyDataspaceTest.java -text
+study/test/src/org/labkey/test/tests/study/StudyDateBasedTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyDemoModeTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyExportTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyLotsOfParticipantsTest.java -text
