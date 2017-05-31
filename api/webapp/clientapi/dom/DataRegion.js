@@ -1441,8 +1441,8 @@ if (!LABKEY.DataRegions) {
         var dir = options && options.dir ? options.dir : 'n';
 
         var sec = _getSectionSelector(this, dir);
-        if (options && options.content) {
-            options.append === true ? sec.append(content) : sec.html(content);            
+        if (options && options.html) {
+            options.append === true ? sec.append(options.html) : sec.html(options.html);
         }
         sec.show();
     };
