@@ -24,7 +24,10 @@
 LABKEY.Ajax = new function () {
     'use strict';
 
-    var DEFAULT_HEADERS = {'X-LABKEY-CSRF': LABKEY.CSRF};
+    var DEFAULT_HEADERS = {
+        'X-LABKEY-CSRF': LABKEY.CSRF,
+        'X-ONUNAUTHORIZED': 'UNAUTHORIZED'
+    };
 
     var callback = function(fn, scope, args) {
         if (fn) {

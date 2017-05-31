@@ -11,9 +11,9 @@ Ext4.Ajax.timeout = 5 * 60 * 1000;
 
 // set csrf value for all requests
 if (!Ext4.Ajax.defaultHeaders) {
-    Ext4.Ajax.defaultHeaders = {}
+    Ext4.Ajax.defaultHeaders = {};
 }
-Ext4.Ajax.defaultHeaders['X-LABKEY-CSRF'] = LABKEY.CSRF;
+Ext4.apply(Ext4.Ajax.defaultHeaders, LABKEY.Ajax.DEFAULT_HEADERS);
 
 /**
  * @Override
