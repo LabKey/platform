@@ -20,18 +20,10 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%!
-    @Override
-    public void addClientDependencies(ClientDependencies dependencies)
-    {
-        dependencies.add("Ext4");
-    }
-%>
 <%
     WikiController.CustomizeWikiPartView me = (WikiController.CustomizeWikiPartView) HttpView.currentView();
     Portal.WebPart webPart = me.getModelBean();
@@ -45,17 +37,16 @@ var m = {};
 
 function getForm()
 {
-    return document.forms[1];
+    return document.getElementById('change-wiki-form');
 }
 function updatePageList()
 {
     //get selection value
     var containerId = getForm().webPartContainer.value;
-    var wikiPageList = containerId in m ? m[containerId] : null;
 
-    if (null != wikiPageList)
+    if (m[containerId])
     {
-        loadPages(wikiPageList);
+        loadPages(m[containerId]);
     }
     else
     {
@@ -65,15 +56,13 @@ function updatePageList()
         //show a "loading..." option while AJAX request is happening
         var select = getForm().name;
         select.options.length = 0;
-        o = new Option("loading...", "", true, true);
-        select.options[select.options.length] = o;
+        select.options[select.options.length] = new Option('loading...', '', true, true);
 
-        Ext4.Ajax.request({
-            url: LABKEY.ActionURL.buildURL("wiki", "getPages"),
-            success: onSuccess,
-            failure: onError,
+        LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('wiki', 'getPages.api', undefined, { id: containerId }),
             method: 'GET',
-            params: {'id' : containerId}
+            success: onSuccess.bind(this, containerId),
+            failure: onError
         });
     }
     return true;
@@ -89,7 +78,6 @@ function loadPages(wikiPageList)
     select.options.length = 0;
     var text;
     var fDefaultSelected;
-    var o;
 
     if (wikiPageList != null)
     {
@@ -97,14 +85,12 @@ function loadPages(wikiPageList)
         {
             text = wikiPageList[i].name + " (" + wikiPageList[i].title + ")";
             fDefaultSelected = wikiPageList[i].name.toLowerCase() == "default";
-            o = new Option(text, wikiPageList[i].name, fDefaultSelected, fDefaultSelected);
-            select.options[select.options.length] = o;
+            select.options[select.options.length] = new Option(text, wikiPageList[i].name, fDefaultSelected, fDefaultSelected);
         }
     }
     else
     {
-        o = new Option("<no pages>", "", true, true);
-        select.options[select.options.length] = o;
+        select.options[select.options.length] = new Option("<no pages>", "", true, true);
     }
 
     //re-enable the submit button while we're fetching the list of pages
@@ -127,18 +113,18 @@ function disableSubmit()
     btn.href = "javascript:return false;";
 }
 
-function onSuccess(response, config)
+function onSuccess(containerId, response)
 {
     //parse the response text as JSON
-    var json = Ext4.decode(response.responseText);
+    var json = JSON.parse(response.responseText);
     if (null != json)
     {
         //add the page list to the global map so that we don't need to fetch it again
-        m[config.params.id] = json.pages;
+        m[containerId] = json.pages;
         loadPages(json.pages);
     }
     else
-        window.alert("Unable to parse the response from the server!");
+        LABKEY.Utils.alert("Unable to parse the response from the server!");
 }
 
 function onError(response, config)
@@ -147,23 +133,21 @@ function onError(response, config)
     {
         //exception thrown within the server
         //parse the response text as JSON
-        var json = Ext4.decode(response.responseText);
-        window.alert("The server experienced the following error: " + json.exception);
+        var json = JSON.parse(response.responseText);
+        LABKEY.Utils.alert("The server experienced the following error: " + json.exception);
     }
     else if (response.status >= 400 && response.status <= 499)
     {
         //invalid container id
-        var json = Ext4.decode(response.responseText);
-        window.alert("The server could not find the selected project or folder: " + json.exception);
+        var json = JSON.parse(response.responseText);
+        LABKEY.Utils.alert("The server could not find the selected project or folder: " + json.exception);
     }
     else
-        window.alert("Problem communicating with the server: " + response.statusText + " (" + response.status + ")");
+        LABKEY.Utils.alert("Problem communicating with the server: " + response.statusText + " (" + response.status + ")");
 
     var select = getForm().name;
     select.options.length = 0;
-    o = new Option("<error getting pages>", "", true, true);
-    select.options[select.options.length] = o;
-
+    select.options[select.options.length] = new Option("<error getting pages>", "", true, true);
 }
 
 function restoreDefaultPage()
@@ -176,9 +160,69 @@ function restoreDefaultPage()
     updatePageList();
 }
 </script>
+<% if (PageFlowUtil.useExperimentalCoreUI()) { %>
+<labkey:form id="change-wiki-form" className="col-md-6 col-lg-5" method="POST">
+    <div class="form-group">
+        <label for="webPartContainer">Folder containing the page to display</label>
+        <select id="webPartContainer" name="webPartContainer" class="form-control" onkeyup="updatePageList();" onchange="updatePageList();">
+        <%
+            String webPartContainer = StringUtils.trimToNull(webPart.getPropertyMap().get("webPartContainer"));
+            for (Container c : me.getContainerList())
+            {
+                boolean selected = false;
+                //if there's no property setting for container, select the current container.
+                if (webPartContainer == null)
+                {
+                    if (null != currentContainer && c.getId().equals(currentContainer.getId()))
+                        selected = true;
+                }
+                else if (c.getId().equals(webPartContainer))
+                {
+                    selected = true;
+                }
+                out.write("\n");
+        %>
+            <option<%=selected(selected)%> value="<%=text(c.getId())%>"><%=h(c.getPath())%></option>
+        <%
+            }
+        %>
+        </select>
+        <small class="form-text">You can also <a href="javascript:restoreDefaultPage();">restore to this folders default page</a>.</small>
+    </div>
+    <div class="form-group">
+        <label for="wiki-name">Page to display</label>
+        <select id="wiki-name" name="name" class="form-control">
+            <%
+                //if current container has no pages
+                if (null == me.getContainerNameTitleMap() || me.getContainerNameTitleMap().size() == 0)
+                {%>
+            <option selected value="">&lt;no pages&gt;</option>
+            <%}
+            else
+            {
+                for (Map.Entry<String, String> entry : me.getContainerNameTitleMap().entrySet())
+                {
+                    String name = entry.getKey();
+                    String title = entry.getValue();
 
-
-<labkey:form name= "frmCustomize" method="post">
+                    //if there's a "default" page and no other page has been selected as default, select it.
+                    if (name.equalsIgnoreCase("default") && webPart.getPropertyMap().get("name") == null)
+                    {%>
+            <option selected value="<%=h(name)%>"><%=h(name + " (" + title + ")")%></option>
+            <%}
+            else
+            {%>
+            <option<%=selected(name.equals(webPart.getPropertyMap().get("name")))%> value="<%=h(name)%>"><%=h(name + " (" + title + ")")%></option>
+            <%}
+            }
+            }%>
+        </select>
+    </div>
+    <%= button("Submit").submit(true).id("btnSubmit") %>
+    <%= button("Cancel").href(getContainer().getStartURL(getUser())) %>
+</labkey:form>
+<% } else { %>
+<labkey:form id="change-wiki-form" method="POST">
 <table>
     <tr>
         <td colspan="2">
@@ -251,7 +295,7 @@ function restoreDefaultPage()
         <table>
             <tr>
                 <td align="left">
-                    <%= button("Submit").submit(true).attributes("name=\"Submit\" id=\"btnSubmit\"") %>
+                    <%= button("Submit").submit(true).id("btnSubmit") %>
                     <%= button("Cancel").href(getContainer().getStartURL(getUser())) %>
                 </td>
             </tr>
@@ -260,3 +304,4 @@ function restoreDefaultPage()
 </tr>
 </table>
 </labkey:form>
+<% } %>
