@@ -59,8 +59,9 @@
         No confidential data is submitted.
         <br/>
         <div style="margin-top: 5px;">
-        <input type="checkbox" id="allowReporting" name="allowReporting" <%=checked(bean.isAllowReporting() && !AppProps.getInstance().isDevMode())%>> Allow Automatic Reporting
-        <span style="font-size: smaller; font-style: italic;">(we strongly recommend this basic level of reporting)</span>
+            <input type="checkbox" id="allowReporting" name="allowReporting" <%=checked(bean.isAllowReporting() && !AppProps.getInstance().isDevMode())%>> Allow Automatic Reporting
+            <% String recommendText = AppProps.getInstance().isDevMode() ? "(we recommend leaving this unchecked when running in dev mode)" : "(we strongly recommend this basic level of reporting)"; %>
+            <span style="font-size: smaller; font-style: italic;"><%=h(recommendText)%></span>
         </div>
     </div>
     <%= button("Next").submit(true) %>
