@@ -416,8 +416,9 @@
             var html = '<div id="' + plotDivId + '" class="labkey-dataregion-msg-plot-analytic"></div>';
 
             if (LABKEY.experimental.useExperimentalCoreUI) {
-                region.displaySection(html, {
-                    append: true
+                region.displaySection({
+                    append: true,
+                    html: html
                 })
             }
             else {
