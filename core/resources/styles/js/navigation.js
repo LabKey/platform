@@ -342,7 +342,42 @@
 
 // Initialize tooltips
 +function($) {
+    'use strict';
+
     $(function () {
         $('[data-toggle="tooltip"]').tooltip();
     })
+}(jQuery);
+
+// Data Region column dropdown
++function($) {
+    'use strict';
+
+    var columnMenu;
+
+    function attachMenu(e) {
+        columnMenu = $(e.target).find('.dropdown-menu');
+        $('body').append(columnMenu.detach());
+
+        var parent = $(e.relatedTarget);
+        var offsets = parent.offset();
+
+        columnMenu.css({
+            top: offsets.top + parent.height() + 'px',
+            left: offsets.left + 'px',
+            width: columnMenu.width() + 'px'
+        });
+
+        columnMenu.show();
+    }
+
+    function detachMenu(e) {
+        if (columnMenu) {
+            $(e.target).append(columnMenu.detach());
+            columnMenu.hide();
+        }
+    }
+
+    $(document).on('show.bs.dropdown', '.lk-region-ct', attachMenu);
+    $(document).on('hide.bs.dropdown', '.lk-region-ct', detachMenu);
 }(jQuery);
