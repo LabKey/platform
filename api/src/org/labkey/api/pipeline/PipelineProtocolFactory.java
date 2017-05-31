@@ -119,7 +119,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         for (int i = 0; i < name.length(); i++)
         {
             char ch = name.charAt(i);
-            if (!Character.isLetterOrDigit(ch) && ch != '_' && ch != ' ')
+            if (!Character.isLetterOrDigit(ch) && ch != '_' && ch != ' ' && ch != '-')
                 return false;
         }
         return true;
