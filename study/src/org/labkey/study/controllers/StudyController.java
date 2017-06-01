@@ -2471,7 +2471,7 @@ public class StudyController extends BaseStudyController
             Pair<List<String>, UploadLog> result;
             try
             {
-                result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, true, file, originalName, columnMap, errors);
+                result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors);
             }
             catch (ServletException x)
             {

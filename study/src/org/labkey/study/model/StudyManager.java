@@ -3826,12 +3826,13 @@ public class StudyManager
 
     public List<String> importDatasetData(User user, DatasetDefinition def, DataLoader loader, Map<String, String> columnMap,
                                           BatchValidationException errors, DatasetDefinition.CheckForDuplicates checkDuplicates,
-                                          QCState defaultQCState, QueryUpdateService.InsertOption insertOption, StudyImportContext studyImportContext, Logger logger)
+                                          QCState defaultQCState, QueryUpdateService.InsertOption insertOption, StudyImportContext studyImportContext, Logger logger, boolean importLookupByAlternateKey)
             throws IOException, ServletException, SQLException
     {
         parseData(user, def, loader, columnMap);
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setInsertOption(insertOption);
+        context.setAllowImportLookupByAlternateKey(importLookupByAlternateKey);
         if (logger != null)
         {
             Map<Enum, Object> options = new HashMap<>();

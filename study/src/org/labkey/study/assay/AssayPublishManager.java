@@ -698,7 +698,7 @@ public class AssayPublishManager implements AssayPublishService
      * Return an array of LSIDs from the newly created dataset entries,
      * along with the upload log.
      */
-    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DatasetDefinition dsd, DataLoader dl, boolean withTriggers, FileStream fileIn, String originalFileName, Map<String, String> columnMap, BatchValidationException errors) throws SQLException, ServletException
+    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DatasetDefinition dsd, DataLoader dl, boolean importLookupByAlternateKey, FileStream fileIn, String originalFileName, Map<String, String> columnMap, BatchValidationException errors) throws SQLException, ServletException
     {
         DbScope scope = DbSchema.get("study").getScope();
 
@@ -717,7 +717,7 @@ public class AssayPublishManager implements AssayPublishService
                 if (defaultQCStateId != null)
                     defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
                 lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DatasetDefinition.CheckForDuplicates.sourceOnly,
-                        defaultQCState, QueryUpdateService.InsertOption.IMPORT, null, null);
+                        defaultQCState, QueryUpdateService.InsertOption.IMPORT, null, null, importLookupByAlternateKey);
                 if (!errors.hasErrors())
                     transaction.commit();
             }
