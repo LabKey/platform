@@ -359,7 +359,7 @@
     'use strict';
 
     $(function () {
-        $('[data-toggle="tooltip"]').tooltip();
+        $('[data-tt="tooltip"]').tooltip();
     })
 }(jQuery);
 
