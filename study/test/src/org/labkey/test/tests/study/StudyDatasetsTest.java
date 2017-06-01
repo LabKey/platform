@@ -29,7 +29,6 @@ import org.labkey.test.components.LookAndFeelScatterPlot;
 import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.components.ext4.Window;
 import org.labkey.test.components.study.DatasetFacetPanel;
-import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -158,12 +157,6 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     protected void createDataset(@LoggedParam String name)
     {
         _studyHelper.goToManageDatasets();
-
-
-        //TODO Remove before committing
-        DatasetPropertiesPage manageDatasetsPage = new DatasetPropertiesPage(this.getDriver());
-        
-        manageDatasetsPage.clickViewData();
 
         waitForText("Create New Dataset");
         click(Locator.xpath("//a[text()='Create New Dataset']"));
