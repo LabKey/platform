@@ -920,7 +920,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var participantGroupStore = new Ext.data.JsonStore({
             proxy: new Ext.data.HttpProxy({
-                url : LABKEY.ActionURL.buildURL("participant-group", "browseParticipantGroups", null, {includePrivateGroups : false}),
+                url : LABKEY.ActionURL.buildURL("participant-group", "browseParticipantGroups", null, {
+                    // the ImmPort module "Data Finder" creates private groups, so include them if that module is enabled
+                    includePrivateGroups : LABKEY.container.activeModules.indexOf('ImmPort') > -1
+                }),
                 method : 'POST'
             }),
             baseParams: { type : 'participantGroup', includeParticipantIds: true, includeUnassigned: false },
