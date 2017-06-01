@@ -170,11 +170,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             assert x.hasErrors();
             return 0;
         }
-        catch (QueryUpdateServiceException x)
-        {
-            rowException = x;
-        }
-        catch (DuplicateKeyException x)
+        catch (QueryUpdateServiceException | DuplicateKeyException | SQLException x)
         {
             rowException = x;
         }
