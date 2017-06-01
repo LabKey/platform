@@ -194,10 +194,7 @@ public class StudyProtectedExportTest extends StudyExportTest
 
         waitAndClick(Locator.name("ff_label9"));
         setColumnProtected();
-        sleep(1000); //TODO
-        clickButton("Save", 0);
-        waitForSaveAssay();
-
+        clickButton("Save");
     }
 
     protected  void verifyMaskedClinics(int clinicCount)
@@ -288,7 +285,7 @@ public class StudyProtectedExportTest extends StudyExportTest
     //TODO
     private void setColumnProtected()
     {
-        click(Locator.tagContainingText("span", "Advanced"));
+        _listHelper.selectPropertyTab("Advanced");
         checkCheckbox(Locator.checkboxByName("protected"));
     }
 
