@@ -19,24 +19,16 @@ package org.labkey.issue.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.Sort;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.issue.IssuesController;
@@ -44,10 +36,7 @@ import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.view.IssuesListView;
 import org.springframework.validation.BindException;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.List;
 
 public class IssuesQueryView extends QueryView
 {
@@ -114,127 +103,5 @@ public class IssuesQueryView extends QueryView
                 bar.add(prefsButton);
             }
         }
-    }
-
-    @Override
-    protected void addGridViews(MenuButton menu, URLHelper target, String currentView)
-    {
-        URLHelper url = cloneIssuesUrl(target);
-        NavTree item = new NavTree("all", url);
-        if ("".equals(currentView))
-            item.setStrong(URLHelper.queryEqual(url, target));
-        menu.addMenuItem(item);
-
-        boolean hasMilestoneField = false;
-        Domain domain = _issueDef.getDomain(getUser());
-        if (domain != null)
-            hasMilestoneField = domain.getPropertyByName("Milestone") != null;
-
-        url = cloneIssuesUrl(target);
-        url.addFilter(getDataRegionName(), FieldKey.fromString("Status"), CompareType.EQUAL, "open");
-        Sort sort = new Sort("AssignedTo/DisplayName");
-        if (hasMilestoneField)
-            sort.insertSortColumn(FieldKey.fromParts("Milestone"), Sort.SortDirection.ASC, true);
-        sort.addURLSort(url, getDataRegionName());
-        url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
-        item = new NavTree("open", url);
-        if ("".equals(currentView))
-            item.setStrong(URLHelper.queryEqual(url, target));
-        menu.addMenuItem(item);
-
-        url = cloneIssuesUrl(target);
-        url.addFilter(getDataRegionName(), FieldKey.fromString("Status"), CompareType.EQUAL, "resolved");
-        sort = new Sort("AssignedTo/DisplayName");
-        if (hasMilestoneField)
-            sort.insertSortColumn(FieldKey.fromParts("Milestone"), Sort.SortDirection.ASC, true);
-        sort.addURLSort(url, getDataRegionName());
-        url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
-        item = new NavTree("resolved", url);
-        if ("".equals(currentView))
-            item.setStrong(URLHelper.queryEqual(url, target));
-        menu.addMenuItem(item);
-
-        if (!getUser().isGuest())
-        {
-            url = cloneIssuesUrl(target);
-            url.addFilter(getDataRegionName(), FieldKey.fromString("AssignedTo/DisplayName"), CompareType.EQUAL, getUser().getDisplayName(getViewContext().getUser()));
-            url.addFilter(getDataRegionName(), FieldKey.fromString("Status"), CompareType.NEQ_OR_NULL, "closed");
-            sort = hasMilestoneField ? new Sort("-Milestone") : new Sort();
-            sort.addURLSort(url, getDataRegionName());
-            url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
-            item = new NavTree("mine", url);
-            if ("".equals(currentView))
-                item.setStrong(URLHelper.queryEqual(url, target));
-            menu.addMenuItem(item);
-        }
-
-        // sort the grid view alphabetically, with private views over public ones
-        List<CustomView> views = new ArrayList<>(getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest(), false, false).values());
-        views.sort((o1, o2) ->
-        {
-            if (!o1.isShared() && o2.isShared()) return -1;
-            if (o1.isShared() && !o2.isShared()) return 1;
-            if (o1.getName() == null) return -1;
-            if (o2.getName() == null) return 1;
-
-            return o1.getName().compareTo(o2.getName());
-        });
-
-        boolean addSep = true;
-
-        // issues doesn't preserve any URL sorts or filters because they may have been introduced by
-        // the built in filter views.
-        // TODO: replace these views with programatically filtered ones so we can leave URL filters on
-        for (CustomView view : views)
-        {
-            String label = view.getName();
-            if (label == null)
-                continue;
-
-            if (addSep)
-            {
-                menu.addSeparator();
-                addSep = false;
-            }
-            item = new NavTree(label, cloneIssuesUrl(target).replaceParameter(param(QueryParam.viewName), label).getLocalURIString());
-            item.setId("GridViews:" + PageFlowUtil.filter(label));
-            if (label.equals(currentView))
-                item.setStrong(true);
-
-            StringBuilder description = new StringBuilder();
-            if (view.isSession())
-            {
-                item.setEmphasis(true);
-                description.append("Unsaved ");
-            }
-            if (view.isShared())
-                description.append("Shared ");
-            if (description.length() > 0)
-                item.setDescription(description.toString());
-
-            if (view.isShared())
-                item.setImageSrc(getViewContext().getContextPath() + "/reports/grid_shared.gif");
-            else
-            {
-                item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
-                item.setImageCls("fa fa-table");
-            }
-            menu.addMenuItem(item);
-        }
-    }
-
-    private URLHelper cloneIssuesUrl(URLHelper target)
-    {
-        URLHelper url = target.clone().deleteParameters();
-
-        // preserve some required parameters
-        if (target.getParameter(IssuesListView.ISSUE_LIST_DEF_NAME) != null)
-            url.addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, target.getParameter(IssuesListView.ISSUE_LIST_DEF_NAME));
-        if (target.getParameter(QueryParam.schemaName.name()) != null)
-            url.addParameter(QueryParam.schemaName.name(), target.getParameter(QueryParam.schemaName.name()));
-        if (target.getParameter(param(QueryParam.queryName)) != null)
-            url.addParameter(param(QueryParam.queryName), target.getParameter(param(QueryParam.queryName)));
-
-        return url;
     }
 }

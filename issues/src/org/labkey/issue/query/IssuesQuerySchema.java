@@ -16,33 +16,57 @@
 
 package org.labkey.issue.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.Module;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class IssuesQuerySchema extends UserSchema 
+public class IssuesQuerySchema extends UserSchema
 {
     public static final String SCHEMA_NAME = "issues";
     public static final String ALL_ISSUE_TABLE = "all_issues";      // legacy all issues
@@ -224,5 +248,368 @@ public class IssuesQuerySchema extends UserSchema
             map.put(def.getName(), def);
         }
         return map;
+    }
+
+    /**
+     * Add the built in custom views for : all, open, resolved and mine.
+     */
+    @Override
+    public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd, boolean alwaysUseTitlesForLoadingCustomViews)
+    {
+        List<CustomView> customViews = new ArrayList<>();
+        String queryName = qd.getName();
+
+        // built in custom views only apply to issue lists
+        if (!tableNames.contains(queryName) && !TableType.IssueListDef.name().equals(queryName))
+        {
+            IssueListDef issueListDef = IssueManager.getIssueListDef(container, queryName);
+            if (issueListDef != null)
+            {
+                customViews.add(new IssuesBuiltInCustomView(qd, "all", Collections.emptyList(), null));
+
+                Domain domain = issueListDef.getDomain(getUser());
+                Sort sort = new Sort("AssignedTo/DisplayName");
+                if (domain != null && domain.getPropertyByName("Milestone") != null)
+                    sort.insertSortColumn(FieldKey.fromParts("Milestone"), Sort.SortDirection.ASC, true);
+
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromString("Status"), "open");
+
+                customViews.add(new IssuesBuiltInCustomView(qd, "open", filter.getClauses(), sort));
+
+                filter = new SimpleFilter(FieldKey.fromString("Status"), "resolved");
+                customViews.add(new IssuesBuiltInCustomView(qd, "resolved", filter.getClauses(), sort));
+
+                if (!getUser().isGuest())
+                {
+                    filter = new SimpleFilter(FieldKey.fromString("AssignedTo/DisplayName"), "~me~");
+                    filter.addCondition(FieldKey.fromString("Status"), "closed", CompareType.NEQ_OR_NULL);
+                    customViews.add(new IssuesBuiltInCustomView(qd, "mine", filter.getClauses(), sort));
+                }
+            }
+        }
+        return customViews;
+    }
+
+    private static class IssuesBuiltInCustomView implements CustomView
+    {
+        private QueryDefinition _queryDef;
+        private String _name;
+        private List<FieldKey> _columns;
+        private List<SimpleFilter.FilterClause> _filters = new ArrayList<>();
+        private String _filterText;
+        private Sort _sort;
+
+        public IssuesBuiltInCustomView(QueryDefinition def, String name, List<SimpleFilter.FilterClause> filters, @Nullable Sort sort)
+        {
+            _queryDef = def;
+            _name = name;
+            _filters.addAll(filters);
+            _sort = sort;
+        }
+
+        @Override
+        public QueryDefinition getQueryDefinition()
+        {
+            return _queryDef;
+        }
+
+        @Override
+        public void setName(String name)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setQueryName(String queryName)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setCanInherit(boolean f)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean canEdit(Container c, Errors errors)
+        {
+            return false;
+        }
+
+        @Override
+        public void setIsHidden(boolean f)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setColumns(List<FieldKey> columns)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setColumnProperties(List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> list)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void applyFilterAndSortToURL(ActionURL url, String dataRegionName)
+        {
+            if (!hasFilterOrSort())
+                return;
+
+            for (SimpleFilter.FilterClause clause : _filters)
+            {
+                Map.Entry<String, String> param = clause.toURLParam(dataRegionName + ".");
+                url.addParameter(param.getKey(), param.getValue());
+            }
+
+            if (_sort != null)
+                url.addParameter(dataRegionName + ".sort", _sort.getURLParamValue());
+        }
+
+        @Override
+        public void setFilterAndSortFromURL(ActionURL url, String dataRegionName)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setFilterAndSort(String filter)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void save(User user, HttpServletRequest request) throws QueryException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void delete(User user, HttpServletRequest request) throws QueryException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean serialize(VirtualFile dir) throws IOException
+        {
+            return true;
+        }
+
+        @Override
+        public String getName()
+        {
+            return _name;
+        }
+
+        @Override
+        public String getLabel()
+        {
+            return _name;
+        }
+
+        @Override
+        public User getOwner()
+        {
+            return null;
+        }
+
+        @Override
+        public boolean isShared()
+        {
+            return false;
+        }
+
+        @Override
+        public User getCreatedBy()
+        {
+            return null;
+        }
+
+        @Override
+        public Date getCreated()
+        {
+            return new Date();
+        }
+
+        @Override
+        public User getModifiedBy()
+        {
+            return null;
+        }
+
+        @Override
+        public Date getModified()
+        {
+            return new Date();
+        }
+
+        @Override
+        public String getSchemaName()
+        {
+            return _queryDef.getSchema().getSchemaName();
+        }
+
+        @Override
+        public SchemaKey getSchemaPath()
+        {
+            return _queryDef.getSchema().getSchemaPath();
+        }
+
+        @Override
+        public String getQueryName()
+        {
+            return _queryDef.getName();
+        }
+
+        @Override
+        public Container getContainer()
+        {
+            return null;
+        }
+
+        @Override
+        public String getEntityId()
+        {
+            return null;
+        }
+
+        @Override
+        public boolean canInherit()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isHidden()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isEditable()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isDeletable()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isRevertable()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isOverridable()
+        {
+            return true;
+        }
+
+        @Override
+        public boolean isSession()
+        {
+            return false;
+        }
+
+        @Override
+        public String getCustomIconUrl()
+        {
+            return "/issues/built-in.png";
+        }
+
+        @Override
+        public String getCustomIconCls()
+        {
+            return null;
+        }
+
+        @NotNull
+        @Override
+        public List<FieldKey> getColumns()
+        {
+            if (_columns == null)
+            {
+                _columns = new ArrayList<>();
+                TableInfo table = _queryDef.getTable(new ArrayList<QueryException>(), true);
+                if (table != null)
+                {
+                    _columns = table.getDefaultVisibleColumns();
+                }
+            }
+            return _columns;
+        }
+
+        @NotNull
+        @Override
+        public List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> getColumnProperties()
+        {
+            List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> result = new ArrayList<>();
+            for (FieldKey fieldKey : getColumns())
+            {
+                result.add(new Pair<>(fieldKey, Collections.emptyMap()));
+            }
+            return result;
+        }
+
+        @Override
+        public String getFilterAndSort()
+        {
+            if (_filterText == null)
+            {
+                try
+                {
+                    URLHelper dest = new URLHelper("");
+                    for (SimpleFilter.FilterClause clause : _filters)
+                    {
+                        Map.Entry<String, String> param = clause.toURLParam(FILTER_PARAM_PREFIX + ".");
+                        dest.addParameter(param.getKey(), param.getValue());
+                    }
+
+                    if (_sort != null)
+                        dest.addParameter(FILTER_PARAM_PREFIX + ".sort", _sort.getURLParamValue());
+
+                    _filterText = dest.toString();
+                }
+                catch (URISyntaxException use)
+                {
+                    throw UnexpectedException.wrap(use);
+                }
+            }
+            return _filterText;
+        }
+
+        @Override
+        public String getContainerFilterName()
+        {
+            return ContainerFilter.Type.Current.name();
+        }
+
+        @Override
+        public boolean hasFilterOrSort()
+        {
+            return !_filters.isEmpty();
+        }
+
+        @Override
+        public Collection<String> getDependents(User user)
+        {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public boolean isLoadedFromTableTitle()
+        {
+            return false;
+        }
     }
 }
