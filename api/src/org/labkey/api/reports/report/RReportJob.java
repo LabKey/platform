@@ -173,24 +173,15 @@ public class RReportJob extends PipelineJob implements Serializable
         {
             // get the input file which should have been previously created
             File inputFile = inputFile(report, context);
+            List<ParamReplacement> outputSubst = new ArrayList<>();
 
-            if (inputFile.exists())
-            {
-                List<ParamReplacement> outputSubst = new ArrayList<>();
+            // todo: figure out a way to pass script input parameters for a script job if needed.
+            String output = report.runScript(context, outputSubst, inputFile, null);
+            if (!StringUtils.isEmpty(output))
+                info(output);
 
-                // todo: figure out a way to pass script input parameters for a script job if needed.
-                String output = report.runScript(context, outputSubst, inputFile, null);
-                if (!StringUtils.isEmpty(output))
-                    info(output);
-
-                processOutputs(report, outputSubst);
-                setStatus(TaskStatus.complete, "Job finished at: " + DateUtil.nowISO());
-            }
-            else
-            {
-                error("Unable to find input file " + inputFile);
-                setStatus(TaskStatus.error, "Job failed at: " + DateUtil.nowISO());
-            }
+            processOutputs(report, outputSubst);
+            setStatus(TaskStatus.complete, "Job finished at: " + DateUtil.nowISO());
         }
         catch (Exception e)
         {
