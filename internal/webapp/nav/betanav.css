@@ -44,15 +44,12 @@
     padding-right: 25px;
 }
 
-.project-list ul li:hover
+.project-list ul li.last-active
 {
-    /*background-color: #126495;*/
-    background-image: url('../_images/beta_nav_arrow.png');
-    background-repeat: no-repeat;
-    background-position: 95% 50%;
+    background: #126495 url('../_images/beta_nav_arrow.png') no-repeat 95% 50%;
 }
 
-.project-list ul li:hover a
+.project-list ul li.last-active a
 {
     color: #ffffff;
 }
@@ -81,9 +78,6 @@
     padding: 5px 50px 10px 10px;
 }
 
-.maintainHover {
-    color: #ffffff;
-}
-.nav-buttons {
+.beta-nav-buttons {
     margin-top: 10px;
 }
