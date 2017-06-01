@@ -199,8 +199,8 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 
             if (null != tinfo.getDescription())
                 resp.put("description", tinfo.getDescription());
-            if(null != tinfo.getImportMessage())
-                    resp.put("importMessage", tinfo.getImportMessage());
+            if (null != tinfo.getImportMessage())
+                resp.put("importMessage", tinfo.getImportMessage());
 
             JSONArray templates = new JSONArray();
             List<Pair<String, String>> it = tinfo.getImportTemplates(getViewContext());
