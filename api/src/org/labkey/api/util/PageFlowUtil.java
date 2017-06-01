@@ -1364,7 +1364,7 @@ public class PageFlowUtil
         return "<a class=\"" + iconCls + "\" " + additions + "href=\"" + filter(url) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                (tooltip != null ? "data-toggle=\"tooltip\" data-placement=\"top\" title data-original-title=\"" + tooltip + "\"" : "") +
+                (tooltip != null ? "data-tt=\"tooltip\" data-placement=\"top\" title data-original-title=\"" + tooltip + "\"" : "") +
                 ">" + "</a>";
     }
 

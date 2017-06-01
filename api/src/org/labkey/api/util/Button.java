@@ -225,7 +225,7 @@ public class Button
         String tip = tooltip != null ? tooltip : (iconOnly && text != null ? text : null);
         if (tip != null)
         {
-            sb.append("data-toggle=\"tooltip\" data-placement=\"top\" title=\"").append(tip).append("\" ");
+            sb.append("data-tt=\"tooltip\" data-placement=\"top\" title=\"").append(tip).append("\" ");
         }
 
         sb.append(">");

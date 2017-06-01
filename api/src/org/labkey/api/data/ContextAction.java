@@ -63,7 +63,7 @@ public class ContextAction
         sb.append("<div class=\"").append(cssClass).append("\"");
 
         if (getTooltip() != null)
-            sb.append(" data-toggle=\"tooltip\" data-placement=\"top\" title=\"").append(PageFlowUtil.filter(getTooltip())).append("\"");
+            sb.append(" data-tt=\"tooltip\" data-placement=\"top\" title=\"").append(PageFlowUtil.filter(getTooltip())).append("\"");
 
         if (getOnClick() != null)
             sb.append(" onclick=\"").append(getOnClick()).append("\"");
