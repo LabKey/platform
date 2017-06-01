@@ -102,13 +102,12 @@
 <%  } %>
                     </ul>
                 </li>
-                <li class="dropdown hidden-xs" data-webpart="projectnav" data-name="projectnav">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                <li class="dropdown hidden-xs" data-webpart="betanav" data-name="betanav">
+                    <a href="#" class="dropdown-toggle">
                         <i class="fa fa-folder-open"></i>&nbsp;<%=h(model.getProjectTitle())%>
                     </a>
                     <ul class="dropdown-menu"></ul>
                 </li>
-
 <%
     for (Pair<String, Portal.WebPart> pair : menus)
     {

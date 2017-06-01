@@ -156,6 +156,8 @@
 }(jQuery);
 
 +function ($) {
+    'use strict';
+
     $(function() {
         var menus = window.__menus;
         if (!menus) {
@@ -190,12 +192,9 @@
         });
 
         // lock body scrolling
-        $('#project-mobile').on('show.bs.dropdown', function() {
-            $('body').addClass('scroll-locked');
-        });
-        $('#project-mobile').on('hide.bs.dropdown', function() {
-            $('body').removeClass('scroll-locked');
-        });
+        $('#project-mobile')
+                .on('show.bs.dropdown', function() { $('body').addClass('scroll-locked'); })
+                .on('hide.bs.dropdown', function() { $('body').removeClass('scroll-locked'); });
     });
 }(jQuery);
 
@@ -317,7 +316,6 @@
             menu.removeClass("dropdown-menu-right");
             menu.addClass("dropdown-menu-left");
         }
-
     };
 
     // SubMenu DATA-API
@@ -338,6 +336,22 @@
             .on('hide.bs.dropdown.data-api', '.lk-menu-drop', SubMenu.prototype.unfurl)
             .on('shown.bs.dropdown.data-api', '.lk-menu-drop', SubMenu.prototype.viewportAlign);
 
+    $(function() {
+
+        $('.navbar-header .nav li.dropdown > a.dropdown-toggle').on('click', function(e) {
+            $(this).parent().trigger('show.bs.dropdown');
+            $(this).parent().toggleClass('open');
+            e.stopPropagation(); // prevent #
+        });
+
+        $(document).on('click', function(e) {
+            var sel = $('.navbar-header .nav li.dropdown');
+            if (!sel.is(e.target) && sel.has(e.target).length === 0 && $('.open').has(e.target).length === 0) {
+                sel.removeClass('open');
+                sel.trigger('hide.bs.dropdown');
+            }
+        });
+    });
 }(jQuery);
 
 // Initialize tooltips
@@ -378,6 +392,7 @@
         }
     }
 
-    $(document).on('show.bs.dropdown', '.lk-region-ct', attachMenu);
-    $(document).on('hide.bs.dropdown', '.lk-region-ct', detachMenu);
+    $(document)
+            .on('show.bs.dropdown', '.lk-region-ct', attachMenu)
+            .on('hide.bs.dropdown', '.lk-region-ct', detachMenu);
 }(jQuery);

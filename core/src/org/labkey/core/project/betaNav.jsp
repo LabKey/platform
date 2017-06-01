@@ -31,8 +31,8 @@
     {
         dependencies.add("internal/jQuery");
         dependencies.add("internal/jQuery/jquery.menu-aim.js");
-        dependencies.add("Ext4");
-        dependencies.add("nav/betanav.css");
+        if (!PageFlowUtil.useExperimentalCoreUI()) // see core/_navigation.scss
+            dependencies.add("nav/betanav.css");
     }
 %>
 <%
@@ -41,16 +41,14 @@
 
     // Create Project URL
     ActionURL createProjectURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateProjectURL(me.getViewContext().getActionURL());
-
     NavTree projects = ContainerManager.getProjectList(getViewContext());
 %>
 <div class="beta-nav">
     <div class="list-content">
-
         <div class="project-list-container iScroll">
             <p class="title">Projects</p>
             <div class="project-list" style="max-height: 375px; overflow-x: hidden;">
-                <ul class="dropdown-menu">
+                <ul>
                 <%
                     for (NavTree p : projects.getChildren())
                     {
@@ -66,7 +64,6 @@
                 </ul>
             </div>
         </div>
-
         <div class="folder-list-container">
             <p class="title">Project Folders & Pages</p>
             <div id="folder-tree-wrap" class="beta-folder-tree">
@@ -75,99 +72,58 @@
         </div>
     </div>
 </div>
-<div class="nav-buttons">
+<div class="beta-nav-buttons">
     <span class="button-icon"><a href="<%=createProjectURL%>" title="New Project"><img src="<%=getContextPath()%>/_images/icon_projects_add.png" alt="New Project" /></a></span>
 </div>
 <script type="text/javascript">
-    Ext4.onReady(function() {
-        var prepFolderNav = function() {
-            var toggle = function(selector) {
-                var p = selector.parent();
-                if (p) {
-                    var collapse = true;
-                    if (p.hasCls('expand-folder')) {
-                        // collapse the tree
-                        p.replaceCls('expand-folder', 'collapse-folder');
+    +function($) {
+        'use strict';
+
+        var cache = [];
+
+        var toggle = function() {
+            var p = $(this).parent();
+            if (p && p.length) {
+                var collapse = true;
+                if (p.hasClass('expand-folder')) {
+                    // collapse the tree
+                    p.removeClass('expand-folder').addClass('collapse-folder');
+                }
+                else {
+                    // expand the tree
+                    p.removeClass('collapse-folder').addClass('expand-folder');
+                    collapse = false;
+                }
+
+                p.children('a').each(function() {
+                    var a = $(this);
+                    var url = a.attr('expandurl');
+                    if (url) {
+                        url += collapse ? '&collapse=true' : '';
+                        LABKEY.Ajax.request({url: url});
+                    }
+                });
+            }
+        };
+
+        var requestProject = function(el) {
+            var link = $(el);
+            if (link) {
+                var name = link.data('field');
+
+                if (name) {
+                    name = decodeURIComponent(name);
+                    if (cache[name]) {
+                        $('#folder-tree-wrap').html(cache[name]);
                     }
                     else {
-                        // expand the tree
-                        p.replaceCls('collapse-folder', 'expand-folder');
-                        collapse = false;
-                    }
-
-                    var a = p.child('a');
-                    if (a) {
-                        var url = a.getAttribute('expandurl');
-                        if (url) {
-                            url += (collapse ? '&collapse=true' : '');
-                            Ext4.Ajax.request({ url : url });
-                        }
-                    }
-                }
-            };
-
-            // nodes - the set of +/- icons
-            var nodes = Ext4.DomQuery.select('.folder-nav .clbl span.marked');
-            for (var n=0; n < nodes.length; n++) {
-                Ext4.get(nodes[n]).on('click', function(x,node) { toggle(Ext4.get(node)); });
-            }
-
-            // scrollIntoView
-            var siv = function(t, ct) {
-                ct = Ext4.getDom(ct) || Ext4.getBody().dom;
-                var el = t.dom,
-                        offsets = t.getOffsetsTo(ct),
-                // el's box
-                        top = offsets[1] + ct.scrollTop,
-                        bottom = top + el.offsetHeight,
-                // ct's box
-                        ctClientHeight = ct.clientHeight,
-                        ctScrollTop = parseInt(ct.scrollTop, 10),
-                        ctBottom = ctScrollTop + ctClientHeight,
-                        ctHalf = (ctBottom / 2);
-                if (bottom > ctBottom) { // outside the visible area
-                    ct.scrollTop = bottom - (ctClientHeight / 2);
-                }
-                else if (bottom > ctHalf) { // centering
-                    ct.scrollTop = bottom - ctHalf;
-                }
-                // corrects IE, other browsers will ignore
-                ct.scrollTop = ct.scrollTop;
-
-                return this;
-            };
-
-            // Folder Scrolling
-            var t = Ext4.get('folder-target');
-            if (t) { siv(t, Ext4.get('folder-tree-wrap')); }
-        };
-        var cache = [];
-        var requestProject = function(el) {
-            var link = Ext4.get(el);
-            if(link)
-            {
-                var name = link.getAttribute('data-field');
-
-                if (name)
-                {
-                    name = decodeURIComponent(name);
-                    //ajax call to request folder navigation
-                    if (cache[name])
-                    {
-                        //using cached response
-                        Ext4.get('folder-tree-wrap').update(cache[name]);
-                    }
-                    else
-                    {
-                        Ext4.Ajax.request({
+                        LABKEY.Ajax.request({
                             url: LABKEY.ActionURL.buildURL('project', 'getFolderNavigation', null, {projectName: name}),
-                            success: function (response)
-                            {
-                                var data = Ext4.decode(response.responseText);
+                            success: function (response) {
+                                var data = JSON.parse(response.responseText);
                                 // add result to the cache
                                 cache[name] = data.html;
-                                Ext4.get('folder-tree-wrap').update(data.html);
-                                prepFolderNav();
+                                $('#folder-tree-wrap').html(data.html);
                             }
                         });
                     }
@@ -177,31 +133,23 @@
             return false;
         };
 
-        // TODO: Center focus on active project
-        prepFolderNav();
-        var $ = jQuery;
-        var $menu = $('.dropdown-menu');
+        $(function() {
+            $('.beta-nav').on('click', '.clbl span.marked', toggle);
 
-        // requests a submenu for the curent directory, takes current row as a parameter
-        function activateFolder(row) {
-            var $row = $(row),
-                    submenuId = $row.data("submenuId");
-            // gets the new folder on the list
-            if($(row).children('a')[0])
-            {
-                requestProject($(row).children('a')[0]);
-            }
-            $row.find("a").addClass("maintainHover");
-        }
-        function deactivateFolder(row) {
-            var $row = $(row),
-                    submenuId = $row.data("submenuId");
-            $row.find("a").removeClass("maintainHover");
-        }
-        $menu.menuAim({
-            // runs the active row and creates the delay function and triangle
-            activate: activateFolder,
-            deactivate: deactivateFolder
+            $('.project-list > ul').menuAim({
+                activate: function(row) {
+                    var $row = $(row);
+                    $row.addClass('last-active');
+
+                    var links = $(row).children('a');
+                    if (links.length) {
+                        requestProject(links[0]);
+                    }
+                },
+                deactivate: function(row) {
+                    $(row).removeClass('last-active');
+                }
+            });
         });
-    });
+    }(jQuery);
 </script>

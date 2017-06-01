@@ -35,29 +35,32 @@
 %>
 <div id="fmp"></div>
 <script type="text/javascript">
-    LABKEY.requiresExt4ClientAPI();
-    LABKEY.requiresScript("admin/FolderManagementPanel.js");
-</script>
-<script type="text/javascript">
+    +function() {
+        function init() {
+            Ext4.onReady(function() {
 
-    Ext4.onReady(function() {
+                var folderPanel = Ext4.create('LABKEY.ext4.panel.FolderManagement', {
+                    renderTo: 'fmp',
+                    height: 700,
+                    minWidth: 600,
+                    selected: <%= c.getRowId() %>,
+                    requiredPermission: <%=PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>,
+                    showContainerTabs: true
+                });
 
-        var folderPanel = Ext4.create('LABKEY.ext4.panel.FolderManagement', {
-            renderTo : 'fmp',
-            height   : 700,
-            minWidth : 600,
-            selected : <%= c.getRowId() %>,
-            requiredPermission : <%=PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>,
-            showContainerTabs : true
+                var _resize = function(w, h) {
+                    if (!folderPanel.rendered)
+                        return;
+
+                    LABKEY.ext4.Util.resizeToViewport(folderPanel, w, h);
+                };
+
+                Ext4.EventManager.onWindowResize(_resize);
+            });
+        }
+
+        LABKEY.requiresExt4ClientAPI(function() {
+            LABKEY.requiresScript('admin/FolderManagementPanel.js', init);
         });
-
-        var _resize = function(w, h) {
-            if (!folderPanel.rendered)
-                return;
-
-            LABKEY.ext4.Util.resizeToViewport(folderPanel, w, h);
-        };
-
-        Ext4.EventManager.onWindowResize(_resize);
-    });
+    }();
 </script>

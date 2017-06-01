@@ -35,6 +35,8 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
+    // TODO: This dependency declaration does not work due to TabStripView.java not correctly threading dependencies prior to render
+    // Declaration is re-declared in JavaScript in this jsp.
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
@@ -42,10 +44,9 @@
     }
 %>
 <labkey:errors/>
-
-<script>
-var requiredModules = new Object();
-var defaultModules = new Object();  <% // This is used... Java code below generates JavaScript that references defaultModules[] %>
+<script type="text/javascript">
+var requiredModules = {};
+var defaultModules = {};  <% // This is used... Java code below generates JavaScript that references defaultModules[] %>
 <% //Generate javascript objects...
     FolderManagementAction.FolderManagementForm form = (FolderManagementAction.FolderManagementForm) HttpView.currentModel();
     final ViewContext context = getViewContext();
@@ -88,7 +89,7 @@ var defaultModules = new Object();  <% // This is used... Java code below genera
         }
     }
 %>
-var switchedOnLast = new Object();
+var switchedOnLast = {};
 function changeFolderType()
 {
     var i;
@@ -96,11 +97,11 @@ function changeFolderType()
 
     var required = requiredModules[name];
     //Make a map
-    var map = new Object();
+    var map = {};
     for (i = 0; i < required.length; i++)
         map[required[i]] = true;
 
-    var switchedOn = new Object();
+    var switchedOn = {};
     for (i = 0; i < <%= allModules.size() %>; i++)
     {
         var current = document.folderModules['activeModules[' + i + ']'];
@@ -198,13 +199,11 @@ function updateDefaultOptions(cb)
     if ("None" != folderTypename)
     {
         document.getElementById("defaultTabDiv").style.display = "none";
-        //setNodeText(document.getElementById("tabsHeader"), "Available Modules:");
         return true;
     }
     else
     {
         document.getElementById("defaultTabDiv").style.display = "";
-        //setNodeText(document.getElementById("tabsHeader"), "Available Folder Tabs:");
     }
         
     for (var i = 0; i < <%= allModules.size() %>; i++)
@@ -224,10 +223,6 @@ function updateDefaultOptions(cb)
     return true;
 }
 
-function setNodeText(parent, text)
-{
-    parent.innerHTML = text;
-}
 function validate()
 {
     for (var i = 0; i < <%= allModules.size() %>; i++)
@@ -240,17 +235,6 @@ function validate()
     }
     return false;
 }
-
-function checkChangedType()
-{
-    var currentType = '<%=h(folderType.getName())%>';
-    if (currentType.toLowerCase() != getSelectedFolderType().toLowerCase())
-    {
-        return confirm("Are you sure you want to change a container tab's folder type?");
-    }
-    return true;
-}
-
 </script>
 <labkey:form name="folderModules" id="folderModules" method="POST" action="<%=text(buildURL(FolderManagementAction.class))%>" onsubmit="return validate();">
     <input type="hidden" name="tabId" value="folderType">
@@ -281,7 +265,7 @@ function checkChangedType()
     %>
                 </table>
                 <input type="hidden" name="wizard" value="<%=h(form.isWizard())%>">
-                <div id="UpdateFolderButtonDiv"/>
+                <div id="UpdateFolderButtonDiv"></div>
     <%WebPartView.endTitleFrame(out);%>
     </td>
     <td width="30%" valign="top">
@@ -335,134 +319,127 @@ for (Module module : allModules)
 </labkey:form>
 </div>
 <script type="text/javascript">
-
-    var updateButton = Ext4.create('Ext.button.Button', {
-        text: '<%=text(form.isWizard() ? "Next" : "Update Folder")%>',
-        renderTo: 'UpdateFolderButtonDiv',
-        handler: function() {
-            if (!validate())
-            {
-                Ext4.Msg.alert("Error", "Please select at least one tab to display.");
-            }
-            else
-            {
-                var currentType = "<%=h(folderType.getName())%>";
-                var isContainerTab = <%=c.isContainerTab()%>;
-                var newFolderType = getSelectedFolderType();
-                if (isContainerTab)
-                {
-                    if (currentType.toLowerCase() != newFolderType.toLowerCase())
-                    {
-                        Ext4.Msg.confirm("Change Folder Type", "Are you sure you want to change a tab folder's type?", function(btn) {
-                            if (btn == "yes")
-                            {
-                                submitForm(document.getElementById('folderModules'));
-                            }
-                        }, this);
-                    }
-                    else
-                    {
-                        submitForm(document.getElementById('folderModules'));
-                    }
-                }
-                else
-                {
-                    this.checkDeletedTabFolders(newFolderType);
-                }
-            }
-        },
-
-        checkDeletedTabFolders: function(newFolderType) {
-            // call to find out if container had deleted tab folders from the new folder type
-            Ext4.Ajax.request({
-                url     : LABKEY.ActionURL.buildURL('core', 'getContainerInfo.api'),
-                method  : 'POST',
-                jsonData: {
-                    containerPath : "<%=text(path)%>",
-                    newFolderType : newFolderType
-                },
-                success: function (resp) {
-                    var containerInfo = Ext4.decode(resp.responseText);
-                    if (containerInfo.success)
-                    {
-                        if (containerInfo.deletedFolders && containerInfo.deletedFolders.length > 0)
-                        {
-                            var userQuestion = Ext4.create('Ext.window.Window', {
-                                title: 'Change Folder Type',
-                                width: 540,
-                                defaults: {margin: '0 2 0 2'},
-                                items: [
-                                    {xtype: 'displayfield',
-                                        value: 'This folder was previously typed as the new folder type and had deleted tab folders.'},
-                                    {xtype: 'displayfield', value: 'Check the deleted tab folders that you want to be recreated.'}
-                                ],
-                                layout: 'vbox',
-                                buttons: [{
-                                    text: 'OK',
-                                    margin: '2 2 2 2',
-                                    handler: function() {
-                                        // grab answers from userQuestion and tell server to clear properties for those tab folders; then submit
-                                        var resurrect = [];
-                                        var itemCount = userQuestion.items.length;
-                                        for (var index = 2; index < itemCount; index += 1)
-                                        {
-                                            var checkbox = userQuestion.getComponent(index);
-                                            if (checkbox.getValue())
-                                                resurrect.push(checkbox.name);
+    +function() {
+        LABKEY.requiresExt4Sandbox(function() {
+            Ext4.onReady(function() {
+                Ext4.create('Ext.button.Button', {
+                    text: '<%=text(form.isWizard() ? "Next" : "Update Folder")%>',
+                    renderTo: 'UpdateFolderButtonDiv',
+                    handler: function() {
+                        if (!validate()) {
+                            Ext4.Msg.alert('Error', 'Please select at least one tab to display.');
+                        }
+                        else {
+                            var currentType = "<%=h(folderType.getName())%>";
+                            var isContainerTab = <%=c.isContainerTab()%>;
+                            var newFolderType = getSelectedFolderType();
+                            if (isContainerTab) {
+                                if (currentType.toLowerCase() != newFolderType.toLowerCase()) {
+                                    Ext4.Msg.confirm("Change Folder Type", "Are you sure you want to change a tab folder's type?", function(btn) {
+                                        if (btn == 'yes') {
+                                            submitForm(document.getElementById('folderModules'));
                                         }
-                                        userQuestion.destroy();
-                                        if (resurrect.length > 0)
-                                        {
-                                            Ext4.Ajax.request({
-                                                url     : LABKEY.ActionURL.buildURL('admin', 'clearDeletedTabFolders.api'),
-                                                method  : 'POST',
-                                                jsonData: {
-                                                    containerPath : "<%=h(path)%>",
-                                                    resurrectFolders : resurrect,
-                                                    newFolderType : newFolderType
-                                                },
-                                                success: function (resp) {
-                                                    var o = Ext4.decode(resp.responseText);
-                                                    if (o.success)
+                                    }, this);
+                                }
+                                else {
+                                    submitForm(document.getElementById('folderModules'));
+                                }
+                            }
+                            else {
+                                this.checkDeletedTabFolders(newFolderType);
+                            }
+                        }
+                    },
+                    checkDeletedTabFolders: function(newFolderType) {
+                        // call to find out if container had deleted tab folders from the new folder type
+                        LABKEY.Ajax.request({
+                            url: LABKEY.ActionURL.buildURL('core', 'getContainerInfo.api'),
+                            method: 'POST',
+                            jsonData: {
+                                containerPath: "<%=text(path)%>",
+                                newFolderType: newFolderType
+                            },
+                            success: function (resp) {
+                                var containerInfo = Ext4.decode(resp.responseText);
+                                if (containerInfo.success) {
+                                    if (containerInfo.deletedFolders && containerInfo.deletedFolders.length > 0) {
+                                        var userQuestion = Ext4.create('Ext.window.Window', {
+                                            title: 'Change Folder Type',
+                                            width: 540,
+                                            defaults: {margin: '0 2 0 2'},
+                                            items: [{
+                                                xtype: 'displayfield',
+                                                value: 'This folder was previously typed as the new folder type and had deleted tab folders.'
+                                            },{
+                                                xtype: 'displayfield',
+                                                value: 'Check the deleted tab folders that you want to be recreated.'
+                                            }],
+                                            layout: 'vbox',
+                                            buttons: [{
+                                                text: 'OK',
+                                                margin: '2 2 2 2',
+                                                handler: function() {
+                                                    // grab answers from userQuestion and tell server to clear properties for those tab folders; then submit
+                                                    var resurrect = [];
+                                                    var itemCount = userQuestion.items.length;
+                                                    for (var index = 2; index < itemCount; index += 1)
+                                                    {
+                                                        var checkbox = userQuestion.getComponent(index);
+                                                        if (checkbox.getValue())
+                                                            resurrect.push(checkbox.name);
+                                                    }
+                                                    userQuestion.destroy();
+                                                    if (resurrect.length > 0)
+                                                    {
+                                                        Ext4.Ajax.request({
+                                                            url     : LABKEY.ActionURL.buildURL('admin', 'clearDeletedTabFolders.api'),
+                                                            method  : 'POST',
+                                                            jsonData: {
+                                                                containerPath : "<%=h(path)%>",
+                                                                resurrectFolders : resurrect,
+                                                                newFolderType : newFolderType
+                                                            },
+                                                            success: function (resp) {
+                                                                var o = Ext4.decode(resp.responseText);
+                                                                if (o.success)
+                                                                {
+                                                                    submitForm(document.getElementById('folderModules'));
+                                                                }
+                                                            }
+                                                        });
+                                                    }
+                                                    else
                                                     {
                                                         submitForm(document.getElementById('folderModules'));
                                                     }
-                                                }
+
+                                                },
+                                                scope: this
+                                            }],
+                                            buttonAlign: 'center'
+                                        });
+                                        for (var index = 0; index < containerInfo.deletedFolders.length; index += 1) {
+                                            var folder = containerInfo.deletedFolders[index];
+                                            userQuestion.add({
+                                                xtype: 'checkbox',
+                                                boxLabel: folder.label,
+                                                name: folder.name,
+                                                margin: '0 2 2 4'
                                             });
                                         }
-                                        else
-                                        {
-                                            submitForm(document.getElementById('folderModules'));
-                                        }
-
-                                    },
-                                    scope: this
-                                }],
-                                buttonAlign: 'center'
-                            });
-                            for (var index = 0; index < containerInfo.deletedFolders.length; index += 1)
-                            {
-                                var folder = containerInfo.deletedFolders[index];
-                                userQuestion.add({
-                                    xtype: 'checkbox',
-                                    boxLabel: folder.label,
-                                    name: folder.name,
-                                    margin: '0 2 2 4'
-                                });
+                                        userQuestion.show();
+                                    }
+                                    else {
+                                        submitForm(document.getElementById('folderModules'));
+                                    }
+                                }
                             }
-                            userQuestion.show();
-                        }
-                        else
-                        {
-                            submitForm(document.getElementById('folderModules'));
-                        }
+                        });
                     }
-                }
+                });
+
+                updateDefaultOptions();
             });
-
-
-        }
-    });
-
-    updateDefaultOptions()
+        });
+    }();
 </script>
