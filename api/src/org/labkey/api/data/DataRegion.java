@@ -1676,7 +1676,12 @@ public class DataRegion extends AbstractDataRegion
         {
             out.write("<tr class=\"labkey-col-total labkey-row\">");
 
-            if (showRecordSelectors)
+            boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+
+            DisplayColumn detailsColumn = newUI ? getDetailsUpdateColumn(ctx, renderers, true) : null;
+            DisplayColumn updateColumn = newUI ? getDetailsUpdateColumn(ctx, renderers, false) : null;;
+
+            if (showRecordSelectors || (newUI && (detailsColumn != null || updateColumn != null)))
             {
                 out.write("<td nowrap class=\"labkey-selectors\">&nbsp;</td>");
             }
@@ -1685,6 +1690,9 @@ public class DataRegion extends AbstractDataRegion
             {
                 if (renderer.isVisible(ctx))
                 {
+                    if (newUI && (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn))
+                        continue;
+
                     out.write("<td nowrap ");
                     if (renderer.getTextAlign() != null)
                         out.write(" align=\"" + renderer.getTextAlign() + "\"");
