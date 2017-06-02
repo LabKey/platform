@@ -397,19 +397,21 @@
                                 var items = [];
                                 if (moduleTypes) {
                                     Ext4.each(moduleTypes.modules, function(m) {
-                                        // keep a map from the module name to the display/tab name
-                                        moduleTypesMap[m.name] = m.tabName;
+                                        if (!m.required) {
+                                            // keep a map from the module name to the display/tab name
+                                            moduleTypesMap[m.name] = m.tabName;
 
-                                        //the effect of this is that by default, a new container inherits modules from the parent
-                                        //if creating a project, there is nothing to inherit, so we set to Portal below
-                                        if ((m.active || m.enabled) && (userHasEnableRestrictedModulesPermission || !m.requireSitePermission)) {
-                                            items.push({
-                                                xtype: 'checkbox',
-                                                name: 'activeModules',
-                                                inputValue: m.name,
-                                                boxLabel: m.tabName,
-                                                checked: (hasLoaded ? (selectedModules && selectedModules.indexOf(m.name) != -1) : m.active)
-                                            });
+                                            //the effect of this is that by default, a new container inherits modules from the parent
+                                            //if creating a project, there is nothing to inherit, so we set to Portal below
+                                            if ((m.active || m.enabled) && (userHasEnableRestrictedModulesPermission || !m.requireSitePermission)) {
+                                                items.push({
+                                                    xtype: 'checkbox',
+                                                    name: 'activeModules',
+                                                    inputValue: m.name,
+                                                    boxLabel: m.tabName,
+                                                    checked: (hasLoaded ? (selectedModules && selectedModules.indexOf(m.name) != -1) : m.active)
+                                                });
+                                            }
                                         }
                                     }, this);
                                 }
