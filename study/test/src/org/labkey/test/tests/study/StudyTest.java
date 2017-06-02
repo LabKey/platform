@@ -1023,7 +1023,7 @@ public class StudyTest extends StudyBaseTest
         clickButtonContainingText("View Data");
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.showHiddenItems();
-        assertTrue("Could not find column \"MouseVisit/Alt ID mapping\"", _customizeViewsHelper.isColumnPresent("MouseVisit/Alt ID mapping"));
+        assertTrue("Could not find column \"MOUSEVISIT/MOUSEID\"", _customizeViewsHelper.isColumnPresent("MOUSEVISIT/MOUSEID"));
     }
 
     @LogMethod
