@@ -423,6 +423,10 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                         Object val = ConvertUtils.convert(str, propType);
                         values.put(propName, val);
                     }
+                    else
+                    {
+                        values.put(propName, str);
+                    }
                 }
                 else if (_validateRequired && null != _tinfo)
                 {
