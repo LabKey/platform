@@ -96,12 +96,7 @@
                 }
 
                 p.children('a').each(function() {
-                    var a = $(this);
-                    var url = a.attr('expandurl');
-                    if (url) {
-                        url += collapse ? '&collapse=true' : '';
-                        LABKEY.Ajax.request({url: url});
-                    }
+                    LABKEY.Utils.notifyExpandCollapse($(this).attr('expandurl'), collapse);
                 });
             }
         };

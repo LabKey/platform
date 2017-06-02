@@ -72,7 +72,17 @@
                    pageTitle = pageConfig.getAppBar().getFolderTitle();
 
                boolean showTrail = trail != null;
-               boolean showTitle = pageTitle != null && !pageTitle.equalsIgnoreCase(getContainer().getName());
+               boolean showTitle = false;
+               if (pageTitle != null)
+               {
+                   String folder = null;
+                   if (getContainer().isProject())
+                       folder = getContainer().getName();
+                   else if (getContainer().getProject() != null)
+                       folder = getContainer().getProject().getName();
+                   if (folder != null && !pageTitle.equalsIgnoreCase(folder))
+                       showTitle = true;
+               }
                if (showTrail || showTitle)
                {
         %>
