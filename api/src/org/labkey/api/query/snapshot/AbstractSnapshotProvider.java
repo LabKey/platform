@@ -140,6 +140,7 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.P
             newProp.setPropertyURI(getPropertyURI(domain, column));
             newProp.setPropertyId(0);
             newProp.setName(name);
+            newProp.setLabel(column.getLabel());
             // Clear out any copied-over name
             newProp.setStorageColumnName(null);
 
