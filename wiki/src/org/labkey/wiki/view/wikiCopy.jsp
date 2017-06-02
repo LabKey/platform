@@ -39,6 +39,12 @@ Note that only the latest version of each wiki page is copied.
 
 <table>
     <tr>
+        <td><labkey:checkbox id="isCopyingHistory" name="isCopyingHistory" value="true" checked="false"/> Copy Histories Also</td>
+    </tr>
+    <tr><td><br></td></tr>
+</table>
+<table>
+    <tr>
         <td><%= button("Copy Pages").submit(true) %></td>
         <td><%= button("Cancel").href(bean.cancelURL) %></td>
     </tr>

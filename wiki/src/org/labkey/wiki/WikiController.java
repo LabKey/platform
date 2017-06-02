@@ -857,7 +857,7 @@ public class WikiController extends SpringActionController
         private String _sourceContainer;
         private String _destContainer;
         private String _pageName;
-        private boolean _overwrite;
+        private boolean _isCopyingHistory;
 
         public String getPageName()
         {
@@ -901,14 +901,14 @@ public class WikiController extends SpringActionController
             _destContainer = destContainer;
         }
 
-        public boolean isOverwrite()
+        public boolean getIsCopyingHistory()
         {
-            return _overwrite;
+            return _isCopyingHistory;
         }
 
-        public void setOverwrite(boolean overwrite)
+        public void setIsCopyingHistory(boolean isCopyingHistory)
         {
-            _overwrite = overwrite;
+            _isCopyingHistory = isCopyingHistory;
         }
     }
 
@@ -998,9 +998,6 @@ public class WikiController extends SpringActionController
                     throw new NotFoundException("No page named '" + pageName + "' exists in the source container.");
             }
 
-            //UNDONE: currently overwrite option is not exposed in UI
-            boolean overwrite = form.isOverwrite();
-
             if (cDest != null && cDest.hasPermission(getUser(), AdminPermission.class))
             {
                 //get source wiki pages
@@ -1025,7 +1022,7 @@ public class WikiController extends SpringActionController
                 for (String name : srcPageNames)
                 {
                     Wiki srcWikiPage = WikiSelectManager.getWiki(cSrc, name);
-                    getWikiManager().copyPage(getUser(), cSrc, srcWikiPage, cDest, destPageNames, pageIdMap, false);
+                    getWikiManager().copyPage(getUser(), cSrc, srcWikiPage, cDest, destPageNames, pageIdMap, form.getIsCopyingHistory());
                 }
 
                 //display the wiki module in the destination container
@@ -1066,7 +1063,7 @@ public class WikiController extends SpringActionController
             List<String> destPageNames = WikiSelectManager.getPageNames(cDest);
 
             //copy single page
-            Wiki newWikiPage = getWikiManager().copyPage(getUser(), cSrc, srcPage, cDest, destPageNames, null, form.isOverwrite());
+            Wiki newWikiPage = getWikiManager().copyPage(getUser(), cSrc, srcPage, cDest, destPageNames, null, form.getIsCopyingHistory());
 
             displayWikiModuleInDestContainer(cDest);
 

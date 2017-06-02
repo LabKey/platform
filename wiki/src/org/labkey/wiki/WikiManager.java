@@ -418,85 +418,78 @@ public class WikiManager implements WikiService
 
     //copies a single wiki page
     public Wiki copyPage(User user, Container cSrc, Wiki srcPage, Container cDest, List<String> destPageNames,
-                          Map<Integer, Integer> pageIdMap, boolean fOverwrite)
-            throws SQLException, IOException, AttachmentService.DuplicateFilenameException
+                          Map<Integer, Integer> pageIdMap, boolean isCopyingHistory)
+            throws SQLException, IOException
     {
-        //get latest version
-        WikiVersion srcLatestVersion = srcPage.getLatestVersion();
-
         //create new wiki page
         String srcName = srcPage.getName();
         String destName = srcName;
-        Wiki destPage = WikiSelectManager.getWiki(cDest, destName);
 
-        //check whether name exists in destination container
-        //if not overwriting, generate new name
-        if (fOverwrite)
-        {
-            //can't overwrite if page does not exist
-            if (!containsCaseInsensitive(destName, destPageNames))
-                fOverwrite = false;
-        }
-        else
-        {
-            int i = 1;
+        int i = 1;
 
-            while (containsCaseInsensitive(destName, destPageNames))
-                destName = srcName.concat("" + i++);
-        }
+        while (containsCaseInsensitive(destName, destPageNames))
+            destName = srcName.concat("" + i++);
 
         //new wiki page
         Wiki newWikiPage = null;
 
-        if (!fOverwrite)
+        newWikiPage = new Wiki(cDest, destName);
+        newWikiPage.setDisplayOrder(srcPage.getDisplayOrder());
+        newWikiPage.setShowAttachments(srcPage.isShowAttachments());
+        newWikiPage.setShouldIndex(srcPage.isShouldIndex());
+
+        //look up parent page via map
+        if (pageIdMap != null)
         {
-            newWikiPage = new Wiki(cDest, destName);
-            newWikiPage.setDisplayOrder(srcPage.getDisplayOrder());
-            newWikiPage.setShowAttachments(srcPage.isShowAttachments());
-            newWikiPage.setShouldIndex(srcPage.isShouldIndex());
+            Integer destParentId = pageIdMap.get(srcPage.getParent());
 
-            //look up parent page via map
-            if (pageIdMap != null)
-            {
-                Integer destParentId = pageIdMap.get(srcPage.getParent());
-
-                if (destParentId != null)
-                    newWikiPage.setParent(destParentId);
-                else
-                    newWikiPage.setParent(-1);
-            }
+            if (destParentId != null)
+                newWikiPage.setParent(destParentId);
+            else
+                newWikiPage.setParent(-1);
         }
-
-        //new wiki version
-        WikiVersion newWikiVersion = new WikiVersion(destName);
-        newWikiVersion.setTitle(srcLatestVersion.getTitle());
-        newWikiVersion.setBody(srcLatestVersion.getBody());
-        newWikiVersion.setRendererTypeEnum(srcLatestVersion.getRendererTypeEnum());
 
         //get wiki & attachments
         Wiki wiki = WikiSelectManager.getWiki(cSrc, srcName);
         Collection<Attachment> attachments = wiki.getAttachments();
         List<AttachmentFile> files = getAttachmentService().getAttachmentFiles(wiki, attachments);
 
-        if (fOverwrite)
+
+        WikiVersion[] wikiVersions = null;
+
+        if(!isCopyingHistory)
         {
-            updateWiki(user, destPage, newWikiVersion);
-            getAttachmentService().deleteAttachments(destPage);
-            getAttachmentService().addAttachments(destPage, files, user);
-            // NOTE indexWiki() gets called twice in this case
-            touch(destPage);
-            indexWiki(destPage);
+            wikiVersions = new WikiVersion[] { srcPage.getLatestVersion() };
         }
         else
         {
-            //insert new wiki page in destination container
-            insertWiki(user, cDest, newWikiPage, newWikiVersion, files);
+            wikiVersions = WikiSelectManager.getAllVersions(wiki);
+        }
 
-            //map source row id to dest row id
-            if (pageIdMap != null)
+        boolean firstVersion = true;
+        for(WikiVersion wikiVersion : wikiVersions)
+        {
+            //new wiki version
+            WikiVersion newWikiVersion = new WikiVersion(destName);
+            newWikiVersion.setTitle(wikiVersion.getTitle());
+            newWikiVersion.setBody(wikiVersion.getBody());
+            newWikiVersion.setRendererTypeEnum(wikiVersion.getRendererTypeEnum());
+
+            if(firstVersion)
             {
-                pageIdMap.put(srcPage.getRowId(), newWikiPage.getRowId());
+                insertWiki(user, cDest, newWikiPage, newWikiVersion, files);
+                firstVersion = false;
             }
+            else
+            {
+                updateWiki(user, newWikiPage, newWikiVersion);
+            }
+        }
+
+        //map source row id to dest row id
+        if (pageIdMap != null)
+        {
+            pageIdMap.put(srcPage.getRowId(), newWikiPage.getRowId());
         }
 
         return newWikiPage;
