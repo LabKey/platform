@@ -152,9 +152,11 @@ LABKEY.Utils = new function()
 
     var notifyExpandCollapse = function(url, collapse)
     {
-        if (collapse)
-            url += "&collapse=true";
-        LABKEY.Ajax.request({url: url});
+        if (url) {
+            if (collapse)
+                url += "&collapse=true";
+            LABKEY.Ajax.request({url: url});
+        }
     };
 
     var toggleLink = function(link, notify, targetTagName)
@@ -185,13 +187,14 @@ LABKEY.Utils = new function()
 		*/
         encodeHtml : function(html)
         {
-            // http://stackoverflow.com/questions/1219860/html-encoding-in-javascript-jquery
+            // https://stackoverflow.com/a/7124052
             return String(html)
                     .replace(/&/g, '&amp;')
                     .replace(/"/g, '&quot;')
                     .replace(/'/g, '&#39;')
                     .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;');
+                    .replace(/>/g, '&gt;')
+                    .replace(/\//g, '&#x2F;');
         },
 
         isArray: function(value) {

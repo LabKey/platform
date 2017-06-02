@@ -8,7 +8,7 @@ Ext.BLANK_IMAGE_URL = LABKEY.contextPath + '/_.gif';  // 2.0
 if (!Ext.Ajax.defaultHeaders) {
     Ext.Ajax.defaultHeaders = {};
 }
-Ext.apply(Ext.Ajax.defaultHeaders, LABKEY.Ajax.DEFAULT_HEADERS);
+Ext.apply(Ext.Ajax.defaultHeaders, LABKEY.defaultHeaders);
 
 // set the default ajax timeout from 30's to 5 minutes
 Ext.Ajax.timeout = 5 * 60 * 1000;

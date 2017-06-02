@@ -13,7 +13,7 @@ Ext4.Ajax.timeout = 5 * 60 * 1000;
 if (!Ext4.Ajax.defaultHeaders) {
     Ext4.Ajax.defaultHeaders = {};
 }
-Ext4.apply(Ext4.Ajax.defaultHeaders, LABKEY.Ajax.DEFAULT_HEADERS);
+Ext4.apply(Ext4.Ajax.defaultHeaders, LABKEY.defaultHeaders);
 
 /**
  * @Override

@@ -2099,6 +2099,9 @@ public class PageFlowUtil
         if (AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
             json.put("notifications", getNotificationJson(user));
 
+        JSONObject defaultHeaders = new JSONObject();
+        defaultHeaders.put("X-ONUNAUTHORIZED", "UNAUTHORIZED");
+
         if (request != null)
         {
             json.put("login", AuthenticationManager.getLoginPageConfiguration(getTermsOfUseProject(project, request.getParameter("returnUrl"))));
@@ -2106,8 +2109,13 @@ public class PageFlowUtil
                 json.put("postParameters", request.getParameterMap());
             String tok = CSRFUtil.getExpectedToken(request, null);
             if (null != tok)
+            {
                 json.put("CSRF", tok);
+                defaultHeaders.put(CSRFUtil.csrfHeader, tok);
+            }
         }
+
+        json.put("defaultHeaders", defaultHeaders);
 
         // Include a few server-generated GUIDs/UUIDs
         json.put("uuids", Arrays.asList(GUID.makeGUID(), GUID.makeGUID(), GUID.makeGUID()));
@@ -2134,14 +2142,13 @@ public class PageFlowUtil
     {
         Map<Integer, Map<String, Object>> notificationsPropMap = new HashMap<>();
         Map<String, List<Integer>> notificationGroupingsMap = new TreeMap<>();
-        List<Notification> userNotifications = new ArrayList<>();
         int unreadCount = 0;
         boolean hasRead = false;
 
         NotificationService service = NotificationService.get();
         if (service != null && user != null && !user.isGuest())
         {
-            userNotifications = service.getNotificationsByUser(null, user.getUserId(), false);
+            List<Notification> userNotifications = service.getNotificationsByUser(null, user.getUserId(), false);
             for (Notification notification : userNotifications)
             {
                 if (notification.getReadOn() != null)
