@@ -1,0 +1,21 @@
+Mouse Id	Visit	Assessment Date	1.Was assessment done?	2.Body temperature	Body Temp	3. Right Deltoid	3a.Vaccine-related lesion	3b.Erythema 1st measure	3b.Erythema 2nd measure	Right Erythema	3c.Induration 1st measure	3c.Induration 2nd measure	Right Induration	4. Left Deltoid	4a.Vaccine-related lesion	4b.Erythema 1st measure	4b.Erythema 2nd measure	Left Erythema	4c.Induration 1st measure	4c.Induration 2nd measure	Left Induration	5.AxillaryLymphadenopathy	Lymphadenopathy	Malaise/Fatigue	6a.Malaise/Fatigue	6b.Myalgia	Myalgia	6c.Headache	Headache	6d.Nausea	Nausea	6e.Vomiting	Vomiting	6f.Chills	Chills	6g.Arthralgia	Arthralgia	7a.Pain (R deltoid)	Local pain (right)	7b.Tenderness (R deltoid)	Local tenderness (right)	7c.Pain (L deltoid)	Local pain (left)	7d.Tenderness (L deltoid)	Local tenderness (left)	Comments	Form Language	Staff Initials/Date
+999321033	Grp1:F/U/Grp2:V#2	6/29/2005 15:03	Yes	37		Yes	No							No	0							not required			Mild	None		Mild		Mild		None		None		None		None		None		None		None			English	0
+999321033	Enroll/Vacc #1	2/4/2006 7:14	Yes	36.9		Yes	No							No	0							not assessed			Mild	None		Mild		Mild		None		None		None		Mild		Mild		None		None			English	0
+999321029	Enroll/Vacc #1	1/6/2006 15:37	Yes	37.2		No	0							Yes	No							not present			None	Mild		None		Mild		None		Mild		None		Mild		None		Mild		None			English	0
+999320719	Grp1:F/U/Grp2:V#2	1/22/2006 14:46	Yes	36.2		No	0							Yes	No							not present			None	None		None		None		None		None		None		None		None		None		None			English	0
+999320719	Enroll/Vacc #1	12/15/2005 16:34	Yes	36.8		Yes	No							No	0							not present			None	None		None		None		None		None		None		None		None		None		None			English	0
+999320703	Enroll/Vacc #1	10/30/2005 11:38	Yes	37.1		No	0							Yes	Yes	10.1	12.2		0	0		not present			None	None		None		None		None		None		None		None		None		None		None			English	1
+999320687	G1: V#2/G2: V#3	8/21/2005 10:10	Yes	37.1		No	0							Yes	No							not required			None	None		None		None		None		None		None		None		None		None		None			English	0
+999320687	Enroll/Vacc #1	8/21/2005 9:05	Yes	37.1		No	0							Yes	No							not present			None	None		None		None		None		None		None		None		None		None		None			English	0
+999320671	G1: V#2/G2: V#3	4/6/2005 9:39	Yes	37		Yes	No							No	0							not required			None	None		None		None		None		None		None		None		None		None		None			English	0
+999320613	Enroll/Vacc #1	5/23/2006 10:46	Yes	37		No	0							Yes	No							not required			None	None		None		None		None		None		None		None		None		None		None			English	0
+999320609	G1: V#2/G2: V#3	8/28/2005 7:19	Yes	37		Yes	No							No	0							not required			None	None		None		None		None		None		None		None		None		None		None			English	0
+999320609	Enroll/Vacc #1	3/8/2005 15:04	Yes	37		Yes	No							No	0							not required			None	None		None		None		None		None		None		None		None		None		None			English	0
+999320582	Enroll/Vacc #1	2/7/2006 10:42	Yes	37		Yes	No							No	0							not required			None	None		None		None		None		None		None		None		None		None		None			English	0
+999320576	Grp1:F/U/Grp2:V#2	4/25/2005 11:43	Yes	37		No	0							Yes	No							not required			None	None		None		None		None		None		None		None		None		None		None			English	0
+999320565	Enroll/Vacc #1	2/8/2006 8:47	Yes	37.1		Yes	No							No	0							not required			None	None		None		None		Severe		None		None		None		None		None		None			English	0
+999320557	Grp1:F/U/Grp2:V#2	3/10/2006 14:47	Yes	37.1		No	0							Yes	No							not required			None	None		None		None		Severe		None		None		None		None		None		None			English	0
+999320529	G1: V#2/G2: V#3	2/21/2006 10:56	Yes	37.1		Yes	No							No	0							not required			None	None		None		None		None		None		None		None		Severe		None		None			English	0
+999320518	Grp1:F/U/Grp2:V#2	8/2/2005 12:42	Yes	37		Yes	No							No	0							not required			None	None		None		None		None		None		None		None		None		None		None			English	0
+999320518	Enroll/Vacc #1	4/21/2005 16:50	Yes	37		No	0							Yes	No							not required			None	None		None		None		None		None		None		None		None		None		None			English	0
+999320016	Enroll/Vacc #1	3/5/2005 10:20	Yes			0	0							0	0							0			0	0		0		0		0		0		0		0		0		0		0				0

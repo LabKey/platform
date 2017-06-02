@@ -1,0 +1,49 @@
+Mouse Id	Visit	Date	Boolean	Double	Integer	String
+999320016	Screening	2006-01-04 21:00				Ut bibendum semper sem.
+999320016	Enroll/Vacc #1	2005-12-08 12:35	false	0.0	-1	Phasellus scelerisque enim ut odio. Pellentesque ac augue sit amet risus mattis varius. Praesent at odio. In vel sem. Praesent nec turpis. Sed adipiscing blandit tortor. Praesent et ipsum quis elit ultrices lobortis. Nunc vitae enim semper neque laoreet accumsan. Praesent a ante. Donec consectetuer metus in arcu. Maecenas eget elit sit amet dolor porta egestas. Vestibulum mollis lorem et tellus. Integer odio pede, consectetuer a, rutrum at, volutpat at, ipsum. Aliquam erat volutpat.
+999320518	Screening	2006-01-05 12:44	false			Nullam cursus risus quis ligula.
+999320518	Enroll/Vacc #1	2006-01-04 18:33	true	1.0	0	Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit
+999320529	Screening	2006-01-05 00:22	true			Fusce facilisis congue velit.
+999320529	Enroll/Vacc #1	2006-01-04 20:32	false	-1.0	1	Vestibulum consectetuer vestibulum eros. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Nam nec pede. Suspendisse potenti. Duis porta. Maecenas pretium quam eget mauris. In consectetuer. Donec sit amet turpis imperdiet purus aliquam pharetra. Suspendisse fringilla enim sit amet tellus. Vestibulum quis felis.
+999320533	Screening	2006-01-09 22:18	false	0.009215209		Nam fermentum orci eu velit.
+999320533	Enroll/Vacc #1	2006-01-04 21:00				Ut bibendum semper sem.
+999320541	Screening	2006-01-09 21:36	true	0.679929235		Ut iaculis sem sit amet orci.
+999320541	Enroll/Vacc #1	2006-01-04 21:28	true	1.23456789E8	1000000	Mauris euismod mi et enim
+999320557	Screening	2006-01-09 23:07	false	0.161664552		In cursus felis vel diam.
+999320557	Enroll/Vacc #1	2006-01-04 21:35	false	0.856738528	1234567	Curabitur adipiscing pretium enim. Mauris tincidunt. Praesent mollis nisi sit amet risus. Vivamus lorem lacus, gravida at, ornare quis, sollicitudin id, libero. Vestibulum odio nulla, vestibulum nec, sollicitudin sed, porta sed, est. Duis tempor, massa a malesuada hendrerit, ante tellus accumsan pede, a tempor metus risus id tellus. Nulla viverra, odio dignissim adipiscing dignissim, dolor pede molestie diam, et ultrices purus libero non eros. Nullam nec augue. Aliquam dictum. Nunc quis leo at quam facilisis aliquet. Maecenas elit urna, vestibulum ac, pretium sed, auctor at, dui. Donec sed sapien nec urna posuere pretium. Phasellus malesuada ante non sem. Nulla facilisi. Phasellus in nulla. In a tellus quis velit posuere faucibus. Maecenas purus elit, ornare volutpat, suscipit sit amet, venenatis tempor, purus. Nunc mollis, ligula in commodo gravida, libero libero nonummy enim, a eleifend dolor arcu nec nulla. Aliquam eu est non turpis iaculis ultricies. Phasellus pharetra, dui id eleifend nonummy, sapien erat suscipit tortor, a elementum tellus sem vitae lacus.
+999320565	Screening	2006-01-05 12:55		0.876668032		Integer pellentesque orci at est.
+999320565	Enroll/Vacc #1	2006-01-04 22:00	true	0.637820126		Cras accumsan adipiscing augue.
+999320576	Screening	2006-01-05 01:02		0.72088426		Cras fringilla lectus eget mauris.
+999320576	Enroll/Vacc #1	2006-01-04 22:25	false	0.188153967		Quisque mattis iaculis augue. Maecenas interdum arcu sit amet enim. Aliquam eget velit. Fusce dignissim augue eu orci. Integer non pede tempor magna tempor rhoncus. Morbi luctus, massa sed porttitor ultricies, massa urna venenatis justo, sit amet lacinia ante nunc nec ipsum. Sed placerat ante sed odio molestie vulputate. Sed dignissim euismod ligula. Fusce pulvinar magna vitae enim. Sed viverra.
+999320582	Screening	2006-01-05 00:53		0.59821007		Fusce iaculis sodales mauris.
+999320582	Enroll/Vacc #1	2006-01-04 22:55	true	0.098246519		Sed at sem at dui porttitor auctor.
+999320590	Screening	2006-01-05 00:32		0.35507102		Vivamus pharetra magna id urna.
+999320590	Enroll/Vacc #1	2006-01-04 23:21	false	0.572637259		Praesent eleifend lectus at sapien sollicitudin euismod. Aliquam rutrum ligula. Etiam ultricies turpis a est. Donec dolor dolor, sodales non, lacinia sed, facilisis eu, leo. Suspendisse eget tortor eget velit ornare pretium. Duis pellentesque dignissim dui. Fusce urna. Vivamus sed nunc sit amet ante porttitor accumsan. Fusce adipiscing tellus eget justo. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Fusce eget augue ut arcu adipiscing tempor.
+999320609	Screening	2006-01-05 00:16		0.904721466		In varius ante a dui auctor tristique.
+999320609	Enroll/Vacc #1	2006-01-04 23:34	true	0.947609635		Sed vestibulum scelerisque augue
+999320613	Screening	2006-01-05 00:10	false	0.027837663		Integer aliquam aliquet lorem.
+999320613	Enroll/Vacc #1	2006-01-04 23:50	false	0.851494763		Mauris euismod mi et enim.
+999320624	Screening	2006-01-05 00:01	true	0.696392237		Sed vestibulum scelerisque augue.
+999320624	Enroll/Vacc #1	2006-01-05 00:01	true	0.696392237		Sed vestibulum scelerisque augue.
+999320638	Screening	2006-01-04 23:50	false	0.851494763		Mauris euismod mi et enim.
+999320638	Enroll/Vacc #1	2006-01-05 00:10	false	0.027837663		Integer aliquam aliquet lorem.
+999320646	Screening	2006-01-04 23:34	true	0.947609635		Sed vestibulum scelerisque augue
+999320646	Enroll/Vacc #1	2006-01-05 00:16		0.904721466		In varius ante a dui auctor tristique.
+999320652	Screening	2006-01-04 23:21	false	0.572637259		Praesent eleifend lectus at sapien sollicitudin euismod. Aliquam rutrum ligula. Etiam ultricies turpis a est. Donec dolor dolor, sodales non, lacinia sed, facilisis eu, leo. Suspendisse eget tortor eget velit ornare pretium. Duis pellentesque dignissim dui. Fusce urna. Vivamus sed nunc sit amet ante porttitor accumsan. Fusce adipiscing tellus eget justo. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Fusce eget augue ut arcu adipiscing tempor.
+999320652	Enroll/Vacc #1	2006-01-05 00:22	true			Fusce facilisis congue velit.
+999320660	Screening	2006-01-04 22:55	true	0.098246519		Sed at sem at dui porttitor auctor.
+999320660	Enroll/Vacc #1	2006-01-05 00:32		0.35507102		Vivamus pharetra magna id urna.
+999320671	Screening	2006-01-04 22:25	false	0.188153967		Quisque mattis iaculis augue. Maecenas interdum arcu sit amet enim. Aliquam eget velit. Fusce dignissim augue eu orci. Integer non pede tempor magna tempor rhoncus. Morbi luctus, massa sed porttitor ultricies, massa urna venenatis justo, sit amet lacinia ante nunc nec ipsum. Sed placerat ante sed odio molestie vulputate. Sed dignissim euismod ligula. Fusce pulvinar magna vitae enim. Sed viverra.
+999320671	Enroll/Vacc #1	2006-01-05 00:53		0.59821007		Fusce iaculis sodales mauris.
+999320687	Screening	2006-01-04 22:00	true	0.637820126		Cras accumsan adipiscing augue.
+999320687	Enroll/Vacc #1	2006-01-05 01:02		0.72088426		Cras fringilla lectus eget mauris.
+999320695	Screening	2006-01-04 21:35	false	0.856738528	1234567	Curabitur adipiscing pretium enim. Mauris tincidunt. Praesent mollis nisi sit amet risus. Vivamus lorem lacus, gravida at, ornare quis, sollicitudin id, libero. Vestibulum odio nulla, vestibulum nec, sollicitudin sed, porta sed, est. Duis tempor, massa a malesuada hendrerit, ante tellus accumsan pede, a tempor metus risus id tellus. Nulla viverra, odio dignissim adipiscing dignissim, dolor pede molestie diam, et ultrices purus libero non eros. Nullam nec augue. Aliquam dictum. Nunc quis leo at quam facilisis aliquet. Maecenas elit urna, vestibulum ac, pretium sed, auctor at, dui. Donec sed sapien nec urna posuere pretium. Phasellus malesuada ante non sem. Nulla facilisi. Phasellus in nulla. In a tellus quis velit posuere faucibus. Maecenas purus elit, ornare volutpat, suscipit sit amet, venenatis tempor, purus. Nunc mollis, ligula in commodo gravida, libero libero nonummy enim, a eleifend dolor arcu nec nulla. Aliquam eu est non turpis iaculis ultricies. Phasellus pharetra, dui id eleifend nonummy, sapien erat suscipit tortor, a elementum tellus sem vitae lacus.
+999320695	Enroll/Vacc #1	2006-01-05 12:44	false			Nullam cursus risus quis ligula.
+999320703	Screening	2006-01-04 21:28	true	1.23456789E8	1000000	Mauris euismod mi et enim
+999320703	Enroll/Vacc #1	2006-01-05 12:55		0.876668032		Integer pellentesque orci at est.
+999320719	Screening	2006-01-04 20:32	false	-1.0	1	Vestibulum consectetuer vestibulum eros. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Nam nec pede. Suspendisse potenti. Duis porta. Maecenas pretium quam eget mauris. In consectetuer. Donec sit amet turpis imperdiet purus aliquam pharetra. Suspendisse fringilla enim sit amet tellus. Vestibulum quis felis.
+999320719	Enroll/Vacc #1	2006-01-09 23:07	false	0.161664552		In cursus felis vel diam.
+999321029	Screening	2006-01-04 18:33	true	1.0	0	Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit
+999321029	Enroll/Vacc #1	2006-01-09 21:36	true	0.679929235		Ut iaculis sem sit amet orci.
+999321033	Screening	2005-12-08 12:35	false	0.0	-1	Phasellus scelerisque enim ut odio. Pellentesque ac augue sit amet risus mattis varius. Praesent at odio. In vel sem. Praesent nec turpis. Sed adipiscing blandit tortor. Praesent et ipsum quis elit ultrices lobortis. Nunc vitae enim semper neque laoreet accumsan. Praesent a ante. Donec consectetuer metus in arcu. Maecenas eget elit sit amet dolor porta egestas. Vestibulum mollis lorem et tellus. Integer odio pede, consectetuer a, rutrum at, volutpat at, ipsum. Aliquam erat volutpat.
+999321033	Enroll/Vacc #1	2006-01-09 22:18	false	0.009215209		Nam fermentum orci eu velit.

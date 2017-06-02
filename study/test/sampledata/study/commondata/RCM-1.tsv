@@ -1,0 +1,21 @@
+Mouse Id	Visit	Assessment Date	1.Was assessment done?	2.Time	3.Body temperature	Body Temp	4. Right Deltoid	4a.Vaccine-related lesion	4b.Erythema 1st measure	4b.Erythema 2nd measure	4b.Right Erythema	4c.Induration 1st measure	4c.Induration 2nd measure	4b.Right Induration	5. Left Deltoid	5a.Vaccine-related lesion	5b.Erythema 1st measure	5b.Erythema 2nd measure	5b.Left Erythema	5c.Induration 1st measure	5c.Induration 2nd measure	5c.Left Induration	6.AxillaryLymphadenopathy	6.Lymphadenopathy	7a.Malaise/Fatigue	Malaise/Fatigue	7b.Myalgia	Myalgia	7c.Headache	Headache	7d.Nausea	Nausea	7e.Vomiting	Vomiting	7f.Chills	Chills	7g.Arthralgia	Arthralgia	8a.Pain (R Deltoid)	Local pain (right)	8b.Tenderness (R Deltoid)	Tenderness (R Deltoid)	8c.Pain (L Deltoid)	Local pain (left)	8d.Tenderness (L Deltoid)	Tenderness (L Deltoid)	Comments	Form Language	Staff Initials/Date
+999321033	Grp1:F/U/Grp2:V#2	2006-03-01	Yes	10:10:00	37.0		Yes	No							No	0							not assessed		Mild		Mild		Mild		Mild		None		None		None		Mild		Mild		None		None			English	0
+999321033	Enroll/Vacc #1	2006-02-01	Yes	08:30:00	36.9		Yes	No							No	0							not present		None		None		Mild		Mild		None		None		None		Mild		Mild		None		None			English	0
+999321029	Enroll/Vacc #1	2006-01-26	Yes	10:00:00	37.1		No	0							Yes	No							not present		Mild		None		Mild		None		Mild		None		Mild		None		Mild		None		Mild			English	0
+999320719	Grp1:F/U/Grp2:V#2	2006-02-15	Yes		36.6		No	0							Yes	No							not present		None		None		None		None		None		None		None		None		None		None		None			English	0
+999320719	Enroll/Vacc #1	2006-01-15	Yes		36.8		Yes	No							No	0							not present		None		Mild		Mild		Mild		None		None		None		None		Mild		None		None		RCM test	English	0
+999320703	Enroll/Vacc #1	2006-02-01	Yes	13:25:00	37.1		No	0							Yes	Yes	9.1	12.2		0.0	0.0		not present		None		None		None		None		None		None		None		None		None		None		None			English	1
+999320687	G1: V#2/G2: V#3	2006-08-01	Yes	15:25:00	37.1		No	0							Yes	No							not present		None		None		None		None		None		None		None		None		None		None		None			English	0
+999320687	Enroll/Vacc #1	2006-02-03	Yes	14:25:00	37.1		No	0							Yes	No							not present		None		None		None		None		None		None		None		None		None		None		None			English	0
+999320671	G1: V#2/G2: V#3	2006-08-05	Yes	12:30:00	37.0		Yes	No							No	0							not present		None		None		None		None		None		None		None		None		None		None		None			English	0
+999320613	Enroll/Vacc #1	2006-02-10	Yes	13:30:00	37.0		No	0							Yes	No							not present		None		None		None		None		None		None		None		None		None		None		None			English	0
+999320609	G1: V#2/G2: V#3	2006-08-11	Yes	13:25:00	37.0		Yes	No							No	0							not present		None		None		None		None		None		None		None		None		None		None		None			English	0
+999320609	Enroll/Vacc #1	2006-02-11	Yes	13:30:00	37.0		Yes	No							No	0							not present		None		None		None		None		None		None		None		None		None		None		None			English	0
+999320582	Enroll/Vacc #1	2006-03-10	Yes	13:25:00	37.0		Yes	No							No	0							not present		None		None		None		None		None		None		None		None		None		None		None			English	0
+999320576	Grp1:F/U/Grp2:V#2	2006-03-11	Yes	13:25:00	37.0		No	0							Yes	No							not present		None		None		None		None		None		None		None		None		None		None		None			English	0
+999320565	Enroll/Vacc #1	2006-03-13	Yes	13:25:00	37.1		Yes	No							No	0							not present		None		None		None		None		Severe		None		None		None		None		None		None			English	0
+999320557	Grp1:F/U/Grp2:V#2	2006-04-14	Yes	13:25:00	37.1		No	0							Yes	No							not present		None		None		None		None		Severe		None		None		None		None		None		None			English	0
+999320529	G1: V#2/G2: V#3	2006-09-01	Yes	13:25:00	37.1		Yes	No							No	0							not present		None		None		None		None		None		None		None		None		Moderate		None		None			English	0
+999320518	Grp1:F/U/Grp2:V#2	2006-04-01	Yes	13:30:00	37.0		Yes	No							No	0							not present		None		None		None		None		None		None		None		None		None		None		None			English	0
+999320518	Enroll/Vacc #1	2006-03-01	Yes	13:25:00	37.1		No	0							Yes	No							not present		None		None		None		None		None		None		None		None		None		None		None			English	0
+999320016	Enroll/Vacc #1	2005-02-01	Yes				0	0							0	0							0		0		0		0		0		0		0		0		0		0		0		0				0

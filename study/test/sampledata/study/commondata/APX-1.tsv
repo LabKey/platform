@@ -1,0 +1,48 @@
+Mouse Id	Visit	Exam Date	1. Weight	Weight QC	2. Body Temp	Body Temp QC	3. BP systolic xxx/	3. BP diastolic /xxx	Blood Pressure QC	4. Pulse	5. Respirations	6. HEENT	6. HEENT Notes	7. Neck	7. Neck Notes	8. Lymph Nodes	8. Lymph Nodes Notes	9. Heart	9. Heart Notes	10. Chest	10. Chest Notes	11. Abdomen	11. Abdomen Notes	12. Extremities	12. Extremities Notes	13. Neurological	13. Neurological Notes	14. Skin	14. Skin Notes	15. Other	15. Other Notes	Sx-directed eval deemed	16. Evaluation Summary	Clinician signature/date	17. Date Pregnancy test	17. Pregnancy test N/A	17a. Preg. test result	Comments	Form Language	Staff Initials/Date
+999321033	Grp1:F/U/Grp2:V#2	3/3/06 11:41	86		37.1		130	80		65	19	Normal		Normal		Normal		Normal		Normal		Normal		Not Done		Not Done		Not Done		Not Done			normal	1		0	0		English	0
+999321033	2 week Post-V#1	2/2/06 10:53	85		37		124	74		63	18	Normal		Normal		Normal		Normal		Normal		Normal		Not Done		Not Done		Not Done		Not Done			normal	1		0	0		English	0
+999321029	Grp1:F/U/Grp2:V#2	1/14/06 4:39	73		37.2		125	75		64	15	Normal		Not Done		Normal		Not Done		Normal		Not Done		Normal		Not Done		Normal		Not Done			normal	1		0	0		English	0
+999321029	3 week Post-V#1	2/17/05 8:13	72		37.2		115	71		67	13	Not Done		Normal		Not Done		Normal		Not Done		Normal		Not Done		Normal		Not Done		Normal			normal	1		0	0		English	1
+999321029	2 week Post-V#1	2/18/06 18:00	72		37.1		121	69		64	15	Not Done		Normal		Not Done		Normal		Not Done		Normal		Not Done		Normal		Not Done		Normal			normal	1		0	0		English	0
+999321029	1 week Post-V#1	1/24/06 19:20	75		37.2		117	71		68	15	Not Done		Normal		Not Done		Normal		Not Done		Normal		Not Done		Normal		Not Done		Normal			normal	1		0	0		English	0
+999320719	Grp1:F/U/Grp2:V#2	2/2/06 8:18	55		36.8		117	82		65	13	Not Done		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Not Done		Not Done			normal	1		0	0		English	0
+999320719	2 week Post-V#1	2/10/06 12:32	48		36.9		120	90		60	10	Normal		Normal		Abnormal		Normal		Normal		Normal		Normal		Normal		Normal		Not Done			abnormal/insignificant	1		0	0		English	0
+999320703	Grp1:F/U/Grp2:V#2	3/7/06 11:32	89		37.1		135	75		92	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Not Done	Y		abnormal/significant	1		0	0		English	0
+999320703	Enroll/Vacc #1	2/21/06 3:09	113		37.1		140	89		76	14	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		0	0		English	0
+999320695	2 week Post-V#1	2/1/06 18:26	72		37.2		135	86		72	16	Normal		Normal		Normal		Abnormal	Y	Normal		Normal		Normal		Normal		Normal		Not Done			abnormal/significant	1	2/16/2006	0	Negative		English	0
+999320660	Day 140 F/U	7/17/06 6:31	79		37		138	87		72	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		0			normal	1		0	0		English	0
+999320660	2 week Post-V#1	2/7/06 18:48	79		37		140	89		72	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Not Done			normal	1		0	0		English	1
+999320652	2 week Post-V#1	2/2/06 22:25	73		37		138	87		72	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		0	0		English	1
+999320646	2 week Post-V#1	3/1/06 8:00	73		37		99	62		67	16	Not Done		Not Done		Not Done		Not Done		Not Done		Not Done		Not Done		Not Done		Not Done		Not Done			normal	1		17. Pregnancy test N/A	0		English	1
+999320624	2 week Post-V#1	2/27/06 10:49	65		37		138	87		72	16	Normal		Normal		Normal		Normal		Normal		Abnormal	Y	Normal		Normal		Normal		Normal			abnormal/significant	1		0	0		English	1
+999320590	Int. Vis. %{S.1.1} .%{S.2.1}	8/3/06 21:50	67		37		130	75		72	16	Not Done		Not Done		Not Done		Not Done		Not Done		Not Done		Not Done		Not Done		Not Done		Not Done			normal	1		17. Pregnancy test N/A	0		English	1
+999320590	2 wk Post-V#2/V#3	8/15/06 7:42	67		40		138	88		72	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		17. Pregnancy test N/A	0		English	0
+999320590	Int. Vis. %{S.1.1} .%{S.2.1}	8/10/06 17:28	67		37		130	75		70	16	Not Done		Not Done		Not Done		Not Done		Not Done		Not Done		Not Done		Not Done		Not Done		Not Done			normal	1		17. Pregnancy test N/A	0		English	1
+999320590	1 wk Post-V#2/V#3	8/26/06 17:44	67		40		138	88		72	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		17. Pregnancy test N/A	0		English	1
+999320582	Enroll/Vacc #1	3/27/06 1:42	76		37		136	84		68	14	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		0	0		English	1
+999320576	Grp1:F/U/Grp2:V#2	3/10/06 23:23	65		37		138	86		72	14	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1	3/11/2006	0	Negative		English	1
+999320557	Grp1:F/U/Grp2:V#2	4/1/06 21:17	77		36.9		130	80		70	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		0	0		English	1
+999320557	2 week Post-V#1	3/24/06 10:15	77		37.1		138	86		72	14	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		0	0		English	1
+999320541	G1: 6wk/G2: 2wk	4/20/06 21:51	62		37.1		185	115		72	14	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		17. Pregnancy test N/A	0		English	1
+999320533	Day 140 F/U	8/2/06 22:59	76		37		130	80		72	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		0	0		English	1
+999320533	3 week Post-V#2	5/4/06 1:17	76		39.9		130	80		72	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		0	0		English	1
+999320533	G1: 6wk/G2: 2wk	5/5/06 3:52	76		37.1		130	80		72	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		0	0		English	1
+999320518	3 week Post-V#2	4/13/06 21:36	80		39.9		125	80		66	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		0	0		English	1
+999320518	Enroll/Vacc #1	3/16/06 6:13	80		37		125	80		66	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		0	0		English	1
+999320485	6 wk Post-V#2/V#3	1/14/00 22:02										0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	1
+999320485	G1: V#2/G2: V#3	6/19/05 4:59										0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	0
+999320485	G1: 6wk/G2: 2wk	2/4/05 7:21										0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	0
+999320485	Grp1:F/U/Grp2:V#2	1/2/05 17:05										0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	1
+999320485	3 week Post-V#1	1/6/00 15:47										0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	0
+999320485	2 week Post-V#1	1/11/05 9:41										0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	1
+999320485	1 week Post-V#1	1/28/00 14:08										0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	1
+999320016	4 wk Post-V#2/V#3	1/11/00 23:24										0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	1
+999320016	1 wk Post-V#2/V#3	1/26/00 17:51										0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	1
+999320016	6 week Post-V#2	1/27/00 10:35										0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	1
+999320016	3 week Post-V#2	1/10/00 18:07										0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	1
+999320016	G1: 6wk/G2: 2wk	1/14/00 3:05										0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	0
+999320016	1 week Post-V#2	1/21/00 6:28										0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	1
+999320016	3 week Post-V#1	2/16/05 10:18										0		0		0		0		0		0		0		0		0		0			0	0		0	0		English	1
+999320016	Int. Vis. %{S.1.1} .%{S.2.1}	2/5/05 15:23	200		32		110	110		115	5	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			abnormal/insignificant	1		0	0		English	1
+999320016	2 week Post-V#1	2/17/05 16:46	150		36		50	115		115	5	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			abnormal/insignificant	1		0	0		English	1
+999320016	1 week Post-V#1	2/18/05 10:31	100		37.1		110	79		85	16	Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal		Normal			normal	1		0	0		English	1

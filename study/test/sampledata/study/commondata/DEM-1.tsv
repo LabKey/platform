@@ -1,0 +1,25 @@
+Mouse Id	Visit	Contact Date	1.Date of Birth	2.What is your sex?	3.Latino/a or Hispanic?	4a.Amer Indian/Alaska	4b.Asian	4c.African American/Black	4d.Hawaiian/Pacific Islnd	4e.White	4f.Other specify	4f. Other, specify text	5. Sexual orientation	Form Language	Staff Initials/Date
+999320016	Screening	2005-01-01	1965-03-06	Female	No	0	0	0	0	White	0		heterosexual	English	1
+999321033	Screening	2006-01-06	1976-01-05	Male	No	0	Asian	0	0	0	0		heterosexual	English	0
+999321029	Screening	2006-01-05	1971-05-27	Male	No	0	0	0	0	White	0		heterosexual	English	0
+999320719	Screening	2006-01-02	1970-01-02	Male	No	0	0	0	Nat. Hawaiian/Pacific Island	0	0		heterosexual	English	0
+999320703	Screening	2006-01-11	1979-03-07	Male	No	0	0	African American or Black	0	0	0		homosexual	English	1
+999320695	Screening	2006-01-10	1972-12-09	Female	No	0	0	0	0	White	0		heterosexual	English	1
+999320687	Screening	2006-01-14	1970-11-11	Male	No	0	0	African American or Black	0	0	0		heterosexual	English	0
+999320671	Screening	2006-01-15	1965-01-13	Female	No	0	Asian	0	0	0	0		bisexual	English	0
+999320660	Screening	2006-02-01	1969-11-14	Male	Yes	0	0	0	0	0	Other, specify		heterosexual	English	0
+999320652	Screening	2006-02-01	1960-07-11	Male	No	0	0	0	Nat. Hawaiian/Pacific Island	0	0		heterosexual	English	0
+999320646	Screening	2006-01-02	1974-08-17	Female	No	0	0	African American or Black	0	0	0		heterosexual	English	0
+999320638	Screening	2006-02-03	1980-08-01	Female	No	0	0	0	0	White	0		heterosexual	English	0
+999320624	Screening	2006-01-01	1979-12-21	Male	No	0	0	African American or Black	0	0	0		homosexual	English	0
+999320613	Screening	2006-01-03	1972-10-18	Female	No	0	0	0	0	White	0		heterosexual	English	0
+999320609	Screening	2006-01-09	1970-09-15	Male	No	American Indian/Alaska Native	0	0	0	0	0		bisexual	English	0
+999320590	Screening	2006-01-07	1968-02-28	Female	No	0	0	African American or Black	0	0	0		heterosexual	English	0
+999320582	Screening	2006-02-11	1968-07-05	Male	No	0	0	0	0	White	0		homosexual	English	0
+999320576	Screening	2006-02-01	1968-10-11	Female	No	0	0	African American or Black	0	0	0		heterosexual	English	0
+999320565	Screening	2006-03-10	1960-07-06	Male	Yes	0	0	0	0	0	Other, specify	Brazilian	heterosexual	English	0
+999320557	Screening	2006-02-27	1960-03-05	Male	No	0	0	African American or Black	0	0	0		bisexual	English	0
+999320541	Screening	2006-03-01	1960-06-05	Female	No	0	0	African American or Black	0	0	0		bisexual	English	0
+999320533	Screening	2006-03-01	1961-06-06	Male	No	0	Asian	0	0	0	0		heterosexual	English	0
+999320529	Screening	2006-02-01	1969-07-11	Female	No	0	0	0	0	White	0		heterosexual	English	0
+999320518	Screening	2006-02-22	1970-10-11	Male	No	0	0	0	0	White	0		heterosexual	English	0

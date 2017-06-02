@@ -1,0 +1,762 @@
+global_unique_specimen_id	specimen_number	draw_timestamp	ptid	volume	volume_units	primary_specimen_type	derivative_type	additive_type	visit_value
+AAA07XK5-01	1	12/14/2005 12:23	999320812	2	ml	Blood (Whole)	Serum	Serum Separator	1
+AAA07XK5-02	2	12/14/2005 12:08	999320812	1	ml	Blood (Whole)	Serum	Heparin	2
+AAA07XK5-03	3	12/14/2005 13:07	999320812	1	ml	Blood (Whole)	PBMC Cells Viable	Heparin	3
+AAA07XK5-04	4	12/14/2005 12:41	999320812	1	ml	Blood (Whole)	Serum	Serum Separator	4
+AAA07XK5-05	5	12/14/2005 13:01	999320812	1	ml	Blood (Whole)	Serum	Serum Separator	5
+AAA07XK5-06	6	12/14/2005 12:17	999320812	1	ml	Blood (Whole)	Serum	Serum Separator	6
+AAA07XMC-01	7	12/23/2005 7:57	999320396	1	ml	Blood (Whole)	Serum	Serum Separator	7
+AAA07XMC-02	8	12/23/2005 8:17	999320396	1	ml	Blood (Whole)	Serum	Serum Separator	8
+AAA07XMC-03	9	12/23/2005 8:32	999320396	1	ml	Blood (Whole)	Serum	Serum Separator	9
+AAA07XMC-04	10	12/23/2005 7:52	999320396	1	ml	Blood (Whole)	Serum	Serum Separator	10
+AAA07XMC-05	11	12/23/2005 8:47	999320396	1	ml	Blood (Whole)	Serum	Serum Separator	11
+AAA07XMC-06	12	12/23/2005 8:33	999320396	1	ml	Blood (Whole)	Serum	Serum Separator	12
+AAA07XSF-01	13	12/20/2005 23:22	999320885	1	ml	Blood (Whole)	Serum	Serum Separator	13
+AAA07XSF-02	14	12/20/2005 23:22	999320885	1	ml	Blood (Whole)	Serum	Serum Separator	14
+AAA07XSF-03	15	12/19/2005 23:43	999320885	1	ml	Blood (Whole)	Serum	Serum Separator	15
+AAA07XSF-04	16	12/19/2005 23:40	999320885	1	ml	Blood (Whole)	Serum	Serum Separator	16
+AAA07XSF-05	17	12/19/2005 23:49	999320885	1	ml	Blood (Whole)	Serum	Serum Separator	17
+AAA07XSF-06	18	12/20/2005 23:12	999320885	1	ml	Blood (Whole)	Serum	Serum Separator	18
+AAA07Y0N-01	19	1/12/2006 21:30	999320746	1	ml	Blood (Whole)	Serum	Serum Separator	19
+AAA07Y0N-02	20	1/12/2006 21:20	999320746	1	ml	Blood (Whole)	Serum	Serum Separator	20
+AAA07Y0N-03	21	1/12/2006 21:45	999320746	1	ml	Blood (Whole)	Serum	Serum Separator	21
+AAA07Y0N-04	22	1/12/2006 21:13	999320746	1	ml	Blood (Whole)	Serum	Serum Separator	22
+AAA07Y0N-05	23	1/12/2006 21:44	999320746	1	ml	Blood (Whole)	Serum	Serum Separator	23
+AAA07Y0N-06	24	1/12/2006 21:22	999320746	1	ml	Blood (Whole)	Serum	Serum Separator	24
+AAA07Y5L-01	25	1/12/2006 18:10	999320190	1	ml	Blood (Whole)	Serum	Serum Separator	25
+AAA07Y5L-02	26	1/12/2006 18:48	999320190	1	ml	Blood (Whole)	Serum	Serum Separator	26
+AAA07Y5L-03	27	1/12/2006 18:24	999320190	1	ml	Blood (Whole)	Serum	Serum Separator	27
+AAA07Y5L-04	28	1/12/2006 18:15	999320190	1	ml	Blood (Whole)	Serum	Serum Separator	28
+AAA07Y5L-05	29	1/12/2006 18:18	999320190	1	ml	Blood (Whole)	Serum	Serum Separator	29
+AAA07Y5L-06	30	1/12/2006 18:30	999320190	1	ml	Blood (Whole)	Serum	Serum Separator	30
+AAA07Y61-01	31	1/10/2006 19:53	999320226	1	ml	Blood (Whole)	Serum	Serum Separator	31
+AAA07Y61-02	32	1/10/2006 19:43	999320226	1	ml	Blood (Whole)	Serum	Serum Separator	32
+AAA07Y61-03	33	1/10/2006 19:37	999320226	1	ml	Blood (Whole)	Serum	Serum Separator	33
+AAA07Y61-04	34	1/10/2006 19:32	999320226	1	ml	Blood (Whole)	Serum	Serum Separator	34
+AAA07Y61-05	35	1/10/2006 20:11	999320226	1	ml	Blood (Whole)	Serum	Serum Separator	35
+AAA07Y61-06	36	1/10/2006 20:05	999320226	1	ml	Blood (Whole)	Serum	Serum Separator	36
+AAA07YGN-01	37	1/6/2006 16:31	999320706	1	ml	Blood (Whole)	Serum	Serum Separator	37
+AAA07YGN-02	38	1/6/2006 16:32	999320706	1	ml	Blood (Whole)	Serum	Serum Separator	38
+AAA07YGN-03	39	1/6/2006 16:02	999320706	1	ml	Blood (Whole)	Serum	Serum Separator	39
+AAA07YGN-04	40	1/6/2006 17:00	999320706	1	ml	Blood (Whole)	Serum	Serum Separator	40
+AAA07YGN-05	41	1/6/2006 16:37	999320706	1	ml	Blood (Whole)	Serum	Serum Separator	41
+AAA07YGN-06	42	1/6/2006 16:31	999320706	1	ml	Blood (Whole)	Serum	Serum Separator	42
+AAA07YJD-01	43	1/6/2006 12:40	999320795	1	ml	Blood (Whole)	Serum	Serum Separator	43
+AAA07YJD-02	44	1/6/2006 13:08	999320795	1	ml	Blood (Whole)	Serum	Serum Separator	44
+AAA07YJD-03	45	1/6/2006 13:08	999320795	1	ml	Blood (Whole)	Serum	Serum Separator	45
+AAA07YJD-04	46	1/6/2006 12:45	999320795	1	ml	Blood (Whole)	Serum	Serum Separator	46
+AAA07YJD-05	47	1/6/2006 13:10	999320795	1	ml	Blood (Whole)	Serum	Serum Separator	47
+AAA07YJD-06	48	1/6/2006 13:16	999320795	1	ml	Blood (Whole)	Serum	Serum Separator	48
+AAA07YSS-01	49	1/11/2006 7:33	999320422	1	ml	Blood (Whole)	Serum	Serum Separator	49
+AAA07YSS-02	50	1/11/2006 7:48	999320422	1	ml	Blood (Whole)	Serum	Serum Separator	50
+AAA07YT4-01	51	1/17/2006 1:08	999320528	1	ml	Blood (Whole)	Serum	Serum Separator	51
+AAA07YT4-02	52	1/17/2006 1:52	999320528	1	ml	Blood (Whole)	Serum	Serum Separator	52
+AAA07YVS-01	53	1/18/2006 2:20	999320466	1	ml	Blood (Whole)	Serum	Serum Separator	53
+AAA07YVS-02	54	1/18/2006 2:38	999320466	1	ml	Blood (Whole)	Serum	Serum Separator	54
+AAA07YVS-03	55	1/18/2006 2:06	999320466	1	ml	Blood (Whole)	Serum	Serum Separator	55
+AAA07YVS-04	56	1/18/2006 2:56	999320466	1	ml	Blood (Whole)	Serum	Serum Separator	56
+AAA07YVS-05	57	1/18/2006 2:43	999320466	1	ml	Blood (Whole)	Serum	Serum Separator	57
+AAA07YVS-06	58	1/18/2006 2:27	999320466	1	ml	Blood (Whole)	Serum	Serum Separator	58
+AAA07YW0-01	59	1/18/2006 19:07	999320033	1	ml	Blood (Whole)	Serum	Serum Separator	59
+AAA07YW0-02	60	1/18/2006 19:55	999320033	1	ml	Blood (Whole)	Serum	Serum Separator	60
+AAA07YW0-03	61	1/18/2006 19:15	999320033	1	ml	Blood (Whole)	Serum	Serum Separator	61
+AAA07YW0-04	62	1/18/2006 19:42	999320033	1	ml	Blood (Whole)	Serum	Serum Separator	62
+AAA07YW0-05	63	1/18/2006 19:31	999320033	1	ml	Blood (Whole)	Serum	Serum Separator	63
+AAA07YW0-06	64	1/18/2006 19:47	999320033	1	ml	Blood (Whole)	Serum	Serum Separator	64
+AAA082NQ-01	65	1/25/2006 13:07	999320725	1	ml	Blood (Whole)	Serum	Serum Separator	65
+AAA082NQ-02	66	1/25/2006 12:33	999320725	1	ml	Blood (Whole)	Serum	Serum Separator	66
+AAA082NQ-03	67	1/25/2006 13:00	999320725	1	ml	Blood (Whole)	Serum	Serum Separator	67
+AAA082NQ-04	68	1/25/2006 13:18	999320725	1	ml	Blood (Whole)	Serum	Serum Separator	68
+AAA082NQ-05	69	1/25/2006 13:03	999320725	1	ml	Blood (Whole)	Serum	Serum Separator	69
+AAA082NQ-06	70	1/25/2006 12:53	999320725	1	ml	Blood (Whole)	Serum	Serum Separator	70
+AAA082Q9-01	71	1/26/2006 20:30	999320895	1	ml	Blood (Whole)	Serum	Serum Separator	71
+AAA082Q9-02	72	1/26/2006 20:31	999320895	1	ml	Blood (Whole)	Serum	Serum Separator	72
+AAA082Q9-03	73	1/26/2006 20:15	999320895	1	ml	Blood (Whole)	Serum	Serum Separator	73
+AAA082Q9-04	74	1/26/2006 20:07	999320895	1	ml	Blood (Whole)	Serum	Serum Separator	74
+AAA082Q9-05	75	1/26/2006 20:08	999320895	1	ml	Blood (Whole)	Serum	Serum Separator	75
+AAA082Q9-06	76	1/26/2006 19:58	999320895	1	ml	Blood (Whole)	Serum	Serum Separator	76
+AAA082RW-01	77	1/24/2006 13:51	999320358	1	ml	Blood (Whole)	Serum	Serum Separator	77
+AAA082RW-02	78	1/24/2006 13:55	999320358	1	ml	Blood (Whole)	Serum	Serum Separator	78
+AAA082TS-01	79	1/18/2006 23:47	999320583	1	ml	Blood (Whole)	Serum	Serum Separator	79
+AAA082TS-02	80	1/19/2006 23:26	999320583	1	ml	Blood (Whole)	Serum	Serum Separator	80
+AAQ00032-01	81	10/7/2005 15:07	999320062	1	ml	Blood (Whole)	Serum	Serum Separator	81
+AAQ00032-02	82	10/7/2005 15:28	999320062	1	ml	Blood (Whole)	Serum	Serum Separator	82
+AAQ00032-03	83	10/7/2005 14:43	999320062	1	ml	Blood (Whole)	Serum	Serum Separator	83
+AAQ00032-04	84	10/7/2005 15:37	999320062	1	ml	Blood (Whole)	Serum	Serum Separator	84
+AAQ00032-05	85	10/7/2005 15:39	999320062	1	ml	Blood (Whole)	Serum	Serum Separator	85
+AAQ00032-06	86	10/7/2005 15:14	999320062	1	ml	Blood (Whole)	Serum	Serum Separator	86
+AAQ00032-07	87	10/7/2005 14:57	999320062	1	ml	Blood (Whole)	Serum	Serum Separator	87
+AAQ00032-08	88	10/7/2005 15:25	999320062	1	ml	Blood (Whole)	Serum	Serum Separator	88
+AAQ00032-09	89	10/7/2005 14:52	999320062	1	ml	Blood (Whole)	Serum	Serum Separator	89
+AAQ0007Z-01	90	12/1/2005 13:07	999320131	15800000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	90
+AAQ0007Z-02	91	12/1/2005 13:12	999320131	15800000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	91
+AAQ0007Z-03	92	12/1/2005 13:27	999320131	15800000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	92
+AAQ0007Z-04	93	12/1/2005 13:09	999320131	15800000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	93
+AAQ0007Z-05	94	12/1/2005 13:29	999320131	15800000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	94
+AAQ0007Z-06	95	12/1/2005 13:11	999320131	15800000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	95
+AAQ0007Z-07	96	12/1/2005 13:41	999320131	15800000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	96
+AAT0000P-01	97	2/3/2006 11:09	999320033	1	ml	Blood (Whole)	Serum	Serum Separator	97
+AAT0000P-02	98	2/3/2006 10:47	999320033	1	ml	Blood (Whole)	Serum	Serum Separator	98
+AAT0000P-03	99	2/3/2006 10:29	999320033	1	ml	Blood (Whole)	Serum	Serum Separator	99
+AAT0000P-04	100	2/3/2006 10:39	999320033	1	ml	Blood (Whole)	Serum	Serum Separator	100
+AAT0000P-05	101	2/3/2006 10:58	999320033	1	ml	Blood (Whole)	Serum	Serum Separator	101
+AAT0000P-06	102	2/3/2006 11:17	999320033	1	ml	Blood (Whole)	Serum	Serum Separator	102
+ABH000CB-02	103	8/24/2007 8:53	999320396	0.4	ml	Semen	Fluid Portion from a Non-Blood Specimen Type	None	103
+ABH003M4-03	104	1/11/2008 10:38		500000	ml	Blood (Whole)	Whole Blood Pellet Specify Methodology	EDTA	104
+ABH00LT8-01	105	10/9/2008 2:50	999320725	2	ml	Cervix	Tear Flo Strips	None	105
+BAA07XDF-01	106	11/22/2005 1:02	999320701	1	ml	Vaginal Swab	Slide from a primary sample	None	106
+BAA07XDF-02	107	11/22/2005 1:32	999320701	1	ml	Vaginal Swab	Slide from a primary sample	None	107
+BAA07XJ3-01	108	11/17/2005 20:03	999320567	1	ml	Vaginal Swab	Slide from a primary sample	None	108
+BAA07XJ3-02	109	11/17/2005 20:06	999320567	1	ml	Vaginal Swab	Slide from a primary sample	None	109
+BAA07XJW-01	110	1/14/2006 16:27	999320332	1	ml	Vaginal Swab	Slide from a primary sample	None	110
+BAA07XJW-02	111	1/14/2006 16:14	999320332	1	ml	Vaginal Swab	Slide from a primary sample	None	111
+BAA07XNP-01	112	12/24/2005 16:46	999320824	1	ml	Blood (Whole)	Plasma Unknown Processing	EDTA	112
+BAA07XNP-02	113	12/24/2005 16:20	999320824	1	ml	Blood (Whole)	Plasma Unknown Processing	EDTA	113
+BAA07XR9-01	114	12/22/2005 20:07	999320771	1	ml	Blood (Whole)	Serum	Serum Separator	114
+BAA07XR9-02	115	12/22/2005 19:21	999320771	1	ml	Blood (Whole)	Serum	Serum Separator	115
+BAA07XR9-03	116	12/22/2005 19:33	999320771	1	ml	Blood (Whole)	Serum	Serum Separator	116
+BAA07XR9-04	117	12/22/2005 19:56	999320771	1	ml	Blood (Whole)	Serum	Serum Separator	117
+BAA07XR9-05	118	12/22/2005 19:48	999320771	1	ml	Blood (Whole)	Serum	Serum Separator	118
+BAA07XR9-06	119	12/22/2005 19:50	999320771	1	ml	Blood (Whole)	Serum	Serum Separator	119
+BAA07XT3-01	120	12/16/2005 17:55	999320790	1	ml	Blood (Whole)	Serum	Serum Separator	120
+BAA07XT3-02	121	12/16/2005 17:30	999320790	1	ml	Blood (Whole)	Serum	Serum Separator	121
+BAA07XT3-03	122	12/16/2005 17:49	999320790	1	ml	Blood (Whole)	Serum	Serum Separator	122
+BAA07XT3-04	123	12/16/2005 17:24	999320790	1	ml	Blood (Whole)	Serum	Serum Separator	123
+BAA07XT3-05	124	12/16/2005 17:52	999320790	1	ml	Blood (Whole)	Serum	Serum Separator	124
+BAA07XT3-06	125	12/16/2005 18:12	999320790	1	ml	Blood (Whole)	Serum	Serum Separator	125
+BAA07Y2B-01	126	1/11/2006 11:41	999320692	1	ml	Blood (Whole)	Serum	Serum Separator	126
+BAA07Y2B-02	127	1/11/2006 11:56	999320692	1	ml	Blood (Whole)	Serum	Serum Separator	127
+BAA07Y2B-03	128	1/11/2006 12:34	999320692	1	ml	Blood (Whole)	Serum	Serum Separator	128
+BAA07Y2B-04	129	1/11/2006 11:45	999320692	1	ml	Blood (Whole)	Serum	Serum Separator	129
+BAA07Y2B-05	130	1/11/2006 12:27	999320692	1	ml	Blood (Whole)	Serum	Serum Separator	130
+BAA07Y2B-06	131	1/11/2006 12:21	999320692	1	ml	Blood (Whole)	Serum	Serum Separator	131
+BAA07YT7-01	132	1/17/2006 13:23	999320517	1	ml	Blood (Whole)	Serum	Serum Separator	132
+BAA07YT7-02	133	1/17/2006 13:12	999320517	1	ml	Blood (Whole)	Serum	Serum Separator	133
+BAA07YTJ-01	134	1/14/2006 1:39	999320474	1	ml	Blood (Whole)	Serum	Serum Separator	134
+BAA07YTJ-02	135	1/14/2006 1:34	999320474	1	ml	Blood (Whole)	Serum	Serum Separator	135
+BAA07YTT-01	136	1/18/2006 10:39	999320980	1	ml	Blood (Whole)	Serum	Serum Separator	136
+BAA07YTT-02	137	1/18/2006 10:45	999320980	1	ml	Blood (Whole)	Serum	Serum Separator	137
+BAA07YTT-03	138	1/18/2006 10:19	999320980	1	ml	Blood (Whole)	Serum	Serum Separator	138
+BAA07YTT-04	139	1/18/2006 10:34	999320980	1	ml	Blood (Whole)	Serum	Serum Separator	139
+BAA07YTT-05	140	1/18/2006 10:47	999320980	1	ml	Blood (Whole)	Serum	Serum Separator	140
+BAA07YTT-06	141	1/18/2006 10:05	999320980	1	ml	Blood (Whole)	Serum	Serum Separator	141
+BAA07YVB-01	142	1/18/2006 12:31	999320915	1	ml	Blood (Whole)	Serum	Serum Separator	142
+BAA07YVB-02	143	1/18/2006 12:05	999320915	1	ml	Blood (Whole)	Serum	Serum Separator	143
+BAA07YVB-03	144	1/18/2006 12:56	999320915	1	ml	Blood (Whole)	Serum	Serum Separator	144
+BAA07YVB-04	145	1/18/2006 12:30	999320915	1	ml	Blood (Whole)	Serum	Serum Separator	145
+BAA07YVB-05	146	1/18/2006 12:57	999320915	1	ml	Blood (Whole)	Serum	Serum Separator	146
+BAA07YVB-06	147	1/18/2006 12:12	999320915	1	ml	Blood (Whole)	Serum	Serum Separator	147
+BAA082Q2-01	148	1/26/2006 2:07	999320170	1	ml	Blood (Whole)	Serum	Serum Separator	148
+BAA082Q2-02	149	1/26/2006 2:22	999320170	1	ml	Blood (Whole)	Serum	Serum Separator	149
+BAA082Q2-03	150	1/26/2006 2:12	999320170	1	ml	Blood (Whole)	Serum	Serum Separator	150
+BAA082Q2-04	151	1/26/2006 2:36	999320170	1	ml	Blood (Whole)	Serum	Serum Separator	151
+BAA082Q2-05	152	1/26/2006 2:45	999320170	1	ml	Blood (Whole)	Serum	Serum Separator	152
+BAA082Q2-06	153	1/26/2006 2:10	999320170	1	ml	Blood (Whole)	Serum	Serum Separator	153
+BAA082SG-01	154	1/11/2006 10:37	999320998	1	ml	Blood (Whole)	Serum	Serum Separator	154
+BAA082SG-02	155	1/11/2006 10:56	999320998	1	ml	Blood (Whole)	Serum	Serum Separator	155
+BAQ0001L-01	156	7/29/2005 21:20	999320021	16100000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	156
+BAQ0001L-02	157	7/29/2005 22:03	999320021	16100000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	157
+BAQ0001L-03	158	7/29/2005 22:19	999320021	16100000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	158
+BAQ0001L-04	159	7/29/2005 21:39	999320021	16100000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	159
+BAQ0001L-05	160	7/29/2005 21:26	999320021	16100000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	160
+BAQ0001L-06	161	7/29/2005 21:37	999320021	16100000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	161
+BAQ0001L-07	162	7/29/2005 22:18	999320021	16100000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	162
+BAQ0001L-08	163	7/29/2005 21:29	999320021	16100000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	163
+BAQ0001L-09	164	7/29/2005 22:05	999320021	16100000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	164
+BAQ0001L-10	165	7/29/2005 21:25	999320021	16100000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	165
+BAQ00023-01	166	8/5/2005 12:43	999320036	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	166
+BAQ00023-02	167	8/5/2005 12:37	999320036	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	167
+BAQ00023-03	168	8/5/2005 12:21	999320036	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	168
+BAQ00023-04	169	8/5/2005 12:34	999320036	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	169
+BAQ00023-05	170	8/5/2005 12:15	999320036	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	170
+BAQ00023-06	171	8/5/2005 12:16	999320036	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	171
+BAQ00023-07	172	8/5/2005 12:01	999320036	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	172
+BAQ00023-08	173	8/5/2005 12:47	999320036	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	173
+BAQ00023-09	174	8/5/2005 12:54	999320036	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	174
+BAQ00023-10	175	8/5/2005 12:50	999320036	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	175
+BAQ00051-01	176	10/15/2005 16:24	999320016	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	176
+BAQ00051-02	177	10/15/2005 16:16	999320016	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	177
+BAQ00051-03	178	10/15/2005 16:50	999320016	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	178
+BAQ00051-04	179	10/15/2005 16:01	999320016	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	179
+BAQ00051-05	180	10/15/2005 16:02	999320016	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	180
+BAQ00051-06	181	10/15/2005 16:38	999320016	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	181
+BAQ00051-07	182	10/15/2005 16:41	999320016	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	182
+BAQ00051-08	183	10/15/2005 16:16	999320016	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	183
+BAQ00051-09	184	10/15/2005 16:02	999320016	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	184
+BAQ00051-10	185	10/15/2005 16:38	999320016	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	185
+BAQ00051-11	186	10/15/2005 16:07	999320016	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	186
+BAQ00087-01	187	12/1/2005 13:26	999320131	1	ml	Blood (Whole)	Serum	Serum Separator	187
+BAQ00087-02	188	12/1/2005 13:20	999320131	1	ml	Blood (Whole)	Serum	Serum Separator	188
+BAQ00087-03	189	12/1/2005 13:39	999320131	1	ml	Blood (Whole)	Serum	Serum Separator	189
+BAQ00087-04	190	12/1/2005 13:24	999320131	1	ml	Blood (Whole)	Serum	Serum Separator	190
+BAQ00087-05	191	12/1/2005 13:25	999320131	1	ml	Blood (Whole)	Serum	Serum Separator	191
+BAQ00087-06	192	12/1/2005 13:42	999320131	1	ml	Blood (Whole)	Serum	Serum Separator	192
+BAQ00087-07	193	12/1/2005 13:48	999320131	1	ml	Blood (Whole)	Serum	Serum Separator	193
+BAQ00087-08	194	12/1/2005 13:58	999320131	1	ml	Blood (Whole)	Serum	Serum Separator	194
+BAQ0008J-01	195	12/2/2005 22:03	999320144	1	ml	Blood (Whole)	Serum	Serum Separator	195
+BAQ0008J-02	196	12/2/2005 22:10	999320144	1	ml	Blood (Whole)	Serum	Serum Separator	196
+BAQ0008J-03	197	12/2/2005 22:56	999320144	1	ml	Blood (Whole)	Serum	Serum Separator	197
+BAQ0008J-04	198	12/2/2005 22:47	999320144	1	ml	Blood (Whole)	Serum	Serum Separator	198
+BAQ0008J-05	199	12/2/2005 22:20	999320144	1	ml	Blood (Whole)	Serum	Serum Separator	199
+BAQ0008J-06	200	12/2/2005 22:04	999320144	1	ml	Blood (Whole)	Serum	Serum Separator	200
+BAQ0008J-07	201	12/2/2005 22:49	999320144	1	ml	Blood (Whole)	Serum	Serum Separator	201
+BAT00012-01	202	2/4/2006 14:05	999320004	1	ml	Blood (Whole)	Serum	Serum Separator	202
+BAT00012-02	203	2/4/2006 14:06	999320004	1	ml	Blood (Whole)	Serum	Serum Separator	203
+BAT00012-03	204	2/4/2006 14:49	999320004	1	ml	Blood (Whole)	Serum	Serum Separator	204
+BAT00012-04	205	2/4/2006 14:35	999320004	1	ml	Blood (Whole)	Serum	Serum Separator	205
+BAT00012-05	206	2/4/2006 14:33	999320004	1	ml	Blood (Whole)	Serum	Serum Separator	206
+BAT00012-06	207	2/4/2006 14:08	999320004	1	ml	Blood (Whole)	Serum	Serum Separator	207
+BAT00012-07	208	2/4/2006 14:38	999320004	1	ml	Blood (Whole)	Serum	Serum Separator	208
+BAT00012-08	209	2/4/2006 15:00	999320004	1	ml	Blood (Whole)	Serum	Serum Separator	209
+BBG002RP-01	210	2/28/2008 10:08	999320795	1	ml	Blood (Whole)	Blood (Whole)		210
+CAA07XM4-01	211	12/23/2005 16:25	999320281	1	ml	Blood (Whole)	Serum	Serum Separator	211
+CAA07XM4-02	212	12/23/2005 16:53	999320281	1	ml	Blood (Whole)	Serum	Serum Separator	212
+CAA07XM4-03	213	12/23/2005 16:08	999320281	1	ml	Blood (Whole)	Serum	Serum Separator	213
+CAA07XM4-04	214	12/23/2005 16:21	999320281	1	ml	Blood (Whole)	Serum	Serum Separator	214
+CAA07XM4-05	215	12/23/2005 16:56	999320281	1	ml	Blood (Whole)	Serum	Serum Separator	215
+CAA07XM4-06	216	12/23/2005 16:33	999320281	1	ml	Blood (Whole)	Serum	Serum Separator	216
+CAA07XN8-01	217	12/23/2005 4:16	999320087	1	ml	Vaginal Swab	Swab	None	217
+CAA07XX8-01	218	1/10/2006 16:24	999320440	1	ml	Blood (Whole)	Serum	Serum Separator	218
+CAA07XX8-02	219	1/10/2006 16:21	999320440	1	ml	Blood (Whole)	Serum	Serum Separator	219
+CAA07XX8-03	220	1/10/2006 16:16	999320440	1	ml	Blood (Whole)	Serum	Serum Separator	220
+CAA07XX8-04	221	1/10/2006 16:24	999320440	1	ml	Blood (Whole)	Serum	Serum Separator	221
+CAA07XX8-05	222	1/10/2006 16:01	999320440	1	ml	Blood (Whole)	Serum	Serum Separator	222
+CAA07XX8-06	223	1/10/2006 16:28	999320440	1	ml	Blood (Whole)	Serum	Serum Separator	223
+CAA07Y6Y-01	224	1/7/2006 6:43	999320797	1	ml	Blood (Whole)	Serum	Serum Separator	224
+CAA07Y6Y-02	225	1/7/2006 6:27	999320797	1	ml	Blood (Whole)	Serum	Serum Separator	225
+CAA07Y6Y-03	226	1/7/2006 6:30	999320797	1	ml	Blood (Whole)	Serum	Serum Separator	226
+CAA07Y6Y-04	227	1/7/2006 6:40	999320797	1	ml	Blood (Whole)	Serum	Serum Separator	227
+CAA07Y6Y-05	228	1/7/2006 6:15	999320797	1	ml	Blood (Whole)	Serum	Serum Separator	228
+CAA07Y6Y-06	229	1/7/2006 6:01	999320797	1	ml	Blood (Whole)	Serum	Serum Separator	229
+CAA07YSF-01	230	1/14/2006 16:33	999320497	1	ml	Blood (Whole)	Serum	Serum Separator	230
+CAA07YSF-02	231	1/14/2006 16:23	999320497	1	ml	Blood (Whole)	Serum	Serum Separator	231
+CAA07YT1-01	232	1/17/2006 18:06	999320500	1	ml	Blood (Whole)	Serum	Serum Separator	232
+CAA07YT1-02	233	1/17/2006 18:15	999320500	1	ml	Blood (Whole)	Serum	Serum Separator	233
+CAA082RN-01	234	1/24/2006 1:13	999320955	1	ml	Blood (Whole)	Serum	Serum Separator	234
+CAA082RN-02	235	1/24/2006 1:00	999320955	1	ml	Blood (Whole)	Serum	Serum Separator	235
+CAA082RN-03	236	1/24/2006 1:01	999320955	1	ml	Blood (Whole)	Serum	Serum Separator	236
+CAA082RN-04	237	1/24/2006 1:06	999320955	1	ml	Blood (Whole)	Serum	Serum Separator	237
+CAA082RN-05	238	1/24/2006 1:15	999320955	1	ml	Blood (Whole)	Serum	Serum Separator	238
+CAA082RN-06	239	1/24/2006 2:00	999320955	1	ml	Blood (Whole)	Serum	Serum Separator	239
+CAA082SK-01	240	1/19/2006 22:10	999320569	1	ml	Blood (Whole)	Serum	Serum Separator	240
+CAA082SK-02	241	1/19/2006 21:43	999320569	1	ml	Blood (Whole)	Serum	Serum Separator	241
+CAA082TZ-01	242	1/11/2006 17:11	999320477	1	ml	Blood (Whole)	Serum	Serum Separator	242
+CAA082TZ-02	243	1/11/2006 16:43	999320477	1	ml	Blood (Whole)	Serum	Serum Separator	243
+CAQ0005W-01	244	11/23/2005 14:07	999320098	17900000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	244
+CAQ0005W-02	245	11/23/2005 14:00	999320098	17900000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	245
+CAQ0005W-03	246	11/23/2005 13:43	999320098	17900000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	246
+CAQ0008K-01	247	12/2/2005 22:28	999320144	15030000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	247
+CAQ0008K-02	248	12/2/2005 22:05	999320144	15030000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	248
+CAQ0008K-03	249	12/2/2005 22:56	999320144	15030000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	249
+CAQ0008K-04	250	12/2/2005 22:56	999320144	15030000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	250
+CAQ0008K-05	251	12/2/2005 22:02	999320144	15030000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	251
+CAQ0008K-06	252	12/2/2005 22:29	999320144	15030000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	252
+CAQ0008K-07	253	12/2/2005 22:20	999320144	15030000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	253
+DAA07XJD-01	254	12/13/2005 23:27	999320473	1	ml	Vaginal Swab	Slide from a primary sample	None	254
+DAA07XJD-02	255	12/13/2005 23:18	999320473	1	ml	Vaginal Swab	Slide from a primary sample	None	255
+DAA07XL9-01	256	12/21/2005 1:16	999320898	1	ml	Blood (Whole)	Serum	Serum Separator	256
+DAA07XL9-02	257	12/21/2005 0:21	999320898	1	ml	Blood (Whole)	Serum	Serum Separator	257
+DAA07XL9-03	258	12/21/2005 1:06	999320898	1	ml	Blood (Whole)	Serum	Serum Separator	258
+DAA07XL9-04	259	12/21/2005 0:46	999320898	1	ml	Blood (Whole)	Serum	Serum Separator	259
+DAA07XL9-05	260	12/21/2005 0:38	999320898	1	ml	Blood (Whole)	Serum	Serum Separator	260
+DAA07XL9-06	261	12/21/2005 1:04	999320898	1	ml	Blood (Whole)	Serum	Serum Separator	261
+DAA07XMT-01	262	12/23/2005 22:39	999320429	1	ml	Blood (Whole)	Serum	Serum Separator	262
+DAA07XMT-02	263	12/23/2005 22:59	999320429	1	ml	Blood (Whole)	Serum	Serum Separator	263
+DAA07XMT-03	264	12/23/2005 22:42	999320429	1	ml	Blood (Whole)	Serum	Serum Separator	264
+DAA07XMT-04	265	12/23/2005 22:51	999320429	1	ml	Blood (Whole)	Serum	Serum Separator	265
+DAA07XMT-05	266	12/23/2005 22:03	999320429	1	ml	Blood (Whole)	Serum	Serum Separator	266
+DAA07XMT-06	267	12/23/2005 22:39	999320429	1	ml	Blood (Whole)	Serum	Serum Separator	267
+DAA07YGW-01	268	1/6/2006 16:05	999320706	1	ml	Vaginal Swab	Swab	None	268
+DAA082PV-01	269	1/26/2006 13:07	999320642	1	ml	Blood (Whole)	Serum	Serum Separator	269
+DAA082PV-02	270	1/26/2006 13:34	999320642	1	ml	Blood (Whole)	Serum	Serum Separator	270
+DAA082PV-03	271	1/26/2006 13:21	999320642	1	ml	Blood (Whole)	Serum	Serum Separator	271
+DAA082PV-04	272	1/26/2006 13:27	999320642	1	ml	Blood (Whole)	Serum	Serum Separator	272
+DAA082PV-05	273	1/26/2006 13:14	999320642	1	ml	Blood (Whole)	Serum	Serum Separator	273
+DAA082PV-06	274	1/26/2006 13:37	999320642	1	ml	Blood (Whole)	Serum	Serum Separator	274
+DAA082SC-01	275	1/19/2006 8:41	999320949	1	ml	Blood (Whole)	Serum	Serum Separator	275
+DAA082SC-02	276	1/19/2006 8:54	999320949	1	ml	Blood (Whole)	Serum	Serum Separator	276
+DAA082SW-01	277	1/19/2006 8:24	999320590	1	ml	Blood (Whole)	Serum	Serum Separator	277
+DAA082SW-02	278	1/19/2006 7:44	999320590	1	ml	Blood (Whole)	Serum	Serum Separator	278
+DAA082SW-03	279	1/19/2006 8:15	999320590	1	ml	Blood (Whole)	Serum	Serum Separator	279
+DAA082SW-04	280	1/19/2006 8:23	999320590	1	ml	Blood (Whole)	Serum	Serum Separator	280
+DAA082SW-05	281	1/19/2006 7:43	999320590	1	ml	Blood (Whole)	Serum	Serum Separator	281
+DAA082SW-06	282	1/19/2006 8:40	999320590	1	ml	Blood (Whole)	Serum	Serum Separator	282
+DAQ00018-01	283	7/29/2005 21:24	999320021	1	ml	Blood (Whole)	Serum	Serum Separator	283
+DAQ00018-02	284	7/29/2005 21:44	999320021	1	ml	Blood (Whole)	Serum	Serum Separator	284
+DAQ00018-03	285	7/29/2005 21:43	999320021	1	ml	Blood (Whole)	Serum	Serum Separator	285
+DAQ00018-04	286	7/29/2005 21:58	999320021	1	ml	Blood (Whole)	Serum	Serum Separator	286
+DAQ00018-05	287	7/29/2005 21:52	999320021	1	ml	Blood (Whole)	Serum	Serum Separator	287
+DAQ00018-06	288	7/29/2005 21:40	999320021	1	ml	Blood (Whole)	Serum	Serum Separator	288
+DAQ00018-07	289	7/29/2005 21:56	999320021	1	ml	Blood (Whole)	Serum	Serum Separator	289
+DAQ00018-08	290	7/29/2005 21:39	999320021	1	ml	Blood (Whole)	Serum	Serum Separator	290
+DAQ00018-09	291	7/29/2005 21:51	999320021	1	ml	Blood (Whole)	Serum	Serum Separator	291
+DAQ0006H-01	292	11/24/2005 14:18	999320102	15160000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	292
+DAQ0006H-02	293	11/24/2005 14:03	999320102	15160000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	293
+DAQ0006H-03	294	11/24/2005 14:52	999320102	15160000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	294
+DAQ0006H-04	295	11/24/2005 14:29	999320102	15160000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	295
+DAQ0006H-05	296	11/24/2005 14:03	999320102	15160000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	296
+DAQ0006H-06	297	11/24/2005 14:12	999320102	15160000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	297
+DAT00009-01	298	2/3/2006 8:21	999320029	1	ml	Blood (Whole)	Serum	Serum Separator	298
+DAT00009-02	299	2/3/2006 8:36	999320029	1	ml	Blood (Whole)	Serum	Serum Separator	299
+DAT00009-03	300	2/3/2006 8:48	999320029	1	ml	Blood (Whole)	Serum	Serum Separator	300
+DAT00009-04	301	2/3/2006 8:40	999320029	1	ml	Blood (Whole)	Serum	Serum Separator	301
+DAT00009-05	302	2/3/2006 8:49	999320029	1	ml	Blood (Whole)	Serum	Serum Separator	302
+DAT00009-06	303	2/3/2006 8:47	999320029	1	ml	Blood (Whole)	Serum	Serum Separator	303
+DBH002QV-28	304	12/5/2007 21:47	999320746	10570000	ml	Blood (Whole)	PBMC Cells Viable	Acid Citrate Dextrose	304
+DBH002QV-29	305	12/5/2007 22:24	999320746	10570000	ml	Blood (Whole)	PBMC Cells Viable	Acid Citrate Dextrose	305
+DBH002QV-30	306	12/5/2007 21:45	999320422	10570000	ml	Blood (Whole)	PBMC Cells Viable	Acid Citrate Dextrose	306
+DBH002QV-31	307	12/5/2007 22:32	999320795	10570000	ml	Blood (Whole)	PBMC Cells Viable	Acid Citrate Dextrose	307
+DBH002QV-32	308	12/6/2007 22:45	999320795	10570000	ml	Blood (Whole)	PBMC Cells Viable	Acid Citrate Dextrose	308
+DBH002QV-33	309	12/5/2007 22:11	999320812	10570000	ml	Blood (Whole)	PBMC Cells Viable	Acid Citrate Dextrose	309
+DBH002QV-34	310	12/5/2007 22:32	999320885	10570000	ml	Blood (Whole)	PBMC Cells Viable	Acid Citrate Dextrose	310
+EAA07XJ0-01	311	12/14/2005 10:41	999320198	1	ml	Vaginal Swab	Slide from a primary sample	None	311
+EAA07XJ0-02	312	12/14/2005 10:35	999320198	1	ml	Vaginal Swab	Slide from a primary sample	None	312
+EAA07XWK-01	313	1/10/2006 15:33	999320668	1	ml	Blood (Whole)	Serum	Serum Separator	313
+EAA07XWK-02	314	1/10/2006 15:47	999320668	1	ml	Blood (Whole)	Serum	Serum Separator	314
+EAA07XWK-03	315	1/10/2006 15:21	999320668	1	ml	Blood (Whole)	Serum	Serum Separator	315
+EAA07XWK-04	316	1/10/2006 15:57	999320668	1	ml	Blood (Whole)	Serum	Serum Separator	316
+EAA07XWK-05	317	1/10/2006 15:26	999320668	1	ml	Blood (Whole)	Serum	Serum Separator	317
+EAA07XWK-06	318	1/10/2006 15:52	999320668	1	ml	Blood (Whole)	Serum	Serum Separator	318
+EAA07Y6Q-01	319	1/14/2006 16:49	999320332	1	ml	Blood (Whole)	Serum	Serum Separator	319
+EAA07Y6Q-02	320	1/14/2006 16:19	999320332	1	ml	Blood (Whole)	Serum	Serum Separator	320
+EAA07Y6Q-03	321	1/14/2006 16:12	999320332	1	ml	Blood (Whole)	Serum	Serum Separator	321
+EAA07Y6Q-04	322	1/14/2006 16:59	999320332	1	ml	Blood (Whole)	Serum	Serum Separator	322
+EAA07Y6Q-05	323	1/14/2006 16:02	999320332	1	ml	Blood (Whole)	Serum	Serum Separator	323
+EAA07Y6Q-06	324	1/14/2006 16:54	999320332	1	ml	Blood (Whole)	Serum	Serum Separator	324
+EAA07YRB-01	325	12/14/2005 16:28	999320619	1	ml	Blood (Whole)	Serum	Serum Separator	325
+EAA07YRB-02	326	12/14/2005 16:23	999320619	1	ml	Blood (Whole)	Serum	Serum Separator	326
+EAA07YRB-03	327	12/14/2005 16:04	999320619	1	ml	Blood (Whole)	Serum	Serum Separator	327
+EAA07YRB-04	328	12/14/2005 16:37	999320619	1	ml	Blood (Whole)	Serum	Serum Separator	328
+EAA07YRB-05	329	12/14/2005 16:01	999320619	1	ml	Blood (Whole)	Serum	Serum Separator	329
+EAA07YRB-06	330	12/14/2005 16:19	999320619	1	ml	Blood (Whole)	Serum	Serum Separator	330
+EAA082S5-01	331	1/24/2006 20:59	999320637	1	ml	Blood (Whole)	Serum	Serum Separator	331
+EAA082S5-02	332	1/24/2006 20:54	999320637	1	ml	Blood (Whole)	Serum	Serum Separator	332
+EAA082V5-01	333	1/19/2006 12:35	999320954	1	ml	Blood (Whole)	Serum	Serum Separator	333
+EAA082V5-02	334	1/19/2006 12:00	999320954	1	ml	Blood (Whole)	Serum	Serum Separator	334
+EAQ00002-01	335	7/27/2005 15:27	999320007	1	ml	Blood (Whole)	Serum	Serum Separator	335
+EAQ00002-02	336	7/27/2005 15:38	999320007	1	ml	Blood (Whole)	Serum	Serum Separator	336
+EAQ00002-03	337	7/27/2005 15:39	999320007	1	ml	Blood (Whole)	Serum	Serum Separator	337
+EAQ00002-04	338	7/27/2005 16:08	999320007	1	ml	Blood (Whole)	Serum	Serum Separator	338
+EAQ00002-05	339	7/27/2005 16:11	999320007	1	ml	Blood (Whole)	Serum	Serum Separator	339
+EAQ00002-06	340	7/27/2005 15:36	999320007	1	ml	Blood (Whole)	Serum	Serum Separator	340
+EAQ00002-07	341	7/27/2005 16:01	999320007	1	ml	Blood (Whole)	Serum	Serum Separator	341
+EAQ00002-08	342	7/27/2005 16:01	999320007	1	ml	Blood (Whole)	Serum	Serum Separator	342
+EAQ00002-09	343	7/27/2005 15:49	999320007	1	ml	Blood (Whole)	Serum	Serum Separator	343
+EAQ0002G-01	344	10/6/2005 21:58	999320054	1	ml	Blood (Whole)	Serum	Serum Separator	344
+EAQ0002G-02	345	10/6/2005 22:14	999320054	1	ml	Blood (Whole)	Serum	Serum Separator	345
+EAQ0002G-03	346	10/6/2005 21:44	999320054	1	ml	Blood (Whole)	Serum	Serum Separator	346
+EAQ0002G-04	347	10/6/2005 22:00	999320054	1	ml	Blood (Whole)	Serum	Serum Separator	347
+EAQ0002G-05	348	10/6/2005 22:09	999320054	1	ml	Blood (Whole)	Serum	Serum Separator	348
+EAQ0002G-06	349	10/6/2005 22:02	999320054	1	ml	Blood (Whole)	Serum	Serum Separator	349
+EAQ0007L-01	350	11/25/2005 5:23	999320115	11700000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	350
+EAQ0007L-02	351	11/25/2005 5:59	999320115	11700000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	351
+EAQ0007L-03	352	11/25/2005 5:37	999320115	11700000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	352
+EAQ0007L-04	353	11/25/2005 5:47	999320115	11700000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	353
+EAQ0007L-05	354	11/25/2005 5:37	999320115	11700000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	354
+EAQ0007L-06	355	11/25/2005 5:30	999320115	11700000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	355
+EAQ0007L-07	356	11/25/2005 5:30	999320115	11700000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	356
+EAQ0007L-08	357	11/25/2005 6:15	999320115	11700000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	357
+EAQ0007L-09	358	11/25/2005 5:39	999320115	11700000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	358
+EAQ0007L-10	359	11/25/2005 6:09	999320115	11700000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	359
+EAQ0007L-11	360	11/25/2005 6:13	999320115	11700000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	360
+EBG000W4-04	361	5/16/2007 7:10		0.5	ml	Semen	Fluid Portion from a Non-Blood Specimen Type	None	361
+EBG002K4-19	362	2/13/2008 0:36	999320062	1	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	362
+EBG002K4-20	363	2/13/2008 0:29	999320226	1	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	363
+EBG002K4-21	364	2/13/2008 0:56	999320190	1	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	364
+EBG002K4-22	365	2/13/2008 0:05	999320895	1	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	365
+EBG002K4-23	366	2/13/2008 0:01	999320812	1	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	366
+EBG002K4-24	367	2/13/2008 0:51		1	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	367
+EBG002K4-25	368	2/13/2008 0:17	999320033	1	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	368
+EBH00413-03	369	1/18/2008 3:12	999320706	500000	ml	Blood (Whole)	Whole Blood Pellet Specify Methodology	EDTA	369
+EBH00S5Q-01	370	11/26/2008 1:24	999320396	2	ml	Cervix	Tear Flo Strips	None	370
+FAA07XJL-01	371	12/7/2005 11:57	999320080	1	ml	Vaginal Swab	Slide from a primary sample	None	371
+FAA07XJL-02	372	12/7/2005 11:49	999320080	1	ml	Vaginal Swab	Slide from a primary sample	None	372
+FAA07XLJ-01	373	12/21/2005 0:48	999320898	1	ml	Vaginal Swab	Swab	None	373
+FAA07XN1-01	374	12/23/2005 3:55	999320087	1	ml	Blood (Whole)	Serum	Serum Separator	374
+FAA07XN1-02	375	12/23/2005 4:14	999320087	1	ml	Blood (Whole)	Serum	Serum Separator	375
+FAA07XN1-03	376	12/23/2005 3:59	999320087	1	ml	Blood (Whole)	Serum	Serum Separator	376
+FAA07XN1-04	377	12/23/2005 4:19	999320087	1	ml	Blood (Whole)	Serum	Serum Separator	377
+FAA07XN1-05	378	12/23/2005 3:49	999320087	1	ml	Blood (Whole)	Serum	Serum Separator	378
+FAA07XN1-06	379	12/23/2005 3:53	999320087	1	ml	Blood (Whole)	Serum	Serum Separator	379
+FAA07XNK-01	380	12/24/2005 16:37	999320824	1	ml	Blood (Whole)	Serum	Serum Separator	380
+FAA07XNK-02	381	12/24/2005 16:57	999320824	1	ml	Blood (Whole)	Serum	Serum Separator	381
+FAA07XNK-03	382	12/24/2005 16:39	999320824	1	ml	Blood (Whole)	Serum	Serum Separator	382
+FAA07XTB-01	383	12/16/2005 0:52	999320822	1	ml	Blood (Whole)	Serum	Serum Separator	383
+FAA07XTB-02	384	12/16/2005 0:10	999320822	1	ml	Blood (Whole)	Serum	Serum Separator	384
+FAA07XTB-03	385	12/16/2005 0:39	999320822	1	ml	Blood (Whole)	Serum	Serum Separator	385
+FAA07XTB-04	386	12/16/2005 0:20	999320822	1	ml	Blood (Whole)	Serum	Serum Separator	386
+FAA07XTB-05	387	12/16/2005 0:56	999320822	1	ml	Blood (Whole)	Serum	Serum Separator	387
+FAA07XTB-06	388	12/16/2005 0:21	999320822	1	ml	Blood (Whole)	Serum	Serum Separator	388
+FAA07Y45-01	389	1/13/2006 17:56	999320981	1	ml	Blood (Whole)	Serum	Serum Separator	389
+FAA07Y45-02	390	1/13/2006 17:44	999320981	1	ml	Blood (Whole)	Serum	Serum Separator	390
+FAA07Y45-03	391	1/13/2006 17:22	999320981	1	ml	Blood (Whole)	Serum	Serum Separator	391
+FAA07Y45-04	392	1/13/2006 17:30	999320981	1	ml	Blood (Whole)	Serum	Serum Separator	392
+FAA07Y45-05	393	1/13/2006 18:00	999320981	1	ml	Blood (Whole)	Serum	Serum Separator	393
+FAA07Y45-06	394	1/13/2006 17:49	999320981	1	ml	Blood (Whole)	Serum	Serum Separator	394
+FAA07YKL-01	395	1/6/2006 0:56	999320616	1	ml	Blood (Whole)	Serum	Serum Separator	395
+FAA07YKL-02	396	1/6/2006 0:58	999320616	1	ml	Blood (Whole)	Serum	Serum Separator	396
+FAA07YKL-03	397	1/6/2006 0:01	999320616	1	ml	Blood (Whole)	Serum	Serum Separator	397
+FAA07YKL-04	398	1/6/2006 0:57	999320616	1	ml	Blood (Whole)	Serum	Serum Separator	398
+FAA07YKL-05	399	1/6/2006 0:32	999320616	1	ml	Blood (Whole)	Serum	Serum Separator	399
+FAA07YKL-06	400	1/6/2006 0:00	999320616	1	ml	Blood (Whole)	Serum	Serum Separator	400
+FAA07YMZ-01	401	12/22/2005 4:12	999320760	1	ml	Blood (Whole)	Serum	Serum Separator	401
+FAA07YMZ-02	402	12/22/2005 3:25	999320760	1	ml	Blood (Whole)	Serum	Serum Separator	402
+FAA07YMZ-03	403	12/22/2005 4:18	999320760	1	ml	Blood (Whole)	Serum	Serum Separator	403
+FAA07YMZ-04	404	12/22/2005 4:17	999320760	1	ml	Blood (Whole)	Serum	Serum Separator	404
+FAA07YMZ-05	405	12/22/2005 3:31	999320760	1	ml	Blood (Whole)	Serum	Serum Separator	405
+FAA07YMZ-06	406	12/22/2005 3:49	999320760	1	ml	Blood (Whole)	Serum	Serum Separator	406
+FAA07YPB-01	407	1/17/2006 12:06	999320899	1	ml	Blood (Whole)	Serum	Serum Separator	407
+FAA07YPB-02	408	1/17/2006 12:51	999320899	1	ml	Blood (Whole)	Serum	Serum Separator	408
+FAA07YPB-03	409	1/17/2006 12:07	999320899	1	ml	Blood (Whole)	Serum	Serum Separator	409
+FAA07YPB-04	410	1/17/2006 12:35	999320899	1	ml	Blood (Whole)	Serum	Serum Separator	410
+FAA07YPB-05	411	1/17/2006 12:54	999320899	1	ml	Blood (Whole)	Serum	Serum Separator	411
+FAA07YPB-06	412	1/17/2006 12:07	999320899	1	ml	Blood (Whole)	Serum	Serum Separator	412
+FAA07YSC-01	413	1/14/2006 0:57	999320264	1	ml	Vaginal Swab	Swab	None	413
+FAA07YSM-01	414	1/13/2006 0:13	999320463	1	ml	Blood (Whole)	Serum	Serum Separator	414
+FAA07YSM-02	415	1/13/2006 23:32	999320463	1	ml	Blood (Whole)	Serum	Serum Separator	415
+FAA07YV3-01	416	1/18/2006 17:00	999320239	1	ml	Blood (Whole)	Serum	Serum Separator	416
+FAA07YV3-02	417	1/18/2006 16:21	999320239	1	ml	Blood (Whole)	Serum	Serum Separator	417
+FAA07YV3-03	418	1/18/2006 16:41	999320239	1	ml	Blood (Whole)	Serum	Serum Separator	418
+FAA07YV3-04	419	1/18/2006 16:44	999320239	1	ml	Blood (Whole)	Serum	Serum Separator	419
+FAA07YV3-05	420	1/18/2006 16:25	999320239	1	ml	Blood (Whole)	Serum	Serum Separator	420
+FAA07YV3-06	421	1/18/2006 16:18	999320239	1	ml	Blood (Whole)	Serum	Serum Separator	421
+FAA07YXY-01	422	12/16/2005 18:29	999320520	1	ml	Vaginal Swab	Swab	None	422
+FAA082PD-01	423	1/25/2006 22:15	618005775	1	ml	Blood (Whole)	Serum	Serum Separator	423
+FAA082PD-02	424	1/25/2006 22:07	618005775	1	ml	Blood (Whole)	Serum	Serum Separator	424
+FAA082PD-03	425	1/25/2006 21:48	618005775	1	ml	Blood (Whole)	Serum	Serum Separator	425
+FAA082PD-04	426	1/25/2006 21:24	618005775	1	ml	Blood (Whole)	Serum	Serum Separator	426
+FAA082PD-05	427	1/25/2006 21:46	618005775	1	ml	Blood (Whole)	Serum	Serum Separator	427
+FAA082PD-06	428	1/25/2006 21:43	618005775	1	ml	Blood (Whole)	Serum	Serum Separator	428
+FAA082S8-01	429	1/19/2006 4:58	999320608	1	ml	Blood (Whole)	Serum	Serum Separator	429
+FAA082S8-02	430	1/19/2006 4:53	999320608	1	ml	Blood (Whole)	Serum	Serum Separator	430
+FAA082T3-01	431	1/20/2006 6:48	999320038	1	ml	Blood (Whole)	Serum	Serum Separator	431
+FAA082T3-02	432	1/20/2006 6:46	999320038	1	ml	Blood (Whole)	Serum	Serum Separator	432
+FAA082T3-03	433	1/20/2006 6:50	999320038	1	ml	Blood (Whole)	Serum	Serum Separator	433
+FAA082T3-04	434	1/20/2006 6:13	999320038	1	ml	Blood (Whole)	Serum	Serum Separator	434
+FAA082T3-05	435	1/20/2006 6:10	999320038	1	ml	Blood (Whole)	Serum	Serum Separator	435
+FAA082T3-06	436	1/20/2006 6:53	999320038	1	ml	Blood (Whole)	Serum	Serum Separator	436
+FAA082TW-01	437	1/20/2006 5:42	999320620	1	ml	Blood (Whole)	Serum	Serum Separator	437
+FAA082TW-02	438	1/20/2006 5:54	999320620	1	ml	Blood (Whole)	Serum	Serum Separator	438
+FAA082V8-01	439	1/19/2006 23:20	999320575	1	ml	Blood (Whole)	Serum	Serum Separator	439
+FAA082V8-02	440	1/18/2006 23:57	999320575	1	ml	Blood (Whole)	Serum	Serum Separator	440
+FAT0000J-01	441	2/3/2006 10:59	999320033	1	ml	Blood (Whole)	PBMC Cells Viable	Heparin	441
+FAT0000J-02	442	2/3/2006 10:38	999320033	1	ml	Blood (Whole)	PBMC Cells Viable	Heparin	442
+FAT0000J-03	443	2/3/2006 10:33	999320033	1	ml	Blood (Whole)	PBMC Cells Viable	Heparin	443
+FAT0000J-04	444	2/3/2006 11:13	999320033	1	ml	Blood (Whole)	PBMC Cells Viable	Heparin	444
+FAT0001C-01	445	2/4/2006 12:48	999320018	1	ml	Blood (Whole)	PBMC Cells Viable	Heparin	445
+FAT0001C-02	446	2/4/2006 12:12	999320018	1	ml	Blood (Whole)	PBMC Cells Viable	Heparin	446
+FAT0001C-03	447	2/4/2006 12:42	999320018	1	ml	Blood (Whole)	PBMC Cells Viable	Heparin	447
+FAT0001C-04	448	2/4/2006 12:02	999320018	1	ml	Blood (Whole)	PBMC Cells Viable	Heparin	448
+FBG000RQ-11	449	4/3/2007 14:23	999320885	1.5	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	449
+FBG000RQ-12	450	4/3/2007 14:13	999320812	1.5	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	450
+FBG000RQ-13	451	4/3/2007 14:25	999320190	1.5	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	451
+FBG000RQ-14	452	4/3/2007 13:46		1.5	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	452
+FBG000RQ-15	453	4/3/2007 13:48	999320812	1.5	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	453
+FBG000RQ-16	454	4/3/2007 14:21	999320746	1.5	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	454
+FBG000RQ-17	455	4/3/2007 14:10	999320583	1.5	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	455
+FBG000RQ-18	456	4/3/2007 14:22	999320895	1.5	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	456
+FBG000RQ-19	457	4/3/2007 14:40	999320795	1.5	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	457
+FBG000Z2-04	458	6/26/2007 2:14	999320466	0.5	ml	Semen	Fluid Portion from a Non-Blood Specimen Type	None	458
+GAA07XHX-01	459	12/9/2005 20:48	999320768	1	ml	Vaginal Swab	Slide from a primary sample	None	459
+GAA07XHX-02	460	12/9/2005 20:47	999320768	1	ml	Vaginal Swab	Slide from a primary sample	None	460
+GAA07XJ6-01	461	11/23/2005 4:03	999320755	1	ml	Vaginal Swab	Slide from a primary sample	None	461
+GAA07XJ6-02	462	11/23/2005 4:05	999320755	1	ml	Vaginal Swab	Slide from a primary sample	None	462
+GAA07XJP-01	463	11/16/2005 19:38	999320495	1	ml	Vaginal Swab	Slide from a primary sample	None	463
+GAA07XJP-02	464	11/16/2005 19:35	999320495	1	ml	Vaginal Swab	Slide from a primary sample	None	464
+GAA07XJZ-01	465	11/24/2005 4:56	999320424	1	ml	Vaginal Swab	Slide from a primary sample	None	465
+GAA07XJZ-02	466	11/24/2005 4:00	999320424	1	ml	Vaginal Swab	Slide from a primary sample	None	466
+GAA07XQF-01	467	12/14/2005 3:44	999320173	1	ml	Blood (Whole)	Serum	Serum Separator	467
+GAA07XQF-02	468	12/14/2005 3:50	999320173	1	ml	Blood (Whole)	Serum	Serum Separator	468
+GAA07XQF-03	469	12/14/2005 4:08	999320173	1	ml	Blood (Whole)	Serum	Serum Separator	469
+GAA07XQF-04	470	12/14/2005 3:25	999320173	1	ml	Blood (Whole)	Serum	Serum Separator	470
+GAA07XQF-05	471	12/14/2005 3:49	999320173	1	ml	Blood (Whole)	Serum	Serum Separator	471
+GAA07XWB-01	472	1/10/2006 10:16	999320364	1	ml	Blood (Whole)	Serum	Serum Separator	472
+GAA07XWB-02	473	1/10/2006 10:16	999320364	1	ml	Blood (Whole)	Serum	Serum Separator	473
+GAA07XWB-03	474	1/10/2006 10:14	999320364	1	ml	Blood (Whole)	Serum	Serum Separator	474
+GAA07XWB-04	475	1/10/2006 9:39	999320364	1	ml	Blood (Whole)	Serum	Serum Separator	475
+GAA07XWB-05	476	1/10/2006 9:54	999320364	1	ml	Blood (Whole)	Serum	Serum Separator	476
+GAA07XWB-06	477	1/10/2006 9:31	999320364	1	ml	Blood (Whole)	Serum	Serum Separator	477
+GAA07Y4D-01	478	1/13/2006 13:58	999320176	1	ml	Blood (Whole)	Serum	Serum Separator	478
+GAA07Y4D-02	479	1/13/2006 13:46	999320176	1	ml	Blood (Whole)	Serum	Serum Separator	479
+GAA07Y4D-03	480	1/13/2006 14:02	999320176	1	ml	Blood (Whole)	Serum	Serum Separator	480
+GAA07Y4D-04	481	1/13/2006 13:55	999320176	1	ml	Blood (Whole)	Serum	Serum Separator	481
+GAA07Y4D-05	482	1/13/2006 13:47	999320176	1	ml	Blood (Whole)	Serum	Serum Separator	482
+GAA07Y4D-06	483	1/13/2006 13:49	999320176	1	ml	Blood (Whole)	Serum	Serum Separator	483
+GAA07YSY-01	484	1/12/2006 17:28	999320270	1	ml	Blood (Whole)	Serum	Serum Separator	484
+GAA07YSY-02	485	1/12/2006 17:32	999320270	1	ml	Blood (Whole)	Serum	Serum Separator	485
+GAA07YZF-01	486	1/18/2006 4:59	999320556	1	ml	Urine	Urine	None	486
+GAA07YZF-02	487	1/18/2006 5:31	999320556	1	ml	Urine	Urine	None	487
+GAA082NH-01	488	1/25/2006 10:37	999320528	1	ml	Blood (Whole)	Serum	Serum Separator	488
+GAA082NH-02	489	1/25/2006 10:41	999320528	1	ml	Blood (Whole)	Serum	Serum Separator	489
+GAA082NH-03	490	1/25/2006 10:40	999320528	1	ml	Blood (Whole)	Serum	Serum Separator	490
+GAA082NH-04	491	1/25/2006 10:33	999320528	1	ml	Blood (Whole)	Serum	Serum Separator	491
+GAA082NH-05	492	1/25/2006 10:26	999320528	1	ml	Blood (Whole)	Serum	Serum Separator	492
+GAA082NH-06	493	1/25/2006 10:36	999320528	1	ml	Blood (Whole)	Serum	Serum Separator	493
+GAQ0001Y-01	494	8/5/2005 12:18	999320036	1	ml	Blood (Whole)	Serum	Serum Separator	494
+GAQ0001Y-02	495	8/5/2005 12:42	999320036	1	ml	Blood (Whole)	Serum	Serum Separator	495
+GAQ0001Y-03	496	8/5/2005 12:36	999320036	1	ml	Blood (Whole)	Serum	Serum Separator	496
+GAQ0001Y-04	497	8/5/2005 12:54	999320036	1	ml	Blood (Whole)	Serum	Serum Separator	497
+GAQ00033-01	498	10/7/2005 15:26	999320062	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	498
+GAQ00033-02	499	10/7/2005 15:23	999320062	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	499
+GAQ00033-03	500	10/7/2005 15:25	999320062	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	500
+GAQ00033-04	501	10/7/2005 14:43	999320062	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	501
+GAQ00033-05	502	10/7/2005 15:23	999320062	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	502
+GAQ00033-06	503	10/7/2005 14:45	999320062	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	503
+GAQ00033-07	504	10/7/2005 14:58	999320062	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	504
+GAQ00033-08	505	10/7/2005 14:57	999320062	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	505
+GAQ00033-09	506	10/7/2005 15:35	999320062	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	506
+GBG000WR-04	507	5/16/2007 7:38	999320226	0.5	ml	Semen	Fluid Portion from a Non-Blood Specimen Type	None	507
+GBG000ZP-02	508	6/26/2007 8:48		0.5	ml	Semen	Fluid Portion from a Non-Blood Specimen Type	None	508
+GBH001H2-01	509	11/2/2007 17:32	999320062	2	ml	Blood (Whole)	Blood (Whole)		509
+H0000000639	510	1/20/2006 7:26	999320231	1510000	ml	Blood (Whole)		Heparin	510
+H0000000640	511	1/20/2006 7:13	999320231	1510000	ml	Blood (Whole)		Heparin	511
+H0000000641	512	1/20/2006 7:40	999320231	1510000	ml	Blood (Whole)		Heparin	512
+H0000000642	513	1/20/2006 7:12	999320231	1510000	ml	Blood (Whole)		Heparin	513
+H0000000643	514	1/20/2006 7:34	999320231	1510000	ml	Blood (Whole)		Heparin	514
+HAA07XJH-01	515	1/14/2006 1:26	999320264	1	ml	Vaginal Swab	Slide from a primary sample	None	515
+HAA07XJH-02	516	1/14/2006 1:14	999320264	1	ml	Vaginal Swab	Slide from a primary sample	None	516
+HAA07XK2-01	517	11/16/2005 4:47	999320526	1	ml	Vaginal Swab	Slide from a primary sample	None	517
+HAA07XK2-02	518	11/16/2005 4:18	999320526	1	ml	Vaginal Swab	Slide from a primary sample	None	518
+HAA07XPB-01	519	12/14/2005 10:38	999320198	1	ml	Blood (Whole)	Serum	Serum Separator	519
+HAA07XPB-02	520	12/14/2005 10:07	999320198	1	ml	Blood (Whole)	Serum	Serum Separator	520
+HAA07XPB-03	521	12/14/2005 10:49	999320198	1	ml	Blood (Whole)	Serum	Serum Separator	521
+HAA07XPB-04	522	12/14/2005 10:21	999320198	1	ml	Blood (Whole)	Serum	Serum Separator	522
+HAA07XRJ-01	523	12/22/2005 19:01	999320550	1	ml	Blood (Whole)	Serum	Serum Separator	523
+HAA07XRJ-02	524	12/22/2005 18:36	999320550	1	ml	Blood (Whole)	Serum	Serum Separator	524
+HAA07XRJ-03	525	12/22/2005 18:50	999320550	1	ml	Blood (Whole)	Serum	Serum Separator	525
+HAA07XRJ-04	526	12/22/2005 18:37	999320550	1	ml	Blood (Whole)	Serum	Serum Separator	526
+HAA07XRJ-05	527	12/22/2005 18:48	999320550	1	ml	Blood (Whole)	Serum	Serum Separator	527
+HAA07XRJ-06	528	12/22/2005 18:44	999320550	1	ml	Blood (Whole)	Serum	Serum Separator	528
+HAA07XSW-01	529	12/16/2005 22:54	999320134	1	ml	Blood (Whole)	Serum	Serum Separator	529
+HAA07XSW-02	530	12/16/2005 22:57	999320134	1	ml	Blood (Whole)	Serum	Serum Separator	530
+HAA07XSW-03	531	12/16/2005 23:10	999320134	1	ml	Blood (Whole)	Serum	Serum Separator	531
+HAA07XSW-04	532	12/16/2005 23:10	999320134	1	ml	Blood (Whole)	Serum	Serum Separator	532
+HAA07XSW-05	533	12/16/2005 22:55	999320134	1	ml	Blood (Whole)	Serum	Serum Separator	533
+HAA07XSW-06	534	12/15/2005 23:18	999320134	1	ml	Blood (Whole)	Serum	Serum Separator	534
+HAA07XXY-01	535	1/11/2006 21:35	999320297	1	ml	Blood (Whole)	Serum	Serum Separator	535
+HAA07XXY-02	536	1/11/2006 21:56	999320297	1	ml	Blood (Whole)	Serum	Serum Separator	536
+HAA07XXY-03	537	1/11/2006 22:12	999320297	1	ml	Blood (Whole)	Serum	Serum Separator	537
+HAA07XXY-04	538	1/11/2006 21:28	999320297	1	ml	Blood (Whole)	Serum	Serum Separator	538
+HAA07XXY-05	539	1/11/2006 21:51	999320297	1	ml	Blood (Whole)	Serum	Serum Separator	539
+HAA07XXY-06	540	1/11/2006 21:59	999320297	1	ml	Blood (Whole)	Serum	Serum Separator	540
+HAA07Y68-01	541	1/14/2006 4:14	999320202	1	ml	Blood (Whole)	Serum	Serum Separator	541
+HAA07Y68-02	542	1/14/2006 4:21	999320202	1	ml	Blood (Whole)	Serum	Serum Separator	542
+HAA07Y68-03	543	1/14/2006 4:58	999320202	1	ml	Blood (Whole)	Serum	Serum Separator	543
+HAA07Y68-04	544	1/14/2006 4:11	999320202	1	ml	Blood (Whole)	Serum	Serum Separator	544
+HAA07Y68-05	545	1/14/2006 4:42	999320202	1	ml	Blood (Whole)	Serum	Serum Separator	545
+HAA07Y68-06	546	1/14/2006 4:54	999320202	1	ml	Blood (Whole)	Serum	Serum Separator	546
+HAA07YHM-01	547	1/10/2006 7:36	999320248	1	ml	Blood (Whole)	Serum	Serum Separator	547
+HAA07YHM-02	548	1/10/2006 8:00	999320248	1	ml	Blood (Whole)	Serum	Serum Separator	548
+HAA07YHM-03	549	1/10/2006 7:46	999320248	1	ml	Blood (Whole)	Serum	Serum Separator	549
+HAA07YHM-04	550	1/10/2006 7:07	999320248	1	ml	Blood (Whole)	Serum	Serum Separator	550
+HAA07YHM-05	551	1/10/2006 7:14	999320248	1	ml	Blood (Whole)	Serum	Serum Separator	551
+HAA07YHM-06	552	1/10/2006 7:23	999320248	1	ml	Blood (Whole)	Serum	Serum Separator	552
+HAA07YR3-01	553	12/15/2005 12:30	999320079	1	ml	Blood (Whole)	Serum	Serum Separator	553
+HAA07YR3-02	554	12/15/2005 12:24	999320079	1	ml	Blood (Whole)	Serum	Serum Separator	554
+HAA07YR3-03	555	12/15/2005 12:09	999320079	1	ml	Blood (Whole)	Serum	Serum Separator	555
+HAA07YR3-04	556	12/15/2005 12:34	999320079	1	ml	Blood (Whole)	Serum	Serum Separator	556
+HAA07YR3-05	557	12/15/2005 12:24	999320079	1	ml	Blood (Whole)	Serum	Serum Separator	557
+HAA07YR3-06	558	12/15/2005 12:06	999320079	1	ml	Blood (Whole)	Serum	Serum Separator	558
+HAA07YXT-01	559	12/16/2005 18:45	999320520	1	ml	Blood (Whole)	Serum	Serum Separator	559
+HAA07YXT-02	560	12/16/2005 18:57	999320520	1	ml	Blood (Whole)	Serum	Serum Separator	560
+HAA07YXT-03	561	12/16/2005 18:02	999320520	1	ml	Blood (Whole)	Serum	Serum Separator	561
+HAA082R6-01	562	1/24/2006 6:18	999320117	1	ml	Blood (Whole)	Serum	Serum Separator	562
+HAA082R6-02	563	1/24/2006 6:46	999320117	1	ml	Blood (Whole)	Serum	Serum Separator	563
+HAA082R6-03	564	1/24/2006 6:59	999320117	1	ml	Blood (Whole)	Serum	Serum Separator	564
+HAA082R6-04	565	1/24/2006 6:48	999320117	1	ml	Blood (Whole)	Serum	Serum Separator	565
+HAA082R6-05	566	1/24/2006 6:49	999320117	1	ml	Blood (Whole)	Serum	Serum Separator	566
+HAA082R6-06	567	1/24/2006 6:15	999320117	1	ml	Blood (Whole)	Serum	Serum Separator	567
+HAA082RF-01	568	1/24/2006 12:19	999320762	1	ml	Blood (Whole)	Serum	Serum Separator	568
+HAA082RF-02	569	1/24/2006 12:41	999320762	1	ml	Blood (Whole)	Serum	Serum Separator	569
+HAA082RF-03	570	1/24/2006 12:53	999320762	1	ml	Blood (Whole)	Serum	Serum Separator	570
+HAA082RF-04	571	1/24/2006 12:49	999320762	1	ml	Blood (Whole)	Serum	Serum Separator	571
+HAA082RF-05	572	1/24/2006 12:43	999320762	1	ml	Blood (Whole)	Serum	Serum Separator	572
+HAA082RF-06	573	1/24/2006 12:39	999320762	1	ml	Blood (Whole)	Serum	Serum Separator	573
+HAA082RZ-01	574	1/24/2006 23:18	999320964	1	ml	Blood (Whole)	Serum	Serum Separator	574
+HAA082RZ-02	575	1/23/2006 23:50	999320964	1	ml	Blood (Whole)	Serum	Serum Separator	575
+HAQ0002H-01	576	10/6/2005 21:23	999320054	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	576
+HAQ0002H-02	577	10/6/2005 21:56	999320054	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	577
+HAQ0002H-03	578	10/6/2005 21:58	999320054	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	578
+HAQ0002H-04	579	10/6/2005 21:43	999320054	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	579
+HAQ0002H-05	580	10/6/2005 22:00	999320054	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	580
+HAQ0002H-06	581	10/6/2005 21:30	999320054	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	581
+HAQ0002H-07	582	10/6/2005 21:44	999320054	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	582
+HAQ0002H-08	583	10/6/2005 21:35	999320054	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	583
+HAQ0002H-09	584	10/6/2005 21:20	999320054	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	584
+HAQ0002H-10	585	10/6/2005 21:58	999320054	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	585
+HAQ0002H-11	586	10/6/2005 21:49	999320054	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	586
+HAQ0003Y-01	587	10/14/2005 16:19	999320518	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	587
+HAQ0003Y-02	588	10/14/2005 16:11	999320518	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	588
+HAQ0003Y-03	589	10/14/2005 15:50	999320518	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	589
+HAQ0003Y-04	590	10/14/2005 15:42	999320518	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	590
+HAQ0003Y-05	591	10/14/2005 16:07	999320518	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	591
+HAQ0003Y-06	592	10/14/2005 15:22	999320518	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	592
+HAQ0003Y-07	593	10/14/2005 16:19	999320518	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	593
+HAQ0003Y-08	594	10/14/2005 15:52	999320518	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	594
+HAQ0003Y-09	595	10/14/2005 16:16	999320518	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	595
+HAQ00073-01	596	11/26/2005 8:46	999320126	1	ml	Blood (Whole)	Serum	Serum Separator	596
+HAQ00073-02	597	11/26/2005 8:22	999320126	1	ml	Blood (Whole)	Serum	Serum Separator	597
+HAQ00073-03	598	11/26/2005 8:52	999320126	1	ml	Blood (Whole)	Serum	Serum Separator	598
+HAQ00073-04	599	11/26/2005 8:51	999320126	1	ml	Blood (Whole)	Serum	Serum Separator	599
+HAQ00073-05	600	11/26/2005 8:35	999320126	1	ml	Blood (Whole)	Serum	Serum Separator	600
+HAQ00073-06	601	11/26/2005 8:06	999320126	1	ml	Blood (Whole)	Serum	Serum Separator	601
+HAQ00073-07	602	11/26/2005 8:45	999320126	1	ml	Blood (Whole)	Serum	Serum Separator	602
+HAQ0007C-01	603	11/25/2005 5:35	999320115	1	ml	Blood (Whole)	Serum	Serum Separator	603
+HAQ0007C-02	604	11/25/2005 5:48	999320115	1	ml	Blood (Whole)	Serum	Serum Separator	604
+HAQ0007C-03	605	11/25/2005 5:40	999320115	1	ml	Blood (Whole)	Serum	Serum Separator	605
+HAQ0007C-04	606	11/25/2005 6:16	999320115	1	ml	Blood (Whole)	Serum	Serum Separator	606
+HAQ0007C-05	607	11/25/2005 5:47	999320115	1	ml	Blood (Whole)	Serum	Serum Separator	607
+HAQ0007C-06	608	11/25/2005 5:32	999320115	1	ml	Blood (Whole)	Serum	Serum Separator	608
+HBG0014Y-02	609	7/31/2007 7:55	999320033	0.5	ml	Semen	Fluid Portion from a Non-Blood Specimen Type	None	609
+HBH005JS-03	610	2/5/2008 22:05		0.5	ml	Blood (Whole)	Whole Blood Pellet Specify Methodology	EDTA	610
+JAA07YJB-01	611	1/6/2006 14:33	999320498	1	ml	Vaginal Swab	Swab	None	611
+JAA07YQL-01	612	12/15/2005 13:23	999320505	1	ml	Blood (Whole)	Serum	Serum Separator	612
+JAA07YQL-02	613	12/15/2005 13:30	999320505	1	ml	Blood (Whole)	Serum	Serum Separator	613
+JAA07YQL-03	614	12/15/2005 13:23	999320505	1	ml	Blood (Whole)	Serum	Serum Separator	614
+JAA07YQL-04	615	12/15/2005 13:04	999320505	1	ml	Blood (Whole)	Serum	Serum Separator	615
+JAA07YQL-05	616	12/15/2005 13:37	999320505	1	ml	Blood (Whole)	Serum	Serum Separator	616
+JAA07YQL-06	617	12/15/2005 13:45	999320505	1	ml	Blood (Whole)	Serum	Serum Separator	617
+JAA07YS7-01	618	1/14/2006 1:23	999320264	1	ml	Blood (Whole)	Serum	Serum Separator	618
+JAA07YS7-02	619	1/14/2006 1:04	999320264	1	ml	Blood (Whole)	Serum	Serum Separator	619
+JAA07YS7-03	620	1/14/2006 1:39	999320264	1	ml	Blood (Whole)	Serum	Serum Separator	620
+JAA07YSJ-01	621	1/10/2006 6:20	999320406	1	ml	Blood (Whole)	Serum	Serum Separator	621
+JAA07YSJ-02	622	1/10/2006 6:21	999320406	1	ml	Blood (Whole)	Serum	Serum Separator	622
+JAA07YSQ-01	623	1/12/2006 17:29	999320476	1	ml	Vaginal Swab	Swab	None	623
+JAA07YTB-01	624	1/17/2006 8:20	999320534	1	ml	Blood (Whole)	Serum	Serum Separator	624
+JAA07YTB-02	625	1/17/2006 8:08	999320534	1	ml	Blood (Whole)	Serum	Serum Separator	625
+JAA082PM-01	626	1/25/2006 18:21	999320707	1	ml	Blood (Whole)	Serum	Serum Separator	626
+JAA082PM-02	627	1/25/2006 18:14	999320707	1	ml	Blood (Whole)	Serum	Serum Separator	627
+JAA082PM-03	628	1/25/2006 18:48	999320707	1	ml	Blood (Whole)	Serum	Serum Separator	628
+JAA082PM-04	629	1/25/2006 18:24	999320707	1	ml	Blood (Whole)	Serum	Serum Separator	629
+JAA082PM-05	630	1/25/2006 18:40	999320707	1	ml	Blood (Whole)	Serum	Serum Separator	630
+JAA082PM-06	631	1/25/2006 18:12	999320707	1	ml	Blood (Whole)	Serum	Serum Separator	631
+JAQ00067-01	632	11/24/2005 14:54	999320102	1	ml	Blood (Whole)	Serum	Serum Separator	632
+JAQ00067-02	633	11/24/2005 14:43	999320102	1	ml	Blood (Whole)	Serum	Serum Separator	633
+JAQ00067-03	634	11/24/2005 14:32	999320102	1	ml	Blood (Whole)	Serum	Serum Separator	634
+JAQ00067-04	635	11/24/2005 14:32	999320102	1	ml	Blood (Whole)	Serum	Serum Separator	635
+JAQ00067-05	636	11/24/2005 14:49	999320102	1	ml	Blood (Whole)	Serum	Serum Separator	636
+JAQ00067-06	637	11/24/2005 14:09	999320102	1	ml	Blood (Whole)	Serum	Serum Separator	637
+JAQ00067-07	638	11/24/2005 14:16	999320102	1	ml	Blood (Whole)	Serum	Serum Separator	638
+JAQ0006T-01	639	11/26/2005 8:26	999320126	7130000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	639
+JAQ0006T-02	640	11/26/2005 8:49	999320126	7130000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	640
+JAQ0006T-03	641	11/26/2005 8:38	999320126	7130000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	641
+JAQ0006T-04	642	11/26/2005 8:52	999320126	7130000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	642
+JAQ0006T-05	643	11/26/2005 8:50	999320126	7130000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	643
+JAQ0006T-06	644	11/26/2005 8:27	999320126	7130000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	644
+JAQ0006T-07	645	11/26/2005 8:40	999320126	7130000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	645
+JAQ0006T-08	646	11/26/2005 8:36	999320126	7130000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	646
+JAT0001J-01	647	2/4/2006 12:37	999320018	1	ml	Blood (Whole)	Serum	Serum Separator	647
+JAT0001J-02	648	2/4/2006 12:26	999320018	1	ml	Blood (Whole)	Serum	Serum Separator	648
+JAT0001J-03	649	2/4/2006 12:16	999320018	1	ml	Blood (Whole)	Serum	Serum Separator	649
+JAT0001J-04	650	2/4/2006 12:38	999320018	1	ml	Blood (Whole)	Serum	Serum Separator	650
+JAT0001J-05	651	2/4/2006 12:18	999320018	1	ml	Blood (Whole)	Serum	Serum Separator	651
+JAT0001J-06	652	2/4/2006 12:34	999320018	1	ml	Blood (Whole)	Serum	Serum Separator	652
+JAT0001J-07	653	2/4/2006 12:33	999320018	1	ml	Blood (Whole)	Serum	Serum Separator	653
+JAT0001J-08	654	2/4/2006 12:41	999320018	1	ml	Blood (Whole)	Serum	Serum Separator	654
+JBG000ST-14	655	4/3/2007 16:44		1.5	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	655
+JBG000ST-15	656	4/3/2007 16:24		1.5	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	656
+JBH004PF-03	657	1/22/2008 8:23	999320706	1	ml	Blood (Whole)	Whole Blood Pellet Specify Methodology	EDTA	657
+KAA07XDJ-01	658	12/14/2005 3:53	999320173	1	ml	Vaginal Swab	Slide from a primary sample	None	658
+KAA07XDJ-02	659	12/14/2005 3:33	999320173	1	ml	Vaginal Swab	Slide from a primary sample	None	659
+KAA07XJ9-01	660	11/25/2005 8:00	999320779	1	ml	Vaginal Swab	Slide from a primary sample	None	660
+KAA07XJ9-02	661	11/25/2005 7:12	999320779	1	ml	Vaginal Swab	Slide from a primary sample	None	661
+KAA07XJS-01	662	11/23/2005 20:27	999320593	1	ml	Vaginal Swab	Slide from a primary sample	None	662
+KAA07XJS-02	663	11/23/2005 20:53	999320593	1	ml	Vaginal Swab	Slide from a primary sample	None	663
+KAA07XLX-01	664	12/23/2005 16:10	999320450	1	ml	Blood (Whole)	Serum	Serum Separator	664
+KAA07XLX-02	665	12/23/2005 16:20	999320450	1	ml	Blood (Whole)	Serum	Serum Separator	665
+KAA07XLX-03	666	12/23/2005 16:20	999320450	1	ml	Blood (Whole)	Serum	Serum Separator	666
+KAA07XLX-04	667	12/23/2005 15:22	999320450	1	ml	Blood (Whole)	Serum	Serum Separator	667
+KAA07XLX-05	668	12/23/2005 15:26	999320450	1	ml	Blood (Whole)	Serum	Serum Separator	668
+KAA07XLX-06	669	12/23/2005 16:15	999320450	1	ml	Blood (Whole)	Serum	Serum Separator	669
+KAA07XSN-01	670	12/20/2005 15:50	999320492	1	ml	Blood (Whole)	Serum	Serum Separator	670
+KAA07XSN-02	671	12/20/2005 15:42	999320492	1	ml	Blood (Whole)	Serum	Serum Separator	671
+KAA07XSN-03	672	12/20/2005 15:31	999320492	1	ml	Blood (Whole)	Serum	Serum Separator	672
+KAA07XSN-04	673	12/20/2005 16:11	999320492	1	ml	Blood (Whole)	Serum	Serum Separator	673
+KAA07XSN-05	674	12/20/2005 15:28	999320492	1	ml	Blood (Whole)	Serum	Serum Separator	674
+KAA07XSN-06	675	12/20/2005 15:25	999320492	1	ml	Blood (Whole)	Serum	Serum Separator	675
+KAA07XXQ-01	676	1/12/2006 9:29	999320454	1	ml	Blood (Whole)	Serum	Serum Separator	676
+KAA07XXQ-02	677	1/12/2006 9:29	999320454	1	ml	Blood (Whole)	Serum	Serum Separator	677
+KAA07XXQ-03	678	1/12/2006 9:43	999320454	1	ml	Blood (Whole)	Serum	Serum Separator	678
+KAA07XXQ-04	679	1/12/2006 9:21	999320454	1	ml	Blood (Whole)	Serum	Serum Separator	679
+KAA07XXQ-05	680	1/12/2006 9:32	999320454	1	ml	Blood (Whole)	Serum	Serum Separator	680
+KAA07XXQ-06	681	1/12/2006 10:13	999320454	1	ml	Blood (Whole)	Serum	Serum Separator	681
+KAA07Y57-01	682	1/12/2006 17:44	999320476	1	ml	Blood (Whole)	Serum	Serum Separator	682
+KAA07Y57-02	683	1/12/2006 18:05	999320476	1	ml	Blood (Whole)	Serum	Serum Separator	683
+KAA07Y57-03	684	1/12/2006 18:07	999320476	1	ml	Blood (Whole)	Serum	Serum Separator	684
+KAA07Y57-04	685	1/12/2006 18:13	999320476	1	ml	Blood (Whole)	Serum	Serum Separator	685
+KAA07Y57-05	686	1/12/2006 17:59	999320476	1	ml	Blood (Whole)	Serum	Serum Separator	686
+KAA07Y57-06	687	1/12/2006 18:19	999320476	1	ml	Blood (Whole)	Serum	Serum Separator	687
+KAA07YTF-01	688	1/17/2006 12:10	999320763	1	ml	Blood (Whole)	Serum	Serum Separator	688
+KAA07YTF-02	689	1/17/2006 11:56	999320763	1	ml	Blood (Whole)	Serum	Serum Separator	689
+KAA07YTP-01	690	1/18/2006 23:05	999320542	1	ml	Blood (Whole)	Serum	Serum Separator	690
+KAA07YTP-02	691	1/17/2006 23:48	999320542	1	ml	Blood (Whole)	Serum	Serum Separator	691
+KAA07YV1-01	692	1/18/2006 10:14	999320980	1	ml	Vaginal Swab	Swab	None	692
+KAA07YY0-01	693	12/16/2005 18:35	999320520	1	ml	Blood (Whole)	Plasma Unknown Processing	EDTA	693
+KAA07YY0-02	694	12/16/2005 18:39	999320520	1	ml	Blood (Whole)	Plasma Unknown Processing	EDTA	694
+KAA082P5-01	695	1/25/2006 2:28	999320912	1	ml	Blood (Whole)	Serum	Serum Separator	695
+KAA082P5-02	696	1/25/2006 2:49	999320912	1	ml	Blood (Whole)	Serum	Serum Separator	696
+KAA082P5-03	697	1/25/2006 2:04	999320912	1	ml	Blood (Whole)	Serum	Serum Separator	697
+KAA082P5-04	698	1/25/2006 2:49	999320912	1	ml	Blood (Whole)	Serum	Serum Separator	698
+KAA082P5-05	699	1/25/2006 2:56	999320912	1	ml	Blood (Whole)	Serum	Serum Separator	699
+KAA082P5-06	700	1/25/2006 2:18	999320912	1	ml	Blood (Whole)	Serum	Serum Separator	700
+KAQ0000D-01	701	7/27/2005 15:24	999320007	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	701
+KAQ0000D-02	702	7/27/2005 16:12	999320007	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	702
+KAQ0000D-03	703	7/27/2005 16:15	999320007	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	703
+KAQ0000D-04	704	7/27/2005 15:27	999320007	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	704
+KAQ0000D-05	705	7/27/2005 15:55	999320007	15000000	ml	Blood (Whole)	PBMC Cells Viable	Heparin	705
+KAQ0000N-01	706	7/28/2005 19:20	999320010	1	ml	Blood (Whole)	Serum	Serum Separator	706
+KAQ0000N-02	707	7/28/2005 19:32	999320010	1	ml	Blood (Whole)	Serum	Serum Separator	707
+KAQ0000N-03	708	7/28/2005 19:17	999320010	1	ml	Blood (Whole)	Serum	Serum Separator	708
+KAQ0000N-04	709	7/28/2005 19:18	999320010	1	ml	Blood (Whole)	Serum	Serum Separator	709
+KAQ0000N-05	710	7/28/2005 19:50	999320010	1	ml	Blood (Whole)	Serum	Serum Separator	710
+KAQ0000N-06	711	7/28/2005 19:26	999320010	1	ml	Blood (Whole)	Serum	Serum Separator	711
+KAQ0000N-07	712	7/28/2005 19:16	999320010	1	ml	Blood (Whole)	Serum	Serum Separator	712
+KAQ0000X-01	713	7/28/2005 19:55	999320010	16980000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	713
+KAQ0000X-02	714	7/28/2005 19:22	999320010	16980000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	714
+KAQ0000X-03	715	7/28/2005 19:00	999320010	16980000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	715
+KAQ0000X-04	716	7/28/2005 19:00	999320010	16980000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	716
+KAQ0000X-05	717	7/28/2005 19:33	999320010	16980000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	717
+KAQ0000X-06	718	7/28/2005 19:23	999320010	16980000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	718
+KAQ0000X-07	719	7/28/2005 19:51	999320010	16980000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	719
+KAQ0000X-08	720	7/28/2005 19:35	999320010	16980000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	720
+KAQ0000X-09	721	7/28/2005 19:32	999320010	16980000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	721
+KAQ0000X-10	722	7/28/2005 19:15	999320010	16980000	ml	Blood (Whole)	PBMC Cells Viable	EDTA	722
+KAQ0003Q-01	723	10/14/2005 15:57	999320518	1	ml	Blood (Whole)	Serum	Serum Separator	723
+KAQ0003Q-02	724	10/14/2005 15:29	999320518	1	ml	Blood (Whole)	Serum	Serum Separator	724
+KAQ0003Q-03	725	10/14/2005 15:34	999320518	1	ml	Blood (Whole)	Serum	Serum Separator	725
+KAQ0003Q-04	726	10/14/2005 15:29	999320518	1	ml	Blood (Whole)	Serum	Serum Separator	726
+KAQ0003Q-05	727	10/14/2005 15:53	999320518	1	ml	Blood (Whole)	Serum	Serum Separator	727
+KAQ0003Q-06	728	10/14/2005 15:25	999320518	1	ml	Blood (Whole)	Serum	Serum Separator	728
+KAQ00052-01	729	10/15/2005 16:26	999320016	1	ml	Blood (Whole)	Serum	Serum Separator	729
+KAQ00052-02	730	10/15/2005 16:04	999320016	1	ml	Blood (Whole)	Serum	Serum Separator	730
+KAQ00052-03	731	10/15/2005 16:42	999320016	1	ml	Blood (Whole)	Serum	Serum Separator	731
+KAQ00052-04	732	10/15/2005 16:11	999320016	1	ml	Blood (Whole)	Serum	Serum Separator	732
+KAQ00052-05	733	10/15/2005 16:23	999320016	1	ml	Blood (Whole)	Serum	Serum Separator	733
+KAQ00052-06	734	10/15/2005 16:38	999320016	1	ml	Blood (Whole)	Serum	Serum Separator	734
+KAQ00052-07	735	10/15/2005 16:29	999320016	1	ml	Blood (Whole)	Serum	Serum Separator	735
+KAQ00052-08	736	10/15/2005 16:54	999320016	1	ml	Blood (Whole)	Serum	Serum Separator	736
+KAQ00052-09	737	10/15/2005 16:42	999320016	1	ml	Blood (Whole)	Serum	Serum Separator	737
+KAQ00052-10	738	10/15/2005 16:57	999320016	1	ml	Blood (Whole)	Serum	Serum Separator	738
+KAQ00052-11	739	10/15/2005 16:08	999320016	1	ml	Blood (Whole)	Serum	Serum Separator	739
+KAQ00052-12	740	10/15/2005 16:08	999320016	1	ml	Blood (Whole)	Serum	Serum Separator	740
+KAQ0005V-01	741	11/23/2005 14:12	999320098	1	ml	Blood (Whole)	Serum	Serum Separator	741
+KAQ0005V-02	742	11/23/2005 14:32	999320098	1	ml	Blood (Whole)	Serum	Serum Separator	742
+KAQ0005V-03	743	11/23/2005 14:18	999320098	1	ml	Blood (Whole)	Serum	Serum Separator	743
+KAQ0005V-04	744	11/23/2005 14:27	999320098	1	ml	Blood (Whole)	Serum	Serum Separator	744
+KAQ0005V-05	745	11/23/2005 14:35	999320098	1	ml	Blood (Whole)	Serum	Serum Separator	745
+KAQ0005V-06	746	11/23/2005 14:21	999320098	1	ml	Blood (Whole)	Serum	Serum Separator	746
+KAQ0005V-07	747	11/23/2005 13:52	999320098	1	ml	Blood (Whole)	Serum	Serum Separator	747
+KAT00004-01	748	2/3/2006 8:38	999320029	1	ml	Blood (Whole)	PBMC Cells Viable	Heparin	748
+KAT00004-02	749	2/3/2006 8:36	999320029	1	ml	Blood (Whole)	PBMC Cells Viable	Heparin	749
+KAT00004-03	750	2/3/2006 8:28	999320029	1	ml	Blood (Whole)	PBMC Cells Viable	Heparin	750
+KAT00004-04	751	2/3/2006 8:29	999320029	1	ml	Blood (Whole)	PBMC Cells Viable	Heparin	751
+KAT0000X-01	752	2/4/2006 14:11	999320004	1	ml	Blood (Whole)	PBMC Cells Viable	Heparin	752
+KAT0000X-02	753	2/4/2006 14:19	999320004	1	ml	Blood (Whole)	PBMC Cells Viable	Heparin	753
+KAT0000X-03	754	2/4/2006 14:38	999320004	1	ml	Blood (Whole)	PBMC Cells Viable	Heparin	754
+KAT0000X-04	755	2/4/2006 14:28	999320004	1	ml	Blood (Whole)	PBMC Cells Viable	Heparin	755
+KBG000ZS-04	756	6/26/2007 18:28	999320725	1.5	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	756
+KBG000ZS-05	757	6/26/2007 17:45	999320358	1.5	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	757
+KBG000ZS-06	758	6/26/2007 18:34	999320885	1.5	ml	Blood (Whole)	Plasma Unknown Processing	Acid Citrate Dextrose	758
+KBH003RT-03	759	1/12/2008 4:24	999320885	500000	ml	Blood (Whole)	Whole Blood Pellet Specify Methodology	EDTA	759
+KBH0040S-03	760	1/18/2008 5:51	999320062	500000	ml	Blood (Whole)	Whole Blood Pellet Specify Methodology	EDTA	760
+KBH00S5S-01	761	11/7/2008 18:52	999320466	2	ml	Cervix	Tear Flo Strips	Heparin	761

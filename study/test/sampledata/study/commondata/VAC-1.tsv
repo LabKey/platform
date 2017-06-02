@@ -1,0 +1,15 @@
+Mouse Id	Visit Date	Visit	1. Was vaccination given?	2. Date of today's vacc.	3a. Location of injection	3b.Time of injection	Injection administered by	Form Language	Staff Initials/Date
+999320016	10/14/2005	Grp1:F/U/Grp2:V#2	0		0		0		0
+999320016	5/1/2005	G1: V#2/G2: V#3	No		0		0		0
+999320485	1/17/2005	Grp1:F/U/Grp2:V#2	Yes	2/1/2005	0		0		0
+999320485	10/21/2006	G1: V#2/G2: V#3	No		0		0		0
+999320518	10/7/2005	Grp1:F/U/Grp2:V#2	Yes	4/1/2006	Right deltoid	13:00:00	0	English	0
+999320529	8/18/2006	G1: V#2/G2: V#3	Yes	9/1/2006	Right deltoid	13:00:00	0	English	0
+999320557	10/23/2006	Grp1:F/U/Grp2:V#2	Yes	4/14/2006	Left deltoid	13:00:00	0	English	0
+999320582	1/18/2006	Grp1:F/U/Grp2:V#2	Yes	4/10/2006	Right deltoid	13:00:00	0	English	0
+999320609	3/7/2005	G1: V#2/G2: V#3	Yes	8/11/2006	Right deltoid	13:00:00	0	English	0
+999320671	4/24/2005	G1: V#2/G2: V#3	Yes	8/5/2006	Right deltoid	12:00:00	0	English	0
+999320687	1/27/2006	G1: V#2/G2: V#3	Yes	8/1/2006	Left deltoid	15:00:00	0	English	0
+999320719	9/17/2006	Grp1:F/U/Grp2:V#2	Yes	2/15/2006	Left deltoid	9:03:00	marked	English	0
+999320719	4/4/2005	G1: V#2/G2: V#3	Yes	7/15/2006	Right deltoid	9:02:00	marked	English	0
+999321033	10/23/2006	Grp1:F/U/Grp2:V#2	Yes	3/16/2006	Right deltoid	8:10:00	0	English	0
