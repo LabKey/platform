@@ -401,7 +401,7 @@ public class QueryTable extends QueryRelation
         public SQLFragment getValueSql()
         {
             assert ref.count() > 0;
-            assert null != _generateSelectSQL;
+            assert null != _generateSelectSQL : "Select SQL has not been generated";
             if (_generateSelectSQL)
                 return super.getValueSql();
             else
