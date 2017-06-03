@@ -2334,8 +2334,7 @@ public class IssuesController extends SpringActionController
     public static class SummaryBean
     {
         public boolean hasPermission;
-        public Map[] bugs;
-        public ActionURL listURL;
+        public Collection<Map<String, Object>> bugs;
         public ActionURL insertURL;
         public String issueDefName;
     }

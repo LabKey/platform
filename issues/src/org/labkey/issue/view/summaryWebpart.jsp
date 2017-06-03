@@ -16,16 +16,20 @@
  */
 %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
+<%@ page import="org.labkey.issue.IssuesController.ListAction" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.labkey.issue.model.IssueManager.EntryTypeNames" %>
+<%@ page import="org.labkey.issue.view.IssuesListView" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     IssuesController.SummaryBean bean = ((JspView<IssuesController.SummaryBean>) HttpView.currentView()).getModelBean();
     User user = getUser();
-    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), bean.issueDefName);
+    EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), bean.issueDefName);
 
     if (bean.hasPermission)
     {
@@ -33,15 +37,17 @@
 <table class="labkey-data-region">
     <tr><td>User</td><td>Open</td><td>Resolved</td>
 <%
-        for (Map bug : bean.bugs)
+        for (Map<String, Object> bug : bean.bugs)
         {
 %>
     <tr>
       <td>
-      <% if (null != bug.get("displayName")) { %>
-         <a href="<%=h(bean.listURL)%>Issues.AssignedTo/DisplayName~eq=<%=bug.get("displayName")%>"><%=bug.get("displayName")%></a>
-      <% } else { %>
-         <a href="<%=h(bean.listURL)%>Issues.AssignedTo/DisplayName~isblank"><i>Unassigned</i></a>
+      <% if (null != bug.get("displayName")) {
+          ActionURL url = getBaseListURL(bean.issueDefName).addParameter("issues-" + bean.issueDefName + ".AssignedTo/DisplayName~eq", bug.get("displayName").toString());%>
+        <a href="<%=h(url)%>"><%=h(bug.get("displayName"))%></a>
+      <% } else {
+          ActionURL url = getBaseListURL(bean.issueDefName).addParameter("issues-" + bean.issueDefName + ".AssignedTo/DisplayName~isblank", null);%>
+         <a href="<%=h(url)%>"><i>Unassigned</i></a>
       <% } %>
       </td>
     <td align="right"><%=bug.get("open")%></td>
@@ -49,7 +55,7 @@
     </tr>
 <% } %>
 </table>
-<%=textLink("view open " + names.pluralName, bean.listURL + "Issues.Status~eq=open")%>
+<%=textLink("view open " + names.pluralName, getBaseListURL(bean.issueDefName).addParameter("issues-" + bean.issueDefName + ".Status~eq", "open"))%>
 <%=textLink("submit new " + names.singularName, bean.insertURL)%>
 <%
     }
@@ -64,3 +70,11 @@
   <% } %>
 </span>
 <% } %>
+<%!
+    public ActionURL getBaseListURL(String issueDefName)
+    {
+        return new ActionURL(ListAction.class, getContainer()).
+            addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName);
+    }
+%>
+

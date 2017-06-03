@@ -61,7 +61,6 @@ public class SummaryWebPart extends JspView<IssuesController.SummaryBean>
         setTitleHref(listUrl);
 
         bean.issueDefName = issueDefName;
-        bean.listURL = listUrl;
         bean.insertURL = new ActionURL(IssuesController.InsertAction.class, c).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName);
 
         try

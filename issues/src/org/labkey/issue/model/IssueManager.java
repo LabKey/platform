@@ -711,7 +711,7 @@ public class IssueManager
     }
 
 
-    public static Map[] getSummary(Container c, User user, @Nullable IssueListDef issueListDef) throws SQLException
+    public static Collection<Map<String, Object>> getSummary(Container c, User user, @Nullable IssueListDef issueListDef) throws SQLException
     {
         if (issueListDef != null)
         {
@@ -727,10 +727,10 @@ public class IssueManager
             sql.append("GROUP BY DisplayName");
             sql.addAll(params);
 
-            return new SqlSelector(_issuesSchema.getSchema(), sql).getMapArray();
+            return new SqlSelector(_issuesSchema.getSchema(), sql).getMapCollection();
         }
         else
-            return new Map[0];
+            return Collections.emptyList();
     }
 
 
