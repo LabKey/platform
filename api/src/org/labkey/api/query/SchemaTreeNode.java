@@ -28,7 +28,7 @@ public interface SchemaTreeNode
      *
      * @param <R> result type of this operation.
      * @param path The current path, including this node.
-     * @param <P> type of additonal data.
+     * @param <P> type of additional data.
      * @see SchemaTreeVisitor
      */
     public <R, P> R accept(SchemaTreeVisitor<R, P> visitor, SchemaTreeVisitor.Path path, P param);

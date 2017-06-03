@@ -274,7 +274,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
     }
 
     /**
-     * Convenience method for subclasses to add additonal fields needed, e.g., on reshow.
+     * Convenience method for subclasses to add additional fields needed, e.g., on reshow.
      * @param domainIdForm
      * @param rgn
      */
