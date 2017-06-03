@@ -150,4 +150,5 @@ public abstract class UserPrincipal implements Principal, Parameter.JdbcParamete
     {
         return JdbcType.INTEGER;
     }
+    public abstract boolean isActive();
 }

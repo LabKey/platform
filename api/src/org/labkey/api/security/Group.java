@@ -135,4 +135,10 @@ public class Group extends UserPrincipal
     {
         return new HashSet<>();
     }
+
+    @Override
+    public boolean isActive()
+    {
+        return true;
+    }
 }
