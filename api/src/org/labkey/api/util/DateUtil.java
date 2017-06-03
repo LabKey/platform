@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.jetbrains.annotations.Nullable;
+import org.jfree.util.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
@@ -42,9 +43,13 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.NavigableMap;
 import java.util.TimeZone;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 
 public class DateUtil
@@ -269,7 +274,7 @@ public class DateUtil
         t    // T : time marker
     }
 
-    static Enum[] parts = null;
+    private static final Enum[] parts;
     static
     {
         ArrayList<Enum> list = new ArrayList<>();
@@ -285,7 +290,7 @@ public class DateUtil
     // Yes, this compares Enum to String, on purpose. Only used for binarySearch() below.
     private static final Comparator compEnum = (Comparator<Object>) (o1, o2) -> ((Enum)o1).name().compareTo((String)o2);
 
-    static Enum resolveDatePartEnum(String s)
+    private static Enum resolveDatePartEnum(String s)
     {
         s = s.toLowerCase();
         int i = Arrays.binarySearch(parts, s, compEnum);
@@ -297,9 +302,34 @@ public class DateUtil
         return i>parts.length-1 ? null : parts[i].name().startsWith(s) ? parts[i] : null;
     }
 
-    static Object resolveDatePart(String s)
+    private static final NavigableMap<String, Enum> PARTS_MAP = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+    static
+    {
+        Stream.of(AMPM.values(), Month.values(), Weekday.values(), TZ.values(), ISO.values())
+            .flatMap(Arrays::stream)
+            .forEach(e -> PARTS_MAP.put(e.name(), e));
+    }
+
+    private static @Nullable Enum resolveDatePartEnum2(String s)
+    {
+        // Require an exact match if s is one character long
+        if (s.length() < 2)
+            return PARTS_MAP.get(s);
+
+        // If s is longer than one character then find first key with s as its prefix
+        Entry<String, Enum> entry = PARTS_MAP.ceilingEntry(s);
+
+        return (null != entry && StringUtils.startsWithIgnoreCase(entry.getKey(), s)) ? entry.getValue() : null;
+    }
+
+    private static Object resolveDatePart(String s)
     {
         Enum e = resolveDatePartEnum(s);
+        Enum e2 = resolveDatePartEnum2(s);
+
+        assert e == e2 : s + " resolved to " + e2 + " but should have been " + e;
+
         if (null != e)
             return e instanceof TZ && (null != ((TZ)e).tz) ? ((TZ)e).tz : e;
 
