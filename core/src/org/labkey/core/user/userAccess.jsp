@@ -29,11 +29,11 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.core.user.UserController" %>
+<%@ page import="org.labkey.core.user.UserController.AccessDetail" %>
+<%@ page import="org.labkey.core.user.UserController.AccessDetailRow" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.core.user.UserController.AccessDetailRow" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -53,8 +53,8 @@
 
     User currentUser = getUser();
     Container c = getContainer();
-    JspView<UserController.AccessDetail> me = (JspView<UserController.AccessDetail>) HttpView.currentView();
-    UserController.AccessDetail bean = me.getModelBean();
+    JspView<AccessDetail> me = (JspView<AccessDetail>) HttpView.currentView();
+    AccessDetail bean = me.getModelBean();
     List<AccessDetailRow> rows = bean.getRows();
 
     DataRegion accessRegion = new DataRegion();
@@ -74,7 +74,7 @@
 
 <% if (!bean.isActive()) {%>
 <div class="labkey-error"><b>NOTE:</b> This user account has been disabled, and thus has no permissions.
-However, If this account is re-enabled, it would have the following permissions.</div>
+    However, if this account were re-enabled, it would have the following permissions.</div>
 <% } %>
 
 <table id=<%=q(accessRegion.getDomId())%> lk-region-name=<%=q(accessRegion.getName())%> class="labkey-data-region labkey-show-borders">
@@ -102,7 +102,7 @@ However, If this account is re-enabled, it would have the following permissions.
         boolean isUser = null != UserManager.getUser(row.getUser().getUserId());
         String userColDisplay = h(isUser ? ((User)row.getUser()).getDisplayName(currentUser) : row.getUser().getName());
 %>
-      <tr class="<%=getShadeRowClass(rowNumber++ % 2 == 0)%>">
+    <tr class="<%=getShadeRowClass(rowNumber++ % 2 == 0)%>">
 <%
         if (!bean.showUserCol())
         {
@@ -169,11 +169,11 @@ However, If this account is re-enabled, it would have the following permissions.
                                         {
                                             String groupName = group.isProjectGroup() ? groupContainer.getPath() + "/" + group.getName() : group.getName();
                                             ActionURL groupURL = urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
-                                            %><%= !first ? ", " : "" %><a href="<%=h(groupURL)%>" data-qtip="<%=hoverExplanation%>"><%=h(displayName)%></a><%
+                                            %><%= text(!first ? ", " : "") %><a href="<%=h(groupURL)%>" data-qtip="<%=text(hoverExplanation)%>"><%=h(displayName)%></a><%
                                         }
                                         else
                                         {
-                                            %><%= !first ? ", " : "" %><span data-qtip="<%=hoverExplanation%>"><%=h(displayName)%></span><%
+                                            %><%= text(!first ? ", " : "") %><span data-qtip="<%=text(hoverExplanation)%>"><%=h(displayName)%></span><%
                                         }
                                         first = false;
                                     }
@@ -192,7 +192,7 @@ However, If this account is re-enabled, it would have the following permissions.
         {
             out.print("<td>&nbsp;</td>");
         }
-    %>
+%>
     </tr>
 <%
     }

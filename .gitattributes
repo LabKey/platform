@@ -549,6 +549,7 @@ core/src/org/labkey/core/thumbnail/ThumbnailCache.java -text
 core/src/org/labkey/core/thumbnail/ThumbnailServiceImpl.java -text
 core/src/org/labkey/core/user/DeactivateUsersBean.java -text
 core/src/org/labkey/core/user/DeleteUsersBean.java -text
+core/src/org/labkey/core/user/SecurityAccessView.java -text
 core/src/org/labkey/core/user/changeEmail.jsp -text
 core/src/org/labkey/core/user/deactivateUsers.jsp -text
 core/src/org/labkey/core/user/deleteUsers.jsp -text

@@ -16,7 +16,6 @@
 
 package org.labkey.core.user;
 
-import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -73,8 +72,6 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityMessage;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -86,11 +83,10 @@ import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
-import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.NoPermissionsRole;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -156,12 +152,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 public class UserController extends SpringActionController
 {
@@ -548,7 +542,6 @@ public class UserController extends SpringActionController
         {
             String siteUsersUrl = new UserUrlsImpl().getSiteUsersURL().getLocalURIString();
             DeleteUsersBean bean = new DeleteUsersBean();
-            User user = getUser();
 
             if (null != form.getUserId())
             {
@@ -1267,28 +1260,15 @@ public class UserController extends SpringActionController
 
     public static class AccessDetailRow implements Comparable<AccessDetailRow>
     {
-        private ViewContext _viewContext;
-        private Container _container;
-        private UserPrincipal _userPrincipal;
-        private Map<String, List<Group>> _accessGroups;
-        private int _depth;
+        private final User _currentUser;
+        private final Container _container;
+        private final UserPrincipal _userPrincipal;
+        private final Map<String, List<Group>> _accessGroups;
+        private final int _depth;
 
-        public AccessDetailRow(ViewContext viewContext, Container container, UserPrincipal userPrincipal, List<Role> roles, int depth)
+        public AccessDetailRow(User currentUser, Container container, UserPrincipal userPrincipal, Map<String, List<Group>> accessGroups, int depth)
         {
-            _viewContext = viewContext;
-            _container = container;
-            _userPrincipal = userPrincipal;
-            _depth = depth;
-
-            Map<String, List<Group>> accessGroups = new TreeMap<>();
-            for (Role role : roles)
-                accessGroups.put(role.getName(), new ArrayList<Group>());
-            _accessGroups = accessGroups;
-
-        }
-        public AccessDetailRow(ViewContext viewContext,Container container, UserPrincipal userPrincipal, Map<String, List<Group>> accessGroups, int depth)
-        {
-            _viewContext = viewContext;
+            _currentUser = currentUser;
             _container = container;
             _userPrincipal = userPrincipal;
             _accessGroups = accessGroups;
@@ -1344,9 +1324,9 @@ public class UserController extends SpringActionController
             return _accessGroups;
         }
 
-        public ViewContext getViewContext()
+        private User getCurrentUser()
         {
-            return _viewContext;
+            return _currentUser;
         }
 
         public boolean isInheritedAcl()
@@ -1361,78 +1341,9 @@ public class UserController extends SpringActionController
             User thisUser = UserManager.getUser(this.getUser().getUserId());
             User thatUser = UserManager.getUser(o.getUser().getUserId());
             if (null != thisUser && null != thatUser)
-                return thisUser.getDisplayName(getViewContext().getUser()).compareTo(thatUser.getDisplayName(getViewContext().getUser()));
+                return thisUser.getDisplayName(getCurrentUser()).compareToIgnoreCase(thatUser.getDisplayName(getCurrentUser()));
             else
-                return this.getUser().getName().compareTo(o.getUser().getName());
-        }
-    }
-
-    private void buildAccessDetailList(MultiValuedMap<Container, Container> containerTree, Container parent,
-                                       List<AccessDetailRow> rows, Set<Container> containersInList, User requestedUser,
-                                       int depth, Map<Container, List<Group>> projectGroupCache, boolean showAll)
-    {
-        if (requestedUser == null)
-            return;
-        Collection<Container> children = containerTree.get(parent);
-        if (children == null || children.isEmpty())
-            return;
-
-        for (Container child : children)
-        {
-            // Skip workbooks as they don't have directly assigned permissions (they inherit from their parent)
-            if (child.isWorkbook())
-                continue;
-
-            Map<String, List<Group>> childAccessGroups = new TreeMap<>();
-
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(child);
-            Set<Role> effectiveRoles = policy.getEffectiveRoles(requestedUser);
-            effectiveRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
-            for (Role role : effectiveRoles)
-            {
-                childAccessGroups.put(role.getName(), new ArrayList<Group>());
-            }
-
-            if (effectiveRoles.size() > 0)
-            {
-                Container project = child.getProject();
-                List<Group> groups = projectGroupCache.get(project);
-                if (groups == null)
-                {
-                    groups = SecurityManager.getGroups(project, true);
-                    projectGroupCache.put(project, groups);
-                }
-                for (Group group : groups)
-                {
-                    if (requestedUser.isInGroup(group.getUserId()))
-                    {
-                        Collection<Role> groupRoles = policy.getAssignedRoles(group);
-                        for (Role role : effectiveRoles)
-                        {
-                            if (groupRoles.contains(role))
-                                childAccessGroups.get(role.getName()).add(group);
-                        }
-                    }
-                }
-            }
-
-            if (showAll || effectiveRoles.size() > 0)
-            {
-                int index = rows.size();
-                rows.add(new AccessDetailRow(getViewContext(), child, requestedUser, childAccessGroups, depth));
-                containersInList.add(child);
-
-                //Ensure parents of any accessible folder are in the tree. If not add them with no access info
-                int newDepth = depth;
-                while (parent != null && !parent.isRoot() && !containersInList.contains(parent))
-                {
-                    rows.add(index, new AccessDetailRow(getViewContext(), parent, requestedUser, Collections.emptyMap(), --newDepth));
-                    containersInList.add(parent);
-                    parent = parent.getParent();
-                }
-            }
-
-            buildAccessDetailList(containerTree, child, rows, containersInList, requestedUser, depth + 1, projectGroupCache, showAll);
+                return this.getUser().getName().compareToIgnoreCase(o.getUser().getName());
         }
     }
 
@@ -1492,22 +1403,7 @@ public class UserController extends SpringActionController
                 throw new NotFoundException("User not found");
 
             VBox view = new VBox();
-            SecurityController.FolderAccessForm accessForm = new SecurityController.FolderAccessForm();
-            accessForm.setShowAll(form.getShowAll());
-            accessForm.setShowCaption("show all folders");
-            accessForm.setHideCaption("hide unassigned folders");
-            view.addView(new JspView<>("/org/labkey/core/user/toggleShowAll.jsp", accessForm));
-
-            List<AccessDetailRow> rows = new ArrayList<>();
-            Set<Container> containersInList = new HashSet<>();
-            Container c = getContainer();
-            MultiValuedMap<Container, Container> containerTree =  c.isRoot() ? ContainerManager.getContainerTree() : ContainerManager.getContainerTree(c.getProject());
-            Map<Container, List<Group>> projectGroupCache = new HashMap<>();
-            buildAccessDetailList(containerTree, c.isRoot() ? ContainerManager.getRoot() : null, rows, containersInList, requestedUser, 0, projectGroupCache, form.getShowAll());
-            AccessDetail details = new AccessDetail(rows);
-            details.setActive(requestedUser.isActive());
-            JspView<AccessDetail> accessView = new JspView<>("/org/labkey/core/user/userAccess.jsp", details);
-            view.addView(accessView);
+            view.addView(new SecurityAccessView(getContainer(), getUser(), requestedUser, form.getShowAll()));
             view.addView(createInitializedQueryView(form, errors, false, QueryView.DATAREGIONNAME_DEFAULT));
 
             if (form.getRenderInHomeTemplate())

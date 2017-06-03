@@ -51,10 +51,10 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
-import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -87,6 +87,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.core.query.CoreQuerySchema;
+import org.labkey.core.user.SecurityAccessView;
 import org.labkey.core.user.UserController;
 import org.labkey.core.user.UserController.AccessDetailRow;
 import org.springframework.validation.BindException;
@@ -105,8 +106,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1086,98 +1085,15 @@ public class SecurityController extends SpringActionController
 
         public ModelAndView getView(GroupAccessForm form, BindException errors) throws Exception
         {
-            List<AccessDetailRow> rows = new ArrayList<>();
-            Set<Container> containersInList = new HashSet<>();
             _requestedGroup = form.getGroupFor(getContainer());
-            if (_requestedGroup != null)
-            {
-                if (getContainer().isRoot() && _requestedGroup.isProjectGroup())
-                {
-                    throw new UnauthorizedException("Can not view a project group's permissions from the root container");
-                }
 
-                List<Container> projects = getContainer().isRoot() ? getContainer().getChildren() : Collections.singletonList(getContainer().getProject());
-                Map<Container, List<Group>> projectGroupCache = new HashMap<>();
-                buildAccessDetailList(projects, rows, containersInList, _requestedGroup, 0, projectGroupCache, form.getShowAll());
-            }
-            else
+            if (_requestedGroup == null)
                 throw new NotFoundException("Group not found");
 
-            VBox view = new VBox();
-            SecurityController.FolderAccessForm accessForm = new SecurityController.FolderAccessForm();
-            accessForm.setShowAll(form.getShowAll());
-            accessForm.setShowCaption("show all folders");
-            accessForm.setHideCaption("hide unassigned folders");
-            view.addView(new JspView<>("/org/labkey/core/user/toggleShowAll.jsp", accessForm));
+            if (getContainer().isRoot() && _requestedGroup.isProjectGroup())
+                throw new UnauthorizedException("Can not view a project group's permissions from the root container");
 
-            UserController.AccessDetail bean = new UserController.AccessDetail(rows, false);
-            view.addView(new JspView<>("/org/labkey/core/user/userAccess.jsp", bean, errors));
-            return view;
-        }
-
-        private void buildAccessDetailList(List<Container> children, List<AccessDetailRow> rows,
-                                           Set<Container> containersInList, Group requestedGroup, int depth,
-                                           Map<Container, List<Group>> projectGroupCache, boolean showAll)
-        {
-            if (children == null || children.isEmpty())
-                return;
-            for (Container child : children)
-            {
-                if (child != null)
-                {
-                    Map<String, List<Group>> groupAccessGroups = new TreeMap<>();
-                    SecurityPolicy policy = child.getPolicy();
-                    Collection<Role> roles = policy.getEffectiveRoles(requestedGroup);
-                    roles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
-                    for (Role role : roles)
-                    {
-                        groupAccessGroups.put(role.getName(), new ArrayList<>());
-                    }
-
-                    if (roles.size() > 0)
-                    {
-                        Container project = child.getProject();
-                        List<Group> groups = projectGroupCache.get(project);
-                        if (groups == null)
-                        {
-                            groups = SecurityManager.getGroups(project, true);
-                            projectGroupCache.put(project, groups);
-                        }
-
-                        for (Group group : groups)
-                        {
-                            if (requestedGroup.isInGroup(group.getUserId()))
-                            {
-                                Collection<Role> groupRoles = policy.getAssignedRoles(group);
-                                for (Role role : roles)
-                                {
-                                    if (groupRoles.contains(role))
-                                        groupAccessGroups.get(role.getName()).add(group);
-                                }
-                            }
-                        }
-                    }
-
-                    if (showAll || roles.size() > 0)
-                    {
-                        int index = rows.size();
-                        rows.add(new AccessDetailRow(getViewContext(), child, requestedGroup, groupAccessGroups, depth));
-                        containersInList.add(child);
-
-                        //Ensure parents of any accessible folder are in the tree. If not add them with no access info
-                        int newDepth = depth;
-                        Container parent = child.getParent();
-                        while (parent != null && !parent.isRoot() && !containersInList.contains(parent))
-                        {
-                            rows.add(index, new AccessDetailRow(getViewContext(), parent, requestedGroup, Collections.emptyMap(), --newDepth));
-                            containersInList.add(parent);
-                            parent = parent.getParent();
-                        }
-                    }
-
-                    buildAccessDetailList(child.getChildren(), rows, containersInList, requestedGroup, depth + 1, projectGroupCache, showAll);
-                }
-            }
+            return new SecurityAccessView(getContainer(), getUser(), _requestedGroup, form.getShowAll());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1905,7 +1821,7 @@ public class SecurityController extends SpringActionController
                 }
 
                 if (showAll || userAccessGroups.size() > 0)
-                    rows.add(new AccessDetailRow(getViewContext(), getContainer(), user, userAccessGroups, 0));
+                    rows.add(new AccessDetailRow(getUser(), getContainer(), user, userAccessGroups, 0));
             }
         }
 
