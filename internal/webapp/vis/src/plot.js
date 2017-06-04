@@ -2278,18 +2278,18 @@ boxPlot.render();
  *                  row height will resize to 75% of this value. Defaults to 1.
  * @param {Object} [config.options.highlight] (Optional) Special Data object containing information to highlight a specific
  *                  row in the timeline. Must have the same shape & properties as all other input data.
- * @param {String} [config.options.highlightRowColor] (Optional) Hex color to specifiy what color the highlighted row will
+ * @param {String} [config.options.highlightRowColor] (Optional) Hex color to specify what color the highlighted row will
  *                  be if, found in the data. Defaults to #74B0C4.
  * @param {String} [config.options.activeEventKey] (Optional) Name of property that is paired with
  *                  @param config.options.activeEventIdentifier to identify a unique event in the data.
  * @param {String} [config.options.activeEventIdentifier] (Optional) Name of value that is paired with
  *                  @param config.options.activeEventKey to identify a unique event in the data.
- * @param {String} [config.options.activeEventStrokeColor] (Optional) Hex color to specifiy what color the active event
+ * @param {String} [config.options.activeEventStrokeColor] (Optional) Hex color to specify what color the active event
  *                  rect's stroke will be, if found in the data. Defaults to Red.
  * @param {Object} [config.options.emphasisEvents] (Optional) Object containing key:[value] pairs whose keys are property
  *                  names of a data object and whose value is an array of possible values that should have a highlight
 *                   line drawn on the chart when found. Example: {'type': ['death', 'Withdrawal']}
- * @param {String} [config.options.tickColor] (Optional) Hex color to specifiy the color of Axis ticks.D efaults to #DDDDDD.
+ * @param {String} [config.options.tickColor] (Optional) Hex color to specify the color of Axis ticks. Defaults to #DDDDDD.
  * @param {String} [config.options.emphasisTickColor] (Optional) Hex color to specify the color of emphasis event ticks,
  *                  if found in the data. Defaults to #1a969d.
  * @param {String} [config.options.timeUnit] (Optional) Unit of time to use when calculating how far an event's date

@@ -230,7 +230,7 @@ LABKEY.vis.Geom.Bin.prototype.render = function(renderer, grid, scales, data, la
  * and size aesthetics from the {LABKEY.vis.Plot} and/or {LABKEY.vis.Layer} objects.
  * @param {Object} config An object with the following properties:
  * @param {String} [config.color] (Optional) String used to determine the color of all paths. Defaults to black (#000000).
- * @param {Number} [config.size] (Optional) Number used to determine the size of all paths.  Defaults to 3.
+ * @param {Number} [config.size] (Optional) Number used to determine the size of all paths. Defaults to 3.
  * @param {Number} [config.opacity] (Optional) Number between 0 and 1, used to determine the opacity of all paths.
  *                                   Useful if there are many overlapping paths. Defaults to 1.
  * @param {boolean} [config.dashed] (Optional) True for dashed path, false for solid path. Defaults to false.
@@ -528,18 +528,18 @@ LABKEY.vis.Geom.BarPlot.prototype.render = function(renderer, grid, scales, data
  *                  will resize to 75% of this value. Defaults to 40px.
  * @param {Object} [config.highlight] (Optional) Special Data object containing information to highlight a specific row
  *                  in the timeline. Must have the same shape & properties as all other input data.
- * @param {String} [config.highlightRowColor] (Optional) Hex color to specifiy what color the highlighted row will be if,
+ * @param {String} [config.highlightRowColor] (Optional) Hex color to specify what color the highlighted row will be if,
  *                  found in the data. Defaults to #74B0C4.
  * @param {String} [config.activeEventKey] (Optional) Name of property that is paired with @param config.activeEventIdentifier to
  *                  identify a unique event in the data.
  * @param {String} [config.activeEventIdentifier] (Optional) Name of value that is paired with @param config.activeEventKey
  *                  to identify a unique event in the data.
- * @param {String} [config.activeEventStrokeColor] (Optional) Hex color to specifiy what color the active event rect's
+ * @param {String} [config.activeEventStrokeColor] (Optional) Hex color to specify what color the active event rect's
  *                  stroke will be, if found in the data. Defaults to red.
  * @param {Object} [config.emphasisEvents] (Optional) Object containing key:[value] pairs whose keys are property names
  *                  of a data object and whose value is an array of possible values that should have a highlight line drawn
  *                  on the chart when found. Example: {'type': ['death', 'Withdrawal']}
- * @param {String} [config.tickColor] (Optional) Hex color to specifiy the color of Axis ticks. Defaults to #DDDDDD.
+ * @param {String} [config.tickColor] (Optional) Hex color to specify the color of Axis ticks. Defaults to #DDDDDD.
  * @param {String} [config.emphasisTickColor] (Optional) Hex color to specify the color of emphasis event ticks, if
  *                  found in the data. Defaults to #1a969d.
  * @param {String} [config.timeUnit] (Optional) Unit of time to use when calculating how far an event's date is from
