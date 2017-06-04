@@ -765,17 +765,14 @@ public class IssueManager
         issueDefName = issueDefName != null ? issueDefName : IssueListDef.DEFAULT_ISSUE_LIST_NAME;
         String cacheKey = getCacheKey(c, issueDefName);
 
-        return ASSIGNED_TO_CACHE.get(cacheKey, issueDefName, new CacheLoader<String, Set<User>>() {
-            @Override
-            public Set<User> load(String key, @Nullable Object issueDefName)
-            {
-                Group group = getAssignedToGroup(c, String.valueOf(issueDefName));
+        return ASSIGNED_TO_CACHE.get(cacheKey, issueDefName, (key, issueDefName1) ->
+        {
+            Group group = getAssignedToGroup(c, String.valueOf(issueDefName1));
 
-                if (null != group)
-                    return createAssignedToList(c, SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS, true));
-                else
-                    return createAssignedToList(c, SecurityManager.getProjectUsers(c.getProject()));
-            }
+            if (null != group)
+                return createAssignedToList(c, SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS, true));
+            else
+                return createAssignedToList(c, SecurityManager.getProjectUsers(c.getProject()));
         });
     }
 

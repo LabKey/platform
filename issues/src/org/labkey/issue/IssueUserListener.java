@@ -30,12 +30,13 @@ public class IssueUserListener implements UserListener
 {
     public void userAddedToSite(User user)
     {
+        IssueManager.uncache(); // Might change assigned to lists
     }
 
     public void userDeletedFromSite(User user)
     {
         IssueManager.deleteUserEmailPreferences(user);
-        IssueManager.uncache();                     // Might change assigned to lists
+        IssueManager.uncache(); // Might change assigned to lists
     }
 
     public void userAccountDisabled(User user)
