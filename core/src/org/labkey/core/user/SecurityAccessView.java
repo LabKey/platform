@@ -61,7 +61,7 @@ public class SecurityAccessView extends VBox
         buildAccessDetailList(c.isRoot() ? ContainerManager.getRoot() : null, 0);
         AccessDetail details = new AccessDetail(_rows);
         details.setActive(_principal.isActive());
-        JspView<AccessDetail> accessView = new JspView<>("/org/labkey/core/user/userAccess.jsp", details);
+        JspView<AccessDetail> accessView = new JspView<>("/org/labkey/core/user/securityAccess.jsp", details);
         addView(accessView);
     }
 

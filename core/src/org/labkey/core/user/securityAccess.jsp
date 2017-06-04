@@ -100,7 +100,7 @@
     {
         boolean inherited = row.isInheritedAcl() && !row.getContainer().isProject();
         boolean isUser = null != UserManager.getUser(row.getUser().getUserId());
-        String userColDisplay = h(isUser ? ((User)row.getUser()).getDisplayName(currentUser) : row.getUser().getName());
+        String userColDisplay = isUser ? ((User)row.getUser()).getDisplayName(currentUser) : row.getUser().getName();
 %>
     <tr class="<%=getShadeRowClass(rowNumber++ % 2 == 0)%>">
 <%
