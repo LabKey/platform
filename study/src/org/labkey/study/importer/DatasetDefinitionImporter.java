@@ -21,7 +21,6 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
-import org.labkey.api.annotations.RefactorIn15_1;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.util.XmlBeansUtil;
@@ -58,7 +57,6 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
 
     public String getDataType() { return StudyArchiveDataTypes.DATASET_DEFINITIONS; }
 
-    @RefactorIn15_1 // Remove SchemaTsvReader in 15.1
     public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, DatasetImportUtils.DatasetLockExistsException, XmlException, ImportException
     {
         if (!ctx.isDataTypeSelected(getDataType()))

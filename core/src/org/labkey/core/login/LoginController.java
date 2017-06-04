@@ -22,12 +22,14 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.DeprecatedActionException;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.annotations.RefactorIn17_3;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -564,8 +566,14 @@ public class LoginController extends SpringActionController
             return showLogin(form, errors, request, getPageConfig());
         }
 
+        @RefactorIn17_3
         public boolean handlePost(LoginForm form, BindException errors) throws Exception
         {
+            // This old login POST handler should no longer be used since it's been replaced by LoginApiAction. Leave the
+            // code in place for now (17.2) in case we find a client who really needs it.
+            if (1 == 1)
+                throw new DeprecatedActionException(LoginAction.class);
+
             HttpServletRequest request = getViewContext().getRequest();
 
             // Handle a hash (#Example) on the originally requested URL. These aren't passed to the server on GET, so getView()
