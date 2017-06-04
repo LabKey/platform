@@ -1894,9 +1894,9 @@ public class PageFlowUtil
 
     private static String getJavaScriptIncludes(Container c, LinkedHashSet<ClientDependency> resources)
     {
-        /**
-          * scripts: the scripts that should be explicitly included
-          * included: the scripts that are implicitly included, which will include the component scripts on a minified library.
+        /*
+           scripts: the scripts that should be explicitly included
+           included: the scripts that are implicitly included, which will include the component scripts on a minified library.
           */
         LinkedHashSet<String> includes = new LinkedHashSet<>();
         LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
