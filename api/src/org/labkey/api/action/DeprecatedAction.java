@@ -21,10 +21,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Used to annotate an action we want to remove.  If the annotation-based permission checks pass, the action throws
+ * Used to annotate an action we want to remove. If the annotation-based permission checks pass, the action throws
  * an exception informing the user that the action has been removed and encouraging the user to contact LabKey; the
- * exception will also be logged to mothership.  This allows us to reinstate the action if we find clients are
- * actually using it.
+ * exception will also be logged to mothership. This lets us reinstate the action if we find clients are actually
+ * using it.
+ *
  * User: adam
  * Date: Feb 24, 2011
  */
