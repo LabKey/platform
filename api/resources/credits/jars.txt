@@ -2,7 +2,6 @@
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
 annotations-15.0.jar|Compiler annotations|1.0|{link:JetBrains|http://www.jetbrains.com/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Annotations to enable compile-time checking for null
 batik-1.7.jar|Apache Batik|1.7|{link:Apache|http://xmlgraphics.apache.org/batik/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Used for exporting SVG visualizations to image and PDF formats. This jar includes dependencies.
-ant-1.7.0.jar|bzip2|1.0|{link:Apache Ant|http://ant.apache.org/}|{link:Apache 1.1|http://www.apache.org/licenses/LICENSE-1.1}|bbimber|BZIP, required by HTS-JDK
 cglib-nodep-2.2.3.jar|Code Generation Library|2.2.3|{link:SourceForge|http://sourceforge.net/projects/cglib/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Used by Spring Framework and jMock
 commons-beanutils-1.7.0.jar|Commons Beanutils|1.7.0|{link:Apache|http://jakarta.apache.org/commons/beanutils/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Reading/writing beans
 commons-codec-1.6.jar|Commons Codec|1.6|{link:Apache|http://jakarta.apache.org/commons/codec/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Provides implementations of common encoders and decoders such as Base64, Hex, Phonetic and URLs
