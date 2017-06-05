@@ -36,6 +36,7 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 
@@ -518,7 +519,10 @@ public class ApiQueryResponse implements ApiResponse
     protected Object getColumnValue(DisplayColumn dc)
     {
         Object value = dc.getJsonValue(_ctx);
-        return ensureJSONDate(value);
+        if (value instanceof String)
+            return PageFlowUtil.filterControlChars(value);
+        else
+            return ensureJSONDate(value);
     }
 
     protected Object ensureJSONDate(Object value)

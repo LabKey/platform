@@ -307,6 +307,22 @@ public class PageFlowUtil
         return filter(s, translateWhiteSpace, false);
     }
 
+    static public String filterControlChars(Object o)
+    {
+        String s = o == null ? null : o.toString();
+        if (null == s || 0 == s.length())
+            return "";
+
+        int len = s.length();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < len; ++i)
+        {
+            char c = s.charAt(i);
+            sb.append(c >= ' ' ? c : NONPRINTING_ALTCHAR);
+        }
+
+        return sb.toString();
+    }
 
     /**
      * put quotes around a JavaScript string, and HTML encode that.
