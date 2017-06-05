@@ -496,7 +496,10 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                 {
                     TaskPipeline tp = PipelineJobService.get().getTaskPipeline(parentPipelineTaskId);
                     if (null != tp)
+                    {
                         settings.setWorkflowProcessKey(tp.getWorkflowProcessKey());
+                        settings.setWorkflowProcessModule(tp.getWorkflowProcessModule());
+                    }
                 }
             }
             else
