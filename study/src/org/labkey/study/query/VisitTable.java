@@ -38,20 +38,20 @@ public class VisitTable extends BaseStudyTable
         super(schema, StudySchema.getInstance().getTableInfoVisit());
 
         ContainerFilter cf = schema.getDefaultContainerFilter();
-        if (cf instanceof DataspaceContainerFilter)
+        Study study = schema.getStudy();
+        if (null != study)
         {
-            // fix up container filter to include project if dataspace study with shard visits
-            Study study = StudyManager.getInstance().getStudy(schema.getContainer());
-            if (schema.getContainer().isProject() && study != null && study.getShareVisitDefinitions())
-                _setContainerFilter(((DataspaceContainerFilter)getContainerFilter()).getIncludeProjectDatasetContainerFilter());
-        }
-        else
-        {
-            // If we are in a sub-folder (DataspaceContainerFilter not set), check for a shared visit study.
-            // If shared visits are enabled, only show visits from the project level.
-            if (null != schema.getStudy())
+            if (cf instanceof DataspaceContainerFilter)
             {
-                Study visitStudy = StudyManager.getInstance().getSharedStudy(schema.getStudy());
+                // fix up container filter to include project if dataspace study with shard visits
+                if (schema.getContainer().isProject() && study.getShareVisitDefinitions())
+                    cf = new ContainerFilter.Project(schema.getUser());
+            }
+            else
+            {
+                // If we are in a sub-folder (DataspaceContainerFilter not set), check for a shared visit study.
+                // If shared visits are enabled, only show visits from the project level.
+                Study visitStudy = StudyManager.getInstance().getSharedStudy(study);
                 if (visitStudy != null && visitStudy.getShareVisitDefinitions())
                     cf = new ContainerFilter.Project(schema.getUser());
             }
