@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.FilteredEnumeration;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
@@ -46,9 +47,11 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * User: matthewb
@@ -80,6 +83,22 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
     @Override
     public void close()
     {
+    }
+
+    // Filter out the internal parameters (e.g., X-LABKEY-CSRF), #30532
+    @Override
+    public Enumeration<String> getParameterNames()
+    {
+        return new FilteredEnumeration<>(super.getParameterNames(), paramName -> !PageFlowUtil.isInternalParameter(paramName));
+    }
+
+    // Filter out the internal parameters (e.g., X-LABKEY-CSRF), #30532
+    @Override
+    public Map<String, String[]> getParameterMap()
+    {
+        return super.getParameterMap().entrySet().stream()
+            .filter(e -> !PageFlowUtil.isInternalParameter(e.getKey()))
+            .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 
     public Principal getUserPrincipal()
@@ -416,7 +435,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
          *    c) We've killed/expired it, so we don't need to track
          */
         @Override
-        protected boolean removeEldestEntry(Map.Entry<String, GuestSessionMarker> e)
+        protected boolean removeEldestEntry(Entry<String, GuestSessionMarker> e)
         {
             try
             {
@@ -501,7 +520,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
         HttpSession _session = null;
         final String _ip;
         final long[] _accessedTime = new long[5];
-        final Map<String,String> _info;
+        final Map<String, String> _info;
 
         GuestSessionMarker(AuthenticatedRequest r)
         {
@@ -546,7 +565,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
                 {
                     //String q = PageFlowUtil.toQueryString(_info.entrySet());
                     StringBuilder sb = new StringBuilder();
-                    for (Map.Entry<String,String> e : _info.entrySet())
+                    for (Entry<String, String> e : _info.entrySet())
                         sb.append(e.getKey()).append("=").append(e.getValue()).append("&");
                     sb.setLength(sb.length()-1);
                     _logGuestSession(_ip, "Due to server load, guest session was forced to expire: " + _ip + "?" + sb.toString());

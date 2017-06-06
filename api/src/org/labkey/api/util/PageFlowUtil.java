@@ -556,6 +556,13 @@ public class PageFlowUtil
     }
 
 
+    // Identifies LabKey-specific parameters that shouldn't be persisted or exported, #30532
+    public static boolean isInternalParameter(@NotNull String parameterName)
+    {
+        return parameterName.startsWith("X-LABKEY-");
+    }
+
+
     /**
         Return a map of <T, T>. Note: iteration order of this map is unpredictable.
      */
