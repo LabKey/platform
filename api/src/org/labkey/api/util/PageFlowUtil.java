@@ -318,7 +318,7 @@ public class PageFlowUtil
         for (int i = 0; i < len; ++i)
         {
             char c = s.charAt(i);
-            sb.append(c >= ' ' ? c : NONPRINTING_ALTCHAR);
+            sb.append(c >= ' ' || c == '\n' || c == '\r' || c == '\t' ? c : NONPRINTING_ALTCHAR);
         }
 
         return sb.toString();
