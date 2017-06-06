@@ -571,7 +571,7 @@ public class LoginController extends SpringActionController
         {
             // This old login POST handler should no longer be used since it's been replaced by LoginApiAction. Leave the
             // code in place for now (17.2) in case we find a client who really needs it.
-            if (1 == 1)
+            if (1 == 0)
                 throw new DeprecatedActionException(LoginAction.class);
 
             HttpServletRequest request = getViewContext().getRequest();
@@ -768,9 +768,13 @@ public class LoginController extends SpringActionController
                 }
             }
 
+            /* add CSRF token here, might help some callers avoid second call to whoami.api */
+            if (null != response)
+                response.put("CSRF", CSRFUtil.getExpectedToken(getViewContext()));
             return response;
         }
     }
+
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
@@ -2611,6 +2615,8 @@ public class LoginController extends SpringActionController
             return res;
         }
     }
+
+
 
 
     public static class Config extends ReturnUrlForm
