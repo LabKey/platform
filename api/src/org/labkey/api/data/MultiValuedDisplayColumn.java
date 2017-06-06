@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -141,12 +142,20 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     @Override
     public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException
     {
-        if (null == _caption)
-            out.write("<td colspan=" + (span + 1) + ">");
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+        if (newUI)
+        {
+            out.write("<div class=\"col-sm-9 col-lg-10\"><p class=\"form-control-static\">");
+        }
         else
-            out.write("<td colspan=" + span + ">");
+        {
+            if (null == _caption)
+                out.write("<td colspan=" + (span + 1) + ">");
+            else
+                out.write("<td colspan=" + span + ">");
+        }
         renderGridCellContents(ctx, out);
-        out.write("</td>");
+        out.write(newUI ? "<p></div>" : "</td>");
     }
 
     @Override

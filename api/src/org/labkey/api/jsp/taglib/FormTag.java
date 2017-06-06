@@ -39,6 +39,9 @@ public class FormTag extends BodyTagSupport
     private String style=null;
     private String _class=null;
 
+    private int labelMd = 3;
+    private int labelLg = 2;
+
     public String getName()
     {
         return name;
@@ -114,9 +117,34 @@ public class FormTag extends BodyTagSupport
         _class = aClass;
     }
 
+    public String getClassName()
+    {
+        return _class;
+    }
+
     public void setClassName(String aClass)
     {
         _class = aClass;
+    }
+
+    public int getLabelMd()
+    {
+        return labelMd;
+    }
+
+    public void setLabelMd(int labelMd)
+    {
+        this.labelMd = labelMd;
+    }
+
+    public int getLabelLg()
+    {
+        return labelLg;
+    }
+
+    public void setLabelLg(int labelLg)
+    {
+        this.labelLg = labelLg;
     }
 
     public int doStartTag() throws JspException

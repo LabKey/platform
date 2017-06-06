@@ -133,9 +133,14 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
+        // TODO: Consider using the default renderer in DataColumn for _inputType == "file"
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         String filename = getFileName(value);
         String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
         String labelId = GUID.makeGUID();
+
+        if (newUI)
+            out.write("<div class=\"col-sm-9 col-lg-10\">");
 
         // TODO: modify outputName to return a String and use that here
         String filePicker = "<input name=\"" + PageFlowUtil.filter(formFieldName) + "\"";
@@ -168,6 +173,9 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             out.write("</a>]");
             out.write("</div>\n");
         }
+
+        if (newUI)
+            out.write("</div>");
     }
 
     /**

@@ -707,10 +707,13 @@ api/src/org/labkey/api/jsp/taglib/CsrfInputTag.java -text
 api/src/org/labkey/api/jsp/taglib/ErrorsTag.java -text
 api/src/org/labkey/api/jsp/taglib/FormTag.java -text
 api/src/org/labkey/api/jsp/taglib/HelpPopupTag.java -text
+api/src/org/labkey/api/jsp/taglib/InputTag.java -text
 api/src/org/labkey/api/jsp/taglib/LinkTag.java -text
 api/src/org/labkey/api/jsp/taglib/OptionsTag.java -text
+api/src/org/labkey/api/jsp/taglib/PanelTag.java -text
 api/src/org/labkey/api/jsp/taglib/RadioTag.java -text
 api/src/org/labkey/api/jsp/taglib/ScriptDependenciesTag.java -text
+api/src/org/labkey/api/jsp/taglib/SelectTag.java -text
 api/src/org/labkey/api/jsp/taglib/SimpleTagBase.java -text
 api/src/org/labkey/api/laboratory/AbstractDataProvider.java -text
 api/src/org/labkey/api/laboratory/AbstractNavItem.java -text
