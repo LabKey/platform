@@ -30,7 +30,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -144,39 +143,6 @@ public class ZipUtil
             {
                 FileUtil.copyData(in, out);
             }
-        }
-    }
-
-    private static class ZipStreamEnumeration implements Enumeration<ZipEntry>
-    {
-        private ZipInputStream _zis;
-        private ZipEntry _nextEntry;
-
-        private ZipStreamEnumeration(ZipInputStream zis)
-        {
-            _zis = zis;
-        }
-
-        public boolean hasMoreElements()
-        {
-            try
-            {
-                if (null != _nextEntry)
-                    _zis.closeEntry();
-
-                _nextEntry = _zis.getNextEntry();
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
-
-            return null != _nextEntry;
-        }
-
-        public ZipEntry nextElement()
-        {
-            return _nextEntry;
         }
     }
 }
