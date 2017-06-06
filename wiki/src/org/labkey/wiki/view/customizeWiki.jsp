@@ -162,9 +162,12 @@ function restoreDefaultPage()
 </script>
 <% if (PageFlowUtil.useExperimentalCoreUI()) { %>
 <labkey:form id="change-wiki-form" className="col-md-6 col-lg-5" method="POST">
-    <div class="form-group">
-        <label for="webPartContainer">Folder containing the page to display</label>
-        <select id="webPartContainer" name="webPartContainer" class="form-control" onkeyup="updatePageList();" onchange="updatePageList();">
+    <labkey:select
+            label="Folder containing the page to display"
+            message="You can also <a href=\"javascript:restoreDefaultPage();\">restore to this folders default page.</a>"
+            name="webPartContainer"
+            onKeyUp="updatePageList();"
+            onChange="updatePageList();">
         <%
             String webPartContainer = StringUtils.trimToNull(webPart.getPropertyMap().get("webPartContainer"));
             for (Container c : me.getContainerList())
@@ -177,47 +180,39 @@ function restoreDefaultPage()
                         selected = true;
                 }
                 else if (c.getId().equals(webPartContainer))
-                {
                     selected = true;
-                }
-                out.write("\n");
         %>
-            <option<%=selected(selected)%> value="<%=text(c.getId())%>"><%=h(c.getPath())%></option>
+        <option<%=selected(selected)%> value="<%=text(c.getId())%>"><%=h(c.getPath())%></option>
         <%
             }
         %>
-        </select>
-        <small class="form-text">You can also <a href="javascript:restoreDefaultPage();">restore to this folders default page</a>.</small>
-    </div>
-    <div class="form-group">
-        <label for="wiki-name">Page to display</label>
-        <select id="wiki-name" name="name" class="form-control">
-            <%
-                //if current container has no pages
-                if (null == me.getContainerNameTitleMap() || me.getContainerNameTitleMap().size() == 0)
-                {%>
-            <option selected value="">&lt;no pages&gt;</option>
-            <%}
-            else
-            {
-                for (Map.Entry<String, String> entry : me.getContainerNameTitleMap().entrySet())
-                {
-                    String name = entry.getKey();
-                    String title = entry.getValue();
-
-                    //if there's a "default" page and no other page has been selected as default, select it.
-                    if (name.equalsIgnoreCase("default") && webPart.getPropertyMap().get("name") == null)
-                    {%>
-            <option selected value="<%=h(name)%>"><%=h(name + " (" + title + ")")%></option>
-            <%}
-            else
+    </labkey:select>
+    <labkey:select label="Page to display" name="name">
+        <%
+            //if current container has no pages
+            if (null == me.getContainerNameTitleMap() || me.getContainerNameTitleMap().size() == 0)
             {%>
-            <option<%=selected(name.equals(webPart.getPropertyMap().get("name")))%> value="<%=h(name)%>"><%=h(name + " (" + title + ")")%></option>
-            <%}
-            }
-            }%>
-        </select>
-    </div>
+        <option selected value="">&lt;no pages&gt;</option>
+        <%}
+        else
+        {
+            for (Map.Entry<String, String> entry : me.getContainerNameTitleMap().entrySet())
+            {
+                String name = entry.getKey();
+                String title = entry.getValue();
+
+                //if there's a "default" page and no other page has been selected as default, select it.
+                if (name.equalsIgnoreCase("default") && webPart.getPropertyMap().get("name") == null)
+                {%>
+        <option selected value="<%=h(name)%>"><%=h(name + " (" + title + ")")%></option>
+        <%}
+        else
+        {%>
+        <option<%=selected(name.equals(webPart.getPropertyMap().get("name")))%> value="<%=h(name)%>"><%=h(name + " (" + title + ")")%></option>
+        <%}
+        }
+        }%>
+    </labkey:select>
     <%= button("Submit").submit(true).id("btnSubmit") %>
     <%= button("Cancel").href(getContainer().getStartURL(getUser())) %>
 </labkey:form>

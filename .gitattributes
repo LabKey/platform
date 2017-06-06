@@ -331,8 +331,6 @@ core/resources/views/login.html -text
 core/resources/views/login.view.xml -text
 core/resources/views/register.html -text
 core/resources/views/register.view.xml -text
-core/resources/views/styleGuide.html -text
-core/resources/views/styleGuide.view.xml -text
 core/resources/views/testCustomLogin.html -text
 core/resources/views/testCustomLogin.view.xml -text
 core/script-fragments/Ext.footer.js -text
@@ -558,6 +556,7 @@ core/src/org/labkey/core/user/toggleInactive.jsp -text
 core/src/org/labkey/core/user/toggleShowAll.jsp -text
 core/src/org/labkey/core/view/ShortURLFilter.java -text
 core/src/org/labkey/core/view/ShortURLServiceImpl.java -text
+core/src/org/labkey/core/view/styleGuide.jsp -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapBodyTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapHeader.java -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapTemplate.java -text

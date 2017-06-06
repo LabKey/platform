@@ -61,18 +61,15 @@
         <strong>Under construction!</strong>
         This layout is under development. <a href="<%=h(url.getLocalURIString())%>" class="alert-link">Turn it off here</a> by disabling the "Core UI Migration" feature.
     </div>
-    <% if (pageConfig.showHeader() != PageConfig.TrueFalse.False)
+    <% if (pageConfig.showHeader() != PageConfig.TrueFalse.False && null != pageConfig.getAppBar())
        {
-           if (null != pageConfig.getAppBar())
+           String trail = renderTrail(pageConfig.getAppBar().getNavTrail());
+           String pageTitle = pageConfig.getAppBar().getPageTitle();
+
+           if (pageTitle == null)
            {
-               String trail = renderTrail(pageConfig.getAppBar().getNavTrail());
-               String pageTitle = pageConfig.getAppBar().getPageTitle();
+               pageTitle = pageConfig.getAppBar().getFolderTitle();
 
-               if (pageTitle == null)
-                   pageTitle = pageConfig.getAppBar().getFolderTitle();
-
-               boolean showTrail = trail != null;
-               boolean showTitle = false;
                if (pageTitle != null)
                {
                    String folder = null;
@@ -80,19 +77,20 @@
                        folder = getContainer().getName();
                    else if (getContainer().getProject() != null)
                        folder = getContainer().getProject().getName();
-                   if (folder != null && !pageTitle.equalsIgnoreCase(folder))
-                       showTitle = true;
-               }
-               if (showTrail || showTitle)
-               {
-        %>
-    <div class="col-md-12" style="margin-bottom: 20px;">
-        <% if (showTrail) { %><%= text(trail) %><% } %>
-        <% if (showTitle) { %><h3 style="margin: 0;"><%= h(pageTitle)%></h3><% } %>
-    </div>
-        <%
+                   if (folder != null && pageTitle.equalsIgnoreCase(folder))
+                       pageTitle = null;
                }
            }
+
+           if (trail != null || pageTitle != null)
+           {
+    %>
+    <div class="col-md-12" style="margin-bottom: 20px;">
+        <% if (trail != null) { %><%= text(trail) %><% } %>
+        <% if (pageTitle != null) { %><h3 style="margin: 0;"><%= h(pageTitle)%></h3><% } %>
+    </div>
+    <%
+            }
        }
     %>
     <div class="<%= h(showRight ? "col-md-9" : "col-md-12" ) %>">

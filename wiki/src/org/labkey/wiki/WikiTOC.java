@@ -95,7 +95,7 @@ public class WikiTOC extends NavTreeMenu
         boolean bHasCopy = _cToc.hasPermission("WikiTOC.getNavMenu()", user, AdminPermission.class) && getElements().length > 0;
         boolean bHasPrint = (bHasInsert || !isInWebPart(context)) && getElements().length > 0;
 
-        NavTree menu = new NavTree("");
+        NavTree menu = new NavTree();
         if (bHasInsert)
         {
             ActionURL newPageUrl = new ActionURL(WikiController.EditWikiAction.class, _cToc);

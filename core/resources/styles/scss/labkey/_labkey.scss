@@ -10,6 +10,7 @@ body {
   margin-bottom: 50px;
 }
 
+// TODO: This causes type="file" inputs to not look polished
 input, select, textarea {
   background-color: $lk-input-bg-color;
   border: $lk-input-border-width $lk-input-border-style $lk-input-border-color;
@@ -1024,6 +1025,19 @@ a.no-arrow {
   margin: 0;
 }
 
+.portal-like {
+  background-color: white;
+  padding: 15px;
+  border: 1px solid lightgrey;
+  margin-bottom: 15px;
+}
+
+.panel-body .portal-like {
+  background-color: transparent;
+  padding: 0;
+  border: none;
+  margin-bottom: 0;
+}
 
 /* these are the new text links with css arrows */
 

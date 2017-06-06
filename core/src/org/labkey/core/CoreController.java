@@ -2127,6 +2127,22 @@ public class CoreController extends SpringActionController
         }
     }
 
+    @RequiresNoPermission
+    public class StyleGuideAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/core/view/styleGuide.jsp", o, errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("LabKey Style Guide");
+        }
+    }
+
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Test
