@@ -17,13 +17,14 @@ package org.labkey.core.admin.writer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.admin.BaseFolderWriter;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.WebPartFactory;
@@ -117,11 +118,13 @@ public class PageWriterFactory implements FolderWriterFactory
             for (WebPart webPart : webpartsInPage)
             {
                 WebPartFactory factory = null;
-                if(webPart.getPropertyMap().size() > 0)
+
+                if (webPart.getPropertyMap().size() > 0)
                 {
                     factory = Portal.getPortalPart(webPart.getName());
                 }
-                if(factory != null && !factory.includeInExport(ctx, webPart))
+
+                if (factory != null && !factory.includeInExport(ctx, webPart))
                 {
                     return;
                 }
@@ -132,9 +135,10 @@ public class PageWriterFactory implements FolderWriterFactory
                 webpartXml.setLocation(webPart.getLocation());
                 webpartXml.setPermanent(webPart.isPermanent());
 
-                if(webPart.getPermission() != null)
+                if (webPart.getPermission() != null)
                     webpartXml.setPermission(webPart.getPermission());
-                if(webPart.getPermissionContainer() != null)
+
+                if (webPart.getPermissionContainer() != null)
                     webpartXml.setPermissionContainerPath(webPart.getPermissionContainer().getPath());
 
                 if (webPart.getPropertyMap().size() > 0)
@@ -146,6 +150,11 @@ public class PageWriterFactory implements FolderWriterFactory
                         PagesDocument.Pages.Page.Webpart.Properties propertiesXml = webpartXml.addNewProperties();
                         for (Map.Entry<String, String> prop : props.entrySet())
                         {
+                            // This will filter out internal parameters that were previously saved with webpart properties,
+                            // such as X-LABKEY-CSRF, #30532.
+                            if (PageFlowUtil.isInternalParameter(prop.getKey()))
+                                continue;
+
                             PagesDocument.Pages.Page.Webpart.Properties.Property propertyXml = propertiesXml.addNewProperty();
                             propertyXml.setKey(prop.getKey());
                             propertyXml.setValue(prop.getValue());
@@ -154,7 +163,5 @@ public class PageWriterFactory implements FolderWriterFactory
                 }
             }
         }
-
-
     }
 }
