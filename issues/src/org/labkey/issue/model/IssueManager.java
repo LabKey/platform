@@ -26,7 +26,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
@@ -53,8 +52,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.ReaderRole;
@@ -89,7 +86,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -118,7 +114,6 @@ import static org.labkey.api.security.UserManager.USER_DISPLAY_NAME_COMPARATOR;
 public class IssueManager
 {
     private static final Logger _log = Logger.getLogger(IssueManager.class);
-    public static final IssueManager INSTANCE = new IssueManager();
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("issue", "Issues");
     // UNDONE: Keywords, Summary, etc.
 
@@ -161,28 +156,6 @@ public class IssueManager
 
     private IssueManager()
     {
-    }
-
-    /**
-     * Identifies whether the (Issue List) admin settings of container c were inherited by other containers.
-     * Example: Folder_B has inherited its admin settings from Folder_A. If param c is Folder_A, then this
-     * method will return true, since Folder_B has inherited admin settings from Folder_A.
-     * @param c
-     * @return  true if (one) container with inherited settings from c was found, false otherwise.
-     */
-    public static boolean hasInheritingContainers(@NotNull Container c)
-    {
-
-        for(Container possibleInheritor :  ContainerManager.getAllChildren(ContainerManager.getRoot()))
-        {
-            Map<String, String> props = PropertyManager.getProperties(possibleInheritor, CAT_DEFAULT_INHERIT_FROM_CONTAINER);
-            String propsValue = props.get(PROP_DEFAULT_INHERIT_FROM_CONTAINER);
-
-            if(propsValue != null && c.getId().equals(propsValue))
-                return true;
-        }
-
-        return false;
     }
 
     private static Issue _getIssue(@Nullable Container c, int issueId)
@@ -430,17 +403,14 @@ public class IssueManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(container).addCondition(FieldKey.fromParts("Default"), true);
         Selector selector = new TableSelector(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Type", "Keyword", "Container", "Default"), filter, null);
 
-        selector.forEach(new Selector.ForEachBlock<ResultSet>() {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                ColumnTypeEnum type = ColumnTypeEnum.forOrdinal(rs.getInt("Type"));
+        selector.forEach(rs ->
+        {
+            ColumnTypeEnum type = ColumnTypeEnum.forOrdinal(rs.getInt("Type"));
 
-                assert null != type;
+            assert null != type;
 
-                if (null != type)
-                    defaults.put(type, rs.getString("Keyword"));
-            }
+            if (null != type)
+                defaults.put(type, rs.getString("Keyword"));
         });
 
         return defaults;
@@ -469,28 +439,7 @@ public class IssueManager
     }
 
 
-    // Delete all old rows and insert the new rows; we don't bother detecting changes because this operation should be infrequent.
-    public static void saveCustomColumnConfiguration(Container c, CustomColumnConfiguration ccc)
-    {
-        TableInfo table = IssuesSchema.getInstance().getTableInfoCustomColumns();
-        Filter filter = new SimpleFilter(new FieldKey(null, "Container"), c);
-
-        try (DbScope.Transaction transaction = table.getSchema().getScope().ensureTransaction())
-        {
-            Table.delete(table, filter);
-
-            for (CustomColumn cc : ccc.getCustomColumns())
-                Table.insert(null, table, cc);
-
-            transaction.commit();
-        }
-        finally
-        {
-            ColumnConfigurationCache.uncache();
-        }
-    }
-
-
+    @Deprecated // Used only for 16.2 issue migration
     public static class CustomColumnConfigurationImpl implements CustomColumnConfiguration
     {
         private static final String[] COLUMN_NAMES = {"type", "area", "priority", "milestone", "resolution", "related", "int1", "int2", "string1", "string2", "string3", "string4", "string5"};
@@ -543,69 +492,6 @@ public class IssueManager
             }
 
             _map = new CustomColumnMap(map);
-        }
-
-        // Values are being posted from the admin page
-        public CustomColumnConfigurationImpl(ViewContext context)
-        {
-            Container c = context.getContainer();
-            Map<String, Object> map = context.getExtendedProperties();
-
-            // Could be null, a single String, or List<String>
-            Object pickList = map.get(PICK_LIST_NAME);
-
-            Set<String> pickListColumnNames;
-
-            if (null == pickList)
-                pickListColumnNames = Collections.emptySet();
-            else if (pickList instanceof String)
-                pickListColumnNames = Collections.singleton((String)pickList);
-            else
-                pickListColumnNames = new HashSet<>((List<String>)pickList);
-
-            //need a better way to do this. this code assumes that permissions are listed as per string values: string1 will have permission in 0 location in the list, etc.
-            // what if string1 and string2 are inherited? then string3-string5 values are now listed in the perms.
-            List<String> perms = context.getList("permissions");
-
-            int totalCustomColsWithPerms = 5;
-            // Should have one for each string column (we don't support permissions on int columns yet)
-            assert perms.size() <= totalCustomColsWithPerms; //if custom column values are inherited from a different container, then perms.size() can be less than 5.
-            Map<String, Class<? extends Permission>> permMap = new HashMap<>();
-
-            int index = 0;//perms index counter
-
-            for (int i = 0; i < totalCustomColsWithPerms; i++)
-            {
-                String stringCustCol = "string" + (i + 1);
-                String stringCustColVal = (String) map.get(stringCustCol); //look for non-inherited custom strings (only non-inherited strings will be captured in the context map).
-
-                //if custom string is not empty
-                if(StringUtils.isNotEmpty(stringCustColVal))
-                {
-                    //get custom string column's permission, which should be listed in a list starting from index 0. For example: first non-inherited custom string (say, string3) will have its permission value in index 0.
-                    String simplePerm = perms.get(index);
-
-                    Class<? extends Permission> perm = "admin".equals(simplePerm) ? AdminPermission.class : "insert".equals(simplePerm) ? InsertPermission.class : ReadPermission.class;
-                    permMap.put(stringCustCol, perm);
-                    index++;
-                }
-            }
-
-            Map<String, CustomColumn> ccMap = new HashMap<>();
-
-            for (String columnName : COLUMN_NAMES)
-            {
-                String caption = (String)map.get(columnName);
-
-                if (!StringUtils.isEmpty(caption))
-                {
-                    Class<? extends Permission> perm = permMap.get(columnName);
-                    CustomColumn cc = new CustomColumn(c, columnName, caption, pickListColumnNames.contains(columnName), null != perm ? perm : ReadPermission.class);
-                    ccMap.put(columnName, cc);
-                }
-            }
-
-            _map = new CustomColumnMap(ccMap);
         }
 
         @Override
@@ -661,31 +547,11 @@ public class IssueManager
         }
 
         @Override
-        public boolean hasPickList(String name)
-        {
-            CustomColumn cc = getCustomColumn(name);
-
-            return null != cc && cc.isPickList();
-        }
-
-        @Override
         public @Nullable String getCaption(String name)
         {
             CustomColumn cc = getCustomColumn(name);
 
             return null != cc ? cc.getCaption() : null;
-        }
-
-        // TODO: If we need this, then pre-compute it
-        @Override
-        public Map<String, String> getColumnCaptions()
-        {
-            Map<String, String> map = new HashMap<>();
-
-            for (CustomColumn cc : _map.values())
-                map.put(cc.getName(), cc.getCaption());
-
-            return map;
         }
 
         @Override
@@ -948,7 +814,7 @@ public class IssueManager
         props.save();
     }
 
-    @Deprecated
+    @Deprecated  // Used only for 16.2 issue migration
     public static @Nullable Group getAssignedToGroup(Container c)
     {
         Map<String, String> props = PropertyManager.getProperties(c, CAT_ASSIGNED_TO_LIST);
@@ -981,7 +847,7 @@ public class IssueManager
         uncache();  // uncache the assigned to list
     }
 
-    @Deprecated
+    @Deprecated  // Used only for 16.2 issue migration
     public static @Nullable User getDefaultAssignedToUser(Container c)
     {
         Map<String, String> props = PropertyManager.getProperties(c, CAT_DEFAULT_ASSIGNED_TO_LIST);
@@ -1066,8 +932,7 @@ public class IssueManager
                     }
                     entityIds.add(issue.getEntityId());
 
-                    for (Issue.Comment comment : issue.getComments())
-                        attachmentParents.add(comment);
+                    attachmentParents.addAll(issue.getComments());
                 }
             }
             if (issueDefId != null)
@@ -1132,7 +997,7 @@ public class IssueManager
         return inheritFromContainer;
     }
 
-    @Deprecated
+    @Deprecated  // Used only for 16.2 issue migration
     public static Sort.SortDirection getCommentSortDirection(Container c)
     {
         Map<String, String> props = PropertyManager.getProperties(getInheritFromOrCurrentContainer(c), CAT_COMMENT_SORT);

@@ -41,7 +41,6 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
@@ -323,7 +322,7 @@ public class IssuesController extends SpringActionController
                     return HttpView.redirect(url);
                 }
 
-                getPageConfig().setRssProperties(new IssuesController.RssAction().getUrl(), names.pluralName.toString());
+                getPageConfig().setRssProperties(new IssuesController.RssAction().getUrl(), names.pluralName);
 
                 return new IssuesListView(issueDefName);
             }
@@ -593,7 +592,7 @@ public class IssuesController extends SpringActionController
             page.setCallbackURL(form.getCallbackURL());
             page.setReturnURL(form.getReturnActionURL());
             page.setVisibleFields(getVisibleFields(page.getAction(), customColumnConfig));
-            page.setReadOnlyFields(getReadOnlyFields(page.getAction(), getColumnConfiguration()));
+            page.setReadOnlyFields(getReadOnlyFields(page.getAction()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
@@ -1107,7 +1106,7 @@ public class IssuesController extends SpringActionController
         /**
          * Specifies which fields have read only values
          */
-        protected Set<String> getReadOnlyFields(Class<? extends Controller> action, CustomColumnConfiguration ccc)
+        protected Set<String> getReadOnlyFields(Class<? extends Controller> action)
         {
             final Set<String> readOnly = new HashSet<>(20);
 
@@ -1120,8 +1119,7 @@ public class IssuesController extends SpringActionController
         /**
          * Throw an exception if user does not have permission to update issue
          */
-        protected void requiresUpdatePermission(User user, Issue issue)
-                throws ServletException
+        protected void requiresUpdatePermission(User user, Issue issue) throws ServletException
         {
             if (!hasUpdatePermission(user, issue))
             {
@@ -1173,11 +1171,6 @@ public class IssuesController extends SpringActionController
                 }
             }
             return _issueListDef;
-        }
-
-        public void setColumnConfiguration(CustomColumnConfiguration columnConfiguration)
-        {
-            _columnConfiguration = columnConfiguration;
         }
 
         protected IssueManager.EntryTypeNames getEntryTypeNames()
@@ -1296,25 +1289,12 @@ public class IssuesController extends SpringActionController
             return false;
         }
 
-        @Override
-        public boolean hasPickList(String name)
-        {
-            CustomColumn col = _columnMap.get(name);
-            return col != null && col.isPickList();
-        }
-
         @Nullable
         @Override
         public String getCaption(String name)
         {
             CustomColumn col = _columnMap.get(name);
             return col != null ? col.getCaption() : ColumnInfo.labelFromName(name);
-        }
-
-        @Override
-        public Map<String, String> getColumnCaptions()
-        {
-            return _captionMap;
         }
     }
 
@@ -1410,16 +1390,6 @@ public class IssuesController extends SpringActionController
     }
 
 
-    public class IssueAttachmentParent extends AttachmentParentEntity
-    {
-        public IssueAttachmentParent(Container c, GUID entityId)
-        {
-            setContainer(c.getId());
-            setEntityId(null==entityId?null:entityId.toString());
-        }
-    }
-
-
     @RequiresPermission(ReadPermission.class)
     public class UpdateAction extends AbstractIssueAction
     {
@@ -1432,7 +1402,7 @@ public class IssuesController extends SpringActionController
                 throw new NotFoundException();
             }
 
-            Issue prevIssue = (Issue)_issue.clone();
+            Issue prevIssue = _issue.clone();
             User user = getUser();
             requiresUpdatePermission(user, _issue);
 
@@ -1448,7 +1418,7 @@ public class IssuesController extends SpringActionController
             page.setBody(form.getComment());
             page.setReturnURL(form.getReturnActionURL());
             page.setVisibleFields(getVisibleFields(page.getAction(), getColumnConfiguration()));
-            page.setReadOnlyFields(getReadOnlyFields(page.getAction(), getColumnConfiguration()));
+            page.setReadOnlyFields(getReadOnlyFields(page.getAction()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
@@ -1476,7 +1446,7 @@ public class IssuesController extends SpringActionController
                 throw new NotFoundException();
             }
 
-            Issue prevIssue = (Issue)_issue.clone();
+            Issue prevIssue = _issue.clone();
             User user = getUser();
             requiresUpdatePermission(user, _issue);
 
@@ -1507,7 +1477,7 @@ public class IssuesController extends SpringActionController
             page.setCustomColumnConfiguration(getColumnConfiguration());
             page.setBody(form.getComment());
             page.setVisibleFields(getVisibleFields(page.getAction(), getColumnConfiguration()));
-            page.setReadOnlyFields(getReadOnlyFields(page.getAction(), getColumnConfiguration()));
+            page.setReadOnlyFields(getReadOnlyFields(page.getAction()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
@@ -1535,7 +1505,7 @@ public class IssuesController extends SpringActionController
                 throw new NotFoundException();
             }
 
-            Issue prevIssue = (Issue)_issue.clone();
+            Issue prevIssue = _issue.clone();
             User user = getUser();
             requiresUpdatePermission(user, _issue);
 
@@ -1550,7 +1520,7 @@ public class IssuesController extends SpringActionController
             page.setCustomColumnConfiguration(getColumnConfiguration());
             page.setBody(form.getComment());
             page.setVisibleFields(getVisibleFields(page.getAction(), getColumnConfiguration()));
-            page.setReadOnlyFields(getReadOnlyFields(page.getAction(), getColumnConfiguration()));
+            page.setReadOnlyFields(getReadOnlyFields(page.getAction()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
@@ -1579,7 +1549,7 @@ public class IssuesController extends SpringActionController
                 throw new NotFoundException();
             }
 
-            Issue prevIssue = (Issue)_issue.clone();
+            Issue prevIssue = _issue.clone();
 
             User user = getUser();
             requiresUpdatePermission(user, _issue);
@@ -1596,7 +1566,7 @@ public class IssuesController extends SpringActionController
             page.setCustomColumnConfiguration(getColumnConfiguration());
             page.setBody(form.getComment());
             page.setVisibleFields(getVisibleFields(page.getAction(), getColumnConfiguration()));
-            page.setReadOnlyFields(getReadOnlyFields(page.getAction(), getColumnConfiguration()));
+            page.setReadOnlyFields(getReadOnlyFields(page.getAction()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());

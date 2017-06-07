@@ -40,11 +40,7 @@ public interface CustomColumnConfiguration
     @Deprecated
     boolean shouldDisplay(String name);
     boolean shouldDisplay(User user, String name);
-    boolean hasPickList(String name);
 
     @Nullable
     String getCaption(String name);
-
-    // TODO: If we need this, then pre-compute it
-    Map<String, String> getColumnCaptions();
 }

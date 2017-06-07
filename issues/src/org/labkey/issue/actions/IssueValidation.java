@@ -94,7 +94,7 @@ public class IssueValidation
     {
         if (requiredFields != null)
         {
-            if (requiredFields.indexOf(columnName) != -1)
+            if (requiredFields.contains(columnName))
             {
                 if (StringUtils.isEmpty(value) || StringUtils.isEmpty(value.trim()))
                 {

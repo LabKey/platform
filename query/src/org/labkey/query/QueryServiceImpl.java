@@ -157,7 +157,7 @@ public class QueryServiceImpl implements QueryService
     private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
     private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
 
-    private ConcurrentMap<Class<? extends Controller>, Pair<Module,String>> _schemaLinkActions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class<? extends Controller>, Pair<Module,String>> _schemaLinkActions = new ConcurrentHashMap<>();
 
     private final List<CompareType> COMPARE_TYPES = new CopyOnWriteArrayList<>(Arrays.asList(
             CompareType.EQUAL,
@@ -2113,7 +2113,7 @@ public class QueryServiceImpl implements QueryService
 
 
     @Override
-    public Results selectResults(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, Map<String,Object> parameters, boolean strictColumnList, boolean cached) throws SQLException
+    public Results selectResults(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, Map<String, Object> parameters, boolean strictColumnList, boolean cached) throws SQLException
     {
         Query q = new Query(schema);
         q.setStrictColumnList(strictColumnList);
@@ -2130,7 +2130,7 @@ public class QueryServiceImpl implements QueryService
 
 
     @Override
-    public void bindNamedParameters(SQLFragment frag, @Nullable Map<String,Object> in)
+    public void bindNamedParameters(SQLFragment frag, @Nullable Map<String, Object> in)
     {
         Map<String, Object> params = null == in ? Collections.emptyMap() :
                 in instanceof CaseInsensitiveHashMap ? in :
@@ -2575,14 +2575,7 @@ public class QueryServiceImpl implements QueryService
     }
 
 
-    private static ThreadLocal<HashMap<Environment,Object>> environments = new ThreadLocal<HashMap<Environment, Object>>()
-    {
-        @Override
-        protected HashMap<Environment, Object> initialValue()
-        {
-            return new HashMap<>();
-        }
-    };
+    private static ThreadLocal<HashMap<Environment, Object>> environments = ThreadLocal.withInitial(HashMap::new);
 
 
     @Override
@@ -2602,16 +2595,16 @@ public class QueryServiceImpl implements QueryService
     @Override
     public Object cloneEnvironment()
     {
-        HashMap<Environment,Object> env = environments.get();
+        HashMap<Environment, Object> env = environments.get();
         return new HashMap<>(env);
     }
 
     @Override
     public void copyEnvironment(Object o)
     {
-        HashMap<Environment,Object> env = environments.get();
+        HashMap<Environment, Object> env = environments.get();
         env.clear();
-        env.putAll((HashMap<Environment,Object>)o);
+        env.putAll((HashMap<Environment, Object>)o);
     }
 
 
@@ -2915,13 +2908,6 @@ public class QueryServiceImpl implements QueryService
 
     public static class TestCase extends Assert
     {
-        ResultSet rs = null;
-
-	    void _close()
-	    {
-		    rs = ResultSetUtil.close(rs);
-	    }
-
         @Test
         public void testSelect() throws SQLException
         {
@@ -2936,11 +2922,12 @@ public class QueryServiceImpl implements QueryService
 					roleAssignments.getColumn("resourceid"),
 					roleAssignments.getColumn("userid"),
 					roleAssignments.getColumn("role"));
-				rs = qs.select(roleAssignments, l, null, null);
-				assertEquals(rs.getMetaData().getColumnCount(),3);
-				_close();
-            }
 
+                try (ResultSet rs = qs.select(roleAssignments, l, null, null))
+                {
+                    assertEquals(rs.getMetaData().getColumnCount(), 3);
+                }
+            }
 
 	        {
 				List<ColumnInfo> l = Arrays.asList(
@@ -2948,9 +2935,11 @@ public class QueryServiceImpl implements QueryService
                         roleAssignments.getColumn("userid"),
                         roleAssignments.getColumn("role"));
 		        Sort sort = new Sort("+userid");
-				rs = qs.select(roleAssignments, l, null, sort);
-				assertEquals(rs.getMetaData().getColumnCount(),3);
-		        _close();
+
+                try (ResultSet rs = qs.select(roleAssignments, l, null, sort))
+                {
+                    assertEquals(rs.getMetaData().getColumnCount(), 3);
+                }
 	        }
 
 	        {
@@ -2959,9 +2948,11 @@ public class QueryServiceImpl implements QueryService
                         roleAssignments.getColumn("userid"),
                         roleAssignments.getColumn("role"));
                 Filter f = new SimpleFilter(FieldKey.fromParts("userid"), -3);
-				rs = qs.select(roleAssignments, l, f, null);
-				assertEquals(rs.getMetaData().getColumnCount(),3);
-		        _close();
+
+                try (ResultSet rs = qs.select(roleAssignments, l, f, null))
+                {
+                    assertEquals(rs.getMetaData().getColumnCount(), 3);
+                }
 	        }
 
 	        {
@@ -2972,9 +2963,11 @@ public class QueryServiceImpl implements QueryService
 				        new FieldKey(new FieldKey(null, "userid"), "name")));
 		        Sort sort = new Sort("+userid");
                 Filter f = new SimpleFilter(FieldKey.fromParts("userid"), -3);
-				rs = qs.select(roleAssignments, map.values(), f, sort);
-				assertEquals(rs.getMetaData().getColumnCount(),4);
-		        _close();
+
+                try (ResultSet rs = qs.select(roleAssignments, map.values(), f, sort))
+                {
+                    assertEquals(rs.getMetaData().getColumnCount(), 4);
+                }
 	        }
         }
 
