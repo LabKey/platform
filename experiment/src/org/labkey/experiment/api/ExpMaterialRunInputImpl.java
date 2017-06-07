@@ -16,9 +16,7 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpMaterialRunInput;
-import org.labkey.api.exp.api.ExperimentService;
 
 import java.util.ArrayList;
 import java.util.List;

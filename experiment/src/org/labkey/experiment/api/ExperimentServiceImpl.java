@@ -21,11 +21,14 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -47,6 +50,7 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpMaterialRunInput;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
@@ -85,8 +89,10 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -105,8 +111,10 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -1490,6 +1498,77 @@ public class ExperimentServiceImpl implements ExperimentService
         return new TreeSet<>(new SqlSelector(getSchema(), sql).getCollection(String.class));
     }
 
+    @Override
+    @Nullable
+    public ExpDataRunInputImpl getDataInput(Lsid lsid)
+    {
+        String namespace = lsid.getNamespace();
+        if (!DataInput.NAMESPACE.equals(namespace))
+            return null;
+
+        String objectId = lsid.getObjectId();
+        if (objectId == null || objectId.length() == 0)
+            return null;
+
+        String[] parts = StringUtils.split(objectId, ".");
+        if (parts.length == 0 || parts.length > 2)
+            return null;
+
+        int dataId = NumberUtils.toInt(parts[0]);
+        int targetApplicationId = NumberUtils.toInt(parts[1]);
+        return getDataInput(dataId, targetApplicationId);
+    }
+
+    @Override
+    @Nullable
+    public ExpDataRunInputImpl getDataInput(int dataId, int targetProtocolApplicationId)
+    {
+        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoDataInput();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("dataId"), dataId);
+        filter.addCondition(FieldKey.fromParts("targetApplicationId"), targetProtocolApplicationId);
+        DataInput di = new TableSelector(inputTable, TableSelector.ALL_COLUMNS, filter, null).getObject(DataInput.class);
+        if (di == null)
+            return null;
+
+        return new ExpDataRunInputImpl(di);
+    }
+
+    @Override
+    @Nullable
+    public ExpMaterialRunInputImpl getMaterialInput(Lsid lsid)
+    {
+        String namespace = lsid.getNamespace();
+        if (!MaterialInput.NAMESPACE.equals(namespace))
+            return null;
+
+        String objectId = lsid.getObjectId();
+        if (objectId == null || objectId.length() == 0)
+            return null;
+
+        String[] parts = StringUtils.split(objectId, ".");
+        if (parts.length == 0 || parts.length > 2)
+            return null;
+
+        int materialId = NumberUtils.toInt(parts[0]);
+        int targetApplicationId = NumberUtils.toInt(parts[1]);
+        return getMaterialInput(materialId, targetApplicationId);
+    }
+
+    @Override
+    @Nullable
+    public ExpMaterialRunInputImpl getMaterialInput(int materialId, int targetProtocolApplicationId)
+    {
+        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoMaterialInput();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("materialId"), materialId);
+        filter.addCondition(FieldKey.fromParts("targetApplicationId"), targetProtocolApplicationId);
+        MaterialInput mi = new TableSelector(inputTable, TableSelector.ALL_COLUMNS, filter, null).getObject(MaterialInput.class);
+        if (mi == null)
+            return null;
+
+        return new ExpMaterialRunInputImpl(mi);
+    }
 
     @Override
     public Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpProtocolOutput start)
@@ -2974,10 +3053,11 @@ public class ExperimentServiceImpl implements ExperimentService
         if (selectedMaterialIds.isEmpty())
             return;
 
+        final SqlDialect dialect = getExpSchema().getSqlDialect();
         try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
             SQLFragment sql = new SQLFragment("SELECT * FROM exp.Material WHERE RowId ");
-            getExpSchema().getSqlDialect().appendInClauseSql(sql, selectedMaterialIds);
+            dialect.appendInClauseSql(sql, selectedMaterialIds);
 
             List<ExpMaterialImpl> materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
 
@@ -3014,13 +3094,21 @@ public class ExperimentServiceImpl implements ExperimentService
                 OntologyManager.deleteOntologyObjects(container, material.getLSID());
             }
 
+            // Delete MaterialInput exp.object and properties
+            SQLFragment inputObjects = new SQLFragment("SELECT ")
+                    .append(dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'", "mi.materialId", "'.'", "mi.targetApplicationId"))
+                    .append(" FROM ").append(getTinfoMaterialInput(), "mi").append(" WHERE mi.materialId ");
+            dialect.appendInClauseSql(inputObjects, selectedMaterialIds);
+            OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container, false);
+
             SqlExecutor executor = new SqlExecutor(getExpSchema());
 
             SQLFragment materialInputSQL = new SQLFragment("DELETE FROM exp.MaterialInput WHERE MaterialId ");
-            getExpSchema().getSqlDialect().appendInClauseSql(materialInputSQL, selectedMaterialIds);
+            dialect.appendInClauseSql(materialInputSQL, selectedMaterialIds);
             executor.execute(materialInputSQL);
+
             SQLFragment materialSQL = new SQLFragment("DELETE FROM exp.Material WHERE RowId ");
-            getExpSchema().getSqlDialect().appendInClauseSql(materialSQL, selectedMaterialIds);
+            dialect.appendInClauseSql(materialSQL, selectedMaterialIds);
             executor.execute(materialSQL);
 
             // Remove from search index
@@ -3072,6 +3160,14 @@ public class ExperimentServiceImpl implements ExperimentService
             }
 
             SqlDialect dialect = getExpSchema().getSqlDialect();
+
+            // Delete DataInput exp.object and properties
+            SQLFragment inputObjects = new SQLFragment("SELECT ")
+                    .append(dialect.concatenate("'" + DataInput.lsidPrefix() + "'", "di.dataId", "'.'", "di.targetApplicationId"))
+                    .append(" FROM ").append(getTinfoDataInput(), "di").append(" WHERE di.DataId ");
+            dialect.appendInClauseSql(inputObjects, selectedDataIds);
+            OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container, false);
+
             SqlExecutor executor = new SqlExecutor(getExpSchema());
 
             SQLFragment dataInputSQL = new SQLFragment("DELETE FROM ").append(getTinfoDataInput()).append(" WHERE DataId ");
@@ -3994,10 +4090,24 @@ public class ExperimentServiceImpl implements ExperimentService
         return new TableSelector(getTinfoData(), filter, null).getArrayList(Data.class);
     }
 
+    public List<DataInput> getDataOutputsForApplication(int applicationId)
+    {
+        return new SqlSelector(getExpSchema(), "SELECT di.* FROM exp.DataInput di\n" +
+                "INNER JOIN exp.Data d ON d.rowId = di.dataId\n" +
+                "WHERE d.sourceApplicationId = ?", applicationId).getArrayList(DataInput.class);
+    }
+
     public List<Material> getOutputMaterialForApplication(int applicationId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("SourceApplicationId"), applicationId);
         return new TableSelector(getTinfoMaterial(), filter, null).getArrayList(Material.class);
+    }
+
+    public List<MaterialInput> getMaterialOutputsForApplication(int applicationId)
+    {
+        return new SqlSelector(getExpSchema(), "SELECT mi.* FROM exp.MaterialInput mi\n" +
+                "INNER JOIN exp.Material m ON m.rowId = mi.materialId\n" +
+                "WHERE m.sourceApplicationId = ?", applicationId).getArrayList(MaterialInput.class);
     }
 
     public List<ExpDataImpl> getExpData(Container c)
@@ -5650,7 +5760,19 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public static class TestCase extends Assert
     {
-        @Test
+        @Before
+        public void setUp()
+        {
+            ContainerManager.deleteAll(JunitUtil.getTestContainer(), TestContext.get().getUser());
+        }
+
+        @After
+        public void tearDown()
+        {
+            ContainerManager.deleteAll(JunitUtil.getTestContainer(), TestContext.get().getUser());
+        }
+
+        //@Test
         public void testRecursiveSql()
         {
             ExperimentServiceImpl impl = new ExperimentServiceImpl();
@@ -5673,6 +5795,96 @@ public class ExperimentServiceImpl implements ExperimentService
 
             //System.out.println(union.toDebugString());
             assertFalse(new SqlSelector(impl.getExpSchema().getScope(), union).exists());
+        }
+
+        @Test
+        public void testRunInputProperties() throws Exception
+        {
+            final User user = TestContext.get().getUser();
+            final Container c = JunitUtil.getTestContainer();
+            final ViewBackgroundInfo info = new ViewBackgroundInfo(c, user, null);
+            final Logger log = Logger.getLogger(ExperimentServiceImpl.class);
+
+            // assert no MaterialInput exp.object exist
+            assertEquals(0L, countMaterialInputObjects(c));
+
+            ExperimentServiceImpl impl = ExperimentServiceImpl.get();
+
+            // create sample set
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("name", "string"));
+            ExpSampleSet ss = impl.createSampleSet(c, user, "TestSamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null);
+
+            // create material
+            UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
+            TableInfo table = schema.getTable("TestSamples");
+            QueryUpdateService svc = table.getUpdateService();
+
+            List<Map<String, Object>> rows = new ArrayList<>();
+            rows.add(CaseInsensitiveHashMap.of("name", "bob", "age", 10));
+            rows.add(CaseInsensitiveHashMap.of("name", "sally", "age", 10));
+
+            BatchValidationException errors = new BatchValidationException();
+            svc.insertRows(user, c, rows, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            ExpMaterial sampleIn = ss.getSample(c, "bob");
+            ExpMaterial sampleOut = ss.getSample(c, "sally");
+
+
+            // create run
+            Map<ExpMaterial, String> inputMaterials = new HashMap<>();
+            inputMaterials.put(sampleIn, "Sample Goo");
+
+            Map<ExpData, String> inputData = new HashMap<>();
+            Map<ExpMaterial, String> outputMaterials = new HashMap<>();
+            outputMaterials.put(sampleOut, "Sample Boo");
+
+            Map<ExpData, String> outputData = new HashMap<>();
+
+            ExpRun run = impl.derive(inputMaterials, inputData, outputMaterials, outputData, info, log);
+            run.save(user);
+
+            ExpProtocolApplication pa = run.getInputProtocolApplication();
+            List<? extends ExpMaterialRunInput> materialRunInputs = pa.getMaterialInputs();
+            assertEquals(1, materialRunInputs.size());
+
+            ExpMaterialRunInputImpl materialRunInput = (ExpMaterialRunInputImpl)materialRunInputs.get(0);
+            assertEquals(sampleIn, materialRunInput.getMaterial());
+            assertEquals("Sample Goo", materialRunInput.getRole());
+            assertTrue(materialRunInput.getLSIDNamespacePrefix().equals(MaterialInput.NAMESPACE));
+            assertTrue(materialRunInput.getLSID().contains(":MaterialInput:" + sampleIn.getRowId() + "." + pa.getRowId()));
+
+            ExpMaterialRunInputImpl x = impl.getMaterialInput(sampleIn.getRowId(), pa.getRowId());
+            assertEquals(materialRunInput.getLSID(), x.getLSID());
+
+            Map<String, Object> materialInputProps = materialRunInput.getProperties();
+            assertTrue(materialInputProps.isEmpty());
+
+            // save an edge property -- using the comment property will suffice
+            materialRunInput.setComment(user, "hello world");
+            assertEquals("hello world", materialRunInput.getComment());
+
+            // assert one MaterialInput exp.object exist
+            assertEquals(1L, countMaterialInputObjects(c));
+
+            run.delete(user);
+
+            // assert we cleaned up properly
+            ExpMaterialRunInputImpl y = impl.getMaterialInput(sampleIn.getRowId(), pa.getRowId());
+            assertNull(y);
+
+            // assert we deleted all MaterialInput exp.object
+            assertEquals(0L, countMaterialInputObjects(c));
+        }
+
+        private int countMaterialInputObjects(Container c)
+        {
+            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+            filter.addCondition(FieldKey.fromParts("objecturi"), ":MaterialInput:", CompareType.CONTAINS);
+            TableSelector ts = new TableSelector(OntologyManager.getTinfoObject(), TableSelector.ALL_COLUMNS, filter, null);
+            return (int) ts.getRowCount();
         }
     }
 }

@@ -23,6 +23,8 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -94,6 +96,13 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         return ExpDataRunInputImpl.fromInputs(ExperimentServiceImpl.get().getDataInputsForApplication(getRowId()));
     }
 
+    @Override
+    @NotNull
+    public List<ExpDataRunInputImpl> getDataOutputs()
+    {
+        return ExpDataRunInputImpl.fromInputs(ExperimentServiceImpl.get().getDataOutputsForApplication(getRowId()));
+    }
+
     @NotNull
     public List<ExpDataImpl> getInputDatas()
     {
@@ -141,6 +150,13 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     public List<ExpMaterialRunInputImpl> getMaterialInputs()
     {
         return ExpMaterialRunInputImpl.fromInputs(ExperimentServiceImpl.get().getMaterialInputsForApplication(getRowId()));
+    }
+
+    @Override
+    @NotNull
+    public List<ExpMaterialRunInputImpl> getMaterialOutputs()
+    {
+        return ExpMaterialRunInputImpl.fromInputs(ExperimentServiceImpl.get().getMaterialOutputsForApplication(getRowId()));
     }
 
     @NotNull
@@ -257,6 +273,18 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     {
         if (getRowId() != 0)
         {
+            final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
+            final SqlDialect dialect = svc.getSchema().getSqlDialect();
+
+            // Clean up DataInput and MaterialInput exp.object and properties
+            OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
+                    dialect.concatenate("'" + DataInput.lsidPrefix() + "'", "dataId", "'.'", "targetApplicationId") +
+                    " FROM " + svc.getTinfoDataInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer(), false);
+
+            OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
+                    dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'", "materialId", "'.'", "targetApplicationId") +
+                    " FROM " + svc.getTinfoMaterialInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer(), false);
+
             long countInputs = 0;
             countInputs += Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
             countInputs += Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
@@ -301,30 +329,41 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         ensureUnlocked();
         _outputDatas = outputDataList;
     }
-    
-    public void addDataInput(User user, ExpData data, String roleName)
+
+    @Override
+    @NotNull
+    public ExpDataRunInputImpl addDataInput(User user, ExpData data, String roleName)
     {
         DataInput obj = new DataInput();
         obj.setDataId(data.getRowId());
         obj.setTargetApplicationId(getRowId());
         obj.setRole(roleName);
 
-        Table.insert(user, ExperimentServiceImpl.get().getTinfoDataInput(), obj);
+        obj = Table.insert(user, ExperimentServiceImpl.get().getTinfoDataInput(), obj);
         ExperimentServiceImpl.get().uncacheEdges();
+        return new ExpDataRunInputImpl(obj);
     }
 
-    public void addMaterialInput(User user, ExpMaterial material, @Nullable String roleName)
+    @Override
+    @NotNull
+    public ExpMaterialRunInputImpl addMaterialInput(User user, ExpMaterial material, @Nullable String roleName)
     {
         MaterialInput obj = new MaterialInput();
         obj.setMaterialId(material.getRowId());
         obj.setTargetApplicationId(getRowId());
         obj.setRole(roleName);
-        Table.insert(user, ExperimentServiceImpl.get().getTinfoMaterialInput(), obj);
+        obj = Table.insert(user, ExperimentServiceImpl.get().getTinfoMaterialInput(), obj);
         ExperimentServiceImpl.get().uncacheEdges();
+        return new ExpMaterialRunInputImpl(obj);
     }
 
+    @Override
     public void removeDataInput(User user, ExpData data)
     {
+        // Clean up DataInput exp.object and properties
+        String lsid = DataInput.lsid(data.getRowId(), getRowId());
+        OntologyManager.deleteOntologyObjects(getContainer(), lsid);
+
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("TargetApplicationId"), getRowId());
         filter.addCondition(FieldKey.fromParts("DataId"), data.getRowId());
@@ -332,8 +371,13 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         ExperimentServiceImpl.get().uncacheEdges();
     }
 
+    @Override
     public void removeMaterialInput(User user, ExpMaterial material)
     {
+        // Clean up MaterialInput exp.object and properties
+        String lsid = MaterialInput.lsid(material.getRowId(), getRowId());
+        OntologyManager.deleteOntologyObjects(getContainer(), lsid);
+
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("TargetApplicationId"), getRowId());
         filter.addCondition(FieldKey.fromParts("MaterialId"), material.getRowId());

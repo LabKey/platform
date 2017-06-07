@@ -15,15 +15,25 @@
  */
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.query.ExpInputTable;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.PageFlowUtil;
+
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -97,4 +107,51 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
     {
         applyFilters();
     }
+
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        ColumnInfo col = super.resolveColumn(name);
+        if (col != null)
+            return col;
+
+        // HACK: Temporary column to see the properties on the MaterialInput or DataInput edge
+        if ("TempDebugProperties".equalsIgnoreCase(name))
+        {
+            col = new AliasedColumn(this, name, getColumn("LSID"));
+            col.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
+            {
+                @Override
+                public Object getValue(RenderContext ctx)
+                {
+                    String lsid = (String)super.getValue(ctx);
+                    if (lsid == null)
+                        return null;
+
+                    Map<String, Object> props = OntologyManager.getProperties(ctx.getContainer(), lsid);
+                    if (!props.isEmpty())
+                        return props;
+
+                    return null;
+                }
+
+                @Override
+                public @NotNull String getFormattedValue(RenderContext ctx)
+                {
+                    Object props = getValue(ctx);
+                    if (props == null)
+                        return "&nbsp;";
+
+                    String html = PageFlowUtil.filter(new JSONObject(props).toString(2));
+                    html = html.replaceAll("\\n", "<br>\n");
+                    return html;
+                }
+
+            });
+            return col;
+        }
+
+        return null;
+    }
+
 }

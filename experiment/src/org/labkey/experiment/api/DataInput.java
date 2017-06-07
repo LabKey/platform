@@ -16,15 +16,37 @@
 
 package org.labkey.experiment.api;
 
+import org.labkey.api.exp.LsidType;
 import org.labkey.api.exp.api.ExpDataRunInput;
+import org.labkey.api.settings.AppProps;
+
+import static org.labkey.api.util.PageFlowUtil.encode;
 
 public class DataInput extends AbstractRunInput
 {
+    /*package*/static final String NAMESPACE = LsidType.DataInput.name();
+
+    /*package*/static String lsidPrefix()
+    {
+        return "urn:lsid:" + encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + NAMESPACE + ":";
+    }
+
+    /*package*/ static String lsid(int inputKey, int targetApplicationId)
+    {
+        return AbstractRunInput.lsid(NAMESPACE, inputKey, targetApplicationId);
+    }
+
     private int _dataId;
 
     public DataInput()
     {
         super(ExpDataRunInput.DEFAULT_ROLE);
+    }
+
+    @Override
+    public String getLSID()
+    {
+        return lsid(getInputKey(), getTargetApplicationId());
     }
 
     public int getDataId()

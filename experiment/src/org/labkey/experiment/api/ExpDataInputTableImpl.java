@@ -16,7 +16,11 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.query.ExpDataInputTable;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 
@@ -50,6 +54,20 @@ public class ExpDataInputTableImpl extends ExpInputTableImpl<ExpDataInputTable.C
                 ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("TargetApplicationId"));
                 result.setFk(getExpSchema().getProtocolApplicationForeignKey());
                 return result;
+
+            case LSID:
+            {
+                final SqlDialect dialect = getSqlDialect();
+                SQLFragment sql = new SQLFragment("" +
+                        dialect.concatenate("'" + DataInput.lsidPrefix() + "'", ExprColumn.STR_TABLE_ALIAS + ".dataId", "'.'", ExprColumn.STR_TABLE_ALIAS + ".targetApplicationId"));
+                ColumnInfo col = new ExprColumn(this, alias, sql, JdbcType.VARCHAR);
+                col.setHidden(true);
+                col.setCalculated(true);
+                col.setUserEditable(false);
+                col.setReadOnly(true);
+                return col;
+            }
+
             default:
                 throw new IllegalArgumentException("Unsupported column: " + column);
         }
@@ -60,6 +78,7 @@ public class ExpDataInputTableImpl extends ExpInputTableImpl<ExpDataInputTable.C
         addColumn(Column.Data);
         addColumn(Column.TargetProtocolApplication);
         addColumn(Column.Role);
+        addColumn(Column.LSID);
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts(Column.Data));

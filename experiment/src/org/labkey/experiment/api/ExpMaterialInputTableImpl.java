@@ -15,13 +15,17 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.query.UserSchema;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.query.ExpMaterialInputTable;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: jeckels
@@ -50,6 +54,20 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
                 ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("TargetApplicationId"));
                 result.setFk(getExpSchema().getProtocolApplicationForeignKey());
                 return result;
+
+            case LSID:
+            {
+                final SqlDialect dialect = getSqlDialect();
+                SQLFragment sql = new SQLFragment("" +
+                        dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'", ExprColumn.STR_TABLE_ALIAS + ".materialId", "'.'", ExprColumn.STR_TABLE_ALIAS + ".targetApplicationId"));
+                ColumnInfo col = new ExprColumn(this, alias, sql, JdbcType.VARCHAR);
+                col.setHidden(true);
+                col.setCalculated(true);
+                col.setUserEditable(false);
+                col.setReadOnly(true);
+                return col;
+            }
+
             default:
                 throw new IllegalArgumentException("Unsupported column: " + column);
         }
@@ -60,6 +78,7 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
         addColumn(Column.Material);
         addColumn(Column.TargetProtocolApplication);
         addColumn(Column.Role);
+        addColumn(Column.LSID);
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts(Column.Material));

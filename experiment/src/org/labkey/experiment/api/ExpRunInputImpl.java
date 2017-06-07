@@ -15,15 +15,22 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.ExpRunInput;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRunInput;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.security.User;
+import org.labkey.api.util.URLHelper;
+
+import java.util.Date;
 
 /**
  * User: jeckels
  * Date: Oct 31, 2008
  */
-public abstract class ExpRunInputImpl<InputType extends AbstractRunInput> implements ExpRunInput
+public abstract class ExpRunInputImpl<InputType extends AbstractRunInput> extends ExpObjectImpl implements ExpRunInput
 {
     protected InputType _input;
 
@@ -40,5 +47,95 @@ public abstract class ExpRunInputImpl<InputType extends AbstractRunInput> implem
     public String getRole()
     {
         return _input.getRole();
+    }
+
+    @Override
+    public final String getLSID()
+    {
+        return _input.getLSID();
+    }
+
+    @Override
+    public final void setLSID(String lsid)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final void setLSID(Lsid lsid)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final String getName()
+    {
+        return _input.getName();
+    }
+
+    @Override
+    public final void setName(String name)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final int getRowId()
+    {
+        return 0;
+    }
+
+    @Override
+    public @Nullable URLHelper detailsURL()
+    {
+        return null;
+    }
+
+    @Override
+    public final Container getContainer()
+    {
+        return getTargetApplication().getContainer();
+    }
+
+    @Override
+    public final void setContainer(Container container)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final User getCreatedBy()
+    {
+        return getTargetApplication().getCreatedBy();
+    }
+
+    @Override
+    public final Date getCreated()
+    {
+        return getTargetApplication().getCreated();
+    }
+
+    @Override
+    public final User getModifiedBy()
+    {
+        return getTargetApplication().getModifiedBy();
+    }
+
+    @Override
+    public final Date getModified()
+    {
+        return getTargetApplication().getModified();
+    }
+
+    @Override
+    public final void save(User user)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final void delete(User user)
+    {
+        throw new UnsupportedOperationException();
     }
 }

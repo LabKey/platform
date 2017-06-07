@@ -29,8 +29,10 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -414,7 +416,27 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         }
         DbCache.remove(ExperimentServiceImpl.get().getTinfoExperimentRun(), ExperimentServiceImpl.get().getCacheKey(getLSID()));
 
-        ExperimentServiceImpl.get().beforeDeleteData(datasToDelete);
+        final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
+        final SqlDialect dialect = svc.getSchema().getSqlDialect();
+
+        svc.beforeDeleteData(datasToDelete);
+
+        // Clean up DataInput and MaterialInput exp.object and properties
+        OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
+                dialect.concatenate("'" + DataInput.lsidPrefix() + "'", "dataId", "'.'", "targetApplicationId") +
+                " FROM " + svc.getTinfoDataInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer(), false);
+
+        OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
+                dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'", "materialId", "'.'", "targetApplicationId") +
+                " FROM " + svc.getTinfoMaterialInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer(), false);
+
+        OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
+                dialect.concatenate("'" + DataInput.lsidPrefix() + "'", "dataId", "'.'", "targetApplicationId") +
+                " FROM " + svc.getTinfoDataInput() + " WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = " + getRowId() + ")"), getContainer(), false);
+
+        OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
+                dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'", "materialId", "'.'", "targetApplicationId") +
+                " FROM " + svc.getTinfoMaterialInput() + " WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = " + getRowId() + ")"), getContainer(), false);
 
         String sql = " ";
         sql += "DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";

@@ -16,6 +16,8 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.IdentifiableBase;
+import org.labkey.api.exp.Lsid;
 
 import java.util.Objects;
 
@@ -23,7 +25,7 @@ import java.util.Objects;
  * User: jeckels
  * Date: Oct 31, 2008
  */
-public abstract class AbstractRunInput
+public abstract class AbstractRunInput extends IdentifiableBase
 {
     private final String _defaultRole;
 
@@ -67,6 +69,22 @@ public abstract class AbstractRunInput
     }
 
     protected abstract int getInputKey();
+
+
+    protected static String lsid(String namespace, int inputKey, int targetApplicationId)
+    {
+        if (targetApplicationId == 0 || inputKey == 0)
+            throw new IllegalStateException("LSID requires targetApplicationId and input id");
+        Lsid lsid = new Lsid(namespace, inputKey + "." + targetApplicationId);
+        return lsid.toString();
+    }
+
+
+    @Override
+    public void setLSID(String lsid)
+    {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public boolean equals(Object o)
