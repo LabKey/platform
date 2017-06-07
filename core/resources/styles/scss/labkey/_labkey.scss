@@ -232,10 +232,11 @@ table.labkey-no-spacing
 /* Used for the error messages across the site */
 .error,
 .labkey-error {
-  padding: 15px;
-  margin-bottom: 20px;
-  border: 1px solid $lk-state-danger-border;
-  background-color: $lk-state-danger-bg;
+  // TOOD: Need to determine style strategy for labkey-error vs alert-danger
+  //padding: 15px;
+  //margin-bottom: 20px;
+  //border: 1px solid $lk-state-danger-border;
+  //background-color: $lk-state-danger-bg;
   color: $lk-state-danger-text;
 }
 

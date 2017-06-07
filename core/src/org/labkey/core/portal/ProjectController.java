@@ -100,6 +100,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -1456,7 +1457,7 @@ public class ProjectController extends SpringActionController
                 {
                     list = ids.stream()
                             .map(ContainerManager::getForId)
-                            .filter(ct -> null != ct)
+                            .filter(Objects::nonNull)
                             .collect(Collectors.toList());
                 }
                 list.sort((c1, c2) -> {

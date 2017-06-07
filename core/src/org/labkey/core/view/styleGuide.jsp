@@ -16,6 +16,9 @@
      */
 %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.util.element.Input" %>
+<%@ page import="org.labkey.api.util.element.Select" %>
+<%@ page import="org.labkey.api.util.element.Option" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -165,10 +168,18 @@
         <h1 class="page-header">Forms</h1>
         <p>Horizontal form</p>
         <div class="lk-sg-example">
-            <labkey:form action="some-action" className="form-horizontal">
+            <labkey:form action="some-action" layout="horizontal">
                 <labkey:input name="name" label="Name" placeholder="M Beaker" id="exampleInputName1"/>
-                <labkey:input name="email" label="Email address" placeholder="beaker@labkey.com" id="exampleInputName1"/>
+                <labkey:input name="email" label="Email address" placeholder="beaker@labkey.com" id="exampleInputEmail1"/>
                 <labkey:input name="avatar" label="Avatar" type="file" id="avatar1" message="A special message about the avatar field"/>
+                <labkey:input name="somtext" label="This Area" type="textarea" id="area1" placeholder="These are words"/>
+                <% /* This is an example of a select builder -- hopefully can be replaced soon with a <labkey:select> */ %>
+                <%= new Select.SelectBuilder().name("selectfield").label("Nominal select")
+                        .layout(Input.Layout.HORIZONTAL)
+                        .formGroup(true)
+                        .addOption(new Option.OptionBuilder().build())
+                        .addOption(new Option.OptionBuilder().value("BMW").label("Beemer").build())
+                %>
                 <button type="submit" class="btn btn-default">Invite</button>
             </labkey:form>
         </div>
@@ -185,9 +196,9 @@
                 </div>
                 <button type="submit" class="btn btn-default">Invite</button>
             </form>
-            <labkey:form action="some-action" className="form-inline">
+            <labkey:form action="some-action" layout="inline">
                 <labkey:input name="name" label="Name" placeholder="M Beaker" id="exampleInputName2"/>
-                <labkey:input name="email" label="Email address" placeholder="beaker@labkey.com" id="exampleInputName2" type="email"/>
+                <labkey:input name="email" label="Email address" placeholder="beaker@labkey.com" id="exampleInputEmail2" type="email"/>
                 <button type="submit" class="btn btn-default">Invite</button>
             </labkey:form>
         </div>
