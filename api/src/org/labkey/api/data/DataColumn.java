@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
@@ -31,15 +32,20 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.element.Input;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.element.Option;
+import org.labkey.api.util.element.Select;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.util.element.TextArea;
 import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -408,6 +414,7 @@ public class DataColumn extends DisplayColumn
         return "Formatting Details";
     }
 
+    @Nullable
     private ConditionalFormat findApplicableFormat(RenderContext ctx)
     {
         if (getBoundColumn() == null)
@@ -539,8 +546,7 @@ public class DataColumn extends DisplayColumn
 
         boolean disabledInput = isDisabledInput();
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
-        String formFieldName = getFormFieldName(ctx);
-        String inputCls = newUI ? "form-control" : "";
+        final String formFieldName = getFormFieldName(ctx);
 
         if (newUI)
             out.write("<div class=\"col-sm-9 col-lg-10\">");
@@ -581,67 +587,137 @@ public class DataColumn extends DisplayColumn
             NamedObject[] entries = entryList.toArray();
             String valueStr = ConvertUtils.convert(value);
 
-            out.write("<select class=\"" + inputCls + "\"");
-            outputName(ctx, out, formFieldName);
-            if (disabledInput)
-                out.write(" DISABLED");
-            if (_inputType.equalsIgnoreCase("select.multiple"))
-                out.write(" multiple");
-            out.write(">\n");
-            out.write("<option value=\"\"></option>");
-            for (NamedObject entry : entries)
+            if (newUI)
             {
-                String entryName = entry.getName();
-                out.write("  <option value=\"");
-                out.write(PageFlowUtil.filter(entryName));
-                out.write("\"");
-                if (isSelectInputSelected(entryName, value, valueStr))
-                    out.write(" selected");
-                out.write(">");
-                if (null != entry.getObject())
-                    out.write(PageFlowUtil.filter(getSelectInputDisplayValue(entry)));
-                out.write("</option>\n");
+                Select.SelectBuilder select = new Select.SelectBuilder()
+                        .disabled(disabledInput)
+                        .multiple("select.multiple".equalsIgnoreCase(_inputType))
+                        .name(getInputPrefix() + formFieldName);
+
+                List<Option> options = new ArrayList<>();
+
+                // add empty option
+                options.add(new Option.OptionBuilder().build());
+
+                for (NamedObject entry : entries)
+                {
+                    String entryName = entry.getName();
+                    Option.OptionBuilder option = new Option.OptionBuilder()
+                            .selected(isSelectInputSelected(entryName, value, valueStr))
+                            .value(entryName);
+
+                    if (null != entry.getObject())
+                        option.label(getSelectInputDisplayValue(entry));
+
+                    options.add(option.build());
+                }
+
+                out.write(select.addOptions(options).toString());
             }
-            out.write("</select>");
+            else
+            {
+                out.write("<select");
+                outputName(ctx, out, formFieldName);
+                if (disabledInput)
+                    out.write(" DISABLED");
+                if (_inputType.equalsIgnoreCase("select.multiple"))
+                    out.write(" multiple");
+                out.write(">\n");
+                out.write("<option value=\"\"></option>");
+                for (NamedObject entry : entries)
+                {
+                    String entryName = entry.getName();
+                    out.write("  <option value=\"");
+                    out.write(PageFlowUtil.filter(entryName));
+                    out.write("\"");
+                    if (isSelectInputSelected(entryName, value, valueStr))
+                        out.write(" selected");
+                    out.write(">");
+                    if (null != entry.getObject())
+                        out.write(PageFlowUtil.filter(getSelectInputDisplayValue(entry)));
+                    out.write("</option>\n");
+                }
+                out.write("</select>");
+            }
             // disabled inputs are not posted with the form, so we output a hidden form element:
             if (disabledInput)
                 renderHiddenFormInput(ctx, out, formFieldName, value);
         }
         else if (_inputType.equalsIgnoreCase("textarea"))
         {
-            out.write("<textarea class=\"" + inputCls + "\" cols='");
-            out.write(String.valueOf(_inputLength));
-            out.write("' rows='");
-            out.write(String.valueOf(_inputRows));
-            out.write("'");
-            outputName(ctx, out, formFieldName);
-            if (disabledInput)
-                out.write(" DISABLED");
-            out.write(">");
-            out.write(PageFlowUtil.filter(strVal));
-            out.write("</textarea>\n");
+            if (newUI)
+            {
+                TextArea.TextAreaBuilder input = new TextArea.TextAreaBuilder()
+                        .columns(_inputLength)
+                        .rows(_inputRows)
+                        .name(getInputPrefix() + formFieldName)
+                        .disabled(disabledInput);
+
+                out.write(input.build().toString());
+            }
+            else
+            {
+                out.write("<textarea cols=\"");
+                out.write(String.valueOf(_inputLength));
+                out.write("\" rows=\"");
+                out.write(String.valueOf(_inputRows));
+                out.write("\"");
+                outputName(ctx, out, formFieldName);
+                if (disabledInput)
+                    out.write(" DISABLED");
+                out.write(">");
+                out.write(PageFlowUtil.filter(strVal));
+                out.write("</textarea>\n");
+            }
             // disabled inputs are not posted with the form, so we output a hidden form element:
             if (disabledInput)
                 renderHiddenFormInput(ctx, out, formFieldName, value);
         }
         else if (_inputType.equalsIgnoreCase("file"))
         {
-            out.write("<input class=\"" + inputCls + "\"");
-            outputName(ctx, out, formFieldName);
-            if (disabledInput)
-                out.write(" DISABLED");
-            out.write(" type=\"file\">\n");
+            if (newUI)
+            {
+                Input.InputBuilder input = new Input.InputBuilder()
+                        .type("file")
+                        .name(getInputPrefix() + formFieldName)
+                        .disabled(disabledInput);
+
+                out.write(input.build().toString());
+            }
+            else
+            {
+                out.write("<input");
+                outputName(ctx, out, formFieldName);
+                if (disabledInput)
+                    out.write(" DISABLED");
+                out.write(" type=\"file\">\n");
+            }
         }
         else if (_inputType.equalsIgnoreCase("checkbox"))
         {
             boolean checked = ColumnInfo.booleanFromObj(ConvertUtils.convert(value));
-            out.write("<input type=\"checkbox\"");
-            if (checked)
-                out.write(" CHECKED");
-            if (disabledInput)
-                out.write(" DISABLED");
-            outputName(ctx, out, formFieldName);
-            out.write(" value=\"1\">");
+
+            if (newUI)
+            {
+                Input.InputBuilder input = new Input.InputBuilder()
+                        .type("checkbox")
+                        .name(getInputPrefix() + formFieldName)
+                        .disabled(disabledInput)
+                        .value("1");
+
+                out.write(input.build().toString());
+            }
+            else
+            {
+                out.write("<input type=\"checkbox\"");
+                if (checked)
+                    out.write(" CHECKED");
+                if (disabledInput)
+                    out.write(" DISABLED");
+                outputName(ctx, out, formFieldName);
+                out.write(" value=\"1\">");
+            }
+
             /*
              * Checkboxes are weird. If set to FALSE they don't post at all, so it's impossible to tell
              * the difference between values that weren't on the html form at all and ones that were set
@@ -688,16 +764,27 @@ public class DataColumn extends DisplayColumn
             }
             else
             {
-                out.write("<input class=\"" + inputCls + "\" type=\"text\" size=\"");
-                out.write(Integer.toString(_inputLength));
-                out.write("\"");
-                outputName(ctx, out, formFieldName);
-                if (disabledInput)
-                    out.write(" DISABLED");
-                out.write(" value=\"");
-                out.write(PageFlowUtil.filter(strVal));
-                out.write("\"");
-                out.write(">");
+                if (newUI)
+                {
+                    Input.InputBuilder input = new Input.InputBuilder()
+                            .name(getInputPrefix() + formFieldName)
+                            .disabled(disabledInput);
+
+                    out.write(input.build().toString());
+                }
+                else
+                {
+                    out.write("<input type=\"text\" size=\"");
+                    out.write(Integer.toString(_inputLength));
+                    out.write("\"");
+                    outputName(ctx, out, formFieldName);
+                    if (disabledInput)
+                        out.write(" DISABLED");
+                    out.write(" value=\"");
+                    out.write(PageFlowUtil.filter(strVal));
+                    out.write("\"");
+                    out.write(">");
+                }
                 // disabled inputs are not posted with the form, so we output a hidden form element:
                 if (disabledInput)
                     renderHiddenFormInput(ctx, out, formFieldName, value);

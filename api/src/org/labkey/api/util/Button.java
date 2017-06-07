@@ -35,19 +35,19 @@ public class Button
     private static final String MENU_CLS = "labkey-menu-button";
 
     // Composable members
-    private String cssClass;
-    private String iconCls;
-    private String text; // required
-    private String href;
-    private String onClick;
-    private String id;
-    private String attributes;
-    private String tooltip;
-    private boolean disableOnClick;
-    private boolean dropdown;
-    private boolean enabled = true;
-    private boolean submit;
-    private boolean textAsHTML;
+    private final String cssClass;
+    private final String iconCls;
+    private final String text; // required
+    private final String href;
+    private final String onClick;
+    private final String id;
+    private final String attributes;
+    private final String tooltip;
+    private final boolean disableOnClick;
+    private final boolean dropdown;
+    private final boolean enabled;
+    private final boolean submit;
+    private final boolean textAsHTML;
 
     private Button(ButtonBuilder builder)
     {

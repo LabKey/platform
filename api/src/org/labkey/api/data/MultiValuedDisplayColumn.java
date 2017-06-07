@@ -209,15 +209,8 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
-    {
-        super.renderInputHtml(ctx, out, value);
-    }
-
-    @Override
     public Object getInputValue(RenderContext ctx)
     {
         return values(ctx, super::getInputValue);
     }
-
 }

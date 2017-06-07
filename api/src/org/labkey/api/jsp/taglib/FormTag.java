@@ -19,6 +19,7 @@ package org.labkey.api.jsp.taglib;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.element.Input;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HttpView;
@@ -30,22 +31,15 @@ import java.io.IOException;
 
 public class FormTag extends BodyTagSupport
 {
-    private String name=null;
+    private String name;
     private String method="GET";
-    private Object action=null;
-    private String enctype = null;
-    private String target=null;
-    private String onsubmit=null;
-    private String style=null;
-    private String _class=null;
-
-    private int labelMd = 3;
-    private int labelLg = 2;
-
-    public String getName()
-    {
-        return name;
-    }
+    private Object action;
+    private String enctype;
+    private String target;
+    private String onsubmit;
+    private String style;
+    private String _class;
+    private String _layout;
 
     public void setName(String name)
     {
@@ -127,24 +121,14 @@ public class FormTag extends BodyTagSupport
         _class = aClass;
     }
 
-    public int getLabelMd()
+    public String getLayout()
     {
-        return labelMd;
+        return _layout;
     }
 
-    public void setLabelMd(int labelMd)
+    public void setLayout(String layout)
     {
-        this.labelMd = labelMd;
-    }
-
-    public int getLabelLg()
-    {
-        return labelLg;
-    }
-
-    public void setLabelLg(int labelLg)
-    {
-        this.labelLg = labelLg;
+        _layout = layout;
     }
 
     public int doStartTag() throws JspException
@@ -183,8 +167,20 @@ public class FormTag extends BodyTagSupport
             sb.append(" onsubmit=\"").append(onsubmit).append("\"");
         if (StringUtils.isNotEmpty(style))
             sb.append(" style=\"").append(style).append("\"");
+
+        String cls = "";
         if (StringUtils.isNotEmpty(_class))
-            sb.append(" class=\"").append(_class).append("\"");
+            cls += " " + _class;
+        if (getLayout() != null)
+        {
+            if (Input.Layout.HORIZONTAL.toString().equalsIgnoreCase(getLayout()))
+                cls += " form-horizontal";
+            else if (Input.Layout.INLINE.toString().equalsIgnoreCase(getLayout()))
+                cls += " form-inline";
+        }
+
+        if (StringUtils.isNotEmpty(cls))
+            sb.append(" class=\"").append(cls).append("\"");
         sb.append(">");
         try
         {
@@ -205,7 +201,7 @@ public class FormTag extends BodyTagSupport
             String csrf = CSRFUtil.getExpectedToken(pageContext);
             if (StringUtils.equals("POST", method))
             {
-                pageContext.getOut().write("<input type=hidden name='" + CSRFUtil.csrfName + "' value='" + PageFlowUtil.filter(csrf) + "'>");
+                pageContext.getOut().write("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"" + PageFlowUtil.filter(csrf) + "\">");
             }
             pageContext.getOut().write("</form>");
         }

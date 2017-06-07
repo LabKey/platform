@@ -209,6 +209,10 @@
             <rtexprvalue>true</rtexprvalue>
         </attribute>
         <attribute>
+            <name>layout</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
             <name>target</name>
             <rtexprvalue>true</rtexprvalue>
         </attribute>

@@ -1,0 +1,89 @@
+package org.labkey.api.util.element;
+
+import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.util.PageFlowUtil;
+
+public class TextArea extends Input
+{
+    private final int _columns;
+    private final int _rows;
+
+    private TextArea(TextAreaBuilder builder)
+    {
+        super(builder);
+        _columns = builder._columns == null ? -1 : builder._columns;
+        _rows = builder._rows == null ? -1 : builder._rows;
+    }
+
+    public int getColumns()
+    {
+        return _columns;
+    }
+
+    public int getRows()
+    {
+        return _rows;
+    }
+
+    @Override
+    protected void doInput(StringBuilder sb)
+    {
+        sb.append("<textarea")
+                .append(" name=\"").append(getName()).append("\"");
+
+        if (getColumns() != -1)
+            sb.append(" columns=\"").append(getColumns()).append("\"");
+        if (getRows() != -1)
+            sb.append(" rows=\"").append(getRows()).append("\"");
+
+        if (StringUtils.isNotEmpty(getId()))
+            sb.append(" id=\"").append(getId()).append("\"");
+        if (StringUtils.isNotEmpty(getClassName()))
+            sb.append(" class=\"").append(PageFlowUtil.filter(getClassName())).append("\"");
+        if (StringUtils.isNotEmpty(getPlaceholder()))
+            sb.append(" placeholder=\"").append(PageFlowUtil.filter(getPlaceholder())).append("\"");
+
+        doInputEvents(sb);
+
+        if (isDisabled())
+            sb.append(" disabled");
+
+        sb.append(">");
+
+        doValue(sb);
+
+        sb.append("</textarea>");
+    }
+
+    @Override
+    protected void doValue(StringBuilder sb)
+    {
+        if (getValue() != null && !"".equals(getValue()))
+        {
+            sb.append(PageFlowUtil.filter(getValue()));
+        }
+    }
+
+    public static class TextAreaBuilder extends InputBuilder<TextAreaBuilder>
+    {
+        private Integer _columns;
+        private Integer _rows;
+
+        public TextAreaBuilder columns(Integer columns)
+        {
+            _columns = columns;
+            return this;
+        }
+
+        public TextAreaBuilder rows(Integer rows)
+        {
+            _rows = rows;
+            return this;
+        }
+
+        public TextArea build()
+        {
+            return new TextArea(this);
+        }
+    }
+}

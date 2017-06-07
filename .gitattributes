@@ -1600,6 +1600,10 @@ api/src/org/labkey/api/util/WebPartErrorRenderer.java -text
 api/src/org/labkey/api/util/XMLFileType.java -text
 api/src/org/labkey/api/util/XmlBeansUtil.java -text
 api/src/org/labkey/api/util/XmlValidationException.java -text
+api/src/org/labkey/api/util/element/Input.java -text
+api/src/org/labkey/api/util/element/Option.java -text
+api/src/org/labkey/api/util/element/Select.java -text
+api/src/org/labkey/api/util/element/TextArea.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplate.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplateService.java -text
 api/src/org/labkey/api/util/emailTemplate/UserOriginatedEmailTemplate.java -text

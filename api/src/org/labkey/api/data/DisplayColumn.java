@@ -25,6 +25,7 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.element.Input;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -165,6 +166,7 @@ public abstract class DisplayColumn extends RenderColumn
         return _urlTitle;
     }
 
+    @Nullable
     public String renderURLTitle(RenderContext ctx)
     {
         if (_urlTitleCompiled == null)
@@ -1123,17 +1125,28 @@ public abstract class DisplayColumn extends RenderColumn
 
     protected void renderHiddenFormInput(RenderContext ctx, Writer out, String formFieldName, Object value) throws IOException
     {
-        out.write("<input type=hidden");
-        outputName(ctx, out, formFieldName);
-        out.write(" value=\"");
-        if (null != value)
+        if (PageFlowUtil.useExperimentalCoreUI())
         {
-            // it's important to use ConvertUtils here, since 'value' might be a string (if populated via
-            // an initial values map), or it might be an array containing a single string (if populated via
-            // request.getParameterMap() during an error reshow).  ConvertUtils normalizes these values.
-            out.write(PageFlowUtil.filter(ConvertUtils.convert(value)));
+            out.write(new Input.InputBuilder()
+                    .name(getInputPrefix() + formFieldName)
+                    .type("hidden")
+                    .value(value)
+                    .toString());
         }
-        out.write("\">");
+        else
+        {
+            out.write("<input type=\"hidden\"");
+            outputName(ctx, out, formFieldName);
+            out.write(" value=\"");
+            if (null != value)
+            {
+                // it's important to use ConvertUtils here, since 'value' might be a string (if populated via
+                // an initial values map), or it might be an array containing a single string (if populated via
+                // request.getParameterMap() during an error reshow).  ConvertUtils normalizes these values.
+                out.write(PageFlowUtil.filter(ConvertUtils.convert(value)));
+            }
+            out.write("\">");
+        }
     }
 
     public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
