@@ -399,7 +399,7 @@
         {
             if (LABKEY.user.id && null === _websocket && 'WebSocket' in window)
             {
-                _websocket = new WebSocket("ws://" + window.location.host + LABKEY.contextPath + "/_websocket/notifications");
+                _websocket = new WebSocket((window.location.protocol==="http:"?"ws:":"wss:") + "//" + window.location.host + LABKEY.contextPath + "/_websocket/notifications");
                 _websocket.onmessage = function(evt)
                 {
                     var json = JSON.parse(evt.data);
