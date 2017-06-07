@@ -163,6 +163,36 @@ public enum LsidType
                 {
                     return ExperimentService.get().getExpMaterial(lsid.toString());
                 }
+            },
+
+    DataInput
+            {
+                @Override
+                public Identifiable getObject(Lsid lsid)
+                {
+                    return ExperimentService.get().getDataInput(lsid);
+                }
+
+                @Override
+                public @Nullable ActionURL getDisplayURL(Lsid lsid)
+                {
+                    return null;
+                }
+            },
+
+    MaterialInput
+            {
+                @Override
+                public Identifiable getObject(Lsid lsid)
+                {
+                    return ExperimentService.get().getMaterialInput(lsid);
+                }
+
+                @Override
+                public @Nullable ActionURL getDisplayURL(Lsid lsid)
+                {
+                    return null;
+                }
             };
 
     public abstract Identifiable getObject(Lsid lsid);

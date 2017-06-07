@@ -31,11 +31,15 @@ public interface ExpProtocolApplication extends ExpObject
     @NotNull
     List<? extends ExpDataRunInput> getDataInputs();
     @NotNull
+    List<? extends ExpDataRunInput> getDataOutputs();
+    @NotNull
     List<? extends ExpData> getInputDatas();
     @NotNull
     List<? extends ExpData> getOutputDatas();
     @NotNull
     List<? extends ExpMaterialRunInput> getMaterialInputs();
+    @NotNull
+    List<? extends ExpMaterialRunInput> getMaterialOutputs();
     @NotNull
     List<? extends ExpMaterial> getInputMaterials();
 
@@ -47,10 +51,17 @@ public interface ExpProtocolApplication extends ExpObject
     /**
      * Add a data input
      * @param inputRole optional argument specifying the input role name
+     * @return the newly inserted DataInput edge
      */
-    void addDataInput(User user, ExpData input, String inputRole);
+    @NotNull ExpDataRunInput addDataInput(User user, ExpData input, String inputRole);
     void removeDataInput(User user, ExpData data);
-    void addMaterialInput(User user, ExpMaterial material, @Nullable String inputRole);
+
+    /**
+     * Add a material input
+     * @param inputRole optional argument specifying the input role name
+     * @return the newly inserted MaterialInput edge
+     */
+    @NotNull ExpMaterialRunInput addMaterialInput(User user, ExpMaterial material, @Nullable String inputRole);
     void removeMaterialInput(User user, ExpMaterial material);
 
     ExpRun getRun();

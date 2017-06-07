@@ -27,5 +27,6 @@ public interface ExpMaterialInputTable extends ExpInputTable<ExpMaterialInputTab
         Material,
         TargetProtocolApplication,
         Role,
+        LSID
     }
 }

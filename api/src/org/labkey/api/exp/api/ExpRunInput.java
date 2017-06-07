@@ -20,7 +20,7 @@ package org.labkey.api.exp.api;
  * User: jeckels
  * Date: Oct 31, 2008
  */
-public interface ExpRunInput
+public interface ExpRunInput extends ExpObject
 {
     ExpProtocolApplication getTargetApplication();
     String getRole();

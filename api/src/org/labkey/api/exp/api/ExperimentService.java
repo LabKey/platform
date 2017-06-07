@@ -242,6 +242,18 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     Set<String> getMaterialInputRoles(Container container, ExpProtocol.ApplicationType... type);
 
+    /**
+     * Get the DataInput edge between the dataId and the protocolApplication.
+     */
+    @Nullable ExpDataRunInput getDataInput(int dataId, int targetProtocolApplicationId);
+    @Nullable ExpDataRunInput getDataInput(Lsid lsid);
+
+    /**
+     * Get the MaterialInput edge between the materialId and the protocolApplication.
+     */
+    @Nullable ExpMaterialRunInput getMaterialInput(int materialId, int targetProtocolApplicationId);
+    @Nullable ExpMaterialRunInput getMaterialInput(Lsid lsid);
+
     Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpProtocolOutput start);
     Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpProtocolOutput start);
 
