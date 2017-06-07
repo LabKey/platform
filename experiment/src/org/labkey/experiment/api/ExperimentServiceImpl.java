@@ -112,6 +112,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
@@ -160,9 +161,11 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 public class ExperimentServiceImpl implements ExperimentService
@@ -2107,6 +2110,7 @@ public class ExperimentServiceImpl implements ExperimentService
     MaterializedQueryHelper materializedNodes = null;
     MaterializedQueryHelper materializedEdges = null;
     final Object initEdgesLock = new Object();
+    public final AtomicLong expLineageCounter = new AtomicLong();
 
     public void uncacheEdges()
     {
@@ -2116,6 +2120,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 materializedNodes.uncache(null);
             if (null != materializedEdges)
                 materializedEdges.uncache(null);
+            getExpSchema().getScope().addCommitTask(() -> expLineageCounter.incrementAndGet(), POSTCOMMIT);
         }
     }
 
@@ -2139,15 +2144,14 @@ public class ExperimentServiceImpl implements ExperimentService
                         "'/'",
                         "(select coalesce(cast(max(rowid) as varchar(40)),'-') from exp.experimentrun)") + " AS \"key\"";
 
-                materializedNodes = MaterializedQueryHelper.create( "exp_nodes",
-                        getExpSchema().getScope(),
-                        new SQLFragment(selectNodes),
-                        new SQLFragment(materializeKeySql),
-                        Arrays.asList(
-                                "CREATE INDEX node_lsid_${NAME} ON temp.${NAME}  (lsid)"
-                        ),
-                        CacheManager.MINUTE
-                );
+                materializedNodes = (new MaterializedQueryHelper.Builder( "exp_nodes", getExpSchema().getScope(), new SQLFragment(selectNodes)))
+                        .upToDateSql(new SQLFragment(materializeKeySql))
+                        .addIndex("CREATE INDEX node_lsid_${NAME} ON temp.${NAME}  (lsid)")
+                        .maxTimeToCache(CacheManager.HOUR)
+                        .addInvalidCheck(() -> String.valueOf(expLineageCounter.get()))
+                        .build();
+                assert MemTracker.get().remove(materializedNodes);
+                CacheManager.addListener(materializedNodes);
             }
         }
 
@@ -2183,8 +2187,10 @@ public class ExperimentServiceImpl implements ExperimentService
                                "CREATE INDEX child_${NAME} ON temp.${NAME}  (child_lsid, parent_lsid, child_pathpart, parent_pathpart, role)",
                                "CREATE INDEX parent_${NAME} ON temp.${NAME}  (parent_lsid, child_lsid, parent_pathpart, child_pathpart, role)"
                         ),
-                        CacheManager.MINUTE
+                        CacheManager.HOUR
                         );
+                assert MemTracker.get().remove(materializedEdges);
+                CacheManager.addListener(materializedEdges);
             }
         }
 
@@ -3042,7 +3048,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 {
                     uncacheProtocol(protocol);
                 }
-            }, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.IMMEDIATE);
+            }, POSTCOMMIT, DbScope.CommitTaskOption.IMMEDIATE);
 
             transaction.commit();
         }
@@ -3723,7 +3729,7 @@ public class ExperimentServiceImpl implements ExperimentService
             executor.execute("DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE MaterialSourceLSID = ?", source.getLSID());
             executor.execute("DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
 
-            transaction.addCommitTask(() -> uncacheMaterialSource(source.getDataObject()), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
+            transaction.addCommitTask(() -> uncacheMaterialSource(source.getDataObject()), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT);
             transaction.commit();
         }
         SchemaKey samplesSchema = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
@@ -4218,7 +4224,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 // Be sure that we clear the cache after we commit the overall transaction, in case it
                 // gets repopulated by another thread before then
                 AssayService.get().clearProtocolCache();
-            }, DbScope.CommitTaskOption.POSTCOMMIT);
+            }, POSTCOMMIT);
 
             transaction.commit();
             return result;
