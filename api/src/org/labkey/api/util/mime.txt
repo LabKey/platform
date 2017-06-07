@@ -492,6 +492,7 @@ list	text/plain
 log	text/plain
 lst	text/plain
 mar	text/plain
+md text/markdown
 properties	text/plain
 sdml	text/plain
 sql	text/plain
