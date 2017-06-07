@@ -121,6 +121,8 @@ public interface AppProps
 
     ActionURL getHomePageActionURL();
 
+    String getSiteWelcomePageUrlString();
+
     int getLookAndFeelRevision();
 
     String getDefaultLsidAuthority();

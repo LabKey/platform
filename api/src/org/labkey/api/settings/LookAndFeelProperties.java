@@ -50,6 +50,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     protected static final String DATE_PARSING_MODE = "dateParsingMode";
     protected static final String CUSTOM_LOGIN_PROP = "customLogin";
+    protected static final String CUSTOM_WELCOME_PROP = "customWelcome";
 
     private final Container _settingsContainer;
 
@@ -196,6 +197,11 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     public String getCustomLogin()
     {
         return lookupStringValue(CUSTOM_LOGIN_PROP, "login-login");
+    }
+
+    public String getCustomWelcome()
+    {
+        return lookupStringValue(CUSTOM_WELCOME_PROP, null);
     }
 
     public DateParsingMode getDateParsingMode()

@@ -18,6 +18,7 @@ package org.labkey.api.settings;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.RootContainerException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
@@ -214,6 +215,11 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     {
         //noinspection ConstantConditions
         return PageFlowUtil.urlProvider(ProjectUrls.class).getHomeURL();
+    }
+
+    public String getSiteWelcomePageUrlString()
+    {
+        return StringUtils.trimToNull(LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getCustomWelcome());
     }
 
     public int getLookAndFeelRevision()

@@ -15,10 +15,12 @@
  */
 package org.labkey.api.settings;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.FolderDisplayMode;
+import org.labkey.api.view.ActionURL;
 
 import static org.labkey.api.settings.LookAndFeelProperties.*;
 
@@ -129,4 +131,24 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         storeStringValue(CUSTOM_LOGIN_PROP, customLogin);
     }
 
+    public void setCustomWelcome(String customWelcome)
+    {
+        storeStringValue(CUSTOM_WELCOME_PROP, customWelcome);
+    }
+
+    public boolean isValidUrl(String url)
+    {
+        if (StringUtils.isEmpty(url))
+        {
+            return true;
+        }
+
+        ActionURL actionURL = new ActionURL(url);
+        if (StringUtils.isEmpty(actionURL.getAction()) || StringUtils.isEmpty(actionURL.getController()))
+        {
+            return false;
+        }
+
+        return true;
+    }
 }
