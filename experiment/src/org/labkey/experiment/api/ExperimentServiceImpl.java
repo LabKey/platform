@@ -3096,7 +3096,8 @@ public class ExperimentServiceImpl implements ExperimentService
 
             // Delete MaterialInput exp.object and properties
             SQLFragment inputObjects = new SQLFragment("SELECT ")
-                    .append(dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'", "mi.materialId", "'.'", "mi.targetApplicationId"))
+                    .append(dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'",
+                            "CAST(mi.materialId AS VARCHAR)", "'.'", "CAST(mi.targetApplicationId AS VARCHAR)"))
                     .append(" FROM ").append(getTinfoMaterialInput(), "mi").append(" WHERE mi.materialId ");
             dialect.appendInClauseSql(inputObjects, selectedMaterialIds);
             OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container, false);
@@ -3163,7 +3164,8 @@ public class ExperimentServiceImpl implements ExperimentService
 
             // Delete DataInput exp.object and properties
             SQLFragment inputObjects = new SQLFragment("SELECT ")
-                    .append(dialect.concatenate("'" + DataInput.lsidPrefix() + "'", "di.dataId", "'.'", "di.targetApplicationId"))
+                    .append(dialect.concatenate("'" + DataInput.lsidPrefix() + "'",
+                            "CAST(di.dataId AS VARCHAR)", "'.'", "CAST(di.targetApplicationId AS VARCHAR)"))
                     .append(" FROM ").append(getTinfoDataInput(), "di").append(" WHERE di.DataId ");
             dialect.appendInClauseSql(inputObjects, selectedDataIds);
             OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container, false);

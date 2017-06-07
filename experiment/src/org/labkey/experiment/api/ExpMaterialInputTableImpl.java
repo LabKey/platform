@@ -59,7 +59,12 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
             {
                 final SqlDialect dialect = getSqlDialect();
                 SQLFragment sql = new SQLFragment("" +
-                        dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'", ExprColumn.STR_TABLE_ALIAS + ".materialId", "'.'", ExprColumn.STR_TABLE_ALIAS + ".targetApplicationId"));
+                        dialect.concatenate(
+                                "'" + MaterialInput.lsidPrefix() + "'",
+                                "CAST(" + ExprColumn.STR_TABLE_ALIAS + ".materialId AS VARCHAR)",
+                                "'.'",
+                                "CAST(" + ExprColumn.STR_TABLE_ALIAS + ".targetApplicationId AS VARCHAR)"));
+
                 ColumnInfo col = new ExprColumn(this, alias, sql, JdbcType.VARCHAR);
                 col.setHidden(true);
                 col.setCalculated(true);

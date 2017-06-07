@@ -278,11 +278,13 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
 
             // Clean up DataInput and MaterialInput exp.object and properties
             OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
-                    dialect.concatenate("'" + DataInput.lsidPrefix() + "'", "dataId", "'.'", "targetApplicationId") +
+                    dialect.concatenate("'" + DataInput.lsidPrefix() + "'",
+                            "CAST(dataId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
                     " FROM " + svc.getTinfoDataInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer(), false);
 
             OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
-                    dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'", "materialId", "'.'", "targetApplicationId") +
+                    dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'",
+                            "CAST(materialId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
                     " FROM " + svc.getTinfoMaterialInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer(), false);
 
             long countInputs = 0;
