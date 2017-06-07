@@ -22,8 +22,13 @@ package org.labkey.core.webdav;
  * Time: 2:03:32 PM
  */
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
+import org.apache.log4j.Logger;
 import org.labkey.api.miniprofiler.RequestInfo;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -33,12 +38,14 @@ import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 
 public class WebdavServlet extends HttpServlet
@@ -88,6 +95,27 @@ public class WebdavServlet extends HttpServlet
                     return;
                 }
             }
+        }
+
+        if ("GET".equals(method) && "/".equals(fullPath) && AppProps.getInstance().getSiteWelcomePageUrlString() != null)
+        {
+            try
+            {
+                URLHelper url = new URLHelper(AppProps.getInstance().getSiteWelcomePageUrlString());
+                Path path = url.getParsedPath();
+                if (!AppProps.getInstance().getContextPath().isEmpty() && path.startsWith(AppProps.getInstance().getParsedContextPath()))
+                    path = path.subpath(1, path.size());
+                String queryString = StringUtils.trimToEmpty(url.getQueryString());
+                RequestDispatcher r = request.getRequestDispatcher(path.toString("/", null) + queryString);
+                r.forward(request, response);
+                if (response.getStatus() != HttpStatus.SC_NOT_FOUND)
+                    return;
+            }
+            catch (URISyntaxException e)
+            {
+            }
+            Logger.getRootLogger().error("Improper welcome URL: " + AppProps.getInstance().getSiteWelcomePageUrlString());
+            try {response.reset();}catch(IllegalStateException x){/*pass*/}
         }
 
         ActionURL dispatchUrl = new ActionURL("/" + DavController.name + "/" + method.toLowerCase() + ".view");

@@ -40,6 +40,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.DateParsingMode;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
@@ -189,7 +190,20 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                 return false;
             }
 
+            if (!props.isValidUrl(form.getCustomLogin()))
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Invalid login URL.  Should be in the form <module>-<name>.");
+                return false;
+            }
             props.setCustomLogin(form.getCustomLogin());
+
+            String welcomeUrl = StringUtils.trimToNull(form.getCustomWelcome());
+            if ("/".equals(welcomeUrl) || AppProps.getInstance().getContextPath().equalsIgnoreCase(welcomeUrl))
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Invalid welcome URL.  The url cannot equal '/' or the contextPath (" + AppProps.getInstance().getContextPath() + ")");
+                return false;
+            }
+            props.setCustomWelcome(welcomeUrl);
         }
 
         props.setCompanyName(form.getCompanyName());
@@ -523,6 +537,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
     private static abstract class LookAndFeelBean
     {
         public final String helpLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
+        public final String welcomeLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
         public final String customColumnRestrictionHelpLink = new HelpTopic("chartTrouble").getSimpleLinkHtml("more info...");
     }
 

@@ -1319,6 +1319,7 @@ public class AdminController extends SpringActionController
         private String _defaultNumberFormat;
         private boolean _restrictedColumnsEnabled;
         private String _customLogin;
+        private String _customWelcome;
 
         public enum FileRootProp
         {
@@ -1468,6 +1469,17 @@ public class AdminController extends SpringActionController
         public void setCustomLogin(String customLogin)
         {
             _customLogin = customLogin;
+        }
+
+        public String getCustomWelcome()
+        {
+            return _customWelcome;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setCustomWelcome(String customWelcome)
+        {
+            _customWelcome = customWelcome;
         }
 
         public String getSystemEmailAddress()
@@ -5309,7 +5321,10 @@ public class AdminController extends SpringActionController
                     list.add(m);
                 }
             }
-            return new ApiSimpleResponse("events", list);
+            ApiSimpleResponse res = new ApiSimpleResponse();
+            res.put("success", true);
+            res.put("events", list);
+            return res;
         }
     }
 
