@@ -359,7 +359,6 @@
                 {
                     if (response.success)
                     {
-                        console.log(JSON.stringify(response));
                         LABKEY.notifications = response.notifications;
                         _notificationsUpdatedCallbacks.forEach(function(cb){cb();});
                     }
