@@ -735,29 +735,14 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     valueMissing = false;
                 }
 
-                // UNDONE: Move this check into OntologyManager.insertTabDelimeted
-                // For security reasons, make sure the user hasn't tried to reference a file that's not under
-                // the pipeline root. Otherwise, they could get access to any file on the server
-                if (o instanceof File)
+                File resolvedFile = AssayUploadFileResolver.resolve(o, container, pd);
+                if (resolvedFile != null)
                 {
-                    File file = (File)o;
-                    PipeRoot root = PipelineService.get().findPipelineRoot(container);
-                    if (root == null)
-                    {
-                        throw new ValidationException("Pipeline root not available in container " + container);
-                    }
+                    o = resolvedFile;
 
-                    if (!root.isUnderRoot(file))
-                    {
-                        File resolved = root.resolvePath(file.toString());
-                        if (resolved == null)
-                            throw new ValidationException("Cannot reference file " + file + " from container " + container);
-                        o = resolved;
-
-                        // File column values are stored as the absolute resolved path
-                        map.put(pd.getName(), o);
-                        iter.set(map);
-                    }
+                    // File column values are stored as the absolute resolved path
+                    map.put(pd.getName(), o);
+                    iter.set(map);
                 }
 
                 // If we have a String value for a lookup column, attempt to use the table's unique indices or display value to convert the String into the lookup value

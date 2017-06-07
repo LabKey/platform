@@ -305,10 +305,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     List<ValidationError> errors = validateProperties(context, props);
                     if (!errors.isEmpty())
                         throw new ValidationException(errors);
-                    savePropertyObject(batch, props, context.getUser());
+                    savePropertyObject(batch, context.getContainer(), props, context.getUser());
                 }
                 else
-                    savePropertyObject(batch, batchProperties, context.getUser());
+                    savePropertyObject(batch, context.getContainer(), batchProperties, context.getUser());
             }
 
             if (null != transformResult.getAssayId())
@@ -319,10 +319,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 List<ValidationError> errors = validateProperties(context, props);
                 if (!errors.isEmpty())
                     throw new ValidationException(errors);
-                savePropertyObject(run, props, context.getUser());
+                savePropertyObject(run, context.getContainer(), props, context.getUser());
             }
             else
-                savePropertyObject(run, runProperties, context.getUser());
+                savePropertyObject(run, context.getContainer(), runProperties, context.getUser());
 
             importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
 
@@ -887,7 +887,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     }
 
 
-    protected void savePropertyObject(ExpObject object, Map<DomainProperty, String> properties, User user) throws ExperimentException
+    protected void savePropertyObject(ExpObject object, Container container, Map<DomainProperty, String> properties, User user) throws ExperimentException
     {
         try
         {
@@ -895,6 +895,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             {
                 DomainProperty pd = entry.getKey();
                 String value = entry.getValue();
+
+                // resolve any file links for batch or run properties
+                File resolvedFile = AssayUploadFileResolver.resolve(value, container, entry.getKey());
+                if (resolvedFile != null)
+                {
+                    value = resolvedFile.getAbsolutePath();
+                }
+
                 // Treat the empty string as a null in the database, which is our normal behavior when receiving data
                 // from HTML forms.
                 if ("".equals(value))
