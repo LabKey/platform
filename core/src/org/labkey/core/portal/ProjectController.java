@@ -1109,9 +1109,11 @@ public class ProjectController extends SpringActionController
             IteratorUtils.asIterator(request.getParameterNames()).forEachRemaining(s -> {
                 if (!"webPartId".equals(s) && !"index".equals(s) && !"pageId".equals(s) && !"x".equals(s) && !"y".equals(s) && !ActionURL.Param.returnUrl.name().equals(s))
                 {
-                    String value = request.getParameter(s);
-                    if (value != null && !"".equals(value.trim()))
-                        webPart.getPropertyMap().put(s, value.trim());
+                    // Simple regression test of #30532
+                    assert !s.startsWith("X-LABKEY") : "AuthenticatedRequest.getParameterNames() should have filtered out parameter " + s + "!";
+                    String value = StringUtils.trimToNull(request.getParameter(s));
+                    if (value != null)
+                        webPart.getPropertyMap().put(s, value);
                 }
             });
         }
