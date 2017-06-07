@@ -76,9 +76,16 @@ public class MultiValuedLookupColumn extends LookupColumn
 
     protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable, String alias)
     {
+        strJoin.append(getLookupSql(lookupTable, alias));
+    }
+
+
+    protected SQLFragment getLookupSql(TableInfo lookupTable, String alias)
+    {
         SqlDialect dialect = lookupTable.getSqlDialect();
         boolean groupConcat = dialect.supportsGroupConcat();
 
+        SQLFragment strJoin = new SQLFragment();
         strJoin.append("\n\t(\n\t\t");
         strJoin.append("SELECT ");
         strJoin.append(_lookupKey.getValueSql("child"));
@@ -175,6 +182,7 @@ public class MultiValuedLookupColumn extends LookupColumn
         strJoin.append("\n\t\tGROUP BY ");
         strJoin.append(_lookupKey.getValueSql("child"));
         strJoin.append("\n\t) ").append(alias);
+        return strJoin;
     }
     
 

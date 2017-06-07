@@ -62,6 +62,16 @@ public class MultiValuedForeignKey implements ForeignKey
         _displayField = displayField;
     }
 
+
+    /* this is to help subclasses implement remapFieldKeys() */
+    protected MultiValuedForeignKey(MultiValuedForeignKey source, FieldKey parent, Map<FieldKey, FieldKey> mapping)
+    {
+        _fk = source._fk.remapFieldKeys(parent, mapping);
+        _junctionLookup = source._junctionLookup;
+        _displayField = source._displayField;
+    }
+
+
     public String getJunctionLookup()
     {
         return _junctionLookup;
@@ -243,7 +253,7 @@ public class MultiValuedForeignKey implements ForeignKey
     @Override
     public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
     {
-        return new MultiValuedForeignKey(_fk.remapFieldKeys(null, mapping), _junctionLookup);
+        return new MultiValuedForeignKey(this, parent, mapping);
     }
 
     @Override

@@ -27,6 +27,7 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.JobRunner;
+import org.labkey.api.util.MemTracker;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,51 +48,133 @@ import static org.labkey.api.test.TestWhen.When.BVT;
  */
 public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 {
-    static private class Materialized
+    private class Materialized
     {
         final long created;
         final String cacheKey;
-        final String uptodateKey;
         final String fromSql;
 
-        Materialized(String cacheKey, long created, String uptodate, String sql)
+        final ArrayList<Invalidator> invalidators = new ArrayList<>(3);
+
+        Materialized(String cacheKey, long created, String sql)
         {
             this.created = created;
             this.cacheKey = cacheKey;
-            this.uptodateKey = uptodate;
             this.fromSql = sql;
+        }
+
+        void addUpToDateQuery(SQLFragment uptodate)
+        {
+            if (null != uptodate)
+                this.invalidators.add(new SqlInvalidator(uptodate));
+        }
+
+        void addMaxTimeToCache(long max)
+        {
+            if (max != CacheManager.UNLIMITED)
+                this.invalidators.add(new TimeInvalidator(max));
+        }
+
+        void addInvalidator(Supplier<String> sup)
+        {
+            if (null != sup)
+                this.invalidators.add(new SupplierInvalidator(sup));
+        }
+
+        void reset()
+        {
+            long now = HeartBeat.currentTimeMillis();
+            for (Invalidator i : invalidators)
+                i.stillValid(now);
+        }
+    }
+
+    enum CacheCheck
+    {
+        OK,             // looks fine
+        COALESCE,       // invalid, but within coalesce/delay window
+                        // a) treat COALESCE==OK,
+                        // b) treat COALESCE==INVALID,
+                        // c) return cached value but invalidate cache
+                        // d) return cached value and reload in background
+        INVALID         // invalid
+    }
+
+    private abstract class Invalidator
+    {
+        int coalesceDelay = 0;
+
+        CacheCheck checkValid(long createdTime)
+        {
+            boolean valid = stillValid(createdTime);
+            if (valid)
+                return CacheCheck.OK;
+            if (coalesceDelay == 0 || createdTime+coalesceDelay < HeartBeat.currentTimeMillis())
+                return CacheCheck.INVALID;
+            return CacheCheck.COALESCE;
+        }
+        abstract boolean stillValid(long createdTime);
+    }
+
+
+    private class SqlInvalidator extends Invalidator
+    {
+        final SQLFragment upToDateSql;
+        String result = null;
+
+        SqlInvalidator(SQLFragment sql)
+        {
+            this.upToDateSql = sql;
+        }
+
+        /* Has anything changed since last time stillValid() was called, this method must keep its own state */
+        @Override
+        boolean stillValid(long createdTime)
+        {
+            String prevResult = result;
+            result = new SqlSelector(scope, uptodateQuery).getObject(String.class);
+            return StringUtils.equals(prevResult,result);
         }
     }
 
 
-    /**
-     *  To be consistent with CacheManager maxTimeToCache==0 means UNLIMITED, so we use maxTimeToCache==-1 to mean no caching, just materialize and return
-     *
-     *  NOTE: the uptodate query should be very fast WRT the select query, the caller should use "uncache" as the primary means of making
-     *  sure the materialized table is kept consistent.
-     */
-    public static MaterializedQueryHelper create(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Collection<String> indexes, long maxTimeToCache)
+    private class TimeInvalidator extends Invalidator
     {
-        return new MaterializedQueryHelper(prefix, scope, select, uptodate, indexes, maxTimeToCache, false);
-    }
+        final long maxTime;
 
-    public static MaterializedQueryHelper create(String prefix, DbScope scope, SQLFragment select, Supplier<String> uptodate, Collection<String> indexes, long maxTimeToCache)
-    {
-        return new MaterializedQueryHelper(prefix, scope, select, null, indexes, maxTimeToCache, false)
+        TimeInvalidator(long t)
         {
-            protected String getUpToDateKey()
-            {
-                return uptodate.get();
-            }
-        };
+            this.maxTime = t;
+        }
+
+        @Override
+        boolean stillValid(long createdTime)
+        {
+            return maxTime != -1 && createdTime + maxTime > HeartBeat.currentTimeMillis();
+        }
     }
 
-/*  TODO, we're probably going to want this
-    public static MaterializedQueryHelper createPerContainer(DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, long maxTimeToCache)
+
+    private class SupplierInvalidator extends Invalidator
     {
-        return new MaterializedQueryHelper(scope, select, uptodate, maxTimeToCache, true);
+        final Supplier<String> supplier;
+        String result = null;
+
+        SupplierInvalidator(Supplier<String> sup)
+        {
+            this.supplier = sup;
+        }
+
+        @Override
+        boolean stillValid(long createdTime)
+        {
+            String prevResult = result;
+            result = supplier.get();
+            return StringUtils.equals(prevResult,result);
+        }
     }
-*/
+
+
 
     private String makeKey(DbScope.Transaction t, Container c)
     {
@@ -102,6 +185,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     final DbScope scope;
     final SQLFragment selectQuery;
     final SQLFragment uptodateQuery;
+    final Supplier<String> supplier;
     final List<String> indexes = new ArrayList<>();
     final long maxTimeToCache;
     final boolean perContainer;
@@ -122,20 +206,21 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
     boolean closed = false;
 
-    private MaterializedQueryHelper(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, @Nullable Collection<String> indexes, long maxTimeToCache, boolean perContainer)
+    private MaterializedQueryHelper(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, long maxTimeToCache,
+                                    boolean perContainer)
     {
         this.prefix = StringUtils.defaultString(prefix,"mat");
         this.scope = scope;
         this.selectQuery = select;
         this.uptodateQuery = uptodate;
+        this.supplier = supplier;
         this.maxTimeToCache = maxTimeToCache;
         this.perContainer = perContainer;
         if (null != indexes)
             this.indexes.addAll(indexes);
         if (perContainer)
             throw new UnsupportedOperationException("NYI");
-
-        CacheManager.addListener(this);
+        assert MemTracker.get().put(this);
     }
 
 
@@ -158,7 +243,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
      * NOTE: invalidating within a transaction, may NOT force re-materialize for subsequent call within the transaction
      * because it could re-use the global cached result.
      *
-     * TODO: if that's a problem we could put a maker into the cache
+     * TODO: if that's a problem we could put a marker into the cache
      */
     public synchronized void uncache(final Container c)
     {
@@ -226,13 +311,19 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         if (null == materialized)
             materialized = map.get(makeKey(null,c));
 
-        String uptodateKey = getUpToDateKey();
-
         if (null != materialized)
         {
-            boolean old = maxTimeToCache == -1 || (maxTimeToCache != 0 && materialized.created + maxTimeToCache < now);
-            boolean changed = null!=uptodateKey && !materialized.uptodateKey.equals(uptodateKey);
-            if (old || changed)
+            boolean replace = false;
+            synchronized (materialized)
+            {
+                for (Invalidator i : materialized.invalidators)
+                {
+                    CacheCheck cc = i.checkValid(materialized.created);
+                    if (cc != CacheCheck.OK)
+                        replace = true;
+                }
+            }
+            if (replace)
             {
                 map.remove(materialized.cacheKey);
                 materialized = null;
@@ -244,7 +335,13 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             this.countSelectInto++;
             DbSchema temp = DbSchema.getTemp();
             String name = prefix + "_" + GUID.makeHash();
-            materialized = new Materialized(txCacheKey, now, uptodateKey, "\"" + temp.getName() + "\".\"" + name + "\"");
+            materialized = new Materialized(txCacheKey, now, "\"" + temp.getName() + "\".\"" + name + "\"");
+            materialized.addMaxTimeToCache(this.maxTimeToCache);
+            materialized.addUpToDateQuery(this.uptodateQuery);
+            materialized.addInvalidator(this.supplier);
+            // CONSIDER: copy over old validators (if previous materialized) so we don't need to reset
+            materialized.reset();
+
             TempTableTracker.track(name, materialized);
 
             SQLFragment selectInto = new SQLFragment("SELECT * INTO \"" + temp.getName() + "\".\"" + name + "\"\nFROM (\n");
@@ -270,6 +367,82 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             sqlf.append(" " ).append(tableAlias);
         sqlf.addTempToken(materialized);
         return sqlf;
+    }
+
+
+    /**
+     *  To be consistent with CacheManager maxTimeToCache==0 means UNLIMITED, so we use maxTimeToCache==-1 to mean no caching, just materialize and return
+     *
+     *  NOTE: the uptodate query should be very fast WRT the select query, the caller should use "uncache" as the primary means of making
+     *  sure the materialized table is kept consistent.
+     *
+     *  If you are not putting your MQH in a Cache, you may want to do
+     *    CacheManager.addListener(mqh);
+     *
+     *  that will hook up your MQH to the global cache clear event
+     */
+
+    @Deprecated // use Builder
+    public static MaterializedQueryHelper create(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Collection<String> indexes, long maxTimeToCache)
+    {
+        return new MaterializedQueryHelper(prefix, scope, select, uptodate, null, indexes, maxTimeToCache, false);
+    }
+
+
+    @Deprecated // use Builder
+    public static MaterializedQueryHelper create(String prefix, DbScope scope, SQLFragment select, Supplier<String> uptodate, Collection<String> indexes, long maxTimeToCache)
+    {
+        return new MaterializedQueryHelper(prefix, scope, select, null, uptodate, indexes, maxTimeToCache, false);
+    }
+
+
+    public static class Builder implements org.labkey.api.data.Builder<MaterializedQueryHelper>
+    {
+        final String prefix;
+        final DbScope scope;
+        final SQLFragment select;
+        long max = CacheManager.UNLIMITED;
+        SQLFragment uptodate = null;
+        Supplier supplier = null;
+        Collection<String> indexes = new ArrayList<>();
+
+        public Builder(String prefix, DbScope scope, SQLFragment select)
+        {
+            this.prefix = prefix;
+            this.scope = scope;
+            this.select = select;
+        }
+
+        public Builder upToDateSql(SQLFragment uptodate)
+        {
+            this.uptodate = uptodate;
+            return this;
+        }
+
+        public Builder maxTimeToCache(long max)
+        {
+            this.max = max;
+            return this;
+        }
+
+        public Builder addInvalidCheck(Supplier<String> supplier)
+        {
+            this.supplier = supplier;
+            return this;
+        }
+
+        public Builder addIndex(String index)
+        {
+            this.indexes.add(index);
+            return this;
+        }
+
+        @Override
+        public MaterializedQueryHelper build()
+        {
+            return new MaterializedQueryHelper(prefix, scope, select,  uptodate, supplier, indexes, max, false);
+
+        }
     }
 
 
