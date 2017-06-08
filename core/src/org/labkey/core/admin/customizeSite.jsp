@@ -412,7 +412,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td class="labkey-form-label"><label for="CSRFCheck">CSRF checking</label></td>
     <td><select name="CSRFCheck" id="CSRFCheck">
-        <option value="POST" <%=selectedEq("POST",appProps.getCSRFCheck())%>>All POST requests (recommended)</option>
+        <option value="POST" <%=selectedEq("POST",appProps.getCSRFCheck())%>>All POST requests</option>
         <option value="ADMINONLY" <%=selectedEq("ADMINONLY",appProps.getCSRFCheck())%>>Admin requests</option>
     </select></td>
 </tr>
