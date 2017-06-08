@@ -661,6 +661,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @CSRF(CSRF.Method.NONE) // don't need CSRF for actions that require a password
     public class LoginApiAction extends MutatingApiAction<LoginForm>
     {
         @Override
