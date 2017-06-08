@@ -747,51 +747,64 @@ public class TransformManager implements DataIntegrationService
     public void startAllConfigurations()
     {
         DbSchema schema = DataIntegrationQuerySchema.getSchema();
-        SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE enabled=?", true);
+        SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration");
 
         new SqlSelector(schema, sql).forEach((TransformConfiguration config) ->
         {
-            // CONSIDER explicit runAs user
-            int runAsUserId = config.getModifiedBy();
-            User runAsUser = UserManager.getUser(runAsUserId);
-
             CacheId id = parseConfigId(config.getTransformId());
             Module module = id.getModule();
             ScheduledPipelineJobDescriptor descriptor;
 
+            // Issue 30051. If module, descriptor (xml), or container no longer exist, delete the configuration. If the descriptor is
+            // now standalone == false, disable the configuration and don't schedule.
             if (null == module) // Module has been deleted or renamed
             {
-                disableConfiguration(runAsUser, config);
+                deleteConfiguration(config.getRowId());
             }
             else
             {
                 descriptor = DESCRIPTOR_CACHE.getResourceMap(module).get(config.getTransformId());
-                // Issue 30051. If descriptor no longer exists, or is now standalone == false, disable the configuration
-                // and don't add to scheduler.
-                if (null == descriptor || !descriptor.isStandalone())
+                if (null == descriptor)
                 {
-                    disableConfiguration(runAsUser, config);
+                    deleteConfiguration(config.getRowId());
                 }
                 else
                 {
                     Container c = ContainerManager.getForId(config.getContainerId());
-                    if (null == c)
+                    if (null == c) // This should never happen, as there's a container listener to purge the TransformConfiguration table
                     {
-                        disableConfiguration(runAsUser, config);
+                        deleteConfiguration(config.getRowId());
                     }
-                    else
+                    else if (config.isEnabled())
                     {
-                        schedule(descriptor, c, runAsUser, config.isVerboseLogging());
+                        // CONSIDER explicit runAs user
+                        int runAsUserId = config.getModifiedBy();
+                        User runAsUser = UserManager.getUser(runAsUserId);
+
+                        if (descriptor.isStandalone())
+                        {
+                            schedule(descriptor, c, runAsUser, config.isVerboseLogging());
+                        }
+                        else
+                        {
+                            disableConfiguration(runAsUser, config);
+                        }
                     }
                 }
             }
         }, TransformConfiguration.class);
     }
 
+    private void deleteConfiguration(int rowId)
+    {
+        TableInfo t = DbSchema.get("dataintegration", DbSchemaType.Module).getTable("TransformConfiguration");
+        Table.delete(t, rowId);
+    }
+
     private void disableConfiguration(User u, TransformConfiguration config)
     {
         config.setEnabled(false);
-        TransformManager.get().saveTransformConfiguration(u, config);
+        saveTransformConfiguration(u, config);
     }
 
     public String getRunDetailsLink(Container c, Integer runId, String text)
