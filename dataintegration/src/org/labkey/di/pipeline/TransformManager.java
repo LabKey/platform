@@ -749,7 +749,7 @@ public class TransformManager implements DataIntegrationService
         DbSchema schema = DataIntegrationQuerySchema.getSchema();
         SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE enabled=?", true);
 
-        new SqlSelector(schema, sql).forEach(config ->
+        new SqlSelector(schema, sql).forEach((TransformConfiguration config) ->
         {
             // CONSIDER explicit runAs user
             int runAsUserId = config.getModifiedBy();
@@ -757,18 +757,41 @@ public class TransformManager implements DataIntegrationService
 
             CacheId id = parseConfigId(config.getTransformId());
             Module module = id.getModule();
-            ScheduledPipelineJobDescriptor descriptor = null;
+            ScheduledPipelineJobDescriptor descriptor;
 
-            if (null != module)
+            if (null == module) // Module has been deleted or renamed
+            {
+                disableConfiguration(runAsUser, config);
+            }
+            else
+            {
                 descriptor = DESCRIPTOR_CACHE.getResourceMap(module).get(config.getTransformId());
-
-            if (null == descriptor)
-                return;
-            Container c = ContainerManager.getForId(config.getContainerId());
-            if (null == c)
-                return;
-            schedule(descriptor, c, runAsUser, config.isVerboseLogging());
+                // Issue 30051. If descriptor no longer exists, or is now standalone == false, disable the configuration
+                // and don't add to scheduler.
+                if (null == descriptor || !descriptor.isStandalone())
+                {
+                    disableConfiguration(runAsUser, config);
+                }
+                else
+                {
+                    Container c = ContainerManager.getForId(config.getContainerId());
+                    if (null == c)
+                    {
+                        disableConfiguration(runAsUser, config);
+                    }
+                    else
+                    {
+                        schedule(descriptor, c, runAsUser, config.isVerboseLogging());
+                    }
+                }
+            }
         }, TransformConfiguration.class);
+    }
+
+    private void disableConfiguration(User u, TransformConfiguration config)
+    {
+        config.setEnabled(false);
+        TransformManager.get().saveTransformConfiguration(u, config);
     }
 
     public String getRunDetailsLink(Container c, Integer runId, String text)
