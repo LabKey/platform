@@ -19,6 +19,7 @@
 package org.labkey.core.webdav;
 
 import org.apache.commons.collections4.IteratorUtils;
+import org.apache.commons.fileupload.InvalidFileNameException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
@@ -1207,17 +1208,26 @@ public class DavController extends SpringActionController
                     Map.Entry<String, MultipartFile> entry = multipartRequest.getFileMap().entrySet().iterator().next();
                     MultipartFile file = entry.getValue();
                     if (null == filename)
-                        filename = file.getOriginalFilename();
+                    {
+                        try
+                        {
+                            filename = file.getOriginalFilename();
+                        }
+                        catch (InvalidFileNameException ex)
+                        {
+                            return WebdavStatus.SC_BAD_REQUEST;
+                        }
+                    }
                     stream = new SpringAttachmentFile(file);
                 }
                 else
                 {
                     // CONSIDER: enforce ContentType=text/plain?
                     String content = StringUtils.defaultString(getRequest().getParameter("content"),"");
-                    stream = new FileStream.ByteArrayFileStream(content.getBytes());
+                    stream = new FileStream.ByteArrayFileStream(content.getBytes(StringUtilsLabKey.DEFAULT_CHARSET));
                 }
 
-                if (StringUtils.isEmpty(filename) || -1 != filename.indexOf("/"))
+                if (StringUtils.isEmpty(filename) || filename.contains("/"))
                     return WebdavStatus.SC_METHOD_NOT_ALLOWED;
                 WebdavResource dest = resource.find(filename);
                 if (null == dest)
