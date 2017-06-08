@@ -170,6 +170,8 @@ public class VisitMapImporter
             return false;
         }
 
+        verifyDistinctSequenceNums(records);
+
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
@@ -186,6 +188,24 @@ public class VisitMapImporter
         {
             errors.add(e.getMessage());
             return false;
+        }
+    }
+
+    private void verifyDistinctSequenceNums(List<VisitMapRecord> records)
+    {
+        Set<Double> uniqueSequenceNums = new HashSet<>();
+
+        for (VisitMapRecord record : records)
+        {
+            String errorMsg = "Visit " + (record.getVisitLabel()) + " range overlaps with another record in the visit map.";
+
+            if (uniqueSequenceNums.contains(record.getSequenceNumMin()))
+                throw new VisitMapImportException(errorMsg);
+            uniqueSequenceNums.add(record.getSequenceNumMin());
+
+            if (record.getSequenceNumMax() != record.getSequenceNumMin() && uniqueSequenceNums.contains(record.getSequenceNumMax()))
+                throw new VisitMapImportException(errorMsg);
+            uniqueSequenceNums.add(record.getSequenceNumMax());
         }
     }
 
@@ -257,7 +277,7 @@ public class VisitMapImporter
                     if (visitManager.isVisitOverlapping(visit))
                     {
                         String visitLabel = visit.getLabel() != null ? visit.getLabel() : ""+visit.getSequenceNumMin();
-                        throw new VisitMapImportException("Visit " + visitLabel + " range overlaps an existing visit in this study.");
+                        throw new VisitMapImportException("Visit " + visitLabel + " range overlaps with an existing visit in this study.");
                     }
 
                     StudyManager.getInstance().updateVisit(user, visit);

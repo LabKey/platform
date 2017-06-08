@@ -1896,7 +1896,7 @@ public class StudyController extends BaseStudyController
             if (null != visitMgr)
             {
                 if (visitMgr.isVisitOverlapping(visitBean))
-                    errors.reject(null, "Visit range overlaps an existing visit in this study. Please enter a different range.");
+                    errors.reject(null, "Visit range overlaps with an existing visit in this study. Please enter a different range.");
             }
         }
 
@@ -2296,7 +2296,7 @@ public class StudyController extends BaseStudyController
             if (null != visitMgr)
             {
                 if (visitMgr.isVisitOverlapping(target.getBean()))
-                    errors.reject(null, "Visit range overlaps an existing visit in this study. Please enter a different range.");
+                    errors.reject(null, "Visit range overlaps with an existing visit in this study. Please enter a different range.");
             }
         }
 
