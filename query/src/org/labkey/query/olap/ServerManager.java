@@ -318,6 +318,8 @@ public class ServerManager
      *
      * Need to detect changes to available catalogs in this container to close current server
      *
+     * NOTE: this RefCount is incremented by one, caller must call retval.decrement()
+     *
      * TODO: Investigate getting down to one MondrianServer instance
      */
 
@@ -370,6 +372,7 @@ public class ServerManager
                 ref = new ServerReferenceCount(s, c);
                 SERVERS.put(getServerCacheKey(c), ref);
             }
+            ref.increment();
             return ref;
         }
     }
@@ -519,14 +522,22 @@ public class ServerManager
     public static OlapConnection getConnection(Container c, User u, String catalog) throws SQLException
     {
         ServerReferenceCount ref = ServerManager.getServer(c, u);
-        if (null == ref || null == ref.get())
-            return null;
+        try
+        {
+            if (null == ref || null == ref.get())
+                return null;
 
-        MondrianServer server = ref.get();
-        OlapConnection olap = server.getConnection(DATA_SOURCE_NAME, catalog, null);
-        OlapConnection wrap = OlapConnectionProxy.wrap(olap, ref);
-        MemTracker.getInstance().put(wrap);
-        return wrap;
+            MondrianServer server = ref.get();
+            OlapConnection olap = server.getConnection(DATA_SOURCE_NAME, catalog, null);
+            OlapConnection wrap = OlapConnectionProxy.wrap(olap, ref);
+            MemTracker.getInstance().put(wrap);
+            return wrap;
+        }
+        finally
+        {
+            if (null != ref)
+                ref.decrement();
+        }
     }
 
 
@@ -538,13 +549,21 @@ public class ServerManager
     public static MondrianServer getMondrianServer(Container c, User u) throws SQLException
     {
         ServerReferenceCount ref = ServerManager.getServer(c, u);
-        if (null == ref || null == ref.get())
-            return null;
+        try
+        {
+            if (null == ref || null == ref.get())
+                return null;
 
-        MondrianServer server = ref.get();
-        MondrianServer wrap = MondrianServerProxy.wrap(server, ref);
-        MemTracker.getInstance().put(wrap);
-        return wrap;
+            MondrianServer server = ref.get();
+            MondrianServer wrap = MondrianServerProxy.wrap(server, ref);
+            MemTracker.getInstance().put(wrap);
+            return wrap;
+        }
+        finally
+        {
+            if (null != ref)
+                ref.decrement();
+        }
     }
 
     public static class CacheListener implements org.labkey.api.cache.CacheListener
