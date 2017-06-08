@@ -331,15 +331,6 @@ public class DatasetDataWriter implements InternalStudyWriter
             }
         }
 
-        // Handle lookup columns which have "/" in their names by mapping them to "."
-        for (ColumnInfo outColumn : outColumns)
-        {
-            if (outColumn.getName().contains("/"))
-            {
-                outColumn.setName(outColumn.getName().replace('/', '.'));
-            }
-        }
-
         // need to make sure the SequenceNum column is included for visit based demographic datasets, issue #16146
         if (def.isDemographicData())
         {
