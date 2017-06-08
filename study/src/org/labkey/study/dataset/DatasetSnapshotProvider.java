@@ -302,7 +302,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             Study study = StudyManager.getInstance().getStudy(view.getContainer());
             if (study != null)
             {
-                StudyManager.getInstance().generateNeededAlternateParticipantIds(study);
+                StudyManager.getInstance().generateNeededAlternateParticipantIds(study, context.getUser());
                 DatasetDataWriter.createAlternateIdColumns(tinfo, columns, view.getContainer());
             }
         }

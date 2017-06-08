@@ -15,6 +15,7 @@
  */
 package org.labkey.study.model;
 
+import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 
 import java.util.Map;
@@ -33,7 +34,7 @@ public class ParticipantMapper
     private final boolean _isShiftDates;
     private final boolean _isAlternateIds;
 
-    public ParticipantMapper(Study study, boolean isShiftDates, boolean isAlternateIds)
+    public ParticipantMapper(Study study, User user, boolean isShiftDates, boolean isAlternateIds)
     {
         _isShiftDates = isShiftDates;
         _isAlternateIds = isAlternateIds;
@@ -41,10 +42,15 @@ public class ParticipantMapper
         {
             // If we need alternateIds, ensure that all participants have ids
             if (isAlternateIds)
-                StudyManager.getInstance().generateNeededAlternateParticipantIds(study);
+                StudyManager.getInstance().generateNeededAlternateParticipantIds(study, user);
 
-            _participantInfoMap = StudyManager.getInstance().getParticipantInfos(study, null, isShiftDates, isAlternateIds);
+            _participantInfoMap = StudyManager.getInstance().getParticipantInfos(study, user, isShiftDates, isAlternateIds);
         }
+    }
+
+    public ParticipantMapper(Study study, boolean isShiftDates, boolean isAlternateIds)
+    {
+        this(study, null, isShiftDates, isAlternateIds);
     }
 
     public String getMappedParticipantId(String participantId)

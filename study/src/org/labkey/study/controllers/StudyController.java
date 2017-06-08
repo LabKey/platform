@@ -7713,7 +7713,7 @@ public class StudyController extends BaseStudyController
             if (study != null)
             {
                 // Ensure alternateIds are generated for all participants
-                StudyManager.getInstance().generateNeededAlternateParticipantIds(study);
+                StudyManager.getInstance().generateNeededAlternateParticipantIds(study, getUser());
 
                 TableInfo ti = StudySchema.getInstance().getTableInfoParticipant();
                 List<ColumnInfo> cols = new ArrayList<>();

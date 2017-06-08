@@ -15,8 +15,11 @@
  */
 package org.labkey.study.model;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.study.StudySnapshotType;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -346,5 +349,43 @@ public class ChildStudyDefinition
     public void setParticipantGroupsAll(boolean participantGroupsAll)
     {
         _participantGroupsAll = participantGroupsAll;
+    }
+
+    public void logSelections(Logger logger)
+    {
+        logger.info("----- Start Selected Properties -----");
+        logger.info("Name: " + getName());
+        logger.info("Source Path: " + getSrcPath());
+        logger.info("Destination Path: " + getDstPath());
+        logger.info("Participant Groups: " + (isParticipantGroupsAll() ? "All" : Arrays.toString(getGroups())));
+        logger.info("Datasets: " + Arrays.toString(getDatasets()));
+        logger.info("Data Refresh: " + (isUpdate() ? (getUpdateDelay() > 0 ? "Automatic" : "Manual") : "None"));
+        logger.info("Visits: " + arrayToString(getVisits()));
+        logger.info("Specimens: " + (isIncludeSpecimens() ? (isSpecimenRefresh() ? "Nightly refresh" : "One-time snapshot") : "None"));
+        logger.info("Study Objects: " + arrayToString(getStudyProps()));
+        logger.info("Folder Objects: " + arrayToString(getFolderProps()));
+        logger.info("Publish Options: " + arrayToString(getPublishOptionsArr()));
+        logger.info("----- End Selected Properties -----");
+    }
+
+    private String[] getPublishOptionsArr()
+    {
+        List<String> publishOptions = new ArrayList<>();
+        if (isUseAlternateParticipantIds())
+            publishOptions.add("Use Alternate Participant IDs");
+        if (isShiftDates())
+            publishOptions.add("Shift Participant Dates");
+        if (isRemoveProtectedColumns())
+            publishOptions.add("Remove Protected Columns");
+        if (isMaskClinic())
+            publishOptions.add("Mask Clinic Names");
+        return publishOptions.toArray(new String[publishOptions.size()]);
+    }
+
+    private String arrayToString(Object[] arr)
+    {
+        if (arr == null || arr.length == 0)
+            return "None";
+        return Arrays.toString(arr);
     }
 }

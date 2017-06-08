@@ -43,6 +43,7 @@
 <%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistics" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.text.NumberFormat" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -230,7 +231,7 @@
                 {
     %>
     <tr>
-        <td class="labkey-highlight-cell" align="left" colspan="<%= visits.size() + 2%>"><%= h(category) %>
+        <td class="labkey-highlight-cell" style="padding: 2px 5px;" align="left" colspan="<%= visits.size() + 2%>"><%= h(category) %>
         </td>
     </tr>
     <%
@@ -241,7 +242,7 @@
         String datasetLabel = (dataset.getLabel() != null ? dataset.getLabel() : "" + dataset.getDatasetId());
     %>
     <tr class="<%=getShadeRowClass(row % 2 == 0)%>">
-        <td align="center" class="labkey-row-header" category="<%= h(dataset.getCategory()) %>"><%= h(datasetLabel) %><%
+        <td align="center" style="font-weight:bold;" category="<%= h(dataset.getCategory()) %>"><%= h(datasetLabel) %><%
             if (null != StringUtils.trimToNull(dataset.getDescription()))
             {
         %><%=PageFlowUtil.helpPopup(datasetLabel, dataset.getDescription())%><%
@@ -273,7 +274,7 @@
                 if (!innerHtml.isEmpty())
                     innerHtml += " / ";
 
-                innerHtml += all.get(stat);
+                innerHtml += NumberFormat.getInstance().format(all.get(stat));
             }
 
             if (userCanRead)

@@ -189,6 +189,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                     }
                 }
 
+                // log selected settings to the pipeline job log file
+                _form.logSelections(getLogger());
+
                 MemoryVirtualFile vf = new MemoryVirtualFile();
                 User user = getUser();
                 if(_form.getFolderProps() != null)
@@ -212,7 +215,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
                 StudyExportContext studyExportContext = new StudyExportContext(sourceStudy, user, sourceStudy.getContainer(),
                         dataTypes, _form.isRemoveProtectedColumns(),
-                        new ParticipantMapper(sourceStudy, _form.isShiftDates(), _form.isUseAlternateParticipantIds()),
+                        new ParticipantMapper(sourceStudy, user, _form.isShiftDates(), _form.isUseAlternateParticipantIds()),
                         _form.isMaskClinic(), datasets, new PipelineJobLoggerGetter(this)
                 );
 

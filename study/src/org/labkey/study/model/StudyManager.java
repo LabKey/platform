@@ -3359,15 +3359,22 @@ public class StudyManager
     private static final String ALTERNATEID_COLUMN_NAME = "AlternateId";
     private static final String DATEOFFSET_COLUMN_NAME = "DateOffset";
     private static final String PTID_COLUMN_NAME = "ParticipantId";
+    private static final String CONTAINER_COLUMN_NAME = "Container";
     public class ParticipantInfo
     {
+        private final String _containerId;
         private final String _alternateId;
         private final int _dateOffset;
 
-        public ParticipantInfo(String alternateId, int dateOffset)
+        public ParticipantInfo(String containerId, String alternateId, int dateOffset)
         {
+            _containerId = containerId;
             _alternateId = alternateId;
             _dateOffset = dateOffset;
+        }
+        public String getContainerId()
+        {
+            return _containerId;
         }
         public String getAlternateId()
         {
@@ -3382,17 +3389,19 @@ public class StudyManager
     public Map<String, ParticipantInfo> getParticipantInfos(Study study, User user, final boolean isShiftDates, final boolean isAlternateIds)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
-        SQLFragment sql = getSQLFragmentForParticipantIds(study, user, null, -1, -1, schema, PTID_COLUMN_NAME + ", " + ALTERNATEID_COLUMN_NAME + ", " + DATEOFFSET_COLUMN_NAME);
+        SQLFragment sql = getSQLFragmentForParticipantIds(study, user, null, -1, -1, schema,
+                CONTAINER_COLUMN_NAME + ", " + PTID_COLUMN_NAME + ", " + ALTERNATEID_COLUMN_NAME + ", " + DATEOFFSET_COLUMN_NAME);
         final Map<String, ParticipantInfo> alternateIdMap = new HashMap<>();
 
         new SqlSelector(schema, sql).forEach(new Selector.ForEachBlock<ResultSet>(){
             @Override
             public void exec(ResultSet rs) throws SQLException
             {
+                String containerId = rs.getString(CONTAINER_COLUMN_NAME);
                 String participantId = rs.getString(PTID_COLUMN_NAME);
                 String alternateId = isAlternateIds ? rs.getString(ALTERNATEID_COLUMN_NAME) : participantId;     // if !isAlternateIds, use participantId
                 int dateOffset = isShiftDates ? rs.getInt(DATEOFFSET_COLUMN_NAME) : 0;                            // if !isDateShift, use 0 shift
-                alternateIdMap.put(participantId, new ParticipantInfo(alternateId, dateOffset));
+                alternateIdMap.put(participantId, new ParticipantInfo(containerId, alternateId, dateOffset));
             }
         });
 
@@ -3491,12 +3500,12 @@ public class StudyManager
         String [] participantIds = getParticipantIds(study,null);
 
         for (String participantId : participantIds)
-            setAlternateId(study, participantId, null);
+            setAlternateId(study, study.getContainer().getId(), participantId, null);
     }
 
-    public void generateNeededAlternateParticipantIds(Study study)
+    public void generateNeededAlternateParticipantIds(Study study, User user)
     {
-        Map<String, ParticipantInfo> participantInfos = getParticipantInfos(study, null, false, true);
+        Map<String, ParticipantInfo> participantInfos = getParticipantInfos(study, user, false, true);
 
         StudyController.ChangeAlternateIdsForm changeAlternateIdsForm = StudyController.getChangeAlternateIdForm((StudyImpl) study);
         String prefix = changeAlternateIdsForm.getPrefix();
@@ -3542,7 +3551,7 @@ public class StudyManager
             {
                 String participantId = entry.getKey();
                 int newId = nextRandom(random, usedNumbers, firstRandom, maxRandom);
-                setAlternateId(study, participantId, prefix + String.valueOf(newId));
+                setAlternateId(study, participantInfo.getContainerId(), participantId, prefix + String.valueOf(newId));
             }
         }
     }
@@ -3691,12 +3700,12 @@ public class StudyManager
         return rowCount;
     }
 
-    private void setAlternateId(Study study, String participantId, @Nullable String alternateId)
+    private void setAlternateId(Study study, String containerId, String participantId, @Nullable String alternateId)
     {
         // Set alternateId even if null, because that's how we clear it
         SQLFragment sql = new SQLFragment(String.format(
                 "UPDATE %s SET AlternateId = ? WHERE Container = ? AND ParticipantId = ?", SCHEMA.getTableInfoParticipant().getSelectName()),
-                alternateId, study.getContainer(), participantId);
+                alternateId, containerId, participantId);
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }
 
@@ -5774,7 +5783,7 @@ public class StudyManager
                 Map<String,Object> firstRowMap = ret.get(0);
 
                 // Ensure alternateIds are generated for all participants
-                StudyManager.getInstance().generateNeededAlternateParticipantIds(study);
+                StudyManager.getInstance().generateNeededAlternateParticipantIds(study, _context.getUser());
 
                 // query the study.participant table to verify that the dateoffset and alternateID were generated for the ptid row inserted into the dataset
                 TableInfo participantTableInfo = StudySchema.getInstance().getTableInfoParticipant();
