@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     String message1 = "Secondary Authentication";
-    String email = AuthenticationManager.getPrimaryAuthenticationResult(getViewContext().getSession()).getUser().getEmail();
+    String email = (String)getModelBean();
     String message2 = "Is " + h(email) + " really you?"; //testing for this string in automated test 'SecondaryAuthenticationTest'
 %>
 <p><%=h(message1)%></p>

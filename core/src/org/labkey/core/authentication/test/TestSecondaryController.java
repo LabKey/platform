@@ -21,6 +21,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
@@ -28,6 +29,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -81,11 +83,19 @@ public class TestSecondaryController extends SpringActionController
         public ModelAndView getView(TestSecondaryForm form, boolean reshow, BindException errors) throws Exception
         {
             if (!getUser().isGuest())
-                HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), null, getUser()));
+                return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), null, getUser()));
+
+            PrimaryAuthenticationResult result = AuthenticationManager.getPrimaryAuthenticationResult(getViewContext().getSession());
+
+            if (null == result || null == result.getUser())
+                throw new NotFoundException("You must login before initiating secondary authentication");
+
+            String email = result.getUser().getEmail();
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setIncludeLoginLink(false);
-            return new JspView<>("/org/labkey/core/authentication/test/testSecondary.jsp", null, errors);
+
+            return new JspView<>("/org/labkey/core/authentication/test/testSecondary.jsp", email, errors);
         }
 
         @Override
