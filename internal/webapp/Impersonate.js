@@ -115,7 +115,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
             },
             scope: this,
             success: function() {
-                window.location.reload(); // avoid form resubmit
+                window.location.reload();
             },
             failure: function(response) {
                 var jsonResp = LABKEY.Utils.decode(response.responseText);
@@ -225,17 +225,17 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
 
         var groupId = this.groupCombo.getValue();
         LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('user', 'impersonateGroup'),
+            url: LABKEY.ActionURL.buildURL('user', 'impersonateGroup.api'),
             method: 'POST',
             params: {
                 groupId: groupId,
                 returnUrl: window.location
             },
             scope: this,
-            success: function(response){
-                location = location;
+            success: function() {
+                window.location.reload();
             },
-            failure: function(response){
+            failure: function(response) {
                 var jsonResp = LABKEY.Utils.decode(response.responseText);
                 if (jsonResp && jsonResp.errors)
                 {
@@ -371,17 +371,17 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
             roleNames.push(selected[i].data.roleName);
 
         LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('user', 'impersonateRoles'),
+            url: LABKEY.ActionURL.buildURL('user', 'impersonateRoles.api'),
             method: 'POST',
             params: {
                 roleNames: roleNames,
                 returnUrl: window.location
             },
             scope: this,
-            success: function(response){
-                location = location;
+            success: function() {
+                window.location.reload();
             },
-            failure: function(response){
+            failure: function(response) {
                 var jsonResp = LABKEY.Utils.decode(response.responseText);
                 if (jsonResp && jsonResp.errors)
                 {
