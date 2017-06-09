@@ -187,14 +187,15 @@ public class Input
 
     protected void doInput(StringBuilder sb)
     {
-        sb.append("<input")
-                .append(" type=\"").append(getType()).append("\"")
-                .append(" name=\"").append(getName()).append("\"");
+        sb.append("<input");
+        sb.append(" type=\"").append(getType()).append("\"");
+        if (StringUtils.isNotEmpty(getClassName()))
+            sb.append(" class=\"").append(PageFlowUtil.filter(getClassName())).append("\"");
+
+        sb.append(" name=\"").append(getName()).append("\"");
 
         if (StringUtils.isNotEmpty(getId()))
             sb.append(" id=\"").append(getId()).append("\"");
-        if (StringUtils.isNotEmpty(getClassName()))
-            sb.append(" class=\"").append(PageFlowUtil.filter(getClassName())).append("\"");
         if (StringUtils.isNotEmpty(getPlaceholder()))
             sb.append(" placeholder=\"").append(PageFlowUtil.filter(getPlaceholder())).append("\"");
         if (getSize() != null)
@@ -241,7 +242,7 @@ public class Input
         if (getLabel() != null)
             sb.append(PageFlowUtil.filter(getLabel()));
 
-        sb.append("</label>");
+        sb.append("</label> ");
     }
 
     protected void doValue(StringBuilder sb)
