@@ -151,10 +151,11 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
 
         // crosstab designer
         ActionURL crossTabURL = new ActionURL(ReportsController.ParticipantCrosstabAction.class, context.getContainer());
-        crossTabURL.addParameter(QueryParam.schemaName, settings.getSchemaName());
-        crossTabURL.addParameter(QueryParam.queryName, settings.getQueryName());
-        crossTabURL.addParameter(QueryParam.viewName, settings.getViewName());
-        crossTabURL.addParameter(QueryParam.dataRegionName, settings.getDataRegionName());
+        crossTabURL.addParameters(context.getActionURL().getParameters());
+        crossTabURL.replaceParameter(QueryParam.schemaName, settings.getSchemaName());
+        crossTabURL.replaceParameter(QueryParam.queryName, settings.getQueryName());
+        crossTabURL.replaceParameter(QueryParam.viewName, settings.getViewName());
+        crossTabURL.replaceParameter(QueryParam.dataRegionName, settings.getDataRegionName());
 
         URLHelper returnUrl = settings.getReturnUrl();
         if (returnUrl == null)
