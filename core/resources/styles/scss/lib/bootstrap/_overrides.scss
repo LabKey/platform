@@ -63,6 +63,10 @@
   opacity: $lk-tooltip-opacity;
 }
 
+.form-control {
+  border-radius: $lk-form-control-border-radius;
+}
+
 /*
 *   CSS file with Bootstrap grid classes for screens bigger than 1600px. Just add this file after the Bootstrap CSS file and you will be able to juse col-xl, col-xl-push, hidden-xl, etc.
 *
@@ -71,6 +75,12 @@
 *   Site: WebVakman.nl
 *
 */
+
+@media (min-width: 768px) {
+  .form-horizontal .control-label {
+    text-align: left;
+  }
+}
 
 @media (min-width: 1200px) and (max-width: 1399px) {
   .hidden-lg {
