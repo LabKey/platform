@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -58,7 +59,7 @@ public class SQLFragment implements Appendable, CharSequence
         CTE(@NotNull String name, SQLFragment sqlf, boolean recursive)
         {
             this.preferredName = name;
-            tokens.add("/*$" + GUID.makeGUID() + ":" + name + "$*/");
+            tokens.add("/*$*/" + GUID.makeGUID() + ":" + name + "/*$*/");
             this.sqlf = sqlf;
             this.recursive = recursive;
         }
@@ -197,6 +198,8 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
+    static Pattern markerPattern = Pattern.compile("/\\*\\$\\*/.*/\\*\\$\\*/");
+
     /* This is not an exhaustive .equals() test, but it give pretty good confidence that these statements are the same */
     static boolean debugCompareSQL(SQLFragment sql1, SQLFragment sql2)
     {
@@ -207,16 +210,16 @@ public class SQLFragment implements Appendable, CharSequence
             (null == sql2.commonTableExpressionsMap || sql2.commonTableExpressionsMap.isEmpty()))
             return select1.equals(select2);
 
-        select1 = select1.replaceAll("\\/\\*\\$.*\\$\\*\\/", "CTE");
-        select2 = select1.replaceAll("\\/\\*\\$.*\\$\\*\\/", "CTE");
-            if (!select1.equals(select2))
-                return false;
+        select1 = markerPattern.matcher(select1).replaceAll("CTE");
+        select2 = markerPattern.matcher(select2).replaceAll("CTE");
+        if (!select1.equals(select2))
+            return false;
 
         Set<String> ctes1 = sql1.commonTableExpressionsMap.values().stream()
-                .map(cte -> cte.sqlf.getRawSQL().replaceAll("\\/\\*\\$.*\\$\\*\\/", "CTE"))
+                .map(cte -> markerPattern.matcher(cte.sqlf.getRawSQL()).replaceAll("CTE"))
                 .collect(Collectors.toSet());
         Set<String> ctes2 = sql2.commonTableExpressionsMap.values().stream()
-                .map(cte -> cte.sqlf.getRawSQL().replaceAll("\\/\\*\\$.*\\$\\*\\/", "CTE"))
+                .map(cte -> markerPattern.matcher(cte.sqlf.getRawSQL()).replaceAll("CTE"))
                 .collect(Collectors.toSet());
         return ctes1.equals(ctes2);
     }
