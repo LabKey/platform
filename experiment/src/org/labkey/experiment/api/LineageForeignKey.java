@@ -205,7 +205,14 @@ class LineageForeignKey extends LookupForeignKey
                                     .build();
                         });
                         SQLFragment mqhSelect = mqh.getFromSql(null, null); // TODO do we need to cache per container?? _table.getContainer());
-                        return new SQLFragment(mqhSelect).append(" ").append(alias);
+
+
+                        // using /*$*/ here to surround the temp table name.
+                        // this is an internal SQLFragment trick to help with the LookupColumn assert
+                        //     assert SQLFragment.debugCompareSQL(sqlJoinPrev, strJoin);
+                        // The fragment between the /*$*/ markers will compare .equal()
+                        // this protects againt the temp table changing names
+                        return new SQLFragment().append("/*$*/").append(mqhSelect).append("/*$*/ ").append(alias);
                     }
                 };
             }
