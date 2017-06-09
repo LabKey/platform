@@ -143,7 +143,7 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
         public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
         {
             return PageFlowUtil.set(new PropertyStorageSpec.Index(false, COLUMN_NAME_USER)
-                , new PropertyStorageSpec.Index(false, COLUMN_NAME_CREATED, COLUMN_NAME_COMMENT, COLUMN_NAME_USER));
+                , new PropertyStorageSpec.Index(false, COLUMN_NAME_CREATED, COLUMN_NAME_USER));
         }
 
         @Override
