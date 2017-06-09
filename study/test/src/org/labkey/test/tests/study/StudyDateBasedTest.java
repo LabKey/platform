@@ -8,11 +8,11 @@ import java.util.Map;
  */
 public class StudyDateBasedTest extends AbstractStudyTimeKeyFieldTest
 {
-    @Override
-    protected String getProjectName()
-    {
-        return "DateBasedStudyVerifyProject";
-    }
+//    @Override
+//    protected String getProjectName()
+//    {
+//        return "DateBasedStudyVerifyProject";
+//    }
 
     protected void doCreateSteps()
     {

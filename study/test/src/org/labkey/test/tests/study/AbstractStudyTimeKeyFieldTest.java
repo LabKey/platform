@@ -25,9 +25,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
 {
     protected static final File CONTINUOUS_ARCHIVE = TestFileUtils.getSampleData("study/StudyContinuous.folder.zip");
     protected static final File DATEBASED_ARCHIVE = TestFileUtils.getSampleData("study/StudyDateBasedTest.folder.zip");
-
-    //TODO: Uncomment and fix after sprint 17.2.3 has branched
-    //protected static final File DUPLICATE_DATASET = TestFileUtils.getSampleData("study/commondata/APX-ExactDuplicateRow.tsv");
+    protected static final File DUPLICATE_DATASET = TestFileUtils.getSampleData("study/commondata/APX-ExactDuplicateRow.tsv");
 
     protected static final File DIFFERENT_TIME = TestFileUtils.getSampleData("study/commondata/APX-DiffersInTime.tsv");
     protected static final File DIFFERENT_DATES_DIFFERENT_TIMES = TestFileUtils.getSampleData("study/commondata/RCB-1.tsv");
@@ -45,6 +43,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         return "Contains up to one row of DEM-1: Demographics data for each mouse.";
     }
 
+    //Ensure a duplicate row cannot be inserted when time is not set as an additional key
     protected void testCannotInsertExactDuplicateNoTimeKey(Map<String,String> kvp, String dataset,String folder)
     {
         ViewDatasetDataPage dataPage = goToDataset(folder,dataset);
@@ -57,6 +56,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         insertPage.insert(kvp,false,"Duplicates were found in the database or imported data");
     }
 
+    //Ensure additional key column cannot be changed back to none from time if rows exist that differ only in time
     protected void testCannotInsertDifferingOnlyTimeNoTimeKey(Map<String,String> kvp, String dataset,String folder)
     {
         ViewDatasetDataPage dataPage = goToDataset(folder,dataset);
@@ -69,6 +69,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         insertPage.insert(kvp,false,"Duplicates were found in the database or imported data");
     }
 
+    //Ensure that when time is set as an additional key it is possible to insert a row that differs only in the time portion of the timestamp
     protected void testCanInsertWithOnlyTimeDifferentIfTimeKey(Map<String,String> kvp, String dataset,String folder)
     {
         ViewDatasetDataPage dataPage = goToDataset(folder,dataset);
@@ -82,6 +83,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         insertPage.insert(kvp,true,"Duplicates were found in the database or imported data");
     }
 
+    //Ensure inserting an exact duplicate row is disallowed when time is specified as an additional key
     protected void testCannotUploadDuplicateIfTimeKey(File toUpload, String dataset,String folder)
     {
         ViewDatasetDataPage dataPage = goToDataset(folder,dataset);
@@ -95,6 +97,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         importPage.uploadData(toUpload.getAbsolutePath(),false,"Duplicates were found in the database or imported data");
     }
 
+    //Ensure a row differing only in the time portion of the timestamp can be inserted if time is specified as an additional key
     protected void testCanUploadWithOnlyTimeDifferentIfTimeKey(File toUpload, String dataset, String folder)
     {
         ViewDatasetDataPage dataPage = goToDataset(folder, dataset);
@@ -108,6 +111,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         importPage.uploadData(toUpload.getAbsolutePath(),true,"Duplicates were found in the database or imported data");
     }
 
+    //Ensure that it is possible to change additional key from time if doing so would not result in a collision
     protected void testCanChangeExtraKeyFromTimeIfDoesNotViolateUnique(String folder, String dataset, File toUpload)
     {
         ViewDatasetDataPage dataPage = goToDataset(folder,dataset);
@@ -126,6 +130,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         
     }
 
+    //Date field should display the time as well if time is specified as an additional key
     protected void testDateFieldDisplaysTimeIfTimeKey()
     {
         goToAdminConsole();

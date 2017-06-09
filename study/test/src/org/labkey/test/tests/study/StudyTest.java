@@ -117,6 +117,7 @@ public class StudyTest extends StudyBaseTest
 
     protected File[] getTestFiles()
     {
+        assertEquals("Wrong project for study-api.xml", "StudyVerifyProject", getProjectName());
         return new File[]{new File(TestFileUtils.getLabKeyRoot() + "/server/test/data/api/study-api.xml")};
     }
 
