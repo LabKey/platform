@@ -54,7 +54,7 @@ public class ViewQuerySourceAction extends SimpleViewAction<QueryForm>
         html.append("</pre></div>");
         if (null != qdef.getMetadataXml())
         {
-            html.append("<div>Metadata:<pre>");
+            html.append("<div class='labkey-query-metadata'>Metadata:<pre>");
             html.append(PageFlowUtil.filter(qdef.getMetadataXml()));
             html.append("</pre></div>");
         }
