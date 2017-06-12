@@ -333,27 +333,32 @@ public class ListManager implements SearchService.DocumentProvider
     // Index (or delete) a single list item after item save or delete
     public void indexItem(final ListDefinition list, final ListItem item)
     {
-        final IndexTask task = SearchService.get().defaultTask();
-
-        if (list.getEachItemIndex())
+        SearchService ss = SearchService.get();
+        if (ss != null)
         {
-            Runnable r = () -> {
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(list.getKeyName()), item.getKey());
-                int count = indexItems(task, list, filter);
-                if (0 == count)
-                    LOG.info("I should be deleting!");
-            };
-            _addIndexTask(r, SearchService.PRIORITY.item);
-        }
+            final IndexTask task = ss.defaultTask();
 
-        if (list.getEntireListIndex() && list.getEntireListIndexSetting().indexItemData())
-        {
-            Runnable r = new ListIndexRunnable(task, list);
-            _addIndexTask(r, SearchService.PRIORITY.item);
-        }
+            if (list.getEachItemIndex())
+            {
+                Runnable r = () ->
+                {
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(list.getKeyName()), item.getKey());
+                    int count = indexItems(task, list, filter);
+                    if (0 == count)
+                        LOG.info("I should be deleting!");
+                };
+                _addIndexTask(r, SearchService.PRIORITY.item);
+            }
 
-        //If attachmentIndexing (checked within method) is enabled index attachment file(s)
-        indexAttachments(task, list);
+            if (list.getEntireListIndex() && list.getEntireListIndexSetting().indexItemData())
+            {
+                Runnable r = new ListIndexRunnable(task, list);
+                _addIndexTask(r, SearchService.PRIORITY.item);
+            }
+
+            //If attachmentIndexing (checked within method) is enabled index attachment file(s)
+            indexAttachments(task, list);
+        }
     }
 
 
@@ -443,11 +448,16 @@ public class ListManager implements SearchService.DocumentProvider
         if (!list.getEntireListIndex() && !list.getEachItemIndex())
             return;
 
-        final IndexTask task = SearchService.get().defaultTask();
+        SearchService ss = SearchService.get();
 
-        Runnable r = () -> SearchService.get().deleteResource(getDocumentId(list, entityId));
+        if (null != ss)
+        {
+            final IndexTask task = ss.defaultTask();
 
-        task.addRunnable(r, SearchService.PRIORITY.delete);
+            Runnable r = () -> ss.deleteResource(getDocumentId(list, entityId));
+
+            task.addRunnable(r, SearchService.PRIORITY.delete);
+        }
     }
 
     private String getDocumentId(ListDefinition list)
