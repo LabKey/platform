@@ -651,7 +651,8 @@ public class DataColumn extends DisplayColumn
                         .columns(_inputLength)
                         .rows(_inputRows)
                         .name(getInputPrefix() + formFieldName)
-                        .disabled(disabledInput);
+                        .disabled(disabledInput)
+                        .value(strVal);
 
                 out.write(input.build().toString());
             }
