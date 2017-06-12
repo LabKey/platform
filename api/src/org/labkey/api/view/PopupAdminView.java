@@ -21,9 +21,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.menu.FolderAdminMenu;
 import org.labkey.api.view.menu.ProjectAdminMenu;
 import org.labkey.api.view.menu.SiteAdminMenu;
@@ -138,6 +140,15 @@ public class PopupAdminView extends PopupMenuView
 
         if (!c.isRoot())
         {
+            if (isFolderAdmin(context))
+            {
+                String pageAdminTxt = PageFlowUtil.isPageAdminMode(context) ? "Exit Admin Mode" : "Enter Admin Mode";
+                ActionURL pageAdminUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(c, context.getActionURL());
+                NavTree pageAdmin = new NavTree(pageAdminTxt, pageAdminUrl);
+                pageAdmin.setId("__lk-adminmenu-page");
+                navTree.addChild(pageAdmin);
+            }
+
             navTree.addSeparator();
             c.getFolderType().addManageLinks(navTree, c, user);
 

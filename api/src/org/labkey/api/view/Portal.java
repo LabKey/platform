@@ -919,7 +919,8 @@ public class Portal
 
     public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView) throws Exception
     {
-        populatePortalView(context, id, template, printView, context.getContainer().hasPermission("populatePortalView",context.getUser(), AdminPermission.class));
+        boolean canCustomize = context.getContainer().hasPermission("populatePortalView",context.getUser(), AdminPermission.class);
+        populatePortalView(context, id, template, printView, canCustomize);
     }
 
 
@@ -966,18 +967,20 @@ public class Portal
                     if (desc.isEditable() && view.getCustomize() == null)
                         view.setCustomize(new NavTree("", getCustomizeURL(context, part)));
 
-                    if (i > 0)
-                        navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), null, "fa fa-caret-square-o-up labkey-fa-portal-nav");
-                    else
-                        navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), null, "fa fa-caret-square-o-up x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav");
-
-                    if (i < partsForLocation.size() - 1)
-                        navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), null, "fa fa-caret-square-o-down labkey-fa-portal-nav");
-                     else
-                        navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), null, "fa fa-caret-square-o-down x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav");
-                    if (!part.isPermanent())
+                    if (PageFlowUtil.isPageAdminMode(context))
                     {
-                        navTree.addChild("Remove From Page", getDeleteURL(context, part), null, "fa fa-times");
+                        if (i > 0)
+                            navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), null, "fa fa-caret-square-o-up labkey-fa-portal-nav");
+                        else
+                            navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), null, "fa fa-caret-square-o-up x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav");
+
+                        if (i < partsForLocation.size() - 1)
+                            navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), null, "fa fa-caret-square-o-down labkey-fa-portal-nav");
+                        else
+                            navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), null, "fa fa-caret-square-o-down x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav");
+
+                        if (!part.isPermanent())
+                            navTree.addChild("Remove From Page", getDeleteURL(context, part), null, "fa fa-times");
                     }
                 }
 
@@ -994,7 +997,7 @@ public class Portal
             }
         }
 
-        if (canCustomize && !printView)
+        if (PageFlowUtil.isPageAdminMode(context) && canCustomize && !printView)
             addCustomizeDropdowns(context.getContainer(), template, id, locations);
     }
 

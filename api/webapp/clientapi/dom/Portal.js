@@ -128,27 +128,6 @@
             updateButtons(webparts);
         }
 
-
-        function removeImgHref(imageEl, newImageCls)
-        {
-            var href = imageEl.parentNode;
-            var hrefParent = href.parentNode;
-             imageEl.className = newImageCls;
-            // replace href with imageEl to remove the link entirely:
-            hrefParent.replaceChild(imageEl, href);
-            hrefParent.className = "labkey-wp-icon-button-inactive";
-        }
-
-        function addImgHref(imageEl, href, newImageCls)
-        {
-            var hrefEl = document.createElement("a");
-            hrefEl.href = href;
-            imageEl.className = newImageCls;
-            imageEl.parentNode.className = "labkey-wp-icon-button-active";
-            imageEl.parentNode.replaceChild(hrefEl, imageEl);
-            hrefEl.appendChild(imageEl);
-        }
-
         function updateButtons(webparts)
         {
             var moveUpImage = 'fa fa-caret-square-o-up labkey-fa-portal-nav';
@@ -181,7 +160,6 @@
                 for (index = 0; index < confirmedWebpartTables.length; index++)
                 {
                     var webpartTable = confirmedWebpartTables[index];
-                    var webpart = confirmedWebparts[index];
                     var disableUp = index == 0;
                     var disableDown = index == confirmedWebparts.length - 1;
                     var imgChildren = webpartTable.getElementsByClassName('labkey-fa-portal-nav');
@@ -189,14 +167,16 @@
                     for (var imageIndex = 0; imageIndex < imgChildren.length; imageIndex++)
                     {
                         var imageEl = imgChildren[imageIndex];
+
                         if (imageEl.className.indexOf(moveUpImage) >= 0 && disableUp)
-                            removeImgHref(imageEl, moveUpDisabledImage);
+                            imageEl.className = moveUpDisabledImage;
                         else if (imageEl.className.indexOf(moveUpDisabledImage) >= 0 && !disableUp)
-                            addImgHref(imageEl, "javascript:LABKEY.Portal.moveWebPartUp({webPartId:" + webpart.webPartId + ",updateDOM:true});", moveUpImage);
-                        else if (imageEl.className.indexOf(moveDownImage) >= 0 && disableDown)
-                            removeImgHref(imageEl, moveDownDisabledImage);
+                            imageEl.className = moveUpImage;
+
+                        if (imageEl.className.indexOf(moveDownImage) >= 0 && disableDown)
+                            imageEl.className = moveDownDisabledImage;
                         else if (imageEl.className.indexOf(moveDownDisabledImage) >= 0 && !disableDown)
-                            addImgHref(imageEl, "javascript:LABKEY.Portal.moveWebPartDown({webPartId:" + webpart.webPartId + ",updateDOM:true});", moveDownImage);
+                            imageEl.className = moveDownImage;
                     }
                 }
             }

@@ -6,6 +6,8 @@
 Ext4.define('LABKEY.Portal.WebPartPermissionsPanel', {
         extend: 'Ext.window.Window',
 
+        border: false,
+
         constructor: function(config){
 
             config.containerPath = Ext4.htmlDecode(config.containerPath);

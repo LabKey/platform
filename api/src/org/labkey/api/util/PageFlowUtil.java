@@ -160,11 +160,13 @@ public class PageFlowUtil
      * Default parser class.
      */
     private static final String DEFAULT_PARSER_NAME = "org.apache.xerces.parsers.SAXParser";
+
     private static final String NONPRINTING_ALTCHAR = "~";
 
     // This is a flag that is used to distinguish code paths while migrating the core UI
     public static final String EXPERIMENTAL_MIGRATE_CORE_UI = "migrate-core-ui";
 
+    public static final String SESSION_PAGE_ADMIN_MODE = "session-page-admin-mode";
 
     public static boolean useExperimentalCoreUI()
     {
@@ -178,6 +180,18 @@ public class PageFlowUtil
         return false;
     }
 
+    /**
+     * Whether or not the user has entered the "Admin Mode". Used for showing/hiding controls like adding/moving/removing webparts and tabs.
+     * @return boolean
+     */
+    public static boolean isPageAdminMode(@NotNull ViewContext context)
+    {
+        if (!useExperimentalCoreUI())
+            return true;
+
+        HttpSession session = context.getSession();
+        return session != null && session.getAttribute(SESSION_PAGE_ADMIN_MODE) != null;
+    }
 
     static public String filterXML(String s)
     {
