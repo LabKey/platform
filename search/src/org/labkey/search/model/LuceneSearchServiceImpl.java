@@ -864,6 +864,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 // Need to translate TikaException in Tika classloader to TikaException in this classloader
                 if ("org.apache.tika.exception.TikaException".equals(cause.getClass().getName()))
                     throw new TikaException(cause.getMessage(), cause.getCause());
+                // Likewise, need to translate EncryptedDocumentException in Tika classloader to EncryptedDocumentException in this classloader, #30306
+                if ("org.apache.tika.exception.EncryptedDocumentException".equals(cause.getClass().getName()))
+                    throw new EncryptedDocumentException(cause.getMessage(), cause.getCause());
 
                 // Need to unwrap SAXException and IOException
                 if (cause instanceof SAXException)
