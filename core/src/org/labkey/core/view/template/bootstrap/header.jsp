@@ -28,6 +28,8 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.BootstrapHeader" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -114,6 +116,12 @@
 <% if (user != null && user.isImpersonated()) { %>
             <li>
                 <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()))%>" class="btn btn-primary">Stop impersonating</a>
+            </li>
+<% } %>
+<% if (PageFlowUtil.isPageAdminMode(getViewContext())) { %>
+            <li>&nbsp;</li> <!--spacer, for the case of both impersonating and page admin mode-->
+            <li>
+                <a href="<%=h(urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(c, getActionURL()))%>" class="btn btn-primary">Exit Admin Mode</a>
             </li>
 <% } %>
 <% if (!isRealUser && model.pageConfig.shouldIncludeLoginLink()) { %>

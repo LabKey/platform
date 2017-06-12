@@ -91,6 +91,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -212,6 +213,14 @@ public class ProjectController extends SpringActionController
             ActionURL url = new ActionURL(FileBrowserAction.class, c);
             url.addParameter("path", path);
 
+            return url;
+        }
+
+        @Override
+        public ActionURL getTogglePageAdminModeURL(Container c, ActionURL returnURL)
+        {
+            ActionURL url = new ActionURL(TogglePageAdminModeAction.class, c);
+            url.addReturnURL(returnURL);
             return url;
         }
     }
@@ -1742,6 +1751,35 @@ public class ProjectController extends SpringActionController
             getPageConfig().setTemplate(PageConfig.Template.None);
 
             return menu.renderToApiResponse();
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class TogglePageAdminModeAction extends org.labkey.api.action.RedirectAction<ReturnUrlForm>
+    {
+        @Override
+        public void validateCommand(ReturnUrlForm form, Errors errors)
+        {}
+
+        @Override
+        public boolean doAction(ReturnUrlForm form, BindException errors) throws Exception
+        {
+            HttpSession session = getViewContext().getSession();
+            if (session != null)
+            {
+                if (session.getAttribute(PageFlowUtil.SESSION_PAGE_ADMIN_MODE) != null)
+                    session.removeAttribute(PageFlowUtil.SESSION_PAGE_ADMIN_MODE);
+                else
+                    session.setAttribute(PageFlowUtil.SESSION_PAGE_ADMIN_MODE, true);
+            }
+
+            return session != null;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ReturnUrlForm form)
+        {
+            return form.getReturnURLHelper(beginURL());
         }
     }
 }

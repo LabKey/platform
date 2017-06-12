@@ -55,9 +55,9 @@
   &.fa {
     margin: 2px;
 
-    /* don't allow the up down arrows to show as disabled until bug 24434 has been fixed */
+    /* allow the up down arrows to show as disabled (see Issue #24434) */
     &.x4-btn-default-toolbar-small-disabled {
-      opacity: 1;
+      opacity: 0.5;
     }
   }
 }

@@ -3544,7 +3544,7 @@ div.headermenu a.labkey-menu-text-link img {
     margin: 2px;
 }
 
-/* dont allow the up down arrows to show as disabled until bug 24434 has been fixed */
+/* don't allow the up down arrows to show as disabled (see Issue #24434) */
 .x4-menu-item-icon.fa.x4-btn-default-toolbar-small-disabled
 {
     opacity: 1;
