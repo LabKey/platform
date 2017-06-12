@@ -768,7 +768,8 @@ public class DataColumn extends DisplayColumn
                 {
                     Input.InputBuilder input = new Input.InputBuilder()
                             .name(getInputPrefix() + formFieldName)
-                            .disabled(disabledInput);
+                            .disabled(disabledInput)
+                            .value(strVal);
 
                     out.write(input.build().toString());
                 }
