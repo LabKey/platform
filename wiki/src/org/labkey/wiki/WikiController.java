@@ -1096,7 +1096,7 @@ public class WikiController extends SpringActionController
             Container sourceContainer = getSourceContainer(form.getSourceContainer());
             bean.cancelURL = null == sourceContainer ? getBeginURL(c) : getBeginURL(sourceContainer);
 
-            setHelpTopic("wikiUserGuide#copy");
+            setHelpTopic("docTools");
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setShowHeader(true);
 
