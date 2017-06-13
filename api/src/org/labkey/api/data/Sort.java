@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
@@ -411,14 +412,12 @@ public class Sort
         return null;
     }
 
-    public int indexOf(FieldKey fieldKey)
+    public int indexOf(@NotNull FieldKey fieldKey)
     {
-        for (int i = 0; i < _sortList.size(); i++)
-        {
-            SortField sf = _sortList.get(i);
-            if (sf._fieldKey.equals(fieldKey))
-                return i;
-        }
+        if (_sortList != null)
+            for (SortField sortField : _sortList)
+                if (fieldKey.equals(sortField.getFieldKey()))
+                    return _sortList.indexOf(sortField);
 
         return -1;
     }
