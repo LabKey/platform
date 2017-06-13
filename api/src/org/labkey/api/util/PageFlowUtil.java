@@ -188,7 +188,7 @@ public class PageFlowUtil
      */
     public static boolean isPageAdminMode(ViewContext context)
     {
-        if (context == null || !context.hasPermission("PageAdminMode", AdminPermission.class))
+        if (context == null || context.getContainer() == null || !context.hasPermission("PageAdminMode", AdminPermission.class))
             return false;
 
         if (!useExperimentalCoreUI())
