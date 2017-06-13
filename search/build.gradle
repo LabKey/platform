@@ -16,7 +16,7 @@ project.task("copyTika",
         description: "Copy Tika app into directory for use by special classloader",
         { CopySpec copy ->
            copy.from project.configurations.tika
-           copy.into new File(project.buildDir, "resources/tika")
+           copy.into new File(project.buildDir, "explodedModule/tika")
         }
 )
 
