@@ -393,13 +393,19 @@ public abstract class SearchTest extends StudyTest
     {
         clickFolder(getFolderName());
         goToModule("FileContent");
-        File file = TestFileUtils.getSampleData("security/InlineFile.html");
-        _fileBrowserHelper.uploadFile(file);
+        File htmlFile = TestFileUtils.getSampleData("security/InlineFile.html");
+        _fileBrowserHelper.uploadFile(htmlFile);
         File MLfile = TestFileUtils.getSampleData("mzxml/test_nocompression.mzXML");
         _fileBrowserHelper.uploadFile(MLfile);
+        File pdfFile = TestFileUtils.getSampleData("fileTypes/docx_sample.docx");
+        _fileBrowserHelper.uploadFile(pdfFile);
+        File docFile = TestFileUtils.getSampleData("fileTypes/pdf_sample.pdf");
+        _fileBrowserHelper.uploadFile(docFile);
 
-        _searchHelper.enqueueSearchItem("antidisestablishmentarianism", true, Locator.linkWithText(file.getName()));
+        _searchHelper.enqueueSearchItem("antidisestablishmentarianism", true, Locator.linkWithText(htmlFile.getName()));
         _searchHelper.enqueueSearchItem("ThermoFinnigan", true, Locator.linkWithText(MLfile.getName()));
+        _searchHelper.enqueueSearchItem("acyclic", true, Locator.linkWithText(pdfFile.getName()));
+        _searchHelper.enqueueSearchItem("Audience", true, Locator.linkWithText(docFile.getName()));
     }
 
     @Override @Test @Ignore
