@@ -183,12 +183,12 @@ public class PageFlowUtil
     }
 
     /**
-     * Whether or not the user has entered the "Admin Mode". Used for showing/hiding controls like adding/moving/removing webparts and tabs.
+     * Whether or not the user has entered the "Page Admin Mode". Used for showing/hiding controls like adding/moving/removing webparts and tabs.
      * @return boolean
      */
-    public static boolean isPageAdminMode(@NotNull ViewContext context)
+    public static boolean isPageAdminMode(ViewContext context)
     {
-        if (!context.hasPermission("PageAdminMode", AdminPermission.class))
+        if (context == null || !context.hasPermission("PageAdminMode", AdminPermission.class))
             return false;
 
         if (!useExperimentalCoreUI())
@@ -200,11 +200,11 @@ public class PageFlowUtil
 
     /** This is to be removed/replace by the isPageAdminMode() above after useExperimentalCoreUI is turned on **/
     @Deprecated
-    public static boolean isTabEditMode(@NotNull ViewContext context, Container tabContainer)
+    public static boolean isTabEditMode(ViewContext context, Container tabContainer)
     {
         if (!useExperimentalCoreUI())
         {
-            HttpSession session = context.getSession();
+            HttpSession session = context != null ? context.getSession() : null;
             if (session == null)
                 return false;
 
