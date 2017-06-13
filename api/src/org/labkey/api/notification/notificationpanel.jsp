@@ -66,7 +66,7 @@
                 });
 
                 for (var i = 0; i < groupings.length; i++) {
-                    html += "<div class='labkey-notification-type' id='notificationtype-" + groupings[i] + "'>" + groupings[i] + "</div>";
+                    html += "<div class='labkey-notification-type' id='notificationtype-" + groupings[i] + "'>" + LABKEY.Utils.encodeHtml(groupings[i]) + "</div>";
 
                     var groupRowIds = LABKEY.notifications.grouping[groupings[i]];
                     for (var j = 0; j < groupRowIds.length; j++) {
@@ -83,7 +83,7 @@
                                 + "      <div class='fa fa-times labkey-notification-times' onclick='LABKEY.Notification.markAsRead(" + rowId + "); return true;'></div>"
                                 + "      <div class='fa fa-angle-down labkey-notification-toggle' onclick='LABKEY.Notification.toggleBody(this); return true;'></div>"
                                 + "   </div>"
-                                + "   <div class='labkey-notification-createdby'>" + dStr + " - " + info.CreatedBy + "</div>"
+                                + "   <div class='labkey-notification-createdby'>" + dStr + " - " + LABKEY.Utils.encodeHtml(info.CreatedBy) + "</div>"
                                 + "   <div class='labkey-notification-body'>" + info.HtmlContent + "</div>"
                                 + "</div>";
                     }
