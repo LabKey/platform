@@ -362,11 +362,7 @@
                         LABKEY.notifications = response.notifications;
                         _notificationsUpdatedCallbacks.forEach(function(cb){cb();});
                     }
-                }),
-                failure: function(response)
-                {
-                    console.log(responseText.exception);
-                }
+                })
             });
         };
 
