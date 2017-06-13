@@ -35,7 +35,6 @@ import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
-import java.util.Date;
 import java.util.EmptyStackException;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -96,9 +95,8 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         else
         {
             PasswordExpiration expiration = DbLoginManager.getPasswordExpiration();
-            Date lastChanged = SecurityManager.getLastChanged(user);
 
-            if (expiration.hasExpired(lastChanged))
+            if (expiration.hasExpired(() -> SecurityManager.getLastChanged(user)))
             {
                 return getChangePasswordResponse(user, returnURL, FailureReason.expired);
             }
