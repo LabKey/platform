@@ -50,11 +50,12 @@
 
     & > li {
       float: left;
-      background-color: #73b6e0;
+      background-color: $lk-page-nav-color-inactive;
       margin: 0 3px;
       border-radius: 3px 3px 0 0;
 
       & > a {
+        display: inline-block;
         border-radius: 3px 3px 0 0;
         padding: 6px 15px;
       }
@@ -63,6 +64,18 @@
     & > li.active > a {
       color: $lk-page-nav-color-active;
       background-color: $lk-body-bg-color;
+    }
+  }
+
+  .lk-nav-tabs-admin {
+    & > li > a:first-of-type {
+      padding: 6px 6px 6px 15px;
+      border-radius: 3px 0 0 0;
+    }
+
+    & > li > a:last-of-type {
+      padding: 6px;
+      border-radius: 0 3px 0 0;
     }
   }
 }

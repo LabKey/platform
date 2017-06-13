@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.PopupMenuView" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -46,10 +47,10 @@
     NavigationModel model = (NavigationModel) HttpView.currentView().getModelBean();
     ViewContext context = getViewContext();
     List<NavTree> tabs = model.getTabs();
+    LinkedHashSet<Pair<String, Portal.WebPart>> menus = new LinkedHashSet<>();
+    boolean isPageAdminMode = PageFlowUtil.isPageAdminMode(getViewContext()) && !getContainer().isRoot();
 
     // process custom menus
-    LinkedHashSet<Pair<String, Portal.WebPart>> menus = new LinkedHashSet<>();
-
     for (Portal.WebPart menu : model.getCustomMenus())
     {
         String caption = menu.getName();
@@ -72,6 +73,8 @@
 
         menus.add(new Pair<>(caption, menu));
     }
+
+    // TODO need support for sub-tabs of a container tab (see example in TabTest)
 %>
 <nav class="labkey-page-nav">
     <div class="container">
@@ -116,22 +119,53 @@
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown"><%=h(pair.first)%></a>
                     <ul class="dropdown-menu"></ul>
                 </li>
-<%  } %>
+<%
+    }
+%>
             </ul>
         </div>
         <div class="lk-nav-tabs-ct">
-            <ul class="nav lk-nav-tabs hidden-sm hidden-xs pull-right">
+            <ul class="nav lk-nav-tabs hidden-sm hidden-xs pull-right <%=h(isPageAdminMode ? "lk-nav-tabs-admin" : "")%>">
                 <%
                     for (NavTree tab : tabs)
                     {
-                        if (null != tab.getText() && tab.getText().length() > 0)
+                        boolean show = isPageAdminMode || !tab.isDisabled();
+
+                        if (show && null != tab.getText() && tab.getText().length() > 0)
                         {
                 %>
                 <li role="presentation" class="<%= text(tab.isSelected() ? "active" : "") %>">
-                    <a href="<%=h(tab.getHref())%>"><%=h(tab.getText())%></a>
+                    <a href="<%=h(tab.getHref())%>" id="<%=h(tab.getText()).replace(" ", "")%>Tab">
+                        <% if (tab.isDisabled()) { %><i class="fa fa-eye-slash"></i><% } %>
+                        <%=h(tab.getText())%>
+                <%
+                            if (isPageAdminMode && tab.getChildren().length == 1)
+                            {
+                %>
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        <i class="fa fa-caret-down"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-right">
+                        <% PopupMenuView.renderTree(tab.getChildren()[0], out); %>
+                    </ul>
+                <%
+                            }
+                %>
+                    </a>
                 </li>
                 <%
                         }
+                    }
+
+                    if (isPageAdminMode)
+                    {
+                %>
+                <li role="presentation">
+                    <a href="javascript:LABKEY.Portal.addTab();" id="addTab" title="Add New Tab">
+                        <i class="fa fa-plus" style="font-size: 12px;"></i>
+                    </a>
+                </li>
+                <%
                     }
                 %>
             </ul>
@@ -165,7 +199,9 @@
                         // Generate all other tabs
                         for (NavTree tab : tabs)
                         {
-                            if (null != tab.getText() && tab.getText().length() > 0 && !tab.isSelected())
+                            boolean show = isPageAdminMode || !tab.isDisabled();
+
+                            if (show && null != tab.getText() && tab.getText().length() > 0 && !tab.isSelected())
                             {
                 %>
                         <li>
