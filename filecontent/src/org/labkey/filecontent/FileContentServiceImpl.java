@@ -62,6 +62,7 @@ import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -710,8 +711,11 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             _log.info("moving " + prev.getPath() + " to " + dest.getPath());
             boolean doRename = true;
 
-            // attempt to rename, if that fails (try the more expensive copy)
-            if (dest.exists())
+            // Our best bet for perf is to to a rename, which doesn't require creating an actual copy.
+            // If it exists, try deleting the target directory, which will only succeed if it's empty, but would
+            // enable using renameTo() method. Don't delete if it's a symbolic link, since it wouldn't be recreated
+            // in the same way.
+            if (dest.exists() && !Files.isSymbolicLink(dest.toPath()))
                 doRename = dest.delete();
 
             if (doRename && !prev.renameTo(dest))
