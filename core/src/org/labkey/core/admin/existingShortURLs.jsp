@@ -1,6 +1,9 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.api.view.ShortURLRecord" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="java.util.Collections" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%
 /*
  * Copyright (c) 2014 LabKey Corporation
@@ -20,6 +23,13 @@
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("internal/clipboard/clipboard-1.5.9.min.js");
+    }
+%>
 
 <%
     AdminController.ShortURLForm bean = (AdminController.ShortURLForm) HttpView.currentModel();
@@ -29,14 +39,21 @@
     <tr>
         <td class="labkey-column-header">Short URL</td>
         <td class="labkey-column-header">Test Link</td>
+        <td class="labkey-column-header"></td>
         <td class="labkey-column-header">Target URL</td>
         <td class="labkey-column-header"></td>
     </tr>
     <% if (bean.getSavedShortURLs().isEmpty()) { %><tr><td colspan="3">No short URLs have been configured.</td></tr> <% } %>
-    <% for (ShortURLRecord shortURLRecord : bean.getSavedShortURLs()) { %>
+    <% int index = 0;
+        for (ShortURLRecord shortURLRecord : bean.getSavedShortURLs()) {
+            index++; %>
         <tr>
             <td><%= h(shortURLRecord.getShortURL())%></td>
             <td><%= textLink("test", shortURLRecord.renderShortURL()) %></td>
+            <td>
+                <%= textLink("copy to clipboard", (URLHelper)null, "return false;", "copyToClipboardId" + index, Collections.singletonMap("data-clipboard-text", shortURLRecord.renderShortURL())) %>
+                <script>new Clipboard('#copyToClipboardId' + <%= index %>)</script>
+            </td>
             <td><labkey:form method="post"><input type="text" name="fullURL" value="<%= h(shortURLRecord.getFullURL())%>" size="40"/> <%= button("Update").submit(true) %><input type="hidden" name="shortURL" value="<%= h(shortURLRecord.getShortURL())%>" /></labkey:form></td>
             <td><labkey:form method="post"><input type="hidden" name="delete" value="true" /><%= button("Delete").submit(true) %><input type="hidden" name="shortURL" value="<%= h(shortURLRecord.getShortURL())%>" /></labkey:form></td>
         </tr>
