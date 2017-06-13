@@ -46,7 +46,7 @@ import org.labkey.api.query.RExportScriptFactory;
 import org.labkey.api.query.SasExportScriptFactory;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.URLExportScriptFactory;
-import org.labkey.api.reports.LabKey_ScriptEngineManager;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.chart.ChartRendererFactory;
 import org.labkey.api.reports.report.ChartQueryReport;
@@ -239,7 +239,7 @@ public class QueryModule extends DefaultModule
         ReportsController.registerAdminConsoleLinks();
         QueryController.registerAdminConsoleLinks();
 
-        ServiceRegistry.get().registerService(ScriptEngineManager.class, new LabKey_ScriptEngineManager());
+        ServiceRegistry.get().registerService(ScriptEngineManager.class, new LabKeyScriptEngineManager());
 
         FolderSerializationRegistry folderRegistry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
         if (null != folderRegistry)
