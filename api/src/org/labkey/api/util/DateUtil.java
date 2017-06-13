@@ -35,10 +35,8 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
@@ -274,34 +272,6 @@ public class DateUtil
         t    // T : time marker
     }
 
-    private static final Enum[] parts;
-    static
-    {
-        ArrayList<Enum> list = new ArrayList<>();
-        list.addAll(Arrays.asList(AMPM.values()));
-        list.addAll(Arrays.asList(Month.values()));
-        list.addAll(Arrays.asList(Weekday.values()));
-        list.addAll(Arrays.asList(TZ.values()));
-        list.addAll(Arrays.asList(ISO.values()));
-        list.sort(Comparator.comparing(Enum::name));
-        parts = list.toArray(new Enum[list.size()]);
-    }
-
-    // Yes, this compares Enum to String, on purpose. Only used for binarySearch() below.
-    private static final Comparator compEnum = (Comparator<Object>) (o1, o2) -> ((Enum)o1).name().compareTo((String)o2);
-
-    private static Enum resolveDatePartEnum(String s)
-    {
-        s = s.toLowerCase();
-        int i = Arrays.binarySearch(parts, s, compEnum);
-        if (i>=0)
-            return parts[i];
-        if (s.length() < 2)
-            return null;
-        i = -(i+1);
-        return i>parts.length-1 ? null : parts[i].name().startsWith(s) ? parts[i] : null;
-    }
-
     private static final NavigableMap<String, Enum> PARTS_MAP = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     static
@@ -311,7 +281,7 @@ public class DateUtil
             .forEach(e -> PARTS_MAP.put(e.name(), e));
     }
 
-    private static @Nullable Enum resolveDatePartEnum2(String s)
+    private static @Nullable Enum resolveDatePartEnum(String s)
     {
         // Require an exact match if s is one character long
         if (s.length() < 2)
@@ -326,9 +296,6 @@ public class DateUtil
     private static Object resolveDatePart(String s)
     {
         Enum e = resolveDatePartEnum(s);
-        Enum e2 = resolveDatePartEnum2(s);
-
-        assert e == e2 : s + " resolved to " + e2 + " but should have been " + e;
 
         if (null != e)
             return e instanceof TZ && (null != ((TZ)e).tz) ? ((TZ)e).tz : e;
