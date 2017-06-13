@@ -403,35 +403,26 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         User user = ctx.getUser();
         ProjectUrls projectURLProvider = PageFlowUtil.urlProvider(ProjectUrls.class);
 
-        JSONObject config = new JSONObject();
-        config.put("pageId", portalPageId);
-        config.put("domId", folderLabel.replace(" ", "") + "Tab");
-        String moveConfig = config.toString();
-
         NavTree menu = new NavTree("Tab Administration");
 
+        String portalTabParams = PageFlowUtil.jsString(portalPageId) + ", "
+                + PageFlowUtil.jsString(getTabIdFromLabel(folderLabel)) + ", "
+                + PageFlowUtil.jsString(folderLabel);
+
         if(portalPage.isHidden())
-        {
-            menu.addChild(new NavTree("Show", "javascript:LABKEY.Portal.showTab(" + PageFlowUtil.jsString(portalPageId) + ")"));
-        }
+            menu.addChild(new NavTree("Show", "javascript:LABKEY.Portal.showTab(" + portalTabParams + ")"));
         else
             menu.addChild(new NavTree("Hide", projectURLProvider.getHidePortalPageURL(container, portalPageId, ctx.getActionURL())));
 
         if (portalPage.isCustomTab())
-        {
             menu.addChild(new NavTree("Delete", projectURLProvider.getDeletePortalPageURL(container, portalPageId, ctx.getActionURL())));
-        }
 
         NavTree moveMenu = new NavTree("Move");
-        moveMenu.addChild(new NavTree("Left", "javascript:LABKEY.Portal.moveTabLeft(" + moveConfig + ");"));
-        moveMenu.addChild(new NavTree("Right", "javascript:LABKEY.Portal.moveTabRight(" + moveConfig + ");"));
+        moveMenu.addChild(new NavTree("Left", "javascript:LABKEY.Portal.moveTabLeft(" + portalTabParams + ");"));
+        moveMenu.addChild(new NavTree("Right", "javascript:LABKEY.Portal.moveTabRight(" + portalTabParams + ");"));
         menu.addChild(moveMenu);
 
-        menu.addChild(new NavTree("Rename", "javascript:LABKEY.Portal.renameTab(" + PageFlowUtil.jsString(portalPageId) + ", " + PageFlowUtil.jsString(folderLabel.replace(" ", "") + "Tab") + ");"));
-
-        // TODO: Determing permissions and settings links.
-//        menu.addChild(new NavTree("Permissions"));
-//        menu.addChild(new NavTree("Settings"));
+        menu.addChild(new NavTree("Rename", "javascript:LABKEY.Portal.renameTab(" + portalTabParams + ");"));
 
         if (folderTab.getTabType() == FolderTab.TAB_TYPE.Container)
         {
@@ -479,6 +470,11 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         }
 
         return menu;
+    }
+
+    private String getTabIdFromLabel(String folderLabel)
+    {
+        return folderLabel.replace(" ", "") + "Tab";
     }
 
     @Override

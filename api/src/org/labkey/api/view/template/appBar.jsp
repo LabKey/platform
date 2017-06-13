@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.view.template.AppBarView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -40,8 +41,7 @@
     if (tabContainer.isContainerTab() || tabContainer.isWorkbook())
         tabContainer = tabContainer.getParent();
 
-    String tabEditMode = session.getAttribute("tabEditMode") == null ? "" : (String) session.getAttribute("tabEditMode");
-    boolean isTabEditMode = tabEditMode.equals(tabContainer.getId());
+    boolean isTabEditMode = PageFlowUtil.isTabEditMode(context, tabContainer);
     AppBarView me = (AppBarView) HttpView.currentView();
     AppBar bean = me.getModelBean();
     if (null == bean)

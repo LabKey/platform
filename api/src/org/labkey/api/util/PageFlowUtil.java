@@ -56,6 +56,7 @@ import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ExperimentalFeatureService;
@@ -167,6 +168,7 @@ public class PageFlowUtil
     public static final String EXPERIMENTAL_MIGRATE_CORE_UI = "migrate-core-ui";
 
     public static final String SESSION_PAGE_ADMIN_MODE = "session-page-admin-mode";
+    public static final String SESSION_TAB_EDIT_MODE = "tabEditMode";
 
     public static boolean useExperimentalCoreUI()
     {
@@ -186,11 +188,33 @@ public class PageFlowUtil
      */
     public static boolean isPageAdminMode(@NotNull ViewContext context)
     {
+        if (!context.hasPermission("PageAdminMode", AdminPermission.class))
+            return false;
+
         if (!useExperimentalCoreUI())
             return true;
 
         HttpSession session = context.getSession();
         return session != null && session.getAttribute(SESSION_PAGE_ADMIN_MODE) != null;
+    }
+
+    /** This is to be removed/replace by the isPageAdminMode() above after useExperimentalCoreUI is turned on **/
+    @Deprecated
+    public static boolean isTabEditMode(@NotNull ViewContext context, Container tabContainer)
+    {
+        if (!useExperimentalCoreUI())
+        {
+            HttpSession session = context.getSession();
+            if (session == null)
+                return false;
+
+            String tabEditMode = session.getAttribute(SESSION_TAB_EDIT_MODE) == null ? "" : (String) session.getAttribute(SESSION_TAB_EDIT_MODE);
+            return tabContainer != null && tabEditMode.equals(tabContainer.getId());
+        }
+        else
+        {
+            return isPageAdminMode(context);
+        }
     }
 
     static public String filterXML(String s)
@@ -2068,6 +2092,7 @@ public class PageFlowUtil
         JSONObject experimental = new JSONObject();
         experimental.put("containerRelativeURL", appProps.getUseContainerRelativeURL());
         experimental.put("useExperimentalCoreUI", useExperimentalCoreUI());
+        experimental.put("isPageAdminMode", isPageAdminMode(context));
         json.put("experimental", experimental);
 
         json.put("contextPath", contextPath);

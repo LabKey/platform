@@ -249,6 +249,7 @@
                         enforceMaxLength: true,
                         enableKeyEvents: true,
                         labelSeparator: '',
+                        selectOnFocus: true,
                         listeners: {
                             scope: this,
                             keypress: function(field, event){
@@ -506,22 +507,21 @@
 
             /**
              * Move a folder tab to the left.
-             * @param config An object which contains the following configuration properties.
-             * @param {String} [config.pageId] The pageId of the tab to be moved.
-             * @param {String} [config.folderTabCaption] The caption of the tab to be moved.
+             * @param pageId the pageId of the tab.
+             * @param domId the id of the anchor tag of the tab.
              */
-            moveTabLeft : function(config)
+            moveTabLeft : function(pageId, domId)
             {
                 LABKEY.Ajax.request({
                     url: LABKEY.ActionURL.buildURL('admin', 'moveTab', LABKEY.container.path),
                     method: 'GET',
                     params: {
-                        pageId: config.pageId,
+                        pageId: pageId,
                         direction: MOVE_LEFT
                     },
                     success: LABKEY.Utils.getCallbackWrapper(function(response, options) {
-                        if(config.domId && response.pageIdToSwap && response.pageIdToSwap !== response.pageId) {
-                            var tabAnchor = $('#' + config.domId)[0];
+                        if(domId && response.pageIdToSwap && response.pageIdToSwap !== response.pageId) {
+                            var tabAnchor = $('#' + domId)[0];
                             if (tabAnchor) {
                                 $(tabAnchor.parentElement).insertBefore(tabAnchor.parentNode.previousElementSibling);
                             }
@@ -535,21 +535,21 @@
 
             /**
              * Move a folder tab to the right.
-             * @param config An object which contains the following configuration properties.
-             * @param {String} [config.pageId] Reserved for a time when multiple portal pages are allowed per container.
+             * @param pageId the pageId of the tab.
+             * @param domId the id of the anchor tag of the tab.
              */
-            moveTabRight : function(config)
+            moveTabRight : function(pageId, domId)
             {
                 LABKEY.Ajax.request({
                     url: LABKEY.ActionURL.buildURL('admin', 'moveTab', LABKEY.container.path),
                     method: 'GET',
                     params: {
-                        pageId: config.pageId,
+                        pageId: pageId,
                         direction: MOVE_RIGHT
                     },
                     success: LABKEY.Utils.getCallbackWrapper(function(response, options) {
-                        if(config.domId && response.pageIdToSwap && response.pageIdToSwap !== response.pageId) {
-                            var tabAnchor = $('#' + config.domId)[0];
+                        if(domId && response.pageIdToSwap && response.pageIdToSwap !== response.pageId) {
+                            var tabAnchor = $('#' + domId)[0];
                             if (tabAnchor) {
                                 $(tabAnchor.parentElement).insertAfter(tabAnchor.parentNode.nextElementSibling);
                             }
@@ -564,6 +564,7 @@
             /**
              * Toggle tab edit mode. Enables or disables tab edit mode. When in tab edit mode an administrator
              * can manage tabs (i.e. change order, add, remove, etc.)
+             * TODO this can be removed when we switch to useExperimentalCoreUI()
              */
             toggleTabEditMode : function()
             {
@@ -619,7 +620,9 @@
                     });
                 };
 
-                showEditTabWindow("Add Tab", addTabHandler, null);
+                if (LABKEY.experimental.isPageAdminMode) {
+                    showEditTabWindow("Add Tab", addTabHandler, null);
+                }
             },
 
             /**
@@ -654,17 +657,16 @@
 
             /**
              * Allows an administrator to rename a tab.
-             * @param pageId the pageId of the tab to rename
-             * @param urlId the id of the anchor tag of the tab to be renamed.
+             * @param pageId the pageId of the tab.
+             * @param domId the id of the anchor tag of the tab.
+             * @param currentLabel the current label of the tab.
              */
-            renameTab : function(pageId, urlId)
+            renameTab : function(pageId, domId, currentLabel)
             {
-                var tabLinkEl = document.getElementById(urlId);
+                var tabLinkEl = document.getElementById(domId);
 
                 if (tabLinkEl)
                 {
-                    var currentName = tabLinkEl.textContent;
-
                     var renameHandler = function(name, editWindow)
                     {
                         LABKEY.Ajax.request({
@@ -694,7 +696,9 @@
                         });
                     };
 
-                    showEditTabWindow("Rename Tab", renameHandler, currentName);
+                    if (LABKEY.experimental.isPageAdminMode) {
+                        showEditTabWindow("Rename Tab", renameHandler, currentLabel);
+                    }
                 }
             },
 
