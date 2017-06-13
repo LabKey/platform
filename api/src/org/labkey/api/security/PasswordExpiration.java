@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * User: adam
@@ -34,18 +35,18 @@ public enum PasswordExpiration
 {
     Never(Integer.MAX_VALUE, "Never") {
         @Override
-        public boolean hasExpired(Date lastChanged)
+        public boolean hasExpired(Supplier<Date> supplier)
         {
             return false;
         }},
     FiveSeconds(0, "Every five seconds -- for testing purposes only") {
         @Override
-        public boolean hasExpired(Date lastChanged)
+        public boolean hasExpired(Supplier<Date> supplier)
         {
             Calendar cutoff = Calendar.getInstance();
             cutoff.add(Calendar.SECOND, -5);
 
-            return lastChanged.compareTo(cutoff.getTime()) < 0;
+            return supplier.get().compareTo(cutoff.getTime()) < 0;
         }
 
         @Override
@@ -72,7 +73,7 @@ public enum PasswordExpiration
         return list;
     }
 
-    private PasswordExpiration(int months, String description)
+    PasswordExpiration(int months, String description)
     {
         _months = months;
         _description = description;
@@ -94,12 +95,12 @@ public enum PasswordExpiration
         return _description;
     }
 
-    public boolean hasExpired(Date lastChanged)
+    public boolean hasExpired(Supplier<Date> supplier)
     {
         Calendar cutoff = Calendar.getInstance();
         cutoff.add(Calendar.MONTH, -getMonths());
 
-        return lastChanged.compareTo(cutoff.getTime()) < 0;
+        return supplier.get().compareTo(cutoff.getTime()) < 0;
     }
 
 
@@ -126,7 +127,7 @@ public enum PasswordExpiration
             {
                 Date d = new Date(now - milliseconds_in_week * i);
 
-                if (expiration.hasExpired(d))
+                if (expiration.hasExpired(() -> d))
                     expired++;
             }
 
