@@ -1363,7 +1363,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
-    private List<File> getResourceDirectory(File dir)
+    protected List<File> getResourceDirectory(File dir)
     {
         File resourcesDir = new File(dir, "resources");
 
