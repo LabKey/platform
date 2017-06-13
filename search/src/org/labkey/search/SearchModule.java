@@ -29,6 +29,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StartupListener;
@@ -46,9 +47,12 @@ import org.labkey.search.umls.UmlsController;
 import org.labkey.search.view.SearchWebPartFactory;
 
 import javax.servlet.ServletContext;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 
@@ -214,5 +218,26 @@ public class SearchModule extends DefaultModule
     public Set<Class> getIntegrationTests()
     {
         return Collections.singleton(LuceneSearchServiceImpl.TestCase.class);
+    }
+
+    // Special loading for search resources: gradle build pushes Tika JARs into deploy directory only, so need to
+    // include that if in dev mode.
+    @Override
+    public @NotNull List<File> getResourceDirectories()
+    {
+        List<File> dirs = super.getResourceDirectories();
+
+        if (AppProps.getInstance().isDevMode())
+        {
+            File exploded = getExplodedPath();
+
+            if (exploded != null && exploded.isDirectory())
+            {
+                dirs = new LinkedList<>(dirs);
+                dirs.addAll(getResourceDirectory(exploded));
+            }
+        }
+
+        return dirs;
     }
 }
