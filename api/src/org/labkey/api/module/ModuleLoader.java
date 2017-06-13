@@ -16,6 +16,8 @@
 package org.labkey.api.module;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.JavaVersion;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
@@ -60,6 +62,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContextListener;
@@ -103,6 +106,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -217,6 +221,7 @@ public class ModuleLoader implements Filter
     private Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
 
     private List<Module> _modules;
+    private MultiValuedMap<String, ConfigProperty> _configPropertyMap = new HashSetValuedHashMap<>();
 
     public ModuleLoader()
     {
@@ -292,6 +297,9 @@ public class ModuleLoader implements Filter
         setTomcatVersion();
 
         _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(servletCtx.getRealPath("")));
+
+        // load startup configuration information from properties
+        loadStartupProps();
 
         List<File> explodedModuleDirs;
 
@@ -1898,6 +1906,100 @@ public class ModuleLoader implements Filter
         }
 
         return unknownContexts;
+    }
+
+    /**
+     * Returns the config properties for the specified scope. If no scope is
+     * specified then all properties are returned.
+     *
+     * @param scope
+     * @return
+     */
+    @NotNull
+    public Collection<ConfigProperty> getConfigProperties(@Nullable String scope)
+    {
+        if (!_configPropertyMap.isEmpty())
+        {
+            if (scope != null)
+            {
+                if (_configPropertyMap.containsKey(scope))
+                    return _configPropertyMap.get(scope);
+            }
+            else
+                return _configPropertyMap.values();
+        }
+        return Collections.emptyList();
+    }
+
+    private void loadStartupProps()
+    {
+        File propsDir = new File(_webappDir.getParent(), "startup");
+        if (propsDir.exists())
+        {
+            File[] propFiles = propsDir.listFiles((File dir, String name) -> FileUtil.getExtension(name).equalsIgnoreCase("properties"));
+
+            if (propFiles != null)
+            {
+                List<File> sortedPropFiles = Arrays.stream(propFiles)
+                        .sorted(Comparator.comparing(File::getName).reversed())
+                        .collect(Collectors.toList());
+
+                for (File propFile : sortedPropFiles)
+                {
+                    try (FileInputStream in = new FileInputStream(propFile))
+                    {
+                        Properties props = new Properties();
+                        props.load(in);
+
+                        for (Map.Entry<Object, Object> entry : props.entrySet())
+                        {
+                            if (entry.getKey() instanceof String && entry.getValue() instanceof String)
+                            {
+                                ConfigProperty config = createConfigProperty(entry.getKey().toString(), entry.getValue().toString());
+                                _configPropertyMap.put(config.getScope(), config);
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        _log.error("Error parsing startup config properties file '" + propFile.getAbsolutePath() + "'", e);
+                    }
+                }
+
+                // TODO : load any system properties
+            }
+        }
+    }
+
+    /**
+     * Parse the config property name and construct a ConfigProperty object. A config property
+     * can have an optional dot delimited scope and an optional semicolon delimited modifier, for example:
+     * siteSettings.baseServerUrl;bootstrap defines a property named : baseServerUrl in the siteSettings scope and
+     * having the bootstrap modifier.
+     */
+    private ConfigProperty createConfigProperty(String key, String value)
+    {
+        String name;
+        String scope = null;
+        String modifier = null;
+
+        // the first dot delimited section is always the scope, the rest is the name
+        if (key.contains("."))
+        {
+            scope = key.substring(0, key.indexOf('.'));
+            key = key.substring(key.indexOf('.') + 1, key.length());
+        }
+
+        String[] parts = key.split(";");
+        if (parts.length == 2)
+        {
+            name = parts[0];
+            modifier = parts[1];
+        }
+        else
+            name = key;
+
+        return new ConfigProperty(name, value, modifier, scope);
     }
 
     private class SchemaDetails
