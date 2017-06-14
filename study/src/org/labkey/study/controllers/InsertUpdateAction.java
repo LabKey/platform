@@ -145,9 +145,16 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                                 @Override
                                 public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
                                 {
+                                    boolean newUI = PageFlowUtil.useExperimentalCoreUI();
                                     boolean disabledInput = isDisabledInput();
                                     String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
-                                    out.write("<select name=\"" + formFieldName + "\" " + (disabledInput ? "DISABLED" : "") + ">\n");
+                                    if (newUI)
+                                        out.write("<div class=\"col-sm-9 col-lg-10\">");
+
+                                    out.write("<select name=\"" + formFieldName + "\" " + (disabledInput ? "DISABLED" : ""));
+                                    if (newUI)
+                                        out.write(" class=\"form-control\"");
+                                    out.write(">\n");
                                     if (getBoundColumn().isNullable())
                                         out.write("\t<option value=\"\">");
                                     for (Cohort cohort : cohorts)
@@ -158,6 +165,8 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                                         out.write("</option>\n");
                                     }
                                     out.write("</select>");
+                                    if (newUI)
+                                        out.write("</div>");
                                 }
                             };
                         }
