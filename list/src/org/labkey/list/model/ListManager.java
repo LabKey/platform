@@ -271,7 +271,19 @@ public class ListManager implements SearchService.DocumentProvider
     // Index all lists in this container
     public void enumerateDocuments(@Nullable IndexTask t, final @NotNull Container c, @Nullable Date since)   // TODO: Use since?
     {
-        final IndexTask task = null == t ? SearchService.get().defaultTask() : t;
+        final IndexTask task;
+        if (null == t)
+        {
+            // TODO: Workaround for 30614: Search module doesn't work on TeamCity
+            final SearchService ss = SearchService.get();
+            if (ss == null)
+                return;
+            task = ss.defaultTask();
+        }
+        else
+        {
+            task = t;
+        }
 
         Runnable r = () -> {
             Map<String, ListDefinition> lists = ListService.get().getLists(c);
