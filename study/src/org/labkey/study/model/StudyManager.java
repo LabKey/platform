@@ -4606,7 +4606,13 @@ public class StudyManager
         if (null == dsd.getTypeURI() || null == dsd.getDomain())
             return;
         if (null == task)
-            task = SearchService.get().defaultTask();
+        {
+            // TODO: Workaround for 30614: Search module doesn't work on TeamCity
+            final SearchService ss = SearchService.get();
+            if (ss == null)
+                return;
+            task = ss.defaultTask();
+        }
         String docid = "dataset:" + new Path(dsd.getContainer().getId(), String.valueOf(dsd.getDatasetId())).toString();
 
         StringBuilder body = new StringBuilder();
@@ -4762,7 +4768,11 @@ public class StudyManager
         if (null == c)
             return;
 
-        final SearchService.IndexTask defaultTask = SearchService.get().defaultTask();
+        // TODO: Workaround for 30614: Search module doesn't work on TeamCity
+        final SearchService ss = SearchService.get();
+        if (ss == null)
+            return;
+        final SearchService.IndexTask defaultTask = ss.defaultTask();
         final SearchService.IndexTask task = null==t ? defaultTask : t;
 
         Runnable runEnumerate = new Runnable()
