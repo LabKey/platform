@@ -27,7 +27,9 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.SearcherFactory;
 import org.apache.lucene.search.SearcherManager;
+import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.store.Directory;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -145,13 +147,21 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             // The document is not marked as indexed so it'll get reindexed... plus we're switching index directories
             // anyway, so everything's getting reindexed anyway.
         }
+        catch (AlreadyClosedException e)
+        {
+            if (e.getCause() instanceof IOException && e.getCause().getMessage().equalsIgnoreCase("No space left on device"))
+            {
+                throw new ConfigurationException("Unable to write to search index, Disk is full", e);
+            }
+            else
+                throw e;
+        }
         catch (Throwable e)
         {
             _log.error("Indexing error deleting " + id, e);
             ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
-
 
     public void deleteQuery(Query query) throws IOException
     {
@@ -162,6 +172,15 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
                 IndexWriter w = getIndexWriter();
                 w.deleteDocuments(query);
             }
+        }
+        catch (AlreadyClosedException e)
+        {
+            if (e.getCause() instanceof IOException && e.getCause().getMessage().equalsIgnoreCase("No space left on device"))
+            {
+                throw new ConfigurationException("Unable to write to search index, Disk is full", e);
+            }
+            else
+                throw e;
         }
         catch (IndexManagerClosedException e)
         {
