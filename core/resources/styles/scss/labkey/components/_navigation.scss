@@ -17,16 +17,9 @@
       }
     }
 
-    &.open {
-
-      & > a {
-        background-color: $lk-page-nav-bg-color-active;
-        color: $lk-page-nav-color-active;
-      }
-
-      .fa-bars::before {
-        content: "\F00D"; // fa-close
-      }
+    &.open > a {
+      background-color: $lk-page-nav-bg-color-active;
+      color: $lk-page-nav-color-active;
     }
   }
 
@@ -84,66 +77,77 @@
   list-style: none;
 }
 
-#project-mobile > .dropdown-menu {
-  position: fixed;
-  top: 87px;
-  bottom: 0;
-  right: 0;
-  border: 0;
-  background-color: #3495D2;
-  padding: 0;
+#project-mobile {
+  & > a {
+    display: inline-block;
+  }
 
-  & > li {
+  &  > .dropdown-menu {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border: 0;
+    padding: 0;
 
-    & > a {
-      display: block;
-      height: 54px;
-      width: 80px;
-      text-align: center;
-      padding: 14px 0 0 0;
-      white-space: normal;
-      overflow: hidden;
-      color: $white;
+    & > .lk-header-close {
+      height: 50px;
+      background-color: $lk-page-header-bg-color;
+      padding: 10px 10px 10px 17px;
 
-      &:hover, &:focus {
+      & > i {
+        color: $lk-page-header-color;
+        font-size: 25px;
+        padding-right: 10px;
+        vertical-align: middle;
+      }
+    }
+
+    & > .lk-horizontal-menu {
+      position: fixed;
+      top: 50px;
+      left: 0;
+      right: 0;
+      white-space: nowrap;
+      overflow-x: auto;
+      background-color: $lk-brand-color;
+      padding: 10px;
+
+      & > li {
+        display: inline-block;
+        float: none;
+
+        & > a {
+          padding: 3px 10px;
+          color: $white;
+
+          &:hover, &:focus {
+            background-color: $lk-page-nav-bg-color-active;
+            color: $lk-page-nav-color-active;
+          }
+        }
+      }
+
+      & > li.open > a {
         background-color: $lk-page-nav-bg-color-active;
         color: $lk-page-nav-color-active;
       }
-
-      & i.fa {
-        display: block;
-      }
-
-      & span {
-        font-size: $lk-font-size-small;
-      }
     }
 
-    &.open > a {
-      background-color: $lk-page-nav-bg-color-active;
-      color: $lk-page-nav-color-active;
-    }
-  }
-
-  .tier-2 {
-    background-color: white;
-    bottom: 0;
-    position: absolute;
-    right: 0;
-    top: 0;
-    left: 80px;
-
-    &.dropdown-menu {
-      padding: 0;
-      margin: 0;
-      border: none;
+    & > .lk-dropdown-menu-area {
+      display: block;
+      position: fixed;
+      top: 87px;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      border: 0;
       border-radius: 0;
+      padding: 10px;
+      background-color: white;
     }
   }
-}
-
-#project-mobile > a > i {
-  padding-right: 15px;
 }
 
 .scroll-locked {
