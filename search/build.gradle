@@ -1,5 +1,5 @@
 configurations {
-   tika // { transitive = false } use this setting if you don't want all of the jars that tika depends on to be copied
+   tika { transitive = false } // we don't want all of the jars that tika depends on to be copied, #30592
 }
 
 dependencies {
