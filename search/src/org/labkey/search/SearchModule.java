@@ -51,6 +51,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -221,7 +222,7 @@ public class SearchModule extends DefaultModule
     }
 
     // Special loading for search resources: gradle build pushes Tika JARs into deploy directory only, so need to
-    // include that if in dev mode.
+    // include that if in dev mode. #30598
     @Override
     public @NotNull List<File> getResourceDirectories()
     {
@@ -233,8 +234,10 @@ public class SearchModule extends DefaultModule
 
             if (exploded != null && exploded.isDirectory())
             {
-                dirs = new LinkedList<>(dirs);
-                dirs.addAll(getResourceDirectory(exploded));
+                // super might have already added deploy location (e.g., build with null sourcePath), so de-dupe with set. #30614
+                Set<File> dirSet = new HashSet<>(dirs);
+                dirSet.addAll(getResourceDirectory(exploded));
+                dirs = new LinkedList<>(dirSet);
             }
         }
 
