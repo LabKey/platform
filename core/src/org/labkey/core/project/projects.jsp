@@ -129,16 +129,9 @@ Ext4.onReady(function() {
         queryName: 'Containers',
         sort: 'SortOrder,DisplayName',
         containerFilter: config.containerFilter,
-        columns: 'Name,DisplayName,EntityId,Path,ContainerType',
+        columns: 'Name,DisplayName,EntityId,Path,ContainerType,iconurl',
         autoLoad: false,
         metadata: {
-            iconurl: {
-                createIfDoesNotExist: true,
-                setValueOnLoad: true,
-                getInitialValue: function(val, rec) {
-                    return LABKEY.ActionURL.buildURL('project', 'downloadProjectIcon', rec.get('EntityId'))
-                }
-            },
             url: {
                 createIfDoesNotExist: true,
                 setValueOnLoad: true,
