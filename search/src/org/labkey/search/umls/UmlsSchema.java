@@ -16,6 +16,7 @@
 package org.labkey.search.umls;
 
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 
 /**
@@ -27,7 +28,7 @@ public class UmlsSchema
 {
     public static DbSchema getSchema()
     {
-        return DbSchema.get("umls");
+        return DbSchema.get("umls", DbSchemaType.Module);
     }
 
     public static DbScope getScope()

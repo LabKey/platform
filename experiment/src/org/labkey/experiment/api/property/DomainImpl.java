@@ -726,7 +726,7 @@ public class DomainImpl implements Domain
     {
         if (null == _aliasManager)
         {
-            _aliasManager = new AliasManager(DbSchema.get("exp"));
+            _aliasManager = new AliasManager(ExperimentService.get().getSchema());
             DomainKind k = getDomainKind();
             if (null != k)
             {

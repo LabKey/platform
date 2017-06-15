@@ -1031,7 +1031,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public DbSchema getSchema()
     {
-        return DbSchema.get("search");
+        return SearchSchema.getInstance().getSchema();
     }
 
 

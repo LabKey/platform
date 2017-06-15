@@ -168,7 +168,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -5208,11 +5207,11 @@ public class StudyManager
         {
             Date d = new Date();
             String iso = DateUtil.toISO(d.getTime(), true);
-            DbSchema core = DbSchema.get("core");
+            DbSchema core = CoreSchema.getInstance().getSchema();
             SQLFragment select = new SQLFragment("SELECT ");
             select.append(core.getSqlDialect().getISOFormat(new SQLFragment("?",d)));
             String db = new SqlSelector(core, select).getObject(String.class);
-            // SQL SERVER doesn't quite store millesecond precision
+            // SQL SERVER doesn't quite store millisecond precision
             assertEquals(23,iso.length());
             assertEquals(23,db.length());
             assertEquals(iso.substring(0,20), db.substring(0,20));

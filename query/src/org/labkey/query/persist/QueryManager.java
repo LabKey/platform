@@ -26,6 +26,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.FilterInfo;
 import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.SimpleFilter;
@@ -220,7 +221,7 @@ public class QueryManager
         if (!inheritable)
             return views;
 
-        Container containerCur = container == null ? null : container.getParent();
+        Container containerCur = container.getParent();
         while (containerCur != null && !containerCur.isRoot())
         {
             getCstmViewsInContainer(views, containerCur, schemaName, queryName, owner, true, sharedOnly);
@@ -414,7 +415,7 @@ public class QueryManager
 
     public DbSchema getDbSchema()
     {
-        return DbSchema.get(SCHEMA_NAME);
+        return DbSchema.get(SCHEMA_NAME, DbSchemaType.Module);
     }
 
     public TableInfo getTableInfoQueryDef()

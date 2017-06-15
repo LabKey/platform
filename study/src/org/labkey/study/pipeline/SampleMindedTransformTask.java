@@ -55,6 +55,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelLoader;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
@@ -73,7 +74,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.sql.ResultSet;
@@ -210,7 +210,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
             {
                 try (FileInputStream fIn = new FileInputStream(labsFile))
                 {
-                    parseLabs(_labIds, new BufferedReader(new InputStreamReader(fIn)));
+                    parseLabs(_labIds, Readers.getReader(fIn));
                 }
                 info("Parsed " + _labIds.size() + " labs from " + labsFile);
             }
@@ -435,7 +435,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
     /* for missing visit, missing specimen, we use the existing lookup values */
     void loadLookupsFromDb(Container c)
     {
-        DbSchema study = DbSchema.get("study");
+        DbSchema study = StudySchema.getInstance().getSchema();
         StudyManager sm = StudyManager.getInstance();
         String primaryTypeSelectName = StudySchema.getInstance().getTableInfoSpecimenPrimaryType(c).getSelectName();
         String derivativeSelectName = StudySchema.getInstance().getTableInfoSpecimenDerivative(c).getSelectName();

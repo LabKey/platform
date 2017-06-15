@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -39,7 +40,7 @@ public class RolapTestSchema extends UserSchema
 {
     public RolapTestSchema(User user, Container c)
     {
-        super("rolap_test", "unit test schema", user, c, DbSchema.get("core"));
+        super("rolap_test", "unit test schema", user, c, CoreSchema.getInstance().getSchema());
     }
 
 

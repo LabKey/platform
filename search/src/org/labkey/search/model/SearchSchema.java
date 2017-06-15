@@ -16,6 +16,7 @@
 package org.labkey.search.model;
 
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.TableInfo;
 
 /**
@@ -38,7 +39,7 @@ public class SearchSchema
 
     public DbSchema getSchema()
     {
-        return DbSchema.get("search");
+        return DbSchema.get("search", DbSchemaType.Module);
     }
 
     public TableInfo getCrawlCollectionsTable()

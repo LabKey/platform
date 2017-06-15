@@ -189,7 +189,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerLis
     @Override
     public void containerDeleted(Container c, User user)
     {
-        DbSchema di = DbSchema.get("dataintegration");
+        DbSchema di = DataIntegrationQuerySchema.getSchema();
         try (DbScope.Transaction transaction = di.getScope().ensureTransaction())
         {
             TransformManager.get().unscheduleAll(c);

@@ -64,7 +64,7 @@ public class StudySchema
 
     public DbSchema getSchema()
     {
-        return DbSchema.get(SCHEMA_NAME);
+        return DbSchema.get(SCHEMA_NAME, DbSchemaType.Module);
     }
 
     public DbScope getScope()

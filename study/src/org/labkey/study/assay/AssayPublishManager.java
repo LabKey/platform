@@ -700,7 +700,7 @@ public class AssayPublishManager implements AssayPublishService
      */
     public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DatasetDefinition dsd, DataLoader dl, boolean importLookupByAlternateKey, FileStream fileIn, String originalFileName, Map<String, String> columnMap, BatchValidationException errors) throws SQLException, ServletException
     {
-        DbScope scope = DbSchema.get("study").getScope();
+        DbScope scope = StudySchema.getInstance().getScope();
 
         UploadLog ul = null;
         List<String> lsids = Collections.emptyList();
