@@ -16,6 +16,7 @@
 package org.labkey.search.model;
 
 import org.apache.commons.collections4.iterators.ArrayIterator;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -60,12 +61,14 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.resource.ChildFirstClassLoader;
@@ -80,6 +83,8 @@ import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
@@ -1595,6 +1600,69 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         return _standardAnalyzer;
     }
 
+
+    public static class TikaTestCase extends Assert
+    {
+        private static final String FOLDER_NAME = "TikaTest Project";
+
+        private Container container;
+        private File fileRoot;
+
+        @Before
+        public void preTest() throws Exception
+        {
+            container = ContainerManager.ensureContainer(JunitUtil.getTestContainer(), FOLDER_NAME);
+
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            fileRoot = svc.getFileRoot(container);
+            FileUtils.cleanDirectory(fileRoot);
+            File sampledata = new File(AppProps.getInstance().getProjectRoot(), "sampledata/fileTypes");
+            FileUtils.copyDirectory(sampledata, fileRoot);
+        }
+
+        /**
+         * Traverses the specified directory and indexes only the files that meet the fileFilter. This "test" is not normally
+         * run, but it can be re-enabled locally to investigate and fix issues with specific file types.
+         */
+        @Test
+        public void testTika()
+        {
+            Predicate<WebdavResource> fileFilter = webdavResource -> true;
+
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(container);
+            policy.addRoleAssignment(User.getSearchUser(), ReaderRole.class);
+            FileSystemResource rootResource = new FileSystemResource(Path.parse(fileRoot.getAbsolutePath()), fileRoot, policy)
+            {
+                @Override
+                public String getContainerId()
+                {
+                    return container.getId();
+                }
+            };
+
+            final Map<String, Throwable> results = traverse((AbstractSearchService) SearchService.get(), rootResource, fileFilter);
+            assertTrue("Error(s) parsing file(s) " + results.keySet(), results.isEmpty());
+        }
+
+        private Map<String, Throwable> traverse(AbstractSearchService ss, WebdavResource rootResource, Predicate<WebdavResource> fileFilter)
+        {
+            Map<String, Throwable> results = new HashMap<>();
+            rootResource.list().stream().filter(Resource::isFile).filter(fileFilter).forEach(resource ->
+            {
+                Throwable[] out = new Throwable[] {null};
+                if (!(ss).processAndIndex(resource.getPath().encode(), resource, out))
+                {
+                    results.put(resource.getFile().getName(), out[0]);
+                }
+            });
+
+            rootResource.list().stream().filter(Resource::isCollection).forEach(dir -> {
+                results.putAll(traverse(ss, dir, fileFilter));
+            });
+
+            return results;
+        }
+    }
 
     public static class TestCase extends Assert
     {
