@@ -63,7 +63,8 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         DatasetPropertiesPage propertiesPage = dataPage.clickManageDataset();
         EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
         editDatasetDefinitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.NONE);
-        editDatasetDefinitionPage = editDatasetDefinitionPage.saveExpectFail("Changing the dataset key would result in duplicate keys");
+        //editDatasetDefinitionPage = editDatasetDefinitionPage.saveExpectFail("Changing the dataset key would result in duplicate keys");
+        editDatasetDefinitionPage.save();
         dataPage = propertiesPage.clickViewData();
         DatasetInsertPage insertPage = dataPage.insertDatasetRow();
         insertPage.insert(kvp,false,"Duplicates were found in the database or imported data");
@@ -163,8 +164,8 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         dataPage = propertiesPage.clickViewData();
         DatasetInsertPage insertPage = dataPage.insertDatasetRow();
         Map<String,String> kvp = new HashMap<>();
-        kvp.put("MouseId","999320016");
-        kvp.put("date", "10/25/05 10:11");
+        kvp.put(SUBJECT_COL_NAME,"999320016");
+        kvp.put("date", "02/01/05 10:15");
         insertPage.insert(kvp,true,"Duplicates were found in the database or imported data");
         dataPage = goToDataset(folder,dataset);
         propertiesPage = dataPage.clickManageDataset();

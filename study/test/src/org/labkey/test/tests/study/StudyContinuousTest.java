@@ -9,10 +9,20 @@ import java.util.Map;
 public class StudyContinuousTest extends AbstractStudyTimeKeyFieldTest
 {
     @Override
+    protected int getDatasetCount(){return 35;}
+
+    @Override
     protected String getProjectName()
     {
         return "ContinuousStudyVerifyProject";
     }
+
+    @Override
+    public void runApiTests(){}
+
+    @Override
+    protected String getHeaderName()
+    {return "4b$PAsian";}
 
     protected void doCreateSteps()
     {
@@ -22,16 +32,16 @@ public class StudyContinuousTest extends AbstractStudyTimeKeyFieldTest
     protected void doVerifySteps()
     {
         Map<String,String> kvp = new HashMap<>();
-        kvp.put("mice","999321033");
+        kvp.put(SUBJECT_COL_NAME,"999321033");
         kvp.put("date","2006-02-14");
         testCannotInsertExactDuplicateNoTimeKey(kvp,"CPF-1: Follow-up Chemistry Panel",getFolderName());
 
-        kvp.put("mice", "999320518");
-        kvp.put("date", "2006-03-04 03:36");
-        testCannotInsertDifferingOnlyTimeNoTimeKey(kvp, "AE-1:(VTN) AE Log", getFolderName());
+        kvp.put(SUBJECT_COL_NAME, "999320016");
+        kvp.put("date", "2005-01-17 03:36");
+        testCannotInsertDifferingOnlyTimeNoTimeKey(kvp, "OTB-1: Outside Testing/Belief", getFolderName());
 
-        kvp.put("mice", "999320518");
-        kvp.put("date", "2006-03-04 03:45");
+        kvp.put(SUBJECT_COL_NAME, "999320518");
+        kvp.put("date", "2006-03-04 03:46");
         testCanInsertWithOnlyTimeDifferentIfTimeKey(kvp, "AE-1:(VTN) AE Log", getFolderName());
 
         //TODO: Uncomment and fix after sprint 17.2.3 has branched
@@ -59,5 +69,6 @@ public class StudyContinuousTest extends AbstractStudyTimeKeyFieldTest
         manageSubjectClassificationTest();
 
         verifyStudyAndDatasets(false);
+
     }
 }

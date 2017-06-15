@@ -64,7 +64,7 @@ import static org.labkey.test.util.PasswordUtil.getUsername;
 @Category({Specimen.class, DailyC.class})
 public class StudyTest extends StudyBaseTest
 {
-    private String datasetLink = datasetCount + " datasets";
+    protected String datasetLink = datasetCount + " datasets";
     protected static final String DEMOGRAPHICS_DESCRIPTION = "This is the demographics dataset, dammit. Here are some \u2018special symbols\u2019 - they help test that we're roundtripping in UTF-8.";
     protected static final String DEMOGRAPHICS_TITLE = "DEM-1: Demographics";
 
@@ -94,6 +94,7 @@ public class StudyTest extends StudyBaseTest
     LinkedList<String> persistingLists = new LinkedList<>();
     protected String authorUser = "author1_study@study.test";
     protected String specimenUrl = null;
+    protected String headerName = "DEMAsian";
 
     protected final PortalHelper portalHelper = new PortalHelper(this);
 
@@ -117,7 +118,7 @@ public class StudyTest extends StudyBaseTest
 
     protected File[] getTestFiles()
     {
-        assertEquals("Wrong project for study-api.xml", "StudyVerifyProject", getProjectName());
+        //assertEquals("Wrong project for study-api.xml", "StudyVerifyProject", getProjectName());
         return new File[]{new File(TestFileUtils.getLabKeyRoot() + "/server/test/data/api/study-api.xml")};
     }
 
@@ -143,6 +144,9 @@ public class StudyTest extends StudyBaseTest
         super.doCleanup(afterTest);
         deleteUsers(false, authorUser); // Subclasses may not have created this user
     }
+
+    protected String getHeaderName()
+    {return "DEMasian";}
 
     protected void emptyParticipantPickerList()
     {
@@ -277,6 +281,7 @@ public class StudyTest extends StudyBaseTest
 
     protected static final String SUBJECT_NOUN = "Mouse";
     protected static final String SUBJECT_NOUN_PLURAL = "Mice";
+    protected static final String SUBJECT_COL_NAME = "MouseId";
     protected static final String PROJECT_NAME = "StudyVerifyProject";
     protected static final String STUDY_NAME = "My Study";
     protected static final String LABEL_FIELD = "groupLabel";
@@ -336,7 +341,7 @@ public class StudyTest extends StudyBaseTest
         {
             //nav trail check
             clickAndWait(Locator.linkContainingText("999320016"));
-            assertTextPresent("Dataset: DEM-1: Demographics, All Visits");
+            assertTextPresent("Dataset: DEM-1: Demographics");
             clickAndWait(Locator.linkContainingText("Dataset:"));
 
             _extHelper.clickMenuButton(false, "Groups", "Create " + SUBJECT_NOUN + " Group", "From Selected " + SUBJECT_NOUN_PLURAL);
@@ -560,7 +565,7 @@ public class StudyTest extends StudyBaseTest
 
         if(filtered)
         {
-            table.setFilter("DEMasian", "Equals", "0", 0);
+            table.setFilter(getHeaderName(), "Equals", "0", 0);
             waitForElement(Locator.paginationText(21));
         }
 

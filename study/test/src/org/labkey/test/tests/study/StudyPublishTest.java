@@ -346,7 +346,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
         if (datasets.length > 0)
             assertEquals("Unexpected number of datasets", datasets.length + dependentDatasets.length, getElementCount(Locator.xpath("//td[contains(@class, 'datasets')]//tr")) - 1);
         else // All visits were published
-            assertEquals("Unexpected number of datasets", datasetCount, getElementCount(Locator.xpath("//td[contains(@class, 'datasets')]//tr")) - 1);
+            assertEquals("Unexpected number of datasets", 48, getElementCount(Locator.xpath("//td[contains(@class, 'datasets')]//tr")) - 1);
         for (String dataset: datasets)
         {
             pushLocation();

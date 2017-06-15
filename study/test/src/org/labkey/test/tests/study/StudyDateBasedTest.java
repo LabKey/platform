@@ -13,6 +13,15 @@ public class StudyDateBasedTest extends AbstractStudyTimeKeyFieldTest
 //    {
 //        return "DateBasedStudyVerifyProject";
 //    }
+    @Override
+    protected int getDatasetCount(){return 35;}
+
+    @Override
+    protected String getHeaderName()
+    {return "4b$PAsian";}
+
+    @Override
+    public void runApiTests(){}
 
     protected void doCreateSteps()
     {
@@ -27,13 +36,12 @@ public class StudyDateBasedTest extends AbstractStudyTimeKeyFieldTest
         testCannotInsertExactDuplicateNoTimeKey(kvp,"CPF-1: Follow-up Chemistry Panel",getFolderName());
         kvp.clear();
 
-        kvp.put("MouseId", "999320518");
-        kvp.put("date", "2006-03-04 03:36");
-        testCannotInsertDifferingOnlyTimeNoTimeKey(kvp, "AE-1:(VTN) AE Log", getFolderName());
-        kvp.clear();
+        kvp.put("MouseId", "999320016");
+        kvp.put("date", "2005-01-17 03:36");
+        testCannotInsertDifferingOnlyTimeNoTimeKey(kvp, "OTB-1: Outside Testing/Belief", getFolderName());
 
         kvp.put("MouseId", "999320518");
-        kvp.put("date", "2006-03-04 time");
+        kvp.put("date", "2006-03-04 03:01");
         testCanInsertWithOnlyTimeDifferentIfTimeKey(kvp, "AE-1:(VTN) AE Log", getFolderName());
         kvp.clear();
 
