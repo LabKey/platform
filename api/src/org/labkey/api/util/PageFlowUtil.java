@@ -1893,13 +1893,13 @@ public class PageFlowUtil
 
     private static String resolveThemeName(Container c)
     {
-        if (useExperimentalCoreUI())
-            return LookAndFeelProperties.getInstance(c).getThemeName();
-
         String themeName = WebTheme.DEFAULT.getFriendlyName();
 
         if (c != null)
         {
+            if (useExperimentalCoreUI())
+                return LookAndFeelProperties.getInstance(c).getThemeName();
+
             WebTheme theme = WebThemeManager.getTheme(c);
 
             // Custom Theme -- TODO: Should have a better way to lookup built-in themes
