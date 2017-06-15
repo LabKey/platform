@@ -168,7 +168,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         @Override
-        public String getNavTreeCacheKey()
+        public String getCacheKey()
         {
             return _cacheKey;
         }

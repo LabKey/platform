@@ -181,7 +181,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         }
 
         @Override
-        public String getNavTreeCacheKey()
+        public String getCacheKey()
         {
             // NavTree for user impersonating a group will be different for each group
             return "/impersonationGroup=" + _group.getUserId();

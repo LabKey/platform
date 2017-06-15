@@ -16,6 +16,7 @@
 package org.labkey.api.security.impersonation;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.annotations.RefactorIn17_3;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
@@ -44,7 +45,13 @@ public interface ImpersonationContext extends Serializable
     @Nullable Container getImpersonationProject();
     /** @return the user who is actually performing the operation, not the user that they might be impersonating */
     User getAdminUser();
-    String getNavTreeCacheKey();  // Caching permission-related state is very tricky with impersonation; context needs to provide the cache key suffix
+    @Deprecated // Use getCacheKey() instead
+    @RefactorIn17_3 // Delete this once GEL schema/column caching switches to getCacheKey()
+    default String getNavTreeCacheKey()
+    {
+        return getCacheKey();
+    }
+    String getCacheKey();  // Caching permission-related state is very tricky with impersonation; context provides a cache key suffix that captures the current impersonation state
     /** @return the URL to which the user should be returned when their impersonation context changes to another context */
     URLHelper getReturnURL();
     int[] getGroups(User user);

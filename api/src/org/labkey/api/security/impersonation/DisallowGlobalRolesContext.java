@@ -46,7 +46,7 @@ public class DisallowGlobalRolesContext extends NotImpersonatingContext
     }
 
     @Override
-    public String getNavTreeCacheKey()
+    public String getCacheKey()
     {
         return "DisallowGlobalRoles";
     }

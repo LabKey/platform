@@ -73,7 +73,7 @@ public class NotImpersonatingContext implements ImpersonationContext
     }
 
     @Override
-    public String getNavTreeCacheKey()
+    public String getCacheKey()
     {
         return "";
     }

@@ -192,7 +192,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         @Override
-        public String getNavTreeCacheKey()
+        public String getCacheKey()
         {
             // NavTree for user being impersonated will be different per impersonating user per project
             String suffix = "/impersonatingUser=" + getAdminUser().getUserId();
