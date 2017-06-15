@@ -274,7 +274,6 @@ public class ListManager implements SearchService.DocumentProvider
         final IndexTask task;
         if (null == t)
         {
-            // TODO: Workaround for 30614: Search module doesn't work on TeamCity
             final SearchService ss = SearchService.get();
             if (ss == null)
                 return;

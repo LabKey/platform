@@ -4767,7 +4767,6 @@ public class StudyManager
         if (null == c)
             return;
 
-        // TODO: Workaround for 30614: Search module doesn't work on TeamCity
         final SearchService ss = SearchService.get();
         if (ss == null)
             return;
