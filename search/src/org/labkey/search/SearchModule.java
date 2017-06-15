@@ -234,7 +234,7 @@ public class SearchModule extends DefaultModule
 
             if (exploded != null && exploded.isDirectory())
             {
-                // super might have already added deploy location (e.g., build with null sourcePath), so de-dupe with set. #30614
+                // super might have already added deploy location (e.g., module with null sourcePath), so de-dupe with set. #30614
                 Set<File> dirSet = new HashSet<>(dirs);
                 dirSet.addAll(getResourceDirectory(exploded));
                 dirs = new LinkedList<>(dirSet);
