@@ -16,10 +16,14 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -28,9 +32,13 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.webdav.WebdavService;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -219,6 +227,95 @@ public class ContainerTable extends FilteredTable<UserSchema>
             return sb.toString();
         }
     }
+
+
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        if (StringUtils.equalsIgnoreCase("iconurl",name))
+        {
+            ColumnInfo iconCol = new WrappedColumn(getColumn("entityid"), "iconurl");
+            iconCol.setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                @Override
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new IconDisplayColumn(colInfo);
+                }
+            });
+            return iconCol;
+        }
+        return super.resolveColumn(name);
+    }
+
+
+    private static class IconDisplayColumn extends DataColumn
+    {
+        IconDisplayColumn(ColumnInfo col)
+        {
+            super(col, false);
+        }
+
+        @Override
+        public boolean isSortable()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isFilterable()
+        {
+            return false;
+        }
+
+
+        @Override
+        public Object getValue(RenderContext ctx)
+        {
+            String entityid = (String)super.getValue(ctx);
+            Container c = ContainerManager.getForId(entityid);
+            if (null == c)
+                return null;
+
+            FolderType ft = c.getFolderType();
+            Path iconPath = Path.parse(ft.getFolderIconPath());
+            WebdavResource iconResource = WebdavService.get().getRootResolver().lookup(iconPath);
+            if (null == iconResource || !iconResource.isFile())
+            {
+                ft = FolderType.NONE;
+                iconPath = Path.parse(ft.getFolderIconPath());
+                Logger.getLogger(ContainerTable.class).warn("Could not find specified icon: "+iconPath);
+            }
+            return AppProps.getInstance().getContextPath() + iconPath.toString("/","");
+        }
+
+        @Override
+        public Object getDisplayValue(RenderContext ctx)
+        {
+            return getValue(ctx);
+        }
+
+        @Override
+        public String renderURL(RenderContext ctx)
+        {
+            String entityid = (String)super.getValue(ctx);
+            Container c = ContainerManager.getForId(entityid);
+            if (null == c)
+                return null;
+            return c.getStartURL(ctx.getViewContext().getUser()).getLocalURIString();
+        }
+
+        @Override
+        public @NotNull String getFormattedValue(RenderContext ctx)
+        {
+            String img = (String)getValue(ctx);
+            String a = renderURL(ctx);
+            if (null == img || null == a)
+                return "";
+            return "<div class=\"tool-icon thumb-wrap thumb-wrap-bottom\"><a href=\"" + PageFlowUtil.filter(a) + "\"><div class=\"thumb-img-bottom\"><img class=\"thumb-large\" src=\"" + PageFlowUtil.filter(img) + "\"></div></a></div>";
+        }
+    }
+
 
     public NamedObjectList getPathSelectList()
     {
