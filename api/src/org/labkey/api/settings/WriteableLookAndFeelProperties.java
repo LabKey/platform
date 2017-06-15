@@ -18,9 +18,12 @@ package org.labkey.api.settings;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.view.ActionURL;
+import java.util.Collection;
 
 import static org.labkey.api.settings.LookAndFeelProperties.*;
 
@@ -150,5 +153,20 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         }
 
         return true;
+    }
+
+    public void populateLookAndFeelWithStartupProps(boolean isBootstrap)
+    {
+        // populate look and feel settings with values from startup configuration as appropriate for prop modifier and isBoostrap flag
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("LookAndFeelSettings");
+        WriteableLookAndFeelProperties writeable = LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
+        startupProps
+                .forEach(prop -> {
+                    if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
+                    {
+                        writeable.storeStringValue(prop.getName(), prop.getValue());
+                    }
+                });
+        writeable.save();
     }
 }

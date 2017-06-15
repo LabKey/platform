@@ -38,6 +38,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.text.DecimalFormat;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -539,5 +540,20 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         // NOT IN UI, because one mistake will probably render the site unusable
         String s = System.getProperty("static.files.prefix");
         return trimToNull(s);
+    }
+
+    public void populateSiteSettingsWithStartupProps(boolean isBootstrap)
+    {
+        // populate site settings with values from startup configuration as appropriate for prop modifier and isBoostrap flag
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("SiteSettings");
+        WriteableAppProps writeable = AppProps.getWriteableInstance();
+        startupProps
+            .forEach(prop -> {
+                if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
+                {
+                    writeable.storeStringValue(prop.getName(), prop.getValue());
+                }
+            });
+        writeable.save();
     }
 }
