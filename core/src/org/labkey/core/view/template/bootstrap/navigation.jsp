@@ -39,6 +39,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("internal/jQuery");
+        dependencies.add("core/MenuBarHoverNavigation.js");
     }
 
     private String getSafeName(Portal.WebPart menu)
@@ -274,7 +275,27 @@
                 {
                     %>__menus[<%=PageFlowUtil.jsString(safeName)%>][<%=PageFlowUtil.jsString(entry.getKey())%>] = <%=PageFlowUtil.jsString(entry.getValue())%>;<%
                 }
-        }
-    %>
+
+                if (null == Portal.getPortalPartCaseInsensitive(menu.getName()))
+                    continue;
+                String menuName = menu.getName() + menu.getIndex();
+                menuName = menuName.replaceAll("\\s+","");
+        %>
+                HoverNavigation.Parts["_<%=text(menuName)%>"] = new HoverNavigation({
+                    hoverElem:"<%=text(menuName)%>-Header",
+                    webPartName: "<%=text(menu.getName())%>",
+                    partConfig: { <%
+                        String sep = "";
+                        for (Map.Entry<String,String> entry : menu.getPropertyMap().entrySet())
+                        { %>
+                            <%=text(sep)%><%=PageFlowUtil.jsString(entry.getKey())%>:<%=PageFlowUtil.jsString(entry.getValue())%><%
+                            sep = ",";
+                        }%>
+                        <%=text(sep)%>hoverPartName:<%=PageFlowUtil.jsString("_" + menuName)%>
+                    }
+                });
+        <%
+            }
+        %>
     </script>
 </nav>
