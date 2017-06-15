@@ -109,6 +109,7 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.FolderSettingsCache;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
@@ -643,6 +644,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             ExceptionUtil.logExceptionToMothership(null, t);
         }
+
+        // populate look and feel settings and site settings with values from startup configuration as appropriate for bootstrap
+        // for a list of recognized look and feel setting properties refer to: LookAndFeelProperties.java
+        // for a list of recognized site setting properties refer to: AppPropsImpl.java
+        LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot()).populateLookAndFeelWithStartupProps(true);;
+        AppProps.getWriteableInstance().populateSiteSettingsWithStartupProps(true);
     }
 
 
@@ -768,6 +775,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 }
             }
         });
+
+        // populate look and feel settings and site settings with values from startup configuration as appropriate for not bootstrap
+        // for a list of recognized look and feel setting properties refer to: LookAndFeelProperties.java
+        // for a list of recognized site setting properties refer to: AppPropsImpl.java
+        LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot()).populateLookAndFeelWithStartupProps(false);;
+        AppProps.getWriteableInstance().populateSiteSettingsWithStartupProps(false);
 
         AdminController.registerAdminConsoleLinks();
         AnalyticsController.registerAdminConsoleLinks();
