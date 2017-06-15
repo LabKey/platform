@@ -121,12 +121,7 @@ public class MergedDirectoryResource extends AbstractResourceCollection
     public MergedDirectoryResource(Resolver resolver, Path path, List<File> dirs, Resource... children)
     {
         super(path, resolver);
-        {
-            // TODO: 30614: Search module doesn't work on TeamCity
-            // assert validateDirs(dirs);
-            // Just remove dupes as a temporary workaround
-            dirs = new ArrayList<>(new HashSet<>(dirs));
-        }
+        assert validateDirs(dirs);
         _dirs = dirs;
         _additional = children;
         _cacheKey = new Pair<>(_resolver, getPath());
