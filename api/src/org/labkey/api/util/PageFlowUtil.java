@@ -172,13 +172,9 @@ public class PageFlowUtil
 
     public static boolean useExperimentalCoreUI()
     {
-        if (AppProps.getInstance().isDevMode())
-        {
-            ExperimentalFeatureService svc = ServiceRegistry.get().getService(ExperimentalFeatureService.class);
-            if (svc != null)
-                return svc.isFeatureEnabled(EXPERIMENTAL_MIGRATE_CORE_UI);
-        }
-
+        ExperimentalFeatureService svc = ServiceRegistry.get().getService(ExperimentalFeatureService.class);
+        if (svc != null)
+            return svc.isFeatureEnabled(EXPERIMENTAL_MIGRATE_CORE_UI);
         return false;
     }
 
