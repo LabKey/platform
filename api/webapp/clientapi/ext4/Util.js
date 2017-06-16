@@ -5,7 +5,13 @@
  */
 (function() {
 
-    Ext4.ns('LABKEY.ext4');
+    /**
+     * @name LABKEY.ext4.Util
+     * @class
+     * Ext4 utilities, contains functions to return an Ext config object to create an Ext field based on
+     * the supplied metadata.
+     */
+    Ext4.ns('LABKEY.ext4.Util');
 
     // TODO: Get these off the global 'Date' object
     Ext4.ns('Date.patterns');
@@ -14,13 +20,7 @@
         ISO8601Short:"Y-m-d"
     });
 
-    /**
-     * @name LABKEY.ext4.Util
-     * @class
-     * Ext4 utilities, contains functions to return an Ext config object to create an Ext field based on
-     * the supplied metadata.
-     */
-    LABKEY.ext4.Util = {};
+    var warned = {};
 
     var Util = LABKEY.ext4.Util;
 
@@ -42,55 +42,7 @@
      * @param options.offsetY - distance between bottom of page to bottom of component
      * @param options.overrideMinWidth - true to set ext container's minWidth value to calculated width, default false
      */
-    var resizeToContainer = function(extContainer, options) {
-        var config = {
-            offsetY: 35,
-            overrideMinWidth: false,
-            paddingHeight: 0,
-            paddingWidth: 0,
-            skipHeight: false,
-            skipWidth: false
-        };
-
-        if (Ext4.isObject(arguments[1])) {
-            config = Ext4.apply(config, options);
-        }
-        // else ignore parameters
-
-        if (!extContainer || !extContainer.rendered || (config.skipWidth && config.skipHeight)) {
-            return;
-        }
-
-        var height = 0;
-        var width = 0;
-
-        if (!config.skipWidth) {
-            width = extContainer.el.parent().getBox().width;
-        }
-        if (!config.skipHeight) {
-            height = window.innerHeight - extContainer.el.getXY()[1];
-        }
-
-        var padding = [config.paddingWidth, config.paddingHeight];
-
-        var size = {
-            width  : Math.max(100, width - padding[0]),
-            height : Math.max(100, height - padding[1] - config.offsetY)
-        };
-
-        if (config.skipWidth) {
-            extContainer.setHeight(size.height);
-            if (config.overrideMinWidth)
-                extContainer.minWidth = size.width;
-        }
-        else if (config.skipHeight) {
-            extContainer.setWidth(size.width);
-        }
-        else {
-            extContainer.setSize(size);
-        }
-        extContainer.doLayout();
-    };
+    // resizeToContainer -- defined in Ext4/ext-patches.js
 
     Ext4.apply(Util, {
 
@@ -1061,7 +1013,7 @@
         resizeToViewport: function(extContainer, width, height, paddingX, paddingY, offsetX, offsetY)
         {
             if (LABKEY.experimental.useExperimentalCoreUI) {
-                resizeToContainer.apply(this, arguments);
+                LABKEY.ext4.Util.resizeToContainer.apply(this, arguments);
                 return;
             }
 

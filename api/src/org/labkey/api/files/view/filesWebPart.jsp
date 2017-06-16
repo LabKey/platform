@@ -61,12 +61,14 @@
     else
     {
 %>
+<% if (!PageFlowUtil.useExperimentalCoreUI()) { %>
 <!-- 19142: Browser action tooltips are clipped in IE -->
 <style type="text/css">
     #ext-quicktips-tip-innerCt {
         white-space: nowrap;
     }
 </style>
+<% } %>
 <div id="<%=h(bean.getContentId())%>"></div>
 <script type="text/javascript">
     Ext4.onReady(function() {
@@ -102,7 +104,12 @@
             isPipelineRoot: <%=bean.isPipelineRoot()%>,
             adminUser: <%=c.hasPermission(getUser(), AdminPermission.class)%>,
             statePrefix: <%=q(bean.getStatePrefix())%>,
-            actions: buttonActions
+            actions: buttonActions,
+            autoResize: {
+                skipHeight: <%=!bean.isAutoResize()%>,
+                offsetY: 80,
+                overrideMinWidth: true
+            }
         };
 
         <%
@@ -139,33 +146,21 @@
             if (!fb || !fb.rendered)
                 return;
 
-            <% if (me.getFrame() == WebPartView.FrameType.PORTAL) {%>
-                var paddingX = 26;
-                var paddingY = 95;
-            <%}else{%>
-                var paddingX = 20;
-                var paddingY = 35;
-            <%}%>
-            <% if (PageFlowUtil.useExperimentalCoreUI()) { %>
-            LABKEY.ext4.Util.resizeToViewport(fb, {
-                paddingWidth: 1, // allow 1 px padding to avoid occasional border cutoff
-                skipHeight: <%=!bean.isAutoResize()%>,
-                offsetY: 80,
-                overrideMinWidth: true
-            });
-            <% } else { %>
+            <% if (!PageFlowUtil.useExperimentalCoreUI()) { %>
+            var paddingX = <%= me.getFrame() == WebPartView.FrameType.PORTAL ? 26 : 20 %>;
+            var paddingY = <%= me.getFrame() == WebPartView.FrameType.PORTAL ? 95 : 35 %>;
             LABKEY.ext4.Util.resizeToViewport(fb, w, h, paddingX, paddingY);
             <% } %>
             fb.detailCheck();
         };
 
-        if (<%=bean.isAutoResize() || PageFlowUtil.useExperimentalCoreUI()%>) {
-            Ext4.EventManager.onWindowResize(_resize);
-            Ext4.defer(function(){
-                var size = Ext4.getBody().getBox();
-                _resize(size.width, size.height);
-            }, 300);
-        }
+        <% if (bean.isAutoResize() && !PageFlowUtil.useExperimentalCoreUI()) { %>
+        Ext4.EventManager.onWindowResize(_resize);
+        Ext4.defer(function(){
+            var size = Ext4.getBody().getBox();
+            _resize(size.width, size.height);
+        }, 300);
+        <% } %>
     });
 </script>
 <%
