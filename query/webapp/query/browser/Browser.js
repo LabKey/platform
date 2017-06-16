@@ -135,18 +135,7 @@ Ext4.define('LABKEY.query.browser.Browser', {
     },
 
     _initResize : function() {
-        if (LABKEY.experimental.useExperimentalCoreUI) {
-            this.on('afterrender', function() {
-                var resize = function() {
-                    LABKEY.ext4.Util.resizeToViewport(this);
-                };
-                Ext4.EventManager.onWindowResize(resize, this);
-                Ext4.defer(function() {
-                    resize.call(this);
-                }, 250, this);
-            }, this, {single: true});
-        }
-        else {
+        if (!LABKEY.experimental.useExperimentalCoreUI) {
             var resize = function(w, h) {
                 LABKEY.ext4.Util.resizeToViewport(this, w, h, 46, 32);
             };

@@ -48,14 +48,14 @@
                     showContainerTabs: true
                 });
 
-                var _resize = function(w, h) {
+                <% if (!PageFlowUtil.useExperimentalCoreUI()) { %>
+                Ext4.EventManager.onWindowResize(function(w, h) {
                     if (!folderPanel.rendered)
                         return;
 
                     LABKEY.ext4.Util.resizeToViewport(folderPanel, w, h);
-                };
-
-                Ext4.EventManager.onWindowResize(_resize);
+                });
+                <% } %>
             });
         }
 

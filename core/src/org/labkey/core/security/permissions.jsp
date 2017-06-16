@@ -144,18 +144,14 @@ Ext4.onReady(function(){
         }
     }, this, {single: true});
 
+    <% if (!PageFlowUtil.useExperimentalCoreUI()) { %>
     Ext4.EventManager.onWindowResize(function(w,h) {
         if (!editor.rendered || !editor.el)
             return;
-        if (LABKEY.experimental.useExperimentalCoreUI) {
-            LABKEY.ext4.Util.resizeToViewport(editor, { offsetY: 80 });
-        }
-        else {
-            var xy = editor.el.getXY();
-            editor.setSize(Math.max(400,w-xy[0]-60), Math.max(300,h-xy[1]-80));
-        }
-
+        var xy = editor.el.getXY();
+        editor.setSize(Math.max(400,w-xy[0]-60), Math.max(300,h-xy[1]-80));
     });
+    <% } %>
     Ext4.EventManager.fireResize();
 });
 

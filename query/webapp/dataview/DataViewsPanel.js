@@ -137,8 +137,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     frame: false,
 
-    bindResize: true,
-
     border: false,
 
     allowCustomize: true,
@@ -150,6 +148,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     index: -1,
 
     minHeight: 200,
+
+    autoResize: {
+        skipHeight: true
+    },
 
     // delete views template
     deleteTpl: new Ext4.XTemplate(
@@ -259,22 +261,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         // Initialize and bind "Full" store
         this.getFullStore().on('load', this.refreshViewStore, this);
 
-        if (this.bindResize) {
-            this._initResize();
-        }
+        this._initResize();
     },
 
     _initResize : function() {
-        if (LABKEY.experimental.useExperimentalCoreUI) {
-            this.on('afterrender', function() {
-                Ext4.EventManager.onWindowResize(function() {
-                    LABKEY.ext4.Util.resizeToViewport(this, {
-                        skipHeight: true
-                    });
-                }, this, {delay: 100});
-            }, this, {single: true});
-        }
-        else {
+        if (!LABKEY.experimental.useExperimentalCoreUI) {
             this.on('render', function(panel) {
                 if (panel.fullPage) {
 

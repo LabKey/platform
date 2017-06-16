@@ -39,6 +39,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("internal/jQuery");
+        dependencies.add("Ext4");
         dependencies.add("core/MenuBarHoverNavigation.js");
     }
 

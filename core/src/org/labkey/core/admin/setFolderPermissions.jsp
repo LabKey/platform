@@ -78,6 +78,7 @@
             renderTo: 'folderPermissionsDiv',
             border: false,
             autoHeight: true,
+            autoResize: false,
             defaults: {
                 border: false
             },
