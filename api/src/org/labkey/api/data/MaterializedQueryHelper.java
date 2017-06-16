@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
@@ -292,8 +293,14 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         return null;
     }
 
-
     public synchronized SQLFragment getFromSql(String tableAlias, Container c)
+    {
+        if (null == selectQuery)
+            throw new IllegalStateException("Must specify source query in constructor or in getFromSql()");
+        return getFromSql(selectQuery, tableAlias, c);
+    }
+
+    public synchronized SQLFragment getFromSql(@NotNull SQLFragment selectQuery, String tableAlias, Container c)
     {
         if (closed)
             throw new IllegalStateException();
