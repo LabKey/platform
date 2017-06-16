@@ -26,6 +26,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.InputStream;
 import java.net.FileNameMap;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -104,15 +105,26 @@ public class MimeMap implements FileNameMap
             result = 31 * result + (_inline ? 1 : 0);
             return result;
         }
+
+        // A few constants for common mime types. We could add a lot more. If you add/more constants then modify the list below.
+        // And if you can find a MimeType enum or constant list in one of our libraries then by all means get rid of these.
+        public static final MimeType GIF = new MimeType("image/gif", true);
+        public static final MimeType JPEG = new MimeType("image/jpeg", true);
+        public static final MimeType PDF = new MimeType("application/pdf", true);
+        public static final MimeType PNG = new MimeType("image/png", true);
+        public static final MimeType SVG = new MimeType("image/svg+xml", true);
+
+        public static final MimeType HTML = new MimeType("text/html");
+        public static final MimeType PLAIN = new MimeType("text/plain");
+        public static final MimeType XML = new MimeType("text/xml");
     }
 
     static
     {
-        mimeTypeMap.put("image/gif", new MimeType("image/gif", true));
-        mimeTypeMap.put("image/jpeg", new MimeType("image/jpeg", true));
-        mimeTypeMap.put("image/png", new MimeType("image/png", true));
-        mimeTypeMap.put("image/svg+xml", new MimeType("image/svg+xml", true));
-        mimeTypeMap.put("application/pdf", new MimeType("application/pdf", true));
+        for (MimeType mt : Arrays.asList(MimeType.GIF, MimeType.JPEG, MimeType.PDF, MimeType.PNG, MimeType.SVG, MimeType.HTML, MimeType.PLAIN, MimeType.XML))
+        {
+            mimeTypeMap.put(mt.getContentType(), mt);
+        }
 
         try (InputStream is = MimeMap.class.getResourceAsStream("mime.txt"))
         {
@@ -123,12 +135,10 @@ public class MimeMap implements FileNameMap
                 int tab = StringUtils.indexOfAny(line, "\t ");
                 if (tab < 0) continue;
                 String extn = StringUtils.trimToNull(line.substring(0,tab));
-                String mimetype = StringUtils.trimToNull(line.substring(tab+1));
-                if (null != extn && null != mimetype)
+                String mimeType = StringUtils.trimToNull(line.substring(tab+1));
+                if (null != extn && null != mimeType)
                 {
-                    MimeType mt = mimeTypeMap.get(mimetype);
-                    if (null == mt)
-                        mimeTypeMap.put(mimetype, (mt = new MimeType(mimetype)));
+                    MimeType mt = mimeTypeMap.computeIfAbsent(mimeType, MimeType::new);
                     extensionMap.put(extn, mt);
                 }
             }
