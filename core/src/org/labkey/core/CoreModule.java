@@ -90,10 +90,13 @@ import org.labkey.api.security.AuthenticationProviderConfigAuditTypeProvider;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.InvalidGroupMembershipException;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
@@ -107,6 +110,7 @@ import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -213,6 +217,7 @@ import org.labkey.core.webdav.DavController;
 import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookQueryView;
 import org.labkey.core.workbook.WorkbookSearchView;
+import org.labkey.security.xml.GroupEnumType;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
@@ -650,6 +655,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // for a list of recognized site setting properties refer to: AppPropsImpl.java
         LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot()).populateLookAndFeelWithStartupProps(true);;
         AppProps.getWriteableInstance().populateSiteSettingsWithStartupProps(true);
+
+        // create users and groups and assign roles with values from startup configuration as appropriate for bootstrap
+        populateGroupRolesWithStartupProps(true);
+        populateUserRolesWithStartupProps(true);
+        populateUserGroupsWithStartupProps(true);
     }
 
 
@@ -781,6 +791,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // for a list of recognized site setting properties refer to: AppPropsImpl.java
         LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot()).populateLookAndFeelWithStartupProps(false);;
         AppProps.getWriteableInstance().populateSiteSettingsWithStartupProps(false);
+
+        // create users and groups and assign roles with values from startup configuration as appropriate for not bootstrap
+        populateGroupRolesWithStartupProps(false);
+        populateUserRolesWithStartupProps(false);
+        populateUserGroupsWithStartupProps(false);
 
         AdminController.registerAdminConsoleLinks();
         AnalyticsController.registerAdminConsoleLinks();
@@ -1199,4 +1214,141 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             new FrameFactoryClassic().registerFrames();
         }
     }
+
+    private void populateUserGroupsWithStartupProps(boolean isBootstrap)
+    {
+        // expects startup properties formatted like: UserGroups.{email}=SiteAdministrators,Developers
+        Container rootContainer = ContainerManager.getRoot();
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("UserGroups");
+        startupProps
+            .forEach(prop -> {
+                if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
+                {
+                    try
+                    {
+                        ValidEmail userEmail = new ValidEmail(prop.getName());
+                        User user = UserManager.getUser(userEmail);;
+                        if (null == user)
+                        {
+                            user = SecurityManager.addUser(userEmail,  UserManager.getUser(rootContainer.getCreatedBy())).getUser();
+                        }
+                        String[] groups = prop.getValue().split(",");
+                        for (String groupName : groups)
+                        {
+                            groupName = StringUtils.stripStart(groupName, null);
+                            Group group = GroupManager.getGroup(rootContainer, groupName, GroupEnumType.SITE);
+                            if (null == group)
+                            {
+                                try
+                                {
+                                    group = SecurityManager.createGroup(rootContainer, groupName, PrincipalType.GROUP);
+                                }
+                                catch (IllegalArgumentException e)
+                                {
+                                    Logger.getLogger(CoreModule.class).warn("Could not add group specified in startup properties: " + prop.getName());
+                                }
+                            }
+                            try
+                            {
+                                SecurityManager.addMember(group, user);
+                            }
+                            catch (InvalidGroupMembershipException e)
+                            {
+                                Logger.getLogger(CoreModule.class).warn("Could not as specified in startup properties user: " + prop.getName() + ", to group: " + groupName);
+                            }
+                        }
+                    }
+                    catch (ValidEmail.InvalidEmailException e)
+                    {
+                        Logger.getLogger(CoreModule.class).warn("Invalied email address specified in startup properties: " + prop.getName());
+                    }
+                    catch (SecurityManager.UserManagementException e)
+                    {
+                        Logger.getLogger(CoreModule.class).warn("Could not add user specified in startup properties: " + prop.getName());
+                    }
+                }
+            });
+    }
+
+    private void populateGroupRolesWithStartupProps(boolean isBootstrap)
+    {
+        // expects startup properties formatted like: GroupRoles.{name}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
+        Container rootContainer = ContainerManager.getRoot();
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("GroupRoles");
+        startupProps
+            .forEach(prop -> {
+                if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
+                {
+                    Group group = GroupManager.getGroup(rootContainer, prop.getName(), GroupEnumType.SITE);
+                    if (null == group)
+                    {
+                        try
+                        {
+                            group = SecurityManager.createGroup(rootContainer, prop.getName(), PrincipalType.GROUP);
+                        }
+                        catch (IllegalArgumentException e)
+                        {
+                            Logger.getLogger(CoreModule.class).warn("Could not add group specified in startup properties: " + prop.getName());
+                        }
+                    }
+                    String[] roles = prop.getValue().split(",");
+                    for (String roleName : roles)
+                    {
+                        roleName = StringUtils.stripStart(roleName, null);
+                        MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
+                        Role role = RoleManager.getRole(roleName);
+                        if (null == role)
+                        {
+                            Logger.getLogger(CoreModule.class).warn("Invalied role for group specified in startup properties: " + prop.getValue());
+                        }
+                        policy.addRoleAssignment(group, role);
+                        SecurityPolicyManager.savePolicy(policy);
+                    }
+                 }
+            });
+    }
+
+    private void populateUserRolesWithStartupProps(boolean isBootstrap)
+    {
+        // expects startup properties formatted like: UserRoles.{email}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
+        Container rootContainer = ContainerManager.getRoot();
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("UserRoles");
+        startupProps
+            .forEach(prop -> {
+                if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
+                {
+                    try
+                    {
+                        ValidEmail userEmail = new ValidEmail(prop.getName());
+                        User user = UserManager.getUser(userEmail);
+                        if (null == user)
+                        {
+                            user = SecurityManager.addUser(userEmail,  UserManager.getUser(rootContainer.getCreatedBy())).getUser();
+                        }
+                        String[] roles = prop.getValue().split(",");
+                        for (String roleName : roles)
+                        {
+                            roleName = StringUtils.stripStart(roleName, null);
+                            MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
+                            Role role = RoleManager.getRole(roleName);
+                            if (null == role)
+                            {
+                                Logger.getLogger(CoreModule.class).warn("Invalied role for user specified in startup properties: " + prop.getValue());
+                            }
+                            policy.addRoleAssignment(user, role);
+                            SecurityPolicyManager.savePolicy(policy);
+                        }
+                    }
+                    catch (ValidEmail.InvalidEmailException e)
+                    {
+                        Logger.getLogger(CoreModule.class).warn("Invalied email address specified in startup properties: " + prop.getName());
+                    }
+                    catch (SecurityManager.UserManagementException e)
+                    {
+                        Logger.getLogger(CoreModule.class).warn("Could not add user specified in startup properties: " + prop.getName());
+                    }
+                }
+            });
+    }
+
 }
