@@ -121,22 +121,44 @@
 }
 
 .lk-region-bar {
-  padding-bottom: 10px;
+  padding: 10px 15px;
+  background-color: $white;
+  border-top: 1px solid lightgray;
+  border-left: 1px solid lightgray;
+  border-right: 1px solid lightgray;
+  border-bottom: none;
+
+  &:before, &:after {
+    content: " ";
+    display: table;
+  }
+
+  &:after {
+    clear: both;
+  }
+}
+
+.lk-region-context-bar {
+  padding: 0 15px 10px;
 }
 
 .lk-region-context-action {
-  background-color: lighten($lk-accent-color, 15%);
+  background-color: $white;
   border: 1px solid $lk-accent-color;
   border-radius: 14px;
-  display: inline-block;
+  float: left;
   padding: 2px 7px;
-  position: relative;
-  margin: 0 5px 5px 0;
+  margin-right: 5px;
+  margin-top: 10px; // allows space when nested, used in conjunction with lk-region-context-bar top padding
   vertical-align: top;
-  white-space: pre-wrap;
+  white-space: nowrap;
+
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   i.fa {
-    color: $white;
+    color: $lk-accent-color;
     padding-right: 5px;
   }
 
@@ -148,13 +170,14 @@
 }
 
 .lk-region-drawer {
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.175);
+  border-top: 1px solid lightgray;
+  border-left: 1px solid lightgray;
+  border-right: 1px solid lightgray;
+  border-bottom: none;
   background-clip: padding-box;
   background-color: $white;
-  top: 0;
-  width: 100%;
+  padding: 15px;
   z-index: 20001;
-  margin-bottom: 10px;
 }
 
 .lk-region-drawer-container {
