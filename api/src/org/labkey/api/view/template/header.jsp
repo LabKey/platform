@@ -44,7 +44,7 @@
     ActionURL currentURL = getActionURL();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
 
-    boolean hasWarnings = me.getWarningMessages().size() > 0;
+    boolean hasWarnings = bean.pageConfig.getWarningMessages().size() > 0;
     boolean homeOrNoneTemplate = bean.pageConfig.getTemplate() == PageConfig.Template.Home || bean.pageConfig.getTemplate() == PageConfig.Template.None;
     boolean showSearchForm = hasUrlProvider(SearchUrls.class) && homeOrNoneTemplate;
     boolean showHeaderMenu = !homeOrNoneTemplate;
@@ -126,9 +126,9 @@
                 <img src="<%=getWebappURL("/_images/partdelete.gif")%>" alt="x"
                      style="float: right;cursor:pointer;" onclick="labkeyShowWarningMessages(false);">
                 <ul>
-                    <% for(String warningMessage : me.getWarningMessages()) { %>
-                    <li><%=warningMessage%></li>
-                    <% } //for each warning message %>
+                    <% for(String warningMessage : bean.pageConfig.getWarningMessages()) { %>
+                    <li><%=text(warningMessage)%></li>
+                    <% } %>
                 </ul>
             </div>
         </td>

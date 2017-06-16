@@ -29,7 +29,9 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +84,7 @@ public class PageConfig
     private FrameOption _frameOption = FrameOption.ALLOW;
     private boolean _trackingScript = true;
     private String _canonicalLink = null;
+    private List<String> _warningMessages = null;
 
     public PageConfig()
     {
@@ -367,5 +370,27 @@ public class PageConfig
     public void addClientDependency(ClientDependency resource)
     {
         _resources.add(resource);
+    }
+
+    public void addWarningMessage(String html)
+    {
+        if (_warningMessages == null)
+            _warningMessages = new ArrayList<>();
+        _warningMessages.add(html);
+    }
+
+    public void addWarningMessages(Collection<String> messages)
+    {
+        if (_warningMessages == null)
+            _warningMessages = new ArrayList<>();
+        _warningMessages.addAll(messages);
+    }
+
+    @NotNull
+    public List<String> getWarningMessages()
+    {
+        if (_warningMessages != null)
+            return _warningMessages;
+        return Collections.emptyList();
     }
 }

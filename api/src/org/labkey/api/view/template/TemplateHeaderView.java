@@ -45,8 +45,6 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
 {
     public static String SHOW_WARNING_MESSAGES_SESSION_PROP = "hideWarningMessages";
 
-    private List<String> _warningMessages = new ArrayList<>();
-
     public TemplateHeaderView(@Nullable String upgradeMessage, @Nullable Map<String, Throwable> moduleErrors, PageConfig page)
     {
         super("/org/labkey/api/view/template/header.jsp", new TemplateHeaderBean(upgradeMessage, moduleErrors, page));
@@ -76,7 +74,7 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
             //admin-only mode--show to admins
             if (AppProps.getInstance().isUserRequestedAdminOnlyMode())
             {
-                _warningMessages.add("This site is configured so that only administrators may sign in. To allow other users to sign in, turn off admin-only mode via the <a href=\""
+                bean.pageConfig.addWarningMessage("This site is configured so that only administrators may sign in. To allow other users to sign in, turn off admin-only mode via the <a href=\""
                         + PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeSiteURL()
                         + "\">"
                         + "site settings page</a>.");
@@ -85,7 +83,7 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
             //module failures during startup--show to admins
             if (null != bean.moduleFailures && bean.moduleFailures.size() > 0)
             {
-                _warningMessages.add("The following modules experienced errors during startup: "
+                bean.pageConfig.addWarningMessage("The following modules experienced errors during startup: "
                         + "<a href=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getModuleErrorsURL(container) + "\">"
                         + PageFlowUtil.filter(bean.moduleFailures.keySet())
                         + "</a>");
@@ -94,25 +92,9 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
             //upgrade message--show to admins
             if (null != bean.upgradeMessage && !bean.upgradeMessage.isEmpty())
             {
-                _warningMessages.add(bean.upgradeMessage);
+                bean.pageConfig.addWarningMessage(bean.upgradeMessage);
             }
 
-/*
-            // We have deprecated support for Java 7... warn
-            if (!SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_1_8))
-                _warningMessages.add("LabKey Server no longer supports Java 7. Please upgrade your runtime to Java 8.");
-
-            String serverInfo = ModuleLoader.getServletContext().getServerInfo();
-
-            if (serverInfo.startsWith("Apache Tomcat/"))
-            {
-                String[] versionParts = serverInfo.substring(14).split("\\.");
-                int majorVersion = Integer.valueOf(versionParts[0]);
-
-                if (majorVersion < 7)
-                    _warningMessages.add("Tomcat 6.0.x (and earlier) is no longer supported. Please upgrade your Tomcat installation to 7.0.x.");
-            }
-*/
             //FIX: 9683
             //show admins warning about inadequate heap size (<= 256Mb)
             MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
@@ -121,13 +103,16 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
             if (maxMem > 0 && maxMem <= 268435456)
             {
                 HelpTopic topic = new HelpTopic("configWebappMemory");
-                _warningMessages.add("The maximum amount of heap memory allocated to LabKey Server is too low (256M or less). " +
+                bean.pageConfig.addWarningMessage("The maximum amount of heap memory allocated to LabKey Server is too low (256M or less). " +
                         "LabKey recommends " + topic.getSimpleLinkHtml("setting the maximum heap to at least one gigabyte (-Xmx1024M)")
                         + ".");
             }
 
             // Warn if running on a deprecated database version or some other non-fatal database configuration issue
-            DbScope.getLabKeyScope().getSqlDialect().addAdminWarningMessages(_warningMessages);
+            List<String> sqlWarnings = new ArrayList<>();
+            DbScope.getLabKeyScope().getSqlDialect().addAdminWarningMessages(sqlWarnings);
+            if (sqlWarnings.size() > 0)
+                bean.pageConfig.addWarningMessages(sqlWarnings);
         }
 
         if (AppProps.getInstance().isDevMode())
@@ -138,7 +123,7 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
                 int count = ConnectionWrapper.getActiveConnectionCount();
                 String connectionsInUse = "<a href=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getMemTrackerURL() + "\">" + count + " DB connection" + (count == 1 ? "" : "s") + " in use.";
                 connectionsInUse += " " + leakCount + " probable leak" + (leakCount == 1 ? "" : "s") + ".</a>";
-                _warningMessages.add(connectionsInUse);
+                bean.pageConfig.addWarningMessage(connectionsInUse);
             }
         }
 
@@ -146,19 +131,8 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
         {
             String message = AppProps.getInstance().getRibbonMessageHtml();
             message = ModuleHtmlView.replaceTokens(message, getViewContext());
-            _warningMessages.add(message);
+            bean.pageConfig.addWarningMessage(message);
         }
-    }
-
-    public List<String> getWarningMessages()
-    {
-        return _warningMessages;
-    }
-
-    // for testing only
-    public void addTestMessage()
-    {
-        _warningMessages.add("TESTING");
     }
 
     public static class TemplateHeaderBean
