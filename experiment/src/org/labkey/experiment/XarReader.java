@@ -948,7 +948,7 @@ public class XarReader extends AbstractXarImporter
         {
             loadData(d, experimentRun, protAppId, context);
         }
-        ExperimentServiceImpl.get().uncacheEdges();
+        ExperimentServiceImpl.get().uncacheLineageGraph();
         getLog().debug("Finished loading ProtocolApplication with LSID '" + protocolLSID + "'");
     }
 

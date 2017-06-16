@@ -2112,7 +2112,7 @@ public class ExperimentServiceImpl implements ExperimentService
     final Object initEdgesLock = new Object();
     public final AtomicLong expLineageCounter = new AtomicLong();
 
-    public void uncacheEdges()
+    public void uncacheLineageGraph()
     {
         synchronized (initEdgesLock)
         {
@@ -4683,7 +4683,7 @@ public class ExperimentServiceImpl implements ExperimentService
             // clear the stored records
             resetState();
 
-            uncacheEdges();
+            uncacheLineageGraph();
         }
 
         public boolean isEmpty()
@@ -5388,7 +5388,7 @@ public class ExperimentServiceImpl implements ExperimentService
             Table.insert(user, table, input);
         }
 
-        uncacheEdges();
+        uncacheLineageGraph();
     }
 
     @NotNull
