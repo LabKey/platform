@@ -510,14 +510,6 @@ if (!LABKEY.DataRegions) {
      * event.
      */
     LABKEY.DataRegion.prototype.refresh = function() {
-
-        //var event = $.Event("beforerefresh");
-        //
-        //$(this).trigger(event);
-        //
-        //if (event.isDefaultPrevented()) {
-        //    return;
-        //}
         $(this).trigger('beforerefresh', this);
 
         if (this.async) {
@@ -545,14 +537,6 @@ if (!LABKEY.DataRegions) {
      * Removes all filters from the DataRegion
      */
     LABKEY.DataRegion.prototype.clearAllFilters = function() {
-        //var event = $.Event("beforeclearallfilters");
-        //
-        //$(this).trigger(event, this);
-        //
-        //if (event.isDefaultPrevented()) {
-        //    return;
-        //}
-
         if (this.async) {
             this.offset = 0;
             this.userFilters = {};
@@ -1110,14 +1094,6 @@ if (!LABKEY.DataRegions) {
      * Removes all parameters from the DataRegion
      */
     LABKEY.DataRegion.prototype.clearAllParameters = function() {
-        //var event = $.Event('beforeclearallparameters');
-        //
-        //$(this).trigger(event, this);
-        //
-        //if (event.isDefaultPrevented()) {
-        //    return;
-        //}
-
         if (this.async) {
             this.offset = 0;
             this.parameters = undefined;
@@ -1325,7 +1301,8 @@ if (!LABKEY.DataRegions) {
 
     LABKEY.DataRegion.prototype.hideContext = function() {
         if (NEW_UI) {
-            _getContextSelector(this).hide();
+            _getContextBarSelector(this).hide();
+            _getViewBarSelector(this).hide();
         }
     };
 
@@ -1412,7 +1389,14 @@ if (!LABKEY.DataRegions) {
 
     LABKEY.DataRegion.prototype.showContext = function() {
         if (NEW_UI) {
-            _getContextSelector(this).show();
+            var ctx = _getContextBarSelector(this);
+            if (ctx.html().trim() !== '') {
+                ctx.show();
+            }
+            var view = _getViewBarSelector(this);
+            if (view.html().trim() !== '') {
+                view.show();
+            }
         }
     };
 
@@ -1720,27 +1704,53 @@ if (!LABKEY.DataRegions) {
     // Customize View
     //
     var _initCustomViews = function() {
-        if (this.view && this.view.session && this.getMessage('customizeview') == undefined) {
-            var msg;
-            if (this.view.savable) {
-                msg = (this.viewName ? "The current grid view '<em>" + LABKEY.Utils.encodeHtml(this.viewName) + "</em>'" : "The current <em>&lt;default&gt;</em> grid view") + " is unsaved.";
-                msg += " &nbsp;";
-                msg += "<span class='labkey-button unsavedview-revert'>Revert</span>";
-                msg += "&nbsp;";
-                msg += "<span class='labkey-button unsavedview-edit'>Edit</span>";
-                msg += "&nbsp;";
-                msg += "<span class='labkey-button unsavedview-save'>Save</span>";
-            }
-            else {
-                msg = ("The current grid view has been customized.");
-                msg += "&nbsp;";
-                msg += "<span class='labkey-button unsavedview-revert' title='Revert'>Revert</span>";
-                msg += "&nbsp;";
-                msg += "<span class='labkey-button unsavedview-edit'>Edit</span>";
-            }
+        if (NEW_UI) {
+            if (this.view && this.view.session) {
+                // clear old contents
+                _getViewBarSelector(this).find('.labkey-button-bar').remove();
 
-            // add the customize view message, the link handlers will get added after render in _onRenderMessageArea
-            this.addMessage(msg, 'customizeview');
+                _getViewBarSelector(this).append([
+                    '<div class="labkey-button-bar" style="margin-top:10px;float:left;">',
+                    '<span style="padding:0 10px;">This grid view has been modified.</span>',
+                    '<span class="labkey-button unsavedview-revert">Revert</span>',
+                    '<span class="labkey-button unsavedview-edit">Edit</span>',
+                    '<span class="labkey-button unsavedview-save">Save</span>',
+                    '</div>'
+                ].join(''));
+                _getViewBarSelector(this).find('.unsavedview-revert').off('click').on('click', $.proxy(function() {
+                    _revertCustomView(this);
+                }, this));
+                _getViewBarSelector(this).find('.unsavedview-edit').off('click').on('click', $.proxy(function() {
+                    this.showCustomizeView(undefined);
+                }, this));
+                _getViewBarSelector(this).find('.unsavedview-save').off('click').on('click', $.proxy(function() {
+                    _saveSessionCustomView(this);
+                }, this));
+            }
+        }
+        else {
+            if (this.view && this.view.session && this.getMessage('customizeview') == undefined) {
+                var msg;
+                if (this.view.savable) {
+                    msg = (this.viewName ? "The current grid view '<em>" + LABKEY.Utils.encodeHtml(this.viewName) + "</em>'" : "The current <em>&lt;default&gt;</em> grid view") + " is unsaved.";
+                    msg += " &nbsp;";
+                    msg += "<span class='labkey-button unsavedview-revert'>Revert</span>";
+                    msg += "&nbsp;";
+                    msg += "<span class='labkey-button unsavedview-edit'>Edit</span>";
+                    msg += "&nbsp;";
+                    msg += "<span class='labkey-button unsavedview-save'>Save</span>";
+                }
+                else {
+                    msg = ("The current grid view has been customized.");
+                    msg += "&nbsp;";
+                    msg += "<span class='labkey-button unsavedview-revert' title='Revert'>Revert</span>";
+                    msg += "&nbsp;";
+                    msg += "<span class='labkey-button unsavedview-edit'>Edit</span>";
+                }
+
+                // add the customize view message, the link handlers will get added after render in _onRenderMessageArea
+                this.addMessage(msg, 'customizeview');
+            }
         }
     };
 
@@ -2823,11 +2833,19 @@ if (!LABKEY.DataRegions) {
     };
 
     var _getBarSelector = function(region) {
-        return _getFormSelector(region).find('.lk-region-bar');
+        return $('#' + region.domId + '-headerbar');
     };
 
-    var _getContextSelector = function(region) {
+    var _getContextBarSelector = function(region) {
         return $('#' + region.domId + '-ctxbar');
+    };
+
+    var _getDrawerSelector = function(region) {
+        if (NEW_UI) {
+            return $('#' + region.domId + '-drawer');
+        }
+
+        return _getHeaderSelector(region).find('.labkey-ribbon');
     };
 
     var _getFormSelector = function(region) {
@@ -2922,14 +2940,6 @@ if (!LABKEY.DataRegions) {
         return params;
     };
 
-    var _getDrawerSelector = function(region) {
-        if (NEW_UI) {
-            return $('.lk-region-drawer'); // TODO: Adjust to work for more than one region
-        }
-
-        return _getHeaderSelector(region).find('.labkey-ribbon');
-    };
-
     /**
      * 
      * @param region
@@ -2964,6 +2974,10 @@ if (!LABKEY.DataRegions) {
         return userSort;
     };
 
+    var _getViewBarSelector = function(region) {
+        return $('#' + region.domId + '-viewbar');
+    };
+
     var _buttonBind = function(region, cls, fn) {
         region.msgbox.find('.labkey-button' + cls).off('click').on('click', $.proxy(function() {
             fn.call(this);
@@ -2972,7 +2986,7 @@ if (!LABKEY.DataRegions) {
 
     var _onRenderMessageArea = function(region, parts) {
         var msgArea = region.msgbox;
-        if (msgArea) {
+        if (msgArea && !NEW_UI) {
             if (region.showRecordSelectors && parts['selection']) {
                 _buttonBind(region, '.select-all', region.selectAll);
                 _buttonBind(region, '.select-none', region.clearSelected);

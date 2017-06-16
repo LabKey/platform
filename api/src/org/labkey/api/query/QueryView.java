@@ -1338,6 +1338,8 @@ public class QueryView extends WebPartView<Object>
 
         URLHelper target = urlChangeView();
         MenuButton button = new MenuButton("Grid Views");
+        button.setTooltip("Grid views");
+        button.setIconCls("table");
         NavTree menu = button.getNavTree();
         menu.setId(getBaseMenuId() + ".Menu.GridViews");
 

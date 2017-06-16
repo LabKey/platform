@@ -145,6 +145,7 @@ public class DataRegion extends AbstractDataRegion
     public static final String DEFAULTDATETIME = "DateTime";
 
     private List<ContextAction> _contextActions = new ArrayList<>();
+    private List<ContextAction> _viewActions = new ArrayList<>();
     private List<Message> _messages;
 
     private class GroupTable
@@ -980,48 +981,40 @@ public class DataRegion extends AbstractDataRegion
 
         Map<String, String> messages = prepareMessages(ctx);
 
-        // 1. render form wrapper
         renderFormHeader(ctx, out, ctx.getMode());
 
-        // 2. render button bar
-        //      a. render paging
-        _renderHeaderNew(ctx, out, renderButtons);
+        if (shouldRenderHeader(renderButtons))
+        {
+            _renderHeaderNew(ctx, out, renderButtons);
+            _renderContextBar(ctx, out);
+            _renderViewBar(ctx, out);
+        }
 
-        // 3. render messages
         _renderMessages(ctx, out);
 
-        // 4. render context bar
-        _renderContextBar(ctx, out);
-
-        // 5. render table
         if (!_errorCreatingResults)
             _renderDataTableNew(ctx, out, showRecordSelectors, renderers, colCount);
 
-        // 6. Bind the region code
         renderHeaderScript(ctx, out, messages, showRecordSelectors);
         renderAnalyticsProvidersScripts(ctx, out);
 
-        // 7. end form wrapper
         renderFormEnd(ctx, out);
     }
 
     private void _renderHeaderNew(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
     {
-        if (shouldRenderHeader(renderButtons))
-        {
-            out.write("<div class=\"row lk-region-bar\">");
-            _renderButtonBarNew(ctx, out, renderButtons);
-            _renderPaginationNew(ctx, out);
-            out.write("</div>");
-            _renderDrawer(ctx, out);
-        }
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-headerbar") + "\" class=\"lk-region-bar\">");
+        _renderButtonBarNew(ctx, out, renderButtons);
+        _renderPaginationNew(ctx, out);
+        out.write("</div>");
+        _renderDrawer(ctx, out);
     }
 
     private void _renderButtonBarNew(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
     {
         if (renderButtons)
         {
-            out.write("<div class=\"col-md-9\">");
+            out.write("<div class=\"pull-left\">");
             renderButtons(ctx, out);
             out.write("</div>");
         }
@@ -1029,18 +1022,32 @@ public class DataRegion extends AbstractDataRegion
 
     private void _renderDrawer(RenderContext ctx, Writer out) throws IOException
     {
-        out.write("<div class=\"lk-region-drawer\" style=\"display:none;\"></div>");
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-drawer")+ "\" class=\"lk-region-bar lk-region-drawer\" style=\"display:none;\"></div>");
+    }
+
+    private void _renderBar(RenderContext ctx, Writer out, List<ContextAction> actions, String idSuffix) throws IOException
+    {
+        boolean isEmpty = actions == null || actions.size() == 0;
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-" + idSuffix) + "\" class=\"lk-region-bar lk-region-context-bar\"");
+        if (isEmpty)
+            out.write(" style=\"display:none;\">");
+        else
+        {
+            out.write(">");
+            for (ContextAction ca : actions)
+                out.write(ca.toString());
+        }
+        out.write("</div>");
     }
 
     private void _renderContextBar(RenderContext ctx, Writer out) throws IOException
     {
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-ctxbar") + "\" class=\"lk-region-context-bar\">");
-        if (_contextActions != null)
-        {
-            for (ContextAction ca : _contextActions)
-                out.write(ca.toString());
-        }
-        out.write("</div>");
+        _renderBar(ctx, out, _contextActions, "ctxbar");
+    }
+
+    private void _renderViewBar(RenderContext ctx, Writer out) throws IOException
+    {
+        _renderBar(ctx, out, _viewActions, "viewbar");
     }
 
     private void _renderMessages(RenderContext ctx, Writer out) throws IOException
@@ -1051,8 +1058,7 @@ public class DataRegion extends AbstractDataRegion
         {
             for (Message message : _messages)
             {
-                String alertCls = message.getType().equals(MessageType.ERROR) ? "error" : "info";
-                out.write("<div class=\"alert alert-" + alertCls + "\">");
+                out.write("<div class=\"lk-region-bar\" data-msgpart=\"" + PageFlowUtil.filter(message.getArea()) + "\">");
                 out.write(message.getContent());
                 out.write("</div>");
             }
@@ -1062,8 +1068,8 @@ public class DataRegion extends AbstractDataRegion
 
     private void _renderPaginationNew(RenderContext ctx, Writer out) throws IOException
     {
-        out.write("<div class=\"col-md-3 pull-right\">");
-        out.write("<div class=\"labkey-pagination pull-right\"></div>"); // rendered by client
+        out.write("<div class=\"pull-right\">");
+        out.write("<div class=\"labkey-pagination\"></div>"); // rendered by client
         out.write("</div>");
     }
 
@@ -1092,7 +1098,7 @@ public class DataRegion extends AbstractDataRegion
     private void _renderDataTableNew(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
     {
         out.write("<div class=\"lk-region-ct\">");
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-n") + "\" class=\"lk-region-section north\"></div>");
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-n") + "\" class=\"lk-region-bar lk-region-section north\"></div>");
 
         // table wrapper
         out.write("<div class=\"table-responsive lk-region-section center\" style=\"display: block;\">");
@@ -1121,9 +1127,9 @@ public class DataRegion extends AbstractDataRegion
         out.write("</div>");
         // end table wrapper
 
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-w") + "\" class=\"lk-region-section west\"></div>");
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-e") + "\" class=\"lk-region-section east\"></div>");
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-s") + "\" class=\"lk-region-section south\"></div>");
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-w") + "\" class=\"lk-region-bar lk-region-section west\"></div>");
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-e") + "\" class=\"lk-region-bar lk-region-section east\"></div>");
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-s") + "\" class=\"lk-region-bar lk-region-section south\"></div>");
         out.write("</div>");
     }
 
@@ -2866,11 +2872,18 @@ public class DataRegion extends AbstractDataRegion
         }
 
         // don't generate a view message if this is the default view and the filter is empty
-        if (!isDefaultView(ctx) || filterMsg.length() > 0)
+        if (newUI)
         {
-            addViewMessage(viewMsg, ctx);
-            if (viewMsg.length() > 0)
-                addMessage(new Message(viewMsg.toString(), MessageType.INFO, MessagePart.view));
+            prepareView(ctx);
+        }
+        else
+        {
+            if (!isDefaultView(ctx) || filterMsg.length() > 0)
+            {
+                addViewMessage(viewMsg, ctx);
+                if (viewMsg.length() > 0)
+                    addMessage(new Message(viewMsg.toString(), MessageType.INFO, MessagePart.view));
+            }
         }
 
         Map<String, String> messages = new LinkedHashMap<>();
@@ -2882,6 +2895,20 @@ public class DataRegion extends AbstractDataRegion
         }
 
         return messages;
+    }
+
+    private void prepareView(RenderContext ctx)
+    {
+        if (ctx.getView() != null)
+        {
+            String region = "LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "]";
+
+            ContextAction.Builder action = new ContextAction.Builder()
+                    .iconCls("table")
+                    .onClick(region + ".showCustomizeView(); return false;")
+                    .text(ctx.getView().getLabel());
+            _viewActions.add(action.build());
+        }
     }
 
     public void setShadeAlternatingRows(boolean shadeAlternatingRows)
