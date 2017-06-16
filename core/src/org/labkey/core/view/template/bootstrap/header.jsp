@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.core.view.template.bootstrap.BootstrapHeader" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
+<%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -41,7 +42,7 @@
 %>
 <%
     BootstrapHeader me = (BootstrapHeader) HttpView.currentView();
-    BootstrapHeader.BootstrapHeaderBean model = me.getModelBean();
+    PageConfig pageConfig = me.getModelBean();
     Container c = getContainer();
     User user = getUser();
     boolean isRealUser = null != user && !user.isGuest();
@@ -96,7 +97,7 @@
                     <i class="fa fa-user"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
-                    <% PopupMenuView.renderTree(PopupUserView.createNavTree(context, model.pageConfig), out); %>
+                    <% PopupMenuView.renderTree(PopupUserView.createNavTree(context, pageConfig), out); %>
                 </ul>
             </li>
 <% } %>
@@ -124,7 +125,7 @@
                 <a href="<%=h(urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(c, getActionURL()))%>" class="btn btn-primary">Exit Admin Mode</a>
             </li>
 <% } %>
-<% if (!isRealUser && model.pageConfig.shouldIncludeLoginLink()) { %>
+<% if (!isRealUser && pageConfig.shouldIncludeLoginLink()) { %>
             <li>
                 <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign In</a>
             </li>

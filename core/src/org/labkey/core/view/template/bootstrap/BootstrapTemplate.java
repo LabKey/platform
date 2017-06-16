@@ -1,10 +1,17 @@
 package org.labkey.core.view.template.bootstrap;
 
 import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -19,6 +26,9 @@ import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,8 +48,66 @@ public class BootstrapTemplate extends HomeTemplate
     public BootstrapTemplate(ViewContext context, ModelAndView body, PageConfig page)
     {
         super("/org/labkey/core/view/template/bootstrap/BootstrapTemplate.jsp", context, context.getContainer(), body, page);
-
+        buildWarnings(context, page);
         setView("bodyTemplate", getBodyTemplate(page));
+    }
+
+    private void buildWarnings(ViewContext context, PageConfig page)
+    {
+        page.addWarningMessage("<strong>Under construction!</strong> This layout is under development. " +
+                "<a href=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getExperimentalFeaturesURL() + "\" class=\"alert-link\">Turn it off here</a> " +
+                "by disabling the \"Core UI Migration\" feature.");
+
+        User user = getViewContext().getUser();
+        Container container = getViewContext().getContainer();
+
+        if (null != user && user.isInSiteAdminGroup())
+        {
+            //admin-only mode--show to admins
+            if (AppProps.getInstance().isUserRequestedAdminOnlyMode())
+            {
+                page.addWarningMessage("This site is configured so that only administrators may sign in. To allow other users to sign in, turn off admin-only mode via the <a href=\""
+                        + PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeSiteURL()
+                        + "\">"
+                        + "site settings page</a>.");
+            }
+
+            //module failures during startup--show to admins
+            Map<String, Throwable> moduleFailures = ModuleLoader.getInstance().getModuleFailures();
+            if (null != moduleFailures && moduleFailures.size() > 0)
+            {
+                page.addWarningMessage("The following modules experienced errors during startup: "
+                        + "<a href=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getModuleErrorsURL(container) + "\">"
+                        + PageFlowUtil.filter(moduleFailures.keySet())
+                        + "</a>");
+            }
+
+            //upgrade message--show to admins
+            String upgradeMessage = UsageReportingLevel.getUpgradeMessage();
+            if (StringUtils.isNotEmpty(upgradeMessage))
+            {
+                page.addWarningMessage(upgradeMessage);
+            }
+
+            //FIX: 9683
+            //show admins warning about inadequate heap size (<= 256Mb)
+            MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
+            long maxMem = membean.getHeapMemoryUsage().getMax();
+
+            if (maxMem > 0 && maxMem <= 268435456)
+            {
+                page.addWarningMessage("The maximum amount of heap memory allocated to LabKey Server is too low (256M or less). " +
+                        "LabKey recommends " +
+                        new HelpTopic("configWebappMemory").getSimpleLinkHtml("setting the maximum heap to at least one gigabyte (-Xmx1024M)")
+                        + ".");
+            }
+
+            // Warn if running on a deprecated database version or some other non-fatal database configuration issue
+            List<String> sqlWarnings = new ArrayList<>();
+            DbScope.getLabKeyScope().getSqlDialect().addAdminWarningMessages(sqlWarnings);
+            if (sqlWarnings.size() > 0)
+                page.addWarningMessages(sqlWarnings);
+        }
     }
 
     @Override
@@ -59,9 +127,7 @@ public class BootstrapTemplate extends HomeTemplate
     @Override
     protected HttpView getHeaderView(PageConfig page)
     {
-        String upgradeMessage = UsageReportingLevel.getUpgradeMessage();
-        Map<String, Throwable> moduleFailures = ModuleLoader.getInstance().getModuleFailures();
-        return new BootstrapHeader(upgradeMessage, moduleFailures, page);
+        return new BootstrapHeader(page);
     }
 
     @Override
@@ -209,5 +275,27 @@ public class BootstrapTemplate extends HomeTemplate
     protected void setAppTemplate(boolean appTemplate)
     {
         isAppTemplate = appTemplate;
+    }
+
+    // For now, gives a central place to render messaging
+    public static String renderSiteMessages(PageConfig page)
+    {
+        String messages = "";
+        int size = page.getWarningMessages().size();
+        if (size > 0)
+        {
+            messages += "<div class=\"alert alert-warning\" role=\"alert\" style=\"margin: 0 15px 15px;\">";
+
+            if (size == 1)
+                messages += page.getWarningMessages().get(0) + "</div>";
+            else
+            {
+                messages += "<ul>";
+                for (String msg : page.getWarningMessages())
+                    messages += "<li>" + msg + "</li>";
+                messages += "</ul></div>";
+            }
+        }
+        return messages;
     }
 }

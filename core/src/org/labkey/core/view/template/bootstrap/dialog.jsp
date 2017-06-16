@@ -19,16 +19,14 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.BootstrapTemplate" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PageConfig> me = (JspView<PageConfig>) HttpView.currentView();
-    PageConfig model = me.getModelBean();
+    PageConfig pageConfig = me.getModelBean();
 %>
 <div class="container">
-    <div class="alert alert-warning" role="alert" style="margin-top: 20px;">
-        <strong>Under construction!</strong>
-        This layout is under development. <a href="admin-experimentalFeatures.view" class="alert-link">Turn it off here</a> by disabling the "Core UI Migration" feature.
-    </div>
+    <%= text(BootstrapTemplate.renderSiteMessages(pageConfig)) %>
     <div class="well">
         <% me.include(me.getBody(), out); %>
     </div>

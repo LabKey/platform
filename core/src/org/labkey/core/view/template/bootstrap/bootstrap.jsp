@@ -17,13 +17,11 @@
 --%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.WebPartFactory" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.BootstrapTemplate" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Nullable
@@ -53,14 +51,10 @@
     PageConfig pageConfig = (PageConfig) me.getModelBean();
 
     boolean showRight = me.getView(WebPartFactory.LOCATION_RIGHT) instanceof HttpView && ((HttpView) me.getView(WebPartFactory.LOCATION_RIGHT)).isVisible();
-    ActionURL url = new ActionURL(AdminController.ExperimentalFeaturesAction.class, ContainerManager.getRoot());
     // TODO: Remove all inline styles
 %>
 <div class="container" style="padding: 20px 0 0 0;">
-    <div class="alert alert-warning" role="alert" style="margin: 0 15px 15px;">
-        <strong>Under construction!</strong>
-        This layout is under development. <a href="<%=h(url.getLocalURIString())%>" class="alert-link">Turn it off here</a> by disabling the "Core UI Migration" feature.
-    </div>
+    <%= text(BootstrapTemplate.renderSiteMessages(pageConfig)) %>
     <% if (pageConfig.showHeader() != PageConfig.TrueFalse.False && null != pageConfig.getAppBar())
        {
            String trail = renderTrail(pageConfig.getAppBar().getNavTrail());

@@ -31,7 +31,7 @@ public class BootstrapBodyTemplate extends BootstrapTemplate
 
         setUserMetaTag(context, page);
 
-//        //don't show the header on body template
+        // don't show the header on body template
         page.setShowHeader(false);
 
         setBody(body);

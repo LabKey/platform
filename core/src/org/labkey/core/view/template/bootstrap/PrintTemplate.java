@@ -1,8 +1,6 @@
 package org.labkey.core.view.template.bootstrap;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.web.servlet.ModelAndView;

@@ -379,6 +379,11 @@ public class AdminController extends SpringActionController
             return url;
         }
 
+        public ActionURL getExperimentalFeaturesURL()
+        {
+            return new ActionURL(ExperimentalFeaturesAction.class, ContainerManager.getRoot());
+        }
+
         public ActionURL getProjectSettingsURL(Container c)
         {
             return new ActionURL(ProjectSettingsAction.class, LookAndFeelProperties.getSettingsContainer(c));
