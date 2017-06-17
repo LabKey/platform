@@ -15,13 +15,14 @@
  */
 package org.labkey.api.notification;
 
+import org.labkey.api.util.MimeMap.MimeType;
 import org.labkey.api.view.HttpView;
+import java.io.File;
+import java.util.List;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import javax.servlet.http.HttpServletRequest;
-import java.io.File;
-import java.util.List;
 
 /**
  * User: klum
@@ -30,23 +31,6 @@ import java.util.List;
  */
 public interface EmailMessage
 {
-    enum contentType
-    {
-        PLAIN("text/plain"), HTML("text/html");
-
-        private String _mimeType;
-
-        contentType(String mimeType)
-        {
-            _mimeType = mimeType;
-        }
-
-        public String getMimeType()
-        {
-            return _mimeType;
-        }
-    }
-    
     String getFrom();
     String[] getTo();
     String getSubject();
@@ -55,8 +39,8 @@ public interface EmailMessage
     void setHeader(String name, String value);
     // TODO: Only used by tests... delete?
     void setFiles(List<File> files);
-    void addContent(contentType type, String content);
-    void addContent(contentType type, HttpServletRequest request, HttpView view) throws Exception;
+    void addContent(MimeType type, String content);
+    void addContent(MimeType type, HttpServletRequest request, HttpView view) throws Exception;
 
     /**
      * Sets the display name for the email sender, the actual sender email address will be the one configured via site or project settings

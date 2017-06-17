@@ -106,8 +106,8 @@ public class MimeMap implements FileNameMap
             return result;
         }
 
-        // A few constants for common mime types. We could add a lot more. If you add/more constants then modify the list below.
-        // And if you can find a MimeType enum or constant list in one of our libraries then by all means get rid of these.
+        // Constants for a few common mime types. We could add a lot more. If you add/remove constants then modify the list below.
+        // And if you can find a more official MimeType enum or constant list in one of our libraries then by all means get rid of these.
         public static final MimeType GIF = new MimeType("image/gif", true);
         public static final MimeType JPEG = new MimeType("image/jpeg", true);
         public static final MimeType PDF = new MimeType("application/pdf", true);
