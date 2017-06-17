@@ -28,9 +28,10 @@ import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailPref;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MailHelper.BulkEmailer;
+import org.labkey.api.util.MimeMap.MimeType;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.WebPartView;
@@ -58,6 +59,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -166,7 +168,7 @@ public class EmailServiceImpl implements EmailService
         private final String _from;
         private final Map<Message.RecipientType, String[]> _recipients = new HashMap<>();
         private final String _subject;
-        private final Map<contentType, String> _contentMap = new HashMap<>();
+        private final Map<MimeType, String> _contentMap = new HashMap<>();
         private final Map<String, String> _headers = new HashMap<>();
 
         private List<File> _files;
@@ -224,13 +226,13 @@ public class EmailServiceImpl implements EmailService
         }
 
         @Override
-        public void addContent(contentType type, String content)
+        public void addContent(MimeType type, String content)
         {
             _contentMap.put(type, content);
         }
 
         @Override
-        public void addContent(contentType type, HttpServletRequest request, HttpView view) throws Exception
+        public void addContent(MimeType type, HttpServletRequest request, HttpView view) throws Exception
         {
             // set the frame type to none to remove the extra div that gets added otherwise.
             if (view instanceof JspView)
@@ -283,17 +285,17 @@ public class EmailServiceImpl implements EmailService
 
             msg.setSubject(_subject);
 
-            for (Entry<contentType, String> entry : _contentMap.entrySet())
+            for (Entry<MimeType, String> entry : _contentMap.entrySet())
             {
                 if (multipart)
                 {
                     BodyPart body = new MimeBodyPart();
-                    body.setContent(entry.getValue(), entry.getKey().getMimeType());
+                    body.setContent(entry.getValue(), entry.getKey().getContentType());
 
                     multiPartContent.addBodyPart(body);
                 }
                 else
-                    msg.setContent(entry.getValue(), entry.getKey().getMimeType());
+                    msg.setContent(entry.getValue(), entry.getKey().getContentType());
             }
 
             if (_files != null && _files.size() > 0)
@@ -320,7 +322,7 @@ public class EmailServiceImpl implements EmailService
         @Rule
         public ExpectedException exception = ExpectedException.none();
 
-        private static final String PROTOCOL_ATTACHMENT_NAME = "Protocol.txt";
+        private static final String PROTOCOL_ATTACHMENT_PATH = "study/Protocol.txt";
         private static final String NON_EXISTENT_ATTACHMENT_NAME = "fake_file.txt";
         private static final String FAKE_DIRECTORY_NAME = "/path/to/fake/directory";
 
@@ -328,9 +330,9 @@ public class EmailServiceImpl implements EmailService
         public void testEmailAttachments() throws MessagingException, IOException
         {
             EmailMessage msg = getBaseMessage();
-            File attachment = getAttachment(PROTOCOL_ATTACHMENT_NAME);
+            File attachment = JunitUtil.getSampleData(null, PROTOCOL_ATTACHMENT_PATH);
 
-            if(attachment == null)
+            if (attachment == null)
                 return;
 
             assertTrue("Couldn't find " + attachment, attachment.isFile());
@@ -365,12 +367,12 @@ public class EmailServiceImpl implements EmailService
         private void testAttachmentExceptions(String name) throws MessagingException, IOException
         {
             EmailMessage msg = getBaseMessage();
-            File attachment = getAttachment(name);
+            File studySampleData = JunitUtil.getSampleData(null, "study");
 
-            if (attachment == null)
+            if (studySampleData == null)
                 return;
 
-            List<File> attachmentList = new ArrayList<>(Arrays.asList(attachment));
+            List<File> attachmentList = Collections.singletonList(new File(studySampleData, name));
 
             exception.expect(IllegalArgumentException.class);
             msg.setFiles(attachmentList);
@@ -381,20 +383,9 @@ public class EmailServiceImpl implements EmailService
             EmailMessage msg = EmailService.get().createMessage("test@example.com",
                 new String[]{"to@example.com"},
                 "JUnit Test Email");
-            msg.addContent(EmailMessage.contentType.HTML, "This is a test email.");
+            msg.addContent(MimeType.HTML, "This is a test email.");
 
             return msg;
-        }
-
-        private File getAttachment(String fileName)
-        {
-            AppProps props = AppProps.getInstance();
-            String projectRootPath = props.getProjectRoot();
-
-            if (!props.isDevMode() || null == projectRootPath) // We can only run the test if we're in dev mode and have access to sampledata
-                return null;
-
-            return Paths.get(projectRootPath).resolve("sampledata/study").resolve(fileName).toFile();
         }
 
         private String convertMessageToString(EmailMessage msg) throws MessagingException, IOException

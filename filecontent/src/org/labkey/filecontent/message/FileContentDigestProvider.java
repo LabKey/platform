@@ -44,6 +44,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.MimeMap.MimeType;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -175,9 +176,9 @@ public class FileContentDigestProvider implements MessageDigest.Provider
 
                     // TODO: This approach means normal context isn't set on the JSPs, e.g., getContainer() returns null.
                     // Perhaps we should use a mock ViewContext, like we do with email notifications
-                    msg.addContent(EmailMessage.contentType.HTML, request,
+                    msg.addContent(MimeType.HTML, request,
                             new JspView<>("/org/labkey/filecontent/view/fileDigestNotify.jsp", form));
-                    msg.addContent(EmailMessage.contentType.PLAIN, request,
+                    msg.addContent(MimeType.PLAIN, request,
                             new JspView<>("/org/labkey/filecontent/view/fileDigestNotifyPlain.jsp", form));
 
                     messages.add(msg);

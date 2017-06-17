@@ -31,6 +31,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.MimeMap.MimeType;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
 
@@ -168,7 +169,7 @@ public final class ReportAndDatasetChangeDigestProviderImpl implements ReportAnd
         EmailMessage msg = ems.createMessage(LookAndFeelProperties.getInstance(form.getContainer()).getSystemEmailAddress(),
                 new String[]{form.getUser().getEmail()}, template.renderSubject(form.getContainer()));
         msg.setSenderName(template.renderSenderName(form.getContainer()));
-        msg.addContent(EmailMessage.contentType.HTML, template.renderBody(form.getContainer()));
+        msg.addContent(MimeType.HTML, template.renderBody(form.getContainer()));
 
         return msg;
     }
