@@ -15,19 +15,18 @@
  */
 package org.labkey.api.util;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.Module;
+import org.labkey.api.settings.AppProps;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -121,24 +120,20 @@ public class JunitUtil
         final CyclicBarrier barrier = new CyclicBarrier(threads);
         final AtomicInteger iterations = new AtomicInteger(0);
 
-        Runnable runnableWrapper = new Runnable()
+        Runnable runnableWrapper = () ->
         {
-            @Override
-            public void run()
+            for (int i = 0; i < races; i++)
             {
-                for (int i = 0; i < races; i++)
+                try
                 {
-                    try
-                    {
-                        barrier.await();
-                    }
-                    catch (InterruptedException | BrokenBarrierException e)
-                    {
-                        return;
-                    }
-                    runnable.run();
-                    iterations.incrementAndGet();
+                    barrier.await();
                 }
+                catch (InterruptedException | BrokenBarrierException e)
+                {
+                    return;
+                }
+                runnable.run();
+                iterations.incrementAndGet();
             }
         };
 
@@ -154,5 +149,41 @@ public class JunitUtil
 
         if (iterations.intValue() != expected)
             throw new IllegalStateException("Did not execute runnable the expected number of times: " + iterations + " vs. " + expected);
+    }
+
+    /**
+     * Retrieves sample data files from the specified module or, if no module is specified, from the top-level sampledata
+     * directory. Similar to TestFileUtils.getSampleData() used in Selenium tests.
+     *
+     * @param module Module that contains the sample data. If null, central sampledata directory will be searched.
+     * @param relativePath e.g. "lists/ListDemo.lists.zip" or "OConnor_Test.folder.zip"
+     * @return File object to the specified file or directory, if it exists on this server. Otherwise, null.
+     */
+    public static @Nullable File getSampleData(@Nullable Module module, String relativePath)
+    {
+        final File sampleDataDir;
+
+        if (null == module)
+        {
+            String projectRoot = AppProps.getInstance().getProjectRoot();
+
+            if (null == projectRoot)
+                return null;
+
+            sampleDataDir = new File(projectRoot, "sampledata");
+        }
+        else
+        {
+            String sourcePath = module.getSourcePath();
+
+            if (null == sourcePath)
+                return null;
+
+            sampleDataDir = new File(sourcePath, "test/sampledata");
+        }
+
+        File file = new File(sampleDataDir, relativePath);
+
+        return file.exists() ? file : null;
     }
 }
