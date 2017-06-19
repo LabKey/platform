@@ -15,7 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
-import org.labkey.api.action.LabKey_Error;
+import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.Container;
@@ -133,7 +133,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
             ExpData data = ExperimentService.get().getExpDataByURL(file, getContainer());
             if (data != null && data.getRun() != null)
             {
-                errors.addError(new LabKey_Error("The file " + file.getAbsolutePath() + " has already been imported"));
+                errors.addError(new LabKeyError("The file " + file.getAbsolutePath() + " has already been imported"));
             }
         }
         return files;

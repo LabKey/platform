@@ -24,15 +24,14 @@ import org.springframework.validation.ObjectError;
  * User: jeckels
  * Date: May 2, 2008
  */
-// TODO: Rename to remove _ from name. Wonky name was used temporarily to avoid a case-only rename on SVN.
-public class LabKey_Error extends ObjectError
+public class LabKeyError extends ObjectError
 {
-    public LabKey_Error(Throwable t)
+    public LabKeyError(Throwable t)
     {
         this(t.getMessage() == null ? t.getClass().getName() : t.getMessage());
     }
 
-    public LabKey_Error(String message)
+    public LabKeyError(String message)
     {
         super("main", new String[] { "Error" }, new Object[] { message }, message);
     }

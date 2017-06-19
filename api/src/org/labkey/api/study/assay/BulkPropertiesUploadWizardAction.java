@@ -23,7 +23,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.action.LabKey_Error;
+import org.labkey.api.action.LabKeyError;
 import org.labkey.api.query.ValidationException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
@@ -82,7 +82,7 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
                 }
                 catch (ExperimentException e)
                 {
-                    errors.addError(new LabKey_Error(e));
+                    errors.addError(new LabKeyError(e));
                 }
             }
 
@@ -135,11 +135,11 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
             }
             catch (ExperimentException e)
             {
-                errors.addError(new LabKey_Error(e));
+                errors.addError(new LabKeyError(e));
             }
             catch (ValidationException e)
             {
-                errors.addError(new LabKey_Error(e));
+                errors.addError(new LabKeyError(e));
             }
             return Collections.emptyList();
         }

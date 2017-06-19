@@ -17,7 +17,7 @@
 package org.labkey.api.jsp.taglib;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.action.LabKey_Error;
+import org.labkey.api.action.LabKeyError;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
@@ -65,8 +65,8 @@ public class ErrorsTag extends TagSupport
                                 out.print("<div class=\"labkey-error\">");
                             try
                             {
-                                if (m instanceof LabKey_Error)
-                                    out.print(((LabKey_Error)m).renderToHTML(context));
+                                if (m instanceof LabKeyError)
+                                    out.print(((LabKeyError)m).renderToHTML(context));
                                 else
                                     out.print(PageFlowUtil.filter(context.getMessage(m), true));
                             }

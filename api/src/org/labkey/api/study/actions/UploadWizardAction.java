@@ -17,7 +17,7 @@
 package org.labkey.api.study.actions;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.LabKey_Error;
+import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ActionButton;
@@ -696,7 +696,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             }
             catch (ExperimentException e)
             {
-                errors.addError(new LabKey_Error(e));
+                errors.addError(new LabKeyError(e));
             }
 
             return getBatchPropertiesView(form, !form.isResetDefaultValues(), errors);
@@ -797,7 +797,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             }
             catch (ExperimentException e)
             {
-                errors.addError(new LabKey_Error(e));
+                errors.addError(new LabKeyError(e));
                 return false;
             }
         }

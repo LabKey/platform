@@ -16,7 +16,7 @@
 package org.labkey.remoteapi;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.action.LabKey_Error;
+import org.labkey.api.action.LabKeyError;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.ValidEmail;
@@ -58,7 +58,7 @@ public class RemoteConnections
         boolean changingName = editing && !name.equals(newName);
         if (!StringUtils.isNotBlank(newName))
         {
-            errors.addError(new LabKey_Error("Connection name may not be blank."));
+            errors.addError(new LabKeyError("Connection name may not be blank."));
             return false;
         }
 
@@ -70,7 +70,7 @@ public class RemoteConnections
 
         if (url == null || user == null || password == null || (CONNECTION_KIND_QUERY.equals(connectionKind) && folderPath == null))
         {
-            errors.addError(new LabKey_Error("All fields must be filled in."));
+            errors.addError(new LabKeyError("All fields must be filled in."));
             return false;
         }
 
@@ -83,12 +83,12 @@ public class RemoteConnections
         }
         catch (MalformedURLException e)
         {
-            errors.addError(new LabKey_Error("The entered URL is not valid."));
+            errors.addError(new LabKeyError("The entered URL is not valid."));
             return false;
         }
         catch (IOException e)
         {
-            errors.addError(new LabKey_Error("A connection to the entered URL could not be established."));
+            errors.addError(new LabKeyError("A connection to the entered URL could not be established."));
             return false;
         }
 
@@ -99,7 +99,7 @@ public class RemoteConnections
         }
         catch(ValidEmail.InvalidEmailException e)
         {
-            errors.addError(new LabKey_Error("The entered user is not a valid email address."));
+            errors.addError(new LabKeyError("The entered user is not a valid email address."));
             return false;
         }
 
@@ -108,7 +108,7 @@ public class RemoteConnections
         PropertyManager.PropertyMap connectionMap = PropertyManager.getEncryptedStore().getWritableProperties(container, connectionsCategory, true);
         if ((!editing || changingName) && connectionMap.containsKey(makeRemoteConnectionKey(connectionsCategory, newName)))
         {
-            errors.addError(new LabKey_Error("There is already a remote connection with the name '" + newName + "'."));
+            errors.addError(new LabKeyError("There is already a remote connection with the name '" + newName + "'."));
             return false;
         }
 
