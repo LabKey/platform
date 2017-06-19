@@ -143,6 +143,13 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             return "labkey";
         }
 
+        private final String[] PARAMS = new String[]
+                {
+                        "tree : renders a LabKey navigation menu.",
+                        "treeId: the id of the menu to render can be one of the following: core.projects, " +
+                                "core.CurrentProject, core.projectAdmin, core.folderAdmin, core.SiteAdmin"
+                };
+
         public void execute(Writer writer, MacroParameter params) throws IllegalArgumentException, IOException
         {
             String macroName = params.get(0);
@@ -156,6 +163,12 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         public String getDescription()
         {
             return "Base LabKey macro, used for including data from the LabKey Server portal into wikis.";
+        }
+
+        @Override
+        public String[] getParamDescription()
+        {
+            return PARAMS;
         }
 
         public void executeTree(Writer writer, MacroParameter params) throws IOException
