@@ -202,7 +202,7 @@
                 name: 'sourceTemplateFolder',
                 hiddenName: 'sourceTemplateFolderId',
                 itemId: 'sourceFolderCombo',
-                width: 250,
+                width: 500,
                 allowBlank: false,
                 displayField: 'path',
                 valueField: 'id',

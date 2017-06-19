@@ -15,6 +15,7 @@
  */
 package org.labkey.study.importer;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
@@ -54,7 +55,7 @@ public class TopLevelStudyPropertiesImporter implements InternalStudyImporter
             StudyDocument.Study studyXml = ctx.getXml();
 
             // TODO: Change these props and save only if values have changed
-            if (studyXml.isSetLabel())
+            if (studyXml.isSetLabel() && !StringUtils.isEmpty(studyXml.getLabel()))
                 study.setLabel(studyXml.getLabel());
 
             if (studyXml.isSetSecurityType())

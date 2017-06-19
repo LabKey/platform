@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
@@ -148,6 +149,9 @@ public class StudyPropertiesTable extends BaseStudyTable
         }
 
         setDefaultVisibleColumns(_visibleColumns);
+
+        // disable import data link for this table
+        setImportURL(AbstractTableInfo.LINK_DISABLER);
     }
 
     private ColumnInfo addRootColumn(String columnName, boolean visible, boolean userEditable)

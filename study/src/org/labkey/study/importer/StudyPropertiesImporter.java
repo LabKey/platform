@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by klum on 3/17/14.
@@ -88,7 +90,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
                     }
 
                     StudyQuerySchema.TablePackage propertiesTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PROPERTIES_TABLE_NAME);
-                    importTableData(ctx, vf, propertiesTablePackage, null, null);
+                    importTableData(ctx, vf, propertiesTablePackage, null, new StudyPropertiesTransform());
 
                     StudyQuerySchema.TablePackage personnelTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PERSONNEL_TABLE_NAME);
                     importTableData(ctx, vf, personnelTablePackage, _personnelTableMapBuilder,
@@ -156,6 +158,32 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
                 }
             }
             return newRows;
+        }
+    }
+
+    private class StudyPropertiesTransform implements TransformHelper
+    {
+        Set PROPS_TO_SKIP = new CaseInsensitiveHashSet("Label", "StartDate", "EndDate", "SubjectNounSingular",
+            "SubjectNounPlural", "SubjectColumnName", "Grant", "Investigator", "Species", "AssayPlan",
+            "ParticipantAliasDatasetId", "ParticipantAliasProperty", "ParticipantAliasSourceProperty",
+            "Description", "DescriptionRendererType");
+
+        @Override
+        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows) throws ImportException
+        {
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (Map<String, Object> origRow : origRows)
+            {
+                Map<String, Object> row = new HashMap<>();
+                for (String key : origRow.keySet())
+                {
+                    // Issue 30235: skip those properties that are set via TopLevelStudyPropertiesImporter
+                    if (!PROPS_TO_SKIP.contains(key))
+                        row.put(key, origRow.get(key));
+                }
+                rows.add(row);
+            }
+            return rows;
         }
     }
 }
