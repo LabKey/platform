@@ -176,6 +176,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -4391,7 +4392,7 @@ public class AdminController extends SpringActionController
                 getPageConfig().setTemplate(Template.Dialog);
                 for (ValidationError validationError : e.getErrors())
                 {
-                    errors.addError(new LabKey_Error(validationError.getMessage()));
+                    errors.addError(new LabKeyError(validationError.getMessage()));
                 }
                 return new SimpleErrorView(errors);
             }
@@ -5583,7 +5584,7 @@ public class AdminController extends SpringActionController
 
         private Set<Double> getIgnoreSet()
         {
-            return new HashSet<>(Arrays.asList(ArrayUtils.toObject(_ignore)));
+            return new LinkedHashSet<>(Arrays.asList(ArrayUtils.toObject(_ignore)));
         }
 
         public boolean isManagedOnly()
@@ -6706,13 +6707,13 @@ public class AdminController extends SpringActionController
             String shortURL = StringUtils.trimToEmpty(form.getShortURL());
             if (StringUtils.isEmpty(shortURL))
             {
-                errors.addError(new LabKey_Error("Short URL must not be blank"));
+                errors.addError(new LabKeyError("Short URL must not be blank"));
             }
             if (shortURL.endsWith(".url"))
                 shortURL = shortURL.substring(0,shortURL.length()-".url".length());
             if (shortURL.contains("#") || shortURL.contains("/") || shortURL.contains("."))
             {
-                errors.addError(new LabKey_Error("Short URLs may not contain '#' or '/' or '.'"));
+                errors.addError(new LabKeyError("Short URLs may not contain '#' or '/' or '.'"));
             }
             URLHelper fullURL = null;
             if (!form.isDelete())
@@ -6720,7 +6721,7 @@ public class AdminController extends SpringActionController
                 String trimmedFullURL = StringUtils.trimToNull(form.getFullURL());
                 if (trimmedFullURL == null)
                 {
-                    errors.addError(new LabKey_Error("Target URL must not be blank"));
+                    errors.addError(new LabKeyError("Target URL must not be blank"));
                 }
                 else
                 {
@@ -6730,7 +6731,7 @@ public class AdminController extends SpringActionController
                     }
                     catch (URISyntaxException e)
                     {
-                        errors.addError(new LabKey_Error("Invalid Target URL. " + e.getMessage()));
+                        errors.addError(new LabKeyError("Invalid Target URL. " + e.getMessage()));
                     }
                 }
             }
@@ -6753,10 +6754,10 @@ public class AdminController extends SpringActionController
                 }
                 catch (ValidationException e)
                 {
-                    errors.addError(new LabKey_Error("Error deleting short URL:"));
+                    errors.addError(new LabKeyError("Error deleting short URL:"));
                     for(ValidationError error: e.getErrors())
                     {
-                        errors.addError(new LabKey_Error(error.getMessage()));
+                        errors.addError(new LabKeyError(error.getMessage()));
                     }
                 }
 

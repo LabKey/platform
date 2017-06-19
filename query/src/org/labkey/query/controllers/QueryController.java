@@ -349,7 +349,7 @@ public class QueryController extends SpringActionController
             }
             catch (Exception e)
             {
-                errors.addError(new LabKey_Error("The listed credentials for this remote connection failed to connect."));
+                errors.addError(new LabKeyError("The listed credentials for this remote connection failed to connect."));
                 return new JspView<>("/org/labkey/query/view/testRemoteConnectionsFailure.jsp", remoteConnectionForm);
             }
 

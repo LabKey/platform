@@ -26,7 +26,7 @@ import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.LabKey_Error;
+import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -262,7 +262,7 @@ public class PipelineController extends SpringActionController
         URI supplementalRoot = supplementalPath == null ? null : validatePath(supplementalPath, errors);
         if (root == null && supplementalRoot != null)
         {
-            errors.addError(new LabKey_Error("Cannot set a supplemental root without also setting a primary root"));
+            errors.addError(new LabKeyError("Cannot set a supplemental root without also setting a primary root"));
         }
         if (errors.hasErrors())
         {
@@ -331,7 +331,7 @@ public class PipelineController extends SpringActionController
                 {
                     for (String errorMessage : pipeRoot.validate())
                     {
-                        errors.addError(new LabKey_Error(errorMessage));
+                        errors.addError(new LabKeyError(errorMessage));
                     }
 
                     if (!errors.hasErrors() && getViewContext().getRequest().getParameter(PipelineController.Params.rootset.toString()) != null)

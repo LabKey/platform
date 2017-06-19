@@ -19,7 +19,7 @@ package org.labkey.core.admin;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.LabKey_Error;
+import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
@@ -497,7 +497,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                         if (pipeRoot != null)
                         {
                             for (String errorMessage : pipeRoot.validate())
-                                _errors.addError(new LabKey_Error(errorMessage));
+                                _errors.addError(new LabKeyError(errorMessage));
                         }
                         box.addView(PipelineService.get().getSetupView(form));
                         box.addView(new HttpView()

@@ -3409,14 +3409,14 @@ public class ExperimentController extends SpringActionController
             MultipartFile formFile = getFileMap().get("uploadFile");
             if (formFile == null)
             {
-                errors.addError(new LabKey_Error("No file was posted by the browser."));
+                errors.addError(new LabKeyError("No file was posted by the browser."));
                 return false;
             }
 
             byte[] bytes = formFile.getBytes();
             if (bytes.length == 0)
             {
-                errors.addError(new LabKey_Error("No file was posted by the browser."));
+                errors.addError(new LabKeyError("No file was posted by the browser."));
                 return false;
             }
 
@@ -3426,7 +3426,7 @@ public class ExperimentController extends SpringActionController
             uploadDir.mkdirs();
             if (!uploadDir.isDirectory())
             {
-                errors.addError(new LabKey_Error("Unable to create a 'system/UploadedXARs' directory under the pipeline root"));
+                errors.addError(new LabKeyError("Unable to create a 'system/UploadedXARs' directory under the pipeline root"));
                 return false;
             }
             String userDirName = getUser().getEmail();
@@ -3438,7 +3438,7 @@ public class ExperimentController extends SpringActionController
             userDir.mkdirs();
             if (!userDir.isDirectory())
             {
-                errors.addError(new LabKey_Error("Unable to create an 'UploadedXARs/" + userDirName + "' directory under the pipeline root"));
+                errors.addError(new LabKeyError("Unable to create an 'UploadedXARs/" + userDirName + "' directory under the pipeline root"));
                 return false;
             }
 
@@ -3451,7 +3451,7 @@ public class ExperimentController extends SpringActionController
             }
             catch (IOException e)
             {
-                errors.addError(new LabKey_Error("Unable to write uploaded XAR file to " + xarFile.getPath()));
+                errors.addError(new LabKeyError("Unable to write uploaded XAR file to " + xarFile.getPath()));
                 return false;
             }
             finally

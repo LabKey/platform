@@ -26,7 +26,7 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.LabKey_Error;
+import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
@@ -561,7 +561,7 @@ public class AssayController extends SpringActionController
         {
             if (form.getProviderName() == null || PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName(), null) == null)
             {
-                errors.addError(new LabKey_Error("Please select an assay type."));
+                errors.addError(new LabKeyError("Please select an assay type."));
                 return false;
             }
             this.createIn = form.getCreateContainer();

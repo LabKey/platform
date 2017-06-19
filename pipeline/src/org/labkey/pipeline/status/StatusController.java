@@ -160,7 +160,7 @@ public class StatusController extends SpringActionController
             VBox result = new VBox();
             if (form.getErrorMessage() != null)
             {
-                errors.addError(new LabKey_Error(form.getErrorMessage()));
+                errors.addError(new LabKeyError(form.getErrorMessage()));
             }
             if (errors.getErrorCount() > 0)
             {
@@ -325,7 +325,7 @@ public class StatusController extends SpringActionController
             VBox result = new VBox(detailsView);
             if (form.getErrorMessage() != null)
             {
-                errors.addError(new LabKey_Error(form.getErrorMessage()));
+                errors.addError(new LabKeyError(form.getErrorMessage()));
             }
             if (errors.getErrorCount() > 0)
             {
@@ -489,7 +489,7 @@ public class StatusController extends SpringActionController
             }
             catch (PipelineProvider.HandlerException e)
             {
-                errors.addError(new LabKey_Error(e.getMessage()));
+                errors.addError(new LabKeyError(e.getMessage()));
             }
 
             return super.getView(form, reshow, errors);
@@ -665,7 +665,7 @@ public class StatusController extends SpringActionController
             }
             catch (PipelineProvider.HandlerException e)
             {
-                errors.addError(new LabKey_Error(e.getMessage()));
+                errors.addError(new LabKeyError(e.getMessage()));
                 return false;
             }
 
@@ -807,7 +807,7 @@ public class StatusController extends SpringActionController
             }
             catch (PipelineProvider.HandlerException e)
             {
-                errors.addError(new LabKey_Error(e.getMessage() == null ? "Failed to delete at least one job. It may be referenced by other jobs" : e.getMessage()));
+                errors.addError(new LabKeyError(e.getMessage() == null ? "Failed to delete at least one job. It may be referenced by other jobs" : e.getMessage()));
                 return false;
             }
             return true;
