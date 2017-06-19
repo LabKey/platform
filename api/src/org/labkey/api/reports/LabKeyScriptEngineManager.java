@@ -24,10 +24,12 @@ import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ConfigProperty;
 import org.springframework.beans.MutablePropertyValues;
 
 import javax.script.ScriptEngine;
@@ -35,6 +37,7 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -403,6 +406,52 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
         throw new IllegalArgumentException("Unable to create an engine definition from the specified properties : " + props);
     }
 
+    private static ExternalScriptEngineDefinition createNewDefinitionFromProps(Map<String, String> props)
+    {
+        // dont set the key for this new def as it will made when saving external definition
+        String name = props.get(Props.name.name());
+        String exePath = props.get(Props.exePath.name());
+        String extensionStr = props.get(Props.extensions.name());
+        String pathMapStr = props.get(Props.pathMap.name());
+        boolean isRemote = Boolean.valueOf(props.get(Props.remote.name()));
+
+        // Create a copy of the props so we can remove pathMap
+        props = new HashMap<>(props);
+        props.remove(Props.pathMap.name());
+
+        if (name != null && extensionStr != null && (isRemote || (exePath!=null)))
+        {
+            try
+            {
+                String[] extensions = StringUtils.split(extensionStr, ',');
+                EngineDefinition def = new EngineDefinition();
+
+                BeanUtils.populate(def, props);
+                def.setExtensions(extensions);
+                def.setEnabled(!BooleanUtils.toBoolean(props.get(Props.disabled.name())));
+
+                PathMapper pathMapper;
+                if (pathMapStr != null && !pathMapStr.equals("null"))
+                {
+                    JSONObject pathMapJson = new JSONObject(pathMapStr);
+                    pathMapper = PathMapperImpl.fromJSON(pathMapJson);
+                }
+                else
+                {
+                    pathMapper = new PathMapperImpl();
+                }
+                def.setPathMap(pathMapper);
+
+                return def;
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException("Unable to create an engine definition ", e);
+            }
+        }
+        throw new IllegalArgumentException("Unable to create an engine definition from the specified properties : " + props);
+    }
+
     private static String getProp(String prop, String mapName)
     {
         Map<String, String> map = PropertyManager.getProperties(mapName);
@@ -621,4 +670,53 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
                 _pathMap = PathMapperImpl.fromJSON(jsonPathMap, true /*trackValidationErrors*/);
         }
     }
+
+    public static void populateSiteSettingsWithStartupProps(boolean isBootstrap)
+    {
+        // populate script engine definition with values from startup configuration as appropriate for prop modifier and isBootstrap flag
+        // expects startup properties formatted like:
+        //        ScriptEngineDefinition.{name}.external;bootstrap=True
+        //        ScriptEngineDefinition.{name}.name;bootstrap=R Scripting Engine
+        //        ScriptEngineDefinition.{name}.extensions;bootstrap=R,r
+        //        ScriptEngineDefinition.{name}.languageName;bootstrap=R
+        //        ScriptEngineDefinition.{name}.exePath;bootstrap=/usr/bin/R
+        //
+        // todo: For now only works when property modifier is blank or bootstrap. To make startup modifier work we need to check if def already exist and if so then modify it instead of create it.
+
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("ScriptEngineDefinition");
+        Map<String, Map> enginePropertyMap = new HashMap<>();
+
+        for (ConfigProperty prop: startupProps)
+        {
+            if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
+            {
+                String[] scriptEngineNameAndParamSplit = prop.getName().split("\\.");
+                if (null != scriptEngineNameAndParamSplit && scriptEngineNameAndParamSplit.length == 2)
+                {
+                    String engineName = scriptEngineNameAndParamSplit[0];
+                    String engineParam = scriptEngineNameAndParamSplit[1];
+                    String paramValue = prop.getValue();
+                    if (enginePropertyMap.containsKey(engineName))
+                    {
+                        Map propertyMap = enginePropertyMap.get(engineName);
+                        propertyMap.put(engineParam, paramValue);
+                        enginePropertyMap.put(engineName, propertyMap);
+                    }
+                    else
+                    {
+                        Map<String, String> propertyMap = new HashMap<>();
+                        propertyMap.put(engineParam, paramValue);
+                        enginePropertyMap.put(engineName, propertyMap);
+                    }
+                }
+            }
+        }
+
+        // for each engine create a definition from the map of properties and save it
+        for (Map.Entry<String, Map> entry : enginePropertyMap.entrySet()) {
+            ExternalScriptEngineDefinition def = createNewDefinitionFromProps(entry.getValue());
+            saveDefinition(def);
+        }
+    }
+
 }

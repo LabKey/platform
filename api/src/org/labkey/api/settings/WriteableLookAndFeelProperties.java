@@ -157,7 +157,9 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
 
     public void populateLookAndFeelWithStartupProps(boolean isBootstrap)
     {
-        // populate look and feel settings with values from startup configuration as appropriate for prop modifier and isBoostrap flag
+        // populate look and feel settings with values read from startup properties as appropriate for prop modifier and isBootstrap flag
+        // expects startup properties formatted like: LookAndFeelSettings.systemDescription;startup=Test Server Description
+        // for a list of recognized look and feel setting properties refer to: LookAndFeelProperties.java
         Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("LookAndFeelSettings");
         WriteableLookAndFeelProperties writeable = LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
         startupProps
