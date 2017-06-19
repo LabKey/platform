@@ -39,6 +39,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.core.admin.sql.ScriptReorderer;
 import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
+import org.springframework.jdbc.BadSqlGrammarException;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
@@ -1488,7 +1489,14 @@ abstract class PostgreSql91Dialect extends SqlDialect
                     }
                     drop.append(")");
 
-                    executor.execute(drop);
+                    try
+                    {
+                        executor.execute(drop);
+                    }
+                    catch (BadSqlGrammarException x)
+                    {
+                        LOG.warn("could not clean up psotgres function : temp." + name, x);
+                    }
                 }
             });
     }
