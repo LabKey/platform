@@ -242,6 +242,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     this.studyWriters = [];
                     this.folderWriters = [];
 
+                    // Issue 30656: hide/disable certain publish options for Dataspace folder type
+                    if (LABKEY.container.folderType == "Dataspace") {
+                        folderWritersToExclude.push('Folder type and active modules');
+                    }
+
                     Ext.each(allWriters, function(writer){
                         if (folderWritersToExclude.indexOf(writer.name) == -1) {
                             this.folderWriters.push([writer.name]);
@@ -2001,26 +2006,30 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
         });
 
+        var availablePublishOptions = [];
+        // Issue 30656: hide/disable certain publish options for Dataspace folder type
+        if (LABKEY.container.folderType != "Dataspace") {
+            availablePublishOptions.push(['Use Alternate ' + this.subject.nounSingular + ' IDs',
+                'Replace each ' + this.subject.nounSingular.toLowerCase() + ' id with a randomly generated alternate id',
+                'useAlternateParticipantIds']);
+            availablePublishOptions.push(['Shift ' + this.subject.nounSingular + ' Dates',
+                'Shift date values associated with a ' + this.subject.nounSingular.toLowerCase() + ' by a random, ' + this.subject.nounSingular.toLowerCase() + ' specific, offset (from 1 to 365 days)',
+                'shiftDates']);
+        }
+        availablePublishOptions.push(['Remove Protected Columns',
+            'Exclude all dataset, list, and specimen columns that have been tagged as protected',
+            'removeProtectedColumns']);
+        availablePublishOptions.push(['Mask Clinic Names',
+            'Replace clinic labels with a generic label ("Clinic")',
+            'maskClinic']);
+
         var publishOptionsStore = new Ext.data.ArrayStore({
             fields : [
                 {name : 'name', type : 'string'},
                 {name : 'description', type : 'string'},
                 {name : 'option', type : 'string'}
             ],
-            data : [
-                ['Use Alternate ' + this.subject.nounSingular + ' IDs',
-                 'Replace each ' + this.subject.nounSingular.toLowerCase() + ' id with a randomly generated alternate id',
-                 'useAlternateParticipantIds'],
-                ['Shift ' + this.subject.nounSingular + ' Dates',
-                 'Shift date values associated with a ' + this.subject.nounSingular.toLowerCase() + ' by a random, ' + this.subject.nounSingular.toLowerCase() + ' specific, offset (from 1 to 365 days)',
-                 'shiftDates'],
-                ['Remove Protected Columns',
-                 'Exclude all dataset, list, and specimen columns that have been tagged as protected',
-                 'removeProtectedColumns'],
-                ['Mask Clinic Names',
-                 'Replace clinic labels with a generic label ("Clinic")',
-                 'maskClinic']
-            ]
+            data : availablePublishOptions
         });
 
         // http://stackoverflow.com/questions/2106104/word-wrap-grid-cells-in-ext-js

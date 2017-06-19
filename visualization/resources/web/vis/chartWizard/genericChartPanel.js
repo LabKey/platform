@@ -93,7 +93,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.callParent();
 
-        if (this.autoResize)
+        if (!LABKEY.experimental.useExperimentalCoreUI && this.autoResize)
         {
             Ext4.EventManager.onWindowResize(function(w,h){
                 this.resizeToViewport(w,h);
