@@ -172,7 +172,7 @@
                 target = $(this).parent().next('.dropdown-menu')
             }
 
-            if (partName && safeName && target) {
+            if (partName && safeName && target && partName != 'lk-project-nav') {
                 var id = target.attr('id');
                 if (!id) {
                     id = LABKEY.Utils.id();
@@ -242,6 +242,7 @@
 
         // hide this link and its direct parent sibling list elements
         el.css('display', 'none');
+        el.siblings('a').css('display', 'none');
         el.parent().siblings('li').css('display', 'none');
 
         // toggle the sibling ul element to show the nested list
@@ -261,6 +262,7 @@
         // show the parent link and its direct parent sibling list elements
         var menuLink = menu.prev('a.subexpand');
         menuLink.css('display', '');
+        menuLink.siblings('a').css('display', '');
         menuLink.parent().siblings('li').css('display', '');
 
         e.stopPropagation();
@@ -296,6 +298,7 @@
         var menu =  $(this).children('ul.dropdown-menu');
         menu.find('li').css('display', '');
         menu.find('.subexpand').css('display', '');
+        menu.find('.subexpand-link').css('display', '');
         menu.find('.dropdown-layer-menu.open').toggleClass('open');
 
         if (!$(this).hasClass('dropdown-rollup')) {

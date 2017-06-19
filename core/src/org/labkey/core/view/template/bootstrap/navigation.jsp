@@ -32,6 +32,12 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.view.PopupMenuView" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.view.menu.FolderMenu" %>
+<%@ page import="org.labkey.api.view.PopupFolderNavView" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -153,7 +159,38 @@
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                         <i class="fa fa-folder-open"></i>&nbsp;<%=h(model.getProjectTitle())%>
                     </a>
-                    <ul class="dropdown-menu"></ul>
+                    <ul class="dropdown-menu">
+                        <% PopupFolderNavView.renderFolderNavTrail(context, out); %>
+<%
+                    if (context.getContainer().isRoot() || context.getContainer().isProject())
+                        PopupFolderNavView.renderTree(context, ContainerManager.getProjectList(context), out);
+                    else
+                        PopupFolderNavView.renderTree(context, FolderMenu.getNavTree(context), out);
+%>
+<%
+                    if (c.hasPermission(context.getUser(), AdminPermission.class))
+                    {
+%>
+                        <div class="divider lk-project-nav-divider"></div>
+                        <div class="lk-project-nav-footer">
+                            <span class="button-icon">
+                                <a href="<%=new ActionURL(AdminController.CreateFolderAction.class, c)%>" title="New Subfolder">
+                                    <span class="fa-stack fa-1x labkey-fa-stacked-wrapper">
+                                        <span class="fa fa-folder-o fa-stack-2x labkey-main-menu-icon" alt="New Subfolder"></span>
+                                        <span class="fa fa-plus-circle fa-stack-1x"></span>
+                                    </span>
+                                </a>
+                            </span>
+                            <span class="button-icon">
+                                <a id="permalink_vis" href="#" title="Permalink Page">
+                                    <span class="fa fa-link labkey-main-menu-icon" alt="Permalink Page"></span>
+                                </a>
+                            </span>
+                        </div>
+<%
+                    }
+%>
+                    </ul>
                 </li>
 <%
                 }
@@ -267,36 +304,44 @@
     </div>
     <script type="application/javascript">
         var __menus = {};
-        <%
-            for (Portal.WebPart menu : model.getCustomMenus())
-            {
-                String safeName = getSafeName(menu);
-                %>__menus[<%=PageFlowUtil.jsString(safeName)%>] = {};<%
-                for (Map.Entry<String,String> entry : menu.getPropertyMap().entrySet())
+        LABKEY.Utils.onReady(function() {
+            <%
+                for (Portal.WebPart menu : model.getCustomMenus())
                 {
-                    %>__menus[<%=PageFlowUtil.jsString(safeName)%>][<%=PageFlowUtil.jsString(entry.getKey())%>] = <%=PageFlowUtil.jsString(entry.getValue())%>;<%
-                }
-
-                if (null == Portal.getPortalPartCaseInsensitive(menu.getName()))
-                    continue;
-                String menuName = menu.getName() + menu.getIndex();
-                menuName = menuName.replaceAll("\\s+","");
-        %>
-                HoverNavigation.Parts["_<%=text(menuName)%>"] = new HoverNavigation({
-                    hoverElem:"<%=text(menuName)%>-Header",
-                    webPartName: "<%=text(menu.getName())%>",
-                    partConfig: { <%
-                        String sep = "";
-                        for (Map.Entry<String,String> entry : menu.getPropertyMap().entrySet())
-                        { %>
-                            <%=text(sep)%><%=PageFlowUtil.jsString(entry.getKey())%>:<%=PageFlowUtil.jsString(entry.getValue())%><%
-                            sep = ",";
-                        }%>
-                        <%=text(sep)%>hoverPartName:<%=PageFlowUtil.jsString("_" + menuName)%>
+                    String safeName = getSafeName(menu);
+                    %>__menus[<%=PageFlowUtil.jsString(safeName)%>] = {};<%
+                    for (Map.Entry<String,String> entry : menu.getPropertyMap().entrySet())
+                    {
+                        %>__menus[<%=PageFlowUtil.jsString(safeName)%>][<%=PageFlowUtil.jsString(entry.getKey())%>] = <%=PageFlowUtil.jsString(entry.getValue())%>;<%
                     }
-                });
-        <%
+
+                    if (null == Portal.getPortalPartCaseInsensitive(menu.getName()))
+                        continue;
+                    String menuName = menu.getName() + menu.getIndex();
+                    menuName = menuName.replaceAll("\\s+","");
+            %>
+                    HoverNavigation.Parts["_<%=text(menuName)%>"] = new HoverNavigation({
+                        hoverElem:"<%=text(menuName)%>-Header",
+                        webPartName: "<%=text(menu.getName())%>",
+                        partConfig: { <%
+                            String sep = "";
+                            for (Map.Entry<String,String> entry : menu.getPropertyMap().entrySet())
+                            { %>
+                                <%=text(sep)%><%=PageFlowUtil.jsString(entry.getKey())%>:<%=PageFlowUtil.jsString(entry.getValue())%><%
+                                sep = ",";
+                            }%>
+                            <%=text(sep)%>hoverPartName:<%=PageFlowUtil.jsString("_" + menuName)%>
+                        }
+                    });
+            <%
+                }
+            %>
+
+            var p = document.getElementById('permalink');
+            var pvis = document.getElementById('permalink_vis');
+            if (p && pvis) {
+                pvis.href = p.href;
             }
-        %>
+        });
     </script>
 </nav>
