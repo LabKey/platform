@@ -81,6 +81,7 @@ import org.labkey.api.reader.HTMLDataLoader;
 import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.script.RhinoService;
 import org.labkey.api.search.SearchService;
@@ -650,16 +651,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ExceptionUtil.logExceptionToMothership(null, t);
         }
 
-        // populate look and feel settings and site settings with values from startup configuration as appropriate for bootstrap
-        // for a list of recognized look and feel setting properties refer to: LookAndFeelProperties.java
-        // for a list of recognized site setting properties refer to: AppPropsImpl.java
+        // populate look and feel settings and site settings with values read from startup properties as appropriate for bootstrap
         LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot()).populateLookAndFeelWithStartupProps(true);;
         AppProps.getWriteableInstance().populateSiteSettingsWithStartupProps(true);
 
-        // create users and groups and assign roles with values from startup configuration as appropriate for bootstrap
+        // create users and groups and assign roles with values read from startup properties as appropriate for bootstrap
         populateGroupRolesWithStartupProps(true);
         populateUserRolesWithStartupProps(true);
         populateUserGroupsWithStartupProps(true);
+
+        // populate script engine definitions with values read from startup properties as appropriate for not bootstrap
+        LabKeyScriptEngineManager.populateSiteSettingsWithStartupProps(true);
     }
 
 
@@ -786,16 +788,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        // populate look and feel settings and site settings with values from startup configuration as appropriate for not bootstrap
-        // for a list of recognized look and feel setting properties refer to: LookAndFeelProperties.java
-        // for a list of recognized site setting properties refer to: AppPropsImpl.java
+        // populate look and feel settings and site settings with values read from startup properties as appropriate for not bootstrap
         LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot()).populateLookAndFeelWithStartupProps(false);;
         AppProps.getWriteableInstance().populateSiteSettingsWithStartupProps(false);
 
-        // create users and groups and assign roles with values from startup configuration as appropriate for not bootstrap
+        // create users and groups and assign roles with values read from startup properties as appropriate for not bootstrap
         populateGroupRolesWithStartupProps(false);
         populateUserRolesWithStartupProps(false);
         populateUserGroupsWithStartupProps(false);
+
+        // populate script engine definitions values read from startup properties as appropriate for not bootstrap
+        LabKeyScriptEngineManager.populateSiteSettingsWithStartupProps(false);
 
         AdminController.registerAdminConsoleLinks();
         AnalyticsController.registerAdminConsoleLinks();
@@ -1217,7 +1220,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     private void populateUserGroupsWithStartupProps(boolean isBootstrap)
     {
-        // expects startup properties formatted like: UserGroups.{email}=SiteAdministrators,Developers
+        // assign users to groups using values read from startup configuration as appropriate for prop modifier and isBootstrap flag
+        // expects startup properties formatted like: UserGroups.{email};{modifier}=SiteAdministrators,Developers
         Container rootContainer = ContainerManager.getRoot();
         Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("UserGroups");
         startupProps
@@ -1272,7 +1276,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     private void populateGroupRolesWithStartupProps(boolean isBootstrap)
     {
-        // expects startup properties formatted like: GroupRoles.{name}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
+        // create groups with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
+        // expects startup properties formatted like: GroupRoles.{groupName};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
         Container rootContainer = ContainerManager.getRoot();
         Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("GroupRoles");
         startupProps
@@ -1310,7 +1315,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     private void populateUserRolesWithStartupProps(boolean isBootstrap)
     {
-        // expects startup properties formatted like: UserRoles.{email}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
+        // create users with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
+        // expects startup properties formatted like: UserRoles.{email};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
         Container rootContainer = ContainerManager.getRoot();
         Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("UserRoles");
         startupProps
