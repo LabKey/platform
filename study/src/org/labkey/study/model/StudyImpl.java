@@ -54,7 +54,6 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudySnapshotType;
@@ -80,7 +79,6 @@ import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.specimen.settings.RepositorySettings;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
@@ -1384,7 +1382,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             List<Attachment> attachedFiles = testStudy.getProtocolDocuments();
             assertEquals("Expected 0 attached documents", 0, attachedFiles.size());
 
-            AttachmentFile file = new FileAttachmentFile(new File(AppProps.getInstance().getProjectRoot() + "/sampledata/study/Protocol.txt"));
+            AttachmentFile file = new FileAttachmentFile(JunitUtil.getSampleData(null, "study/Protocol.txt"));
             testStudy.attachProtocolDocument(Collections.singletonList(file), _context.getUser());
             attachedFiles = testStudy.getProtocolDocuments();
             assertEquals("Expected 1 attached document", 1, attachedFiles.size());
@@ -1401,8 +1399,6 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             assertEquals("Expected 0 attached documents", 0, attachedFiles.size());
         }
     }
-
-
 
 
     static

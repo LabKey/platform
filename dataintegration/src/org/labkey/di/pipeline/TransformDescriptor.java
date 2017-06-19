@@ -55,7 +55,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
@@ -574,7 +573,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
     public static class TestCase extends Assert
     {
-        private static final String BASE_PATH = "sampledata/dataintegration/etls/";
+        private static final String BASE_PATH = "dataintegration/etls/";
         private static final String ONE_TASK = "one.xml";
         private static final String UNIT_TASKS = "unit.xml";
         private static final String FOUR_TASKS = "four.xml";
@@ -627,7 +626,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
         private File getFile(String file)
         {
-            return new File(AppProps.getInstance().getProjectRoot() + "/" + BASE_PATH + file);
+            return JunitUtil.getSampleData(null, BASE_PATH + file);
         }
 
         @Test

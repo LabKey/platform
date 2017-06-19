@@ -84,9 +84,9 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.FileStream.FileFileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HTMLContentExtractor;
@@ -110,6 +110,7 @@ import org.xml.sax.SAXException;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1616,7 +1617,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
             fileRoot = svc.getFileRoot(container);
             FileUtils.cleanDirectory(fileRoot);
-            File sampledata = new File(AppProps.getInstance().getProjectRoot(), "sampledata/fileTypes");
+            File sampledata = JunitUtil.getSampleData(null, "fileTypes");
             FileUtils.copyDirectory(sampledata, fileRoot);
         }
 
@@ -1624,7 +1625,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
          * Traverses the specified directory and indexes only the files that meet the fileFilter. This "test" is not normally
          * run, but it can be re-enabled locally to investigate and fix issues with specific file types.
          */
-        @Test
+        //@Test
         public void testTika()
         {
             Predicate<WebdavResource> fileFilter = webdavResource -> true;
@@ -1661,6 +1662,32 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             });
 
             return results;
+        }
+
+//        @Test
+        public void testTika2() throws IOException, TikaException, SAXException
+        {
+            File sampledata = JunitUtil.getSampleData(null, "fileTypes");
+
+            assertNotNull(sampledata);
+            assertTrue(sampledata.isDirectory());
+            SearchService ss = SearchService.get();
+            LuceneSearchServiceImpl lssi = (LuceneSearchServiceImpl)ss;
+
+            for (File file : sampledata.listFiles(File::isFile))
+            {
+                String docId = "testtika";
+                SimpleDocumentResource resource = new SimpleDocumentResource(new Path(docId), docId, null, "text/plain", null, null, null);
+                ContentHandler handler = new BodyContentHandler(-1);
+                Metadata metadata = new Metadata();
+
+                try (InputStream is = new FileInputStream(file))
+                {
+                    lssi.parse(resource, new FileFileStream(file), is, handler, metadata);
+                    String body = handler.toString();
+                    body = body;  // TODO: Test expectations for body and metadata for all (or at least key) document types
+                }
+            }
         }
     }
 

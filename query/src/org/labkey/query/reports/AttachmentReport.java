@@ -36,13 +36,13 @@ import org.labkey.api.reports.report.ReportNameContext;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ImageUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -53,10 +53,12 @@ import org.labkey.query.reports.ReportsController.DownloadReportFileAction;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.zip.ZipEntry;
@@ -394,13 +396,12 @@ public class AttachmentReport extends BaseRedirectReport
     // Document must be saved with thumbnail (preview) selected.
     private @Nullable Thumbnail getOfficeXmlThumbnail(InputStream in) throws IOException
     {
-
-        try(ZipInputStream zin = new ZipInputStream(in))
+        try (ZipInputStream zin = new ZipInputStream(in))
         {
             ZipEntry entry;
-            while(null != (entry=zin.getNextEntry()))
+            while (null != (entry=zin.getNextEntry()))
             {
-                if("docProps/thumbnail.jpeg".equals(entry.getName()))
+                if ("docProps/thumbnail.jpeg".equals(entry.getName()))
                 {
                     return ImageUtil.renderThumbnail(ImageIO.read(zin));
                 }
@@ -514,18 +515,16 @@ public class AttachmentReport extends BaseRedirectReport
         public void test() throws IOException
         {
             AttachmentReport report = new AttachmentReport();
-            AppProps props = AppProps.getInstance();
-            String projectRootPath = props.getProjectRoot();
 
-            //String root = System.getProperty("labkey.root", "..");
-
-            try(InputStream inPptx = new FileInputStream(projectRootPath + "/sampledata/query/attachments/PowerPoint_JPEG_Thumbnail.pptx");
-                InputStream inXlsx = new FileInputStream(projectRootPath + "/sampledata/query/attachments/Excel_Document_JPEG_Thumbnail.xlsx");
-                InputStream inDocx = new FileInputStream(projectRootPath + "/sampledata/query/attachments/Word_Document_JPEG_Thumbnail.docx"))
+            for (String filename : Arrays.asList("PowerPoint_JPEG_Thumbnail.pptx", "Excel_Document_JPEG_Thumbnail.xlsx", "Word_Document_JPEG_Thumbnail.docx"))
             {
-                    assertNotNull(report.getOfficeXmlThumbnail(inPptx));
-                    assertNotNull(report.getOfficeXmlThumbnail(inXlsx));
-                    assertNotNull(report.getOfficeXmlThumbnail(inDocx));
+                File file = JunitUtil.getSampleData(null, "query/attachments/" + filename);
+                assertNotNull(file);
+
+                try (InputStream is = new FileInputStream(file))
+                {
+                    assertNotNull(report.getOfficeXmlThumbnail(is));
+                }
             }
         }
     }

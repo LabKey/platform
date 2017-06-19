@@ -221,8 +221,7 @@ public class SearchModule extends DefaultModule
     {
         return new HashSet<>(Arrays.asList(
                 // TODO: 30631: Add unit test to verify search module document parsing
-                // Not passing yet
-                // LuceneSearchServiceImpl.TikaTestCase.class,
+                LuceneSearchServiceImpl.TikaTestCase.class,
                 LuceneSearchServiceImpl.TestCase.class
                 ));
     }
