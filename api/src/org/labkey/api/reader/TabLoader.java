@@ -28,10 +28,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.iterator.BeanIterator;
 import org.labkey.api.iterator.CloseableFilteredIterator;
 import org.labkey.api.iterator.CloseableIterator;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Filter;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.writer.PrintWriters;
 
 import java.io.BufferedReader;
@@ -1091,16 +1091,6 @@ public class TabLoader extends DataLoader
 
     public static class HeaderMatchTest extends Assert
     {
-        private final File _projectRoot;
-
-        public HeaderMatchTest()
-        {
-            String projectRootPath =  AppProps.getInstance().getProjectRoot();
-            if (projectRootPath == null)
-                projectRootPath = System.getProperty("user.dir") + "/..";
-            _projectRoot = new File(projectRootPath);
-        }
-
         @Test
         public void testHeader()
         {
@@ -1121,17 +1111,17 @@ public class TabLoader extends DataLoader
         public void testSniff() throws IOException
         {
             // File has comment headers
-            assertTrue(isType(TabLoader.TSV_FILE_TYPE, new File(_projectRoot, "sampledata/ms1/bvt/inspect/Find Features/msi-sample.peptides.tsv")));
+            assertTrue(isType(TabLoader.TSV_FILE_TYPE, JunitUtil.getSampleData(null, "ms1/bvt/inspect/Find Features/msi-sample.peptides.tsv")));
 
-            assertFalse(isType(TabLoader.TSV_FILE_TYPE, new File(_projectRoot, "sampledata/Nab/384well_highthroughput.csv")));
-            assertTrue(isType(TabLoader.CSV_FILE_TYPE, new File(_projectRoot, "sampledata/Nab/384well_highthroughput.csv")));
+            assertFalse(isType(TabLoader.TSV_FILE_TYPE, JunitUtil.getSampleData(null, "Nab/384well_highthroughput.csv")));
+            assertTrue(isType(TabLoader.CSV_FILE_TYPE, JunitUtil.getSampleData(null, "Nab/384well_highthroughput.csv")));
 
             // TODO: Support files without headers
-            //assertTrue(isType(TabLoader.CSV_FILE_TYPE, new File(_projectRoot, "sampledata/viability/small.VIA.csv")));
+            //assertTrue(isType(TabLoader.CSV_FILE_TYPE, JunitUtil.getSampleData(null, "viability/small.VIA.csv")));
 
             // binary files
-            assertFalse(isType(TabLoader.TSV_FILE_TYPE, new File(_projectRoot, "sampledata/flow/8color/L02-060120-QUV-JS/91745.fcs")));
-            assertFalse(isType(TabLoader.TSV_FILE_TYPE, new File(_projectRoot, "sampledata/FolderExport/Sample.folder.zip")));
+            assertFalse(isType(TabLoader.TSV_FILE_TYPE, JunitUtil.getSampleData(null, "flow/8color/L02-060120-QUV-JS/91745.fcs")));
+            assertFalse(isType(TabLoader.TSV_FILE_TYPE, JunitUtil.getSampleData(null, "FolderExport/Sample.folder.zip")));
         }
     }
 }

@@ -42,6 +42,7 @@ import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.reader.jxl.JxlWorkbook;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.JunitUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -104,8 +105,7 @@ public class ExcelFactory
         }
         finally
         {
-            if (temp != null)
-                temp.delete();
+            temp.delete();
         }
 /*
         DefaultDetector detector = new DefaultDetector();
@@ -261,14 +261,14 @@ public class ExcelFactory
         // Convert to one-based index
         colIndex++;
         
-        String name = "";
+        StringBuilder name = new StringBuilder();
         while (colIndex > 0)
         {
             colIndex--;
-            name = (char)('A' + colIndex % 26) + name;
+            name.insert(0, (char) ('A' + colIndex % 26));
             colIndex /= 26;
         }
-        return name;
+        return name.toString();
     }
 
     /**
@@ -673,11 +673,7 @@ public class ExcelFactory
             {
                 assertEquals("#VALUE!", jsonArray.getJSONObject(0).getJSONArray("data").getJSONArray(1).getJSONObject(0).getString("value"));
             }
-            catch (NullPointerException e)
-            {
-                throw new RuntimeException("Bad import response: \n" + jsonArray, e);
-            }
-            catch (JSONException e)
+            catch (NullPointerException | JSONException e)
             {
                 throw new RuntimeException("Bad import response: \n" + jsonArray, e);
             }
@@ -686,18 +682,21 @@ public class ExcelFactory
         @Test
         public void testExcelFileImportShouldFail() throws Exception
         {
-            attemptImportExpectError("doesntexist.xls", FileNotFoundException.class);
-            attemptImportExpectError("", FileNotFoundException.class);
-            attemptImportExpectError("notreallyexcel.xls", InvalidFormatException.class);
+            File dataloading = JunitUtil.getSampleData(null, "dataLoading/excel");
+
+            if (null == dataloading)
+                return;
+
+            attemptImportExpectError(new File(dataloading, "doesntexist.xls"), FileNotFoundException.class);
+            attemptImportExpectError(new File(dataloading, ""), FileNotFoundException.class);
+            attemptImportExpectError(new File(dataloading, "notreallyexcel.xls"), InvalidFormatException.class);
         }
 
-
-
-        private void attemptImportExpectError(String filename, Class exceptionClass)
+        private void attemptImportExpectError(File excelFile, Class exceptionClass)
         {
             try
             {
-                JSONArray jsonArray = startImportFile(filename);
+                JSONArray jsonArray = ExcelFactory.convertExcelToJSON(excelFile, true);
                 if(jsonArray == null && !AppProps.getInstance().isDevMode())
                     return; // test requires dev mode
                 fail("Should have failed before this point");
@@ -723,20 +722,13 @@ public class ExcelFactory
             assertEquals("SIR", getCellColumnDescription(13095));
         }
 
-        private JSONArray startImportFile (String filename) throws Exception
+        private JSONArray startImportFile(String filename) throws Exception
         {
-            AppProps props = AppProps.getInstance();
-            if (!props.isDevMode()) // We can only run the excel tests if we're in dev mode and have access to our samples
-                return null;
+            File excelFile = JunitUtil.getSampleData(null, "dataLoading/excel/" + filename);
 
-            String projectRootPath =  props.getProjectRoot();
-            File projectRoot = new File(projectRootPath);
-            File excelFile = new File(projectRoot, "sampledata/dataLoading/excel/" + filename);
-
-            JSONArray jsonArray = ExcelFactory.convertExcelToJSON(excelFile, true);
-            return jsonArray;
-
+            return null != excelFile ? ExcelFactory.convertExcelToJSON(excelFile, true) : null;
         }
+
         private void validateSimpleExcel(String filename) throws Exception
         {
             JSONArray jsonArray = startImportFile(filename);

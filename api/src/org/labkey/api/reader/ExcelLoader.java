@@ -40,10 +40,10 @@ import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.iterator.CloseableIterator;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.JunitUtil;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -579,20 +579,10 @@ public class ExcelLoader extends DataLoader
 
     public static class ExcelLoaderTestCase extends Assert
     {
-        private final File _projectRoot;
-
-        public ExcelLoaderTestCase()
-        {
-            String projectRootPath = AppProps.getInstance().getProjectRoot();
-            if (projectRootPath == null)
-                projectRootPath = System.getProperty("user.dir") + "/..";
-            _projectRoot = new File(projectRootPath);
-        }
-
         @Test
         public void detect() throws Exception
         {
-            File excelSamplesRoot = new File(_projectRoot, "sampledata/dataLoading/excel");
+            File excelSamplesRoot = JunitUtil.getSampleData(null, "dataLoading/excel");
 
             assertTrue(isExcel(new File(excelSamplesRoot, "ExcelLoaderTest.xls")));
             assertTrue(isExcel(new File(excelSamplesRoot, "SimpleExcelFile.xls")));
@@ -600,13 +590,13 @@ public class ExcelLoader extends DataLoader
             assertTrue(isExcel(new File(excelSamplesRoot, "fruits.xls")));
 
             // Issue 22153: detect xls file without extension
-            assertTrue(isExcel(new File(_projectRoot, "sampledata/Nab/seaman/MS010407")));
+            assertTrue(isExcel(JunitUtil.getSampleData(null, "Nab/seaman/MS010407")));
 
             // NOTE: DataLoaderService only available when running junit tests with running server
             DataLoaderService svc = DataLoaderService.get();
             if (svc != null)
             {
-                DataLoaderFactory factory = svc.findFactory(new File(_projectRoot, "sampledata/Nab/seaman/MS010407"), null);
+                DataLoaderFactory factory = svc.findFactory(JunitUtil.getSampleData(null, "Nab/seaman/MS010407"), null);
                 assertTrue(factory instanceof ExcelLoader.Factory);
             }
 
@@ -617,9 +607,9 @@ public class ExcelLoader extends DataLoader
         @Test
         public void testColumnTypes() throws Exception
         {
-            File excelSamplesRoot = new File(_projectRoot, "sampledata/dataLoading/excel");
+            File excelSamplesRoot = JunitUtil.getSampleData(null, "dataLoading/excel");
 
-            if (!excelSamplesRoot.exists() || !excelSamplesRoot.canRead())
+            if (null == excelSamplesRoot || !excelSamplesRoot.canRead())
                 throw new IOException("Could not read excel samples in: " + excelSamplesRoot);
 
             File metadataSample = new File(excelSamplesRoot, "ExcelLoaderTest.xls");

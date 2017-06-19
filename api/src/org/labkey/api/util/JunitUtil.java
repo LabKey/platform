@@ -170,6 +170,10 @@ public class JunitUtil
             if (null == projectRoot)
                 return null;
 
+//            Some of the individual tests did this... and I'm not sure why
+//            if (projectRoot == null)
+//                projectRoot = System.getProperty("user.dir") + "/..";
+
             sampleDataDir = new File(projectRoot, "sampledata");
         }
         else
