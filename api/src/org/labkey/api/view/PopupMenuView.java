@@ -96,40 +96,58 @@ public class PopupMenuView extends HttpView<PopupMenu>
                 String text = PageFlowUtil.filter(child.getText());
 
                 out.write("<li class=\"dropdown-submenu\">");
-                out.write("<a class=\"subexpand\" tabindex=\"0\">" + text + "<i class=\"fa fa-chevron-right\"></i></a>");
+                out.write("<a class=\"subexpand subexpand-icon\" tabindex=\"0\">" + text + "<i class=\"fa fa-chevron-right\"></i></a>");
                 out.write("<ul class=\"dropdown-layer-menu\">");
-                out.write("<li><a class=\"subcollapse\" tabindex=\"0\"><i class=\"fa fa-chevron-circle-left\"></i>" + text + "</a></li>");
+                out.write("<li><a class=\"subcollapse\" tabindex=\"0\"><i class=\"fa fa-chevron-left\"></i>" + text + "</a></li>");
+                renderTreeDivider(out);
                 renderTree(child, out);
                 out.write("</ul>");
                 out.write("</li>");
             }
             else if ("-".equals(child.getText()))
-                out.write("<li class=\"divider\"></li>");
+                renderTreeDivider(out);
             else
-            {
-                out.write("<li");
-                if (child.isDisabled())
-                    out.write(" class=\"disabled\" ");
-                out.write(">");
-                out.write("<a");
-                if (null != child.getImageCls())
-                    out.write(" style=\"padding-left: 0;\"");
-                if (null != child.getScript())
-                    out.write(" onclick=\"" + PageFlowUtil.filter(child.getScript()) +"\" ");
-                if (null != child.getHref())
-                    out.write(" href=\"" + child.getHref() + "\"");
-                if (null != child.getTarget())
-                    out.write(" target=\"" + child.getTarget() + "\"");
-                if (null != child.getDescription())
-                    out.write(" title=\"" + PageFlowUtil.filter(child.getDescription()) + "\"");
-                out.write(" tabindex=\"0\"");
-                out.write(">");
-                if (null != child.getImageCls())
-                    out.write("<i class=\"" + child.getImageCls() + "\"></i>");
-                out.write(PageFlowUtil.filter(child.getText()));
-                out.write("</a>");
-                out.write("</li>");
-            }
+                renderTreeItem(child, null, out);
         }
+    }
+
+    protected static void renderTreeItem(NavTree item, String cls, Writer out) throws IOException
+    {
+        out.write("<li");
+        if (item.isDisabled())
+            cls = cls != null ? cls + " disabled" : "disabled";
+        if (cls != null)
+            out.write(" class=\"" + cls + "\"");
+        out.write(">");
+        renderLink(item, null, out);
+        out.write("</li>");
+    }
+
+    public static void renderTreeDivider(Writer out) throws IOException
+    {
+        out.write("<li class=\"divider\"></li>");
+    }
+
+    protected static void renderLink(NavTree item, String cls, Writer out) throws IOException
+    {
+        out.write("<a");
+        if (null != cls)
+            out.write(" class=\"" + cls + "\"");
+        if (null != item.getImageCls())
+            out.write(" style=\"padding-left: 0;\"");
+        if (null != item.getScript())
+            out.write(" onclick=\"" + PageFlowUtil.filter(item.getScript()) +"\" ");
+        if (null != item.getHref())
+            out.write(" href=\"" + item.getHref() + "\"");
+        if (null != item.getTarget())
+            out.write(" target=\"" + item.getTarget() + "\"");
+        if (null != item.getDescription())
+            out.write(" title=\"" + PageFlowUtil.filter(item.getDescription()) + "\"");
+        out.write(" tabindex=\"0\"");
+        out.write(">");
+        if (null != item.getImageCls())
+            out.write("<i class=\"" + item.getImageCls() + "\"></i>");
+        out.write(PageFlowUtil.filter(item.getText()));
+        out.write("</a>");
     }
 }

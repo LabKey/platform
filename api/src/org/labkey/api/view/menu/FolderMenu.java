@@ -44,7 +44,7 @@ public class FolderMenu extends NavTreeMenu
     }
 
     @Nullable
-    private static NavTree getNavTree(ViewContext context)
+    public static NavTree getNavTree(ViewContext context)
     {
         if (context.getContainer().getProject() != null)
         {

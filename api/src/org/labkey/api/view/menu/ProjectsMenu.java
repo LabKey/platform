@@ -42,7 +42,7 @@ public class ProjectsMenu extends NavTreeMenu
         return isHomeContainer && "project".equalsIgnoreCase(url.getController()) && "begin".equalsIgnoreCase(url.getAction());
     }
     
-    private static NavTree[] getNavTree(ViewContext context)
+    public static NavTree[] getNavTree(ViewContext context)
     {
         NavTree projects = ContainerManager.getProjectList(context);
         if (null == projects)
