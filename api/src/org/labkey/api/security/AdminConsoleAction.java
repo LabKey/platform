@@ -23,18 +23,15 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
+ * Provides custom permissions handling for standard admin console actions:
+ *
+ * - Current container must be the root
+ * - Requires {@link org.labkey.api.security.permissions.AdminReadPermission} for GET operations
+ * - Requires {@link AdminPermission} (default) for POST operations
  * User: adam
  * Date: Mar 22, 2010
- * Time: 2:08:18 PM
  */
 
-/*
-    Provides custom permissions handling for standard admin console actions:
-
-    - Current container must be the root
-    - Requires AdminReadPermissions for GET operations
-    - Requires AdminPermissions (default) for POST operations
- */
 public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 @interface AdminConsoleAction
 {

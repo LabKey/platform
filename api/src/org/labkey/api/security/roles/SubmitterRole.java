@@ -20,7 +20,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 /*
 * User: Dave
 * Date: Apr 27, 2009
-* Time: 1:22:51 PM
 */
 public class SubmitterRole extends AbstractRole
 {

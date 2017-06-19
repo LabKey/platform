@@ -35,14 +35,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 
-/*
-* User: Dave
-* Date: Jan 23, 2009
-* Time: 4:48:17 PM
-*/
-
 /**
- * Html view based on HTML source stored in a module
+ * Html view based on HTML source stored in a module's ./resources/views directory.
+ * User: Dave
+ * Date: Jan 23, 2009
  */
 public class ModuleHtmlView extends HtmlView
 {

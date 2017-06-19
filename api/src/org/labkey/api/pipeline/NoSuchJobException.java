@@ -16,6 +16,7 @@
 package org.labkey.api.pipeline;
 
 /**
+ * Thrown to indicate that code tried to update or otherwise interact with a job that's since been deleted.
  * User: jeckels
  * Date: 10/28/13
  */

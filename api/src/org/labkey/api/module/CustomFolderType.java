@@ -41,7 +41,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Folder type that results in an old style "tabbed" folder.
+ * Folder type that results in an old style "tabbed" folder. Each enabled module gets its own tab.
  */
 public class CustomFolderType implements FolderType
 {

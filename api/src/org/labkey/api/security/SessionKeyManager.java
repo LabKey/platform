@@ -32,7 +32,6 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * User: adam
  * Date: Aug 23, 2007
- * Time: 2:08:17 PM
  */
 abstract class SessionKeyManager<T>
 {

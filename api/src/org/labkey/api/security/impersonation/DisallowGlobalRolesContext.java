@@ -16,6 +16,7 @@
 package org.labkey.api.security.impersonation;
 
 /**
+ * A "not impersonating" context that disallows all global roles (i.e., Site Admin and Developer)
  * Created by adam on 10/30/2015.
  */
 
@@ -23,9 +24,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 
-/**
- * A "not impersonating" context that disallows all global roles (i.e., Site Admin and Developer)
- */
 public class DisallowGlobalRolesContext extends NotImpersonatingContext
 {
     private static final DisallowGlobalRolesContext INSTANCE = new DisallowGlobalRolesContext();

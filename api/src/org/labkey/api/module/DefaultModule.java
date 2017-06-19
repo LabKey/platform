@@ -100,9 +100,9 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 
 /**
+ * Standard base class for modules, supplies no-op implementations for many optional methods.
  * User: migra
  * Date: Jul 14, 2005
- * Time: 11:42:09 AM
  */
 public abstract class DefaultModule implements Module, ApplicationContextAware
 {

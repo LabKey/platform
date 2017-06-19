@@ -23,9 +23,10 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
+ * Responsible for injecting the right set of links in the Admin menu that's part of the page header for users
+ * with sufficient permissions.
  * User: adam
  * Date: 1/10/2015
- * Time: 11:38 AM
  */
 public class AdminLinkManager
 {

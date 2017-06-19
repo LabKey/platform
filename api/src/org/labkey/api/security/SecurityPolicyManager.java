@@ -42,9 +42,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * Handles persistence and loading of {@link SecurityPolicy} information over {@link SecurableResource}s.
+ * Caches for performance reasons.
  * User: adam
  * Date: 7/6/12
- * Time: 6:39 PM
  */
 public class SecurityPolicyManager
 {

@@ -17,15 +17,15 @@
 package org.labkey.api.study;
 
 /**
+ * Represents the location for a single {@link Well} in a {@link Plate}.
  * User: brittp
  * Date: Oct 20, 2006
- * Time: 4:28:51 PM
  */
 public interface Position
 {
-    public int getColumn();
+    int getColumn();
 
-    public int getRow();
+    int getRow();
 
     String getDescription();
 }

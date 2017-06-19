@@ -125,7 +125,6 @@ import java.util.stream.Collectors;
 /**
  * User: migra
  * Date: Jul 13, 2005
- * Time: 10:27:45 AM
  */
 public class ModuleLoader implements Filter
 {

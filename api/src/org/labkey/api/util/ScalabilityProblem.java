@@ -18,16 +18,15 @@ package org.labkey.api.util;
 
 import java.lang.annotation.Retention;
 
-/*
-* User: adam
-* Date: Mar 29, 2011
-* Time: 9:17:20 PM
-*/
+/**
+ * Used to mark any pattern, code, field, etc. that is inherently unscalable.  In particular, we're using this annotation
+ * to tag techniques that won't work in multiple web server deployments (e.g., caching of database objects in static maps
+ * instead of using a real cache).  We aren't planning to support multi-server deployments any time soon, but it doesn't
+ * hurt to mark these issues as we notice them.
+ * User: adam
+ * Date: Mar 29, 2011
+ */
 
-// Used to mark any pattern, code, field, etc. that is inherently unscalable.  In particular, we're using this annotation
-// to tag techniques that won't work in multiple web server deployments (e.g., caching of database objects in static maps
-// instead of using a real cache).  We aren't planning to support multi-server deployments any time soon, but it doesn't
-// hurt to mark these issues as we notice them.
 public @Retention(java.lang.annotation.RetentionPolicy.SOURCE)
 @interface ScalabilityProblem
 {

@@ -54,7 +54,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-
+/**
+ * Represents a user in the LabKey system, typically tied to a specific individual, but see {@link GuestUser} for a
+ * catch-all implementaton representing anonymous users.
+ */
 public class User extends UserPrincipal implements Serializable, Cloneable, ThumbnailProvider
 {
     private String _firstName = null;

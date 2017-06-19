@@ -33,14 +33,12 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Stats;
 import org.labkey.api.view.ViewContext;
 
-import java.sql.ResultSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 

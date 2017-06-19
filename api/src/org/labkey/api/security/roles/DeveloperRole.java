@@ -15,11 +15,12 @@
  */
 package org.labkey.api.security.roles;
 
-/*
-* User: Dave
-* Date: May 7, 2009
-* Time: 11:30:20 AM
-*/
+/**
+ * Developers are trusted to create executable code that will be run on the server (like R scripts) or sent to browsers
+ * to execute (like JavaScript in wiki pages).
+ * User: Dave
+ * Date: May 7, 2009
+ */
 public class DeveloperRole extends AbstractContextualRole
 {
     public DeveloperRole()

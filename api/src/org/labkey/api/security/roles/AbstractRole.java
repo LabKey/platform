@@ -31,14 +31,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Collections;
 
-/*
-* User: Dave
-* Date: Apr 22, 2009
-* Time: 10:48:20 AM
-*/
-
 /**
  * Abstract base class for roles
+ * User: Dave
+ * Date: Apr 22, 2009
  */
 public abstract class AbstractRole implements Role
 {

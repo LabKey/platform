@@ -21,9 +21,10 @@ import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 
 /**
+ * Marker for actions that should not ensure that the user has accepted any terms of use
+ * that may be configured for the container.
  * User: adamr
  * Date: Jul 4, 2008
- * Time: 8:54:28 AM
  */
 public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 @interface IgnoresTermsOfUse

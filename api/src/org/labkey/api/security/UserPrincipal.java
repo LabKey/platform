@@ -27,11 +27,10 @@ import java.io.Serializable;
 import java.util.Set;
 
 /**
- * A user-oriented principal within the system. This encompasses both users and groups (of groups and users).
+ * A user-oriented principal within the system. This encompasses both {@link User}s and {@link Group}s (of groups and users).
  *
  * User: matthewb
  * Date: Sep 20, 2006
- * Time: 1:28:26 PM
  */
 public abstract class UserPrincipal implements Principal, Parameter.JdbcParameterValue, Serializable
 {

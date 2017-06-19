@@ -78,6 +78,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * A job represents the invocation of a pipeline on a certain set out inputs. It can be monolithic (a single run() method)
+ * or be comprised of multiple tasks that can be checkpointed and restarted individually.
+ */
 abstract public class PipelineJob extends Job implements Serializable
 {
     public static final FileType FT_LOG = new FileType(Arrays.asList(".log"), ".log", Arrays.asList("text/plain"));

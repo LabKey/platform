@@ -19,7 +19,9 @@ import org.apache.log4j.Logger;
 
 import java.util.*;
 
-
+/**
+ * Lightweight utility to capture how much time is spent doing specifically instrumented actions.
+ */
 public class CPUTimer
 {
     private static final Logger _log = Logger.getLogger(CPUTimer.class);

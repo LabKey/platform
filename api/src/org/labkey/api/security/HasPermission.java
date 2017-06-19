@@ -19,11 +19,12 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.permissions.Permission;
 
 /**
+ * Interface for objects that know how to check if a user has permission to perform
+ * a certain kind of action
  * User: matthewb
  * Date: 2011-11-29
- * Time: 12:25 PM
  */
 public interface HasPermission
 {
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm);
+    boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm);
 }

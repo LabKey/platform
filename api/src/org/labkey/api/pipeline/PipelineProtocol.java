@@ -28,10 +28,9 @@ import java.util.HashMap;
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * PipelineProtocol class
- * <p/>
+ * A protocol captures settings to be used when running a pipeline. Values are often passed to tools
+ * being invoked on the command line or similar.
  * Created: Oct 7, 2005
- *
  * @author bmaclean
  */
 public abstract class PipelineProtocol

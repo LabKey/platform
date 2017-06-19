@@ -26,9 +26,7 @@ import org.labkey.api.data.TableInfo;
 /**
  * User: arauch
  * Date: Nov 17, 2004
- * Time: 3:15:54 PM
  */
-
 public class ContainerUtil
 {
     public static int purgeTable(TableInfo tinfo, String key)

@@ -37,14 +37,10 @@ import org.springframework.web.servlet.ModelAndView;
 import java.util.HashSet;
 import java.util.Set;
 
-/*
-* User: Dave
-* Date: Jan 23, 2009
-* Time: 10:21:33 AM
-*/
-
 /**
- * Action for simple file-based views in a module
+ * Action for simple file-based views in a module's ./resources directory.
+ * User: Dave
+ * Date: Jan 23, 2009
  */
 public class SimpleAction extends BaseViewAction implements NavTrailAction
 {

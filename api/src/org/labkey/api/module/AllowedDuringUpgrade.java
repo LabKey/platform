@@ -20,9 +20,10 @@ import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 
 /**
+ * Tag for the very small set of actions that users are allowed to access while the server is in the midst
+ * of an upgrade to the newly deployed module versions or initial install.
  * User: adam
  * Date: Nov 11, 2008
- * Time: 11:37:46 PM
  */
 public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 @interface AllowedDuringUpgrade

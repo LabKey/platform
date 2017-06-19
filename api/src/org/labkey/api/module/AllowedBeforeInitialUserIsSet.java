@@ -20,9 +20,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
+ * Designates actions that are available prior to establishing the initial user (who is automatically a site admin).
  * User: adam
  * Date: Mar 9, 2010
- * Time: 12:21:34 PM
  */
 public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 @interface AllowedBeforeInitialUserIsSet

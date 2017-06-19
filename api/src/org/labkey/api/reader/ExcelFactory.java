@@ -32,6 +32,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -60,9 +61,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Helper that abstracts the different versions of Excel files and returns the implementation that can
+ * parse or create them.
  * User: klum
  * Date: May 2, 2011
- * Time: 6:24:37 PM
  */
 public class ExcelFactory
 {
@@ -70,7 +72,12 @@ public class ExcelFactory
     public static final String SUB_TYPE_BIFF5 = "x-tika-msoffice";
     public static final String SUB_TYPE_BIFF8 = "vnd.ms-excel";
 
-    public static Workbook create(File file) throws IOException, InvalidFormatException
+    /**
+     * Sniffs the file type and returns the appropriate parser
+     * @throws InvalidFormatException if the file isn't a recognized Excel format
+     */
+    @NotNull
+    public static Workbook create(@NotNull File file) throws IOException, InvalidFormatException
     {
         FileInputStream fIn = new FileInputStream(file);
         try
@@ -118,6 +125,9 @@ public class ExcelFactory
 */
     }
 
+    /**
+     * Contructs an in-memory Excel file from a JSON representation, as described in the LABKEY.Utils.convertToExcel JavaScript API
+     */
     public static Workbook createFromArray(JSONArray sheetsArray, ExcelWriter.ExcelDocumentType docType) throws IOException
     {
         Workbook workbook = docType.createWorkbook();
@@ -273,7 +283,6 @@ public class ExcelFactory
 
     /**
      * Helper to safely convert cell values to a string equivalent
-     *
      */
     public static String getCellStringValue(Cell cell)
     {

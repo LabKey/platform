@@ -21,9 +21,10 @@ import java.util.List;
 import java.util.ListIterator;
 
 /**
+ * Handles running the upgrade scripts for modules, both those that are performed synchronously before
+ * the server is considered started, and the async updates that fire after the normal startup is complete.
  * User: adam
  * Date: Nov 5, 2008
- * Time: 10:25:54 AM
  */
 public class ModuleUpgrader
 {

@@ -18,14 +18,10 @@ package org.labkey.api.security.roles;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.security.permissions.*;
 
-/*
-* User: Dave
-* Date: Apr 23, 2009
-* Time: 12:17:37 PM
-*/
-
 /**
- * The Site Administrator role
+ * The Site Administrator role. Site admins are equivalent to root in *nix - they can do anything.
+ * User: Dave
+ * Date: Apr 23, 2009
  */
 public class SiteAdminRole extends AbstractContextualRole
 {

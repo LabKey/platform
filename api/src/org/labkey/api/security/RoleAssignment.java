@@ -17,14 +17,10 @@ package org.labkey.api.security;
 
 import org.labkey.api.security.roles.Role;
 
-/*
-* User: Dave
-* Date: Apr 22, 2009
-* Time: 10:20:31 AM
-*/
-
 /**
- * Record of a particular principal assigned a particular role for a particular securable resource
+ * Record of a particular principal assigned a particular role for a particular {@link SecurableResource}
+ * User: Dave
+ * Date: Apr 22, 2009
  */
 public class RoleAssignment implements Comparable<RoleAssignment>, Cloneable
 {

@@ -39,16 +39,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
+ * This cache keeps various collections of users in memory for fast access. The cache holds a single element containing
+ * various user collections; all collections are populated via a single bulk query. This scales better than adding and
+ * invalidating individual user objects since many common operations require the full list of users (or active users).
+ *
+ * Caching a single object may seem a bit silly, but it provides mem tracker integration, statistics gathering, etc. for free.
  * User: adam
  * Date: 12/30/11
- * Time: 9:02 AM
  */
-
-// This cache keeps various collections of users in memory for fast access. The cache holds a single element containing
-// various user collections; all collections are populated via a single bulk query. This scales better than adding and
-// invalidating individual user objects since many common operations require the full list of users (or active users).
-//
-// Caching a single object may seem a bit silly, but it provides mem tracker integration, statistics gathering, etc. for free.
 class UserCache
 {
     private static final CoreSchema CORE = CoreSchema.getInstance();

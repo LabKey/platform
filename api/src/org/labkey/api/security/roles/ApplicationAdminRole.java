@@ -15,6 +15,9 @@ import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 
+/**
+ * A step down from site admins, app admins have broad access but don't get to control native resources on the server.
+ */
 public class ApplicationAdminRole extends AbstractRootContainerRole
 {
     public ApplicationAdminRole()

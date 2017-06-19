@@ -24,9 +24,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
+ * A group may be scoped to either the entire server or a specific project. It is a collection of users and/or
+ * nested groups.
  * User: arauch
  * Date: Jul 5, 2005
- * Time: 10:34:01 AM
  */
 public class Group extends UserPrincipal
 {

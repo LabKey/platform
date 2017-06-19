@@ -34,7 +34,6 @@ import java.util.Set;
  *
  * User: adam
  * Date: 11/8/11
- * Time: 8:01 PM
  */
 public interface ImpersonationContext extends Serializable
 {

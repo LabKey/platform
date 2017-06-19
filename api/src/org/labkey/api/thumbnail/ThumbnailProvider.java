@@ -22,16 +22,12 @@ import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.view.ViewContext;
 
 /**
- * User: adam
- * Date: 10/7/11
- * Time: 10:55 PM
- */
-
-/**
  * Provides a simple path to a static thumbnail image (usually the same link for all objects of the same type) plus an
  * optional ability to generate a "dynamic" thumbnail image, representing the specific content of this report, etc.
  * Dynamic thumbnails are generated from content at save time and stored as attachments. At display time, thumbnails
  * are read from the attachments service and cached in memory (using the cache key).
+ * User: adam
+ * Date: 10/7/11
  */
 public interface ThumbnailProvider extends AttachmentParent
 {

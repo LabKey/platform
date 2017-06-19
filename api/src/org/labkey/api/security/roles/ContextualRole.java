@@ -15,14 +15,10 @@
  */
 package org.labkey.api.security.roles;
 
-/*
-* User: Dave
-* Date: Apr 22, 2009
-* Time: 10:43:44 AM
-*/
-
 /**
- * Interface for contextual roles.
+ * Interface for contextual roles, which grant access in a more finely-grained context than just a container level.
+ * User: Dave
+ * Date: Apr 22, 2009
  */
 public interface ContextualRole extends Role
 {

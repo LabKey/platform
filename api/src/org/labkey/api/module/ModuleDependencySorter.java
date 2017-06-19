@@ -26,12 +26,11 @@ import org.labkey.api.util.Pair;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 /**
+ * Orders modules so that each module will always be after all of the modules it depends on.
  * User: jeckels
  * Date: Jun 6, 2006
  */

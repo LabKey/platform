@@ -28,10 +28,9 @@ import java.util.HashSet;
 import java.util.Map;
 
 /**
- * PipelineProtocolType class
- * <p/>
- * Created: Oct 7, 2005
+ * Knows how to deserialize protocol definitions that have been persisted on the server (as XML on the file system
  *
+ * Created: Oct 7, 2005
  * @author bmaclean
  */
 public abstract class PipelineProtocolFactory<T extends PipelineProtocol>

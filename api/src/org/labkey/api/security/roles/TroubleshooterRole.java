@@ -19,11 +19,10 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminReadPermission;
 
-/*
-* User: adam
-* Date: Jan 22, 2010
-* Time: 1:22:04 PM
-*/
+/**
+ * User: adam
+ * Date: Jan 22, 2010
+ */
 public class TroubleshooterRole extends AbstractRootContainerRole
 {
     public TroubleshooterRole()

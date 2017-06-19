@@ -49,9 +49,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Modules are the basic unit of deployment for code and resources within LabKey Server. Modules are deployable
+ * independently of one another. They can have dependencies on services or other resources provided by other modules,
+ * but should declare these dependencies.
  * User: migra
  * Date: Jul 14, 2005
- * Time: 11:43:45 AM
  */
 public interface Module extends Comparable<Module>
 {

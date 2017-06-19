@@ -52,14 +52,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/*
-* User: Dave
-* Date: Dec 2, 2008
-* Time: 9:58:18 AM
-*/
-
 /**
- * A module that does nothing. Used for automated tests.
+ * A module that does nothing. Used for unit and integration tests.
+ * User: Dave
+ * Date: Dec 2, 2008
  */
 public class MockModule implements Module
 {

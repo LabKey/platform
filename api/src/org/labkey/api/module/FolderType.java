@@ -33,15 +33,15 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * User: Mark Igra
- * Date: Aug 3, 2006
- * Time: 8:49:19 PM
- *
  * Interface to define look & feel of a folder. Folders with a folder type other than FolderType.NONE will have a single
  * "tab" owned by the FolderType. This "dashboard" drill down to arbitrary URLs without changing its look & feel.
+ *
+ * User: Mark Igra
+ * Date: Aug 3, 2006
  */
 public interface FolderType
 {
+    /** Almost exclusively used on very old installs where folders were set up prior to the introduction of folder types */
     FolderType NONE = new CustomFolderType();
 
     /**
@@ -175,7 +175,7 @@ public interface FolderType
     /** @return whether this is allowed only as a project */
     boolean isProjectOnlyType();
 
-    /** @return whether this has container tabs */
+    /** @return whether this has container tabs, where subfolders are exposed as tabs in the parent container */
     boolean hasContainerTabs();
 
     /**

@@ -16,18 +16,18 @@
 package org.labkey.api.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONObject;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
+ * Metadata about an available {@link PipelineAction} that can be serialized and sent to the UI to let the user see
+ * and invoke the desired action.
  * User: klum
  * Date: Jan 9, 2010
- * Time: 7:45:00 PM
  */
 public class PipelineActionConfig
 {

@@ -26,15 +26,18 @@ import java.util.List;
  * perform caching to avoid many round-trips to the file system to get metadata,
  * such as the list of children and their types.
  *
+ * This is important because some network file shares can have very high latency for metadata operations,
+ * so we want to avoid asking for the same attributes multiple times.
+ *
  * User: jeckels
  * Date: Aug 17, 2010
  */
 public interface PipelineDirectory
 {
-    public ActionURL cloneHref();
-    public List<PipelineAction> getActions();
-    public void addAction(PipelineAction action);
-    public boolean fileExists(File f);
+    ActionURL cloneHref();
+    List<PipelineAction> getActions();
+    void addAction(PipelineAction action);
+    boolean fileExists(File f);
 
     /**
      * Returns a filtered set of files with cached directory/file status.
@@ -42,10 +45,10 @@ public interface PipelineDirectory
      * @param filter The filter to use on the listed files.
      * @return List of filtered files.
      */
-    public File[] listFiles(FileFilter filter);
+    File[] listFiles(FileFilter filter);
 
-    public String getPathParameter();
+    String getPathParameter();
 
     /** @return the path relative to the root */
-    public String getRelativePath();
+    String getRelativePath();
 }

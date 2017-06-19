@@ -118,6 +118,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
+ * Responsible for user authentication, creating or modifying groups, and similar user/group operations.
  * Note should consider implementing a Tomcat REALM, but we've tried to avoid
  * being tomcat specific.
  */

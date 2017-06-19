@@ -29,7 +29,7 @@ import java.util.Map;
 
 /**
  * Represents an email address that is known to be valid according to RFC 822. Will automatically append
- * the default email domain and do other normalization if needed.
+ * the default email domain from {@link AppProps} and do other normalization if needed.
  *
  * User: adam
  * Date: Aug 24, 2006

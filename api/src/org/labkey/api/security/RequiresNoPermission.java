@@ -21,10 +21,10 @@ import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 
 /**
- * Indicates that an action does not require any kind of authentication or permission to invoke.
+ * Indicates that an action does not require any kind of authentication or permission to invoke. Use with extreme
+ * caution. Typically, actions marked with this annotation will handle their own permission checks in their own code path.
  * User: adam
  * Date: Dec 22, 2009
- * Time: 10:52:20 AM
 */
 public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 @interface RequiresNoPermission

@@ -22,12 +22,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * A loader of columnar data.
  * User: adam
  * Date: Aug 8, 2010
- * Time: 9:55:29 AM
  */
-
-// A loader of columnar data.   
 public interface Loader
 {
     ColumnDescriptor[] getColumns() throws IOException;

@@ -52,15 +52,11 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-/*
-* User: Dave
-* Date: Jan 26, 2009
-* Time: 1:43:47 PM
-*/
-
 /**
- * Definition of a file-based html view in a module.
+ * Metadata for a file-based html view in a module, supplied by a .view.xml file in a module's ./resources/views directory.
  * This is separate from ModuleHtmlView so that it can be cached
+ * User: Dave
+ * Date: Jan 26, 2009
  */
 public class ModuleHtmlViewDefinition
 {
