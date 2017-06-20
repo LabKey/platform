@@ -46,7 +46,6 @@
     {
         dependencies.add("internal/jQuery");
         dependencies.add("Ext4");
-        dependencies.add("core/MenuBarHoverNavigation.js");
     }
 
     private String getSafeName(Portal.WebPart menu)
@@ -304,7 +303,9 @@
     </div>
     <script type="application/javascript">
         var __menus = {};
-        LABKEY.Utils.onReady(function() {
+        LABKEY.Utils.onReady({
+            scripts: ['core/MenuBarHoverNavigation.js'],
+            callback: function() {
             <%
                 for (Portal.WebPart menu : model.getCustomMenus())
                 {
@@ -337,10 +338,11 @@
                 }
             %>
 
-            var p = document.getElementById('permalink');
-            var pvis = document.getElementById('permalink_vis');
-            if (p && pvis) {
-                pvis.href = p.href;
+                var p = document.getElementById('permalink');
+                var pvis = document.getElementById('permalink_vis');
+                if (p && pvis) {
+                    pvis.href = p.href;
+                }
             }
         });
     </script>
