@@ -29,7 +29,13 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
@@ -151,6 +157,12 @@ public class JunitUtil
             throw new IllegalStateException("Did not execute runnable the expected number of times: " + iterations + " vs. " + expected);
     }
 
+
+    private static final java.nio.file.Path SAMPLE_DATA_PATH = Paths.get("test", "sampledata");
+    private static final Object MAP_LOCK = new Object();
+
+    private static Map<String, File> _sampleDataDirectories = null;
+
     /**
      * Retrieves sample data files from the specified module or, if no module is specified, from the top-level sampledata
      * directory. Similar to TestFileUtils.getSampleData() used in Selenium tests.
@@ -159,31 +171,61 @@ public class JunitUtil
      * @param relativePath e.g. "lists/ListDemo.lists.zip" or "OConnor_Test.folder.zip"
      * @return File object to the specified file or directory, if it exists on this server. Otherwise, null.
      */
-    public static @Nullable File getSampleData(@Nullable Module module, String relativePath)
+    public static @Nullable File getSampleData(@Nullable Module module, String relativePath) throws IOException
     {
-        final File sampleDataDir;
+        String projectRoot = AppProps.getInstance().getProjectRoot();
 
-        if (null == module)
-        {
-            String projectRoot = AppProps.getInstance().getProjectRoot();
-
-            if (null == projectRoot)
-                return null;
+        if (null == projectRoot)
+            return null;
 
 //            Some of the individual tests did this... and I'm not sure why
 //            if (projectRoot == null)
 //                projectRoot = System.getProperty("user.dir") + "/..";
 
+        final File sampleDataDir;
+
+        if (null == module)
+        {
             sampleDataDir = new File(projectRoot, "sampledata");
         }
         else
         {
             String sourcePath = module.getSourcePath();
 
-            if (null == sourcePath)
-                return null;
+            if (null != sourcePath)
+            {
+                sampleDataDir = new File(sourcePath, "test/sampledata");
+            }
+            else
+            {
+                String buildPath = module.getBuildPath();
+                String name = Paths.get(buildPath).getFileName().toString();
 
-            sampleDataDir = new File(sourcePath, "test/sampledata");
+                synchronized (MAP_LOCK)
+                {
+                    if (null == _sampleDataDirectories)
+                    {
+                        Map<String, File> map = new HashMap<>();
+
+                        for (java.nio.file.Path path : Arrays.asList(
+                                Paths.get("externalModules"),
+                                Paths.get("server", "modules"),
+                                Paths.get("server", "customModules"),
+                                Paths.get("server", "optionalModules")))
+                        {
+                            Files.walk(Paths.get(projectRoot).resolve(path), 2)
+                                .filter(Files::isDirectory)
+                                .map(p -> p.resolve(SAMPLE_DATA_PATH))
+                                .filter(p -> Files.isDirectory(p))
+                                .forEach(p -> map.put(p.getName(p.getNameCount() - 3).toString(), p.toFile()));
+                        }
+
+                        _sampleDataDirectories = Collections.unmodifiableMap(map);
+                    }
+
+                    sampleDataDir = _sampleDataDirectories.get(name);
+                }
+            }
         }
 
         File file = new File(sampleDataDir, relativePath);
