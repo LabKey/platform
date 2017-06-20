@@ -8,77 +8,72 @@ import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PopupFolderNavView extends PopupMenuView
 {
-    public PopupFolderNavView(NavTree navTree)
+    private ViewContext _context;
+    private Map<Container, NavTree> projectNavTreeMap = new HashMap<>();;
+
+    public PopupFolderNavView(ViewContext context)
     {
-        super(navTree);
+        super();
+        _context = context;
     }
 
-    public static void renderTree(ViewContext context, NavTree tree, Writer out) throws IOException
+    public void render(Writer out) throws IOException
+    {
+        Container c = _context.getContainer();
+
+        if (c.isRoot() || c.isProject())
+            renderFolderNavTree(ContainerManager.getProjectList(_context), out);
+        else if (c.getProject() != null)
+            renderFolderNavTree(getProjectNavTree(c.getProject()), out);
+    }
+
+    private NavTree getProjectNavTree(Container project)
+    {
+        if (!projectNavTreeMap.containsKey(project))
+            projectNavTreeMap.put(project, ContainerManager.getFolderListForUser(project, _context));
+
+        return projectNavTreeMap.get(project);
+    }
+
+    private void renderFolderNavTree(NavTree tree, Writer out) throws IOException
     {
         if (tree == null || !PageFlowUtil.useExperimentalCoreUI())
             return;
 
+        //String text = PageFlowUtil.filter(tree.getText());
+        //out.write("<li><a class=\"projectcollapse\" tabindex=\"0\"><i class=\"fa fa-chevron-left\"></i>" + text + "</a></li>");
+        //renderTreeDivider(out);
+
         for (NavTree child : tree.getChildren())
         {
+            String text = PageFlowUtil.filter(child.getText());
+
             if (child.hasChildren())
             {
-                String text = PageFlowUtil.filter(child.getText());
-
                 out.write("<li class=\"dropdown-submenu\">");
                 renderLink(child, "subexpand-link", out);
                 out.write("<a class=\"subexpand subexpand-target\" tabindex=\"0\"><i class=\"fa fa-chevron-right\"></i></a>");
                 out.write("<ul class=\"dropdown-layer-menu\">");
                 out.write("<li><a class=\"subcollapse\" tabindex=\"0\"><i class=\"fa fa-chevron-left\"></i>" + text + "</a></li>");
                 renderTreeDivider(out);
-                renderTree(context, child, out);
+                renderFolderNavTree(child, out);
                 out.write("</ul>");
                 out.write("</li>");
             }
             else
             {
-                String cls = context.getContainer().getName().equalsIgnoreCase(child.getText()) ? "active" : null;
+                String cls = null;//TODO context.getContainer().getName().equalsIgnoreCase(child.getText()) ? "selected" : null;
                 renderTreeItem(child, cls, out);
             }
         }
     }
 
-    public static void renderFolderNavTrail(ViewContext context, Writer out) throws IOException
-    {
-        List<Container> containers = ContainerManager.containersToRootList(context.getContainer());
-        int size = containers.size();
-
-        // Don't show the nav trail for the root
-        if (size > 1)
-        {
-            String title = containers.get(size - 1).isWorkbook()
-                    ? containers.get(size - 1).getName() : containers.get(size - 1).getTitle();
-
-            out.write("<div class=\"lk-folder-nav-trail\">");
-            if (size < 5)
-            {
-                for (int i = 0; i < size - 1; i++)
-                    renderFolderNavTrailLink(containers.get(i), context.getUser(), out);
-            }
-            else
-            {
-                for (int i = 0; i < 2; i++)
-                    renderFolderNavTrailLink(containers.get(i), context.getUser(), out);
-                out.write("...<i class=\"fa fa-chevron-right\"></i>");
-                for (int i = (size - 2); i < (size - 1); i++)
-                    renderFolderNavTrailLink(containers.get(i), context.getUser(), out);
-            }
-
-            out.write("<span>" + PageFlowUtil.filter(title) + "</span>");
-            out.write("</div>");
-            out.write("<div class=\"divider lk-project-nav-divider\"></div>");
-        }
-    }
-
-    private static void renderFolderNavTrailLink(Container container, User user, Writer out) throws IOException
+    public static void renderFolderNavTrailLink(Container container, User user, Writer out) throws IOException
     {
         if (container.hasPermission(user, ReadPermission.class))
             out.write("<a href=\"" + PageFlowUtil.filter(container.getStartURL(user)) +"\">" + PageFlowUtil.filter(container.getTitle()) + "</a>");
