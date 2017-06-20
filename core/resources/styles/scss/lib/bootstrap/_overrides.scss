@@ -63,8 +63,73 @@
   opacity: $lk-tooltip-opacity;
 }
 
+
+.context-icon {
+  padding: $lk-form-context-icon-padding;
+}
+
+.input-group {
+  position: $lk-input-group-position;
+  display: $lk-input-group-display;
+  border-collapse: $lk-input-group-border-collapse;
+}
+
+.input-group-addon {
+    padding-left: $lk-input-group-addon-padding-left;
+    padding-right: $lk-input-group-addon-padding-right;
+  > .validation-state-icon {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    z-index: 99;
+  }
+  &.validation-state {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+.input-group.input-group-unstyled.input-group-horizontal {
+  display: $lk-input-group-display;
+}
+
+.input-group-unstyled .input-group-addon {
+  border-radius: $lk-input-group-unstyled-border-radius;
+  border: $lk-input-group-unstyled-border;
+  background-color: $lk-input-group-unstyled-bg-color;
+}
+
+.help-block .form-text {
+  font-size: $lk-form-contextContent-size;
+  &has.error {
+    color: $lk-form-group-error-color;
+  }
+}
+
+.control-label {
+  word-break: $lk-form-control-label-break;
+  &has.error {
+    color: $lk-form-group-error-color;
+  }
+}
+
 .form-control {
   border-radius: $lk-form-control-border-radius;
+}
+
+.has-error .form-control {
+    border-color: $lk-form-group-error-color;
+    border-width: $lk-form-control-border-width;
+}
+
+.has-warning .form-control {
+    border-color: $lk-form-group-warning-color;
+    border-width:$lk-form-control-border-width;
+}
+
+.has-success .form-control {
+    border-color: $lk-form-group-success-color;
+    border-width: $lk-form-control-border-width;
 }
 
 /*
@@ -76,13 +141,19 @@
 *
 */
 
-@media (min-width: 768px) {
-  .form-horizontal .control-label {
-    text-align: left;
+@media (max-width: $lk-screen-sm-min) {
+  .form-control.inline-stateful-input {
+    margin-bottom: $lk-form-group-margin-bottom;
   }
 }
 
-@media (min-width: 1200px) and (max-width: 1399px) {
+@media (min-width: $lk-screen-sm-min) {
+  .form-horizontal .control-label {
+    text-align: $lk-form-control-text-align;
+  }
+}
+
+@media (min-width: $lk-screen-lg-min) and (max-width: 1399px) {
   .hidden-lg {
     display: none !important;
   }

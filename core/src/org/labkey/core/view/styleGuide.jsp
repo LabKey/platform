@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.util.element.Input" %>
 <%@ page import="org.labkey.api.util.element.Select" %>
 <%@ page import="org.labkey.api.util.element.Option" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -166,49 +167,76 @@
     </labkey:panel>
     <labkey:panel id="forms" className="lk-sg-section">
         <h1 class="page-header">Forms</h1>
-        <p>Horizontal form</p>
+        <h2>Horizontal form</h2>
         <div class="lk-sg-example">
             <labkey:form action="some-action" layout="horizontal">
-                <labkey:input name="name" label="Name" placeholder="M Beaker" id="exampleInputName1"/>
+                <labkey:input name="name" label="Standard form" placeholder="Placeholder Text" id="exampleInputName1"/>
                 <labkey:input name="email" label="Email address" placeholder="beaker@labkey.com" id="exampleInputEmail1"/>
-                <labkey:input name="avatar" label="Avatar" type="file" id="avatar1" message="A special message about the avatar field"/>
-                <labkey:input name="somtext" label="This Area" type="textarea" id="area1" placeholder="These are words"/>
+                <labkey:input name="avatar" label="Avatar" type="file" id="avatar1" contextContent="It's best to use an image smaller than 400x400 pixels"/>
+                <labkey:input name="somtext" label="Text Area" type="textarea" id="area1" placeholder="These are words that can be on many lines"/>
                 <% /* This is an example of a select builder -- hopefully can be replaced soon with a <labkey:select> */ %>
                 <%= new Select.SelectBuilder().name("selectfield").label("Nominal select")
                         .layout(Input.Layout.HORIZONTAL)
                         .formGroup(true)
                         .addOption(new Option.OptionBuilder().build())
                         .addOption(new Option.OptionBuilder().value("BMW").label("Beemer").build())
+                        .addOption(new Option.OptionBuilder().value("VW").label("Volkswagen").build())
+                        .addOption(new Option.OptionBuilder().value("GM").label("General Motors").build())
                 %>
                 <button type="submit" class="btn btn-default">Invite</button>
             </labkey:form>
         </div>
-        <p>Inline form</p>
+        <h2>Inline form</h2>
         <div class="lk-sg-example">
-            <form action="some-action" class="form-inline">
-                <div class="form-group">
-                    <label for="exampleInputName4" class="control-label">Name</label>
-                    <input type="text" class="form-control" name="name" id="exampleInputName4" placeholder="M Beaker">
-                </div>
-                <div class="form-group">
-                    <label for="exampleInputEmail4" class="control-label">Email address</label>
-                    <input type="email" class="form-control" name="email" id="exampleInputEmail4" placeholder="beaker@labkey.com">
-                </div>
-                <button type="submit" class="btn btn-default">Invite</button>
-            </form>
             <labkey:form action="some-action" layout="inline">
-                <labkey:input name="name" label="Name" placeholder="M Beaker" id="exampleInputName2"/>
-                <labkey:input name="email" label="Email address" placeholder="beaker@labkey.com" id="exampleInputEmail2" type="email"/>
+                <labkey:input name="name" label="Name" stateMessage="good name." placeholder="M Beaker" id="exampleInputName2"/>
+                <labkey:input name="email" label="Email address" stateMessage="may want something different." placeholder="beaker@labkey.com" id="exampleInputEmail2" type="email"/>
+                <labkey:input name="organization" label="Organization" placeholder="LabKey" id="exampleInputOrg2"/>
                 <button type="submit" class="btn btn-default">Invite</button>
             </labkey:form>
         </div>
-        <p>LabKey property form using tables (DEPRECATED)</p>
+        <br>
+        <h2>Context Content</h2>
+        <% String helpText = "Go to home: <a href=" + ActionURL.getBaseServerURL() + ">Server Home</a>";%>
+        <labkey:form action="some-action" layout="horizontal">
+            <labkey:input name="name" label="Rich Content" placeholder="URL of page" contextContent="<%= helpText %>" id="exampleRichContext"/>
+        </labkey:form>
+        <labkey:form action="some-action" layout="inline">
+            <labkey:input name="name" label="Inline Context" contextContent="This is some help text" placeholder="M Beaker" id="exampleInlineContext"/>
+        </labkey:form>
+        <br>
+        <h2>Validation States</h2>
+        <labkey:form action="some-action" layout="inline">
+            <labkey:input name="name" label="Success" state="success" stateMessage="good name." placeholder="M Beaker" id="exampleSuccessInput"/>
+            <labkey:input name="email" label="Warning" contextContent="Your email goes here" state="warning" stateMessage="may want something different." placeholder="beaker@labkey.com" id="exampleWarningInput" type="email"/>
+            <labkey:input name="organization" label="Danger" state="error" stateMessage="This is required" placeholder="LabKey" id="exampleDangerInput"/>
+            <button type="submit" class="btn btn-default">Invite</button>
+        </labkey:form>
+        <br>
+        <labkey:form action="some-action" layout="horizontal">
+            <labkey:input name="name" label="Good Horizontal Input" state="success" placeholder="URL of page" id="exampleGoodInput"/>
+        </labkey:form>
+        <labkey:form action="some-action" layout="horizontal">
+            <labkey:input name="name" label="Bad Horizontal Input" state="error" placeholder="URL of page" id="exampleBadInput"/>
+        </labkey:form>
+
+        <br>
+        <h2>LabKey table property form (DEPRECATED)</h2>
+        <br>
         <div class="lk-sg-example">
             <form action="labkey">
                 <table width="100%" cellpadding="0">
                     <tr>
                         <td class="labkey-form-label">Header short name (appears in every page header and in emails)</td>
                         <td><input type="text" name="systemShortName" size="50" value="LabKey Server"></td>
+                    </tr>
+                    <tr>
+                        <td class="labkey-form-label">Old way of doing things</td>
+                        <td><input type="text" name="systemShortName" size="50" value="Default value"></td>
+                    </tr>
+                    <tr>
+                        <td class="labkey-form-label">Quoth the raven: nevermore!</td>
+                        <td><input type="text" name="systemShortName" size="50" value="It's a good story"></td>
                     </tr>
                 </table>
             </form>

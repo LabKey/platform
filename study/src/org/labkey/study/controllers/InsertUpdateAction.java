@@ -165,8 +165,6 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                                         out.write("</option>\n");
                                     }
                                     out.write("</select>");
-                                    if (newUI)
-                                        out.write("</div>");
                                 }
                             };
                         }
