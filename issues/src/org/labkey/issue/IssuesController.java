@@ -443,7 +443,7 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return new ListAction(getViewContext()).appendNavTrail(root).
-                    addChild(getSingularEntityName() + " " + _issue.getIssueId() + ": " + _issue.getTitle(), getURL());
+                    addChild(getSingularEntityName() + " " + _issue.getIssueId() + ": " + StringUtils.trimToEmpty(_issue.getTitle()), getURL());
         }
 
         public ActionURL getURL()
@@ -1429,7 +1429,7 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return new DetailsAction(_issue, getViewContext()).appendNavTrail(root)
-                    .addChild("Update " + getSingularEntityName() + ": " + _issue.getTitle());
+                    .addChild("Update " + getSingularEntityName() + ": " + StringUtils.trimToEmpty(_issue.getTitle()));
         }
     }
 

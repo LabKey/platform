@@ -119,7 +119,7 @@ public class Issue extends Entity implements Serializable, Cloneable
         setResolved(new Date());      // Current date
 
         setAssignedTo(IssueManager.validateAssignedTo(c, getCreatedBy()));
-        if (getTitle().startsWith("**"))
+        if (getTitle() != null && getTitle().startsWith("**"))
         {
             setTitle(getTitle().substring(2));
         }
