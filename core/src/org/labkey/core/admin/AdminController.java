@@ -165,6 +165,7 @@ import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -760,6 +761,69 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @RequiresPermission(AdminPermission.class)
+    public class HealthCheckAction extends ApiAction
+    {
+        @Override
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            Map<String, Object> healthValues = new HashMap<>();
+
+            healthValues.put("DbConnectionStatus", dbConnectionHealth());
+            healthValues.put("MemoryStatus", memoryHealth());
+
+            return new ApiSimpleResponse(healthValues);
+        }
+
+        private Map<String, Boolean> dbConnectionHealth() throws Exception
+        {
+            Map<String, Boolean> healthValues = new HashMap<>();
+            Boolean allConnected = true;
+            for (DbScope dbScope : DbScope.getDbScopes())
+            {
+                Boolean dbConnected;
+                try (Connection conn = dbScope.getConnection())
+                {
+                    dbConnected = conn != null;
+                }
+                catch (SQLException e)
+                {
+                    dbConnected = false;
+                }
+
+                healthValues.put(dbScope.getDatabaseName(), dbConnected);
+                allConnected &= dbConnected;
+            }
+
+            healthValues.put("@@OverallStatus@@", allConnected);
+            return healthValues;
+        }
+
+        private Map<String, Object> memoryHealth()
+        {
+            Map<String, Object> memoryReports = new HashMap<>();
+
+            //Record the property table
+            MemBean mem = new MemBean(getViewContext().getRequest(), MemTracker.getInstance().beforeReport());
+            mem.systemProperties.forEach( property -> memoryReports.put(property.getKey(), property.getValue()));
+
+            //Record the usage stats for each memory (sub)type
+            Map<String, Object> memUsage = new HashMap<>();
+            mem.memoryUsages.forEach( usage -> {
+                Map<String, Object> usageMap = new HashMap<>();
+                MemoryUsageSummary summary = usage.getValue();
+                usageMap.put("Init", summary.getInit());
+                usageMap.put("Used", summary.getUsed());
+                usageMap.put("Committed", summary.getCommitted());
+                usageMap.put("Max", summary.getMax());
+
+                memUsage.put(usage.getKey(), usageMap);
+            });
+            memoryReports.put("Usage", memUsage);
+
+            return memoryReports;
+        }
+    }
 
     // No security checks... anyone (even guests) can view the credits page
     @RequiresNoPermission
