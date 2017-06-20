@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -158,6 +159,7 @@ public class JunitUtil
     }
 
 
+    private static final Logger LOG = Logger.getLogger(JunitUtil.class);
     private static final java.nio.file.Path SAMPLE_DATA_PATH = Paths.get("test", "sampledata");
     private static final Object MAP_LOCK = new Object();
 
@@ -201,6 +203,9 @@ public class JunitUtil
                 String buildPath = module.getBuildPath();
                 String name = Paths.get(buildPath).getFileName().toString();
 
+                LOG.info("buildPath: " + buildPath);
+                LOG.info("name: " + name);
+
                 synchronized (MAP_LOCK)
                 {
                     if (null == _sampleDataDirectories)
@@ -224,6 +229,12 @@ public class JunitUtil
                     }
 
                     sampleDataDir = _sampleDataDirectories.get(name);
+
+                    if (null == sampleDataDir)
+                    {
+                        LOG.info("null == sampleDataDir!");
+                        LOG.info(_sampleDataDirectories);
+                    }
                 }
             }
         }
