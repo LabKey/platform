@@ -504,6 +504,7 @@ core/src/org/labkey/core/portal/customizeErrors.jsp -text
 core/src/org/labkey/core/project/FolderNavigationForm.java -text
 core/src/org/labkey/core/project/betaNav.jsp -text
 core/src/org/labkey/core/project/folderNav.jsp -text
+core/src/org/labkey/core/project/menuProjectNav.jsp -text
 core/src/org/labkey/core/project/modulePropertiesAdmin.jsp -text
 core/src/org/labkey/core/project/projectNav.jsp -text
 core/src/org/labkey/core/project/projects.jsp -text

@@ -172,7 +172,7 @@
                 target = $(this).parent().next('.dropdown-menu')
             }
 
-            if (partName && safeName && target && partName != 'lk-project-nav') {
+            if (partName && safeName && target) {
                 var id = target.attr('id');
                 if (!id) {
                     id = LABKEY.Utils.id();

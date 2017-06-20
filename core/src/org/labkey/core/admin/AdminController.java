@@ -460,7 +460,13 @@ public class AdminController extends SpringActionController
 
         public ActionURL getCreateProjectURL(@Nullable ActionURL returnURL)
         {
-            ActionURL result = new ActionURL(CreateFolderAction.class, ContainerManager.getRoot());
+            return getCreateFolderURL(ContainerManager.getRoot(), returnURL);
+        }
+
+        @Override
+        public ActionURL getCreateFolderURL(Container c, @Nullable ActionURL returnURL)
+        {
+            ActionURL result = new ActionURL(CreateFolderAction.class, c);
             if (returnURL != null)
             {
                 result.addParameter(ActionURL.Param.returnUrl, returnURL.toString());

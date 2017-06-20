@@ -126,7 +126,7 @@
                             if (context.isShowFolders())
                             {
 %>
-                            <li class="mobiledrop" data-webpart="projectnav" data-name="projectnav">
+                            <li class="mobiledrop" data-webpart="MenuProjectNav" data-name="MenuProjectNav">
                                 <a href="#" class="mobiledrop-toggle" data-toggle="mobiledrop">
                                     <i class="fa fa-folder-open"></i>
                                     <span>Projects</span>
@@ -154,42 +154,11 @@
                 if (context.isShowFolders())
                 {
 %>
-                <li class="dropdown hidden-xs" data-webpart="betanav" data-name="betanav">
+                <li class="dropdown hidden-xs" data-webpart="MenuProjectNav" data-name="MenuProjectNav">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                         <i class="fa fa-folder-open"></i>&nbsp;<%=h(model.getProjectTitle())%>
                     </a>
-                    <ul class="dropdown-menu">
-                        <% PopupFolderNavView.renderFolderNavTrail(context, out); %>
-<%
-                    if (context.getContainer().isRoot() || context.getContainer().isProject())
-                        PopupFolderNavView.renderTree(context, ContainerManager.getProjectList(context), out);
-                    else
-                        PopupFolderNavView.renderTree(context, FolderMenu.getNavTree(context), out);
-%>
-<%
-                    if (c.hasPermission(context.getUser(), AdminPermission.class))
-                    {
-%>
-                        <div class="divider lk-project-nav-divider"></div>
-                        <div class="lk-project-nav-footer">
-                            <span class="button-icon">
-                                <a href="<%=new ActionURL(AdminController.CreateFolderAction.class, c)%>" title="New Subfolder">
-                                    <span class="fa-stack fa-1x labkey-fa-stacked-wrapper">
-                                        <span class="fa fa-folder-o fa-stack-2x labkey-main-menu-icon" alt="New Subfolder"></span>
-                                        <span class="fa fa-plus-circle fa-stack-1x"></span>
-                                    </span>
-                                </a>
-                            </span>
-                            <span class="button-icon">
-                                <a id="permalink_vis" href="#" title="Permalink Page">
-                                    <span class="fa fa-link labkey-main-menu-icon" alt="Permalink Page"></span>
-                                </a>
-                            </span>
-                        </div>
-<%
-                    }
-%>
-                    </ul>
+                    <ul class="dropdown-menu"></ul>
                 </li>
 <%
                 }
