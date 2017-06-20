@@ -88,6 +88,11 @@ public class Input
         return _formGroup;
     }
 
+    public boolean isHidden()
+    {
+        return "hidden".equalsIgnoreCase(_type);
+    }
+
     public String getId()
     {
         return _id;
@@ -163,24 +168,30 @@ public class Input
     {
         StringBuilder sb = new StringBuilder();
 
-        if (isFormGroup())
-            sb.append("<div class=\"form-group\">");
+        if (!isHidden())
+        {
+            if (isFormGroup())
+                sb.append("<div class=\"form-group\">");
 
-        if (isShowLabel())
-            doLabel(sb);
+            if (isShowLabel())
+                doLabel(sb);
 
-        // wrapper for layout
-        if (Layout.HORIZONTAL.equals(getLayout()))
-            sb.append("<div class=\"col-sm-9 col-lg-10\">");
+            // wrapper for layout
+            if (Layout.HORIZONTAL.equals(getLayout()))
+                sb.append("<div class=\"col-sm-9 col-lg-10\">");
+        }
 
         doInput(sb);
 
-        if (Layout.HORIZONTAL.equals(getLayout()))
-            sb.append("</div>");
-        // end wrapper for layout
+        if (!isHidden())
+        {
+            if (Layout.HORIZONTAL.equals(getLayout()))
+                sb.append("</div>");
+            // end wrapper for layout
 
-        if (isFormGroup())
-            sb.append("</div>");
+            if (isFormGroup())
+                sb.append("</div>");
+        }
 
         return sb.toString();
     }
@@ -189,7 +200,7 @@ public class Input
     {
         sb.append("<input");
         sb.append(" type=\"").append(getType()).append("\"");
-        if (StringUtils.isNotEmpty(getClassName()))
+        if (StringUtils.isNotEmpty(getClassName()) && !isHidden())
             sb.append(" class=\"").append(PageFlowUtil.filter(getClassName())).append("\"");
 
         sb.append(" name=\"").append(getName()).append("\"");
