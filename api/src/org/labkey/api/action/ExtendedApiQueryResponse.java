@@ -68,6 +68,12 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         super(view, schemaEditable, includeLookupInfo, schemaName, queryName, offset, fieldKeys, metaDataOnly, includeDetailsColumn, includeUpdateColumn, false);
     }
 
+    public ExtendedApiQueryResponse(QueryView view, boolean schemaEditable, boolean includeLookupInfo, String schemaName, String queryName, long offset,
+                                    List<FieldKey> fieldKeys, boolean metaDataOnly, boolean includeDetailsColumn, boolean includeUpdateColumn, boolean includeMetaData)
+    {
+        super(view, schemaEditable, includeLookupInfo, schemaName, queryName, offset, fieldKeys, metaDataOnly, includeDetailsColumn, includeUpdateColumn, false, includeMetaData);
+    }
+
     // When true, serialize multi-value columns as an array of objects containing 'value', 'url', 'displayValue'
     public void arrayMultiValueColumns(boolean arrayMultiValueColumns)
     {

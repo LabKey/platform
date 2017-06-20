@@ -82,10 +82,12 @@ public class ApiQueryResponse implements ApiResponse
     private boolean _includeUpdateColumn;
     private boolean _includeDisplayValues;
     private List<FieldKey> _columnFilter;
+    private boolean _includeMetaData;
 
+    // TODO: This is silly... switch to builder pattern, or at least a constructor that takes reasonable strategies
     public ApiQueryResponse(QueryView view, boolean schemaEditable, boolean includeLookupInfo,
                             String schemaName, String queryName, long offset, List<FieldKey> fieldKeys, boolean metaDataOnly,
-                            boolean includeDetailsColumn, boolean includeUpdateColumn, boolean includeDisplayValues)
+                            boolean includeDetailsColumn, boolean includeUpdateColumn, boolean includeDisplayValues, boolean includeMetaData)
     {
         _viewContext = view.getViewContext();
         _schemaEditable = schemaEditable;
@@ -98,7 +100,15 @@ public class ApiQueryResponse implements ApiResponse
         _includeDetailsColumn = includeDetailsColumn;
         _includeUpdateColumn = includeUpdateColumn;
         _includeDisplayValues = includeDisplayValues;
+        _includeMetaData = includeMetaData;
         view.exportToApiResponse(this);
+    }
+
+    public ApiQueryResponse(QueryView view, boolean schemaEditable, boolean includeLookupInfo,
+                            String schemaName, String queryName, long offset, List<FieldKey> fieldKeys, boolean metaDataOnly,
+                            boolean includeDetailsColumn, boolean includeUpdateColumn, boolean includeDisplayValues)
+    {
+        this(view, schemaEditable, includeLookupInfo, schemaName, queryName, offset, fieldKeys, metaDataOnly, includeDetailsColumn, includeUpdateColumn, includeDisplayValues, true);
     }
 
     public ApiQueryResponse()
@@ -129,14 +139,15 @@ public class ApiQueryResponse implements ApiResponse
         {
             writeMetaData(writer);
             if (_metaDataOnlyIncludesEmptyRowset)
-                writeEmptyRowsset(writer);
+                writeEmptyRowset(writer);
         }
         else
         {
             // First run the query, so on potential SQLException we only serialize the exception instead of outputting all the metadata before the exception
             try (Results results = getResults())
             {
-                writeMetaData(writer);
+                if (_includeMetaData)
+                    writeMetaData(writer);
 
                 boolean complete = writeRowset(writer, results);
 
@@ -450,7 +461,7 @@ public class ApiQueryResponse implements ApiResponse
     }
 
 
-    protected void writeEmptyRowsset(ApiResponseWriter writer) throws Exception
+    protected void writeEmptyRowset(ApiResponseWriter writer) throws Exception
     {
         writer.startList("rows");
         writer.endList();

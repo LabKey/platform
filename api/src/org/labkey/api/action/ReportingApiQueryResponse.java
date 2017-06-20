@@ -35,12 +35,17 @@ import java.util.Map;
  */
 public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
 {
-    private SchemaKey _schemaPath = null;
+    private final SchemaKey _schemaPath;
 
     public ReportingApiQueryResponse(QueryView view, boolean schemaEditable, boolean includeLookupInfo, String queryName, long offset, List<FieldKey> fieldKeys, boolean metaDataOnly, boolean includeDetailsColumn, boolean includeUpdateColumn)
     {
+        this(view, schemaEditable, includeLookupInfo, queryName, offset, fieldKeys, metaDataOnly, includeDetailsColumn, includeUpdateColumn, true);
+    }
+
+    public ReportingApiQueryResponse(QueryView view, boolean schemaEditable, boolean includeLookupInfo, String queryName, long offset, List<FieldKey> fieldKeys, boolean metaDataOnly, boolean includeDetailsColumn, boolean includeUpdateColumn, boolean includeMetaData)
+    {
         // Mostly piggybacking on ApiQueryResponse constructor
-        super(view, schemaEditable, includeLookupInfo, "", queryName, offset, fieldKeys, metaDataOnly, includeDetailsColumn, includeUpdateColumn);
+        super(view, schemaEditable, includeLookupInfo, "", queryName, offset, fieldKeys, metaDataOnly, includeDetailsColumn, includeUpdateColumn, includeMetaData);
         _schemaPath = view.getTable().getUserSchema().getSchemaPath();
         _metaDataOnlyIncludesEmptyRowset = false;
     }
