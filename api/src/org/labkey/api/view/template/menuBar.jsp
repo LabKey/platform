@@ -120,9 +120,9 @@
 </div>
 <div class="labkey-main-menu main-menu-replicate"></div>
 <script type="text/javascript">
-    Ext4.onReady(function() {
-
-        LABKEY.requiresScript("core/MenuBarHoverNavigation.js", function() {
+    LABKEY.Utils.onReady({
+        scripts: ['core/MenuBarHoverNavigation.js'],
+        callback: function() {
             var loginUrl = <%= PageFlowUtil.jsString(PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(getContainer(), getActionURL()).toString()) %>;
 
             HoverNavigation._project = new HoverNavigation({
@@ -170,7 +170,7 @@
 <%
     }
 %>
-        });
+        }
     });
 </script>
 </div>
