@@ -1272,6 +1272,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 setSelectedTabId(form.getTabId());
 
             addClientDependency(ClientDependency.fromPath("clientapi/ext3"));
+            addClientDependency(ClientDependency.fromPath("Ext4"));
             if ("concepts".equals(form.getTabId()))
                 addClientDependency(ClientDependency.fromPath("sqv"));
         }
