@@ -792,9 +792,6 @@ public class DataColumn extends DisplayColumn
                     renderHiddenFormInput(ctx, out, formFieldName, value);
             }
         }
-
-        if (newUI)
-            out.write("</div>");
     }
 
     protected String getAutoCompleteURLPrefix()

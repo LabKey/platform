@@ -8,16 +8,28 @@ import java.io.IOException;
 
 public class InputTag extends SimpleTagBase
 {
+    private String contextContent;
     private Boolean formGroup;
     private String id;
     private String label;
-    private String message;
+    private String stateMessage;
     private String name;
     private String onChange;
     private String onKeyUp;
     private String placeholder;
+    private String state;
     private String type;
     private Object value;
+
+    public void setState(String state)
+    {
+        this.state = state;
+    }
+
+    public void setContextContent(String contextContent)
+    {
+        this.contextContent = contextContent;
+    }
 
     public void setFormGroup(Boolean formGroup)
     {
@@ -34,9 +46,9 @@ public class InputTag extends SimpleTagBase
         this.label = label;
     }
 
-    public void setMessage(String message)
+    public void setStateMessage(String stateMessage)
     {
-        this.message = message;
+        this.stateMessage = stateMessage;
     }
 
     public void setName(String name)
@@ -78,15 +90,23 @@ public class InputTag extends SimpleTagBase
         else
             input = new Input.InputBuilder().type(type);
 
-        input.formGroup(formGroup)
+        input.contextContent(contextContent)
+            .formGroup(formGroup)
             .id(id)
             .label(label)
-            .message(message)
+            .stateMessage(stateMessage)
             .name(name)
             .onChange(onChange)
             .onKeyUp(onKeyUp)
             .placeholder(placeholder)
             .value(value);
+
+        if (Input.State.ERROR.toString().equalsIgnoreCase(state))
+            input.state(Input.State.ERROR);
+        else if (Input.State.WARNING.toString().equalsIgnoreCase(state))
+            input.state(Input.State.WARNING);
+        else if (Input.State.SUCCESS.toString().equalsIgnoreCase(state))
+            input.state(Input.State.SUCCESS);
 
         FormTag form = (FormTag) findAncestorWithClass(this, FormTag.class);
 
@@ -99,6 +119,10 @@ public class InputTag extends SimpleTagBase
 
             if (Input.Layout.HORIZONTAL.toString().equalsIgnoreCase(form.getLayout()))
                 input.layout(Input.Layout.HORIZONTAL);
+
+            if (Input.Layout.INLINE.toString().equalsIgnoreCase(form.getLayout()))
+                input.layout(Input.Layout.INLINE);
+
         }
 
         getOut().write(input.toString());

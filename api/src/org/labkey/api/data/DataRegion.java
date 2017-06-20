@@ -2314,7 +2314,7 @@ public class DataRegion extends AbstractDataRegion
             renderer.renderDetailsData(ctx, out, span);
         if (newUI)
             renderInputError(errors, out, span);
-        out.write(newUI ? "</div>" : "</tr>");
+        out.write(newUI ? "</div></div>" : "</tr>");
     }
 
     private Set<String> getErrors(RenderContext ctx, DisplayColumn... renderers)
@@ -2346,11 +2346,12 @@ public class DataRegion extends AbstractDataRegion
 
     private void renderInputError(Set<String> errors, Writer out, int span) throws IOException
     {
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         if (!errors.isEmpty())
         {
-            if (PageFlowUtil.useExperimentalCoreUI())
+            if (newUI)
             {
-                out.write("<span class=\"help-block\">");
+                out.write("<span class=\"help-block form-text\">");
                 for (String error : errors)
                     out.write(error);
                 out.write("</span>");

@@ -234,6 +234,10 @@
         <tag-class>org.labkey.api.jsp.taglib.InputTag</tag-class>
         <body-content>empty</body-content>
         <attribute>
+            <name>contextContent</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
             <name>formGroup</name>
             <rtexprvalue>true</rtexprvalue>
             <type>java.lang.Boolean</type>
@@ -247,7 +251,7 @@
             <rtexprvalue>true</rtexprvalue>
         </attribute>
         <attribute>
-            <name>message</name>
+            <name>stateMessage</name>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
         <attribute>
@@ -264,6 +268,10 @@
         </attribute>
         <attribute>
             <name>onKeyUp</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>state</name>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
         <attribute>

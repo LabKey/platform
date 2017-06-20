@@ -15,8 +15,16 @@ public class Input
         INLINE
     }
 
+    public enum State
+    {
+        ERROR,
+        WARNING,
+        SUCCESS
+    }
+
     private final boolean _checked;
     private final String _className;
+    private final String _contextContent;
     private final boolean _disabled;
     private final Format _format;
     private final boolean _formGroup;
@@ -24,19 +32,21 @@ public class Input
     private final String _label;
     private final String _labelClassName;
     private final Layout _layout;
-    private final String _message;
     private final String _name;
     private final String _onChange;
     private final String _onKeyUp;
     private final String _placeholder;
     private final boolean _required;
     private final Integer _size;
+    private final State _state;
+    private final String _stateMessage;
     private final boolean _showLabel;
     private final String _type;
     private final Object _value;
 
     protected Input(InputBuilder builder)
     {
+        _contextContent = builder._contextContent;
         _checked = builder._checked;
         _className = builder._className;
         _disabled = builder._disabled;
@@ -46,7 +56,7 @@ public class Input
         _label = builder._label;
         _labelClassName = builder._labelClassName;
         _layout = builder._layout;
-        _message = builder._message;
+        _stateMessage = builder._stateMessage;
         _name = builder._name;
         _onChange = builder._onChange;
         _onKeyUp = builder._onKeyUp;
@@ -54,8 +64,14 @@ public class Input
         _required = builder._required;
         _type = builder._type;
         _size = builder._size;
+        _state = builder._state;
         _showLabel = builder._showLabel == null ? builder._label != null : builder._showLabel;
         _value = builder._value;
+    }
+
+    private String getContextContent()
+    {
+        return _contextContent;
     }
 
     private boolean isCheckbox()
@@ -113,9 +129,9 @@ public class Input
         return _layout;
     }
 
-    public String getMessage()
+    public String getStateMessage()
     {
-        return _message;
+        return _stateMessage;
     }
 
     public String getName()
@@ -148,6 +164,11 @@ public class Input
         return _size;
     }
 
+    public State getState()
+    {
+        return _state;
+    }
+
     public boolean isShowLabel()
     {
         return _showLabel;
@@ -167,27 +188,60 @@ public class Input
     public String toString()
     {
         StringBuilder sb = new StringBuilder();
+        boolean isHorizontal = Layout.HORIZONTAL.equals(getLayout());
+        boolean isInline = Layout.INLINE.equals(getLayout());
+        boolean needsInputGroup = needsInputGroup();
 
         if (!isHidden())
         {
             if (isFormGroup())
-                sb.append("<div class=\"form-group\">");
+            {
+                sb.append("<div class=\"form-group");
+                if (null != getState())
+                    doValidationStates(sb);
+                sb.append("\">");
+            }
 
             if (isShowLabel())
                 doLabel(sb);
 
+            if (isInline && StringUtils.isNotEmpty(getContextContent()))
+                doContextField(sb);
+
+            sb.append("</label> ");
+
             // wrapper for layout
-            if (Layout.HORIZONTAL.equals(getLayout()))
+            if (isHorizontal)
                 sb.append("<div class=\"col-sm-9 col-lg-10\">");
+
+            // wrapper for input group
+            if (needsInputGroup)
+            {
+                sb.append("<div class=\"input-group input-group-unstyled");
+                if (isHorizontal)
+                    sb.append(" input-group-horizontal");
+                sb.append("\">");
+            }
         }
 
         doInput(sb);
 
         if (!isHidden())
         {
-            if (Layout.HORIZONTAL.equals(getLayout()))
+
+            if (null != getState())
+                doStateIcon(sb);
+
+            if (isHorizontal && StringUtils.isNotEmpty(getContextContent()))
+                doContextField(sb);
+
+            if (needsInputGroup)
                 sb.append("</div>");
-            // end wrapper for layout
+                // end wrapper for input group
+
+            if (isHorizontal)
+                sb.append("</div>");
+                // end wrapper for layout
 
             if (isFormGroup())
                 sb.append("</div>");
@@ -201,7 +255,12 @@ public class Input
         sb.append("<input");
         sb.append(" type=\"").append(getType()).append("\"");
         if (StringUtils.isNotEmpty(getClassName()) && !isHidden())
-            sb.append(" class=\"").append(PageFlowUtil.filter(getClassName())).append("\"");
+        {
+            sb.append(" class=\"").append(PageFlowUtil.filter(getClassName()));
+            if (null != getState() && Layout.INLINE.equals(getLayout()))
+                sb.append(" ").append("inline-stateful-input");
+            sb.append("\"");
+        }
 
         sb.append(" name=\"").append(getName()).append("\"");
 
@@ -211,6 +270,8 @@ public class Input
             sb.append(" placeholder=\"").append(PageFlowUtil.filter(getPlaceholder())).append("\"");
         if (getSize() != null)
             sb.append(" size=\"").append(getSize()).append("\"");
+        if (StringUtils.isNotEmpty(getContextContent()))
+            sb.append(" aria-describedby=\"").append(getId()).append("HelpBlock\"");
 
         doValue(sb);
         doInputEvents(sb);
@@ -252,8 +313,57 @@ public class Input
 
         if (getLabel() != null)
             sb.append(PageFlowUtil.filter(getLabel()));
+    }
 
-        sb.append("</label> ");
+    private void doStateIcon(StringBuilder sb)
+    {
+        String iconClass = State.SUCCESS.equals(getState()) ? "fa fa-check-circle" : "fa fa-exclamation-circle";
+        sb.append("<span class=\"input-group-addon validation-state\">");
+        sb.append("<i class=\" validation-state-icon ");
+        sb.append(iconClass).append("\"");
+        if (null != getStateMessage())
+        {
+            sb.append(" data-tt=\"tooltip\" data-container=\"body\" data-placement=\"top\" title=\"");
+            sb.append(getStateMessage());
+        }
+        sb.append("\"></i>");
+        sb.append("</span>");
+    }
+
+    private boolean needsInputGroup()
+    {
+        return Layout.INLINE.equals(getLayout()) && StringUtils.isNotEmpty(getContextContent()) || null != getState();
+    }
+
+    private void doValidationStates(StringBuilder sb)
+    {
+        if (State.ERROR.equals(getState()))
+            sb.append(" has-error");
+        else if (State.WARNING.equals(getState()))
+            sb.append(" has-warning");
+        else if (State.SUCCESS.equals(getState()))
+            sb.append(" has-success");
+    }
+
+    private void doContextField(StringBuilder sb)
+    {
+        if (Layout.INLINE.equals(getLayout()))
+        {
+            //not enough room when inline; context content hidden under '?' icon, tooltip shown on mouseover
+            sb.append("<i class=\"fa fa-question-circle context-icon\" data-container=\"body\" data-tt=\"tooltip\" data-placement=\"top\" title=\"");
+            sb.append(getContextContent());
+            sb.append("\"></i>");
+        }
+        else
+        {
+            //context content goes underneath input for horizontal/vertical layout
+            sb.append("<p");
+            sb.append(" id=\"").append(getId()).append("HelpBlock\"");
+            sb.append(" class=\" help-block form-text text-muted \" >");
+            sb.append(getContextContent());
+            sb.append("</p>");
+        }
+
     }
 
     protected void doValue(StringBuilder sb)
@@ -292,6 +402,7 @@ public class Input
     {
         private boolean _checked;
         private String _className = "form-control";
+        private String _contextContent;
         private boolean _disabled;
         private Format _format;
         private Boolean _formGroup;
@@ -299,7 +410,6 @@ public class Input
         private String _label;
         private String _labelClassName = "control-label";
         private Layout _layout;
-        private String _message;
         private String _name;
         private String _onChange;
         private String _onKeyUp;
@@ -307,11 +417,19 @@ public class Input
         private boolean _required;
         private Boolean _showLabel;
         private Integer _size;
+        private State _state;
+        private String _stateMessage;
         private String _type = "text";
         private Object _value;
 
         public InputBuilder()
         {
+        }
+
+        public T contextContent(String contextContent)
+        {
+            _contextContent = contextContent;
+            return (T)this;
         }
 
         public T className(String className)
@@ -369,9 +487,9 @@ public class Input
             return (T)this;
         }
 
-        public T message(String message)
+        public T stateMessage(String message)
         {
-            _message = message;
+            _stateMessage = message;
             return (T)this;
         }
 
@@ -408,6 +526,12 @@ public class Input
         public T size(Integer size)
         {
             _size = size;
+            return (T)this;
+        }
+
+        public T state(State state)
+        {
+            _state = state;
             return (T)this;
         }
 
