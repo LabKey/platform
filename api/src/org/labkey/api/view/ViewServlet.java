@@ -28,8 +28,11 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryService.Environment;
+import org.labkey.api.security.SecurityPointcutService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
@@ -95,6 +98,8 @@ public class ViewServlet extends HttpServlet
 
     private static Map<Class<? extends Controller>, String> _controllerClassToName = null;
     private static volatile boolean _shuttingDown = false;
+
+    private static SecurityPointcutService securityPointcut = null;
 
     public static String getControllerName(Class<? extends Controller> controllerClass)
     {
@@ -190,6 +195,13 @@ public class ViewServlet extends HttpServlet
                 return;
             }
 
+
+            if (null != securityPointcut)
+            {
+                if (!securityPointcut.beforeResolveAction(request, response, module, url.getController(), url.getAction()))
+                    return;
+            }
+
             module.dispatch(request, response, url);
 
             if (isDebugEnabled)
@@ -261,6 +273,8 @@ public class ViewServlet extends HttpServlet
     {
         initializeControllerMaps();
         initializeAllSpringControllers();
+        securityPointcut = ServiceRegistry.get(SecurityPointcutService.class);
+
         _serverHeader =  "Labkey/" + AppProps.getInstance().getLabKeyVersionString();
     }
 
@@ -272,6 +286,8 @@ public class ViewServlet extends HttpServlet
     // within a controller... which would guarantee that the controller was initialized before resolving the action class.
     private static void initializeAllSpringControllers()
     {
+        CPUTimer timer = new CPUTimer("ViewServlet.initializeAllSpringControllers");
+        timer.start();
         for (Module module : ModuleLoader.getInstance().getModules())
         {
             for (Class controllerClass : module.getControllerClassToName().keySet())
@@ -289,6 +305,8 @@ public class ViewServlet extends HttpServlet
                 }
             }
         }
+        timer.stop();
+        _log.warn(timer.toString());
     }
 
 

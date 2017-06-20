@@ -17,16 +17,19 @@
 package org.labkey.api.security;
 
 import org.apache.commons.collections4.IteratorUtils;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.view.ViewServlet;
+import sun.util.resources.cldr.se.CurrencyNames_se;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -47,6 +50,7 @@ public class AuthFilter implements Filter
     private static final Object FIRST_REQUEST_LOCK = new Object();
     private static boolean _firstRequestHandled = false;
     private static volatile boolean _sslChecked = false;
+    private static SecurityPointcutService _securityPointcut = null;
 
     public void init(FilterConfig filterConfig) throws ServletException
     {
@@ -64,6 +68,13 @@ public class AuthFilter implements Filter
         ViewServlet.setAsRequestThread();
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = new SafeFlushResponseWrapper((HttpServletResponse)response);
+
+        if (null != _securityPointcut)
+        {
+            if (!_securityPointcut.beforeProcessRequest(req,resp))
+                return;
+        }
+
 
         if (ModuleLoader.getInstance().isStartupComplete())
         {
@@ -237,6 +248,9 @@ public class AuthFilter implements Filter
 
             AppProps.getInstance().ensureBaseServerUrl(request);
             ModuleLoader.getInstance().attemptStartBackgroundThreads();
+
+            _securityPointcut = ServiceRegistry.get(SecurityPointcutService.class);
+
             _firstRequestHandled = true;
         }
     }
