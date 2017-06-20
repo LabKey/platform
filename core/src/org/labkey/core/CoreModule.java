@@ -661,7 +661,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         populateUserGroupsWithStartupProps(true);
 
         // populate script engine definitions with values read from startup properties as appropriate for not bootstrap
-        LabKeyScriptEngineManager.populateSiteSettingsWithStartupProps(true);
+        LabKeyScriptEngineManager.populateScriptEngineDefinitionsWithStartupProps(true);
     }
 
 
@@ -798,7 +798,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         populateUserGroupsWithStartupProps(false);
 
         // populate script engine definitions values read from startup properties as appropriate for not bootstrap
-        LabKeyScriptEngineManager.populateSiteSettingsWithStartupProps(false);
+        LabKeyScriptEngineManager.populateScriptEngineDefinitionsWithStartupProps(false);
 
         AdminController.registerAdminConsoleLinks();
         AnalyticsController.registerAdminConsoleLinks();
@@ -1230,12 +1230,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                     try
                     {
-                        ValidEmail userEmail = new ValidEmail(prop.getName());
-                        User user = UserManager.getUser(userEmail);;
-                        if (null == user)
-                        {
-                            user = SecurityManager.addUser(userEmail,  UserManager.getUser(rootContainer.getCreatedBy())).getUser();
-                        }
+                        User user = getExistingOrCreateUser(prop.getName(), rootContainer);
                         String[] groups = prop.getValue().split(",");
                         for (String groupName : groups)
                         {
@@ -1249,26 +1244,37 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                                 }
                                 catch (IllegalArgumentException e)
                                 {
-                                    Logger.getLogger(CoreModule.class).warn("Could not add group specified in startup properties: " + prop.getName());
+                                    throw new ConfigurationException("Could not add group specified in startup properties: " + prop.getName(), e);
                                 }
                             }
                             try
                             {
-                                SecurityManager.addMember(group, user);
+                                String canUserBeAddedToGroup = SecurityManager.getAddMemberError(group, user);
+                                if (null == canUserBeAddedToGroup) {
+                                    SecurityManager.addMember(group, user);
+                                }
+                                else
+                                {
+                                    // ok if the user is already a member of this group, but everything else throw an exception
+                                    if (!"Principal is already a member of this group".equals(canUserBeAddedToGroup))
+                                    {
+                                        throw new ConfigurationException("Startup properties misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName + " because: " + canUserBeAddedToGroup);
+                                    }
+                                }
                             }
                             catch (InvalidGroupMembershipException e)
                             {
-                                Logger.getLogger(CoreModule.class).warn("Could not as specified in startup properties user: " + prop.getName() + ", to group: " + groupName);
+                                throw new ConfigurationException("Startup properties misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName, e);
                             }
                         }
                     }
                     catch (ValidEmail.InvalidEmailException e)
                     {
-                        Logger.getLogger(CoreModule.class).warn("Invalied email address specified in startup properties: " + prop.getName());
+                        throw new ConfigurationException("Invalid email address specified in startup properties: " + prop.getName(), e);
                     }
                     catch (SecurityManager.UserManagementException e)
                     {
-                        Logger.getLogger(CoreModule.class).warn("Could not add user specified in startup properties: " + prop.getName());
+                        throw new ConfigurationException("Could not add user specified in startup properties: " + prop.getName(), e);
                     }
                 }
             });
@@ -1293,22 +1299,22 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         }
                         catch (IllegalArgumentException e)
                         {
-                            Logger.getLogger(CoreModule.class).warn("Could not add group specified in startup properties: " + prop.getName());
+                            throw new ConfigurationException("Could not add group specified in startup properties: " + prop.getName(), e);
                         }
                     }
                     String[] roles = prop.getValue().split(",");
+                    MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
                     for (String roleName : roles)
                     {
                         roleName = StringUtils.stripStart(roleName, null);
-                        MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
                         Role role = RoleManager.getRole(roleName);
                         if (null == role)
                         {
-                            Logger.getLogger(CoreModule.class).warn("Invalied role for group specified in startup properties: " + prop.getValue());
+                            throw new ConfigurationException("Invalid role for group specified in startup properties: " + prop.getValue());
                         }
                         policy.addRoleAssignment(group, role);
-                        SecurityPolicyManager.savePolicy(policy);
                     }
+                    SecurityPolicyManager.savePolicy(policy);
                  }
             });
     }
@@ -1325,36 +1331,42 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                     try
                     {
-                        ValidEmail userEmail = new ValidEmail(prop.getName());
-                        User user = UserManager.getUser(userEmail);
-                        if (null == user)
-                        {
-                            user = SecurityManager.addUser(userEmail,  UserManager.getUser(rootContainer.getCreatedBy())).getUser();
-                        }
+                        User user = getExistingOrCreateUser(prop.getName(), rootContainer);
                         String[] roles = prop.getValue().split(",");
+                        MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
                         for (String roleName : roles)
                         {
                             roleName = StringUtils.stripStart(roleName, null);
-                            MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
                             Role role = RoleManager.getRole(roleName);
                             if (null == role)
                             {
-                                Logger.getLogger(CoreModule.class).warn("Invalied role for user specified in startup properties: " + prop.getValue());
+                                throw new ConfigurationException("Invalid role for user specified in startup properties: " + prop.getValue());
                             }
                             policy.addRoleAssignment(user, role);
-                            SecurityPolicyManager.savePolicy(policy);
                         }
+                        SecurityPolicyManager.savePolicy(policy);
                     }
                     catch (ValidEmail.InvalidEmailException e)
                     {
-                        Logger.getLogger(CoreModule.class).warn("Invalied email address specified in startup properties: " + prop.getName());
+                        throw new ConfigurationException("Invalid email address specified in startup properties: " + prop.getName(), e);
                     }
                     catch (SecurityManager.UserManagementException e)
                     {
-                        Logger.getLogger(CoreModule.class).warn("Could not add user specified in startup properties: " + prop.getName());
+                        throw new ConfigurationException("Could not add user specified in startup properties: " + prop.getName(), e);
                     }
                 }
             });
+    }
+
+    private User getExistingOrCreateUser (String email, Container rootContainer) throws SecurityManager.UserManagementException, ValidEmail.InvalidEmailException
+    {
+        ValidEmail userEmail = new ValidEmail(email);
+        User user = UserManager.getUser(userEmail);
+        if (null == user)
+        {
+            user = SecurityManager.addUser(userEmail,  UserManager.getUser(rootContainer.getCreatedBy())).getUser();
+        }
+        return user;
     }
 
 }
