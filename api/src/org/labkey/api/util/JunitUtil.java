@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -200,41 +201,56 @@ public class JunitUtil
             }
             else
             {
+                // Modules have null sourcePath on TeamCity, so crawl for test/sampledata directories and populate
+                // a map the first time, then stash the map for future lookups.
                 String buildPath = module.getBuildPath();
-                String name = Paths.get(buildPath).getFileName().toString();
+                String name = null;
 
-                LOG.info("buildPath: " + buildPath);
-                LOG.info("name: " + name);
-
-                synchronized (MAP_LOCK)
+                if (null != buildPath)
                 {
-                    if (null == _sampleDataDirectories)
-                    {
-                        Map<String, File> map = new HashMap<>();
+                    int idx = StringUtils.lastIndexOfAny(buildPath, "/", "\\");
 
-                        for (java.nio.file.Path path : Arrays.asList(
-                                Paths.get("externalModules"),
-                                Paths.get("server", "modules"),
-                                Paths.get("server", "customModules"),
-                                Paths.get("server", "optionalModules")))
+                    if (-1 != idx)
+                        name = buildPath.substring(idx + 1);
+
+                    LOG.info("buildPath: " + buildPath);
+                    LOG.info("name: " + name);
+
+                    synchronized (MAP_LOCK)
+                    {
+                        if (null == _sampleDataDirectories)
                         {
-                            Files.walk(Paths.get(projectRoot).resolve(path), 2)
-                                .filter(Files::isDirectory)
-                                .map(p -> p.resolve(SAMPLE_DATA_PATH))
-                                .filter(p -> Files.isDirectory(p))
-                                .forEach(p -> map.put(p.getName(p.getNameCount() - 3).toString(), p.toFile()));
+                            Map<String, File> map = new HashMap<>();
+
+                            for (java.nio.file.Path path : Arrays.asList(
+                                    Paths.get("externalModules"),
+                                    Paths.get("server", "modules"),
+                                    Paths.get("server", "customModules"),
+                                    Paths.get("server", "optionalModules")))
+                            {
+                                Files.walk(Paths.get(projectRoot).resolve(path), 2)
+                                    .filter(Files::isDirectory)
+                                    .map(p -> p.resolve(SAMPLE_DATA_PATH))
+                                    .filter(p -> Files.isDirectory(p))
+                                    .forEach(p -> map.put(p.getName(p.getNameCount() - 3).toString(), p.toFile()));
+                            }
+
+                            _sampleDataDirectories = Collections.unmodifiableMap(map);
                         }
 
-                        _sampleDataDirectories = Collections.unmodifiableMap(map);
-                    }
+                        sampleDataDir = _sampleDataDirectories.get(name);
 
-                    sampleDataDir = _sampleDataDirectories.get(name);
-
-                    if (null == sampleDataDir)
-                    {
-                        LOG.info("null == sampleDataDir!");
-                        LOG.info(_sampleDataDirectories);
+                        if (null == sampleDataDir)
+                        {
+                            LOG.info("null == sampleDataDir!");
+                            LOG.info(_sampleDataDirectories);
+                        }
                     }
+                }
+                else
+                {
+                    // buildPath is null or not parseable
+                    sampleDataDir = null;
                 }
             }
         }
