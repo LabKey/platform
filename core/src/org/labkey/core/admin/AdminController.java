@@ -203,6 +203,7 @@ public class AdminController extends SpringActionController
 
     private static final Logger LOG = Logger.getLogger(AdminController.class);
     private static final Logger CLIENT_LOG = Logger.getLogger(LogAction.class);
+    private static final String HEAP_MEMORY_KEY = "Total Heap Memory";
 
     private static long _errorMark = 0;
 
@@ -768,14 +769,17 @@ public class AdminController extends SpringActionController
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
             Map<String, Object> healthValues = new HashMap<>();
+            //Hold overall status
+            Map<String, Object> overallStatus = new HashMap<>();
 
-            healthValues.put("DbConnectionStatus", dbConnectionHealth());
-            healthValues.put("MemoryStatus", memoryHealth());
+            healthValues.put("Overall", overallStatus);
+            healthValues.put("DbConnectionStatus", dbConnectionHealth(overallStatus));
+            healthValues.put("MemoryStatus", memoryHealth(overallStatus));
 
             return new ApiSimpleResponse(healthValues);
         }
 
-        private Map<String, Boolean> dbConnectionHealth() throws Exception
+        private Map<String, Boolean> dbConnectionHealth(Map<String, Object> overallStatus) throws Exception
         {
             Map<String, Boolean> healthValues = new HashMap<>();
             Boolean allConnected = true;
@@ -795,11 +799,11 @@ public class AdminController extends SpringActionController
                 allConnected &= dbConnected;
             }
 
-            healthValues.put("@@OverallStatus@@", allConnected);
+            overallStatus.put("AllDBsConnected", allConnected);
             return healthValues;
         }
 
-        private Map<String, Object> memoryHealth()
+        private Map<String, Object> memoryHealth(Map<String, Object> overallStatus)
         {
             Map<String, Object> memoryReports = new HashMap<>();
 
@@ -820,6 +824,7 @@ public class AdminController extends SpringActionController
                 memUsage.put(usage.getKey(), usageMap);
             });
             memoryReports.put("Usage", memUsage);
+            overallStatus.put(HEAP_MEMORY_KEY, memUsage.get(HEAP_MEMORY_KEY));
 
             return memoryReports;
         }
@@ -2918,7 +2923,7 @@ public class AdminController extends SpringActionController
             MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
             if (membean != null)
             {
-                memoryUsages.add(new Pair<>("Total Heap Memory", getUsage(membean.getHeapMemoryUsage())));
+                memoryUsages.add(new Pair<>(HEAP_MEMORY_KEY, getUsage(membean.getHeapMemoryUsage())));
                 memoryUsages.add(new Pair<>("Total Non-heap Memory", getUsage(membean.getNonHeapMemoryUsage())));
             }
 
