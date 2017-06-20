@@ -13,6 +13,7 @@ public class ConfigProperty
     private String _scope = DEFAULT_SCOPE;
 
     public static final String DEFAULT_SCOPE = "none";
+    public static final String SYS_PROP_PREFIX = "labkey.prop.";
 
     public enum modifier
     {

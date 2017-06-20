@@ -1965,7 +1965,18 @@ public class ModuleLoader implements Filter
                     }
                 }
 
-                // TODO : load any system properties
+                // load any system properties with the labkey prop prefix
+                for (Map.Entry<Object, Object> entry : System.getProperties().entrySet())
+                {
+                    String name = String.valueOf(entry.getKey());
+                    String value = String.valueOf(entry.getValue());
+
+                    if (name != null && name.startsWith(ConfigProperty.SYS_PROP_PREFIX) && value != null)
+                    {
+                        ConfigProperty config = createConfigProperty(name.substring(ConfigProperty.SYS_PROP_PREFIX.length()), value);
+                        _configPropertyMap.put(config.getScope(), config);
+                    }
+                }
             }
         }
     }
