@@ -22,6 +22,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
     bodyStyle: 'background-color: transparent;',
 
     statics: {
+        RESERVED_VIEW_NAMES : ['default', '~~DETAILS~~', '~~INSERT~~', '~~UPDATE~~'],
         saveCustomizeViewPrompt: function(config) {
             var success = config.success,
                     scope = config.scope,
@@ -134,8 +135,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                         width: 280,
                         autoCreate: {tag: 'input', type: 'text', size: '50'},
                         validator: function(value) {
-                            if ("default" === value.trim()) {
-                                return "The grid view name 'default' is not allowed";
+                            if (LABKEY.internal.ViewDesigner.Designer.RESERVED_VIEW_NAMES.indexOf(value.trim()) > -1) {
+                                return "The grid view name '" + value + "' is not allowed";
                             }
                             return true;
                         },
