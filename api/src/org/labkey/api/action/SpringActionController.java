@@ -38,6 +38,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
@@ -455,13 +456,17 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     public static ActionURL getUpgradeMaintenanceRedirect(HttpServletRequest request, Controller action)
     {
-        if (UserManager.hasNoUsers())
+        // only show the initial server setup ui wizard if sufficient startup properties have not been specified
+        if (!canSkipInitialSetupUI())
         {
-            // Let the "initial user" view & post, stylesheet & javascript actions, etc. through... otherwise redirect to initial user action
-            if (null != action && action.getClass().isAnnotationPresent(AllowedBeforeInitialUserIsSet.class))
-                return null;
-            else
-                return PageFlowUtil.urlProvider(LoginUrls.class).getInitialUserURL();
+            if (UserManager.hasNoUsers())
+            {
+                // Let the "initial user" view & post, stylesheet & javascript actions, etc. through... otherwise redirect to initial user action
+                if (null != action && action.getClass().isAnnotationPresent(AllowedBeforeInitialUserIsSet.class))
+                    return null;
+                else
+                    return PageFlowUtil.urlProvider(LoginUrls.class).getInitialUserURL();
+            }
         }
 
         boolean upgradeRequired = ModuleLoader.getInstance().isUpgradeRequired();
@@ -519,6 +524,45 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
 
         return null;
+    }
+
+    private static boolean canSkipInitialSetupUI()
+    {
+        // determine if sufficient startup properties have been specified to skip the initial server setup ui wizard
+
+        // make sure there is at least one user defined in the startup properties
+        // todo: CHANGE THIS - need to modify this after we determine what the required user definitions should be. Does there need to be a user defined in the SiteAdminRole?
+        boolean requiredUserDefinedInStartupProps =  ((null != ModuleLoader.getInstance().getConfigProperties("UserGroups")) || (null != ModuleLoader.getInstance().getConfigProperties("UserRoles")));
+        boolean requiredLookAndFeelDefinedInStartupProps = false;
+        boolean requiredSiteSettingsDefinedInStartupProps = false;
+
+        // make sure the required look and feel settings are defined in the startup properties
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("LookAndFeelSettings");
+        // todo: CHANGE THIS - need to modify this as needed after we determine what the required look and feel settings should be
+        if ( startupProps.stream().anyMatch(prop -> prop.getName().equals("systemDescription"))
+             && startupProps.stream().anyMatch(prop -> prop.getName().equals("systemShortName"))
+             && startupProps.stream().anyMatch(prop -> prop.getName().equals("themeName")))
+        {
+
+            requiredLookAndFeelDefinedInStartupProps = true;
+        }
+
+        // make sure the required site settings are defined in the startup properties
+        startupProps = ModuleLoader.getInstance().getConfigProperties("SiteSettings");
+        // todo: CHANGE THIS - need to modify this as needed after we determine what the required site settings should be
+        if ( startupProps.stream().anyMatch(prop -> prop.getName().equals("defaultDomain"))
+                && startupProps.stream().anyMatch(prop -> prop.getName().equals("baseServerURL"))
+                && startupProps.stream().anyMatch(prop -> prop.getName().equals("webRoot")))
+        {
+
+            requiredSiteSettingsDefinedInStartupProps = true;
+        }
+
+        return requiredUserDefinedInStartupProps && requiredLookAndFeelDefinedInStartupProps && requiredSiteSettingsDefinedInStartupProps;
+    }
+
+    private static boolean siteManagerExist() {
+        return false;
     }
 
     protected void renderInTemplate(ViewContext context, Controller action, PageConfig page, ModelAndView mv)
