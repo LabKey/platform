@@ -223,6 +223,7 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
+import javax.mail.MessagingException;
 import javax.servlet.ServletContext;
 import java.io.File;
 import java.io.IOException;
@@ -1246,55 +1247,45 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             .forEach(prop -> {
                 if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
                 {
-                    try
+                    User user = getExistingOrCreateUser(prop.getName(), rootContainer);
+                    String[] groups = prop.getValue().split(",");
+                    for (String groupName : groups)
                     {
-                        User user = getExistingOrCreateUser(prop.getName(), rootContainer);
-                        String[] groups = prop.getValue().split(",");
-                        for (String groupName : groups)
+                        groupName = StringUtils.stripStart(groupName, null);
+                        Group group = GroupManager.getGroup(rootContainer, groupName, GroupEnumType.SITE);
+                        if (null == group)
                         {
-                            groupName = StringUtils.stripStart(groupName, null);
-                            Group group = GroupManager.getGroup(rootContainer, groupName, GroupEnumType.SITE);
-                            if (null == group)
-                            {
-                                try
-                                {
-                                    group = SecurityManager.createGroup(rootContainer, groupName, PrincipalType.GROUP);
-                                }
-                                catch (IllegalArgumentException e)
-                                {
-                                    throw new ConfigurationException("Could not add group specified in startup properties: " + prop.getName(), e);
-                                }
-                            }
                             try
                             {
-                                String canUserBeAddedToGroup = SecurityManager.getAddMemberError(group, user);
-                                if (null == canUserBeAddedToGroup) {
-                                    SecurityManager.addMember(group, user);
-                                }
-                                else
-                                {
-                                    // ok if the user is already a member of this group, but everything else throw an exception
-                                    if (!"Principal is already a member of this group".equals(canUserBeAddedToGroup))
-                                    {
-                                        throw new ConfigurationException("Startup properties misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName + " because: " + canUserBeAddedToGroup);
-                                    }
-                                }
+                                group = SecurityManager.createGroup(rootContainer, groupName, PrincipalType.GROUP);
                             }
-                            catch (InvalidGroupMembershipException e)
+                            catch (IllegalArgumentException e)
                             {
-                                throw new ConfigurationException("Startup properties misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName, e);
+                                throw new ConfigurationException("Could not add group specified in startup properties UserGroups: " + prop.getName(), e);
                             }
                         }
-                    }
-                    catch (ValidEmail.InvalidEmailException e)
-                    {
-                        throw new ConfigurationException("Invalid email address specified in startup properties: " + prop.getName(), e);
-                    }
-                    catch (SecurityManager.UserManagementException e)
-                    {
-                        throw new ConfigurationException("Could not add user specified in startup properties: " + prop.getName(), e);
+                        try
+                        {
+                            String canUserBeAddedToGroup = SecurityManager.getAddMemberError(group, user);
+                            if (null == canUserBeAddedToGroup) {
+                                SecurityManager.addMember(group, user);
+                            }
+                            else
+                            {
+                                // ok if the user is already a member of this group, but everything else throw an exception
+                                if (!"Principal is already a member of this group".equals(canUserBeAddedToGroup))
+                                {
+                                    throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName + " because: " + canUserBeAddedToGroup);
+                                }
+                            }
+                        }
+                        catch (InvalidGroupMembershipException e)
+                        {
+                            throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName, e);
+                        }
                     }
                 }
+
             });
     }
 
@@ -1317,7 +1308,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         }
                         catch (IllegalArgumentException e)
                         {
-                            throw new ConfigurationException("Could not add group specified in startup properties: " + prop.getName(), e);
+                            throw new ConfigurationException("Could not add group specified in startup properties GroupRoles: " + prop.getName(), e);
                         }
                     }
                     String[] roles = prop.getValue().split(",");
@@ -1328,7 +1319,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         Role role = RoleManager.getRole(roleName);
                         if (null == role)
                         {
-                            throw new ConfigurationException("Invalid role for group specified in startup properties: " + prop.getValue());
+                            throw new ConfigurationException("Invalid role for group specified in startup properties GroupRoles: " + prop.getValue());
                         }
                         policy.addRoleAssignment(group, role);
                     }
@@ -1347,44 +1338,73 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             .forEach(prop -> {
                 if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
                 {
-                    try
+                    User user = getExistingOrCreateUser(prop.getName(), rootContainer);
+                    String[] roles = prop.getValue().split(",");
+                    MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
+                    for (String roleName : roles)
                     {
-                        User user = getExistingOrCreateUser(prop.getName(), rootContainer);
-                        String[] roles = prop.getValue().split(",");
-                        MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
-                        for (String roleName : roles)
+                        roleName = StringUtils.stripStart(roleName, null);
+                        Role role = RoleManager.getRole(roleName);
+                        if (null == role)
                         {
-                            roleName = StringUtils.stripStart(roleName, null);
-                            Role role = RoleManager.getRole(roleName);
-                            if (null == role)
-                            {
-                                throw new ConfigurationException("Invalid role for user specified in startup properties: " + prop.getValue());
-                            }
-                            policy.addRoleAssignment(user, role);
+                            throw new ConfigurationException("Invalid role for user specified in startup properties UserRoles: " + prop.getValue());
                         }
-                        SecurityPolicyManager.savePolicy(policy);
+                        policy.addRoleAssignment(user, role);
                     }
-                    catch (ValidEmail.InvalidEmailException e)
-                    {
-                        throw new ConfigurationException("Invalid email address specified in startup properties: " + prop.getName(), e);
-                    }
-                    catch (SecurityManager.UserManagementException e)
-                    {
-                        throw new ConfigurationException("Could not add user specified in startup properties: " + prop.getName(), e);
-                    }
+                    SecurityPolicyManager.savePolicy(policy);
                 }
             });
     }
 
-    private User getExistingOrCreateUser (String email, Container rootContainer) throws SecurityManager.UserManagementException, ValidEmail.InvalidEmailException
+    private User getExistingOrCreateUser (String email, Container rootContainer)
     {
-        ValidEmail userEmail = new ValidEmail(email);
-        User user = UserManager.getUser(userEmail);
-        if (null == user)
+        try
         {
-            user = SecurityManager.addUser(userEmail,  UserManager.getUser(rootContainer.getCreatedBy())).getUser();
+            User currentUser = UserManager.getUser(rootContainer.getCreatedBy());
+            ValidEmail userEmail = new ValidEmail(email);
+            User user = UserManager.getUser(userEmail);
+            if (null == user)
+            {
+                SecurityManager.NewUserStatus userStatus = SecurityManager.addUser(userEmail, currentUser);
+
+                user = userStatus.getUser();
+                try
+                {
+                    SecurityManager.sendRegistrationEmail(rootContainer, currentUser, userEmail, null, userStatus, null, null, true);
+                }
+                catch (ConfigurationException | MessagingException e)
+                {
+                    UserManager.addToUserHistory(UserManager.getUser(rootContainer.getCreatedBy()), "New user created from startup properies, but sending the email to new user failed: " + email);
+                    // TODO: need to setup SMTP before attempting to add user to that we can sent user an email requesting them to login and set password.
+                    // Until then dont throw an error during setup testing on failed emails.
+
+                    // as workaround for testing look in db schema.logins table at the verification string and use that verification to craft an http request for setting the initial password like:
+                    // http://127.0.0.1:8080/labkey/login-setPassword.view?verification=XUSefDFsuS8KxJWllAfCacM9HIISEvWe&email=testUser1%40test.com
+
+                    // throw new ConfigurationException("Invalid email address specified in startup properties: " + email, e);
+                    return user;
+                }
+                catch (Exception e)
+                {
+                    UserManager.addToUserHistory(UserManager.getUser(rootContainer.getCreatedBy()), "New user created from startup properies, but sending the email to new user failed: " + email);
+                    // TODO: need to setup SMTP before attempting to add user to that we can sent user an email requesting them to login and set password.
+                    // Until then dont throw an error during setup testing on failed emails.
+
+                    // throw new ConfigurationException("Failed sending email while adding new user specified in startup properties: " + email, e);
+                    return user;
+                }
+                UserManager.addToUserHistory(user, user.getEmail() + " was added to the system via startup properties.");
+            }
+            return user;
         }
-        return user;
+        catch (ValidEmail.InvalidEmailException e)
+        {
+            throw new ConfigurationException("Invalid email address specified in startup properties for creating new user: " + email, e);
+        }
+        catch (SecurityManager.UserManagementException e)
+        {
+            throw new ConfigurationException("Unale to add new user for: " + email, e);
+        }
     }
 
 }
