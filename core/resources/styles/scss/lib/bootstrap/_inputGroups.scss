@@ -34,6 +34,16 @@
       z-index: 3;
     }
   }
+  &.input-group-unstyled.input-group-horizontal {
+    display: $lk-input-group-display;
+  }
+}
+
+//additional styles for validation/context icons
+.input-group-unstyled .input-group-addon {
+  border-radius: $lk-input-group-unstyled-border-radius;
+  border: $lk-input-group-unstyled-border;
+  background-color: $lk-input-group-unstyled-bg-color;
 }
 
 // Sizing options
@@ -75,7 +85,7 @@
 // Text input groups
 // -------------------------
 .input-group-addon {
-  padding: $padding-base-vertical $padding-base-horizontal;
+  padding: $padding-base-vertical $lk-input-group-addon-padding-right-left;
   font-size: $font-size-base;
   font-weight: normal;
   line-height: 1;
@@ -84,6 +94,13 @@
   background-color: $input-group-addon-bg;
   border: 1px solid $input-group-addon-border-color;
   border-radius: $input-border-radius;
+
+  > .validation-state-icon {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    z-index: 99;
+  }
 
   // Sizing
   &.input-sm {
@@ -95,6 +112,10 @@
     padding: $padding-large-vertical $padding-large-horizontal;
     font-size: $font-size-large;
     border-radius: $input-border-radius-large;
+  }
+  &.validation-state {
+    padding-left: 0;
+    padding-right: 0;
   }
 
   // Nuke default margins from checkboxes and radios to vertically center within.

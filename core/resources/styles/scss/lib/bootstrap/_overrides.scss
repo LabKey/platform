@@ -63,73 +63,38 @@
   opacity: $lk-tooltip-opacity;
 }
 
-
-.context-icon {
-  padding: $lk-form-context-icon-padding;
-}
-
-.input-group {
-  position: $lk-input-group-position;
-  display: $lk-input-group-display;
-  border-collapse: $lk-input-group-border-collapse;
-}
-
-.input-group-addon {
-    padding-left: $lk-input-group-addon-padding-left;
-    padding-right: $lk-input-group-addon-padding-right;
-  > .validation-state-icon {
-    position: absolute;
-    top: 8px;
-    right: 12px;
-    z-index: 99;
-  }
-  &.validation-state {
-    padding-left: 0;
-    padding-right: 0;
-  }
-}
-
-.input-group.input-group-unstyled.input-group-horizontal {
-  display: $lk-input-group-display;
-}
-
-.input-group-unstyled .input-group-addon {
-  border-radius: $lk-input-group-unstyled-border-radius;
-  border: $lk-input-group-unstyled-border;
-  background-color: $lk-input-group-unstyled-bg-color;
-}
-
-.help-block .form-text {
-  font-size: $lk-form-contextContent-size;
-  &has.error {
-    color: $lk-form-group-error-color;
-  }
-}
-
 .control-label {
   word-break: $lk-form-control-label-break;
-  &has.error {
+  .has-error {
     color: $lk-form-group-error-color;
   }
 }
 
-.form-control {
-  border-radius: $lk-form-control-border-radius;
-}
-
-.has-error .form-control {
-    border-color: $lk-form-group-error-color;
+.has-error {
+  .form-control {
     border-width: $lk-form-control-border-width;
+  }
+  .validation-state-icon {
+    color: $lk-form-group-error-color;
+  }
 }
 
-.has-warning .form-control {
-    border-color: $lk-form-group-warning-color;
+.has-warning {
+  .form-control {
     border-width:$lk-form-control-border-width;
+  }
+  .validation-state-icon {
+    color: $lk-form-group-warning-color;
+  }
 }
 
-.has-success .form-control {
-    border-color: $lk-form-group-success-color;
+.has-success {
+  .form-control {
     border-width: $lk-form-control-border-width;
+  }
+  .validation-state-icon {
+    color: $lk-form-group-success-color;
+  }
 }
 
 /*
