@@ -74,7 +74,7 @@ public class ExpDataFileConverter implements Converter
             return data;
         }
         // Then try as an LSID
-        else if (dataObject.has(ExperimentJSONConverter.LSID))
+        else if (dataObject.has(ExperimentJSONConverter.LSID) && dataObject.getString(ExperimentJSONConverter.LSID) != null)
         {
             String lsid = dataObject.getString(ExperimentJSONConverter.LSID);
             ExpData data = expSvc.getExpData(lsid);
