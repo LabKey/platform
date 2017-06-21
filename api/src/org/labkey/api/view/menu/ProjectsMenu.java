@@ -44,7 +44,7 @@ public class ProjectsMenu extends NavTreeMenu
     
     public static NavTree[] getNavTree(ViewContext context)
     {
-        NavTree projects = ContainerManager.getProjectList(context);
+        NavTree projects = ContainerManager.getProjectList(context, false);
         if (null == projects)
             return new NavTree[0];
 

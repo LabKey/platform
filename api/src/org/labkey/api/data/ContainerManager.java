@@ -1082,31 +1082,40 @@ public class ContainerManager
     }
 
 
-    public static NavTree getProjectList(ViewContext context)
+    public static NavTree getProjectList(ViewContext context, boolean includeChildren)
     {
-        NavTree navTree = (NavTree) NavTreeManager.getFromCache(PROJECT_LIST_ID, context);
+        User user = context.getUser();
+        Container currentProject = context.getContainer().getProject();
+        String projectNavTreeId = PROJECT_LIST_ID;
+        if (PageFlowUtil.useExperimentalCoreUI() && currentProject != null)
+            projectNavTreeId += currentProject.getId();
 
+        NavTree navTree = (NavTree) NavTreeManager.getFromCache(projectNavTreeId, context);
         if (null != navTree)
             return navTree;
 
-        User user = context.getUser();
         NavTree list = new NavTree("Projects");
         List<Container> projects = ContainerManager.getProjects();
 
         for (Container project : projects)
         {
-            if (project.shouldDisplay(user) && project.hasPermission("getProjectList()", user, ReadPermission.class))
+            boolean shouldDisplay = project.shouldDisplay(user) && project.hasPermission("getProjectList()", user, ReadPermission.class);
+            boolean includeCurrentProject = includeChildren && currentProject != null && currentProject.equals(project);
+
+            if (shouldDisplay || includeCurrentProject)
             {
                 ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(project);
 
-                if (project.equals(getHomeContainer()))
+                if (includeChildren)
+                    list.addChild(ContainerManager.getFolderListForUser(project, context));
+                else if (project.equals(getHomeContainer()))
                     list.addChild(new NavTree("Home", startURL));
                 else
                     list.addChild(project.getTitle(), startURL);
             }
         }
 
-        list.setId(PROJECT_LIST_ID);
+        list.setId(projectNavTreeId);
         NavTreeManager.cacheTree(list, context.getUser());
 
         return list;
@@ -1572,12 +1581,7 @@ public class ContainerManager
     private static void _clearChildrenFromCache(Container c)
     {
         CACHE.remove(CONTAINER_CHILDREN_PREFIX + c.getId());
-
-        // UNDONE: NavTreeManager should register a ContainerListener
-        Container project = c.getProject();
-        NavTreeManager.uncacheTree(PROJECT_LIST_ID);
-        if (project != null)
-            NavTreeManager.uncacheTree(project.getId());
+        navTreeManageUncache(c);
     }
 
 
@@ -1596,10 +1600,7 @@ public class ContainerManager
         // blow away the all children caches
         CACHE.removeUsingPrefix(CONTAINER_CHILDREN_PREFIX);
 
-        // UNDONE: NavTreeManager should register a ContainerListener
-        NavTreeManager.uncacheTree(PROJECT_LIST_ID);
-        if (project != null)
-            NavTreeManager.uncacheTree(project.getId());
+        navTreeManageUncache(c);
     }
 
 
@@ -1609,6 +1610,20 @@ public class ContainerManager
 
         // UNDONE: NavTreeManager should register a ContainerListener
         NavTreeManager.uncacheAll();
+    }
+
+
+    private static void navTreeManageUncache(Container c)
+    {
+        // UNDONE: NavTreeManager should register a ContainerListener
+        Container project = c.getProject();
+        NavTreeManager.uncacheTree(PROJECT_LIST_ID);
+        if (project != null)
+        {
+            NavTreeManager.uncacheTree(project.getId());
+            if (PageFlowUtil.useExperimentalCoreUI())
+                NavTreeManager.uncacheTree(PROJECT_LIST_ID + project.getId());
+        }
     }
 
 
