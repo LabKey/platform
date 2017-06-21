@@ -28,7 +28,9 @@ import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
@@ -135,6 +137,21 @@ public class FileContentModule extends DefaultModule
 
     }
 
+    @Override
+    public void afterUpdate(ModuleContext moduleContext)
+    {
+        if (moduleContext.isNewInstall())
+        {
+            bootstrap();
+        }
+    }
+
+    private void bootstrap()
+    {
+        // populate File Site Root Settings with values read from startup properties as appropriate for bootstrap
+        populateSiteRootFileWithStartupProps(true);
+    }
+
     public void doStartup(ModuleContext moduleContext)
     {
         WebdavService.get().addProvider(new FileWebdavProvider());
@@ -155,6 +172,10 @@ public class FileContentModule extends DefaultModule
         {
             fsr.addFactories(new FileWriter.Factory(), new FileImporter.Factory());
         }
+
+        // populate File Site Root Settings with values read from startup properties as appropriate for not bootstrap
+        populateSiteRootFileWithStartupProps(false);
+
     }
 
     @Override
@@ -179,4 +200,22 @@ public class FileContentModule extends DefaultModule
             FileContentController.TestCase.class
         ));
     }
+
+    public void populateSiteRootFileWithStartupProps(boolean isBootstrap)
+    {
+        // populate the site root file settings with values read from startup properties as appropriate for prop modifier and isBootstrap flag
+        // expects startup properties formatted like: FileSiteRootSettings.fileRoot;bootstrap=/labkey/labkey/files
+        // if more than one FileSiteRootSettings.siteRootFile specified in the startup properties file then the last one overrides the previous ones
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("SiteRootSettings");
+        startupProps.stream()
+            .filter( prop -> prop.getName().equals("siteRootFile"))
+            .forEach(prop -> {
+                if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
+                {
+                    File fileRoot = new File(prop.getValue());
+                    FileContentServiceImpl.getInstance().setSiteDefaultRoot(fileRoot);
+                }
+            });
+    }
+
 }
