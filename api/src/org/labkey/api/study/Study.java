@@ -27,6 +27,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: kevink
@@ -35,6 +36,8 @@ import java.util.List;
 public interface Study extends StudyEntity
 {
     List<? extends Visit> getVisits(Visit.Order order);
+
+    Map<String, Double> getVisitAliases();
 
     Dataset getDataset(int id);
 
