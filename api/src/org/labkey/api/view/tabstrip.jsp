@@ -30,7 +30,6 @@
     List<NavTree> tabs = view.getTabList();
     String tabId = view.getSelectedTabId();
 %>
-
 <div>
     <ul class="labkey-tab-strip">
     <%
@@ -39,7 +38,7 @@
             if (null != tab.getText() && tab.getText().length() > 0)
             {
             %>
-            <li class="<%=(tab.getId().equals(tabId) ? "labkey-tab-active" : "labkey-tab-inactive")%>" id="<%=view._prefix%>tab<%=tab.getId()%>"><%
+            <li class="<%=(tab.getId().equalsIgnoreCase(tabId) ? "labkey-tab-active" : "labkey-tab-inactive")%>" id="<%=view._prefix%>tab<%=tab.getId()%>"><%
 
             if (tab.getScript() == null && tab.getHref() == null)
             {

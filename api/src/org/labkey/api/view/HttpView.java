@@ -725,7 +725,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         resources.addAll(_clientDependencies);
 
         //include resources of nested views
-        if(_views != null)
+        if (_views != null)
         {
             for (ModelAndView v : _views.values())
             {

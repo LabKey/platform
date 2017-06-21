@@ -899,8 +899,6 @@ public class QueryView extends WebPartView<Object>
         {
             bar.add(createPageSizeMenuButton());
         }
-
-        bar.add(populateMoreMenu(view));
     }
 
     @Nullable
@@ -1343,23 +1341,42 @@ public class QueryView extends WebPartView<Object>
         NavTree menu = button.getNavTree();
         menu.setId(getBaseMenuId() + ".Menu.GridViews");
 
-        // existing views
-        if (!getQueryDef().isTemporary())
+        if (PageFlowUtil.useExperimentalCoreUI())
         {
-            addGridViews(button, target, current);
+            if (getSettings().isAllowCustomizeView())
+                addCustomizeViewItems(button);
 
-            button.addSeparator();
+            if (!getQueryDef().isTemporary())
+            {
+                addManageViewItems(button, PageFlowUtil.map(
+                        "schemaName", getSchema().getSchemaName(),
+                        "queryName", getSettings().getQueryName()));
+                addFilterItems(button);
+                button.addSeparator();
+                addGridViews(button, target, current);
+            }
+        }
+        else
+        {
+            // existing views
+            if (!getQueryDef().isTemporary())
+            {
+                addGridViews(button, target, current);
+
+                button.addSeparator();
+            }
+
+            if (getSettings().isAllowCustomizeView())
+                addCustomizeViewItems(button);
+            if (!getQueryDef().isTemporary())
+            {
+                addManageViewItems(button, PageFlowUtil.map(
+                        "schemaName", getSchema().getSchemaName(),
+                        "queryName", getSettings().getQueryName()));
+                addFilterItems(button);
+            }
         }
 
-        if (getSettings().isAllowCustomizeView())
-            addCustomizeViewItems(button);
-        if (!getQueryDef().isTemporary())
-        {
-            addManageViewItems(button, PageFlowUtil.map(
-                    "schemaName", getSchema().getSchemaName(),
-                    "queryName", getSettings().getQueryName()));
-            addFilterItems(button);
-        }
         return button;
     }
 
@@ -2080,6 +2097,7 @@ public class QueryView extends WebPartView<Object>
         {
             ButtonBar bb = new ButtonBar();
             populateButtonBar(ret, bb);
+            bb.add(populateMoreMenu(ret));
             rgn.setButtonBar(bb);
         }
 

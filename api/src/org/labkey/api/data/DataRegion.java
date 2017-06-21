@@ -1003,7 +1003,7 @@ public class DataRegion extends AbstractDataRegion
 
     private void _renderHeaderNew(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
     {
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-headerbar") + "\" class=\"lk-region-bar\">");
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-headerbar") + "\" class=\"lk-region-bar lk-region-header-bar\">");
         _renderButtonBarNew(ctx, out, renderButtons);
         _renderPaginationNew(ctx, out);
         out.write("</div>");

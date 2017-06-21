@@ -404,7 +404,7 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
                 // Render Navigation Links
                 if (nMenu.hasChildren())
                 {
-                    out.print("<div class=\"labkey-wp-text-buttons\">");
+                    out.print("<div class=\"labkey-wp-text-buttons pull-right\">");
                     for (NavTree link : nMenu.getChildren())
                     {
                         if (link.hasChildren())

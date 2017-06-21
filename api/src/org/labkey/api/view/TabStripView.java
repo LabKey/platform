@@ -17,9 +17,12 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.template.ClientDependency;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
@@ -41,13 +44,37 @@ public abstract class TabStripView extends JspView<TabStripView>
         setModelBean(this);
     }
 
+    @NotNull
+    @Override
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> dependencies = super.getClientDependencies();
+
+        ModelAndView view = null;
+
+        try
+        {
+            /**
+             * Until the lifecycle of client dependencies is better supported, TabStripView needs
+             * to bootstrap the dependencies of the getTabView() so that those .jsps can still declare
+             * dependencies as we desire.
+             */
+            view = getTabView(getSelectedTabId());
+        }
+        catch (Exception e)
+        {
+        }
+
+        if (view != null && view instanceof HttpView)
+            dependencies.addAll(((HttpView) view).getClientDependencies());
+
+        return dependencies;
+    }
+
     /** You can use this constructor, if you know which tab is selected and you don't want to subclass TabStripView */
     public TabStripView(List<NavTree> tabs, ModelAndView selectedView)
     {
-        super("/org/labkey/api/view/tabstrip.jsp");
-        setFrame(WebPartView.FrameType.NONE);
-        setModelBean(this);
-
+        this();
         _tabs = tabs;
         setBody(selectedView);
     }

@@ -163,6 +163,7 @@
                 readOnly        : <%=readOnly%>,
                 minHeight       : 500,
                 minWidth        : 500,
+                autoResize      : false,
                 initialURL      : <%=q(initialViewURL.getLocalURIString())%>,
                 saveURL         : <%=q(saveURL.getLocalURIString())%>,
                 baseURL         : <%=q(baseViewURL.getLocalURIString())%>,
