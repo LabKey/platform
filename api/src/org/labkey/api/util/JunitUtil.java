@@ -193,7 +193,7 @@ public class JunitUtil
         }
         else
         {
-            String sourcePath = module.getSourcePath();
+            String sourcePath = StringUtils.trimToNull(module.getSourcePath());
 
             if (null != sourcePath)
             {
