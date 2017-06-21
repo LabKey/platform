@@ -2589,6 +2589,19 @@ public class SecurityManager
         }
     }
 
+    public static void sendRegistrationEmail(Container container, User user, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, Pair<String, String>[] extraParameters, String provider, boolean isAddUser) throws Exception
+    {
+        ActionURL verificationURL = createModuleVerificationURL(container, email, newUserStatus.getVerification(), extraParameters, provider, isAddUser);
+
+        SecurityManager.sendEmail(container, user, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL);
+        if (!user.isGuest() && !user.getEmail().equals(email.getEmailAddress()))
+        {
+            SecurityMessage msg = getRegistrationMessage(mailPrefix, true);
+            msg.setTo(email.getEmailAddress());
+            SecurityManager.sendEmail(container, user, msg, user.getEmail(), verificationURL);
+        }
+    }
+
     public static void addSelfRegisteredUser(ViewContext context, ValidEmail email) throws Exception
     {
         User currentUser = context.getUser();
