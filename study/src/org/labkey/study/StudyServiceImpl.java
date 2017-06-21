@@ -1078,4 +1078,41 @@ public class StudyServiceImpl implements StudyService
 
         return job;
     }
+
+    @Override
+    public void hideEmptyDatasets(Container c, User user)
+    {
+        Study study = getStudy(c);
+        if (null == study)
+            return;
+        List<? extends Dataset> datasets = study.getDatasets();
+        if (null == datasets || datasets.isEmpty())
+            return;
+        for (Dataset dataset : datasets)
+        {
+            DatasetDefinition d = (DatasetDefinition)dataset;
+            TableInfo t = d.getTableInfo(user,true, false);
+            if (null == t)
+                continue;
+            long count = new TableSelector(t).getRowCount();
+            if (0 == count)
+            {
+                if (d.isShowByDefault())
+                {
+                    d = d.createMutable();
+                    d.setShowByDefault(false);
+                    StudyManager.getInstance().updateDatasetDefinition(user,d);
+                }
+            }
+            else
+            {
+                if (!d.isShowByDefault())
+                {
+                    d = d.createMutable();
+                    d.setShowByDefault(true);
+                    StudyManager.getInstance().updateDatasetDefinition(user,d);
+                }
+            }
+        }
+    }
 }
