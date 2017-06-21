@@ -16,7 +16,6 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -160,7 +159,6 @@ public class JunitUtil
     }
 
 
-    private static final Logger LOG = Logger.getLogger(JunitUtil.class);
     private static final java.nio.file.Path SAMPLE_DATA_PATH = Paths.get("test", "sampledata");
     private static final Object MAP_LOCK = new Object();
 
@@ -204,17 +202,13 @@ public class JunitUtil
                 // Modules have null sourcePath on TeamCity, so crawl for test/sampledata directories and populate
                 // a map the first time, then stash the map for future lookups.
                 String buildPath = module.getBuildPath();
-                String name = null;
 
-                if (null != buildPath)
+                // We don't know if the build machine used Windows or Linux separators, so search for both
+                int idx = StringUtils.lastIndexOfAny(buildPath, "/", "\\");
+
+                if (-1 != idx)
                 {
-                    int idx = StringUtils.lastIndexOfAny(buildPath, "/", "\\");
-
-                    if (-1 != idx)
-                        name = buildPath.substring(idx + 1);
-
-                    LOG.info("buildPath: " + buildPath);
-                    LOG.info("name: " + name);
+                    String name = buildPath.substring(idx + 1);
 
                     synchronized (MAP_LOCK)
                     {
@@ -239,12 +233,6 @@ public class JunitUtil
                         }
 
                         sampleDataDir = _sampleDataDirectories.get(name);
-
-                        if (null == sampleDataDir)
-                        {
-                            LOG.info("null == sampleDataDir!");
-                            LOG.info(_sampleDataDirectories);
-                        }
                     }
                 }
                 else
