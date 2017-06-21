@@ -1503,7 +1503,6 @@ public class SpecimenController extends BaseStudyController
         private boolean[] _required;
         private boolean _fromGroupedView;
         private Integer _preferredLocation;
-        private String _returnUrl;
         private boolean _ignoreReturnUrl;
         private boolean _extendedRequestUrl;
         private String[] _sampleIds;
@@ -1518,8 +1517,8 @@ public class SpecimenController extends BaseStudyController
             }
             if (_destinationLocation != 0)
                 builder.append("<input type=\"hidden\" name=\"destinationLocation\" value=\"").append(_destinationLocation).append("\">\n");
-            if (_returnUrl != null)
-                builder.append("<input type=\"hidden\" name=\"returnUrl\" value=\"").append(PageFlowUtil.filter(_returnUrl)).append("\">\n");
+            if (getReturnUrl() != null)
+                builder.append("<input type=\"hidden\" name=\"returnUrl\" value=\"").append(PageFlowUtil.filter(getReturnUrl())).append("\">\n");
             if (_sampleRowIds != null)
             {
                 for (long sampleId : _sampleRowIds)
@@ -1615,16 +1614,6 @@ public class SpecimenController extends BaseStudyController
         public void setPreferredLocation(Integer preferredLocation)
         {
             _preferredLocation = preferredLocation;
-        }
-
-        public String getReturnUrl()
-        {
-            return _returnUrl;
-        }
-
-        public void setReturnUrl(String returnUrl)
-        {
-            _returnUrl = returnUrl;
         }
 
         public boolean isIgnoreReturnUrl()
