@@ -90,7 +90,9 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -232,6 +234,13 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return StudyManager.getInstance().getVisits(this, order);
     }
 
+    @Override
+    public Map<String, Double> getVisitAliases()
+    {
+        return StudyManager.getInstance().getCustomVisitImportMapping(this)
+                .stream()
+                .collect(Collectors.toMap(StudyManager.VisitAlias::getName, StudyManager.VisitAlias::getSequenceNum));
+    }
 
     public DatasetDefinition getDataset(int id)
     {
