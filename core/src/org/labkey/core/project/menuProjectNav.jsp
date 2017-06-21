@@ -41,6 +41,9 @@
     {
         String title = containers.get(size - 1).isWorkbook()
                 ? containers.get(size - 1).getName() : containers.get(size - 1).getTitle();
+
+        if (c.isProject() && c.equals(ContainerManager.getHomeContainer()))
+            title = "Home";
 %>
         <div class="lk-project-nav-trail">
 <%
@@ -62,14 +65,14 @@
 %>
             <span><%=h(title)%></span>
         </div>
+        <div class="lk-project-nav-buttons">
 <%
         if (c.hasPermission(user, AdminPermission.class))
         {
             ActionURL createProjectUrl = PageFlowUtil.urlProvider(AdminUrls.class).getCreateProjectURL(c.getStartURL(getUser()));
             ActionURL createFolderUrl = PageFlowUtil.urlProvider(AdminUrls.class).getCreateFolderURL(c, c.getStartURL(getUser()));
-%>
-            <div class="lk-project-nav-buttons">
-<%
+            ActionURL folderManagementUrl = PageFlowUtil.urlProvider(AdminUrls.class).getFolderManagementURL(c);
+
             if (user.hasRootAdminPermission())
             {
 %>
@@ -93,9 +96,16 @@
                         </span>
                     </a>
                 </span>
+                <span class="button-icon">
+                    <a href="<%=folderManagementUrl%>" title="Folder Management">
+                        <span class="fa fa-gear labkey-main-menu-icon" alt="Folder Management"></span>
+                    </a>
+                </span>
 <%
-            if (!c.isRoot() && !c.isProject())
-            {
+        }
+
+        if (!c.isRoot() && !c.isProject())
+        {
 %>
                 <span class="button-icon">
                     <a id="permalink_vis" href="#" title="Permalink Page">
@@ -103,15 +113,24 @@
                     </a>
                 </span>
 <%
-            }
-%>
-            </div>
-<%
         }
 %>
+        </div>
         <div class="divider lk-project-nav-divider"></div>
 <%
     }
 %>
 
 <% popupFolderNavView.render(out); %>
+
+<script type="text/javascript">
+    +function($) {
+        //console.log($('.lk-project-nav-menu li.lk-project-nav-tree-selected'));
+
+        var p = document.getElementById('permalink');
+        var pvis = document.getElementById('permalink_vis');
+        if (p && pvis) {
+            pvis.href = p.href;
+        }
+    }(jQuery);
+</script>

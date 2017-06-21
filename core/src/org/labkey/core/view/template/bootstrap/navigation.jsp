@@ -32,12 +32,6 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.view.PopupMenuView" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.view.menu.FolderMenu" %>
-<%@ page import="org.labkey.api.view.PopupFolderNavView" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -46,6 +40,7 @@
     {
         dependencies.add("internal/jQuery");
         dependencies.add("Ext4");
+        dependencies.add("core/MenuBarHoverNavigation.js");
     }
 
     private String getSafeName(Portal.WebPart menu)
@@ -158,7 +153,7 @@
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                         <i class="fa fa-folder-open"></i>&nbsp;<%=h(model.getProjectTitle())%>
                     </a>
-                    <ul class="dropdown-menu"></ul>
+                    <ul class="dropdown-menu lk-project-nav-menu"></ul>
                 </li>
 <%
                 }
@@ -272,9 +267,7 @@
     </div>
     <script type="application/javascript">
         var __menus = {};
-        LABKEY.Utils.onReady({
-            scripts: ['core/MenuBarHoverNavigation.js'],
-            callback: function() {
+        LABKEY.Utils.onReady(function() {
             <%
                 for (Portal.WebPart menu : model.getCustomMenus())
                 {
@@ -306,13 +299,6 @@
             <%
                 }
             %>
-
-                var p = document.getElementById('permalink');
-                var pvis = document.getElementById('permalink_vis');
-                if (p && pvis) {
-                    pvis.href = p.href;
-                }
-            }
         });
     </script>
 </nav>

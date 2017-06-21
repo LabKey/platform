@@ -29,7 +29,7 @@
     // Create Project URL
     ActionURL createProjectURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateProjectURL(getContainer().getStartURL(getUser()));
 
-    NavTree projects = ContainerManager.getProjectList(getViewContext());
+    NavTree projects = ContainerManager.getProjectList(getViewContext(), false);
     Container currentProject = getContainer().getProject();
     String projectName = null;
     if (null != currentProject)

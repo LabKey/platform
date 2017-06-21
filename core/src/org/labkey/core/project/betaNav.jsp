@@ -41,7 +41,7 @@
 
     // Create Project URL
     ActionURL createProjectURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateProjectURL(me.getViewContext().getActionURL());
-    NavTree projects = ContainerManager.getProjectList(getViewContext());
+    NavTree projects = ContainerManager.getProjectList(getViewContext(), false);
 %>
 <div class="beta-nav">
     <div class="list-content">
