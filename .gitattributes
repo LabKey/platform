@@ -310,6 +310,7 @@ core/resources/styles/scss/labkey/components/_schemaBrowser.scss -text
 core/resources/styles/scss/labkey/components/_tabStrip.scss -text
 core/resources/styles/scss/lib/bootstrap/_bootstrap.scss -text
 core/resources/styles/scss/lib/bootstrap/_dropdown.scss -text
+core/resources/styles/scss/lib/bootstrap/_forms.scss -text
 core/resources/styles/scss/lib/bootstrap/_overrides.scss -text
 core/resources/styles/scss/lib/bootstrap/_panel.scss -text
 core/resources/styles/scss/lib/bootstrap/_tables.scss -text
