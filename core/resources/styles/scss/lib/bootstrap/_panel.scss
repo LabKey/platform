@@ -1,3 +1,4 @@
 .panel-portal {
   @include panel-variant($panel-default-border, $panel-default-text, $panel-bg, $panel-default-border);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.20);
 }

@@ -27,7 +27,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("clientapi/ext4");
+        dependencies.add("Ext4");
     }
 %>
 <%
@@ -37,7 +37,6 @@
     MessageConfigService.EmailConfigForm bean = ((JspView <MessageConfigService.EmailConfigForm>)HttpView.currentView()).getModelBean();
 %>
 <div id="<%=h(panelDiv)%>"></div>
-
 <script type="text/javascript">
 
     Ext4.onReady(function(){
@@ -102,15 +101,16 @@
                     }
                 });}
         });
-        var formPanel = Ext4.create('Ext.form.FormPanel', {
+        Ext4.create('Ext.form.FormPanel', {
             renderTo: '<%=h(panelDiv)%>',
             width: 800,
             labelWidth: 350,
             labelAlign: 'top',
-            //buttonAlign: 'right',
             labelPad: 15,
             border: false,
-            //bodyStyle : 'padding: 0px 10px;',
+            autoResize: {
+                skipHeight: true
+            },
             items: [{
                 xtype : 'fieldcontainer',
                 layout : {

@@ -22,7 +22,6 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    // TODO: This doesn't currently load when used in a TabStripView.java -- need to bootstrap these view dependencies
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
@@ -35,32 +34,24 @@
 %>
 <div id="fmp"></div>
 <script type="text/javascript">
-    +function() {
-        function init() {
-            Ext4.onReady(function() {
+    Ext4.onReady(function() {
 
-                var folderPanel = Ext4.create('LABKEY.ext4.panel.FolderManagement', {
-                    renderTo: 'fmp',
-                    height: 700,
-                    minWidth: 600,
-                    selected: <%= c.getRowId() %>,
-                    requiredPermission: <%=PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>,
-                    showContainerTabs: true
-                });
-
-                <% if (!PageFlowUtil.useExperimentalCoreUI()) { %>
-                Ext4.EventManager.onWindowResize(function(w, h) {
-                    if (!folderPanel.rendered)
-                        return;
-
-                    LABKEY.ext4.Util.resizeToViewport(folderPanel, w, h);
-                });
-                <% } %>
-            });
-        }
-
-        LABKEY.requiresExt4ClientAPI(function() {
-            LABKEY.requiresScript('admin/FolderManagementPanel.js', init);
+        var folderPanel = Ext4.create('LABKEY.ext4.panel.FolderManagement', {
+            renderTo: 'fmp',
+            height: 700,
+            minWidth: 600,
+            selected: <%= c.getRowId() %>,
+            requiredPermission: <%=PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>,
+            showContainerTabs: true
         });
-    }();
+
+        <% if (!PageFlowUtil.useExperimentalCoreUI()) { %>
+        Ext4.EventManager.onWindowResize(function(w, h) {
+            if (!folderPanel.rendered)
+                return;
+
+            LABKEY.ext4.Util.resizeToViewport(folderPanel, w, h);
+        });
+        <% } %>
+    });
 </script>

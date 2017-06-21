@@ -49,8 +49,8 @@
     SecurityPolicy reportPolicy = SecurityPolicyManager.getPolicy(bean.getDescriptor());
 
     Container project = study.getContainer().getProject();
-    List<Group> globalGroups = org.labkey.api.security.SecurityManager.getGroups(null, false);
-    List<Group> projectGroups = org.labkey.api.security.SecurityManager.getGroups(project, false);
+    List<Group> globalGroups = SecurityManager.getGroups(null, false);
+    List<Group> projectGroups = SecurityManager.getGroups(project, false);
 %>
 
 <script type="text/javascript">

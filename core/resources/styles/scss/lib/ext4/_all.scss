@@ -2081,14 +2081,24 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
 .x4-btn-default-medium-menu-active,
 .x4-btn-default-medium-pressed,
 .x4-btn-default-large-menu-active,
-.x4-btn-default-large-pressed,
+.x4-btn-default-large-pressed {
+  border-color: $button-default-border-color-over;
+  background-image: none;
+  background-color: $button-default-base-color-pressed;
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $btn-pressed-gradient-start), color-stop(100%, $btn-pressed-gradient-end));
+  background-image: -webkit-linear-gradient(top, $btn-pressed-gradient-start, $btn-pressed-gradient-end);
+  background-image: -moz-linear-gradient(top, $btn-pressed-gradient-start, $btn-pressed-gradient-end);
+  background-image: -o-linear-gradient(top, $btn-pressed-gradient-start, $btn-pressed-gradient-end);
+  background-image: linear-gradient(top, $btn-pressed-gradient-start, $btn-pressed-gradient-end);
+}
+
 .x4-btn-default-toolbar-small-menu-active,
 .x4-btn-default-toolbar-small-pressed,
 .x4-btn-default-toolbar-medium-menu-active,
 .x4-btn-default-toolbar-medium-pressed,
 .x4-btn-default-toolbar-large-menu-active,
 .x4-btn-default-toolbar-large-pressed {
-  border-color: $button-default-border-color-over;
+  border-color: $button-toolbar-border-color-over;
   background-image: none;
   background-color: $button-default-base-color-pressed;
   background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $btn-pressed-gradient-start), color-stop(100%, $btn-pressed-gradient-end));
@@ -4534,10 +4544,10 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
   border: 0;
   margin: 3px 0 0;
   padding: 2px 0 2px 6px;
-}
-/* line 144, ../../../ext-theme-neutral/sass/src/toolbar/Toolbar.scss */
-.x4-toolbar-footer .x4-toolbar-item {
-  margin: 0 6px 0 0;
+
+  .x4-toolbar-item {
+    margin: 0 6px 0 0;
+  }
 }
 
 /* line 149, ../../../ext-theme-neutral/sass/src/toolbar/Toolbar.scss */
@@ -4552,44 +4562,35 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
   background-repeat: no-repeat;
 }
 
-/* line 45, ../../../ext-theme-neutral/sass/src/toolbar/Toolbar.scss */
-.x4-toolbar-default {
-  border-color: $toolbar-border-color;
-  border-width: 1px;
-  background-image: none;
-  background-color: $toolbar-background-color;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $toolbar-background-gradient-start), color-stop(100%, $toolbar-background-gradient-end));
-  background-image: -webkit-linear-gradient(top, $toolbar-background-gradient-start, $toolbar-background-gradient-end);
-  background-image: -moz-linear-gradient(top, $toolbar-background-gradient-start, $toolbar-background-gradient-end);
-  background-image: -o-linear-gradient(top, $toolbar-background-gradient-start, $toolbar-background-gradient-end);
-  background-image: linear-gradient(top, $toolbar-background-gradient-start, $toolbar-background-gradient-end);
-}
-/* line 51, ../../../ext-theme-neutral/sass/src/toolbar/Toolbar.scss */
-.x4-toolbar-default .x4-box-scroller {
-  cursor: pointer;
-}
-/* line 55, ../../../ext-theme-neutral/sass/src/toolbar/Toolbar.scss */
-.x4-toolbar-default .x4-box-scroller-disabled {
-  filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
-  opacity: 0.5;
-  cursor: default;
-}
-
 /* line 82, ../../../ext-theme-neutral/sass/src/toolbar/Toolbar.scss */
 .x4-nlg .x4-toolbar-default {
   background-image: url('#{$ext4-images-dir}/toolbar/toolbar-default-bg.gif') !important;
   background-repeat: repeat-x;
 }
 
-/*<if slicer>*/
-/* line 78, ../../../ext-theme-base/sass/etc/mixins/slicer.scss */
-.x4-toolbar-default:after {
-  display: none;
-  content: "x-slicer:bg:url('#{$ext4-images-dir}/toolbar/toolbar-default-bg.gif'), stretch:bottom";
+/* line 45, ../../../ext-theme-neutral/sass/src/toolbar/Toolbar.scss */
+.x4-toolbar-default {
+  border-color: $toolbar-border-color;
+  border-width: 1px;
+  background-color: $toolbar-background-color;
+  background-image: linear-gradient(top, $toolbar-background-gradient-start, $toolbar-background-gradient-end);
+
+  .x4-box-scroller {
+    cursor: pointer;
+  }
+
+  .x4-box-scroller-disabled {
+    filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  &:after {
+    display: none;
+    content: "x-slicer:bg:url('#{$ext4-images-dir}/toolbar/toolbar-default-bg.gif'), stretch:bottom";
+  }
 }
 
-/*</if slicer>*/
-/* */
 /* line 166, ../../../ext-theme-neutral/sass/src/toolbar/Toolbar.scss */
 .x4-toolbar-scroll-left {
   background-image: url('#{$ext4-images-dir}/toolbar/scroll-left.gif');

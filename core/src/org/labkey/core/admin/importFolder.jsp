@@ -22,8 +22,16 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.FolderManagementAction" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("Ext4");
+    }
+%>
 <%
     FolderManagementAction.FolderManagementForm form = (FolderManagementAction.FolderManagementForm) HttpView.currentModel();
     Container c = getViewContext().getContainerNoTab();
@@ -250,6 +258,9 @@
         var folderTemplatesPanel = Ext4.create('Ext.form.Panel', {
             border : false,
             renderTo : 'SourcePicker',
+            autoResize: {
+                skipHeight: true
+            },
             items : [
                 sourceRadioGroup,
                 folderTemplatesComponent,
@@ -264,7 +275,6 @@
                 success: initTemplateFolders(folderTemplatesComponent)
             });
         }
-
     });
 </script>
 

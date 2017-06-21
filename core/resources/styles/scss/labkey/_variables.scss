@@ -31,9 +31,6 @@ $lk-danger-color: #B82025 !default;
 
 $lk-panel-base-color: #DFE8F6 !default;
 $lk-text-color: $black !default;
-$lk-link-color: $lk-brand-color !default;
-$lk-link-hover-color: darken($lk-link-color, 15%) !default;
-$lk-link-hover-decoration: none !default;
 $lk-grid-color: #E7EFF4 !default;
 $lk-primary-bg-color: #F8F8F8 !default;
 $lk-secondary-bg-color: $white !default;
@@ -109,7 +106,6 @@ $lk-body-bg-color: $lk-primary-bg-color !default;
 $lk-border-radius-base: 2px !default;
 $lk-border-radius-large: 3px !default;
 $lk-border-radius-small: 1px !default;
-$lk-container-border-top: 5px solid $lk-secondary-brand-color !default;
 
 //== Breadcrumbs
 //
@@ -134,10 +130,16 @@ $lk-button-primary-bg-color-hover: $lk-accent-color !default;
 $lk-button-primary-color: $white !default;
 $lk-button-primary-color-hover: $white !default;
 
-$lk-bar-button-border-color: $lk-brand-color !default;
+$lk-bar-button-bg-color: transparent !default;
+$lk-bar-button-bg-color-hover: transparent !default;
+
 $lk-bar-button-color: $lk-brand-color !default;
-$lk-bar-button-bg-color-hover: $lk-brand-color !default;
-$lk-bar-button-color-hover: $white !default;
+$lk-bar-button-color-hover: $black !default;
+
+$lk-bar-button-border-color: transparent !default;
+$lk-bar-button-border: 1px solid $lk-bar-button-border-color !default;
+$lk-bar-button-border-color-hover: lightgray !default;
+$lk-bar-button-border-hover: 1px solid $lk-bar-button-border-color-hover !default;
 
 //== Dialogs / Modals
 //
@@ -175,18 +177,24 @@ $lk-input-group-unstyled-bg-color: transparent;
 $lk-input-group-addon-padding-right: 4px;
 $lk-input-group-addon-padding-left: 4px;
 
-
-
 //== Grids
 //
 $lk-grid-bg-color: $white !default;
-$lk-grid-row-bg-color: $white !default;
-$lk-grid-row-alt-bg-color: #F4F4F4 !default;
-$lk-grid-border-color: #ddd !default;
+$lk-grid-border-color: lightgray !default;
 
-$lk-grid-ct-bg-color: $lk-grid-color !default;
+$lk-grid-inner-border-color: $lk-grid-border-color !default;
+$lk-grid-inner-border-width: 1px !default;
+$lk-grid-outer-border-color: $lk-grid-border-color !default;
+$lk-grid-outer-border-width: 1px !default;
+
+$lk-grid-bar-bg-color: $white !default;
+$lk-grid-header-bar-bg-color: $lk-grid-bar-bg-color !default;
+
+$lk-grid-ct-bg-color: $lk-grid-bar-bg-color !default;
 $lk-grid-msgbox-bg-color: #F4F4F4 !default;
 
+$lk-grid-row-bg-color: $white !default;
+$lk-grid-row-alt-bg-color: #F4F4F4 !default;
 $lk-grid-row-select-color-hover: $white !default;
 
 //== Header
@@ -215,6 +223,9 @@ $lk-input-color: $lk-text-color !default;
 
 //== Links
 //
+$lk-link-color: $lk-brand-color !default;
+$lk-link-color-hover: darken($lk-link-color, 40%) !default;
+$lk-link-hover-decoration: none !default;
 $lk-text-link-color: $lk-brand-color !default;
 $lk-text-link-color-hover: $black !default;
 
@@ -264,6 +275,10 @@ $lk-panel-warning-heading-bg: $lk-state-warning-bg !default;
 $lk-panel-danger-text: $lk-state-danger-text !default;
 $lk-panel-danger-border: $lk-state-danger-border !default;
 $lk-panel-danger-heading-bg: $lk-state-danger-bg !default;
+
+//== Portals
+//
+$lk-container-border-top: 3px solid $lk-secondary-brand-color !default;
 
 //== Tables
 //

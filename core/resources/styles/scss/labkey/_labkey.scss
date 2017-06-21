@@ -84,7 +84,7 @@ li.labkey-ancillary-wizard-active-step
 
   &:hover,
   &:visited:hover {
-    color: $lk-text-color;
+    color: $lk-link-color-hover;
   }
 }
 
@@ -1006,11 +1006,7 @@ span.labkey-wp-icon-button-inactive {
   margin-bottom: 2px;
   border: 1px solid #fff;
   color: $lk-link-color;
-  text-transform: uppercase;
   font-family: $lk-font-family-sans-serif;
-  white-space: nowrap;
-
-  border-radius: 5px;
 }
 
 .labkey-wp-text-buttons a:hover {

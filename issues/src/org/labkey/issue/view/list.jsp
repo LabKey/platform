@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.labkey.issue.view.IssuesListView" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -30,13 +31,40 @@
     IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c, issueListDef);
 
     if (request.getParameter("error") != null)
-    {%>
-<span class="labkey-error"><%=h(request.getParameter("error"))%></span><br/><%
-    }
+    {
 %>
-
-<table><tr>
-    <td nowrap><labkey:form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" method="get">
+<span class="labkey-error"><%=h(request.getParameter("error"))%></span><br/>
+<%  } %>
+<%--<% if (false) { %>--%>
+<% if (PageFlowUtil.useExperimentalCoreUI()) { %>
+<div class="row" style="margin-bottom: 15px;">
+    <div class="col-xs-7">
+        <labkey:form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" layout="inline">
+            <% if (c.hasPermission(getUser(), InsertPermission.class)) { %>
+            <%= button("New " + names.singularName)
+                    .href(new ActionURL(IssuesController.InsertAction.class, c)
+                    .addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueListDef))
+                    .addClass("btn btn-success")
+            %>
+            <% } %>
+            <labkey:input name="issueId"/>
+            <%= button("Jump to " + names.singularName).submit(true) %>
+        </labkey:form>
+    </div>
+    <div class="col-xs-5">
+        <div class="pull-right">
+            <labkey:form action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" layout="inline">
+                <labkey:input name="q"/>
+                <labkey:input type="hidden" name="template" value="<%=h(IssuesController.IssueSearchResultTemplate.NAME)%>"/>
+                <%= button("Search").iconCls("search").submit(true) %>
+            </labkey:form>
+        </div>
+    </div>
+</div>
+<% } else { %>
+<table>
+    <tr>
+    <td nowrap><labkey:form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" layout="horizontal">
         <%
         if (c.hasPermission(getUser(), InsertPermission.class))
         {%>
@@ -46,10 +74,12 @@
         <%= button("Jump to " + names.singularName).submit(true).attributes("align=\"top\" vspace=\"2\"") %></labkey:form></td>
     <td width=100%>&nbsp;</td>
     <td align="right" nowrap>
-        <labkey:form action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" method="get">
+        <labkey:form action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>">
             <input type="text" size="30" name="q" value="">
             <input type="hidden" name="template" value="<%=h(IssuesController.IssueSearchResultTemplate.NAME)%>">
             <%= button("Search").submit(true).attributes("align=\"top\" vspace=\"2\"")%>
         </labkey:form>
     </td>
-</tr></table>
+    </tr>
+</table>
+<% } %>

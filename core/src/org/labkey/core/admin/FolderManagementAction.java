@@ -1270,11 +1270,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             // Stay on same tab if there are errors
             if (_errors.hasErrors() && null != StringUtils.trimToNull(form.getTabId()))
                 setSelectedTabId(form.getTabId());
-
-            addClientDependency(ClientDependency.fromPath("clientapi/ext3"));
-            addClientDependency(ClientDependency.fromPath("Ext4"));
-            if ("concepts".equals(form.getTabId()))
-                addClientDependency(ClientDependency.fromPath("sqv"));
         }
 
         public List<NavTree> getTabList()
@@ -1296,7 +1291,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             {
                 for (Module m : activeModules)
                 {
-                    if(m.getModuleProperties().size() > 0)
+                    if (m.getModuleProperties().size() > 0)
                     {
                         showProps = true;
                         break;
@@ -1335,13 +1330,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
         private boolean isValidTab(String tabId)
         {
-            List<NavTree> validTabs = getTabList();
-
-            for (NavTree validTab : validTabs)
-                if (validTab.getId().equals(tabId))
-                    return true;
-
-            return false;
+            return getTabList().stream().anyMatch(validTab -> validTab.getId().equals(tabId));
         }
 
         public HttpView getTabView(String tabId) throws Exception
@@ -1475,33 +1464,31 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             queryView.disableContainerFilterSelection();
             queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
 
-            VBox view = new VBox();
-
-            view.addView(new JspView<Object>("/org/labkey/core/admin/view/folderSettingsHeader.jsp", Object.class, _errors));
-            VBox defaultsView = new VBox();
-            defaultsView.addView(
+            VBox defaultsView = new VBox(
                 new HtmlView(
-                    "<div class='labkey-announcement-title'><span>Default Settings</span></div><div class='labkey-title-area-line'></div>" +
+                    "<div class=\"labkey-announcement-title\"><span>Default Settings</span></div><div class=\"labkey-title-area-line\"></div>" +
                     "You can change this folder's default settings for email notifications here.")
             );
+
             PanelConfig config = new PanelConfig(getViewContext().getActionURL().clone(), key);
             for (MessageConfigService.ConfigTypeProvider provider : MessageConfigService.get().getConfigTypes())
             {
                 defaultsView.addView(new JspView<>("/org/labkey/core/admin/view/notifySettings.jsp", provider.createConfigForm(getViewContext(), config)));
             }
-            view.addView(defaultsView);
-            VBox usersView = new VBox();
-            usersView.addView(
-                new HtmlView(
-                    "<div class='labkey-announcement-title'><span>User Settings</span></div><div class='labkey-title-area-line'></div>" +
-                    "The list below contains all users with READ access to this folder who are able to receive notifications<br/>" +
-                    "by email for message boards and file content events. A user's current message or file notification setting is<br/>" +
-                    "visible in the appropriately named column.<br/><br/>" +
-                    "To bulk edit individual settings: select one or more users, click the 'Update User Settings' menu, and select the notification type.")
+
+            return new VBox(
+                new JspView<>("/org/labkey/core/admin/view/folderSettingsHeader.jsp", null, _errors),
+                defaultsView,
+                new VBox(
+                    new HtmlView(
+                        "<div class='labkey-announcement-title'><span>User Settings</span></div><div class='labkey-title-area-line'></div>" +
+                        "The list below contains all users with READ access to this folder who are able to receive notifications<br/>" +
+                        "by email for message boards and file content events. A user's current message or file notification setting is<br/>" +
+                        "visible in the appropriately named column.<br/><br/>" +
+                        "To bulk edit individual settings: select one or more users, click the 'Update User Settings' menu, and select the notification type."),
+                    queryView
+                )
             );
-            usersView.addView(queryView);
-            view.addView(usersView);
-            return view;
         }
     }
 

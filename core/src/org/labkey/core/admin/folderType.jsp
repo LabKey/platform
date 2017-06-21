@@ -35,8 +35,6 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    // TODO: This dependency declaration does not work due to TabStripView.java not correctly threading dependencies prior to render
-    // Declaration is re-declared in JavaScript in this jsp.
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {

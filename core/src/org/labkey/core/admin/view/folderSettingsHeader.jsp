@@ -26,7 +26,6 @@
     }
 %>
 <labkey:errors/>
-
 <script type="text/javascript">
     Ext4.QuickTips.init();
 </script>

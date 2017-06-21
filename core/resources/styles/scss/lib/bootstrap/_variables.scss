@@ -35,7 +35,7 @@ $text-color:            $lk-text-color;
 //** Global textual link color.
 $link-color:            $lk-link-color;
 //** Link hover color set via `darken()` function.
-$link-hover-color:      $lk-link-hover-color;
+$link-hover-color:      $lk-link-color-hover;
 //** Link hover decoration.
 $link-hover-decoration: $lk-link-hover-decoration;
 
@@ -135,7 +135,7 @@ $table-cell-padding:            $lk-table-cell-padding;
 $table-condensed-cell-padding:  $lk-table-condensed-cell-padding;
 
 //** Default background color used for all tables.
-$table-bg:                      transparent !default;
+$table-bg:                      $lk-grid-bg-color;
 //** Background color used for `.table-striped`.
 $table-bg-accent:               #f9f9f9 !default;
 //** Background color used for `.table-hover`.
@@ -144,6 +144,7 @@ $table-bg-active:               $table-bg-hover !default;
 
 //** Border color for table and cell borders.
 $table-border-color:            $lk-grid-border-color;
+$table-outer-border-width:      $lk-grid-outer-border-width;
 
 
 //== Buttons

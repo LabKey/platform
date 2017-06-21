@@ -433,15 +433,11 @@ public class ExperimentController extends SpringActionController
                 detailsView.setTitle("Run Group Details");
             }
 
-            VBox vbox = new VBox();
-            vbox.addView(new StandardAndCustomPropertiesView(detailsView, customPropertiesView));
-
             VBox runsVBox = new VBox(views.second, createInitializedQueryView(form, errors, false, null));
             runsVBox.setTitle("Experiment Runs");
             runsVBox.setFrame(WebPartView.FrameType.PORTAL);
-            vbox.addView(runsVBox);
 
-            return vbox;
+            return new VBox(new StandardAndCustomPropertiesView(detailsView, customPropertiesView), runsVBox);
         }
 
         @Override

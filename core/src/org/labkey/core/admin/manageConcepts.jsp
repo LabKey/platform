@@ -21,11 +21,18 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("sqv");
+    }
+%>
 <%
     Map<String, Lookup> conceptURIs = ConceptURIProperties.getMappings(getContainer());
 %>
-
 <style type="text/css">
     form {
         width: 514px;
@@ -156,6 +163,9 @@
         Ext4.create('Ext.form.Panel', {
             border : false,
             renderTo : 'SQVPicker',
+            autoResize: {
+                skipHeight: true
+            },
             items : [
                 conceptTextField,
                 containerIdTextField,

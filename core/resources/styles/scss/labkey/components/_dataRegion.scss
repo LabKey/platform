@@ -69,14 +69,6 @@
     font-weight: bold;
   }
 
-  /*
-  "Pagination" is used with data views that don't display all the data on one page.
-  This class is for the area with the links to change between the pages
-  */
-  .labkey-pagination {
-    white-space: nowrap;
-  }
-
   /* Used for checkboxes in Data Regions */
   .labkey-update, .labkey-details, .labkey-selectors {
     text-align: left;
@@ -121,11 +113,11 @@
 }
 
 .lk-region-bar {
-  padding: 10px 15px;
-  background-color: $white;
-  border-top: 1px solid lightgray;
-  border-left: 1px solid lightgray;
-  border-right: 1px solid lightgray;
+  padding: 5px 15px;
+  background-color: $lk-grid-bar-bg-color;
+  border-top: $lk-grid-outer-border-width solid $lk-grid-outer-border-color;
+  border-left: $lk-grid-outer-border-width solid $lk-grid-outer-border-color;
+  border-right: $lk-grid-outer-border-width solid $lk-grid-outer-border-color;
   border-bottom: none;
 
   &:before, &:after {
@@ -136,6 +128,10 @@
   &:after {
     clear: both;
   }
+}
+
+.lk-region-header-bar {
+  background-color: $lk-grid-header-bar-bg-color;
 }
 
 .lk-region-context-bar {
@@ -170,9 +166,9 @@
 }
 
 .lk-region-drawer {
-  border-top: 1px solid lightgray;
-  border-left: 1px solid lightgray;
-  border-right: 1px solid lightgray;
+  border-top: $lk-grid-outer-border-width solid $lk-grid-outer-border-color;
+  border-left: $lk-grid-outer-border-width solid $lk-grid-outer-border-color;
+  border-right: $lk-grid-outer-border-width solid $lk-grid-outer-border-color;
   border-bottom: none;
   background-clip: padding-box;
   background-color: $white;

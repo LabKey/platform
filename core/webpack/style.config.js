@@ -12,7 +12,6 @@ module.exports = function(env) {
     var styleJs = baseJsDir + 'style.js';
     var ext4Js = baseJsDir + 'ext4.js';
     var ext3Js = baseJsDir + 'ext3.js';
-    var guideJs = baseJsDir + 'guide.js';
     if (env && env.builddependency) {
         entry.core = baseJsDir + 'resources.js';
     }
@@ -21,13 +20,11 @@ module.exports = function(env) {
         entry[themeName] = styleJs;
         entry['ext4_' + themeName] = ext4Js;
         entry['ext3_' + themeName] = ext3Js;
-        entry['guide_' + themeName] = guideJs;
     }
     else {
         entry.seattle = styleJs;
         entry.ext4 = ext4Js;
         entry.ext3 = ext3Js;
-        entry.guide = guideJs;
     }
 
     return {

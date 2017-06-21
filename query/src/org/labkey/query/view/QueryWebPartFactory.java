@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.QueryWebPart;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
@@ -40,6 +41,6 @@ public class QueryWebPartFactory extends AlwaysAvailableWebPartFactory
 
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
-        return new EditQueryView(webPart);
+        return new JspView<>("/org/labkey/query/view/editQueryWebPart.jsp", webPart);
     }
 }

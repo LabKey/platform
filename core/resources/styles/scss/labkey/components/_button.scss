@@ -8,7 +8,6 @@
   color: $lk-button-color;
   display: inline-block;
   letter-spacing: 0.5px;
-  //margin-right: 5px;
   padding: $lk-button-padding;
   font-size: $lk-font-size-small;
   font-weight: $lk-button-font-weight;
@@ -40,7 +39,8 @@
   white-space: nowrap;
 
   .labkey-button {
-    border: 1px solid $lk-bar-button-border-color;
+    background-color: $lk-bar-button-bg-color;
+    border: $lk-bar-button-border;
     color: $lk-bar-button-color;
 
     margin-right: 5px;
@@ -53,12 +53,21 @@
     &:hover,
     &:focus {
       background-color: $lk-bar-button-bg-color-hover;
+      border: $lk-bar-button-border-hover;
       color: $lk-bar-button-color-hover;
     }
 
     &.disabled, &.labkey-disabled-button, &[disabled] {
       cursor: not-allowed;
       opacity: 0.65;
+
+      &:active,
+      &:hover,
+      &:focus {
+        background-color: $lk-bar-button-bg-color;
+        border: $lk-bar-button-border;
+        color: $lk-bar-button-color;
+      }
     }
   }
 }
