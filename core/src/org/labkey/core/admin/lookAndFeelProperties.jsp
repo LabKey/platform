@@ -39,6 +39,7 @@
     boolean hasAdminOpsPerm = c.hasPermission(getUser(), AdminOperationsPermission.class);
     String clearMessage = folder ? "the default format properties" : "all look & feel properties";
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
+    String themeName = laf.getThemeName();
 %>
 <%=formatMissedErrors("form")%>
 
@@ -87,8 +88,8 @@
     <td class="labkey-form-label">Theme (new experimental themes)</td>
     <td>
         <select name="themeName">
-            <option value="Seattle" <%=selected("Seattle".equalsIgnoreCase(LookAndFeelProperties.getInstance(c).getThemeName()))%>>Seattle</option>
-            <option value="SeattleLight" <%=selected("SeattleLight".equalsIgnoreCase(LookAndFeelProperties.getInstance(c).getThemeName()))%>>Seattle (Light)</option>
+            <option value="Seattle" <%=selected("Seattle".equalsIgnoreCase(themeName))%>>Seattle</option>
+            <option value="SeattleLight" <%=selected("SeattleLight".equalsIgnoreCase(themeName))%>>Seattle (Light)</option>
         </select>
     </td>
 </tr>
@@ -110,15 +111,10 @@
                     <option value="<%=h(theme.toString())%>"<%=selected(selected)%>><%=h(theme.getFriendlyName())%></option>
                 <%}
             %>
-        </select><%
-
-        if (c.isRoot())
-        { %>
-
-        <%=textLink("define web themes", AdminController.getDefineWebThemesURL(false))%><%
-
-        }
-        %>
+        </select>
+        <% if (c.isRoot()) { %>
+        <%=textLink("define web themes", AdminController.getDefineWebThemesURL(false))%>
+        <% } %>
     </td>
 </tr>
 <% } %>

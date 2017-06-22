@@ -80,10 +80,10 @@
                     <i class="fa fa-search"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
-                    <li style="padding: 3px 20px;">
+                    <li>
                         <labkey:form action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" method="GET">
-                            <div class="input-group" style="width: 100%;">
-                                <input type="text" class="search-box" name="q" placeholder="Search LabKey Server" value="" style="width: 100%;">
+                            <div class="input-group">
+                                <input type="text" class="search-box" name="q" placeholder="Search LabKey Server" value="">
                                 <input type="submit" hidden>
                             </div>
                         </labkey:form>

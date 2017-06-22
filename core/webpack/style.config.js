@@ -36,7 +36,7 @@ module.exports = function(env) {
 
         output: {
             path: path.resolve(__dirname, '../resources/web/core/css'),
-            publicPath: '/labkey/core/css/',
+            publicPath: './',
             filename: '[name].js'
         },
 

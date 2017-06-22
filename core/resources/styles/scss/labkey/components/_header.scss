@@ -180,6 +180,23 @@
       }
     }
   }
+
+  #global-search-xs {
+
+    .dropdown-menu > li {
+      padding: 3px 20px;
+
+      .input-group {
+        width: 100%;
+      }
+
+      .search-box {
+        line-height: 1.8;
+        padding: 5px;
+        width: 100%;
+      }
+    }
+  }
 }
 
 .labkey-notification-panel,
