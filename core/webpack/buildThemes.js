@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2017 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 var SOURCE_THEME_DIR = 'resources/themes/';
 var TARGET_THEME_DIR = 'resources/styles/themeVariables/';
 var TEMP_VARIABLE_FILE = '_variables.scss';
