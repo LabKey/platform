@@ -27,7 +27,7 @@ public class PopupFolderNavView extends PopupMenuView
 
     private void renderFolderNavTree(NavTree tree, Writer out) throws IOException
     {
-        if (tree == null || !PageFlowUtil.useExperimentalCoreUI())
+        if (tree == null)
             return;
 
         Container container = _context.getContainer();
