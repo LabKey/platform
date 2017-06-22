@@ -37,7 +37,7 @@
     int size = containers.size();
 
     // Only show the nav trail for the project if the user has admin perm
-    if (size > 1 || (c.hasPermission(user, AdminPermission.class) && size > 0))
+    if (size > 0)
     {
         String title = containers.get(size - 1).isWorkbook()
                 ? containers.get(size - 1).getName() : containers.get(size - 1).getTitle();

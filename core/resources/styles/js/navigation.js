@@ -194,7 +194,7 @@
                         // if we have a selected part of the nav menu to jump to, update display states for the various
                         // parts of the nav tree submenus
                         var selectedSubmenu = $('ul.dropdown-menu li.lk-project-nav-tree-selected');
-                        if (selectedSubmenu) {
+                        if (selectedSubmenu.length > 0) {
                             // hide each of the top level project list items
                             var nav = $('ul.lk-project-nav-menu');
                             nav.children('li').css('display', 'none');
