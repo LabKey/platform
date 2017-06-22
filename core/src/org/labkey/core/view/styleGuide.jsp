@@ -170,10 +170,12 @@
         <h2>Horizontal form</h2>
         <div class="lk-sg-example">
             <labkey:form action="some-action" layout="horizontal">
-                <labkey:input name="name" label="Standard form" placeholder="Placeholder Text" id="exampleInputName1"/>
-                <labkey:input name="email" label="Email address" placeholder="beaker@labkey.com" id="exampleInputEmail1"/>
+                <labkey:input name="name" label="Standard Input" placeholder="Placeholder Text" id="exampleInputName1"/>
                 <labkey:input name="avatar" label="Avatar" type="file" id="avatar1" contextContent="It's best to use an image smaller than 400x400 pixels"/>
-                <labkey:input name="somtext" label="Text Area" type="textarea" id="area1" placeholder="These are words that can be on many lines"/>
+                <labkey:input name="sometext" label="Text Area" type="textarea" id="area1" placeholder="My words can be on many lines"/>
+                <labkey:input name="disabled" label="Disabled" isDisabled="true" id="disabled1" placeholder="You can't touch me!"/>
+                <labkey:input name="required" label="Required" isRequired="true" id="required1" placeholder="I need a value"/>
+                <labkey:input name="readOnly" label="Read Only" isReadOnly="true" id="readOnly1" value="You can only read me"/>
                 <% /* This is an example of a select builder -- hopefully can be replaced soon with a <labkey:select> */ %>
                 <%= new Select.SelectBuilder().name("selectfield").label("Nominal select")
                         .layout(Input.Layout.HORIZONTAL)
