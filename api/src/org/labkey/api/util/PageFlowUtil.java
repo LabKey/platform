@@ -1887,7 +1887,7 @@ public class PageFlowUtil
         return "ext-theme";
     }
 
-    private static String resolveThemeName(Container c)
+    public static String resolveThemeName(Container c)
     {
         String themeName = WebTheme.DEFAULT.getFriendlyName();
 

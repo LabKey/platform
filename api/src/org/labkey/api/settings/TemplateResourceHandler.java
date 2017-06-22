@@ -47,9 +47,12 @@ public enum TemplateResourceHandler
             return "logo.image";
         }
 
-        protected String getDefaultLink()
+        protected String getDefaultLink(Container c)
         {
-            return PageFlowUtil.useExperimentalCoreUI() ? "/_images/lk_logo_white.png" : "/_images/defaultlogo.png";
+            if (PageFlowUtil.useExperimentalCoreUI())
+                return "/_images/lk-noTAG-" + PageFlowUtil.resolveThemeName(c) + ".svg";
+
+            return "/_images/defaultlogo.png";
         }
 
         protected CacheableWriter getWriterForContainer(Container c) throws IOException, ServletException
@@ -85,9 +88,12 @@ public enum TemplateResourceHandler
             return "logo-mobile.image";
         }
 
-        protected String getDefaultLink()
+        protected String getDefaultLink(Container c)
         {
-            return PageFlowUtil.useExperimentalCoreUI() ? "/_images/lk_logo_white_m.png" : "/_images/defaultlogo.png";
+            if (PageFlowUtil.useExperimentalCoreUI())
+                return "/_images/mobile-logo-" + PageFlowUtil.resolveThemeName(c) + ".svg";
+
+            return "/_images/defaultlogo.png";
         }
 
         protected CacheableWriter getWriterForContainer(Container c) throws IOException, ServletException
@@ -123,7 +129,7 @@ public enum TemplateResourceHandler
             return "favicon.image";
         }
 
-        protected String getDefaultLink()
+        protected String getDefaultLink(Container c)
         {
             return "/_images/favicon.ico";
         }
@@ -154,7 +160,7 @@ public enum TemplateResourceHandler
     };
 
     abstract protected String getResourceName();
-    abstract protected String getDefaultLink();
+    abstract protected String getDefaultLink(Container c);
     abstract protected CacheableWriter getWriterForContainer(Container c) throws IOException, ServletException;
 
     private Calendar getExpiration()
@@ -172,7 +178,7 @@ public enum TemplateResourceHandler
             Container settingsContainer = LookAndFeelProperties.getSettingsContainer(c);
             CacheableWriter writer = getWriterForContainer(settingsContainer);
 
-            if (CacheableWriter.noDocument == writer)
+            if (CacheableWriter.noDocument == writer && !PageFlowUtil.useExperimentalCoreUI())
                 settingsContainer = ContainerManager.getRoot();
 
             return new ResourceURL(getResourceName(), settingsContainer);
@@ -204,7 +210,7 @@ public enum TemplateResourceHandler
         else
         {
             response.setDateHeader("Expires", getExpiration().getTimeInMillis());
-            request.getRequestDispatcher(getDefaultLink()).forward(request, response);
+            request.getRequestDispatcher(getDefaultLink(c)).forward(request, response);
         }
     }
 
