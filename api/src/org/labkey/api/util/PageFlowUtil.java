@@ -1894,14 +1894,21 @@ public class PageFlowUtil
         if (c != null)
         {
             if (useExperimentalCoreUI())
-                return LookAndFeelProperties.getInstance(c).getThemeName();
-
-            WebTheme theme = WebThemeManager.getTheme(c);
-
-            // Custom Theme -- TODO: Should have a better way to lookup built-in themes
-            if (!theme.isEditable())
             {
-                themeName = theme.getFriendlyName();
+                themeName = LookAndFeelProperties.getInstance(c).getThemeName();
+
+                // Only for 17.2 release
+                if (!"seattle".equalsIgnoreCase(themeName) && !"seattlelight".equalsIgnoreCase(themeName))
+                    return WebTheme.DEFAULT.getFriendlyName().toLowerCase();
+            }
+            else
+            {
+                WebTheme theme = WebThemeManager.getTheme(c);
+
+                if (!theme.isEditable())
+                {
+                    themeName = theme.getFriendlyName();
+                }
             }
         }
 
