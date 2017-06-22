@@ -189,6 +189,32 @@
                     config.partConfig = menus[safeName];
                 }
 
+                if (partName == 'MenuProjectNav') {
+                    config.success = function() {
+                        // if we have a selected part of the nav menu to jump to, update display states for the various
+                        // parts of the nav tree submenus
+                        var selectedSubmenu = $('ul.dropdown-menu li.lk-project-nav-tree-selected');
+                        if (selectedSubmenu) {
+                            // hide each of the top level project list items
+                            var nav = $('ul.lk-project-nav-menu');
+                            nav.children('li').css('display', 'none');
+
+                            // toggle the open class for each of the submenus through the tree to the selected node
+                            // and show each of the dropdown-submenu items up the tree, but hide the links below them
+                            $.each(selectedSubmenu.parents('ul.dropdown-layer-menu'), function(index, submenu) {
+                                $(submenu).toggleClass('open');
+                                $(submenu).siblings('a').css('display', 'none');
+                                $(submenu).parent().css('display', '');
+                                $(submenu).parent().siblings('li').css('display', 'none');
+                            });
+
+                            // show the selected submenu list items
+                            selectedSubmenu.css('display', '');
+                            selectedSubmenu.siblings('li').css('display', '');
+                        }
+                    };
+                }
+
                 var wp = new LABKEY.WebPart(config);
                 wp.render();
                 $(this).unbind('click');

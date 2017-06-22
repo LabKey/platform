@@ -104,7 +104,7 @@
 <%
         }
 
-        if (!c.isRoot() && !c.isProject())
+        if (!c.isRoot())
         {
 %>
                 <span class="button-icon">
@@ -125,8 +125,6 @@
 
 <script type="text/javascript">
     +function($) {
-        //console.log($('.lk-project-nav-menu li.lk-project-nav-tree-selected'));
-
         var p = document.getElementById('permalink');
         var pvis = document.getElementById('permalink_vis');
         if (p && pvis) {

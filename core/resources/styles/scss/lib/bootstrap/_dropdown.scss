@@ -74,7 +74,7 @@
     }
 
     &.subcollapse {
-      padding: 3px 4px;
+      padding: 3px 28px 3px 4px;
     }
 
     & > i.fa {
@@ -99,7 +99,6 @@
   &  > .lk-project-nav-trail {
     display: block;
     padding: 3px 28px;
-    white-space: nowrap;
 
     & > a {
       display: inline-block;
@@ -116,6 +115,7 @@
 
   &  > .lk-project-nav-buttons {
     padding: 3px 28px;
+    white-space: nowrap;
 
     & > .button-icon {
       background-color: transparent;
@@ -125,9 +125,11 @@
       }
     }
   }
-}
 
-.lk-project-nav-menu {
+  &.lk-project-nav-menu > .lk-project-nav-trail {
+    white-space: nowrap;
+  }
+
   & .lk-project-nav-disabled {
     color: $lk-dropdown-submenu-icon-color;
   }
