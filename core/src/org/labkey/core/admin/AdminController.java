@@ -763,6 +763,8 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
+    @AllowedDuringUpgrade
+    @AllowedBeforeInitialUserIsSet
     public class HealthCheckAction extends ApiAction
     {
         @Override
