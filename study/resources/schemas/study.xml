@@ -2214,6 +2214,7 @@
       <column columnName="Name"/>
       <column columnName="Caption"/>
       <column columnName="Description"/>
+      <column columnName="Category"/>
       <column columnName="SingleUse">
           <description>Indicates that this tag can be used for only one visit for each study/cohort combination.</description>
       </column>

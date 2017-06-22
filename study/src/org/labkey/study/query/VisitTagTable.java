@@ -45,6 +45,7 @@ public class VisitTagTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Name")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Caption")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Description")));
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Category")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("SingleUse")));
 
         // setup lookups for the standard fields
