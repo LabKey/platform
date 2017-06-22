@@ -49,18 +49,27 @@
     ViewContext context = getViewContext();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     boolean showSearch = hasUrlProvider(SearchUrls.class);
+
+    String siteShortName = (laf.getShortName() != null && laf.getShortName().length() > 0) ? laf.getShortName() : null;
 %>
 <div class="labkey-page-header">
     <div class="container clearfix">
-        <div class="navbar-header">
-            <a class="hidden-xs brand-logo" href="<%=h(laf.getLogoHref())%>">
+        <div class="hidden-xs navbar-header">
+            <a class="brand-logo" href="<%=h(laf.getLogoHref())%>">
                 <img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>" height="30">
             </a>
-            <a class="hidden-sm hidden-md hidden-lg brand-logo" href="<%=h(laf.getLogoHref())%>">
+            <% if (siteShortName != null) {
+                String displayedShortName = "LabKey Server".equals(siteShortName) ? "Server" : siteShortName;
+            %>
+            <h4 class="brand-link"><a href="<%=h(laf.getLogoHref())%>"><%=h(displayedShortName)%></a></h4>
+            <% } %>
+        </div>
+        <div class="hidden-sm hidden-md hidden-lg navbar-header">
+            <a class="brand-logo-mobile" href="<%=h(laf.getLogoHref())%>">
                 <img src="<%=h(TemplateResourceHandler.LOGO_MOBILE.getURL(c))%>" alt="<%=h(laf.getShortName())%>" height="30">
             </a>
-            <% if (laf.getShortName() != null && laf.getShortName().length() > 0) { %>
-            <h4 class="brand-link"><a href="<%=h(laf.getLogoHref())%>"><%=h(laf.getShortName())%></a></h4>
+            <% if (siteShortName != null) { %>
+            <h4 class="brand-link"><a href="<%=h(laf.getLogoHref())%>"><%=h(siteShortName)%></a></h4>
             <% } %>
         </div>
         <ul class="navbar-nav-lk">
