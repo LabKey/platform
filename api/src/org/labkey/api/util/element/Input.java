@@ -36,6 +36,7 @@ public class Input
     private final String _onChange;
     private final String _onKeyUp;
     private final String _placeholder;
+    private final boolean _readOnly;
     private final boolean _required;
     private final Integer _size;
     private final State _state;
@@ -49,7 +50,7 @@ public class Input
         _contextContent = builder._contextContent;
         _checked = builder._checked;
         _className = builder._className;
-        _disabled = builder._disabled;
+        _disabled = builder._disabled == null ? false : builder._disabled;
         _format = builder._format;
         _formGroup = builder._formGroup == null ? false : builder._formGroup;
         _id = builder._id;
@@ -61,7 +62,8 @@ public class Input
         _onChange = builder._onChange;
         _onKeyUp = builder._onKeyUp;
         _placeholder = builder._placeholder;
-        _required = builder._required;
+        _readOnly = builder._readOnly == null ? false : builder._readOnly;
+        _required = builder._required == null ? false : builder._required;
         _type = builder._type;
         _size = builder._size;
         _state = builder._state;
@@ -157,6 +159,11 @@ public class Input
     public boolean isRequired()
     {
         return _required;
+    }
+
+    public boolean isReadOnly()
+    {
+        return _readOnly;
     }
 
     public Integer getSize()
@@ -282,6 +289,9 @@ public class Input
         if (isDisabled())
             sb.append(" disabled");
 
+        if (isReadOnly())
+            sb.append(" readonly");
+
         sb.append(">");
     }
 
@@ -403,7 +413,7 @@ public class Input
         private boolean _checked;
         private String _className = "form-control";
         private String _contextContent;
-        private boolean _disabled;
+        private Boolean _disabled;
         private Format _format;
         private Boolean _formGroup;
         private String _id;
@@ -414,7 +424,8 @@ public class Input
         private String _onChange;
         private String _onKeyUp;
         private String _placeholder;
-        private boolean _required;
+        private Boolean _readOnly;
+        private Boolean _required;
         private Boolean _showLabel;
         private Integer _size;
         private State _state;
@@ -517,9 +528,15 @@ public class Input
             return (T)this;
         }
 
-        public T required(boolean required)
+        public T required(Boolean required)
         {
             _required = required;
+            return (T)this;
+        }
+
+        public T readOnly(Boolean readOnly)
+        {
+            _readOnly = readOnly;
             return (T)this;
         }
 

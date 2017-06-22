@@ -11,6 +11,9 @@ public class InputTag extends SimpleTagBase
     private String contextContent;
     private Boolean formGroup;
     private String id;
+    private Boolean isDisabled;
+    private Boolean isRequired;
+    private Boolean isReadOnly;
     private String label;
     private String stateMessage;
     private String name;
@@ -20,6 +23,21 @@ public class InputTag extends SimpleTagBase
     private String state;
     private String type;
     private Object value;
+
+    public void setIsDisabled(Boolean disabled)
+    {
+        this.isDisabled = disabled;
+    }
+
+    public void setIsRequired(Boolean required)
+    {
+        this.isRequired = required;
+    }
+
+    public void setIsReadOnly(Boolean readOnly)
+    {
+        this.isReadOnly = readOnly;
+    }
 
     public void setState(String state)
     {
@@ -90,6 +108,15 @@ public class InputTag extends SimpleTagBase
         else
             input = new Input.InputBuilder().type(type);
 
+        if (null == isDisabled)
+            setIsDisabled(false);
+
+        if (null == isRequired)
+            setIsRequired(false);
+
+        if (null == isReadOnly)
+            setIsReadOnly(false);
+
         input.contextContent(contextContent)
             .formGroup(formGroup)
             .id(id)
@@ -99,6 +126,9 @@ public class InputTag extends SimpleTagBase
             .onChange(onChange)
             .onKeyUp(onKeyUp)
             .placeholder(placeholder)
+            .disabled(isDisabled)
+            .required(isRequired)
+            .readOnly(isReadOnly)
             .value(value);
 
         if (Input.State.ERROR.toString().equalsIgnoreCase(state))
