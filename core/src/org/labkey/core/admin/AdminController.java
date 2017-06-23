@@ -167,6 +167,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -776,9 +777,32 @@ public class AdminController extends SpringActionController
 
             healthValues.put("Overall", overallStatus);
             healthValues.put("DbConnectionStatus", dbConnectionHealth(overallStatus));
-            healthValues.put("MemoryStatus", memoryHealth(overallStatus));
+            healthValues.put("Users", userHealth(overallStatus));
+
+            //TODO: Removing for initial health check, may want to add it back later.
+//            healthValues.put("MemoryStatus", memoryHealth(overallStatus));
 
             return new ApiSimpleResponse(healthValues);
+        }
+
+        private Map<String, Object> userHealth(Map<String, Object> overallStatus)
+        {
+            Map<String, Object> userHealth = new HashMap<>();
+            ZonedDateTime now = ZonedDateTime.now();
+            try
+            {
+                userHealth.put("ActiveUsers", UserManager.getActiveUserCount());
+                userHealth.put("LoginsLast24hr", UserManager.getRecentLoginCount(Date.from(now.minusDays(1).toInstant())));
+                int userCount = UserManager.getUserCount(Date.from(now.toInstant()));
+                userHealth.put("RegisteredUsers", userCount);
+                overallStatus.put("HasUsers", userCount > 0);
+            }
+            catch (SQLException e)
+            {
+                LOG.error("HealthCheck: can't get user count", e);
+                overallStatus.put("HasUsers", false);  //TODO: not sure if this is best option...
+            }
+            return userHealth;
         }
 
         private Map<String, Boolean> dbConnectionHealth(Map<String, Object> overallStatus) throws Exception
