@@ -175,7 +175,7 @@
             </div>
             <div class="modal-body text-success">
                 <br>
-                <p>Thanks you! Your feedback has been received.</p>
+                <p>Thank you! Your feedback has been received.</p>
                 <br>
             </div>
         </div>
