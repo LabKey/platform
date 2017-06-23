@@ -59,7 +59,7 @@
                 <img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>" height="30">
             </a>
             <% if (siteShortName != null) {
-                String displayedShortName = "LabKey Server".equals(siteShortName) ? "Server" : siteShortName;
+                String displayedShortName = "LabKey Server".equals(siteShortName) ? "" : siteShortName;
             %>
             <h4 class="brand-link"><a href="<%=h(laf.getLogoHref())%>"><%=h(displayedShortName)%></a></h4>
             <% } %>

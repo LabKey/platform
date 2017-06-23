@@ -28,6 +28,7 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.IgnoresAllocationTracking;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
@@ -117,8 +118,10 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.writer.FileSystemFile;
@@ -2140,6 +2143,36 @@ public class CoreController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("LabKey Style Guide");
+        }
+    }
+
+    @RequiresNoPermission
+    public class FeedbackAction extends FormViewAction<ViewForm>
+    {
+        public ModelAndView getView(ViewForm form, boolean reshow, BindException errors) throws Exception
+        {
+            getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            return new JspView("/org/labkey/core/view/feedback.jsp", form, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Feedback");
+        }
+
+        @Override
+        public boolean handlePost(ViewForm form, BindException errors) throws Exception
+        {
+            return true;
+        }
+
+        public ActionURL getSuccessURL(ViewForm form)
+        {
+            return null;
+        }
+
+        public void validateCommand(ViewForm target, Errors errors)
+        {
         }
     }
 
