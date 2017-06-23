@@ -30,7 +30,7 @@
         if (trees == null || trees.isEmpty())
             return null;
 
-        String trail = "<ol class=\"breadcrumb\" style=\"background-color: transparent; padding: 0; margin-bottom: 8px;\">";
+        String trail = "<ol class=\"breadcrumb\">";
 
         for (NavTree child : trees)
         {
@@ -51,9 +51,8 @@
     PageConfig pageConfig = (PageConfig) me.getModelBean();
 
     boolean showRight = me.getView(WebPartFactory.LOCATION_RIGHT) instanceof HttpView && ((HttpView) me.getView(WebPartFactory.LOCATION_RIGHT)).isVisible();
-    // TODO: Remove all inline styles
 %>
-<div class="container" style="padding: 20px 0 0 0;">
+<div class="container lk-body-ct">
     <%= text(BootstrapTemplate.renderSiteMessages(pageConfig)) %>
     <% if (pageConfig.showHeader() != PageConfig.TrueFalse.False && null != pageConfig.getAppBar())
        {
@@ -79,9 +78,9 @@
            if (trail != null || pageTitle != null)
            {
     %>
-    <div class="col-md-12" style="margin-bottom: 20px;">
+    <div class="col-md-12 lk-body-title">
         <% if (trail != null) { %><%= text(trail) %><% } %>
-        <% if (pageTitle != null) { %><h3 style="margin: 0;"><%= h(pageTitle)%></h3><% } %>
+        <% if (pageTitle != null) { %><h3><%= h(pageTitle)%></h3><% } %>
     </div>
     <%
             }

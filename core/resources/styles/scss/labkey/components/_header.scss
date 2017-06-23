@@ -207,3 +207,30 @@
 .labkey-notification-footer {
   background-color: $lk-page-header-notification-bg-color;
 }
+
+.lk-body-ct {
+  padding: 20px 0 0 0;
+}
+
+.lk-body-title {
+  margin-bottom: 20px;
+
+  h3 {
+    margin: 0;
+  }
+
+  .breadcrumb {
+    background-color: transparent;
+    padding: 0;
+    margin-bottom: 8px;
+  }
+}
+
+.default-template-alert {
+  margin: 0 15px 15px;
+}
+
+.dialog-template-alert,
+.wizard-template-alert {
+  margin-top: 20px;
+}

@@ -709,8 +709,6 @@ public class XarReader extends AbstractXarImporter
             run = Table.insert(getUser(), tiExperimentRun, vals);
         }
 
-        int runId = run.getRowId();
-
         if (experimentLSID != null)
         {
             ExpExperiment e = ExperimentService.get().getExpExperiment(experimentLSID);

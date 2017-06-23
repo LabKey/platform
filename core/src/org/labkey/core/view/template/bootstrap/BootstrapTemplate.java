@@ -299,7 +299,22 @@ public class BootstrapTemplate extends HomeTemplate
         int size = page.getWarningMessages().size();
         if (size > 0)
         {
-            messages += "<div class=\"alert alert-warning\" role=\"alert\" style=\"margin: 0 15px 15px;\">";
+            PageConfig.Template t = page.getTemplate();
+            final String templateCls;
+
+            switch (t)
+            {
+                case Wizard:
+                    templateCls = "wizard";
+                    break;
+                case Dialog:
+                    templateCls = "dialog";
+                    break;
+                default:
+                    templateCls = "default";
+            }
+
+            messages += "<div class=\"alert alert-warning " + templateCls + "-template-alert\" role=\"alert\">";
 
             if (size == 1)
                 messages += page.getWarningMessages().get(0) + "</div>";

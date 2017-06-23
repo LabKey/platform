@@ -260,7 +260,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public HttpView createFileExportView(Container container, String defaultFilenamePrefix)
     {
-        Set<String> roles = ExperimentService.get().getDataInputRoles(container, ContainerFilter.CURRENT);
+        Set<String> roles = getDataInputRoles(container, ContainerFilter.CURRENT);
         // Remove case-only dupes
         Set<String> dedupedRoles = new CaseInsensitiveHashSet();
         for (Iterator<String> i = roles.iterator(); i.hasNext(); )
@@ -578,13 +578,13 @@ public class ExperimentServiceImpl implements ExperimentService
 
         // SampleSet may live in different container
         ContainerFilter.CurrentPlusProjectAndShared containerFilter = new ContainerFilter.CurrentPlusProjectAndShared(user);
-        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(ExperimentService.get().getSchema(), FieldKey.fromParts("Container"), container);
+        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"), container);
         filter.addClause(clause);
 
         Set<String> selectNames = new LinkedHashSet<>();
         selectNames.add("Name");
         selectNames.add("RowId");
-        TableSelector sampleTableSelector = new TableSelector(ExperimentService.get().getTinfoMaterial(), selectNames, filter, null);
+        TableSelector sampleTableSelector = new TableSelector(getTinfoMaterial(), selectNames, filter, null);
         Map<String, Integer> sampleMap = sampleTableSelector.getValueMap();
 
         List<ExpMaterialImpl> resolvedSamples = getExpMaterials(sampleMap.values());
@@ -609,8 +609,7 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         List<ExpMaterialImpl> materials = new ArrayList<>(sampleNames.size());
 
-        DbScope scope = ExperimentService.get().getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (DbScope.Transaction transaction = ensureTransaction())
         {
             if (sampleSet == null)
                 sampleSet = ensureActiveSampleSet(container, user, true);
@@ -2746,7 +2745,7 @@ public class ExperimentServiceImpl implements ExperimentService
     private synchronized ExpSampleSetImpl createDefaultSampleSet()
     {
         //might have been created on another thread, so check within synch block
-        ExpSampleSetImpl matSource = getSampleSet(ExperimentService.get().getDefaultSampleSetLsid());
+        ExpSampleSetImpl matSource = getSampleSet(getDefaultSampleSetLsid());
         if (null == matSource)
         {
             matSource = createSampleSet();
@@ -2981,7 +2980,7 @@ public class ExperimentServiceImpl implements ExperimentService
         sql.append(" OR ParentProtocolId IN (" + protocolIds + ") );");
         Integer[] actionIds = new SqlSelector(getExpSchema(), sql).getArray(Integer.class);
 
-        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
+        try (DbScope.Transaction transaction = ensureTransaction())
         {
             for (Protocol protocol : protocols)
             {
@@ -3060,7 +3059,7 @@ public class ExperimentServiceImpl implements ExperimentService
             return;
 
         final SqlDialect dialect = getExpSchema().getSqlDialect();
-        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
+        try (DbScope.Transaction transaction = ensureTransaction())
         {
             SQLFragment sql = new SQLFragment("SELECT * FROM exp.Material WHERE RowId ");
             dialect.appendInClauseSql(sql, selectedMaterialIds);
@@ -3085,7 +3084,7 @@ public class ExperimentServiceImpl implements ExperimentService
             {
                 // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
                 List<ExpRunImpl> runArray = getRunsUsingMaterials(material.getRowId());
-                for (ExpRun run : ExperimentService.get().runsDeletedWithInput(runArray))
+                for (ExpRun run : runsDeletedWithInput(runArray))
                 {
                     Container runContainer = run.getContainer();
                     if (!runContainer.hasPermission(user, DeletePermission.class))
@@ -3137,7 +3136,7 @@ public class ExperimentServiceImpl implements ExperimentService
         if (selectedDataIds.isEmpty())
             return;
 
-        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
+        try (DbScope.Transaction transaction = ensureTransaction())
         {
             SimpleFilter rowIdFilter = new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), selectedDataIds);
             List<Data> datas = new TableSelector(getTinfoData(), rowIdFilter, null).getArrayList(Data.class);
@@ -3237,7 +3236,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private void deleteExpExperiment(User user, ExpExperimentImpl experiment)
     {
-        try (DbScope.Transaction t = ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction())
+        try (DbScope.Transaction t = ensureTransaction())
         {
             // If we're a batch, delete all the runs too
             if (experiment.getDataObject().getBatchProtocolId() != null)
@@ -3289,7 +3288,7 @@ public class ExperimentServiceImpl implements ExperimentService
         sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ?";
         int[] protIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
 
-        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
+        try (DbScope.Transaction transaction = ensureTransaction())
         {
             // first delete the runs in the container, as that should be fast.  Deletes all Materials, Data,
             // and protocol applications and associated properties and parameters that belong to the run
@@ -3367,7 +3366,7 @@ public class ExperimentServiceImpl implements ExperimentService
         if (null == c)
             return;
 
-        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
+        try (DbScope.Transaction transaction = ensureTransaction())
         {
             OntologyManager.moveContainer(c, oldParent, newParent);
 
@@ -3718,7 +3717,7 @@ public class ExperimentServiceImpl implements ExperimentService
         if (!source.getContainer().equals(c))
             throw new ExperimentException("Trying to delete a SampleSet from a different container");
 
-        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
+        try (DbScope.Transaction transaction = ensureTransaction())
         {
             truncateSampleSet(source, user, null);
 
@@ -3777,7 +3776,7 @@ public class ExperimentServiceImpl implements ExperimentService
         Domain d = dataClass.getDomain();
         Container dcContainer = dataClass.getContainer();
 
-        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
+        try (DbScope.Transaction transaction = ensureTransaction())
         {
             DbSequenceManager.delete(c, ExpDataClassImpl.GENID_SEQUENCE_NAME, dataClass.getRowId());
 
@@ -3800,7 +3799,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private void deleteUnusedAliases(Container c, User user)
     {
-        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
+        try (DbScope.Transaction transaction = ensureTransaction())
         {
             SQLFragment sql = new SQLFragment("DELETE FROM ").
                     append(getTinfoAlias(), "").
@@ -4188,10 +4187,10 @@ public class ExperimentServiceImpl implements ExperimentService
     // If a protocol has already had protocol.setProperty() called on it then the properties will have already
     // been saved to the database. The result is that it can cause the save to fail if this API attempts to save
     // the properties again. The only current recourse is for the caller to enforce their own transaction boundaries
-    // using ExperimentService.get().ensureTransaction().
+    // using ensureTransaction().
     public Protocol saveProtocol(User user, Protocol protocol, boolean saveProperties)
     {
-        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
+        try (DbScope.Transaction transaction = ensureTransaction())
         {
             Protocol result;
             boolean newProtocol = protocol.getRowId() == 0;
@@ -4555,7 +4554,7 @@ public class ExperimentServiceImpl implements ExperimentService
         Date date = new Date();
         DeriveSamplesBulkHelper helper = new DeriveSamplesBulkHelper(info.getContainer(), context);
 
-        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
+        try (DbScope.Transaction transaction = ensureTransaction())
         {
             for (SimpleRunRecord runRecord : runRecords)
             {
@@ -4712,14 +4711,10 @@ public class ExperimentServiceImpl implements ExperimentService
                 runRowMap.put(rec._run.getLSID(), null);
 
             SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-            new TableSelector(ExperimentService.get().getTinfoExperimentRun(), filter, null).forEach(new Selector.ForEachBlock<ResultSet>()
+            new TableSelector(getTinfoExperimentRun(), filter, null).forEach(rs ->
             {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
-                {
-                    if (runRowMap.containsKey(rs.getString("Lsid")))
-                        runRowMap.put(rs.getString("Lsid"), rs.getInt("RowId"));
-                }
+                if (runRowMap.containsKey(rs.getString("Lsid")))
+                    runRowMap.put(rs.getString("Lsid"), rs.getInt("RowId"));
             });
 
             for (ProtocolAppRecord rec : protAppRecords)
@@ -4751,14 +4746,10 @@ public class ExperimentServiceImpl implements ExperimentService
             for (ProtocolAppRecord rec : protAppRecords)
                 protAppRowMap.put(rec._protApp.getLSID(), null);
 
-            new TableSelector(ExperimentService.get().getTinfoProtocolApplication(), null, null).forEach(new Selector.ForEachBlock<ResultSet>()
+            new TableSelector(getTinfoProtocolApplication(), null, null).forEach(rs ->
             {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
-                {
-                    if (protAppRowMap.containsKey(rs.getString("Lsid")))
-                        protAppRowMap.put(rs.getString("Lsid"), rs.getInt("RowId"));
-                }
+                if (protAppRowMap.containsKey(rs.getString("Lsid")))
+                    protAppRowMap.put(rs.getString("Lsid"), rs.getInt("RowId"));
             });
 
             for (ProtocolAppRecord rec : protAppRecords)
@@ -5199,7 +5190,7 @@ public class ExperimentServiceImpl implements ExperimentService
             source.setParentCol(parentUri);
 
         ExpSampleSetImpl ss = new ExpSampleSetImpl(source);
-        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
+        try (DbScope.Transaction transaction = ensureTransaction())
         {
             domain.save(u);
             ss.save(u);
@@ -5225,7 +5216,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
         if (sampleSetId != null)
         {
-            ExpSampleSet ss = ExperimentService.get().getSampleSet(sampleSetId);
+            ExpSampleSet ss = getSampleSet(sampleSetId);
             if (ss == null)
                 throw new IllegalArgumentException("SampleSet '" + sampleSetId + "' not found");
 
@@ -5279,7 +5270,7 @@ public class ExperimentServiceImpl implements ExperimentService
         dataClass.setContainer(c);
 
         ExpDataClassImpl impl = new ExpDataClassImpl(dataClass);
-        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+        try (DbScope.Transaction tx = ensureTransaction())
         {
             OntologyManager.ensureObject(c, lsid.toString());
 
@@ -5414,9 +5405,9 @@ public class ExperimentServiceImpl implements ExperimentService
             throw new ExperimentException("Cannot insert a \"null\" protocol");
         }
 
-        try (DbScope.Transaction tx = getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
+        try (DbScope.Transaction tx = getSchema().getScope().ensureTransaction(getProtocolImportLock()))
         {
-            if (ExperimentService.get().getExpProtocol(wrappedProtocol.getLSID()) != null)
+            if (getExpProtocol(wrappedProtocol.getLSID()) != null)
             {
                 throw new ExperimentException("A protocol with that name already exists");
             }
@@ -5549,9 +5540,9 @@ public class ExperimentServiceImpl implements ExperimentService
     // TODO: Switch this to use insertProtocol(ExpProtocol, List, Map, User)
     public ExpProtocol insertSimpleProtocol(ExpProtocol wrappedProtocol, User user) throws ExperimentException
     {
-        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
+        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction(getProtocolImportLock()))
         {
-            if (ExperimentService.get().getExpProtocol(wrappedProtocol.getLSID()) != null)
+            if (getExpProtocol(wrappedProtocol.getLSID()) != null)
             {
                 throw new ExperimentException("An assay with that name already exists");
             }

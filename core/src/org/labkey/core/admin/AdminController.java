@@ -6036,7 +6036,9 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/core/admin/experimentalFeatures.jsp");
+            JspView view = new JspView<>("/org/labkey/core/admin/experimentalFeatures.jsp");
+            view.setFrame(WebPartView.FrameType.NONE);
+            return view;
         }
 
         @Override

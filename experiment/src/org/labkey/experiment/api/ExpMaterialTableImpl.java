@@ -461,16 +461,28 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         }
 
         @Override
+        protected boolean isDisabledInput(RenderContext ctx)
+        {
+            return !super.isDisabledInput() && ctx.getMode() != DataRegion.MODE_INSERT;
+        }
+
+        @Override
         public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
         {
-            if (ctx.getMode() == DataRegion.MODE_INSERT)
-            {
+            if (PageFlowUtil.useExperimentalCoreUI())
                 super.renderInputCell(ctx, out, span);
-            }
             else
             {
-                super.renderHiddenFormInput(ctx, out);
-                super.renderDetailsData(ctx, out, span);
+                // UX Refresh: when this is being removed, just remove the entire override of renderInputCell
+                if (ctx.getMode() == DataRegion.MODE_INSERT)
+                {
+                    super.renderInputCell(ctx, out, span);
+                }
+                else
+                {
+                    super.renderHiddenFormInput(ctx, out);
+                    super.renderDetailsData(ctx, out, span);
+                }
             }
         }
     }
