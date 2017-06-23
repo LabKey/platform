@@ -59,6 +59,13 @@ public class PopupHelpView extends PopupMenuView
         if (laf.isHelpMenuEnabled())
             menu.addChild(topic.getNavTree("LabKey Documentation"));
 
+        if (PageFlowUtil.useExperimentalCoreUI())
+        {
+            NavTree feedback = new NavTree("Give Feedback", "https://labkey.org/UX%20Refresh%20Feedback/core-feedback.view");
+            feedback.setTarget("_blank");
+            menu.addChild(feedback);
+        }
+
         if (c.hasPermission(user, ReadPermission.class))
         {
             TourService service = TourService.get();
