@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ThemeFont" %>
@@ -67,10 +66,7 @@
         </td>
     </tr>
     </table>
-<script type="text/javascript">
-
-    LABKEY.loadScripts();
-</script>
+<script type="text/javascript">LABKEY.loadScripts();</script>
     <!--<%= h(request.getHeader("User-Agent")) %>--><%
     if (null != request.getAttribute(ViewServlet.REQUEST_STARTTIME))
     { %>

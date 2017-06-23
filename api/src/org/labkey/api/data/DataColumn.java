@@ -524,6 +524,11 @@ public class DataColumn extends DisplayColumn
                 _boundColumn.isReadOnly() || !_boundColumn.isUserEditable();
     }
 
+    protected boolean isDisabledInput(RenderContext ctx)
+    {
+        return isDisabledInput();
+    }
+
     protected boolean isSelectInputSelected(String entryName, Object value, String valueStr)
     {
         if (value instanceof Collection)
@@ -544,7 +549,7 @@ public class DataColumn extends DisplayColumn
         if (_boundColumn.isVersionColumn() || _inputType.equalsIgnoreCase("none"))
             return;
 
-        boolean disabledInput = isDisabledInput();
+        boolean disabledInput = isDisabledInput(ctx);
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         final String formFieldName = getFormFieldName(ctx);
 

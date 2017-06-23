@@ -160,10 +160,14 @@ public class MVDisplayColumn extends DataColumn
     @Override
     public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
     {
-        out.write("<td colspan=" + span + ">");
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+
+        if (!newUI)
+            out.write("<td colspan=" + span + ">");
         renderInputHtml(ctx, out, getInputValue(ctx));
         renderMVPicker(ctx, out);
-        out.write("</td>");
+        if (!newUI)
+            out.write("</td>");
     }
 
     private void renderMVPicker(RenderContext ctx, Writer out) throws IOException

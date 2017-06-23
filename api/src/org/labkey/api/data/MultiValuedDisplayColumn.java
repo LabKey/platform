@@ -201,14 +201,6 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     }
 
     @Override
-    public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
-    {
-        out.write("<td colspan=" + span + ">");
-        renderInputHtml(ctx, out, getInputValue(ctx));
-        out.write("</td>");
-    }
-
-    @Override
     public Object getInputValue(RenderContext ctx)
     {
         return values(ctx, super::getInputValue);
