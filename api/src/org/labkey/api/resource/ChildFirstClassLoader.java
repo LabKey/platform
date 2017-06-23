@@ -15,6 +15,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 /**
+ * https://articles.qos.ch/delegation/src/java/ch/qos/ChildFirstClassLoader.java
+ *
  * An almost trivial no-fuss implementation of a class loader
  * following the child-first delegation model.
  *
