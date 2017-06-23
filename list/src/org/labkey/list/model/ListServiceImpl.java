@@ -29,6 +29,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
@@ -133,5 +134,11 @@ public class ListServiceImpl implements ListService
         {
             errors.reject(ERROR_MSG, e.getMessage());
         }
+    }
+
+    @Override
+    public UserSchema getUserSchema(User user, Container container)
+    {
+        return new ListQuerySchema(user, container);
     }
 }
