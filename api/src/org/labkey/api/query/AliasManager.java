@@ -77,7 +77,7 @@ public class AliasManager
         return true;
     }
 
-    private static String legalNameFromName(String str)
+    public static String legalNameFromName(String str)
     {
         int i;
         char ch=0;

@@ -2800,7 +2800,7 @@ public class QueryView extends WebPartView<Object>
             if (urlDetails != null && urlDetails != AbstractTableInfo.LINK_DISABLER)
             {
                 // We'll decide at render time if we have enough columns in the results to make the DetailsColumn visible
-                ret.add(new DetailsColumn(urlDetails, table));
+                ret.add(createDetailsColumn(urlDetails, table));
             }
         }
 
@@ -2813,6 +2813,11 @@ public class QueryView extends WebPartView<Object>
                 ret.add(0, new UpdateColumn(urlUpdate));
             }
         }
+    }
+
+    protected DisplayColumn createDetailsColumn(StringExpression urlDetails, TableInfo table)
+    {
+        return new DetailsColumn(urlDetails, table);
     }
 
     public QueryDefinition getQueryDef()

@@ -2445,7 +2445,7 @@ public class DataRegion extends AbstractDataRegion
                 continue;
             renderFormField(ctx, out, renderer, span);
             if (null != renderer.getColumnInfo())
-                renderedColumns.add(renderer.getColumnInfo().getPropertyName());
+                renderedColumns.add(renderer.getColumnInfo().getName());
         }
 
         if (!_groupTables.isEmpty())
