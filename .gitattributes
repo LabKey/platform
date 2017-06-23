@@ -558,6 +558,7 @@ core/src/org/labkey/core/user/toggleShowAll.jsp -text
 core/src/org/labkey/core/view/ShortURLFilter.java -text
 core/src/org/labkey/core/view/ShortURLServiceImpl.java -text
 core/src/org/labkey/core/view/feedback.jsp -text
+core/src/org/labkey/core/view/feedbackOldUI.jsp -text
 core/src/org/labkey/core/view/styleGuide.jsp -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapBodyTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapHeader.java -text

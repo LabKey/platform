@@ -39,7 +39,7 @@
                     password: document.getElementById('password').value
                 }
             }).success(function() {
-                $('.login .notifications p.text-success').html('Sign-in Successful. You feedback will be submitted.');
+                $('.login .notifications p.text-success').html('Sign-in Successful. Your feedback will be submitted.');
                 $('.login .notifications p.text-info').hide();
                 $('.login .notifications p.text-danger').hide();
 

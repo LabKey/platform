@@ -2152,7 +2152,9 @@ public class CoreController extends SpringActionController
         public ModelAndView getView(ViewForm form, boolean reshow, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            return new JspView("/org/labkey/core/view/feedback.jsp", form, errors);
+            if (PageFlowUtil.useExperimentalCoreUI())
+                return new JspView<>("/org/labkey/core/view/feedback.jsp", form, errors);
+            return new JspView<>("/org/labkey/core/view/feedbackOldUI.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
