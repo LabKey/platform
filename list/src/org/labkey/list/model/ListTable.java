@@ -280,8 +280,8 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(_userSchema.getContainer()), Collections.<String, String>emptyMap());
         setGridURL(gridURL);
 
-        DetailsURL detailsURL = new DetailsURL(_list.urlDetails(null, _userSchema.getContainer()), Collections.singletonMap("pk", _list.getKeyName()));
-        setDetailsURL(detailsURL);
+        if (null != colKey)
+            setDetailsURL(new DetailsURL(_list.urlDetails(null, _userSchema.getContainer()), Collections.singletonMap("pk", colKey.getAlias())));
 
         if (!listDef.getAllowUpload())
             setImportURL(LINK_DISABLER);

@@ -44,6 +44,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
@@ -556,10 +557,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         Object value = map.get(key);
 
         if (null == value)
-            value = map.get("_" + key);
-
-        if (null == value)
-            value = map.get(key.replaceAll("\\s", "_"));
+            value = map.get(AliasManager.legalNameFromName(key));
 
         return value;
     }

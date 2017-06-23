@@ -827,13 +827,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                     table = getTable(null, true);
                 if (table != null)
                 {
-                    List<String> pkColumnNames = table.getPkColumnNames();
-                    if (pkColumnNames.size() > 0)
+                    List<ColumnInfo> pkColumns = table.getPkColumns();
+                    if (pkColumns.size() > 0)
                     {
                         Map<String, String> params = new HashMap<>();
-                        for (String columnName : pkColumnNames)
+                        for (ColumnInfo column : pkColumns)
                         {
-                            params.put(columnName, columnName);
+                            params.put(column.getName(), column.getAlias());
                         }
                         DetailsURL detailsURL = new DetailsURL(url, params);
 
