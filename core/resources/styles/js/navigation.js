@@ -200,10 +200,6 @@
                         // parts of the nav tree submenus
                         var selectedSubmenu = $('ul.dropdown-menu li.lk-project-nav-tree-selected');
                         if (selectedSubmenu.length > 0) {
-                            // hide each of the top level project list items
-                            var nav = $('ul.lk-project-nav-menu');
-                            nav.children('li').css('display', 'none');
-
                             // toggle the open class for each of the submenus through the tree to the selected node
                             // and show each of the dropdown-submenu items up the tree, but hide the links below them
                             $.each(selectedSubmenu.parents('ul.dropdown-layer-menu'), function(index, submenu) {

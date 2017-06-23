@@ -148,11 +148,11 @@
                 if (context.isShowFolders())
                 {
 %>
-                <li class="dropdown hidden-xs" data-webpart="MenuProjectNav" data-name="MenuProjectNav">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                <li class="dropdown hidden-xs" data-webpart="BetaNav" data-name="BetaNav">
+                    <a href="#" class="dropdown-toggle">
                         <i class="fa fa-folder-open"></i>&nbsp;<%=h(model.getProjectTitle())%>
                     </a>
-                    <ul class="dropdown-menu lk-project-nav-menu"></ul>
+                    <ul class="dropdown-menu"></ul>
                 </li>
 <%
                 }
@@ -162,7 +162,7 @@
 %>
                 <li class="dropdown hidden-xs" data-webpart="<%=text(getSafeName(pair.second))%>" data-name="<%=text(pair.second.getName())%>">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown"><%=h(pair.first)%></a>
-                    <ul class="dropdown-menu"></ul>
+                    <ul class="dropdown-menu lk-custom-dropdown-menu"></ul>
                 </li>
 <%
                 }

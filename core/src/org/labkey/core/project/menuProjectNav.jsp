@@ -36,8 +36,8 @@
     List<Container> containers = ContainerManager.containersToRootList(c);
     int size = containers.size();
 
-    // Only show the nav trail for the project if the user has admin perm
-    if (size > 0)
+    // Only show the nav trail if you are at least one level into the nav tree (i.e. not at project)
+    if (size > 1)
     {
         String title = containers.get(size - 1).isWorkbook()
                 ? containers.get(size - 1).getName() : containers.get(size - 1).getTitle();
@@ -65,63 +65,61 @@
 %>
             <span><%=h(title)%></span>
         </div>
-        <div class="lk-project-nav-buttons">
-<%
-        if (c.hasPermission(user, AdminPermission.class))
-        {
-            ActionURL createProjectUrl = PageFlowUtil.urlProvider(AdminUrls.class).getCreateProjectURL(c.getStartURL(getUser()));
-            ActionURL createFolderUrl = PageFlowUtil.urlProvider(AdminUrls.class).getCreateFolderURL(c, c.getStartURL(getUser()));
-            ActionURL folderManagementUrl = PageFlowUtil.urlProvider(AdminUrls.class).getFolderManagementURL(c);
-
-            if (user.hasRootAdminPermission())
-            {
-%>
-                <span class="button-icon">
-                    <a href="<%=createProjectUrl%>" title="New Project">
-                        <%--<img src="<%=h(context.getContextPath())%>/_images/icon_projects_add.png" alt="New Project" />--%>
-                        <span class="fa-stack fa-1x labkey-fa-stacked-wrapper">
-                            <span class="fa fa-folder fa-stack-2x labkey-main-menu-icon" alt="New Project"></span>
-                            <span class="fa fa-plus fa-stack-1x" style="color: white;"></span>
-                        </span>
-                    </a>
-                </span>
-<%
-            }
-%>
-                <span class="button-icon">
-                    <a href="<%=createFolderUrl%>" title="New Subfolder">
-                        <span class="fa-stack fa-1x labkey-fa-stacked-wrapper">
-                            <span class="fa fa-folder-o fa-stack-2x labkey-main-menu-icon" alt="New Subfolder"></span>
-                            <span class="fa fa-plus-circle fa-stack-1x"></span>
-                        </span>
-                    </a>
-                </span>
-                <span class="button-icon">
-                    <a href="<%=folderManagementUrl%>" title="Folder Management">
-                        <span class="fa fa-gear labkey-main-menu-icon" alt="Folder Management"></span>
-                    </a>
-                </span>
-<%
-        }
-
-        if (!c.isRoot())
-        {
-%>
-                <span class="button-icon">
-                    <a id="permalink_vis" href="#" title="Permalink Page">
-                        <span class="fa fa-link labkey-main-menu-icon" alt="Permalink Page"></span>
-                    </a>
-                </span>
-<%
-        }
-%>
-        </div>
         <div class="divider lk-project-nav-divider"></div>
 <%
     }
 %>
-
 <% popupFolderNavView.render(out); %>
+<div class="lk-project-nav-buttons">
+<%
+    if (c.hasPermission(user, AdminPermission.class))
+    {
+        ActionURL createProjectUrl = PageFlowUtil.urlProvider(AdminUrls.class).getCreateProjectURL(c.getStartURL(getUser()));
+        ActionURL createFolderUrl = PageFlowUtil.urlProvider(AdminUrls.class).getCreateFolderURL(c, c.getStartURL(getUser()));
+        ActionURL folderManagementUrl = PageFlowUtil.urlProvider(AdminUrls.class).getFolderManagementURL(c);
+
+        if (user.hasRootAdminPermission())
+        {
+%>
+            <span class="button-icon">
+                <a href="<%=createProjectUrl%>" title="New Project">
+                    <span class="fa-stack fa-1x" alt="New Project">
+                      <i class="fa fa-folder fa-stack-2x"></i>
+                      <i class="fa fa-plus fa-stack-1x" style="color: white;"></i>
+                    </span>
+                </a>
+            </span>
+<%
+        }
+%>
+            <span class="button-icon">
+                <a href="<%=createFolderUrl%>" title="New Subfolder">
+                    <span class="fa-stack fa-1x" alt="New Subfolder">
+                      <i class="fa fa-folder-o fa-stack-2x"></i>
+                      <i class="fa fa-plus-circle fa-stack-1x"></i>
+                    </span>
+                </a>
+            </span>
+            <span class="button-icon">
+                <a href="<%=folderManagementUrl%>" title="Folder Management">
+                    <span class="fa fa-gear fa-lg" alt="Folder Management"></span>
+                </a>
+            </span>
+<%
+    }
+
+    if (!c.isRoot())
+    {
+%>
+            <span class="button-icon">
+                <a id="permalink_vis" href="#" title="Permalink Page">
+                    <span class="fa fa-link fa-lg" alt="Permalink Page"></span>
+                </a>
+            </span>
+<%
+    }
+%>
+</div>
 
 <script type="text/javascript">
     +function($) {

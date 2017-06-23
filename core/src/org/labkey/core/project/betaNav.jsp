@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.project.FolderNavigationForm" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -39,8 +40,10 @@
     JspView<FolderNavigationForm> me = (JspView<FolderNavigationForm>) HttpView.currentView();
     FolderNavigationForm form = me.getModelBean();
 
-    // Create Project URL
     ActionURL createProjectURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateProjectURL(me.getViewContext().getActionURL());
+    ActionURL createFolderURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateFolderURL(getContainer(), me.getViewContext().getActionURL());
+    ActionURL folderManagementURL = PageFlowUtil.urlProvider(AdminUrls.class).getFolderManagementURL(getContainer());
+
     NavTree projects = ContainerManager.getProjectList(getViewContext(), false);
 %>
 <div class="beta-nav">
@@ -73,7 +76,49 @@
     </div>
 </div>
 <div class="beta-nav-buttons">
-    <span class="button-icon"><a href="<%=createProjectURL%>" title="New Project"><img src="<%=getContextPath()%>/_images/icon_projects_add.png" alt="New Project" /></a></span>
+<%
+    if (getUser().hasRootAdminPermission())
+    {
+%>
+        <span class="button-icon">
+            <a href="<%=createProjectURL%>" title="New Project">
+                <img src="<%=getContextPath()%>/_images/icon_projects_add.png" alt="New Project" />
+            </a>
+        </span>
+<%
+    }
+
+    if (getContainer().hasPermission(getUser(), AdminPermission.class))
+    {
+%>
+        <span class="beta-nav-button-icon">
+            <a href="<%=createFolderURL%>" title="New Subfolder">
+                <span class="fa-stack fa-1x labkey-fa-stacked-wrapper">
+                    <span class="fa fa-folder-o fa-stack-2x labkey-main-menu-icon" alt="New Subfolder"></span>
+                    <span class="fa fa-plus-circle fa-stack-1x"></span>
+                </span>
+            </a>
+        </span>
+        &nbsp;&nbsp;
+        <span class="beta-nav-button-icon">
+            <a href="<%=folderManagementURL%>" title="Folder Management">
+                <span class="fa fa-gear" alt="Folder Management"></span>
+            </a>
+        </span>
+<%
+    }
+
+    if (!getContainer().isRoot())
+    {
+%>
+        <span class="beta-nav-button-icon">
+            <a id="permalink_vis" href="#" title="Permalink Page">
+                <span class="fa fa-link" alt="Permalink Page"></span>
+            </a>
+        </span>
+<%
+    }
+%>
 </div>
 <script type="text/javascript">
     +function($) {
@@ -131,7 +176,8 @@
         $(function() {
             $('.beta-nav').on('click', '.clbl span.marked', toggle);
 
-            $('.project-list > ul').menuAim({
+            var projectList = $('.beta-nav .project-list');
+            projectList.find('ul').menuAim({
                 activate: function(row) {
                     var $row = $(row);
                     $row.addClass('last-active');
@@ -145,6 +191,31 @@
                     $(row).removeClass('last-active');
                 }
             });
+
+            <% if (getContainer().getProject() != null && !getContainer().isRoot()) { %>
+                var l = projectList.find('li[data-submenu-id="<%=h(getContainer().getProject().getName())%>"]');
+                l.trigger('mouseenter');
+
+                // scroll the selected project into view
+                var projectListBottom = projectList.offset().top + projectList.height();
+                if (l.offset().top > projectListBottom) {
+                    projectList.animate({scrollTop: l.offset().top - projectListBottom + 50});
+                }
+
+                // scroll the selected folder into view
+                var folderList = $('.beta-nav .beta-folder-tree');
+                var folderListBottom = folderList.offset().top + folderList.height();
+                var s = folderList.find('.nav-tree-selected');
+                if (s.offset().top > folderListBottom) {
+                    folderList.animate({scrollTop: s.offset().top - folderListBottom + 50});
+                }
+            <% } %>
+
+            var p = document.getElementById('permalink');
+            var pvis = document.getElementById('permalink_vis');
+            if (p && pvis) {
+                pvis.href = p.href;
+            }
         });
     }(jQuery);
 </script>

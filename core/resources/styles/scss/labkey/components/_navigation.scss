@@ -117,7 +117,7 @@
     display: inline-block;
   }
 
-  &  > .dropdown-menu {
+  & > .dropdown-menu {
     position: fixed;
     top: 0;
     bottom: 0;
@@ -126,6 +126,14 @@
     border: 0;
     padding: 0;
 
+    & li > a {
+      padding: 8px 28px;
+    }
+
+    & li > a.subcollapse {
+      padding: 8px 28px 8px 4px;
+    }
+
     & > .lk-header-close {
       height: 50px;
       background-color: $lk-page-header-bg-color;
@@ -133,7 +141,7 @@
 
       & > i {
         color: $lk-page-header-color;
-        font-size: 25px;
+        font-size: $lk-page-header-icon-size;
         padding-right: 10px;
         vertical-align: middle;
       }
@@ -148,6 +156,7 @@
       overflow-x: auto;
       background-color: $lk-brand-color;
       padding: 10px;
+      font-size: $lk-font-size-large;
 
       & > li {
         display: inline-block;
@@ -181,6 +190,66 @@
       border-radius: 0;
       padding: 10px;
       background-color: white;
+      font-size: $lk-font-size-large;
+
+      & a.subexpand-link {
+        padding: 8px 56px 8px 28px;
+      }
+
+      & a.subexpand-target {
+        display: inline-block;
+        padding: 0;
+        position: absolute;
+        top: 5px;
+        right: 14px;
+
+        & > i.fa {
+          font-size: $lk-dropdown-submenu-icon-size;
+          color: $lk-dropdown-submenu-icon-color;
+          border: solid $lk-dropdown-submenu-icon-color 1px;
+          padding: 8px 12px;
+        }
+      }
+
+      & > .lk-project-nav-trail {
+        display: block;
+        padding: 3px 28px;
+
+        & > a {
+          display: inline-block;
+          padding: 0 4px;
+        }
+
+        & > i.fa {
+          font-size: $lk-dropdown-submenu-icon-size;
+          color: $lk-dropdown-submenu-icon-color;
+          vertical-align: middle;
+          padding: 0 4px;
+        }
+      }
+
+      & > .lk-project-nav-buttons {
+        padding: 14px 28px;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        border-top: solid $dropdown-divider-bg 1px;
+        width: 100%;
+
+        & > .button-icon {
+          background-color: transparent;
+          width: 50px;
+        }
+      }
+
+      & .lk-project-nav-disabled {
+        color: $lk-dropdown-submenu-icon-color;
+      }
+
+      & .lk-project-nav-tree-selected > a {
+        font-weight: bold;
+      }
     }
   }
 }
@@ -202,7 +271,9 @@
     display: inline-flex;
 
     .title {
-      padding-bottom: 0.5em;
+      color: $lk-page-nav-color-active;
+      font-weight: $lk-page-nav-font-weight;
+      padding: 0 5px 5px 5px;
       margin-bottom: 0;
     }
   }
@@ -214,7 +285,7 @@
   }
 
   .project-list {
-    border-right: 1px solid #d3d3d3;
+    border-right: 1px solid $dropdown-divider-bg;
 
     ul {
       list-style: none;
@@ -251,13 +322,33 @@
   }
 
   .beta-folder-tree {
-    max-height: 358px;
+    max-height: 375px;
     overflow-x: hidden;
     overflow-y: auto;
-    padding: 5px 50px 10px 10px;
+    padding: 0;
+  }
+}
+
+.beta-nav-buttons {
+  padding: 5px 5px 0 2px;
+  border-top: solid $dropdown-divider-bg 1px;
+
+  .button-icon {
+    background-color: $lk-link-color;
+    opacity: 1.0;
+    &:hover {
+      background-color: $black;
+    }
   }
 
-  .beta-nav-buttons {
-    margin-top: 10px;
+  .beta-nav-button-icon {
+    display: inline-block;
+    background-color: transparent;
+    text-align: center;
+    width: 26px;
   }
+}
+
+.lk-custom-dropdown-menu {
+  padding: 5px;
 }
