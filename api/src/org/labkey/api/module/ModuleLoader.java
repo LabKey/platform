@@ -1930,6 +1930,18 @@ public class ModuleLoader implements Filter
         return Collections.emptyList();
     }
 
+    /**
+     * Sets the entire config properties MultiValueMap.
+     *
+     * @param configProperties
+     * @return
+     */
+    @NotNull
+    public void setConfigProperties(@Nullable MultiValuedMap<String, ConfigProperty> configProperties)
+    {
+        _configPropertyMap = configProperties;
+    }
+
     private void loadStartupProps()
     {
         File propsDir = new File(_webappDir.getParent(), "startup");

@@ -542,7 +542,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return trimToNull(s);
     }
 
-    public void populateSiteSettingsWithStartupProps(boolean isBootstrap)
+    public static void populateSiteSettingsWithStartupProps(boolean isBootstrap)
     {
         // populate site settings with values from startup configuration as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: SiteSettings.sslRequired;bootstrap=True

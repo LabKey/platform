@@ -155,7 +155,7 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         return true;
     }
 
-    public void populateLookAndFeelWithStartupProps(boolean isBootstrap)
+    public static void populateLookAndFeelWithStartupProps(boolean isBootstrap)
     {
         // populate look and feel settings with values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: LookAndFeelSettings.systemDescription;startup=Test Server Description
