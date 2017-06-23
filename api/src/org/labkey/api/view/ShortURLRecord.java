@@ -28,6 +28,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Collections;
 import java.util.List;
@@ -173,7 +174,7 @@ public class ShortURLRecord implements SecurableResource, Parameter.JdbcParamete
         shortUrl = StringUtils.trimToNull(shortUrl);
         if(shortUrl != null)
         {
-            return AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath() + "/" + shortUrl + URL_SUFFIX;
+            return AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath() + "/" + PageFlowUtil.encode(shortUrl) + URL_SUFFIX;
         }
         else
            return "Error_rendering_short_url";
