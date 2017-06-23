@@ -15,6 +15,8 @@
  */
 package org.labkey.core;
 
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
@@ -25,8 +27,14 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.WebPartFactory;
@@ -52,6 +60,9 @@ public class ModulePropertiesTestCase extends Assert
     String PROJECT_NAME = "__ModulePropsTestProject";
     String FOLDER_NAME = "subfolder";
 
+    String LOOKANDFEEL_SYSTEM_DESCRIPTION = "Test System Description";
+    String SITESETTINGS_MAX_BLOB_SIZE = "12345";
+
     @Before
     public void setUp()
     {
@@ -63,6 +74,20 @@ public class ModulePropertiesTestCase extends Assert
 
         _module = new TestModule();
         ((TestModule)_module).init();
+
+        // prepare a multimap of config properties to test with that has properties assigned for several scopes
+        MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
+
+        // prepare test Look And Feel properties
+        ConfigProperty testLookAndFeelProp1 =  new ConfigProperty("systemDescription", LOOKANDFEEL_SYSTEM_DESCRIPTION, "startup", "LookAndFeelSettings");
+        testConfigPropertyMap.put("LookAndFeelSettings", testLookAndFeelProp1);
+
+        // prepare test Site Settings properties
+        ConfigProperty testSiteSettingsProp1 =  new ConfigProperty("maxBLOBSize", SITESETTINGS_MAX_BLOB_SIZE, "startup", "SiteSettings");
+        testConfigPropertyMap.put("SiteSettings", testSiteSettingsProp1);
+
+        // set these simulated startup test properties to be used by the entire server
+        ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
     }
 
     /**
@@ -112,6 +137,52 @@ public class ModulePropertiesTestCase extends Assert
         assertEquals(newVal, prop2.getEffectiveValue(_subFolder));
 
         ContainerManager.deleteAll(_project, _user);
+    }
+
+    /**
+     * Test that the Look And Feel settings can be configured from startup properties
+     */
+    @Test
+    public void testStartupPropertiesForLookAndFeel() throws Exception
+    {
+        // save the original Look And Feel server settings so that we can restore them when this test is done
+        LookAndFeelProperties lookAndFeelProps = LookAndFeelProperties.getInstance(ContainerManager.getRoot());
+        String originalSystemDescription = lookAndFeelProps.getDescription();
+
+        // call the method that makes use of the simulated startup properties defined in setup() change the Look And Feel settings on the server
+        WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps(false);
+
+        // now check that the expected changes occured to the Look And Feel settings on the server
+        String newSystemDescription = lookAndFeelProps.getDescription();
+        assertEquals("The expected change in Look And Feel settings was not found", LOOKANDFEEL_SYSTEM_DESCRIPTION, newSystemDescription);
+
+        // restore the Look And Feel server settings to how they were originally
+        WriteableLookAndFeelProperties writeablelookAndFeelProps = LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
+        writeablelookAndFeelProps.setSystemDescription(originalSystemDescription);
+        writeablelookAndFeelProps.save();
+    }
+
+    /**
+     * Test that the Site Settings can be configured from startup properties
+     */
+    @Test
+    public void testStartupPropertiesForSiteSettings() throws Exception
+    {
+        // save the original Site Settings server settings so that we can restore them when this test is done
+        AppProps siteSettingsProps = AppProps.getInstance();
+        int originalMaxBlobSize = siteSettingsProps.getMaxBLOBSize();
+
+        // call the method that makes use of the simulated startup properties defined in setup() change the Look And Feel settings on the server
+        WriteableAppProps.populateSiteSettingsWithStartupProps(false);
+
+        // now check that the expected changes occured to the Site Settings settings on the server
+        int newMaxBlobSize = siteSettingsProps.getMaxBLOBSize();
+        assertEquals("The expected change in Site Settings was not found", SITESETTINGS_MAX_BLOB_SIZE, Integer.toString(newMaxBlobSize));
+
+        // restore the Look And Feel server settings to how they were originally
+        WriteableAppProps writeableSiteSettingsProps = AppProps.getWriteableInstance();
+        writeableSiteSettingsProps.setMaxBLOBSize(originalMaxBlobSize);
+        writeableSiteSettingsProps.save();
     }
 
     private class TestModule extends CodeOnlyModule

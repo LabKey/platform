@@ -16,6 +16,8 @@
 
 package org.labkey.filecontent;
 
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -49,6 +51,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
@@ -812,6 +815,23 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return frag;
     }
 
+    public static void populateSiteRootFileWithStartupProps(boolean isBootstrap)
+    {
+        // populate the site root file settings with values read from startup properties as appropriate for prop modifier and isBootstrap flag
+        // expects startup properties formatted like: FileSiteRootSettings.fileRoot;bootstrap=/labkey/labkey/files
+        // if more than one FileSiteRootSettings.siteRootFile specified in the startup properties file then the last one overrides the previous ones
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("SiteRootSettings");
+        startupProps.stream()
+                .filter( prop -> prop.getName().equals("siteRootFile"))
+                .forEach(prop -> {
+                    if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
+                    {
+                        File fileRoot = new File(prop.getValue());
+                        FileContentServiceImpl.getInstance().setSiteDefaultRoot(fileRoot);
+                    }
+                });
+    }
+
     public static FileContentServiceImpl getInstance()
     {
         return (FileContentServiceImpl) ServiceRegistry.get(FileContentService.class);
@@ -986,8 +1006,51 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             assertPathsEqual("Folder tab has incorrect file root", expectedTabRoot, svc.getFileRoot(tab));
         }
 
+        /**
+         * Test that the Site Settings can be configured from startup properties
+         */
+        @Test
+        public void testStartupPropertiesForSiteRootSettings() throws Exception
+        {
+            String LOOKANDFEEL_SYSTEM_DESCRIPTION = "Test System Description";
+            String SITESETTINGS_MAX_BLOB_SIZE = "12345";
 
-            @After
+            // save the original Site Root File settings so that we can restore them when this test is done
+            File originalSiteRootFile = FileContentServiceImpl.getInstance().getSiteDefaultRoot();
+
+            // create the new site root file to test with as a child of the current site root file so that we know it is in a dir that exist
+            String originalSiteRootFilePath = originalSiteRootFile.getAbsolutePath();
+            File testSiteRootFile = new File(originalSiteRootFilePath, "mockSiteRootFile");
+            testSiteRootFile.createNewFile();
+
+            // prepare a multimap of config properties to test with that has properties assigned for several scopes and populate with sample properties from several scopes
+            MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
+            // prepare test Look And Feel properties
+            ConfigProperty testLookAndFeelProp1 =  new ConfigProperty("systemDescription", LOOKANDFEEL_SYSTEM_DESCRIPTION, "startup", "LookAndFeelSettings");
+            testConfigPropertyMap.put("LookAndFeelSettings", testLookAndFeelProp1);
+            // prepare test Site Settings properties
+            ConfigProperty testSiteSettingsProp1 =  new ConfigProperty("maxBLOBSize", SITESETTINGS_MAX_BLOB_SIZE, "startup", "SiteSettings");
+            testConfigPropertyMap.put("SiteSettings", testSiteSettingsProp1);
+            // prepare test Site Root Settings properties
+            ConfigProperty testSiteRootSettingsProp1 =  new ConfigProperty("siteRootFile", testSiteRootFile.getAbsolutePath(), "startup", "SiteRootSettings");
+            testConfigPropertyMap.put("SiteRootSettings", testSiteRootSettingsProp1);
+            // set these mock startup test properties to be used by the entire server
+            ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
+
+            // call the method that makes use of the mock startup properties to change the Site Root File settings on the server
+            populateSiteRootFileWithStartupProps(false);
+
+            // now check that the expected changes occured to the Site Root File settings on the server
+            File newSiteRootFile = FileContentServiceImpl.getInstance().getSiteDefaultRoot();
+            Assert.assertEquals("The expected change in Site Root File was not found", testSiteRootFile.getAbsolutePath(), newSiteRootFile.getAbsolutePath());
+
+            // restore the Site Root File server settings to how they were originally
+            FileContentServiceImpl.getInstance().setSiteDefaultRoot(originalSiteRootFile);
+            testSiteRootFile.delete();
+        }
+
+
+        @After
         public void cleanup()
         {
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);

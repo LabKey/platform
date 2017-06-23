@@ -149,7 +149,7 @@ public class FileContentModule extends DefaultModule
     private void bootstrap()
     {
         // populate File Site Root Settings with values read from startup properties as appropriate for bootstrap
-        populateSiteRootFileWithStartupProps(true);
+        FileContentServiceImpl.populateSiteRootFileWithStartupProps(true);
     }
 
     public void doStartup(ModuleContext moduleContext)
@@ -174,7 +174,7 @@ public class FileContentModule extends DefaultModule
         }
 
         // populate File Site Root Settings with values read from startup properties as appropriate for not bootstrap
-        populateSiteRootFileWithStartupProps(false);
+        FileContentServiceImpl.populateSiteRootFileWithStartupProps(false);
 
     }
 
@@ -199,23 +199,6 @@ public class FileContentModule extends DefaultModule
             FileContentServiceImpl.TestCase.class,
             FileContentController.TestCase.class
         ));
-    }
-
-    public void populateSiteRootFileWithStartupProps(boolean isBootstrap)
-    {
-        // populate the site root file settings with values read from startup properties as appropriate for prop modifier and isBootstrap flag
-        // expects startup properties formatted like: FileSiteRootSettings.fileRoot;bootstrap=/labkey/labkey/files
-        // if more than one FileSiteRootSettings.siteRootFile specified in the startup properties file then the last one overrides the previous ones
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("SiteRootSettings");
-        startupProps.stream()
-            .filter( prop -> prop.getName().equals("siteRootFile"))
-            .forEach(prop -> {
-                if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
-                {
-                    File fileRoot = new File(prop.getValue());
-                    FileContentServiceImpl.getInstance().setSiteDefaultRoot(fileRoot);
-                }
-            });
     }
 
 }

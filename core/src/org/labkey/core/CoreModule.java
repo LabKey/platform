@@ -116,6 +116,7 @@ import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.study.Study;
@@ -808,8 +809,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         // populate look and feel settings and site settings with values read from startup properties as appropriate for not bootstrap
-        LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot()).populateLookAndFeelWithStartupProps(false);;
-        AppProps.getWriteableInstance().populateSiteSettingsWithStartupProps(false);
+        WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps(false);;
+        WriteableAppProps.populateSiteSettingsWithStartupProps(false);
 
         // create users and groups and assign roles with values read from startup properties as appropriate for not bootstrap
         populateGroupRolesWithStartupProps(false);
@@ -1237,7 +1238,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
     }
 
-    private void populateUserGroupsWithStartupProps(boolean isBootstrap)
+    private static void populateUserGroupsWithStartupProps(boolean isBootstrap)
     {
         // assign users to groups using values read from startup configuration as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: UserGroups.{email};{modifier}=SiteAdministrators,Developers
@@ -1289,7 +1290,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             });
     }
 
-    private void populateGroupRolesWithStartupProps(boolean isBootstrap)
+    private static void populateGroupRolesWithStartupProps(boolean isBootstrap)
     {
         // create groups with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: GroupRoles.{groupName};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
@@ -1328,7 +1329,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             });
     }
 
-    private void populateUserRolesWithStartupProps(boolean isBootstrap)
+    private static void populateUserRolesWithStartupProps(boolean isBootstrap)
     {
         // create users with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: UserRoles.{email};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
@@ -1356,7 +1357,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             });
     }
 
-    private User getExistingOrCreateUser (String email, Container rootContainer)
+    private static User getExistingOrCreateUser (String email, Container rootContainer)
     {
         try
         {
