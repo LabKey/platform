@@ -4,7 +4,7 @@
     width: 100%;
 }
 
-.summary-stats-panel .stat-table tr.alt-row {
+.summary-stats-panel .stat-table tr.lk-stats-alt-row {
     background-color: #F4F4F4;
 }
 
@@ -16,23 +16,23 @@
     background-color: #C0C0C0;
 }
 
-.summary-stats-panel .stat-table .check {
+.summary-stats-panel .stat-table .lk-stats-check {
     vertical-align: top;
 }
 
-.summary-stats-panel .stat-table .value {
+.summary-stats-panel .stat-table .lk-stats-value {
     text-align: right;
 }
 
-.summary-stats-panel .stat-table .label {
+.summary-stats-panel .stat-table .lk-stats-label {
     padding-right: 10px;
 }
 
-.summary-stats-panel .stat-table .indent {
+.summary-stats-panel .stat-table .lk-stats-indent {
     padding-left: 20px;
 }
 
-.summary-stats-panel .stat-table .description {
+.summary-stats-panel .stat-table .lk-stats-description {
     font-size: 12px;
     vertical-align: top;
 }

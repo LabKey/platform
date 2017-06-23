@@ -144,7 +144,6 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
         if (!this.applyButton) {
             this.applyButton = Ext4.create('Ext.button.Button', {
                 text: 'Apply',
-                width: 63,
                 scope: this,
                 disabled: true,
                 handler: function() {
@@ -160,7 +159,6 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
         if (!this.cancelButton) {
             this.cancelButton = Ext4.create('Ext.button.Button', {
                 text: 'Cancel',
-                width: 63,
                 scope: this,
                 handler: function() {
                     this.close();
@@ -324,15 +322,15 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsPanel', {
                 tpl: new Ext4.XTemplate(
                         '<table class="stat-table">',
                             '<tpl for=".">',
-                                '<tr class="row {[this.getAltRowCls(values.altRow)]}">',
-                                    '<td class="check" style="display: ' + (this.allowSelection ? 'table-cell' : 'none') + ';">',
+                                '<tr class="lk-stats-row {[this.getAltRowCls(values.altRow)]}">',
+                                    '<td class="lk-stats-check" style="display: ' + (this.allowSelection ? 'table-cell' : 'none') + ';">',
                                         '<input type="checkbox" name="stat-cb" value="{name}" {[this.getCheckboxState(values.checked)]}/>',
                                     '</td>',
-                                    '<td class="label">{label}',
+                                    '<td class="lk-stats-label">{label}',
                                         '{[this.getDescriptionHtml(values)]}',
                                         '{[this.getChildrenLabels(values.children)]}',
                                     '</td>',
-                                    '<td class="value">',
+                                    '<td class="lk-stats-value">',
                                         '{[this.getValueHtml(values.value)]}',
                                         '{[this.getChildrenValues(values.children)]}',
                                     '</td>',
@@ -341,14 +339,14 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsPanel', {
                         '</table>',
                         {
                             getAltRowCls: function(altRow) {
-                                return altRow ? 'alt-row' : '';
+                                return altRow ? 'lk-stats-alt-row' : '';
                             },
                             getCheckboxState: function(checked) {
                                 return checked ? 'checked' : '';
                             },
                             getDescriptionHtml: function(values) {
                                 if (values.description != null && values.description != '')
-                                    return '<i class="fa fa-question description" data-qtitle="' + values.label + '" data-qtip="' + values.description + '"></i>';
+                                    return '<i class="fa fa-question lk-stats-description" data-qtitle="' + values.label + '" data-qtip="' + values.description + '"></i>';
 
                                 return '';
                             },
@@ -361,9 +359,9 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsPanel', {
                                     Ext4.each(children, function(child) {
                                         var descHtml = '';
                                         if (child.description != null && child.description != '')
-                                            descHtml = '<i class="fa fa-question description" data-qtitle="' + child.label + '" data-qtip="' + child.description + '"></i>';
+                                            descHtml = '<i class="fa fa-question lk-stats-description" data-qtitle="' + child.label + '" data-qtip="' + child.description + '"></i>';
 
-                                        html += '<div class="indent">' + Ext4.String.htmlEncode(child.label) + descHtml + '</div>';
+                                        html += '<div class="lk-stats-indent">' + Ext4.String.htmlEncode(child.label) + descHtml + '</div>';
                                     });
                                     return html;
                                 }
