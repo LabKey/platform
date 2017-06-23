@@ -474,8 +474,6 @@ public class DatasetQueryView extends StudyQueryView
                 bar.add(viewAssayButton);
             }
         }
-
-        bar.add(populateMoreMenu(view));
     }
 
     @Override

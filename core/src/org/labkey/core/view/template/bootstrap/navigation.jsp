@@ -39,7 +39,6 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("internal/jQuery");
-        dependencies.add("Ext4");
     }
 
     private String getSafeName(Portal.WebPart menu)
@@ -87,7 +86,7 @@
         <div class="navbar-header">
             <ul class="nav">
                 <li id="project-mobile" class="dropdown visible-xs">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                    <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
 <%
                     if (context.isShowFolders())
                     {
@@ -121,7 +120,7 @@
                             {
 %>
                             <li class="mobiledrop" data-webpart="MenuProjectNav" data-name="MenuProjectNav">
-                                <a href="#" class="mobiledrop-toggle" data-toggle="mobiledrop">
+                                <a data-target="#" class="mobiledrop-toggle" data-toggle="mobiledrop">
                                     <i class="fa fa-folder-open"></i>
                                     <span>Projects</span>
                                 </a>
@@ -133,7 +132,7 @@
                             {
 %>
                             <li class="mobiledrop" data-webpart="<%=text(getSafeName(pair.second))%>" data-name="<%=text(pair.second.getName())%>">
-                                <a href="#" class="mobiledrop-toggle" data-toggle="mobiledrop">
+                                <a data-target="#" class="mobiledrop-toggle" data-toggle="mobiledrop">
                                     <span><%=h(pair.first)%></span>
                                 </a>
                             </li>
@@ -149,7 +148,7 @@
                 {
 %>
                 <li class="dropdown hidden-xs" data-webpart="BetaNav" data-name="BetaNav">
-                    <a href="#" class="dropdown-toggle">
+                    <a data-target="#" class="dropdown-toggle">
                         <i class="fa fa-folder-open"></i>&nbsp;<%=h(model.getProjectTitle())%>
                     </a>
                     <ul class="dropdown-menu"></ul>
@@ -161,7 +160,7 @@
                 {
 %>
                 <li class="dropdown hidden-xs" data-webpart="<%=text(getSafeName(pair.second))%>" data-name="<%=text(pair.second.getName())%>">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"><%=h(pair.first)%></a>
+                    <a data-target="#" class="dropdown-toggle" data-toggle="dropdown"><%=h(pair.first)%></a>
                     <ul class="dropdown-menu lk-custom-dropdown-menu"></ul>
                 </li>
 <%
@@ -187,7 +186,7 @@
                             if (isPageAdminMode && tab.getChildren().length == 1)
                             {
                 %>
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                    <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
                         <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-right">
@@ -225,7 +224,7 @@
                             {
                 %>
                 <li role="presentation" class="dropdown active">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                    <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
                         <%=h(tab.getText())%>&nbsp;
                         <% if (tabs.size() > 1) { %>
                         <i class="fa fa-chevron-down" style="font-size: 12px;"></i>
@@ -265,7 +264,6 @@
         </div>
     </div>
 </nav>
-
 <script type="application/javascript">
     var __menus = {};
     LABKEY.Utils.onReady(function() {

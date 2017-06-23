@@ -9,6 +9,7 @@
       color: $lk-page-nav-color;
       font-family: $lk-font-family-secondary-sans-serif;
       font-weight: $lk-page-nav-font-weight;
+      cursor: pointer;
 
       &:hover, &:focus {
         background-color: $lk-page-nav-bg-color-active;

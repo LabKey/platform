@@ -60,7 +60,7 @@
                             projectTitle = projectTitle.substring(0, 31) + "...";
                         }
                 %>
-                    <li data-submenu-id = "<%=h(projectTitle)%>"><a data-field="<%=h(p.getText())%>" title="<%=h(projectTitle)%>" href="<%=h(p.getHref())%>"><%=h(projectTitle)%></a></li>
+                    <li data-submenu-id="<%=h(projectTitle.toLowerCase())%>"><a data-field="<%=h(p.getText())%>" title="<%=h(projectTitle)%>" href="<%=h(p.getHref())%>"><%=h(projectTitle)%></a></li>
                 <%
                     }
                 %>
@@ -193,13 +193,15 @@
             });
 
             <% if (getContainer().getProject() != null && !getContainer().isRoot()) { %>
-                var l = projectList.find('li[data-submenu-id="<%=h(getContainer().getProject().getName())%>"]');
-                l.trigger('mouseenter');
+                var l = projectList.find('li[data-submenu-id="<%=h(getContainer().getProject().getName().toLowerCase())%>"]');
+                if (l.length) {
+                    l.trigger('mouseenter');
 
-                // scroll the selected project into view
-                var projectListBottom = projectList.offset().top + projectList.height();
-                if (l.offset().top > projectListBottom) {
-                    projectList.animate({scrollTop: l.offset().top - projectListBottom + 50});
+                    // scroll the selected project into view
+                    var projectListBottom = projectList.offset().top + projectList.height();
+                    if (l.offset().top > projectListBottom) {
+                        projectList.scrollTop(l.offset().top - projectListBottom + 50);
+                    }
                 }
 
                 // scroll the selected folder into view
@@ -207,7 +209,7 @@
                 var folderListBottom = folderList.offset().top + folderList.height();
                 var s = folderList.find('.nav-tree-selected');
                 if (s.offset().top > folderListBottom) {
-                    folderList.animate({scrollTop: s.offset().top - folderListBottom + 50});
+                    folderList.scrollTop(s.offset().top - folderListBottom + 50);
                 }
             <% } %>
 
