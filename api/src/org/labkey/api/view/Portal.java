@@ -442,7 +442,7 @@ public class Portal
     private static boolean isPageInTabList(List<FolderTab> folderTabs, Portal.PortalPage page)
     {
         for (FolderTab folderTab : folderTabs)
-            if (folderTab.getName().equalsIgnoreCase(page.getPageId()))
+            if (folderTab.getName() != null && folderTab.getName().equalsIgnoreCase(page.getPageId()))
                 return true;
         return false;
     }
