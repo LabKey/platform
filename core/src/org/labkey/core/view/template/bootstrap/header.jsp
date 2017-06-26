@@ -143,7 +143,7 @@
 
 <% if (isRealUser)
 { %>
-            <li data-tt="tooltip" data-placement="bottom" title="Give your thoughts on our look updates">
+            <li data-tt="tooltip" data-placement="bottom" title="Give your thoughts on our new look">
                 <a href="<%=h(urlProvider(CoreUrls.class).getFeedbackURL())%>" target="_blank">Give Feedback</a>
             </li>
 <% } %>
