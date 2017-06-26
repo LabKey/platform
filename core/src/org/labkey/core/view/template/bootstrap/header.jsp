@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
+<%@ page import="org.labkey.api.admin.CoreUrls" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -140,10 +141,12 @@
             </li>
 <% } %>
 
-            <li>&nbsp;</li>
-            <li>
-                <a href="https://labkey.org/UX%20Refresh%20Feedback/core-feedback.view" class="btn btn-primary" target="_blank">Give Feedback</a>
+<% if (isRealUser)
+{ %>
+            <li data-tt="tooltip" data-placement="bottom" title="Give your thoughts on our look updates">
+                <a href="<%=h(urlProvider(CoreUrls.class).getFeedbackURL())%>" target="_blank">Give Feedback</a>
             </li>
+<% } %>
 
         </ul>
     </div>

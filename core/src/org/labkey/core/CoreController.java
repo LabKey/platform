@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -234,6 +235,13 @@ public class CoreController extends SpringActionController
         public ActionURL getDownloadFileLinkBaseURL(Container container, PropertyDescriptor pd)
         {
             return new ActionURL(DownloadFileLinkAction.class, container).addParameter("propertyId", pd.getPropertyId());
+        }
+
+        @NotNull
+        @Override
+        public String getFeedbackURL()
+        {
+            return "https://labkey.org/UX Refresh Feedback/core-feedback.view";
         }
 
         @Override
