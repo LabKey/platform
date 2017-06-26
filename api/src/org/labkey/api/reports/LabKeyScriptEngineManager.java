@@ -16,10 +16,14 @@
 package org.labkey.api.reports;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.cache.CacheManager;
@@ -30,6 +34,7 @@ import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 import org.springframework.beans.MutablePropertyValues;
 
@@ -675,7 +680,8 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
         }
 
         // for each engine create a definition from the map of properties and save it
-        for (Map.Entry<String, Map> entry : enginePropertyMap.entrySet()) {
+        for (Map.Entry<String, Map> entry : enginePropertyMap.entrySet())
+        {
             ExternalScriptEngineDefinition def = createDefinition(entry.getValue(), true);
             String key = makeKey(def.isRemote(), def.getExtensions());
             // Only attempt to create the script engine if no script engine with this key has been created before.
@@ -683,6 +689,60 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
             // It will create a script engine definition, but does not modify an existing script engine definition.
             if (getProp(key, SCRIPT_ENGINE_MAP) == null)
                 saveDefinition(def);
+        }
+    }
+
+    @TestWhen(TestWhen.When.BVT)
+    public static class TestCase extends Assert
+    {
+        String SCRIPT_ENGINE_NAME = "R Scripting Engine Test";
+
+        /**
+         * Test that Script Engine Definitions can be configured from startup properties
+         */
+        @Test
+        public void testStartupPropertiesForScriptEngineDefinition() throws Exception
+        {
+            // ensure that the site wide ModuleLoader had test startup property values in the _configPropertyMap
+            prepareTestStartupProperties();
+
+            // examine the original list of Script Engine Definitions to ensure the test script engine is not already setup
+            List<ExternalScriptEngineDefinition> defList = getEngineDefinitions();
+            assertFalse("The script engine defined in the startup properties was already setup on this server: " + SCRIPT_ENGINE_NAME, defList.stream().anyMatch((ExternalScriptEngineDefinition def) -> def.getName().equals(SCRIPT_ENGINE_NAME))) ;
+
+            // call the method that makes use of the test startup properties to add a new Script Engine Definition to the server
+            populateScriptEngineDefinitionsWithStartupProps(true);
+
+            // now check that the expected changes occured to the Scripting Engine Definitions on the server
+            defList = getEngineDefinitions();
+            assertTrue("The script engine defined in the startup properties was not setup: " + SCRIPT_ENGINE_NAME, defList.stream().anyMatch((ExternalScriptEngineDefinition def) -> def.getName().equals(SCRIPT_ENGINE_NAME))) ;
+
+            // restore the Script Engine Definitions to how they were originally
+            deleteDefinition(defList.stream().filter((ExternalScriptEngineDefinition def) -> def.getName().equals(SCRIPT_ENGINE_NAME)).findAny().get());
+        }
+
+        private void prepareTestStartupProperties()
+        {
+            // use the site root as a mock location for the mock test engine since we know this directory exist
+            // File originalSiteRootFile = FileContentServiceImpl.getInstance().getSiteDefaultRoot();
+
+            // prepare a multimap of config properties to test with that has properties assigned for the ScriptEngineDefinition
+            MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
+
+            // prepare test Script Engine Definition properties - requries multiple lines in the propertry file for each script engine being setup
+            ConfigProperty scriptEngineDefinition1 = new ConfigProperty("Rtest.external", "True", "bootstrap", "ScriptEngineDefinition");
+            testConfigPropertyMap.put("ScriptEngineDefinition", scriptEngineDefinition1);
+            ConfigProperty scriptEngineDefinition2 = new ConfigProperty("Rtest.name", SCRIPT_ENGINE_NAME, "bootstrap", "ScriptEngineDefinition");
+            testConfigPropertyMap.put("ScriptEngineDefinition", scriptEngineDefinition2);
+            ConfigProperty scriptEngineDefinition3 = new ConfigProperty("Rtest.extensions", "Rtest,rtest", "bootstrap", "ScriptEngineDefinition");
+            testConfigPropertyMap.put("ScriptEngineDefinition", scriptEngineDefinition3);
+            ConfigProperty scriptEngineDefinition4 = new ConfigProperty("Rtest.languageName", "Rtest", "bootstrap", "ScriptEngineDefinition");
+            testConfigPropertyMap.put("ScriptEngineDefinition", scriptEngineDefinition4);
+            ConfigProperty scriptEngineDefinition5 = new ConfigProperty("Rtest.exePath", ".", "bootstrap", "ScriptEngineDefinition");
+            testConfigPropertyMap.put("ScriptEngineDefinition", scriptEngineDefinition5);
+
+            // set these test startup test properties to be used by the entire server
+            ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
         }
     }
 
