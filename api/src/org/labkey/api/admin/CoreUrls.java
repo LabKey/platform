@@ -15,6 +15,7 @@
  */
 package org.labkey.api.admin;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -38,4 +39,6 @@ public interface CoreUrls extends UrlProvider
 
     /** Still needs objectURI parameter and value tacked on */
     ActionURL getDownloadFileLinkBaseURL(Container container, PropertyDescriptor pd);
+
+    @NotNull String getFeedbackURL();
 }
