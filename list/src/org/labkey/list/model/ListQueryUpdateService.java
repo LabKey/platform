@@ -557,6 +557,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         Object value = map.get(key);
 
         if (null == value)
+            value = map.get("_" + key);
+
+        if (null == value)
             value = map.get(AliasManager.legalNameFromName(key));
 
         return value;
