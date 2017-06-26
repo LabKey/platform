@@ -27,7 +27,6 @@ import org.junit.Test;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.StringKeyCache;
-import org.labkey.api.cache.Wrapper;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.RowMapFactory;
@@ -97,13 +96,14 @@ import static org.labkey.api.search.SearchService.PROPERTY;
 public class OntologyManager
 {
     private static final Logger _log = Logger.getLogger(OntologyManager.class);
-	private static final DatabaseCache<Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 5000, "Property maps");
-	private static final DatabaseCache<Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 1000, "ObjectIds");
+    private static final DatabaseCache<Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 5000, "Property maps");
+    private static final DatabaseCache<Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 1000, "ObjectIds");
     private static final DatabaseCache<PropertyDescriptor> propDescCache = new DatabaseCache<>(getExpSchema().getScope(), 10000, "Property descriptors");
-	private static final DatabaseCache<DomainDescriptor> domainDescByURICache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by URI");
-	private static final StringKeyCache<DomainDescriptor> domainDescByIDCache = new BlockingStringKeyCache<>(new DatabaseCache<Wrapper<DomainDescriptor>>(getExpSchema().getScope(), 2000, "Domain descriptors by ID"), new DomainDescriptorLoader());
-	private static final DatabaseCache<List<Pair<String, Boolean>>> domainPropertiesCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain properties");
+    private static final DatabaseCache<DomainDescriptor> domainDescByURICache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by URI");
+    private static final StringKeyCache<DomainDescriptor> domainDescByIDCache = new BlockingStringKeyCache<>(new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by ID"), new DomainDescriptorLoader());
+    private static final DatabaseCache<List<Pair<String, Boolean>>> domainPropertiesCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain properties");
     private static final Container _sharedContainer = ContainerManager.getSharedContainer();
+
     public static final String MV_INDICATOR_SUFFIX = "mvindicator";
 
     static
@@ -3798,32 +3798,29 @@ public class OntologyManager
     private static void _indexConcepts(final SearchService.IndexTask task)
     {
         new SqlSelector(getExpSchema(), "SELECT * FROM exp.PropertyDescriptor WHERE Container=? AND rangeuri='xsd:nil'",
-                _sharedContainer.getId()).forEachMap(new Selector.ForEachBlock<Map<String, Object>>() {
-            @Override
-            public void exec(Map<String, Object> m) throws SQLException
-            {
-                String propertyURI = (String)m.get("propertyUri");
-                m.put(PROPERTY.title.toString(), propertyURI);
+                _sharedContainer.getId()).forEachMap(m ->
+        {
+            String propertyURI = (String)m.get("propertyUri");
+            m.put(PROPERTY.title.toString(), propertyURI);
 
-                String desc = (String)m.get("description");
-                String label = (String)m.get("label");
-                String name = (String)m.get("name");
-                String body = StringUtils.trimToEmpty(name) + " " +
-                        StringUtils.trimToEmpty(label) + " " +
-                        StringUtils.trimToEmpty(desc);
+            String desc = (String)m.get("description");
+            String label = (String)m.get("label");
+            String name = (String)m.get("name");
+            String body = StringUtils.trimToEmpty(name) + " " +
+                    StringUtils.trimToEmpty(label) + " " +
+                    StringUtils.trimToEmpty(desc);
 
-                ActionURL url = new ActionURL("experiment-types", "findConcepts", _sharedContainer);
-                url.addParameter("concept",propertyURI);
-                WebdavResource r = new SimpleDocumentResource(
-                    new Path(propertyURI),
-                    "concept:" + propertyURI,
-                    _sharedContainer.getId(),
-                    "text/plain", body,
-                    url,
-                    m
-                );
-                task.addResource(r, SearchService.PRIORITY.item);
-            }
+            ActionURL url = new ActionURL("experiment-types", "findConcepts", _sharedContainer);
+            url.addParameter("concept",propertyURI);
+            WebdavResource r = new SimpleDocumentResource(
+                new Path(propertyURI),
+                "concept:" + propertyURI,
+                _sharedContainer.getId(),
+                "text/plain", body,
+                url,
+                m
+            );
+            task.addResource(r, SearchService.PRIORITY.item);
         });
     }
 }
