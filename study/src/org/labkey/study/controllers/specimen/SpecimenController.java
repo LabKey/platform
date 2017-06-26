@@ -878,10 +878,6 @@ public class SpecimenController extends BaseStudyController
             return true;
         }
 
-        public void validateCommand(AddToSampleRequestForm target, Errors errors)
-        {
-        }
-
         public ActionURL getSuccessURL(AddToSampleRequestForm addToSampleRequestForm)
         {
             return getManageRequestURL(addToSampleRequestForm.getId(), addToSampleRequestForm.getReturnUrl());
@@ -2171,10 +2167,6 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(ManageRequestsPermission.class)
     public class DeleteRequirementAction extends RedirectAction<RequirementForm>
     {
-        public void validateCommand(RequirementForm target, Errors errors)
-        {
-        }
-
         public boolean doAction(RequirementForm form, BindException errors) throws Exception
         {
             SpecimenRequestRequirement requirement =
@@ -2184,8 +2176,8 @@ public class SpecimenController extends BaseStudyController
                 SpecimenManager.getInstance().deleteRequestRequirement(getUser(), requirement);
                 return true;
             }
-            else
-                return false;
+
+            return false;
         }
 
         public ActionURL getSuccessURL(RequirementForm requirementForm)
@@ -2198,10 +2190,6 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(ManageRequestRequirementsPermission.class)
     public class DeleteDefaultRequirementAction extends RedirectAction<IdForm>
     {
-        public void validateCommand(IdForm target, Errors errors)
-        {
-        }
-
         public boolean doAction(IdForm form, BindException errors) throws Exception
         {
             SpecimenRequestRequirement requirement =
@@ -2212,8 +2200,8 @@ public class SpecimenController extends BaseStudyController
                 SpecimenManager.getInstance().deleteRequestRequirement(getUser(), requirement, false);
                 return true;
             }
-            else
-                return false;
+
+            return false;
         }
 
         public ActionURL getSuccessURL(IdForm requirementForm)
@@ -2225,10 +2213,6 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(ManageRequestsPermission.class)
     public class DeleteMissingRequestSpecimensAction extends RedirectAction<IdForm>
     {
-        public void validateCommand(IdForm target, Errors errors)
-        {
-        }
-
         public boolean doAction(IdForm form, BindException errors) throws Exception
         {
             SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
@@ -2711,10 +2695,6 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(RequestSpecimensPermission.class)
     public class SubmitRequestAction extends RedirectAction<IdForm>
     {
-        public void validateCommand(IdForm target, Errors errors)
-        {
-        }
-
         public boolean doAction(IdForm form, BindException errors) throws Exception
         {
             if (!SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
@@ -2774,10 +2754,6 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(RequestSpecimensPermission.class)
     public class DeleteRequestAction extends RedirectAction<IdForm>
     {
-        public void validateCommand(IdForm target, Errors errors)
-        {
-        }
-
         public boolean doAction(IdForm form, BindException errors) throws Exception
         {
             SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
@@ -3730,10 +3706,6 @@ public class SpecimenController extends BaseStudyController
             }
             return true;
         }
-
-        public void validateCommand(UpdateSpecimenCommentsForm target, Errors errors)
-        {
-        }
     }
 
     @RequiresPermission(SetSpecimenCommentsPermission.class)
@@ -4571,10 +4543,6 @@ public class SpecimenController extends BaseStudyController
 
             return true;
         }
-
-        public void validateCommand(IdForm target, Errors errors)
-        {
-        }
     }
 
     @RequiresPermission(AdminPermission.class)
@@ -4602,10 +4570,6 @@ public class SpecimenController extends BaseStudyController
                 updateRequestStatusOrder(getContainer(), remainingIds, true);
             }
             return true;
-        }
-
-        public void validateCommand(IdForm target, Errors errors)
-        {
         }
     }
 
@@ -4644,10 +4608,6 @@ public class SpecimenController extends BaseStudyController
             }
             SpecimenManager.getInstance().saveNewSpecimenRequestInputs(getContainer(), inputs);
             return true;
-        }
-
-        public void validateCommand(ManageRequestInputsForm target, Errors errors)
-        {
         }
     }
 

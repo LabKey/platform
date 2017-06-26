@@ -90,12 +90,6 @@ public class NotificationController extends SpringActionController
             NotificationService.get().markAsRead(getUser(), form.getRowid());
             return true;
         }
-
-        @Override
-        public void validateCommand(NotificationForm target, Errors errors)
-        {
-            // pass
-        }
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin

@@ -3613,10 +3613,6 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
-        public void validateCommand(DeleteQCStateForm target, Errors errors)
-        {
-        }
-
         public ActionURL getSuccessURL(DeleteQCStateForm form)
         {
             ActionURL returnUrl = new ActionURL(ManageQCStatesAction.class, getContainer());

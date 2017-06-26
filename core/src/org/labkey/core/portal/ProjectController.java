@@ -449,11 +449,6 @@ public class ProjectController extends SpringActionController
             }
             return true;
         }
-
-        @Override
-        public void validateCommand(Object target, Errors errors)
-        {
-        }
     }
 
     @RequiresNoPermission
@@ -1757,10 +1752,6 @@ public class ProjectController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class TogglePageAdminModeAction extends org.labkey.api.action.RedirectAction<ReturnUrlForm>
     {
-        @Override
-        public void validateCommand(ReturnUrlForm form, Errors errors)
-        {}
-
         @Override
         public boolean doAction(ReturnUrlForm form, BindException errors) throws Exception
         {

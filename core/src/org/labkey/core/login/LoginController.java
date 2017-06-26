@@ -1536,10 +1536,6 @@ public class LoginController extends SpringActionController
         {
             return deauthenticate(getUser(), getViewContext());
         }
-
-        public void validateCommand(ReturnUrlForm form, Errors errors)
-        {
-        }
     }
 
 
@@ -2467,12 +2463,6 @@ public class LoginController extends SpringActionController
             AuthenticationManager.setAuthConfigProperty(getUser(), parameterForm.getParameter(), parameterForm.isEnabled());
             return true;
         }
-
-        @Override
-        public void validateCommand(AuthParameterForm target, Errors errors)
-        {
-
-        }
     }
 
     public static class AuthParameterForm
@@ -2514,10 +2504,6 @@ public class LoginController extends SpringActionController
             AuthenticationManager.enableProvider(form.getProvider(), getUser());
             return true;
         }
-
-        public void validateCommand(ProviderForm form, Errors errors)
-        {
-        }
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
@@ -2532,10 +2518,6 @@ public class LoginController extends SpringActionController
         {
             AuthenticationManager.disableProvider(form.getProvider(), getUser());
             return true;
-        }
-
-        public void validateCommand(ProviderForm target, Errors errors)
-        {
         }
     }
 
@@ -2616,8 +2598,6 @@ public class LoginController extends SpringActionController
             return res;
         }
     }
-
-
 
 
     public static class Config extends ReturnUrlForm

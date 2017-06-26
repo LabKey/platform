@@ -706,10 +706,6 @@ public class PipelineController extends SpringActionController
 
             return true;
         }
-
-        public void validateCommand(PermissionForm target, Errors errors)
-        {
-        }
     }
 
     public static class PermissionForm extends ReturnUrlForm
@@ -721,6 +717,7 @@ public class PipelineController extends SpringActionController
                 return Integer.valueOf(Integer.MIN_VALUE);
             }
         };
+
         private List<String> perms = new FormArrayList<>(String.class);
 
         private boolean enable = false;

@@ -5659,11 +5659,6 @@ public class AdminController extends SpringActionController
             }
             return false;
         }
-
-        @Override
-        public void validateCommand(Object target, Errors errors)
-        {
-        }
     }
 
 

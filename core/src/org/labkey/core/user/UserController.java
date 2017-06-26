@@ -236,7 +236,7 @@ public class UserController extends SpringActionController
         {
             ActionURL url = new ActionURL(ShowUpdateAction.class, c);
             url.addParameter("userId", userId);
-            url.addParameter(QueryParam.schemaName.toString(), "core");
+            url.addParameter(QueryParam.schemaName.toString(), CoreQuerySchema.NAME);
             url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.USERS_TABLE_NAME);
             url.addReturnURL(returnURL);
 
@@ -841,7 +841,7 @@ public class UserController extends SpringActionController
         @Override
         public boolean doAction(Object form, BindException errors) throws Exception
         {
-            String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), getUser());
+            String domainURI = UsersDomainKind.getDomainURI(CoreQuerySchema.NAME, CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), getUser());
             Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
 
             if (domain != null)
@@ -852,11 +852,6 @@ public class UserController extends SpringActionController
                 return true;
             }
             return false;
-        }
-
-        @Override
-        public void validateCommand(Object form, Errors errors)
-        {
         }
     }
 

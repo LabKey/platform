@@ -312,10 +312,6 @@ public class AnnouncementsController extends SpringActionController
         {
             return getListURL(getContainer());
         }
-
-        public void validateCommand(Object target, Errors errors)
-        {
-        }
     }
 
 
@@ -1605,10 +1601,6 @@ public class AnnouncementsController extends SpringActionController
         {
             return getAdminEmailURL(getContainer(), form.getReturnURLHelper(null));
         }
-
-        public void validateCommand(EmailDefaultSettingsForm target, Errors errors)
-        {
-        }
     }
 
     @RequiresPermission(AdminPermission.class)
@@ -2822,12 +2814,6 @@ public class AnnouncementsController extends SpringActionController
                 new SqlExecutor(CommSchema.getInstance().getSchema()).execute("INSERT INTO comm.userlist (UserId, MessageId) VALUES (?, ?)", getUser(), ann.getRowId());
             }
             return true;
-        }
-
-        @Override
-        public void validateCommand(SubscriptionBean target, Errors errors)
-        {
-
         }
     }
 

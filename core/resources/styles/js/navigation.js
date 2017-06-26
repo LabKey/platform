@@ -173,7 +173,7 @@
             var safeName = $(this).data('webpart');
 
             var target = $(this).find('.dropdown-menu');
-            if (target.length == 0) {
+            if (target.length === 0) {
                 target = $(this).parent().next('.dropdown-menu')
             }
 
@@ -194,7 +194,7 @@
                     config.partConfig = menus[safeName];
                 }
 
-                if (partName == 'MenuProjectNav') {
+                if (partName === 'MenuProjectNav') {
                     config.success = function() {
                         // if we have a selected part of the nav menu to jump to, update display states for the various
                         // parts of the nav tree submenus
