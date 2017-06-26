@@ -203,8 +203,13 @@
         <labkey:form action="some-action" layout="horizontal">
             <labkey:input name="name" label="Rich Content" placeholder="URL of page" contextContent="<%= helpText %>" id="exampleRichContext"/>
         </labkey:form>
+        <br>
         <labkey:form action="some-action" layout="inline">
             <labkey:input name="name" label="Inline Context" contextContent="This is some help text" placeholder="M Beaker" id="exampleInlineContext"/>
+        </labkey:form>
+        <br>
+        <labkey:form action="some-action">
+            <labkey:input name="name" label="Stacked Context" contextContent="This is some help text" placeholder="HoneyDew" id="exampleStackedContext"/>
         </labkey:form>
         <br>
         <h2>Validation States</h2>
@@ -221,7 +226,13 @@
         <labkey:form action="some-action" layout="horizontal">
             <labkey:input name="name" label="Bad Horizontal Input" state="error" placeholder="URL of page" id="exampleBadInput"/>
         </labkey:form>
-
+        <br>
+        <h2>Other Inputs</h2>
+        <labkey:form>
+            <labkey:input name="checkbox1" type="checkbox" label="Checkbox 1" checked="true"/>
+            <labkey:input name="checkbox2" type="checkbox" label="Checkbox 2"/>
+            <labkey:input name="checkbox3" type="checkbox" label="Checkbox 3"/>
+        </labkey:form>
         <br>
         <h2>LabKey table property form (DEPRECATED)</h2>
         <br>
