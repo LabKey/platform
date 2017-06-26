@@ -139,6 +139,12 @@
                 <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign In</a>
             </li>
 <% } %>
+
+            <li>&nbsp;</li>
+            <li>
+                <a href="https://labkey.org/UX%20Refresh%20Feedback/core-feedback.view" class="btn btn-primary" target="_blank">Give Feedback</a>
+            </li>
+
         </ul>
     </div>
 </div>
