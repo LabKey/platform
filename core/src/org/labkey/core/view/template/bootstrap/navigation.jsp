@@ -112,7 +112,9 @@
                     <ul class="dropdown-menu">
                         <div class="lk-header-close">
                             <i class="fa fa-close"></i>
-                            <img src="<%=h(TemplateResourceHandler.LOGO_MOBILE.getURL(c))%>" alt="<%=h(laf.getShortName())%>" height="30">
+                            <a class="brand-logo-mobile" href="<%=h(laf.getLogoHref())%>">
+                                <img src="<%=h(TemplateResourceHandler.LOGO_MOBILE.getURL(c))%>" alt="<%=h(laf.getShortName())%>" height="30">
+                            </a>
                         </div>
                         <div class="lk-horizontal-menu">
 <%
