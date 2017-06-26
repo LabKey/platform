@@ -92,7 +92,9 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
     }
 
     /* Generic version of validate */
-    public abstract void validateCommand(FORM target, Errors errors);
+    public void validateCommand(FORM target, Errors errors)
+    {
+    }
 
     // Override to put up a fancier error page
     public ModelAndView getErrorView(FORM form, BindException errors) throws Exception

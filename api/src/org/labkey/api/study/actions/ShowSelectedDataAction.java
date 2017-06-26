@@ -85,8 +85,4 @@ public class ShowSelectedDataAction extends RedirectAction<ShowSelectedDataActio
     {
         return true;
     }
-
-    public void validateCommand(ShowSelectedForm target, Errors errors)
-    {
-    }
 }

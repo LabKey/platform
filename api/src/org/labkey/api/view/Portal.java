@@ -555,7 +555,7 @@ public class Portal
     {
         PortalPage page = WebPartCache.getPortalPage(c, pageId);
 
-        if(null != page)
+        if (null != page)
             pageId = page.getPageId();
         
         List<WebPart> parts = getParts(c, pageId);
@@ -786,7 +786,7 @@ public class Portal
         // first so we get the pageId with proper casing.
         PortalPage page = WebPartCache.getPortalPage(c, pageId);
 
-        if(null != page)
+        if (null != page)
             pageId = page.getPageId();
 
         // make sure indexes are unique
@@ -1285,7 +1285,7 @@ public class Portal
 
     public static void updatePortalPage(Container c, PortalPage page)
     {
-        if(null != page)
+        if (null != page)
         {
             try
             {

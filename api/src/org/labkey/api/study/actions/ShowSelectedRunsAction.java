@@ -70,8 +70,4 @@ public class ShowSelectedRunsAction extends RedirectAction<ShowSelectedRunsActio
     {
         return true;
     }
-
-    public void validateCommand(ShowSelectedForm target, Errors errors)
-    {
-    }
 }

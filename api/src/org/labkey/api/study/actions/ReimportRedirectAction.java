@@ -79,9 +79,4 @@ public class ReimportRedirectAction extends RedirectAction<ProtocolIdForm>
     {
         return true;
     }
-
-    @Override
-    public void validateCommand(ProtocolIdForm target, Errors errors)
-    {
-    }
 }

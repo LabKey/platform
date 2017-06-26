@@ -409,7 +409,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                 + PageFlowUtil.jsString(getTabIdFromLabel(folderLabel)) + ", "
                 + PageFlowUtil.jsString(folderLabel);
 
-        if(portalPage.isHidden())
+        if (portalPage.isHidden())
             menu.addChild(new NavTree("Show", "javascript:LABKEY.Portal.showTab(" + portalTabParams + ")"));
         else
             menu.addChild(new NavTree("Hide", projectURLProvider.getHidePortalPageURL(container, portalPageId, ctx.getActionURL())));
@@ -457,12 +457,12 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
                     ActionURL tabUrl = module.getTabURL(tabContainer, user);
 
-                    if(null != tabUrl)
+                    if (null != tabUrl)
                         moduleMenu.addChild(new NavTree(module.getTabName(ctx), tabUrl));
 
                 }
 
-                if(moduleMenu.getChildCount() > 0)
+                if (moduleMenu.getChildCount() > 0)
                 {
                     menu.addChild(moduleMenu);
                 }
