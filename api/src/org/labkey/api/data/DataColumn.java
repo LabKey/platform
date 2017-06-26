@@ -709,7 +709,8 @@ public class DataColumn extends DisplayColumn
                         .type("checkbox")
                         .name(getInputPrefix() + formFieldName)
                         .disabled(disabledInput)
-                        .value("1");
+                        .value("1")
+                        .checked(checked);
 
                 out.write(input.build().toString());
             }

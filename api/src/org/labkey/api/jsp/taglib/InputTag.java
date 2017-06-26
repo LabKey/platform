@@ -23,6 +23,7 @@ import java.io.IOException;
 
 public class InputTag extends SimpleTagBase
 {
+    private Boolean checked;
     private String contextContent;
     private Boolean formGroup;
     private String id;
@@ -38,6 +39,11 @@ public class InputTag extends SimpleTagBase
     private String state;
     private String type;
     private Object value;
+
+    public void setChecked(Boolean checked)
+    {
+        this.checked = checked;
+    }
 
     public void setIsDisabled(Boolean disabled)
     {
@@ -123,6 +129,9 @@ public class InputTag extends SimpleTagBase
         else
             input = new Input.InputBuilder().type(type);
 
+        if (null == checked)
+            setChecked(false);
+
         if (null == isDisabled)
             setIsDisabled(false);
 
@@ -144,7 +153,8 @@ public class InputTag extends SimpleTagBase
             .disabled(isDisabled)
             .required(isRequired)
             .readOnly(isReadOnly)
-            .value(value);
+            .value(value)
+            .checked(checked);
 
         if (Input.State.ERROR.toString().equalsIgnoreCase(state))
             input.state(Input.State.ERROR);

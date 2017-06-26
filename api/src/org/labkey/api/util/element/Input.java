@@ -64,7 +64,7 @@ public class Input
     {
         _contextContent = builder._contextContent;
         _checked = builder._checked;
-        _className = builder._className;
+        _className = builder._type.equals("checkbox") || builder._type.equals("radio") ? "form-check" : builder._className;
         _disabled = builder._disabled == null ? false : builder._disabled;
         _format = builder._format;
         _formGroup = builder._formGroup == null ? false : builder._formGroup;
@@ -254,7 +254,7 @@ public class Input
             if (null != getState())
                 doStateIcon(sb);
 
-            if (isHorizontal && StringUtils.isNotEmpty(getContextContent()))
+            if ((isHorizontal || !isInline) && StringUtils.isNotEmpty(getContextContent()))
                 doContextField(sb);
 
             if (needsInputGroup)

@@ -234,6 +234,10 @@
         <tag-class>org.labkey.api.jsp.taglib.InputTag</tag-class>
         <body-content>empty</body-content>
         <attribute>
+            <name>checked</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
             <name>contextContent</name>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
