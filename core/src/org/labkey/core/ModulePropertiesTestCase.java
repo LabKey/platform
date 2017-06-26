@@ -74,20 +74,6 @@ public class ModulePropertiesTestCase extends Assert
 
         _module = new TestModule();
         ((TestModule)_module).init();
-
-        // prepare a multimap of config properties to test with that has properties assigned for several scopes
-        MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
-
-        // prepare test Look And Feel properties
-        ConfigProperty testLookAndFeelProp1 =  new ConfigProperty("systemDescription", LOOKANDFEEL_SYSTEM_DESCRIPTION, "startup", "LookAndFeelSettings");
-        testConfigPropertyMap.put("LookAndFeelSettings", testLookAndFeelProp1);
-
-        // prepare test Site Settings properties
-        ConfigProperty testSiteSettingsProp1 =  new ConfigProperty("maxBLOBSize", SITESETTINGS_MAX_BLOB_SIZE, "startup", "SiteSettings");
-        testConfigPropertyMap.put("SiteSettings", testSiteSettingsProp1);
-
-        // set these simulated startup test properties to be used by the entire server
-        ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
     }
 
     /**
@@ -145,11 +131,14 @@ public class ModulePropertiesTestCase extends Assert
     @Test
     public void testStartupPropertiesForLookAndFeel() throws Exception
     {
+        // ensure that the site wide ModuleLoader has test startup property values in the _configPropertyMap
+        prepareTestStartupProperties();
+
         // save the original Look And Feel server settings so that we can restore them when this test is done
         LookAndFeelProperties lookAndFeelProps = LookAndFeelProperties.getInstance(ContainerManager.getRoot());
         String originalSystemDescription = lookAndFeelProps.getDescription();
 
-        // call the method that makes use of the simulated startup properties defined in setup() change the Look And Feel settings on the server
+        // call the method that makes use of the test startup properties to change the Look And Feel settings on the server
         WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps(false);
 
         // now check that the expected changes occured to the Look And Feel settings on the server
@@ -168,11 +157,14 @@ public class ModulePropertiesTestCase extends Assert
     @Test
     public void testStartupPropertiesForSiteSettings() throws Exception
     {
+        // ensure that the site wide ModuleLoader had test startup property values in the _configPropertyMap
+        prepareTestStartupProperties();
+
         // save the original Site Settings server settings so that we can restore them when this test is done
         AppProps siteSettingsProps = AppProps.getInstance();
         int originalMaxBlobSize = siteSettingsProps.getMaxBLOBSize();
 
-        // call the method that makes use of the simulated startup properties defined in setup() change the Look And Feel settings on the server
+        // call the method that makes use of the test startup properties to change the Look And Feel settings on the server
         WriteableAppProps.populateSiteSettingsWithStartupProps(false);
 
         // now check that the expected changes occured to the Site Settings settings on the server
@@ -213,4 +205,22 @@ public class ModulePropertiesTestCase extends Assert
             return new HashSet<>();
         }
     }
+
+    private void prepareTestStartupProperties()
+    {
+        // prepare a multimap of config properties to test with that has properties assigned for several scopes
+        MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
+
+        // prepare test Look And Feel properties
+        ConfigProperty testLookAndFeelProp1 =  new ConfigProperty("systemDescription", LOOKANDFEEL_SYSTEM_DESCRIPTION, "startup", "LookAndFeelSettings");
+        testConfigPropertyMap.put("LookAndFeelSettings", testLookAndFeelProp1);
+
+        // prepare test Site Settings properties
+        ConfigProperty testSiteSettingsProp1 =  new ConfigProperty("maxBLOBSize", SITESETTINGS_MAX_BLOB_SIZE, "startup", "SiteSettings");
+        testConfigPropertyMap.put("SiteSettings", testSiteSettingsProp1);
+
+        // set these test startup test properties to be used by the entire server
+        ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
+    }
+
 }

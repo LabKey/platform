@@ -1012,32 +1012,18 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         @Test
         public void testStartupPropertiesForSiteRootSettings() throws Exception
         {
-            String LOOKANDFEEL_SYSTEM_DESCRIPTION = "Test System Description";
-            String SITESETTINGS_MAX_BLOB_SIZE = "12345";
-
             // save the original Site Root File settings so that we can restore them when this test is done
             File originalSiteRootFile = FileContentServiceImpl.getInstance().getSiteDefaultRoot();
 
             // create the new site root file to test with as a child of the current site root file so that we know it is in a dir that exist
             String originalSiteRootFilePath = originalSiteRootFile.getAbsolutePath();
-            File testSiteRootFile = new File(originalSiteRootFilePath, "mockSiteRootFile");
+            File testSiteRootFile = new File(originalSiteRootFilePath, "testSiteRootFile");
             testSiteRootFile.createNewFile();
 
-            // prepare a multimap of config properties to test with that has properties assigned for several scopes and populate with sample properties from several scopes
-            MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
-            // prepare test Look And Feel properties
-            ConfigProperty testLookAndFeelProp1 =  new ConfigProperty("systemDescription", LOOKANDFEEL_SYSTEM_DESCRIPTION, "startup", "LookAndFeelSettings");
-            testConfigPropertyMap.put("LookAndFeelSettings", testLookAndFeelProp1);
-            // prepare test Site Settings properties
-            ConfigProperty testSiteSettingsProp1 =  new ConfigProperty("maxBLOBSize", SITESETTINGS_MAX_BLOB_SIZE, "startup", "SiteSettings");
-            testConfigPropertyMap.put("SiteSettings", testSiteSettingsProp1);
-            // prepare test Site Root Settings properties
-            ConfigProperty testSiteRootSettingsProp1 =  new ConfigProperty("siteRootFile", testSiteRootFile.getAbsolutePath(), "startup", "SiteRootSettings");
-            testConfigPropertyMap.put("SiteRootSettings", testSiteRootSettingsProp1);
-            // set these mock startup test properties to be used by the entire server
-            ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
+            // ensure that the site wide ModuleLoader has test startup property values in the _configPropertyMap
+            prepareTestStartupProperties(testSiteRootFile);
 
-            // call the method that makes use of the mock startup properties to change the Site Root File settings on the server
+            // call the method that makes use of the test startup properties to change the Site Root File settings on the server
             populateSiteRootFileWithStartupProps(false);
 
             // now check that the expected changes occured to the Site Root File settings on the server
@@ -1049,6 +1035,29 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             testSiteRootFile.delete();
         }
 
+        private void prepareTestStartupProperties(File testSiteRootFile)
+        {
+            String LOOKANDFEEL_SYSTEM_DESCRIPTION = "Test System Description";
+            String SITESETTINGS_MAX_BLOB_SIZE = "12345";
+
+            // prepare a multimap of config properties to test with that has properties assigned for several scopes and populate with sample properties from several scopes
+            MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
+
+            // prepare test Look And Feel properties
+            ConfigProperty testLookAndFeelProp1 =  new ConfigProperty("systemDescription", LOOKANDFEEL_SYSTEM_DESCRIPTION, "startup", "LookAndFeelSettings");
+            testConfigPropertyMap.put("LookAndFeelSettings", testLookAndFeelProp1);
+
+            // prepare test Site Settings properties
+            ConfigProperty testSiteSettingsProp1 =  new ConfigProperty("maxBLOBSize", SITESETTINGS_MAX_BLOB_SIZE, "startup", "SiteSettings");
+            testConfigPropertyMap.put("SiteSettings", testSiteSettingsProp1);
+
+            // prepare test Site Root Settings properties
+            ConfigProperty testSiteRootSettingsProp1 =  new ConfigProperty("siteRootFile", testSiteRootFile.getAbsolutePath(), "startup", "SiteRootSettings");
+            testConfigPropertyMap.put("SiteRootSettings", testSiteRootSettingsProp1);
+
+            // set these test startup test properties to be used by the entire server
+            ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
+        }
 
         @After
         public void cleanup()

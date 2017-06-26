@@ -672,14 +672,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
 
         // populate look and feel settings and site settings with values read from startup properties as appropriate for bootstrap
-        LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot()).populateLookAndFeelWithStartupProps(true);;
-        AppProps.getWriteableInstance().populateSiteSettingsWithStartupProps(true);
-
+        WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps(true);
+        WriteableAppProps.populateSiteSettingsWithStartupProps(true);
         // create users and groups and assign roles with values read from startup properties as appropriate for bootstrap
-        populateGroupRolesWithStartupProps(true);
-        populateUserRolesWithStartupProps(true);
-        populateUserGroupsWithStartupProps(true);
-
+        SecurityManager.populateGroupRolesWithStartupProps(true);
+        SecurityManager.populateUserRolesWithStartupProps(true);
+        SecurityManager.populateUserGroupsWithStartupProps(true);
         // populate script engine definitions with values read from startup properties as appropriate for not bootstrap
         LabKeyScriptEngineManager.populateScriptEngineDefinitionsWithStartupProps(true);
     }
@@ -809,14 +807,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         // populate look and feel settings and site settings with values read from startup properties as appropriate for not bootstrap
-        WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps(false);;
+        WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps(false);
         WriteableAppProps.populateSiteSettingsWithStartupProps(false);
-
         // create users and groups and assign roles with values read from startup properties as appropriate for not bootstrap
-        populateGroupRolesWithStartupProps(false);
-        populateUserRolesWithStartupProps(false);
-        populateUserGroupsWithStartupProps(false);
-
+        SecurityManager.populateGroupRolesWithStartupProps(false);
+        SecurityManager.populateUserRolesWithStartupProps(false);
+        SecurityManager.populateUserGroupsWithStartupProps(false);
         // populate script engine definitions values read from startup properties as appropriate for not bootstrap
         LabKeyScriptEngineManager.populateScriptEngineDefinitionsWithStartupProps(false);
 
@@ -1072,7 +1068,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 Sampler.TestCase.class,
                 BuilderObjectFactory.TestCase.class,
                 ChecksumUtil.TestCase.class,
-                MaterializedQueryHelper.TestCase.class
+                MaterializedQueryHelper.TestCase.class,
+                LabKeyScriptEngineManager.TestCase.class
         ));
     }
 
@@ -1238,174 +1235,5 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
     }
 
-    private static void populateUserGroupsWithStartupProps(boolean isBootstrap)
-    {
-        // assign users to groups using values read from startup configuration as appropriate for prop modifier and isBootstrap flag
-        // expects startup properties formatted like: UserGroups.{email};{modifier}=SiteAdministrators,Developers
-        Container rootContainer = ContainerManager.getRoot();
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("UserGroups");
-        startupProps
-            .forEach(prop -> {
-                if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
-                {
-                    User user = getExistingOrCreateUser(prop.getName(), rootContainer);
-                    String[] groups = prop.getValue().split(",");
-                    for (String groupName : groups)
-                    {
-                        groupName = StringUtils.stripStart(groupName, null);
-                        Group group = GroupManager.getGroup(rootContainer, groupName, GroupEnumType.SITE);
-                        if (null == group)
-                        {
-                            try
-                            {
-                                group = SecurityManager.createGroup(rootContainer, groupName, PrincipalType.GROUP);
-                            }
-                            catch (IllegalArgumentException e)
-                            {
-                                throw new ConfigurationException("Could not add group specified in startup properties UserGroups: " + prop.getName(), e);
-                            }
-                        }
-                        try
-                        {
-                            String canUserBeAddedToGroup = SecurityManager.getAddMemberError(group, user);
-                            if (null == canUserBeAddedToGroup) {
-                                SecurityManager.addMember(group, user);
-                            }
-                            else
-                            {
-                                // ok if the user is already a member of this group, but everything else throw an exception
-                                if (!"Principal is already a member of this group".equals(canUserBeAddedToGroup))
-                                {
-                                    throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName + " because: " + canUserBeAddedToGroup);
-                                }
-                            }
-                        }
-                        catch (InvalidGroupMembershipException e)
-                        {
-                            throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName, e);
-                        }
-                    }
-                }
-
-            });
-    }
-
-    private static void populateGroupRolesWithStartupProps(boolean isBootstrap)
-    {
-        // create groups with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
-        // expects startup properties formatted like: GroupRoles.{groupName};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
-        Container rootContainer = ContainerManager.getRoot();
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("GroupRoles");
-        startupProps
-            .forEach(prop -> {
-                if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
-                {
-                    Group group = GroupManager.getGroup(rootContainer, prop.getName(), GroupEnumType.SITE);
-                    if (null == group)
-                    {
-                        try
-                        {
-                            group = SecurityManager.createGroup(rootContainer, prop.getName(), PrincipalType.GROUP);
-                        }
-                        catch (IllegalArgumentException e)
-                        {
-                            throw new ConfigurationException("Could not add group specified in startup properties GroupRoles: " + prop.getName(), e);
-                        }
-                    }
-                    String[] roles = prop.getValue().split(",");
-                    MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
-                    for (String roleName : roles)
-                    {
-                        roleName = StringUtils.stripStart(roleName, null);
-                        Role role = RoleManager.getRole(roleName);
-                        if (null == role)
-                        {
-                            throw new ConfigurationException("Invalid role for group specified in startup properties GroupRoles: " + prop.getValue());
-                        }
-                        policy.addRoleAssignment(group, role);
-                    }
-                    SecurityPolicyManager.savePolicy(policy);
-                 }
-            });
-    }
-
-    private static void populateUserRolesWithStartupProps(boolean isBootstrap)
-    {
-        // create users with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
-        // expects startup properties formatted like: UserRoles.{email};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
-        Container rootContainer = ContainerManager.getRoot();
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("UserRoles");
-        startupProps
-            .forEach(prop -> {
-                if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
-                {
-                    User user = getExistingOrCreateUser(prop.getName(), rootContainer);
-                    String[] roles = prop.getValue().split(",");
-                    MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
-                    for (String roleName : roles)
-                    {
-                        roleName = StringUtils.stripStart(roleName, null);
-                        Role role = RoleManager.getRole(roleName);
-                        if (null == role)
-                        {
-                            throw new ConfigurationException("Invalid role for user specified in startup properties UserRoles: " + prop.getValue());
-                        }
-                        policy.addRoleAssignment(user, role);
-                    }
-                    SecurityPolicyManager.savePolicy(policy);
-                }
-            });
-    }
-
-    private static User getExistingOrCreateUser (String email, Container rootContainer)
-    {
-        try
-        {
-            User currentUser = UserManager.getUser(rootContainer.getCreatedBy());
-            ValidEmail userEmail = new ValidEmail(email);
-            User user = UserManager.getUser(userEmail);
-            if (null == user)
-            {
-                SecurityManager.NewUserStatus userStatus = SecurityManager.addUser(userEmail, currentUser);
-
-                user = userStatus.getUser();
-                try
-                {
-                    SecurityManager.sendRegistrationEmail(rootContainer, currentUser, userEmail, null, userStatus, null, null, true);
-                }
-                catch (ConfigurationException | MessagingException e)
-                {
-                    UserManager.addToUserHistory(UserManager.getUser(rootContainer.getCreatedBy()), "New user created from startup properies, but sending the email to new user failed: " + email);
-                    // TODO: need to setup SMTP before attempting to add user to that we can sent user an email requesting them to login and set password.
-                    // Until then dont throw an error during setup testing on failed emails.
-
-                    // as workaround for testing look in db schema.logins table at the verification string and use that verification to craft an http request for setting the initial password like:
-                    // http://127.0.0.1:8080/labkey/login-setPassword.view?verification=XUSefDFsuS8KxJWllAfCacM9HIISEvWe&email=testUser1%40test.com
-
-                    // throw new ConfigurationException("Invalid email address specified in startup properties: " + email, e);
-                    return user;
-                }
-                catch (Exception e)
-                {
-                    UserManager.addToUserHistory(UserManager.getUser(rootContainer.getCreatedBy()), "New user created from startup properies, but sending the email to new user failed: " + email);
-                    // TODO: need to setup SMTP before attempting to add user to that we can sent user an email requesting them to login and set password.
-                    // Until then dont throw an error during setup testing on failed emails.
-
-                    // throw new ConfigurationException("Failed sending email while adding new user specified in startup properties: " + email, e);
-                    return user;
-                }
-                UserManager.addToUserHistory(user, user.getEmail() + " was added to the system via startup properties.");
-            }
-            return user;
-        }
-        catch (ValidEmail.InvalidEmailException e)
-        {
-            throw new ConfigurationException("Invalid email address specified in startup properties for creating new user: " + email, e);
-        }
-        catch (SecurityManager.UserManagementException e)
-        {
-            throw new ConfigurationException("Unale to add new user for: " + email, e);
-        }
-    }
 
 }
