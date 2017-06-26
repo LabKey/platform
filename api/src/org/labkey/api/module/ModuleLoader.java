@@ -1967,6 +1967,8 @@ public class ModuleLoader implements Filter
                             if (entry.getKey() instanceof String && entry.getValue() instanceof String)
                             {
                                 ConfigProperty config = createConfigProperty(entry.getKey().toString(), entry.getValue().toString());
+                                if (_configPropertyMap.containsMapping(config.getScope(), config))
+                                    _configPropertyMap.removeMapping(config.getScope(), config);
                                 _configPropertyMap.put(config.getScope(), config);
                             }
                         }
@@ -1986,6 +1988,8 @@ public class ModuleLoader implements Filter
                     if (name != null && name.startsWith(ConfigProperty.SYS_PROP_PREFIX) && value != null)
                     {
                         ConfigProperty config = createConfigProperty(name.substring(ConfigProperty.SYS_PROP_PREFIX.length()), value);
+                        if (_configPropertyMap.containsMapping(config.getScope(), config))
+                            _configPropertyMap.removeMapping(config.getScope(), config);
                         _configPropertyMap.put(config.getScope(), config);
                     }
                 }
