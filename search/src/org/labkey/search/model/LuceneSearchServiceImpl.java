@@ -656,13 +656,29 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         catch (NoClassDefFoundError err)
         {
             Throwable cause = err.getCause();
-            // Suppress stack trace, etc., if Bouncy Castle isn't present. Use cause since ClassNotFoundException's
-            // message is consistent across JVMs; NoClassDefFoundError's is not. Note: This shouldn't happen any more
-            // since Bouncy Castle ships with Tika as of 0.7.
-            if (cause != null && cause instanceof ClassNotFoundException && cause.getMessage().equals("org.bouncycastle.cms.CMSException"))
-                _log.warn("Can't read encrypted document \"" + id + "\".  You must install the Bouncy Castle encryption libraries to index this document.  Refer to the LabKey documentation for instructions.");
+
+            if (cause != null && cause instanceof ClassNotFoundException)
+            {
+                switch (cause.getMessage())
+                {
+                    // Suppress stack trace, etc., if Bouncy Castle isn't present. Use cause since ClassNotFoundException's
+                    // message is consistent across JVMs; NoClassDefFoundError's is not. Note: This shouldn't happen any more
+                    // since Bouncy Castle ships with Tika as of 0.7.
+                    case "org.bouncycastle.cms.CMSException":
+                        _log.warn("Can't read encrypted document \"" + id + "\". You must install the Bouncy Castle encryption libraries to index this document. Refer to the LabKey documentation for instructions.");
+                        break;
+                    // #30288 repros with testtika.doc. Temporarily suppress and warn. Exception is supposedly fixed in Tika 1.15. @RefactorIn17_3
+                    case "com.microsoft.schemas.office.visio.x2012.main.ConnectsType":
+                        logAsWarning(r, "Unable to extract embedded Visio document");
+                        break;
+                    default:
+                        logAsPreProcessingException(r, err);
+                }
+            }
             else
+            {
                 logAsPreProcessingException(r, err);
+            }
             handledException[0] = err;
         }
         catch (TikaException e)
@@ -874,11 +890,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 if ("org.apache.tika.exception.EncryptedDocumentException".equals(cause.getClass().getName()))
                     throw new EncryptedDocumentException(cause.getMessage(), cause.getCause());
 
-                // Need to unwrap SAXException and IOException
+                // Need to unwrap SAXException, IOException, and NoClassDefFoundError
                 if (cause instanceof SAXException)
                     throw (SAXException) cause;
                 if (cause instanceof IOException)
                     throw (IOException) cause;
+                if (cause instanceof NoClassDefFoundError)
+                    throw (NoClassDefFoundError)cause;
             }
 
             throw new RuntimeException(e);
