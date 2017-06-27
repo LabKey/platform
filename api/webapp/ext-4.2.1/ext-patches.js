@@ -47,7 +47,7 @@ if (LABKEY.experimental.useExperimentalCoreUI) {
                 overrideMinWidth: false,
                 paddingHeight: 0,
                 paddingWidth: 1, // allow 1 px padding to avoid occasional border cutoff
-                skipHeight: false,
+                skipHeight: true,
                 skipWidth: false
             };
 

@@ -31,6 +31,34 @@ LABKEY.Utils = new function(impl, $) {
         $('#'+formId).submit();
     };
 
+    var displayModal = function(title, msg) {
+        var modal = $('#lk-utils-modal');
+
+        if (modal.length === 0) {
+            $('body').append([
+                '<div id="lk-utils-modal" class="modal fade" role="dialog">',
+                    '<div class="modal-dialog"><div class="modal-content"></div></div>',
+                '</div>'
+            ].join(''));
+
+            modal = $('#lk-utils-modal');
+        }
+
+        modal.find('.modal-content').html([
+            '<div class="modal-header">',
+                '<button type="button" class="close" data-dismiss="modal">&times;</button>',
+                '<h4 class="modal-title">' + LABKEY.Utils.encodeHtml(title) + '</h4>',
+            '</div>',
+            '<div class="modal-body">',
+                '<br>',
+                '<p>' + LABKEY.Utils.encodeHtml(msg) + '</p>',
+                '<br>',
+            '</div>'
+        ].join(''));
+
+        modal.modal('show');
+    };
+
     /**
      * Shows an error dialog box to the user in response to an error from an AJAX request, including
      * any error messages from the server.
@@ -138,7 +166,10 @@ LABKEY.Utils = new function(impl, $) {
      * @param msg
      */
     impl.alert = function(title, msg) {
-        if (window.Ext4) {
+        if (LABKEY.experimental && LABKEY.experimental.useExperimentalCoreUI === true) {
+            displayModal(title, msg);
+        }
+        else if (window.Ext4) {
             Ext4.Msg.alert(title?Ext4.htmlEncode(title):"", msg?Ext4.htmlEncode(msg):"")
         }
         else if (window.Ext) {
