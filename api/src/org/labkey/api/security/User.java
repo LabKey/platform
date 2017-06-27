@@ -226,13 +226,19 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
         return isAllowedGlobalRoles() && isInGroup(Group.groupAdministrators);
     }
 
-    // Is the user a Site Administrator? This is NOT a check for AdminPermission.
+    /**
+     * Is the user a Site Administrator? This is NOT a check for AdminPermission.
+     * @return boolean
+     */
     public boolean isInSiteAdminGroup()
     {
         return isAllowedGlobalRoles() && isInGroup(Group.groupAdministrators);
     }
 
-    // Is the user assigned to the ApplicationAdminRole at the root container? This is NOT a check for AdminPermission.
+    /**
+     * Is the user assigned to the ApplicationAdminRole at the root container? This is NOT a check for AdminPermission.
+     * @return boolean
+     */
     public boolean isApplicationAdmin()
     {
         SecurityPolicy rootContainerPolicy = ContainerManager.getRoot().getPolicy();
