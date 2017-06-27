@@ -687,6 +687,9 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager implements Co
         // for each engine create a definition from the map of properties and save it
         for (Map.Entry<String, Map <String, String>> entry : enginePropertyMap.entrySet())
         {
+            // Set a default value for external to true since script engines defined in startup props will likely be external
+            if (null == entry.getValue().get("external"))
+                entry.getValue().put("external", "True");
             ExternalScriptEngineDefinition def = createDefinition(entry.getValue(), true);
             String key = makeKey(def.isRemote(), def.getExtensions());
             // Only attempt to create the script engine if no script engine with this key has been created before.
