@@ -22,30 +22,36 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     LoginController.LoginForm form = ((JspView<LoginController.LoginForm>)HttpView.currentView()).getModelBean();
     ActionURL doneURL = AppProps.getInstance().getHomePageActionURL();
 
     String errors = formatMissedErrorsStr("form");
+    if (errors.length() > 0)
+    {
+        %><%=text(errors)%><%
+    }
 %>
-<labkey:form method="POST" action="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>">
-    <table><%
-        if (errors.length() > 0)
-        { %>
-        <tr><td colspan=2><%=text(errors)%></td></tr>
-        <tr><td colspan=2>&nbsp;</td></tr><%
-        }
-        %>
-        <tr><td colspan=2>To reset your password, type in your email address and click the Submit button.</td></tr>
-        <tr><td colspan=2>&nbsp;</td></tr>
-        <tr><td>Email:</td><td><input id="EmailInput" type="text" name="email" value="<%=h(form.getEmail())%>" style="width:200;"></td></tr>
-        <tr>
-            <td></td>
-            <td style="height:50">
-            <%= button("Submit").submit(true).attributes("name=\"reset\"")%>
-            <%= button("Cancel").href(urlProvider(LoginUrls.class).getLoginURL(doneURL)) %>
-            </td>
-        </tr>
-    </table>
+<p>To reset your password, type in your email address and click the Submit button.</p>
+<labkey:form method="POST" action="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>" layout="horizontal">
+<%
+    if (PageFlowUtil.useExperimentalCoreUI())
+    {
+%>
+        <labkey:input id="EmailInput" type="text" name="email" value="<%=h(form.getEmail())%>"/>
+<%
+    }
+    else
+    {
+%>
+        <table>
+            <tr><td>Email:&nbsp;&nbsp;</td><td><input id="EmailInput" type="text" name="email" value="<%=h(form.getEmail())%>" style="width:300px;"></td></tr>
+        </table>
+<%
+    }
+%>
+    <%= button("Submit").submit(true).attributes("name=\"reset\"")%>
+    <%= button("Cancel").href(urlProvider(LoginUrls.class).getLoginURL(doneURL)) %>
 </labkey:form>
