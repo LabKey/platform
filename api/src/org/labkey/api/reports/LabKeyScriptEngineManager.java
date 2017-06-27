@@ -54,7 +54,7 @@ import java.util.Map;
 * Date: Dec 12, 2008
 * Time: 12:52:28 PM
 */
-public class LabKeyScriptEngineManager extends ScriptEngineManager
+public class LabKeyScriptEngineManager extends ScriptEngineManager implements ConfigProperty.ConfigPropertyInitializer
 {
     private static final Logger LOG = Logger.getLogger(LabKeyScriptEngineManager.class);
 
@@ -635,6 +635,11 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
         }
     }
 
+    public void setConfigProperties(boolean isBootstrap)
+    {
+        populateScriptEngineDefinitionsWithStartupProps(isBootstrap);
+    }
+
     public static void populateScriptEngineDefinitionsWithStartupProps(boolean isBootstrap)
     {
         // populate script engine definition with values from startup configuration as appropriate for prop modifier and isBootstrap flag
@@ -646,8 +651,8 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
         //        ScriptEngineDefinition.{name}.exePath;bootstrap=/usr/bin/R
         //
 
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("ScriptEngineDefinition");
-        Map<String, Map> enginePropertyMap = new HashMap<>();
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION);
+        Map<String, Map <String, String>> enginePropertyMap = new HashMap<>();
 
         for (ConfigProperty prop: startupProps)
         {
@@ -680,7 +685,7 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
         }
 
         // for each engine create a definition from the map of properties and save it
-        for (Map.Entry<String, Map> entry : enginePropertyMap.entrySet())
+        for (Map.Entry<String, Map <String, String>> entry : enginePropertyMap.entrySet())
         {
             ExternalScriptEngineDefinition def = createDefinition(entry.getValue(), true);
             String key = makeKey(def.isRemote(), def.getExtensions());
@@ -723,23 +728,20 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
 
         private void prepareTestStartupProperties()
         {
-            // use the site root as a mock location for the mock test engine since we know this directory exist
-            // File originalSiteRootFile = FileContentServiceImpl.getInstance().getSiteDefaultRoot();
-
             // prepare a multimap of config properties to test with that has properties assigned for the ScriptEngineDefinition
             MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
 
             // prepare test Script Engine Definition properties - requries multiple lines in the propertry file for each script engine being setup
-            ConfigProperty scriptEngineDefinition1 = new ConfigProperty("Rtest.external", "True", "bootstrap", "ScriptEngineDefinition");
-            testConfigPropertyMap.put("ScriptEngineDefinition", scriptEngineDefinition1);
-            ConfigProperty scriptEngineDefinition2 = new ConfigProperty("Rtest.name", SCRIPT_ENGINE_NAME, "bootstrap", "ScriptEngineDefinition");
-            testConfigPropertyMap.put("ScriptEngineDefinition", scriptEngineDefinition2);
-            ConfigProperty scriptEngineDefinition3 = new ConfigProperty("Rtest.extensions", "Rtest,rtest", "bootstrap", "ScriptEngineDefinition");
-            testConfigPropertyMap.put("ScriptEngineDefinition", scriptEngineDefinition3);
-            ConfigProperty scriptEngineDefinition4 = new ConfigProperty("Rtest.languageName", "Rtest", "bootstrap", "ScriptEngineDefinition");
-            testConfigPropertyMap.put("ScriptEngineDefinition", scriptEngineDefinition4);
-            ConfigProperty scriptEngineDefinition5 = new ConfigProperty("Rtest.exePath", ".", "bootstrap", "ScriptEngineDefinition");
-            testConfigPropertyMap.put("ScriptEngineDefinition", scriptEngineDefinition5);
+            ConfigProperty scriptEngineDefinition1 = new ConfigProperty("Rtest.external", "True", "bootstrap", ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION);
+            testConfigPropertyMap.put(ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition1);
+            ConfigProperty scriptEngineDefinition2 = new ConfigProperty("Rtest.name", SCRIPT_ENGINE_NAME, "bootstrap", ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION);
+            testConfigPropertyMap.put(ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition2);
+            ConfigProperty scriptEngineDefinition3 = new ConfigProperty("Rtest.extensions", "Rtest,rtest", "bootstrap", ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION);
+            testConfigPropertyMap.put(ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition3);
+            ConfigProperty scriptEngineDefinition4 = new ConfigProperty("Rtest.languageName", "Rtest", "bootstrap", ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION);
+            testConfigPropertyMap.put(ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition4);
+            ConfigProperty scriptEngineDefinition5 = new ConfigProperty("Rtest.exePath", ".", "bootstrap", ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION);
+            testConfigPropertyMap.put(ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition5);
 
             // set these test startup test properties to be used by the entire server
             ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);

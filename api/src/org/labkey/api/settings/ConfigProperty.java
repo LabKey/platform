@@ -29,6 +29,13 @@ public class ConfigProperty
 
     public static final String DEFAULT_SCOPE = "none";
     public static final String SYS_PROP_PREFIX = "labkey.prop.";
+    public static final String SCOPE_LOOK_AND_FEEL_SETTINGS = "LookAndFeelSettings";
+    public static final String SCOPE_SITE_SETTINGS = "SiteSettings";
+    public static final String SCOPE_SITE_ROOT_SETTINGS = "SiteRootSettings";
+    public static final String SCOPE_SCRIPT_ENGINE_DEFINITION = "ScriptEngineDefinition";
+    public static final String SCOPE_USER_ROLES = "UserRoles";
+    public static final String SCOPE_GROUP_ROLES = "GroupRoles";
+    public static final String SCOPE_USER_GROUPS = "UserGroups";
 
     public enum modifier
     {
@@ -89,4 +96,10 @@ public class ConfigProperty
 
         return result;
     }
+
+    public interface ConfigPropertyInitializer
+    {
+        void setConfigProperties(boolean isStartup);
+    }
+
 }

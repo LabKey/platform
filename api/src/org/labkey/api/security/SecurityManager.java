@@ -128,7 +128,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * being tomcat specific.
  */
 
-public class SecurityManager
+public class SecurityManager implements ConfigProperty.ConfigPropertyInitializer
 {
     private static final Logger _log = Logger.getLogger(SecurityManager.class);
     private static final CoreSchema core = CoreSchema.getInstance();
@@ -2515,16 +2515,16 @@ public class SecurityManager
             MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
 
             // prepare test UserRole properties
-            ConfigProperty testUserRoleProp =  new ConfigProperty(TEST_USER_1_EMAIL, TEST_USER_1_ROLE_NAME, "startup", "UserRoles");
-            testConfigPropertyMap.put("UserRoles", testUserRoleProp);
+            ConfigProperty testUserRoleProp =  new ConfigProperty(TEST_USER_1_EMAIL, TEST_USER_1_ROLE_NAME, "startup", ConfigProperty.SCOPE_USER_ROLES);
+            testConfigPropertyMap.put(ConfigProperty.SCOPE_USER_ROLES, testUserRoleProp);
 
             // prepare test GroupRole properties
-            ConfigProperty testGroupRoleProp =  new ConfigProperty(TEST_GROUP_1_NAME, TEST_GROUP_1_ROLE_NAME, "startup", "GroupRoles");
-            testConfigPropertyMap.put("GroupRoles", testGroupRoleProp);
+            ConfigProperty testGroupRoleProp =  new ConfigProperty(TEST_GROUP_1_NAME, TEST_GROUP_1_ROLE_NAME, "startup", ConfigProperty.SCOPE_GROUP_ROLES);
+            testConfigPropertyMap.put(ConfigProperty.SCOPE_GROUP_ROLES, testGroupRoleProp);
 
             // prepare test UserRole properties
-            ConfigProperty testUserGroupProp =  new ConfigProperty(TEST_USER_2_EMAIL, TEST_USER_2_GROUP_NAME, "startup", "UserGroups");
-            testConfigPropertyMap.put("UserGroups", testUserGroupProp);
+            ConfigProperty testUserGroupProp =  new ConfigProperty(TEST_USER_2_EMAIL, TEST_USER_2_GROUP_NAME, "startup", ConfigProperty.SCOPE_USER_GROUPS);
+            testConfigPropertyMap.put(ConfigProperty.SCOPE_USER_GROUPS, testUserGroupProp);
 
             // set these test startup properties to be used by the entire server
             ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
@@ -2711,19 +2711,6 @@ public class SecurityManager
             SecurityMessage msg = getRegistrationMessage(mailPrefix, true);
             msg.setTo(email.getEmailAddress());
             SecurityManager.sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL);
-        }
-    }
-
-    public static void sendRegistrationEmail(Container container, User user, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, Pair<String, String>[] extraParameters, String provider, boolean isAddUser) throws Exception
-    {
-        ActionURL verificationURL = createModuleVerificationURL(container, email, newUserStatus.getVerification(), extraParameters, provider, isAddUser);
-
-        SecurityManager.sendEmail(container, user, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL);
-        if (!user.isGuest() && !user.getEmail().equals(email.getEmailAddress()))
-        {
-            SecurityMessage msg = getRegistrationMessage(mailPrefix, true);
-            msg.setTo(email.getEmailAddress());
-            SecurityManager.sendEmail(container, user, msg, user.getEmail(), verificationURL);
         }
     }
 
@@ -3151,7 +3138,7 @@ public class SecurityManager
         // assign users to groups using values read from startup configuration as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: UserGroups.{email};{modifier}=SiteAdministrators,Developers
         Container rootContainer = ContainerManager.getRoot();
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("UserGroups");
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_USER_GROUPS);
         startupProps
                 .forEach(prop -> {
                     if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
@@ -3203,7 +3190,7 @@ public class SecurityManager
         // create groups with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: GroupRoles.{groupName};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
         Container rootContainer = ContainerManager.getRoot();
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("GroupRoles");
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_GROUP_ROLES);
         startupProps
                 .forEach(prop -> {
                     if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
@@ -3237,12 +3224,17 @@ public class SecurityManager
                 });
     }
 
+    public void setConfigProperties(boolean isBootstrap)
+    {
+        populateUserRolesWithStartupProps(isBootstrap);
+    }
+
     public static void populateUserRolesWithStartupProps(boolean isBootstrap)
     {
         // create users with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: UserRoles.{email};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
         Container rootContainer = ContainerManager.getRoot();
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("UserRoles");
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_USER_ROLES);
         startupProps
                 .forEach(prop -> {
                     if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
@@ -3277,32 +3269,6 @@ public class SecurityManager
                 SecurityManager.NewUserStatus userStatus = SecurityManager.addUser(userEmail, currentUser);
 
                 user = userStatus.getUser();
-                try
-                {
-                    // TODO: need to setup SMTP before attempting to add user so that we can send an email requesting user to login and set password.
-                    // Until then dont throw an error during setup testing on failed emails.
-
-                    // Alternatively we could configure LabKey server to use a centralized authentication service that the user is already a part of,
-                    // In which case we can skip sending the registration email altogether.
-
-                    // as workaround for testing purposes use PgAdmin to look in db schema.logins table at the verification
-                    // column and insert that verification string in a crafted http request for setting the initial password like:
-                    // http://127.0.0.1:8080/labkey/login-setPassword.view?verification=XUSefDFsuS8KxJWllAfCacM9HIISEvWe&email=testUser1%40test.com
-
-                    SecurityManager.sendRegistrationEmail(rootContainer, currentUser, userEmail, null, userStatus, null, null, true);
-                }
-                catch (ConfigurationException | MessagingException e)
-                {
-                    UserManager.addToUserHistory(UserManager.getUser(rootContainer.getCreatedBy()), "New user created from startup properies, but sending the email to new user failed: " + email);
-                    // throw new ConfigurationException("Invalid email address specified in startup properties: " + email, e);
-                    return user;
-                }
-                catch (Exception e)
-                {
-                    UserManager.addToUserHistory(UserManager.getUser(rootContainer.getCreatedBy()), "New user created from startup properies, but sending the email to new user failed: " + email);
-                    // throw new ConfigurationException("Failed sending email while adding new user specified in startup properties: " + email, e);
-                    return user;
-                }
                 UserManager.addToUserHistory(user, user.getEmail() + " was added to the system via startup properties.");
             }
             return user;
