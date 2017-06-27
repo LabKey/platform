@@ -128,6 +128,8 @@ public class Button
 
     private String generateOnClick(String id)
     {
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+
         // prepare onclick method and overrides
         String onClickMethod = getOnClick();
 
@@ -146,8 +148,16 @@ public class Button
 
         if (isDisableOnClick())
         {
-            String replaceClass = ";LABKEY.Utils.replaceClass(this, " + qCls + ", " + qDisabledCls + ");";
-            onClickMethod += replaceClass;
+            if (newUI)
+            {
+                String addClass = ";LABKEY.Utils.addClass(this," + qDisabledCls + ");";
+                onClickMethod += addClass;
+            }
+            else
+            {
+                String replaceClass = ";LABKEY.Utils.replaceClass(this," + qCls + "," + qDisabledCls + ");";
+                onClickMethod += replaceClass;
+            }
         }
 
         if (isSubmit())
