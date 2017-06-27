@@ -20,6 +20,7 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.element.Input;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -140,42 +141,48 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         String labelId = GUID.makeGUID();
 
         if (newUI)
+        {
             out.write("<div class=\"col-sm-9 col-lg-10\">");
+            Input.InputBuilder input = new Input.InputBuilder()
+                    .type("file")
+                    .name(getInputPrefix() + formFieldName);
 
-        // TODO: modify outputName to return a String and use that here
-        String filePicker = "<input name=\"" + PageFlowUtil.filter(formFieldName) + "\"";
-
-        String setFocusId = (String)ctx.get("setFocusId");
-        if (null != setFocusId)
-        {
-            filePicker += (" id=\"" + setFocusId + "\"");
-            ctx.remove("setFocusId");
-        }
-
-        filePicker += " type=\"file\" size=\"60\" onChange=\"showPathname(this, &quot;" + labelId + "&quot;)\">&nbsp;<label id=\"" + labelId + "\"></label>\n";
-
-        if (null == filename)
-        {
-            // No existing value, so render just the regular <input type=file> element
-            out.write(filePicker);
+            out.write(input.build().toString());
         }
         else
         {
-            // Existing value, so tell the user the file name, allow the file to be removed, and a new file uploaded 
-            String divId = GUID.makeGUID();
+            // TODO: modify outputName to return a String and use that here
+            String filePicker = "<input name=\"" + PageFlowUtil.filter(formFieldName) + "\"";
 
-            out.write("<div id=\"" + divId + "\">");
-            renderIconAndFilename(ctx, out, filename, false, false);
-            out.write("&nbsp;[<a href=\"javascript:{}\" onClick=\"");
+            String setFocusId = (String)ctx.get("setFocusId");
+            if (null != setFocusId)
+            {
+                filePicker += (" id=\"" + setFocusId + "\"");
+                ctx.remove("setFocusId");
+            }
 
-            out.write("document.getElementById('" + divId + "').innerHTML = " + PageFlowUtil.filter(PageFlowUtil.jsString(filePicker + "<input type=\"hidden\" name=\"deletedAttachments\" value=\"" + filename + "\"><span class=\"labkey-message\">" + getRemovalWarningText(filename) + "</span>")) + "\"");
-            out.write(">remove");
-            out.write("</a>]");
-            out.write("</div>\n");
+            filePicker += " type=\"file\" size=\"60\" onChange=\"showPathname(this, &quot;" + labelId + "&quot;)\">&nbsp;<label id=\"" + labelId + "\"></label>\n";
+
+            if (null == filename)
+            {
+                // No existing value, so render just the regular <input type=file> element
+                out.write(filePicker);
+            }
+            else
+            {
+                // Existing value, so tell the user the file name, allow the file to be removed, and a new file uploaded
+                String divId = GUID.makeGUID();
+
+                out.write("<div id=\"" + divId + "\">");
+                renderIconAndFilename(ctx, out, filename, false, false);
+                out.write("&nbsp;[<a href=\"javascript:{}\" onClick=\"");
+
+                out.write("document.getElementById('" + divId + "').innerHTML = " + PageFlowUtil.filter(PageFlowUtil.jsString(filePicker + "<input type=\"hidden\" name=\"deletedAttachments\" value=\"" + filename + "\"><span class=\"labkey-message\">" + getRemovalWarningText(filename) + "</span>")) + "\"");
+                out.write(">remove");
+                out.write("</a>]");
+                out.write("</div>\n");
+            }
         }
-
-        if (newUI)
-            out.write("</div>");
     }
 
     /**
