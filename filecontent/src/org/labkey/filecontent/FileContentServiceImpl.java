@@ -81,7 +81,7 @@ import java.util.regex.Pattern;
  * User: klum
  * Date: Dec 9, 2009
  */
-public class FileContentServiceImpl implements FileContentService, ContainerManager.ContainerListener
+public class FileContentServiceImpl implements FileContentService, ContainerManager.ContainerListener, ConfigProperty.ConfigPropertyInitializer
 {
     static Logger _log = Logger.getLogger(FileContentServiceImpl.class);
     private static final String UPLOAD_LOG = ".upload.log";
@@ -815,12 +815,17 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return frag;
     }
 
+    public void setConfigProperties(boolean isBootstrap)
+    {
+        populateSiteRootFileWithStartupProps(isBootstrap);
+    }
+
     public static void populateSiteRootFileWithStartupProps(boolean isBootstrap)
     {
         // populate the site root file settings with values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: FileSiteRootSettings.fileRoot;bootstrap=/labkey/labkey/files
         // if more than one FileSiteRootSettings.siteRootFile specified in the startup properties file then the last one overrides the previous ones
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties("SiteRootSettings");
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_ROOT_SETTINGS);
         startupProps.stream()
                 .filter( prop -> prop.getName().equals("siteRootFile"))
                 .forEach(prop -> {
@@ -1037,23 +1042,12 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
         private void prepareTestStartupProperties(File testSiteRootFile)
         {
-            String LOOKANDFEEL_SYSTEM_DESCRIPTION = "Test System Description";
-            String SITESETTINGS_MAX_BLOB_SIZE = "12345";
-
             // prepare a multimap of config properties to test with that has properties assigned for several scopes and populate with sample properties from several scopes
             MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
 
-            // prepare test Look And Feel properties
-            ConfigProperty testLookAndFeelProp1 =  new ConfigProperty("systemDescription", LOOKANDFEEL_SYSTEM_DESCRIPTION, "startup", "LookAndFeelSettings");
-            testConfigPropertyMap.put("LookAndFeelSettings", testLookAndFeelProp1);
-
-            // prepare test Site Settings properties
-            ConfigProperty testSiteSettingsProp1 =  new ConfigProperty("maxBLOBSize", SITESETTINGS_MAX_BLOB_SIZE, "startup", "SiteSettings");
-            testConfigPropertyMap.put("SiteSettings", testSiteSettingsProp1);
-
             // prepare test Site Root Settings properties
-            ConfigProperty testSiteRootSettingsProp1 =  new ConfigProperty("siteRootFile", testSiteRootFile.getAbsolutePath(), "startup", "SiteRootSettings");
-            testConfigPropertyMap.put("SiteRootSettings", testSiteRootSettingsProp1);
+            ConfigProperty testSiteRootSettingsProp1 =  new ConfigProperty("siteRootFile", testSiteRootFile.getAbsolutePath(), "startup", ConfigProperty.SCOPE_SITE_ROOT_SETTINGS);
+            testConfigPropertyMap.put(ConfigProperty.SCOPE_SITE_ROOT_SETTINGS, testSiteRootSettingsProp1);
 
             // set these test startup test properties to be used by the entire server
             ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
