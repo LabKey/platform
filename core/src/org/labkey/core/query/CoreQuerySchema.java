@@ -449,6 +449,7 @@ public class CoreQuerySchema extends UserSchema
         avatarCol.setDisplayColumnFactory(new UserAvatarDisplayColumnFactory());
         avatarCol.setInputType("file");
         avatarCol.setHidden(true);
+        avatarCol.setReadOnly(false);
         users.addColumn(avatarCol);
     }
 
