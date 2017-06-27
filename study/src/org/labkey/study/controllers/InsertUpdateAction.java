@@ -99,7 +99,12 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
     {
         if (_updateForm == null)
         {
-            _updateForm = new QueryUpdateForm(datasetTable, getViewContext(), errors);
+            QueryUpdateForm ret = new QueryUpdateForm(datasetTable, getViewContext(), errors);
+
+            if (errors.hasErrors())
+                return ret;
+
+            _updateForm = ret;
         }
         return _updateForm;
     }
@@ -136,37 +141,31 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                 ColumnInfo cohortCol = datasetTable.getColumn(participantCohortPropertyName);
                 if (cohortCol != null && cohortCol.getSqlTypeInt() == Types.VARCHAR)
                 {
-                    cohortCol.setDisplayColumnFactory(new DisplayColumnFactory()
+                    cohortCol.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
                     {
-                        public DisplayColumn createRenderer(ColumnInfo colInfo)
+                        @Override
+                        public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
                         {
-                            return new DataColumn(colInfo)
-                            {
-                                @Override
-                                public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
-                                {
-                                    boolean newUI = PageFlowUtil.useExperimentalCoreUI();
-                                    boolean disabledInput = isDisabledInput();
-                                    String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
-                                    if (newUI)
-                                        out.write("<div class=\"col-sm-9 col-lg-10\">");
+                            boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+                            boolean disabledInput = isDisabledInput();
+                            String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
+                            if (newUI)
+                                out.write("<div class=\"col-sm-9 col-lg-10\">");
 
-                                    out.write("<select name=\"" + formFieldName + "\" " + (disabledInput ? "DISABLED" : ""));
-                                    if (newUI)
-                                        out.write(" class=\"form-control\"");
-                                    out.write(">\n");
-                                    if (getBoundColumn().isNullable())
-                                        out.write("\t<option value=\"\">");
-                                    for (Cohort cohort : cohorts)
-                                    {
-                                        out.write("\t<option value=\"" + PageFlowUtil.filter(cohort.getLabel()) + "\" " +
-                                                (Objects.equals(value, cohort.getLabel()) ? "SELECTED" : "") + ">");
-                                        out.write(PageFlowUtil.filter(cohort.getLabel()));
-                                        out.write("</option>\n");
-                                    }
-                                    out.write("</select>");
-                                }
-                            };
+                            out.write("<select name=\"" + formFieldName + "\" " + (disabledInput ? "DISABLED" : ""));
+                            if (newUI)
+                                out.write(" class=\"form-control\"");
+                            out.write(">\n");
+                            if (getBoundColumn().isNullable())
+                                out.write("\t<option value=\"\">");
+                            for (Cohort cohort : cohorts)
+                            {
+                                out.write("\t<option value=\"" + PageFlowUtil.filter(cohort.getLabel()) + "\" " +
+                                        (Objects.equals(value, cohort.getLabel()) ? "SELECTED" : "") + ">");
+                                out.write(PageFlowUtil.filter(cohort.getLabel()));
+                                out.write("</option>\n");
+                            }
+                            out.write("</select>");
                         }
                     });
                 }

@@ -23,10 +23,8 @@ import org.labkey.test.Locator;
 import org.labkey.test.SortDirection;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyB;
-import org.labkey.test.util.DataRegionExportHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
-import org.labkey.test.util.TextSearcher;
 
 import java.io.File;
 import java.util.Arrays;
@@ -72,6 +70,7 @@ public class CohortTest extends BaseWebDriverTest
         cohortTest();
         enrolledCohortTest();
         savedCohortFilterTest();
+        updateCohortAssignmentTest();
     }
 
     @LogMethod
@@ -451,6 +450,26 @@ public class CohortTest extends BaseWebDriverTest
     }
 
     @LogMethod
+    private void updateCohortAssignmentTest()
+    {
+        // Regression test for Issue: 30616
+        clickProject(PROJECT_NAME);
+        clickAndWait(Locator.linkWithText("2 datasets"));
+        clickAndWait(Locator.linkWithText("Cohort Assignments"));
+        clickAndWait(Locator.linkWithText("edit").index(0));
+        setFormElement(Locator.input("quf_ParticipantId"), "");
+
+        clickAndWait(Locator.tagContainingText("span","Submit"));
+        // Update should fail, and we should be on same update dataset page.
+
+        // Check that cohort field is drop down and not a text field.
+        assertElementVisible(Locator.xpath("//select").withAttribute("name", "quf_Cohort"));
+
+        // "Clean up"
+        clickAndWait(Locator.tagContainingText("span","Submit"));
+    }
+
+    @LogMethod
     private void savedCohortFilterTest()
     {
         log("Create cohort filtered views");
@@ -487,43 +506,6 @@ public class CohortTest extends BaseWebDriverTest
         DataRegionTable.findDataRegion(this).clickHeaderMenu("Grid Views", "DataCollectionPositive");
         assertEquals("Unexpected row count", 6, dataset.getDataRowCount());
     }
-
-    @LogMethod
-    private void testCohortFilterExport()
-    {
-        clickProject(PROJECT_NAME);
-        clickAndWait(Locator.linkWithText("2 datasets"));
-        clickAndWait(Locator.linkWithText("Test Results"));
-
-        setCohortFilter("Positive", AdvancedCohortType.CURRENT);
-        DataRegionTable list = new DataRegionTable("query", getDriver());
-        DataRegionExportHelper helper = new DataRegionExportHelper(list);
-        File expFile = helper.exportText(DataRegionExportHelper.TextSeparator.TAB);
-        String tsv = TestFileUtils.getFileContents(expFile);
-        TextSearcher tsvSearcher = new TextSearcher(() -> tsv).setSearchTransformer(t -> t);
-        assertTextNotPresent(tsvSearcher, "Infected4");
-    }
-
-    @LogMethod
-    private void testCohortFilteredChart()
-    {
-        clickProject(PROJECT_NAME);
-        clickAndWait(Locator.linkWithText("2 datasets"));
-        clickAndWait(Locator.linkWithText("Test Results"));
-
-        setCohortFilter("Positive", AdvancedCohortType.CURRENT);
-        DataRegionTable dataset = new DataRegionTable("Dataset", getDriver());
-        dataset.createQuickChart("SequenceNum");
-        clickButton("View Data", 0);
-        waitForElement(Locator.xpath("//*[starts-with(@id, 'aqwp')]"));
-        String drtId = getAttribute(Locator.xpath("//*[starts-with(@id, 'aqwp')]"), "id");
-        DataRegionTable chartData = new DataRegionTable(drtId, getDriver());
-        assertEquals("Wrong amount of data rows in quick chart", 12, chartData.getDataRowCount());
-        List<String> participants = chartData.getColumnDataAsText("ParticipantID");
-        assertTrue("Expected participant was not present in chart data", participants.contains("Infected1"));
-        assertFalse("Filtered out participant was present in chart data", participants.contains("Infected4"));
-    }
-
     private void verifyDatasetEnrolledCohortFilter(String datasetName, boolean enrolledMenu, int allRowCount, int enrolledRowCount)
     {
         DataRegionTable table = verifyUnfilteredDataset(datasetName, allRowCount);
