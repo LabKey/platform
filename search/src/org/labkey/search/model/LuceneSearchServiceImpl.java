@@ -486,7 +486,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Map<String, ?> props = r.getProperties();
             assert null != props;
 
-            String keywordsMed = "";
+            StringBuilder keywordsMed = new StringBuilder();
 
             try
             {
@@ -495,7 +495,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 if (null != customProperties && !customProperties.isEmpty())
                 {
                     for (String value : customProperties.values())
-                        keywordsMed += " " + value;
+                        keywordsMed.append(" ").append(value);
                 }
             }
             catch (UnauthorizedException ue)
@@ -510,7 +510,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String description = r.getDescription();
 
             if (null != description)
-                keywordsMed += " " + description;
+                keywordsMed.append(" ").append(description);
 
             final String type = r.getContentType();
             final String body;
@@ -566,7 +566,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     if (StringUtils.isBlank(title))
                         title = metadata.get(TikaCoreProperties.TITLE);
 
-                    keywordsMed = keywordsMed + getInterestingMetadataProperties(metadata);
+                    keywordsMed.append(getInterestingMetadataProperties(metadata));
                 }
 
                 fs.closeInputStream();
@@ -584,8 +584,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             _log.debug("parsed " + url);
 
-            if (null == props.get(PROPERTY.keywordsMed.toString()) && StringUtils.isBlank(keywordsMed))
-                keywordsMed = title;
+            if (null == props.get(PROPERTY.keywordsMed.toString()) && StringUtils.isBlank(keywordsMed.toString()))
+                keywordsMed = new StringBuilder(title);
 
             // Add all container path parts as low-priority keywords... see #9362
             String identifiersLo = StringUtils.join(c.getParsedPath(), " ");
@@ -617,7 +617,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             doc.add(new TextField(FIELD_NAME.body.toString(), body, Field.Store.NO));
 
             addTerms(doc, props, PROPERTY.keywordsLo, FIELD_NAME.keywordsLo, null);
-            addTerms(doc, props, PROPERTY.keywordsMed, FIELD_NAME.keywordsMed, keywordsMed);
+            addTerms(doc, props, PROPERTY.keywordsMed, FIELD_NAME.keywordsMed, keywordsMed.toString());
             addTerms(doc, props, PROPERTY.keywordsHi, FIELD_NAME.keywordsHi, null);
 
             // === Don't index, store ===
@@ -811,6 +811,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             // Tika mistakenly thinks some files (e.g., *.fmp12) are TrueType fonts. Don't even warn about these.
             // https://issues.apache.org/jira/browse/TIKA-1061 is clearly related, but seems insufficient for FMP 12 files
         }
+        else if (topMessage.equals("Error parsing Matlab file with MatParser"))
+        {
+            // Tika mistakenly thinks all .mat are Matlab files. Don't even warn about these.
+        }
         else if (topMessage.equals("image/gif parse error") && StringUtils.endsWithIgnoreCase(r.getName(), ".mht"))
         {
             // Tika can't parse all .mht files
@@ -825,7 +829,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             // Usually "org.apache.commons.compress.archivers.ArchiveException: No Archiver found for the stream signature"
             logAsWarning(r, "Can't decompress this file", rootMessage);
-         }
+        }
         else
         {
             logAsPreProcessingException(r, e);
