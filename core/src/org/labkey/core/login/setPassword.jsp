@@ -23,80 +23,115 @@
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.core.portal.ProjectController" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     LoginController.SetPasswordBean bean = ((JspView<LoginController.SetPasswordBean>)HttpView.currentView()).getModelBean();
     String errors = formatMissedErrorsStr("form");
 %>
-<labkey:form method="POST" id="setPasswordForm" action="<%=h(buildURL(bean.action))%>">
+<labkey:form method="POST" id="setPasswordForm" action="<%=h(buildURL(bean.action))%>" layout="horizontal">
 <%
     if (errors.length() > 0)
-    { %>
-    <div><%=text(errors)%></div><%
+    {
+        %><%=text(errors)%><%
     }
 
     if (!bean.unrecoverableError)
     {
+        if (null != bean.email) { %>
+            <div class="lk-body-title"><h3><%=h(bean.email)%></h3></div>
+        <% } %>
+        <p><%=h(bean.message)%></p>
+    <%
+
+        for (NamedObject input : bean.nonPasswordInputs)
+        {
+            if (PageFlowUtil.useExperimentalCoreUI())
+            {
+        %>
+                <labkey:input
+                    type="text"
+                    id="<%=h(input.getObject().toString())%>"
+                    name="<%=h(input.getObject().toString())%>"
+                    label="<%=h(input.getName())%>"
+                    value="<%=h(input.getDefaultValue())%>"
+                />
+        <%
+            }
+            else
+            {
+        %>
+                <div style="padding-top: 1em;">
+                    <label for="<%=input.getObject()%>"><%=h(input.getName())%></label>
+                    <br/>
+                    <input id="<%=input.getObject()%>" type="text" name="<%=input.getObject()%>" value="<%= h(input.getDefaultValue()) %>" style="width:20em;">
+                </div>
+        <%
+            }
+        }
+
+        for (NamedObject input : bean.passwordInputs)
+        {
+            String contextContent = LoginController.PASSWORD1_TEXT_FIELD_NAME.equals(input.getObject())
+                    ? DbLoginManager.getPasswordRule().getSummaryRuleHTML() : "";
+
+            if (PageFlowUtil.useExperimentalCoreUI())
+            {
+        %>
+                <labkey:input
+                    type="password"
+                    id="<%=h(input.getObject().toString())%>"
+                    name="<%=h(input.getObject().toString())%>"
+                    label="<%=h(input.getName())%>"
+                    contextContent="<%=text(contextContent)%>"
+                />
+        <%
+            }
+            else
+            {
+        %>
+                <div style="padding-top: 1em;">
+                    <label for="<%=input.getObject()%>"><%=h(input.getName())%></label>
+                    <% if (LoginController.PASSWORD1_TEXT_FIELD_NAME.equals(input.getObject())) { %>
+                    <span style="font-size: smaller;">(<%=text(DbLoginManager.getPasswordRule().getSummaryRuleHTML())%>)</span>
+                    <% } %>
+                    <br/>
+                    <input id="<%=input.getObject()%>" type="password" name="<%=input.getObject()%>" style="width:20em;">
+                </div>
+        <%
+            }
+        }
+        %>
+        <div>
+        <%
         if (null != bean.email)
         { %>
-    <div><%=h(bean.email)%>:</div><%
-        } %>
-    <div style="width: 50em;"><%=h(bean.message)%></div>
-    <div><br/></div><%
+            <labkey:input type="hidden" name="email" value="<%=h(bean.email)%>"/>
+        <% }
 
-    for (NamedObject input : bean.nonPasswordInputs)
-    { %>
-    <div style="padding-top: 1em;">
-        <label for="<%=input.getObject()%>"><%=h(input.getName())%></label>
-        <br/>
-        <input id="<%=input.getObject()%>" type="text" name="<%=input.getObject()%>" value="<%= h(input.getDefaultValue()) %>" style="width:20em;">
-    </div><%
-    }
+        if (null != bean.form.getVerification())
+        { %>
+            <labkey:input type="hidden" name="verification" value="<%=h(bean.form.getVerification())%>"/>
+        <% }
 
-    for (NamedObject input : bean.passwordInputs)
-    { %>
-    <div style="padding-top: 1em;">
-        <label for="<%=input.getObject()%>"><%=h(input.getName())%></label>
-        <% if (LoginController.PASSWORD1_TEXT_FIELD_NAME.equals(input.getObject())) { %>
-            <span style="font-size: smaller;">(<%=text(DbLoginManager.getPasswordRule().getSummaryRuleHTML())%>)</span>
+        if (null != bean.form.getMessage())
+        { %>
+            <labkey:input type="hidden" name="message" value="<%=h(bean.form.getMessage())%>"/>
+        <% }
+
+        if (bean.form.getSkipProfile())
+        { %>
+            <labkey:input type="hidden" name="skipProfile" value="1"/>
+        <% }
+
+        if (null != bean.form.getReturnURLHelper())
+        { %>
+            <%=generateReturnUrlFormField(bean.form)%>
         <% } %>
-
-        <br/>
-        <input id="<%=input.getObject()%>" type="password" name="<%=input.getObject()%>" style="width:20em;">
-    </div><%
-    }
-    %>
-    <div>
-        <%
-            if (null != bean.email)
-            { %>
-            <input type="hidden" name="email" value="<%=h(bean.email)%>"><%
-            }
-
-            if (null != bean.form.getVerification())
-            { %>
-            <input type="hidden" name="verification" value="<%=h(bean.form.getVerification())%>"><%
-            }
-
-            if (null != bean.form.getMessage())
-            { %>
-            <input type="hidden" name="message" value="<%=h(bean.form.getMessage())%>"><%
-            }
-
-            if (bean.form.getSkipProfile())
-            { %>
-            <input type="hidden" name="skipProfile" value="1"><%
-            }
-
-            if (null != bean.form.getReturnURLHelper())
-            { %>
-            <%=generateReturnUrlFormField(bean.form)%><%
-            }
-        %>
         </div>
-    <div style="padding-top: 1em;">
-        <%= button(bean.buttonText).submit(true).attributes("name=\"set\"") %>
-        <%=text(bean.cancellable ? button("Cancel").href(bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(ProjectController.HomeAction.class, getContainer())).toString() : "")%>
-    </div>
+        <div style="padding-top: 1em;">
+            <%= button(bean.buttonText).submit(true).attributes("name=\"set\"") %>
+            <%=text(bean.cancellable ? button("Cancel").href(bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(ProjectController.HomeAction.class, getContainer())).toString() : "")%>
+        </div>
     <% } %>
 </labkey:form>

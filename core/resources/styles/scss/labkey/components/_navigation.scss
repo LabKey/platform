@@ -193,11 +193,11 @@
       background-color: white;
       font-size: $lk-font-size-large;
 
-      & a.subexpand-link {
+      a.subexpand-link {
         padding: 8px 56px 8px 28px;
       }
 
-      & a.subexpand-target {
+      a.subexpand-target {
         display: inline-block;
         padding: 0;
         position: absolute;
@@ -244,11 +244,11 @@
         }
       }
 
-      & .lk-project-nav-disabled {
+      .lk-project-nav-disabled {
         color: $lk-dropdown-submenu-icon-color;
       }
 
-      & .lk-project-nav-tree-selected > a {
+      .lk-project-nav-tree-selected > a {
         font-weight: bold;
       }
     }

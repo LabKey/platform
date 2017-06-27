@@ -950,7 +950,7 @@ public class UserController extends SpringActionController
             }
 
             if (isOwnRecord)
-                view =  new VBox(new HtmlView("Please enter your contact information."), view);
+                view =  new VBox(new HtmlView("<div>Please enter your contact information.</div></br>"), view);
 
             return view;
         }
