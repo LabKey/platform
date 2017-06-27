@@ -120,6 +120,13 @@
             <input class="btn btn-default" type="button" value="Input">
             <input class="btn btn-default" type="submit" value="Submit">
         </div>
+        <p>All disabled.</p>
+        <div class="lk-sg-example">
+            <a class="btn btn-default disabled" href="#" role="button">Link</a>
+            <button class="btn btn-default" type="submit" disabled="disabled">Button</button>
+            <input class="btn btn-default" type="button" value="Input" disabled="disabled">
+            <input class="btn btn-default" type="submit" value="Submit" disabled="disabled">
+        </div>
         <p>btn-primary buttons using &lt;a&gt;, &lt;button&gt;, or &lt;input&gt; element.</p>
         <div class="lk-sg-example">
             <a class="btn btn-primary" href="#" role="button">Link</a>
@@ -261,6 +268,7 @@
             <div class="lk-sg-example-ext3">
                 <div id="ext3-panel" class="extContainer"></div>
                 <div id="ext3-button" class="extContainer"></div>
+                <div id="ext3-button-d" class="extContainer"></div>
                 <div id="ext3-dialog" class="extContainer"></div>
             </div>
             <script type="application/javascript">
@@ -279,9 +287,15 @@
                             }]
                         });
 
-                        var btn = new Ext.Button({
+                        new Ext.Button({
                             renderTo: 'ext3-button',
                             text: 'Ext 3 Button'
+                        });
+
+                        new Ext.Button({
+                            renderTo: 'ext3-button-d',
+                            text: 'Ext 3 Button Disabled',
+                            disabled: true
                         });
 
                         var dialog = new Ext.Button({
@@ -313,9 +327,10 @@
     <labkey:panel id="ext4" className="lk-sg-section">
         <h1 class="page-header">ExtJS 4.2.1</h1>
         <div class="lk-sg-example">
-            <div class="lk-sg-example-ext3">
+            <div class="lk-sg-example-ext4">
                 <div id="ext4-panel"></div>
                 <div id="ext4-button"></div>
+                <div id="ext4-button-d"></div>
                 <div id="ext4-dialog"></div>
                 <div id="ext4-form"></div>
             </div>
@@ -340,6 +355,12 @@
                             Ext4.create('Ext.Button', {
                                 renderTo: 'ext4-button',
                                 text: 'Ext 4 Button'
+                            });
+
+                            Ext4.create('Ext.Button', {
+                                renderTo: 'ext4-button-d',
+                                text: 'Ext 4 Disabled',
+                                disabled: true
                             });
 
                             Ext4.create('Ext.Button', {

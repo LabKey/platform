@@ -108,9 +108,6 @@
             labelAlign: 'top',
             labelPad: 15,
             border: false,
-            autoResize: {
-                skipHeight: true
-            },
             items: [{
                 xtype : 'fieldcontainer',
                 layout : {

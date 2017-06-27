@@ -130,6 +130,9 @@ $lk-button-primary-bg-color-hover: $lk-accent-color !default;
 $lk-button-primary-color: $white !default;
 $lk-button-primary-color-hover: $white !default;
 
+$lk-button-disabled-cursor: not-allowed !default;
+$lk-button-disabled-opacity: 0.65 !default;
+
 $lk-bar-button-bg-color: transparent !default;
 $lk-bar-button-bg-color-hover: transparent !default;
 
@@ -188,6 +191,7 @@ $lk-grid-outer-border-width: 1px !default;
 
 $lk-grid-bar-bg-color: $white !default;
 $lk-grid-header-bar-bg-color: $lk-grid-bar-bg-color !default;
+$lk-grid-header-bar-bg-color-portal: #F2F2F2 !default;
 
 $lk-grid-ct-bg-color: $lk-grid-bar-bg-color !default;
 $lk-grid-msgbox-bg-color: #F4F4F4 !default;

@@ -149,10 +149,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     minHeight: 200,
 
-    autoResize: {
-        skipHeight: true
-    },
-
     // delete views template
     deleteTpl: new Ext4.XTemplate(
             '<div><span>Are you sure you want to delete the following?</span></div><br/>' +

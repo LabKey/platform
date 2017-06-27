@@ -258,9 +258,6 @@
         var folderTemplatesPanel = Ext4.create('Ext.form.Panel', {
             border : false,
             renderTo : 'SourcePicker',
-            autoResize: {
-                skipHeight: true
-            },
             items : [
                 sourceRadioGroup,
                 folderTemplatesComponent,

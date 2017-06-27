@@ -317,8 +317,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             layout: 'card',
             layoutConfig: {deferredRender:true},
             activeItem: 0,
-            bodyStyle : LABKEY.experimental.useExperimentalCoreUI ? '' : 'padding: 25px;',
-            bodyCssClass: LABKEY.experimental.useExperimentalCoreUI ? 'study-wizard-form' : '',
+            bodyStyle: 'padding: 25px;',
             flex: 1,
             items: this.steps,
             bbar: ['->', this.prevBtn, this.nextBtn]

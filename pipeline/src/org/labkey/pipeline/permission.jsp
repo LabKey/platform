@@ -99,9 +99,6 @@ function toggleEnableFTP(checkbox)
 {
     var i;
     var checked = checkbox.checked;
-//    var sets = document.getElementsByTagName("FIELDSET");
-//    for (i=0 ; i<sets.length ; i++)
-//        sets[i].style.backgroundColor = checked ? "#ffffff" : "#eeeeee";
     var form = document.getElementById("permissionsForm");
     var elements = form.getElementsByTagName("select"); 
     for (i in elements)

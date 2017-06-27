@@ -5,11 +5,6 @@
   color: #606060;
 }
 
-.x4-btn-default-small-disabled
-{
-  background-color: #e4e4e4;
-}
-
 .x4-boundlist-list-ct {
   ul {
     margin: 0;
@@ -54,11 +49,6 @@
 
   &.fa {
     margin: 2px;
-
-    /* allow the up down arrows to show as disabled (see Issue #24434) */
-    &.x4-btn-default-toolbar-small-disabled {
-      opacity: 0.5;
-    }
   }
 }
 

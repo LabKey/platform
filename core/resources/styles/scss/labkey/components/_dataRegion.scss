@@ -134,6 +134,10 @@
   background-color: $lk-grid-header-bar-bg-color;
 }
 
+.panel-body .lk-region-header-bar {
+  background-color: $lk-grid-header-bar-bg-color-portal;
+}
+
 .lk-region-context-bar {
   padding: 0 15px 10px;
 }

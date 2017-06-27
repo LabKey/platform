@@ -117,6 +117,9 @@ Ext4.onReady(function(){
             folder: <%=PageFlowUtil.jsString(c.getId())%>,
             global: true
         }),
+        autoResize: {
+            skipHeight: false
+        },
         doneURL: <%=doneURL==null?"null":PageFlowUtil.jsString(doneURL.getLocalURIString())%>
     <% if (!c.isRoot()) { %>
         ,treeConfig: {

@@ -1940,14 +1940,32 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
 
 /* line 309, ../../../ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-small-disabled {
-  border-color: #e1e1e1;
-  background-image: none;
-  background-color: #f7f7f7;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #f7f7f7), color-stop(48%, #f1f1f1), color-stop(52%, #dadada), color-stop(100%, #dfdfdf));
-  background-image: -webkit-linear-gradient(top, #f7f7f7, #f1f1f1 48%, #dadada 52%, #dfdfdf);
-  background-image: -moz-linear-gradient(top, #f7f7f7, #f1f1f1 48%, #dadada 52%, #dfdfdf);
-  background-image: -o-linear-gradient(top, #f7f7f7, #f1f1f1 48%, #dadada 52%, #dfdfdf);
-  background-image: linear-gradient(top, #f7f7f7, #f1f1f1 48%, #dadada 52%, #dfdfdf);
+
+  cursor: $lk-button-disabled-cursor;
+  /* Adjustment due to blanket override of .x4-item-disabled */
+  * {
+    cursor: $lk-button-disabled-cursor;
+  }
+
+  opacity: $lk-button-disabled-opacity;
+
+  .x4-frame-tl,
+  .x4-frame-bl,
+  .x4-frame-tr,
+  .x4-frame-br,
+  .x4-frame-tc,
+  .x4-frame-bc {
+    background-image: url('#{$ext4-images-dir}/btn/btn-default-small-disabled-corners.gif');
+  }
+
+  .x4-frame-ml,
+  .x4-frame-mr {
+    background-image: url('#{$ext4-images-dir}/btn/btn-default-small-disabled-sides.gif');
+  }
+
+  .x4-frame-mc {
+    background-image: url('#{$ext4-images-dir}/btn/btn-default-small-disabled-fbg.gif');
+  }
 }
 
 /* line 335, ../../../ext-theme-neutral/sass/src/button/Button.scss */
@@ -2045,13 +2063,6 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
   width: 100%;
 }
 
-/*</if slicer>*/
-/* */
-/* line 246, ../../../ext-theme-neutral/sass/src/button/Button.scss */
-.x4-btn-default-toolbar-small,  .x4-btn-default-toolbar-medium, .x4-btn-default-toolbar-large {
-  border-color: transparent;
-}
-
 /* line 492, ../../../ext-theme-neutral/sass/src/button/Button.scss */
 /* line 516, ../../../ext-theme-neutral/sass/src/button/Button.scss */
 /* line 541, ../../../ext-theme-neutral/sass/src/button/Button.scss */
@@ -2060,13 +2071,7 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
 .x4-btn-default-medium-over,
 .x4-btn-default-medium-focus,
 .x4-btn-default-large-over,
-.x4-btn-default-large-focus,
-.x4-btn-default-toolbar-small-over,
-.x4-btn-default-toolbar-small-focus,
-.x4-btn-default-toolbar-medium-over,
-.x4-btn-default-toolbar-medium-focus,
-.x4-btn-default-toolbar-large-over,
-.x4-btn-default-toolbar-large-focus {
+.x4-btn-default-large-focus {
   border-color: $button-default-border-color-over;
   background: $button-default-base-color-over none;
 
@@ -2085,27 +2090,39 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
   border-color: $button-default-border-color-over;
   background-image: none;
   background-color: $button-default-base-color-pressed;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $btn-pressed-gradient-start), color-stop(100%, $btn-pressed-gradient-end));
-  background-image: -webkit-linear-gradient(top, $btn-pressed-gradient-start, $btn-pressed-gradient-end);
-  background-image: -moz-linear-gradient(top, $btn-pressed-gradient-start, $btn-pressed-gradient-end);
-  background-image: -o-linear-gradient(top, $btn-pressed-gradient-start, $btn-pressed-gradient-end);
-  background-image: linear-gradient(top, $btn-pressed-gradient-start, $btn-pressed-gradient-end);
 }
 
-.x4-btn-default-toolbar-small-menu-active,
-.x4-btn-default-toolbar-small-pressed,
-.x4-btn-default-toolbar-medium-menu-active,
-.x4-btn-default-toolbar-medium-pressed,
-.x4-btn-default-toolbar-large-menu-active,
-.x4-btn-default-toolbar-large-pressed {
-  border-color: $button-toolbar-border-color-over;
-  background-image: none;
-  background-color: $button-default-base-color-pressed;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, $btn-pressed-gradient-start), color-stop(100%, $btn-pressed-gradient-end));
-  background-image: -webkit-linear-gradient(top, $btn-pressed-gradient-start, $btn-pressed-gradient-end);
-  background-image: -moz-linear-gradient(top, $btn-pressed-gradient-start, $btn-pressed-gradient-end);
-  background-image: -o-linear-gradient(top, $btn-pressed-gradient-start, $btn-pressed-gradient-end);
-  background-image: linear-gradient(top, $btn-pressed-gradient-start, $btn-pressed-gradient-end);
+.x4-btn-default-toolbar {
+
+  &-small,
+  &-medium,
+  &-large {
+    border-color: $lk-bar-button-border-color;
+  }
+
+  &-small-over,
+  &-small-focus,
+  &-medium-over,
+  &-medium-focus,
+  &-large-over,
+  &-large-focus {
+    border-color: $lk-bar-button-border-color-hover;
+
+    .x4-btn-inner {
+      color: $lk-bar-button-color;
+    }
+  }
+
+  &-small-menu-active,
+  &-small-pressed,
+  &-medium-menu-active,
+  &-medium-pressed,
+  &-large-menu-active,
+  &-large-pressed {
+    border-color: $button-toolbar-border-color-over;
+    background-image: none;
+    background-color: $button-default-base-color-pressed;
+  }
 }
 
 /* line 573, ../../../ext-theme-neutral/sass/src/button/Button.scss */
@@ -2175,26 +2192,6 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
 .x4-btn-default-small-pressed .x4-frame-mc {
   background-color: $button-default-base-color-pressed;
   background-image: url('#{$ext4-images-dir}/btn/btn-default-small-pressed-fbg.gif');
-}
-
-/* line 640, ../../../ext-theme-neutral/sass/src/button/Button.scss */
-.x4-btn-default-small-disabled .x4-frame-tl,
-.x4-btn-default-small-disabled .x4-frame-bl,
-.x4-btn-default-small-disabled .x4-frame-tr,
-.x4-btn-default-small-disabled .x4-frame-br,
-.x4-btn-default-small-disabled .x4-frame-tc,
-.x4-btn-default-small-disabled .x4-frame-bc {
-  background-image: url('#{$ext4-images-dir}/btn/btn-default-small-disabled-corners.gif');
-}
-/* line 644, ../../../ext-theme-neutral/sass/src/button/Button.scss */
-.x4-btn-default-small-disabled .x4-frame-ml,
-.x4-btn-default-small-disabled .x4-frame-mr {
-  background-image: url('#{$ext4-images-dir}/btn/btn-default-small-disabled-sides.gif');
-}
-/* line 647, ../../../ext-theme-neutral/sass/src/button/Button.scss */
-.x4-btn-default-small-disabled .x4-frame-mc {
-  background-color: #f7f7f7;
-  background-image: url('#{$ext4-images-dir}/btn/btn-default-small-disabled-fbg.gif');
 }
 
 /* line 659, ../../../ext-theme-neutral/sass/src/button/Button.scss */

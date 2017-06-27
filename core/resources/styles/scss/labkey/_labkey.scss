@@ -679,11 +679,10 @@ td.labkey-main-nav
     color: $lk-border-title-color;
     text-decoration: none;
   }
-}
 
-.labkey-search-filter a:hover
-{
-  text-decoration: underline;
+  a:hover {
+    text-decoration: underline;
+  }
 }
 
 .labkey-search-navresults
@@ -707,11 +706,6 @@ form.labkey-search-form
   font-size:110%;
 }
 
-div.menu-wrapper {
-  width: 175px;
-  overflow: auto;
-}
-
 /* The strip at the top of the left side panel that is used to set its minimum width */
 .labkey-site-nav-expander
 {
@@ -730,44 +724,8 @@ table.labkey-expandable-nav
 }
 
 /* The individual expandable nav menus */
-.labkey-expandable-nav
-{
+.labkey-expandable-nav {
   padding: 0;
-}
-
-/* expandable nav in dropdown custom menu */
-
-#menuBarFolder_menu .labkey-expandable-nav
-{
-  border: none;
-}
-
-#menuBarFolder_menu .labkey-expandable-nav-body
-{
-  padding-left: 4px;
-}
-
-#menuBarFolder_menu table.labkey-expandable-nav {
-  background-color: #fff;
-  width: 180px;
-}
-
-/* The rest of the project area besides the project nav panel */
-.labkey-body-panel
-{
-  padding: 0 0 0 0;
-  width: 100%;
-  height: 100%;
-  vertical-align: top;
-}
-
-/* The right side panel that is seen in views like portal */
-.labkey-side-panel
-{
-  padding: 0 0 0 20px;
-  width: 240px;
-  height: 100%;
-  vertical-align: top;
 }
 
 /* The cell that contains the expand/collapse image */
@@ -998,21 +956,21 @@ span.labkey-wp-icon-button-inactive {
   padding-bottom: 2px;
   margin-bottom: 2px;
   margin-top: 2px;
-}
 
-.labkey-wp-text-buttons a, .labkey-wp-text-buttons a:visited {
-  padding: 3px 5px;
-  margin-left: 5px;
-  margin-bottom: 2px;
-  border: 1px solid #fff;
-  color: $lk-link-color;
-  font-family: $lk-font-family-sans-serif;
-}
+  a, a:visited {
+    padding: 3px 5px;
+    margin-left: 5px;
+    margin-bottom: 2px;
+    border: 1px solid #fff;
+    color: $lk-link-color;
+    font-family: $lk-font-family-sans-serif;
+  }
 
-.labkey-wp-text-buttons a:hover {
-  background-color: #fff;
-  color: $lk-link-color;
-  width: 100%;
+  a:hover {
+    background-color: #fff;
+    color: $lk-link-color;
+    width: 100%;
+  }
 }
 
 a.no-arrow {
@@ -1020,20 +978,6 @@ a.no-arrow {
   padding-right: 2px !important;
   padding-top: 0 !important;
   margin: 0;
-}
-
-.portal-like {
-  background-color: white;
-  padding: 15px;
-  border: 1px solid lightgrey;
-  margin-bottom: 15px;
-}
-
-.panel-body .portal-like {
-  background-color: transparent;
-  padding: 0;
-  border: none;
-  margin-bottom: 0;
 }
 
 /* these are the new text links with css arrows */
@@ -1068,12 +1012,6 @@ a.labkey-text-link-noarrow {
 
 a.labkey-text-link {
   background: url('#{$internal-images-dir}/arrow_right.png') right no-repeat;
-}
-
-/* Data Region Header Locking */
-table.labkey-data-region a.labkey-text-link,
-table.labkey-data-region a.labkey-text-link:visited {
-  position: static;
 }
 
 /* Module Specific */
@@ -1309,21 +1247,18 @@ table.chart-preview td {
     Applying a width triggers "haslayout" in IE so that the module's
     body clears its floated elements
 */
-div.clear, div.bd {
-
+div.clear,
+div.bd {
   width:100%;
 
-}
-
-/*
-    Clear the module body for other browsers
-*/
-div.clear:after, div.bd:after {
-  content:'.';
-  display:block;
-  clear:both;
-  visibility:hidden;
-  height:0;
+  /* Clear the module body for other browsers */
+  &:after {
+    content:'.';
+    display:block;
+    clear:both;
+    visibility:hidden;
+    height:0;
+  }
 }
 
 .labkey-query-source
@@ -1539,12 +1474,6 @@ span.button-icon {
     height: 20px;
     margin-bottom: 0;
   }
-}
-
-.project-menu-buttons {
-  border-top: 1px solid #d5d5d5;
-  padding: 5px 0 0 5px;
-  margin-top: 10px;
 }
 
 #folderBar_menu {
@@ -1789,11 +1718,6 @@ div span.labkey-main-menu-icon {
 {
   color: $lk-text-color !important;
   cursor: default;
-}
-
-.study-wizard-form>.x-panel-noborder>.x-panel-bwrap
-{
-  padding: 25px;
 }
 
 @import "components/header";

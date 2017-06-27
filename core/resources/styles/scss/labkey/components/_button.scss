@@ -25,6 +25,21 @@
     color: $lk-button-color-hover;
     cursor: pointer;
   }
+
+  &.disabled, &.labkey-disabled-button, &[disabled] {
+    cursor: not-allowed;
+    opacity: $lk-button-disabled-opacity;
+
+    &:active,
+    &:hover,
+    &:focus {
+      /* Intentionally not using *-hover variables */
+      background-color: $lk-button-bg-color;
+      border: 1px solid $lk-button-border-color;
+      color: $lk-button-color;
+      cursor: pointer;
+    }
+  }
 }
 
 .labkey-down-arrow {
@@ -59,7 +74,7 @@
 
     &.disabled, &.labkey-disabled-button, &[disabled] {
       cursor: not-allowed;
-      opacity: 0.65;
+      opacity: $lk-button-disabled-opacity;
 
       &:active,
       &:hover,
@@ -71,166 +86,3 @@
     }
   }
 }
-
-//.labkey-disabled-button,
-//.labkey-disabled-button:visited,
-//.labkey-disabled-button:active,
-//a.labkey-disabled-button {
-//  padding: $lk-button-padding;
-//  border: 1px solid #b4b4b4;
-//  margin-right: 5px;
-//  color: #808080 !important;
-//  text-transform: $lk-button-text-transform;
-//  white-space: nowrap;
-//  cursor: default;
-//  border-radius: $lk-button-border-radius;
-//}
-//
-////== Button Bars
-////
-//
-//.labkey-button-bar {
-//  white-space: nowrap;
-//}
-//
-//.labkey-button,
-//.labkey-menu-button,
-//.labkey-disabled-button,
-//.labkey-disabled-menu-button,
-//.labkey-wp-text-buttons a
-//{
-//  font-size: $lk-font-size-small;
-//  font-weight: bold;
-//}
-//
-///* Used for the new css menu buttons, which consist of a link (<a>)
-//    or a span wrapped around an input for submit buttons */
-//.labkey-button-bar .labkey-button,
-//.labkey-button-bar .labkey-menu-button,
-//.labkey-button-bar .labkey-button:visited,
-//.labkey-button-bar .labkey-menu-button:visited {
-//  background: none;
-//  border: 1px solid $lk-grid-color;
-//
-//  margin: 0.1em 0.8em 0.5em 0;
-//  padding: 4px;
-//  position: relative;
-//  vertical-align: middle;
-//  white-space: nowrap;
-//
-//  color: $lk-link-color;
-//  text-transform: $lk-button-text-transform;
-//  line-height: 2.3;
-//}
-//
-//td .labkey-menu-button,
-//td .labkey-menu-button:visited,
-//.labkey-button-bar .labkey-menu-button,
-//.labkey-button-bar .labkey-menu-button:visited {
-//  background: url('#{$internal-images-dir}/arrow_down.png') right no-repeat !important;
-//}
-//
-//.labkey-button-bar .labkey-button:hover,
-//.labkey-button-bar .labkey-menu-button:hover {
-//  background-color: #FFFFFF;
-//  border: 1px solid $lk-border-title-color !important;
-//
-//  margin: 0.1em 0.8em 0.5em 0;
-//  padding: 4px;
-//  position: relative;
-//  vertical-align: middle;
-//  white-space: nowrap;
-//
-//  color: #000000;
-//  cursor: pointer;
-//
-//  border-radius: $lk-button-border-radius;
-//}
-//
-//td .labkey-menu-button,
-//td .labkey-menu-button:hover,
-//.labkey-button-bar .labkey-menu-button:hover {
-//  background: #fff url('#{$internal-images-dir}/arrow_down.png') right no-repeat !important;
-//}
-//
-///*Darker background when it's being clicked on, or it's the parent of an expanded menu or panel on the ribbon.*/
-//.labkey-button-bar .labkey-menu-button-active,
-//.labkey-button-bar .labkey-menu-button:active {
-//  background: #fff url('#{$internal-images-dir}/arrow_down.png') right no-repeat !important;
-//  border: 1px solid $lk-border-title-color !important;
-//
-//  margin: 0.1em 0.8em 0.5em 0;
-//  padding: 4px;
-//  position: relative;
-//  vertical-align: middle;
-//  white-space: nowrap;
-//
-//  color: #000000;
-//  cursor:pointer;
-//
-//  border-radius: $lk-button-border-radius;
-//}
-//
-//.labkey-button-bar .labkey-disabled-button,
-//.labkey-button-bar .labkey-disabled-button:visited,
-//.labkey-button-bar .labkey-disabled-button:hover,
-//.labkey-menu-button .labkey-disabled-button,
-//.labkey-menu-button .labkey-disabled-button:visited,
-//.labkey-menu-button .labkey-disabled-button:hover,
-//.labkey-disabled-menu-button,
-//.labkey-disabled-menu-button:visited,
-//.labkey-disabled-menu-button:hover {
-//  background: none !important;
-//  background-color: $lk-grid-color;
-//  border: 1px solid transparent !important;
-//
-//  margin: 0.1em 0.8em 0.5em 0;
-//  padding: 4px;
-//  position: relative;
-//  vertical-align: middle;
-//  white-space: nowrap;
-//
-//  color: #808080 !important;
-//  text-transform: $lk-button-text-transform;
-//  cursor: default;
-//
-//  line-height: 2.3;
-//}
-//
-///* this keeps the space between text and menu down arrows */
-//a.labkey-menu-button span,
-//a.labkey-disabled-menu-button span {
-//  padding-right: 1.0em;
-//}
-//
-///* this keeps the enabled button text blue */
-//a.labkey-menu-button {
-//  color: $lk-link-color;
-//}
-//
-///* this keeps disabled button hover bg invisible and no hand cursor */
-//.labkey-button-bar .labkey-disabled-button:hover {
-//  border: 1px solid $lk-grid-color;
-//  background-color: $lk-grid-color;
-//  cursor: default;
-//}
-//
-///* this keeps the hover state style for enabled buttons */
-//a.labkey-menu-button:hover
-//a.labkey-menu-button:hover span {
-//  border: 1px solid $lk-border-title-color;
-//  background-color: #FFFFFF;
-//  cursor: pointer;
-//  color: #000000;
-//}
-//
-///* classes to toggle the display state of buttons displayed in the dataregion message area
-//   on hover.
-//*/
-//.labkey-dataregion-msg .labkey-button {
-//  visibility: hidden;
-//}
-//
-//.labkey-dataregion-msg:hover .labkey-button {
-//  visibility: visible;
-//}

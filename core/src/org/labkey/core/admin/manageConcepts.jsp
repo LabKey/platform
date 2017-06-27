@@ -163,9 +163,6 @@
         Ext4.create('Ext.form.Panel', {
             border : false,
             renderTo : 'SQVPicker',
-            autoResize: {
-                skipHeight: true
-            },
             items : [
                 conceptTextField,
                 containerIdTextField,
