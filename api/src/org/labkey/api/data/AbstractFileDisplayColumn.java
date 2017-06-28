@@ -134,7 +134,6 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
-        // TODO: Consider using the default renderer in DataColumn for _inputType == "file"
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         String filename = getFileName(value);
         String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
@@ -142,10 +141,14 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
         if (newUI)
         {
-            out.write("<div class=\"col-sm-9 col-lg-10\">");
             Input.InputBuilder input = new Input.InputBuilder()
                     .type("file")
-                    .name(getInputPrefix() + formFieldName);
+                    .name(getInputPrefix() + formFieldName)
+                    .disabled(isDisabledInput(ctx))
+                    .value(value);
+
+            if (null != filename)
+                renderThumbnailAndRemoveLink(out, ctx, filename, "");
 
             out.write(input.build().toString());
         }
@@ -161,7 +164,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
                 ctx.remove("setFocusId");
             }
 
-            filePicker += " type=\"file\" size=\"60\" onChange=\"showPathname(this, &quot;" + labelId + "&quot;)\">&nbsp;<label id=\"" + labelId + "\"></label>\n";
+            filePicker += " type=\"file\" size=\"60\" onchange=\"showPathname(this, &quot;" + labelId + "&quot;)\">&nbsp;<label id=\"" + labelId + "\"></label>\n";
 
             if (null == filename)
             {
@@ -171,16 +174,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             else
             {
                 // Existing value, so tell the user the file name, allow the file to be removed, and a new file uploaded
-                String divId = GUID.makeGUID();
-
-                out.write("<div id=\"" + divId + "\">");
-                renderIconAndFilename(ctx, out, filename, false, false);
-                out.write("&nbsp;[<a href=\"javascript:{}\" onClick=\"");
-
-                out.write("document.getElementById('" + divId + "').innerHTML = " + PageFlowUtil.filter(PageFlowUtil.jsString(filePicker + "<input type=\"hidden\" name=\"deletedAttachments\" value=\"" + filename + "\"><span class=\"labkey-message\">" + getRemovalWarningText(filename) + "</span>")) + "\"");
-                out.write(">remove");
-                out.write("</a>]");
-                out.write("</div>\n");
+                renderThumbnailAndRemoveLink(out, ctx, filename, filePicker);
             }
         }
     }
@@ -193,5 +187,18 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     protected String getRemovalWarningText(String filename)
     {
         return "Previous file " + filename + " will be removed.";
+    }
+
+    private void renderThumbnailAndRemoveLink(Writer out, RenderContext ctx, String filename, String filePicker) throws IOException
+    {
+        String divId = GUID.makeGUID();
+
+        out.write("<div id=\"" + divId + "\">");
+        renderIconAndFilename(ctx, out, filename, false, false);
+        out.write("&nbsp;[<a href=\"javascript:{}\" onClick=\"");
+        out.write("document.getElementById('" + divId + "').innerHTML = " + PageFlowUtil.filter(PageFlowUtil.jsString(filePicker + "<input type=\"hidden\" name=\"deletedAttachments\" value=\"" + filename + "\"><span class=\"labkey-message\">" + getRemovalWarningText(filename) + "</span>")) + "\"");
+        out.write(">remove");
+        out.write("</a>]");
+        out.write("</div>\n");
     }
 }
