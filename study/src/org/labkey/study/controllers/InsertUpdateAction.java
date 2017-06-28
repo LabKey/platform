@@ -149,8 +149,6 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                             boolean newUI = PageFlowUtil.useExperimentalCoreUI();
                             boolean disabledInput = isDisabledInput();
                             String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
-                            if (newUI)
-                                out.write("<div class=\"col-sm-9 col-lg-10\">");
 
                             out.write("<select name=\"" + formFieldName + "\" " + (disabledInput ? "DISABLED" : ""));
                             if (newUI)
