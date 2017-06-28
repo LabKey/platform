@@ -17,12 +17,16 @@ package org.labkey.api.util.element;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.DisplayElement;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.text.Format;
 
 // TODO: Need handling for checkbox, file, and radio types
-public class Input
+public class Input extends DisplayElement
 {
     public enum Layout
     {
@@ -204,6 +208,12 @@ public class Input
     public Object getValue()
     {
         return _value;
+    }
+
+    @Override
+    public void render(RenderContext ctx, Writer out) throws IOException
+    {
+        out.write(toString());
     }
 
     @Override

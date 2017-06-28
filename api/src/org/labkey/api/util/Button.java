@@ -17,9 +17,13 @@ package org.labkey.api.util;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DisplayElement;
 import org.springframework.web.servlet.mvc.Controller;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.Map;
 
 /**
@@ -27,7 +31,7 @@ import java.util.Map;
  * Created by Nick Arnold on 2/27/14.
  * Testing of this class can be found in the Core module's TestController.ButtonAction
  */
-public class Button
+public class Button extends DisplayElement
 {
     // Button constants
     private static final String CLS = "labkey-button";
@@ -131,51 +135,62 @@ public class Button
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
 
         // prepare onclick method and overrides
-        String onClickMethod = getOnClick();
+        final String onClick = getOnClick() == null ? "" : getOnClick();
 
         // we're modifying the javascript, so need to use whatever quoting the caller used
-        char quote = PageFlowUtil.getUsedQuoteSymbol(onClickMethod);
+        char quote = PageFlowUtil.getUsedQuoteSymbol(onClick);
 
         // quoted CSS classes used in scripting
-        String qCls = quote + CLS + quote;
-        String qDisabledCls = quote + DISABLEDCLS + quote;
+        final String qCls = quote + CLS + quote;
+        final String qDisabledCls = quote + DISABLEDCLS + quote;
 
-        String checkDisabled = "if (this.className.indexOf(" + qDisabledCls + ") != -1){ return false; }";
-        if (onClickMethod != null)
-            onClickMethod = checkDisabled + onClickMethod;
-        else
-            onClickMethod = checkDisabled;
+        // check if the disabled class is applied, if so, do nothing onclick
+        String onClickMethod = "if(this.className.indexOf(" + qDisabledCls + ") != -1){return false;}";
 
         if (isDisableOnClick())
         {
             if (newUI)
-            {
-                String addClass = ";LABKEY.Utils.addClass(this," + qDisabledCls + ");";
-                onClickMethod += addClass;
-            }
+                onClickMethod += ";LABKEY.Utils.addClass(this," + qDisabledCls + ");";
             else
-            {
-                String replaceClass = ";LABKEY.Utils.replaceClass(this," + qCls + "," + qDisabledCls + ");";
-                onClickMethod += replaceClass;
-            }
+                onClickMethod += ";LABKEY.Utils.replaceClass(this," + qCls + "," + qDisabledCls + ");";
         }
 
         if (isSubmit())
         {
-            String submitCode = "submitForm(document.getElementById(" + quote + id + quote + ").form); return false;";
+            final String submitCode = "submitForm(document.getElementById(" + quote + id + quote + ").form);return false;";
 
-            // look at the original onclick value to determine generation
-            if (getOnClick() == null || "".equals(getOnClick()))
+            if ("".equals(onClick))
                 onClickMethod += submitCode;
             else
             {
-                // we allow the onclick method to cancel the submit -- doesn't support isDisableOnClick()
+                // we allow the onclick method to cancel the submit
                 // Question: This isn't activated when the user hits 'enter' so why support this?
-                onClickMethod = checkDisabled + "this.form = document.getElementById(" + quote + id + quote + ").form; if (isTrueOrUndefined(function(){" + getOnClick() + "}.call(this))) {" + submitCode + "}";
+                onClickMethod += "this.form=document.getElementById(" + quote + id + quote + ").form;";
+                onClickMethod += "if(isTrueOrUndefined(function(){" + onClick + "}.call(this))){" + submitCode + "}";
+
+                if (isDisableOnClick())
+                {
+                    onClickMethod += "else{";
+                    if (newUI)
+                        onClickMethod += ";LABKEY.Utils.removeClass(this," + qDisabledCls + ");";
+                    else
+                        onClickMethod += ";LABKEY.Utils.replaceClass(this," + qDisabledCls + "," + qCls + ");";
+                    onClickMethod += "}";
+                }
             }
+        }
+        else
+        {
+            onClickMethod += onClick;
         }
 
         return onClickMethod;
+    }
+
+    @Override
+    public void render(RenderContext ctx, Writer out) throws IOException
+    {
+        out.write(toString());
     }
 
     @Override
@@ -189,7 +204,7 @@ public class Button
 
         if (isSubmit())
         {
-            sb.append("<input type=\"submit\" tab-index=\"-1\" style=\"position: absolute; left: -9999px; width: 1px; height: 1px;\" ");
+            sb.append("<input type=\"submit\" tab-index=\"-1\" style=\"position:absolute;left:-9999px;width:1px;height:1px;\" ");
             sb.append("id=\"").append(submitId).append("\"/>");
         }
 
@@ -225,7 +240,7 @@ public class Button
         //-- href
 
         // onclick
-        sb.append("onClick=\"").append(PageFlowUtil.filter(generateOnClick(submitId))).append("\" ");
+        sb.append("onclick=\"").append(PageFlowUtil.filter(generateOnClick(submitId))).append("\" ");
         //-- onclick
 
         // attributes -- expected to be pre-filtered

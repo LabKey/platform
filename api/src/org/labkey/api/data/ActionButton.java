@@ -38,7 +38,7 @@ import java.util.Map;
  * A standard, fully-HTML rendered (as opposed to being rendered as ExtJS config),
  * button in the appearance sense (but not necessarily an &lt;input&gt; element).
  */
-
+// TODO: This class has essentially become a wrapper of Button.java. Switch to extend Button rather than repeat.
 public class ActionButton extends DisplayElement implements Cloneable
 {
     /** How to respond to the user clicking on the button */
@@ -127,6 +127,7 @@ public class ActionButton extends DisplayElement implements Cloneable
     private String _target;
     private String _tooltip;
     private boolean _appendScript;
+    private boolean _disableOnClick;
     protected boolean _requiresSelection;
     protected Integer _requiresSelectionMinCount;
     protected Integer _requiresSelectionMaxCount;
@@ -227,16 +228,18 @@ public class ActionButton extends DisplayElement implements Cloneable
         return _actionType.toString();
     }
 
-    public void setActionType(Action actionType)
+    public ActionButton setActionType(Action actionType)
     {
         checkLocked();
         _actionType = actionType;
+        return this;
     }
 
-    public void setActionName(String actionName)
+    public ActionButton setActionName(String actionName)
     {
         checkLocked();
         _actionName = StringExpressionFactory.create(actionName);
+        return this;
     }
 
     public String getActionName(RenderContext ctx)
@@ -248,8 +251,7 @@ public class ActionButton extends DisplayElement implements Cloneable
     {
         if (null == _caption)
             return _eval(_actionName, ctx);
-        else
-            return _eval(_caption, ctx);
+        return _eval(_caption, ctx);
     }
 
     public String getCaption()
@@ -267,10 +269,18 @@ public class ActionButton extends DisplayElement implements Cloneable
         _caption = StringExpressionFactory.create(caption);
     }
 
-    public void setIconCls(String iconCls)
+    public ActionButton setDisableOnClick(boolean disableOnClick)
+    {
+        checkLocked();
+        _disableOnClick = disableOnClick;
+        return this;
+    }
+
+    public ActionButton setIconCls(String iconCls)
     {
         checkLocked();
         _iconCls = iconCls;
+        return this;
     }
 
     @Nullable
@@ -306,23 +316,25 @@ public class ActionButton extends DisplayElement implements Cloneable
         return _eval(_script, ctx);
     }
 
-    public void setScript(String script)
+    public ActionButton setScript(String script)
     {
-        setScript(script, false);
+        return setScript(script, false);
     }
 
-    public void setScript(String script, boolean appendToDefaultScript)
+    public ActionButton setScript(String script, boolean appendToDefaultScript)
     {
         checkLocked();
         if (!appendToDefaultScript) // Only change the action type if this is a full script replacement
             _actionType = Action.SCRIPT;
         _script = StringExpressionFactory.create(script);
         _appendScript = appendToDefaultScript;
+        return this;
     }
 
-    public void setTarget(String target)
+    public ActionButton setTarget(String target)
     {
         _target = target;
+        return this;
     }
 
     public String getTarget()
@@ -397,9 +409,10 @@ public class ActionButton extends DisplayElement implements Cloneable
         return _id;
     }
 
-    public void setId(String id)
+    public ActionButton setId(String id)
     {
         _id = id;
+        return this;
     }
 
     public String getTooltip()
@@ -407,15 +420,24 @@ public class ActionButton extends DisplayElement implements Cloneable
         return _tooltip;
     }
 
-    public void setTooltip(String tooltip)
+    public ActionButton setTooltip(String tooltip)
     {
         _tooltip = tooltip;
+        return this;
     }
 
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         if (!shouldRender(ctx))
             return;
+
+        lock();
+
+        Button.ButtonBuilder button = PageFlowUtil.button(getCaption(ctx))
+                .disableOnClick(_disableOnClick)
+                .iconCls(getIconCls())
+                .tooltip(getTooltip())
+                .id(_id);
 
         Map<String, String> attributes = new HashMap<>();
 
@@ -433,11 +455,6 @@ public class ActionButton extends DisplayElement implements Cloneable
         if (_noFollow)
             attributes.put("rel", "nofollow");
 
-        Button.ButtonBuilder button = PageFlowUtil.button(getCaption(ctx))
-                .iconCls(getIconCls())
-                .tooltip(getTooltip())
-                .id(_id);
-
         if (_actionType.equals(Action.POST) || _actionType.equals(Action.GET))
         {
             StringBuilder onClickScript = new StringBuilder();
@@ -450,8 +467,7 @@ public class ActionButton extends DisplayElement implements Cloneable
             if (actionName != null)
                 attributes.put("name", actionName);
 
-            button.attributes(attributes)
-                    .onClick(onClickScript.toString())
+            button.onClick(onClickScript.toString())
                     .submit(true);
         }
         else if (_actionType.equals(Action.LINK))
@@ -461,8 +477,7 @@ public class ActionButton extends DisplayElement implements Cloneable
             if (_script != null)
                 button.onClick(getScript(ctx));
 
-            button.attributes(attributes)
-                    .href(getURL(ctx));
+            button.href(getURL(ctx));
         }
         else
         {
@@ -471,9 +486,10 @@ public class ActionButton extends DisplayElement implements Cloneable
             else
                 button.onClick(getScript(ctx));
 
-            button.attributes(attributes)
-                    .href("javascript:void(0);");
+            button.href("javascript:void(0);");
         }
+
+        button.attributes(attributes);
 
         out.write(button.toString());
     }

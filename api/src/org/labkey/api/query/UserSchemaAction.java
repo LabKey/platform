@@ -29,8 +29,8 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.Button;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -92,22 +92,19 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
     {
     }
 
-    protected ButtonBar createSubmitCancelButtonBar(QueryUpdateForm tableForm)
+    protected ButtonBar createSubmitCancelButtonBar(QueryUpdateForm form)
     {
         ButtonBar bb = new ButtonBar();
         bb.setStyle(ButtonBar.Style.separateButtons);
-        String submitGUID = "submit-" + GUID.makeGUID();
-        String cancelGUID = "cancel-" + GUID.makeGUID();
-        String disableButtonScript = "Ext.get('" + submitGUID + "').replaceClass('labkey-button', 'labkey-disabled-button'); Ext.get('" + cancelGUID + "').replaceClass('labkey-button', 'labkey-disabled-button'); return true;";
-        ActionButton btnSubmit = new ActionButton(getViewContext().getActionURL(), "Submit");
-        btnSubmit.setScript(disableButtonScript);
-        btnSubmit.setActionType(ActionButton.Action.POST);
-        btnSubmit.setId(submitGUID);
-        ActionButton btnCancel = new ActionButton(getCancelURL(tableForm), "Cancel");
-        btnCancel.setId(cancelGUID);
-        bb.add(btnSubmit);
-        bb.add(btnCancel);
-        return bb;
+
+        ActionButton btnSubmit = new ActionButton(getViewContext().getActionURL(), "Submit")
+                .setActionType(ActionButton.Action.POST)
+                .setDisableOnClick(true);
+
+        return bb.add(
+            btnSubmit,
+            new Button.ButtonBuilder("Cancel").href(getCancelURL(form)).build()
+        );
     }
 
     private ActionURL getActionURLParam(ActionURL.Param param)
