@@ -553,9 +553,6 @@ public class DataColumn extends DisplayColumn
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         final String formFieldName = getFormFieldName(ctx);
 
-        if (newUI)
-            out.write("<div class=\"col-sm-9 col-lg-10\">");
-
         String strVal = "";
         //UNDONE: Should use output format here.
         if (null != value)

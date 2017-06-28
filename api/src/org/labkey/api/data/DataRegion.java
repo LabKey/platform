@@ -2308,14 +2308,22 @@ public class DataRegion extends AbstractDataRegion
         }
         renderer.renderDetailsCaptionCell(ctx, out);
 
+        // input container
+        renderer.renderInputWrapperBegin(out, span);
+
         if (renderer.isEditable())
             renderer.renderInputCell(ctx, out, span);
         else
             renderer.renderDetailsData(ctx, out, span);
+
         if (newUI)
             renderInputError(errors, out, span);
+
+        // end input container
+        renderer.renderInputWrapperEnd(out);
+
         //TODO: fix bug where first user-defined field is marked as a key and therefore hidden + editable
-        out.write(newUI ? (renderer.isEditable() ? "</div></div>" : "</div>") : "</tr>");
+        out.write(newUI ? "</div>" : "</tr>");
     }
 
     private Set<String> getErrors(RenderContext ctx, DisplayColumn... renderers)

@@ -145,7 +145,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         if (newUI)
         {
-            out.write("<div class=\"col-sm-9 col-lg-10\"><p class=\"form-control-static\">");
+            out.write("<p class=\"form-control-static\">");
         }
         else
         {
@@ -155,7 +155,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
                 out.write("<td colspan=" + span + ">");
         }
         renderGridCellContents(ctx, out);
-        out.write(newUI ? "<p></div>" : "</td>");
+        out.write(newUI ? "<p>" : "</td>");
     }
 
     @Override

@@ -293,7 +293,7 @@ public class Input
         if (getSize() != null)
             sb.append(" size=\"").append(getSize()).append("\"");
         if (StringUtils.isNotEmpty(getContextContent()))
-            sb.append(" aria-describedby=\"").append(getId()).append("HelpBlock\"");
+            sb.append(" aria-describedby=\"").append(getId()).append("HelpBlock\""); //described by the help block
 
         doValue(sb);
         doInputEvents(sb);
@@ -383,7 +383,8 @@ public class Input
         {
             //context content goes underneath input for horizontal/vertical layout
             sb.append("<p");
-            sb.append(" id=\"").append(getId()).append("HelpBlock\"");
+            if (StringUtils.isNotEmpty(getId()))
+                sb.append(" id=\"").append(getId()).append("HelpBlock\""); //used for aria-describedby
             sb.append(" class=\" help-block form-text text-muted \" >");
             sb.append(getContextContent());
             sb.append("</p>");

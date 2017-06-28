@@ -1045,7 +1045,7 @@ public abstract class DisplayColumn extends RenderColumn
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         if (newUI)
         {
-            out.write("<div class=\"col-sm-9 col-lg-10\"><p class=\"form-control-static\">");
+            out.write("<p class=\"form-control-static\">");
         }
         else
         {
@@ -1056,7 +1056,7 @@ public abstract class DisplayColumn extends RenderColumn
         }
         renderDetailsCellContents(ctx, out);
 
-        out.write(newUI ? "</p></div>" : "</td>");
+        out.write(newUI ? "</p>" : "</td>");
     }
 
     public String getInputCell(RenderContext ctx)
@@ -1149,15 +1149,34 @@ public abstract class DisplayColumn extends RenderColumn
         }
     }
 
-    public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
+    public void renderInputWrapperBegin(Writer out) throws IOException
+    {
+        renderInputWrapperBegin(out, 0);
+    }
+
+    public void renderInputWrapperBegin(Writer out, int span) throws IOException
     {
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
 
-        if (!newUI)
+        if (newUI)
+            out.write("<div class=\"col-sm-9 col-lg-10\">");
+        else
             out.write("<td colspan=" + span + ">");
-        renderInputHtml(ctx, out, getInputValue(ctx));
-        if (!newUI)
+    }
+
+    public void renderInputWrapperEnd(Writer out) throws IOException
+    {
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+
+        if (newUI)
+            out.write("</div>");
+        else
             out.write("</td>");
+    }
+
+    public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
+    {
+        renderInputHtml(ctx, out, getInputValue(ctx));
     }
 
     public String getSortHandler(RenderContext ctx, Sort.SortDirection sort)
