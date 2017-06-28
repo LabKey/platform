@@ -219,7 +219,7 @@ if (!announcementModel.getResponses().isEmpty())
                 <td colspan="2"><div><%
                 for (Attachment rd : r.getAttachments())
                 { %>
-                    <a href="<%=h(rd.getDownloadUrl(DownloadAction.class))%>"><img alt="" src="<%=getWebappURL(rd.getFileIcon())%>">&nbsp;<%=rd.getName()%></a>&nbsp;<%
+                    <a href="<%=h(rd.getDownloadUrl(DownloadAction.class))%>"><img alt="" src="<%=getWebappURL(rd.getFileIcon())%>">&nbsp;<%=h(rd.getName())%></a>&nbsp;<%
                 }
                 %>
                 </div></td>
