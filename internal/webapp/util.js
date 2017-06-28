@@ -128,7 +128,7 @@ function showPathname(filechooser, elementId)
         el.html([
             '<table>',
                 '<tr>',
-                    '<td>' + filename == '' ? '' : ('<img src=\"' + LABKEY.Utils.getFileIconUrl(filename) + '\"/>') + '</td>',
+                    '<td>' + (filename == '' ? '' : ('<img src=\"' + LABKEY.Utils.getFileIconUrl(filename) + '\"/>')) + '</td>',
                     '<td>' + LABKEY.Utils.encodeHtml(filename) + '</td>',
                 '</tr>',
             '</table>'
