@@ -319,6 +319,11 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.textLink(text, url);
     }
 
+    public String iconLink(String iconCls, String tooltip, URLHelper url)
+    {
+        return PageFlowUtil.iconLink(iconCls, tooltip, url.getLocalURIString(), null, null, null);
+    }
+
     /**
      * Add textlink that opens in new tab/window
      * @param text to display
