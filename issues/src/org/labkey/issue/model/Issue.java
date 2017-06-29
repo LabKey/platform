@@ -193,7 +193,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public String getAssignedToName(User currentUser)
     {
-        return UserManager.getDisplayName(getAssignedTo(), currentUser);
+        return UserManager.getDisplayName(getAssignedTo() == null ? 0 : getAssignedTo(), currentUser);
     }
 
 
