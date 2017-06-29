@@ -1043,20 +1043,12 @@ public abstract class DisplayColumn extends RenderColumn
     public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException
     {
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
-        if (newUI)
-        {
-            out.write("<p class=\"form-control-static\">");
-        }
-        else
-        {
-            if (null == _caption)
-                out.write("<td colspan=\"" + (span + 1) + "\">");
-            else
-                out.write("<td colspan=\"" + span + "\">");
-        }
-        renderDetailsCellContents(ctx, out);
 
-        out.write(newUI ? "</p>" : "</td>");
+        if (newUI)
+            out.write("<p class=\"form-control-static\">");
+        renderDetailsCellContents(ctx, out);
+        if (newUI)
+            out.write("</p>");
     }
 
     public String getInputCell(RenderContext ctx)
@@ -1160,8 +1152,10 @@ public abstract class DisplayColumn extends RenderColumn
 
         if (newUI)
             out.write("<div class=\"col-sm-9 col-lg-10\">");
+        else if (null == _caption)
+            out.write("<td colspan=\"" + (span + 1) + "\">");
         else
-            out.write("<td colspan=" + span + ">");
+           out.write("<td colspan=\"" + span + "\">");
     }
 
     public void renderInputWrapperEnd(Writer out) throws IOException

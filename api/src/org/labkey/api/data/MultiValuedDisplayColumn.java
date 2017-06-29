@@ -143,19 +143,12 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException
     {
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+
         if (newUI)
-        {
             out.write("<p class=\"form-control-static\">");
-        }
-        else
-        {
-            if (null == _caption)
-                out.write("<td colspan=" + (span + 1) + ">");
-            else
-                out.write("<td colspan=" + span + ">");
-        }
-        renderGridCellContents(ctx, out);
-        out.write(newUI ? "<p>" : "</td>");
+        renderDetailsCellContents(ctx, out);
+        if (newUI)
+            out.write("</p>");
     }
 
     @Override

@@ -2098,7 +2098,9 @@ public class DataRegion extends AbstractDataRegion
                         continue;
                     out.write(newUI ? "<div class=\"form-group\">" : "<tr>");
                     renderer.renderDetailsCaptionCell(ctx, out);
+                    renderer.renderInputWrapperBegin(out, 1);
                     renderer.renderDetailsData(ctx, out, 1);
+                    renderer.renderInputWrapperEnd(out);
                     out.write(newUI ? "</div>" : "</tr>");
                 }
 
