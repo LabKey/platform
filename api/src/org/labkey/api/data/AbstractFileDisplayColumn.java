@@ -144,13 +144,12 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             Input.InputBuilder input = new Input.InputBuilder()
                     .type("file")
                     .name(getInputPrefix() + formFieldName)
-                    .disabled(isDisabledInput(ctx))
-                    .value(value);
+                    .disabled(isDisabledInput(ctx));
 
             if (null != filename)
-                renderThumbnailAndRemoveLink(out, ctx, filename, "");
-
-            out.write(input.build().toString());
+                renderThumbnailAndRemoveLink(out, ctx, filename, input.build().toString());
+            else
+                out.write(input.build().toString());
         }
         else
         {
