@@ -231,8 +231,7 @@
                 .on('show.bs.dropdown', function() {
                     var target = $(this).find('.lk-horizontal-menu li');
                     if (target && target.length > 0) {
-                        $(target[0]).addClass('open');
-                        $(target[0]).trigger('show.bs.mobiledrop');
+                        $(target[0]).addClass('open').trigger('show.bs.mobiledrop');
                         $(this).find('.lk-horizontal-menu').animate({scrollLeft: 0});
                     }
                 });
@@ -379,19 +378,9 @@
             .on('shown.bs.dropdown.data-api', '.lk-menu-drop', SubMenu.prototype.viewportAlign);
 
     $(function() {
-
-        $('.navbar-header .nav li.dropdown > a.dropdown-toggle').on('click', function(e) {
-            $(this).parent().trigger('show.bs.dropdown');
-            $(this).parent().toggleClass('open');
-            e.stopPropagation(); // prevent #
-        });
-
-        $(document).on('click', function(e) {
-            var sel = $('.navbar-header .nav li.dropdown');
-            if (!sel.is(e.target) && sel.has(e.target).length === 0 && $('.open').has(e.target).length === 0) {
-                sel.removeClass('open');
-                sel.trigger('hide.bs.dropdown');
-            }
+        // stop click within the nav menu and custom menus from closing the menu
+        $('.navbar-header .dropdown-menu').click(function(e) {
+            e.stopPropagation();
         });
     });
 }(jQuery);

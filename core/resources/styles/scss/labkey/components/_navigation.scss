@@ -6,7 +6,7 @@
     float: left;
 
     & > a {
-      padding: 10px 15px 6px 15px;
+      padding: 9px 15px;
       color: $lk-page-nav-color;
       font-family: $lk-font-family-secondary-sans-serif;
       font-weight: $lk-page-nav-font-weight;
@@ -52,7 +52,7 @@
       & > a {
         display: inline-block;
         border-radius: 3px 3px 0 0;
-        padding: 6px 15px;
+        padding: 6px 15px 7px 15px;
       }
     }
 

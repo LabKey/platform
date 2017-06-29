@@ -26,6 +26,8 @@
 <%@ page import="org.labkey.study.controllers.StudyController.VisitVisibilityAction" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     List<VisitImpl> allVisits = getVisits(Visit.Order.DISPLAY);
@@ -92,13 +94,27 @@
         <td class="labkey-column-header">Description</td>
     </tr>
     <%
+        ActionURL editTimepointURL = new ActionURL(StudyController.VisitSummaryAction.class, getStudy().getContainer());
         int rowCount = 0;
         for (VisitImpl visit : getVisits(Visit.Order.DISPLAY))
         {
             rowCount++;
     %>
         <tr class="visit-row <%=h(rowCount % 2 == 1 ? "labkey-alternate-row" : "labkey-row")%>">
-            <td><%= textLink("edit", buildURL(VisitSummaryAction.class)+ "id=" + visit.getRowId()) %></td>
+<%
+        if (PageFlowUtil.useExperimentalCoreUI())
+        {
+%>
+            <td width="20"><%= iconLink("fa fa-pencil", "edit", editTimepointURL.replaceParameter("id", String.valueOf(visit.getRowId()))) %></td>
+<%
+        }
+        else
+        {
+%>
+            <td><%= textLink("edit", editTimepointURL.replaceParameter("id", String.valueOf(visit.getRowId()))) %></td>
+<%
+        }
+%>
             <td align=left><%= h(visit.getDisplayString()) %></td>
             <td class="visit-range-cell"><%= visit.getSequenceNumMin() %><%= h(visit.getSequenceNumMin()!= visit.getSequenceNumMax() ? " - " + visit.getSequenceNumMax() : "") %></td>
             <td><%= h(visit.getCohort() != null ? h(visit.getCohort().getLabel()) : "All") %></td>

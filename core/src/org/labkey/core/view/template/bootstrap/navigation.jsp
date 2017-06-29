@@ -104,7 +104,7 @@
                     if ((context.isShowFolders() && !menus.isEmpty()) || (!context.isShowFolders() && menus.size() > 1))
                     {
 %>
-                        &nbsp;&nbsp;<i class="fa fa-ellipsis-h" style="vertical-align: text-bottom;"></i>
+                        &nbsp;&nbsp;<span>...</span>
 <%
                     }
 %>
@@ -150,7 +150,7 @@
                 {
 %>
                 <li class="dropdown hidden-xs" data-webpart="BetaNav" data-name="BetaNav">
-                    <a data-target="#" class="dropdown-toggle">
+                    <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
                         <i class="fa fa-folder-open"></i>&nbsp;<%=h(model.getProjectTitle())%>
                     </a>
                     <ul class="dropdown-menu"></ul>
