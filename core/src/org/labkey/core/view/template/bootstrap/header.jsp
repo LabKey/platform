@@ -144,7 +144,12 @@
 <% if (isRealUser)
 { %>
             <li data-tt="tooltip" data-placement="bottom" title="Give your thoughts on our new look">
-                <a href="<%=h(urlProvider(CoreUrls.class).getFeedbackURL())%>" target="_blank">Give Feedback</a>
+                <a href="<%=h(urlProvider(CoreUrls.class).getFeedbackURL())%>" target="_blank">
+                    <span class="hidden-sm hidden-md hidden-lg">
+                        <i class="fa fa-comments-o"></i>
+                    </span>
+                    <span class="hidden-xs">Give Feedback</span>
+                </a>
             </li>
 <% } %>
 
