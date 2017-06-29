@@ -120,7 +120,8 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
             {
                 if (!shouldRender(renderer, ctx) || !(renderer instanceof DefaultableDisplayColumn))
                     continue;
-                renderInputError(ctx, out, 1, renderer);
+                if (!PageFlowUtil.useExperimentalCoreUI())
+                    renderInputError(ctx, out, 1, renderer);
                 out.write("<tr>");
                 renderer.renderDetailsCaptionCell(ctx, out);
                 renderer.renderInputCell(ctx, out, 1);

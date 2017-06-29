@@ -2305,24 +2305,16 @@ public class DataRegion extends AbstractDataRegion
         }
         else
         {
+            // In the new UI renderInputError is handled within renderInputCell
             renderInputError(errors, out, span);
             out.write("<tr>");
         }
         renderer.renderDetailsCaptionCell(ctx, out);
 
-        // input container
-        renderer.renderInputWrapperBegin(out, span);
-
         if (renderer.isEditable())
             renderer.renderInputCell(ctx, out, span);
         else
             renderer.renderDetailsData(ctx, out, span);
-
-        if (newUI)
-            renderInputError(errors, out, span);
-
-        // end input container
-        renderer.renderInputWrapperEnd(out);
 
         //TODO: fix bug where first user-defined field is marked as a key and therefore hidden + editable
         out.write(newUI ? "</div>" : "</tr>");
@@ -2357,25 +2349,17 @@ public class DataRegion extends AbstractDataRegion
 
     private void renderInputError(Set<String> errors, Writer out, int span) throws IOException
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+        if (PageFlowUtil.useExperimentalCoreUI())
+            return;
+
         if (!errors.isEmpty())
         {
-            if (newUI)
-            {
-                out.write("<span class=\"help-block form-text\">");
-                for (String error : errors)
-                    out.write(error);
-                out.write("</span>");
-            }
-            else
-            {
-                out.write("  <tr><td colspan=");
-                out.write(Integer.toString(span + 1));
-                out.write(">");
-                for (String error : errors)
-                    out.write(error);
-                out.write("</td></tr>");
-            }
+            out.write("  <tr><td colspan=");
+            out.write(Integer.toString(span + 1));
+            out.write(">");
+            for (String error : errors)
+                out.write(error);
+            out.write("</td></tr>");
         }
     }
 
@@ -2527,7 +2511,8 @@ public class DataRegion extends AbstractDataRegion
                 {
                     for (DisplayColumnGroup group : groups)
                     {
-                        renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
+                        if (!newUI)
+                            renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
                         out.write("<tr>");
                         group.getColumns().get(0).renderDetailsCaptionCell(ctx, out);
                         if (group.isCopyable() && hasCopyable)
@@ -2549,9 +2534,10 @@ public class DataRegion extends AbstractDataRegion
                 }
                 else
                 {
-                    for (DisplayColumnGroup group : groups)
+                    if (!newUI)
                     {
-                        renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
+                        for (DisplayColumnGroup group : groups)
+                            renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
                     }
 
                     for (int i = 0; i < groupHeadings.size(); i++)

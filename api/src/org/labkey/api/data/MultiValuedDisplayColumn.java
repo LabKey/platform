@@ -16,7 +16,6 @@
 package org.labkey.api.data;
 
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -137,18 +136,6 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
         }
 
         // TODO: Call super in empty values case?
-    }
-
-    @Override
-    public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException
-    {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
-
-        if (newUI)
-            out.write("<p class=\"form-control-static\">");
-        renderDetailsCellContents(ctx, out);
-        if (newUI)
-            out.write("</p>");
     }
 
     @Override

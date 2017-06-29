@@ -795,6 +795,26 @@ public class DataColumn extends DisplayColumn
                     renderHiddenFormInput(ctx, out, formFieldName, value);
             }
         }
+
+        if (newUI)
+        {
+            String errors = getErrors(ctx);
+            if (!StringUtils.isEmpty(errors))
+            {
+                out.write("<span class=\"help-block form-text\">");
+                out.write(errors);
+                out.write("</span>");
+            }
+        }
+    }
+
+    protected String getErrors(RenderContext ctx)
+    {
+        ColumnInfo col = null;
+        if (isQueryColumn())
+            col = getColumnInfo();
+
+        return ctx.getForm() == null || col == null ? "" : ctx.getErrors(col);
     }
 
     protected String getAutoCompleteURLPrefix()

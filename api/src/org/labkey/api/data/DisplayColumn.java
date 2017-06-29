@@ -1141,11 +1141,6 @@ public abstract class DisplayColumn extends RenderColumn
         }
     }
 
-    public void renderInputWrapperBegin(Writer out) throws IOException
-    {
-        renderInputWrapperBegin(out, 0);
-    }
-
     public void renderInputWrapperBegin(Writer out, int span) throws IOException
     {
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
@@ -1160,17 +1155,14 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderInputWrapperEnd(Writer out) throws IOException
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
-
-        if (newUI)
-            out.write("</div>");
-        else
-            out.write("</td>");
+        out.write(PageFlowUtil.useExperimentalCoreUI() ? "</div>" : "</td>");
     }
 
     public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
     {
+        renderInputWrapperBegin(out, span);
         renderInputHtml(ctx, out, getInputValue(ctx));
+        renderInputWrapperEnd(out);
     }
 
     public String getSortHandler(RenderContext ctx, Sort.SortDirection sort)
