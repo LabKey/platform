@@ -203,10 +203,11 @@
                             // toggle the open class for each of the submenus through the tree to the selected node
                             // and show each of the dropdown-submenu items up the tree, but hide the links below them
                             $.each(selectedSubmenu.parents('ul.dropdown-layer-menu'), function(index, submenu) {
-                                $(submenu).toggleClass('open');
-                                $(submenu).siblings('a').css('display', 'none');
-                                $(submenu).parent().css('display', '');
-                                $(submenu).parent().siblings('li').css('display', 'none');
+                                var submenuEl = $(submenu);
+                                submenuEl.toggleClass('open')
+                                        .siblings('a').css('display', 'none');
+                                submenuEl.parent().css('display', '')
+                                        .siblings('li').css('display', 'none');
                             });
 
                             // show the selected submenu list items

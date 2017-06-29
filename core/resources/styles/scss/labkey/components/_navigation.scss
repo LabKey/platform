@@ -1,11 +1,12 @@
 .labkey-page-nav {
   background-color: $lk-page-nav-bg-color;
-  height: $lk-page-nav-height;
+  min-height: $lk-page-nav-height;
 
   .nav > li {
     float: left;
 
     & > a {
+      padding: 10px 15px 6px 15px;
       color: $lk-page-nav-color;
       font-family: $lk-font-family-secondary-sans-serif;
       font-weight: $lk-page-nav-font-weight;
