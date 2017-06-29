@@ -40,7 +40,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.util.GUID;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.ArrayList;
@@ -59,18 +58,25 @@ public class DomainPropertyManager
 {
     private static final DomainPropertyManager _instance = new DomainPropertyManager();
 
-    private BlockingCache<GUID, List<ConditionalFormatWithPropertyId>> _conditionalFormatCache = CacheManager.getBlockingCache(500, CacheManager.DAY, "ConditionalFormats", (containerId, argument) ->
+    private static class ConditionalFormatLoader implements CacheLoader<String, List<ConditionalFormatWithPropertyId>>
     {
-        SQLFragment sql = new SQLFragment("SELECT CF.* FROM ");
-        sql.append(getTinfoConditionalFormat(), "CF");
-        sql.append(" WHERE CF.PropertyId IN ");
-        sql.append("(SELECT PropertyId FROM ");
-        sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
-        sql.append(" WHERE pd.Container = ?) ORDER BY PropertyId, SortOrder");
-        sql.add(containerId);
+        @Override
+        public List<ConditionalFormatWithPropertyId> load(String key, Object containerId)
+        {
+            SQLFragment sql = new SQLFragment("SELECT CF.* FROM ");
+            sql.append(getExpSchema().getTable("ConditionalFormat"), "CF");
+            sql.append(" WHERE CF.PropertyId IN ");
+            sql.append("(SELECT PropertyId FROM ");
+            sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
+            sql.append(" WHERE pd.Container = ?) ORDER BY PropertyId, SortOrder");
+            sql.add(containerId);
 
-        return Collections.unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(ConditionalFormatWithPropertyId.class));
-    });
+            return Collections.unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(ConditionalFormatWithPropertyId.class));
+        }
+    }
+
+    private static final ConditionalFormatLoader _conditionalFormatLoader = new ConditionalFormatLoader();
+    private static final DatabaseCache<List<ConditionalFormatWithPropertyId>> _conditionalFormatCache = new DatabaseCache<>(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "ConditionalFormats");
 
     private DomainPropertyManager(){}
 
@@ -124,7 +130,7 @@ public class DomainPropertyManager
         List<ConditionalFormat> result = new ArrayList<>();
         if (property != null && property.getPropertyId() != 0)
         {
-            List<ConditionalFormatWithPropertyId> containerConditionalFormats = _conditionalFormatCache.get(property.getContainer().getEntityId());
+            List<ConditionalFormatWithPropertyId> containerConditionalFormats = _conditionalFormatCache.get(property.getContainer().getEntityId().toString(), property.getContainer(), _conditionalFormatLoader);
             for (ConditionalFormatWithPropertyId containerConditionalFormat : containerConditionalFormats)
             {
                 if (containerConditionalFormat.getPropertyId() == property.getPropertyId())
@@ -153,7 +159,7 @@ public class DomainPropertyManager
 
     public List<ConditionalFormatWithPropertyId> getConditionalFormats(Container container)
     {
-        return _conditionalFormatCache.get(container.getEntityId());
+        return _conditionalFormatCache.get(container.getEntityId().toString(), container, _conditionalFormatLoader);
     }
 
     private String getCacheKey(int propertyId)
@@ -319,7 +325,7 @@ public class DomainPropertyManager
         executor.execute(deleteConditionalFormatsSQL);
 
         validatorCache.remove(c.getId());
-        _conditionalFormatCache.remove(c.getEntityId());
+        _conditionalFormatCache.remove(c.getEntityId().toString());
     }
 
 
@@ -356,7 +362,7 @@ public class DomainPropertyManager
 
                 Table.insert(user, getTinfoConditionalFormat(), row);
                 // Blow the cache for the container
-                _conditionalFormatCache.remove(prop.getContainer().getEntityId());
+                _conditionalFormatCache.remove(prop.getContainer().getEntityId().toString());
             }
         }
     }
