@@ -1428,7 +1428,7 @@ public class PageFlowUtil
     // TODO: Why no HTML filtering?
     private static String getAttributes(Map<String, String> properties)
     {
-        if (properties.isEmpty())
+        if (properties == null || properties.isEmpty())
             return "";
 
         StringBuilder attributes = new StringBuilder();
@@ -2095,7 +2095,6 @@ public class PageFlowUtil
         JSONObject experimental = new JSONObject();
         experimental.put("containerRelativeURL", appProps.getUseContainerRelativeURL());
         experimental.put("useExperimentalCoreUI", useExperimentalCoreUI());
-        experimental.put("isPageAdminMode", isPageAdminMode(context));
         json.put("experimental", experimental);
 
         json.put("contextPath", contextPath);
@@ -2108,6 +2107,7 @@ public class PageFlowUtil
         if (null != shared) // not good
             json.put("sharedContainer", shared.getName());
         json.put("hash", getServerSessionHash());
+        json.put("pageAdminMode", isPageAdminMode(context));
 
         Container container = context.getContainer();
         User user = context.getUser();

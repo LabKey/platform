@@ -620,7 +620,7 @@
                     });
                 };
 
-                if (LABKEY.experimental.isPageAdminMode) {
+                if (LABKEY.pageAdminMode) {
                     showEditTabWindow("Add Tab", addTabHandler, null);
                 }
             },
@@ -696,7 +696,7 @@
                         });
                     };
 
-                    if (LABKEY.experimental.isPageAdminMode) {
+                    if (LABKEY.pageAdminMode) {
                         showEditTabWindow("Rename Tab", renameHandler, currentLabel);
                     }
                 }
