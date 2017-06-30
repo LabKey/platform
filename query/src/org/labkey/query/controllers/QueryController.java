@@ -133,6 +133,7 @@ import org.labkey.remoteapi.SelectRowsStreamHack;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -2979,6 +2980,10 @@ public class QueryController extends SpringActionController
             catch (SQLException x)
             {
                 throw new RuntimeSQLException(x);
+            }
+            catch (DataAccessException x)       // Spring error translator can return various subclasses of this
+            {
+                throw new RuntimeException(x);
             }
             writer.endList();
             writer.endResponse();
