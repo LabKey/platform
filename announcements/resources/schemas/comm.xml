@@ -382,6 +382,7 @@
         <displayColumnFactory>
           <className>org.labkey.wiki.query.PathDisplayColumn$Factory</className>
         </displayColumnFactory>
+        <sortColumn>PathParts</sortColumn>
       </column>
       <column columnName="PathParts">
         <isHidden>true</isHidden>
@@ -423,9 +424,11 @@
         <url>/wiki/page.view?name=${Name}</url>
       </column>
       <column columnName="Path">
+        <url>/wiki/page.view?name=${Part}</url>
         <displayColumnFactory>
           <className>org.labkey.wiki.query.PathDisplayColumn$Factory</className>
         </displayColumnFactory>
+        <sortColumn>PathParts</sortColumn>
       </column>
       <column columnName="PathParts">
         <isHidden>true</isHidden>
