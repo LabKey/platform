@@ -16,7 +16,6 @@
 
 package org.labkey.api.wiki;
 
-import org.apache.tools.ant.taskdefs.condition.Http;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
