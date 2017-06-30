@@ -1296,6 +1296,10 @@ public class QueryServiceImpl implements QueryService
             ret.put(existingColumn.getFieldKey(), existingColumn);
         }
 
+        // Consider that the fieldKey may have come from a URL field that is a colunm's alias
+        Map<String, ColumnInfo> mapAlias = new HashMap<>();
+        table.getColumns().forEach(col -> mapAlias.put(col.getAlias().toLowerCase(), col));
+
         for (FieldKey field : fields)
         {
             if (!ret.containsKey(field))
@@ -1303,6 +1307,12 @@ public class QueryServiceImpl implements QueryService
                 ColumnInfo column = getColumn(manager, table, columnMap, field);
                 if (column != null)
                     ret.put(field, column);
+                else if (null == field.getParent())
+                {
+                    column = mapAlias.get(field.getName().toLowerCase());
+                    if (column != null)
+                        ret.put(field, column);
+                }
             }
         }
 
