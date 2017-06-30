@@ -3533,6 +3533,7 @@ wiki/src/org/labkey/wiki/view/wikiDelete.jsp -text
 wiki/src/org/labkey/wiki/view/wikiEdit.jsp -text
 wiki/src/org/labkey/wiki/view/wikiHtmlHelp.jsp -text
 wiki/src/org/labkey/wiki/view/wikiManage.jsp -text
+wiki/src/org/labkey/wiki/view/wikiMarkdownHelp.jsp -text
 wiki/src/org/labkey/wiki/view/wikiPrint.jsp -text
 wiki/src/org/labkey/wiki/view/wikiPrintAll.jsp -text
 wiki/src/org/labkey/wiki/view/wikiPrintRaw.jsp -text

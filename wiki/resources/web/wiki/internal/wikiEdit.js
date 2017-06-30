@@ -102,6 +102,8 @@ function tinyMceHandleEvent(evt) {
 
     var getVisualTab = function() { return $('#wiki-tab-visual'); };
     var getSourceTab = function() { return $('#wiki-tab-source'); };
+    var getEditingTab = function() { return $('#wiki-tab-markdown-edit')};
+    var getPreviewTab = function() { return $('#wiki-tab-markdown-preview')};
 
     var _init = function() {
         bindControls(_wikiProps);
@@ -719,6 +721,18 @@ function tinyMceHandleEvent(evt) {
     var setEditingHelpDisplayed = function(id, isDisplayed) {
         var el = $('#' + id);
         if (el) { isDisplayed ? el.show() : el.hide(); }
+    };
+
+    var switchToMarkdownEdit = function() {
+        setTabStripVisible(true);
+        getEditingTab().attr('class', 'labkey-tab-active');
+        getPreviewTab().attr('class', 'labkey-tab-inactive');
+    };
+
+    var switchToMarkdownPreview = function() {
+        setTabStripVisible(true);
+        getEditingTab().attr('class', 'labkey-tab-inactive');
+        getPreviewTab().attr('class', 'labkey-tab-active');
     };
 
     var switchToSource = function() {

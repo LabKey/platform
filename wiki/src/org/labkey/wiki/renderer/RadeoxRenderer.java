@@ -54,6 +54,7 @@ import org.radeox.filter.regex.LocaleRegexReplaceFilter;
 import org.radeox.filter.regex.LocaleRegexTokenFilter;
 import org.radeox.filter.regex.RegexTokenFilter;
 import org.radeox.macro.BaseMacro;
+import org.radeox.macro.LinkMacro;
 import org.radeox.macro.MacroRepository;
 import org.radeox.macro.parameter.MacroParameter;
 import org.radeox.regex.MatchResult;
@@ -133,6 +134,53 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         {
             set(RenderContext.INPUT_BUNDLE_NAME, "org.labkey.api.util.wiki_markup");
             set(RenderContext.OUTPUT_BUNDLE_NAME, "org.labkey.api.util.wiki_markup");
+        }
+    }
+
+    private static class newTabLinkMacro extends LinkMacro
+    {
+        @Override
+        public String getDescription()
+        {
+            return "Displays a link that opens in a new tab.";
+        }
+
+        @Override
+        public String[] getParamDescription()
+        {
+            return new String[] {
+                    "1. Text to display",
+                    "2. Link to open in a new tab"
+            };
+        }
+
+        @Override
+        public String getName()
+        {
+            return "new-tab-link";
+        }
+
+        @Override
+        public void execute(Writer writer, MacroParameter params) throws IllegalArgumentException, IOException
+        {
+            String text = params.get("text", 0);
+            String url = params.get("url", 1);
+
+            if(params.getLength() == 1) {
+                url = text;
+                text = Encoder.toEntity(text.charAt(0)) + Encoder.escape(text.substring(1));
+            }
+
+            if(url != null && text != null) {
+                writer.write("<span class=\"nobr\">");
+                writer.write("<a target=\"_blank\" href=\"");
+                writer.write(url);
+                writer.write("\">");
+                writer.write(text);
+                writer.write("</a></span>");
+            } else {
+                throw new IllegalArgumentException("link needs display text and a url as argument");
+            }
         }
     }
 
@@ -409,6 +457,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     static
     {
         MacroRepository repository = MacroRepository.getInstance();
+        repository.put("new-tab-link", new newTabLinkMacro());
         repository.put("image", new ImageMacro());
         repository.put("div", new StylableMacro("div"));
         repository.put("span", new StylableMacro("span"));

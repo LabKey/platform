@@ -282,6 +282,41 @@
                     </tr>
                 </table>
             </div>
+            <div id="wiki-help-MARKDOWN-source" style="display:none">
+                <table>
+                    <tr>
+                        <td colspan=2><b>Formatting Guide</b> (<a href="https://markdown-it.github.io/">More Help</a>)</td>
+                    </tr>
+                    <tr>
+                        <td>Headers</td>
+                        <td># H1 | ## H2 | ### H3</td>
+                    </tr>
+                    <tr>
+                        <td>Bold Text</td>
+                        <td>**use double asterisks**</td>
+                    </tr>
+                    <tr>
+                        <td>Italics</td>
+                        <td>_use underlines_</td>
+                    </tr>
+                    <tr>
+                        <td>links</td>
+                        <td>[I'm an inline-style link with title](https://www.google.com "Google's Homepage")</td>
+                    </tr>
+                    <tr>
+                        <td>code</td>
+                        <td>``` js
+                            var foo = function (bar) {
+                            return bar++;
+                            };
+                            ``` </td>
+                    </tr>
+                    <tr>
+                        <td>lists</td>
+                        <td>Create a list by starting a line with '+', '-', or '*'</td>
+                    </tr>
+                </table>
+            </div>
         </td>
         <td width="1%" style="vertical-align:top;">
             <div id="wiki-toc-tree" style="display: none;"></div>
