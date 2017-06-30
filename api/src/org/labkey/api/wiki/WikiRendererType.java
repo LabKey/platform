@@ -16,6 +16,7 @@
 
 package org.labkey.api.wiki;
 
+import org.apache.tools.ant.taskdefs.condition.Http;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -59,6 +60,16 @@ public enum WikiRendererType
         {
             public String getFileExtension() {return ".txt"; }
             public String getDisplayName() {return "Plain Text";}
+        },
+    MARKDOWN
+        {
+            public String getDisplayName() {return "Markdown";}
+            public String getFileExtension() {return ".md";}
+
+            @Override
+            public HttpView getSyntaxHelpView(){
+                return new JspView("/org/labkey/wiki/view/wikiMarkdownHelp.jsp");
+            }
         };
 
     public abstract String getDisplayName();
