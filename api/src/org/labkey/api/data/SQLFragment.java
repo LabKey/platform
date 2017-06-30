@@ -47,9 +47,10 @@ import java.util.stream.Collectors;
  */
 public class SQLFragment implements Appendable, CharSequence
 {
-    String sql;
-    StringBuilder sb = null;
-    List<Object> params;          // TODO: Should be List<?>
+    private String sql;
+    private StringBuilder sb = null;
+    private List<Object> params;          // TODO: Should be List<?>
+
     private final List<Object> tempTokens = new ArrayList<>();      // Hold refs to ensure they're not GC'd
 
     private Map<Object,CTE> commonTableExpressionsMap = null;
