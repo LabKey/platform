@@ -104,8 +104,8 @@ public class MultiValuedLookupColumn extends LookupColumn
         // Select and aggregate all columns in the far right table for now.  TODO: Select only required columns.
         for (ColumnInfo col : _rightFk.getLookupTableInfo().getColumns())
         {
-            // Skip text and ntext and timestamp columns -- aggregates don't work on them in some databases
-            if (col.isLongTextType() || (col.getJdbcType() == BINARY && "timestamp".equalsIgnoreCase(col.getSqlTypeName())))
+            // Skip text and ntext and binary (including timestamp) columns -- aggregates don't work on them in some databases
+            if (col.isLongTextType() || col.getJdbcType() == BINARY)
                 continue;
 
             ColumnInfo lc = _rightFk.createLookupColumn(_junctionKey, col.getName());
