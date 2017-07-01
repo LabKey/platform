@@ -1,5 +1,7 @@
 package org.labkey.api.data;
 
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.view.NotFoundException;
 
 /**
@@ -84,5 +86,26 @@ public class SqlScanner
         }
 
         return -1;
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void test()
+        {
+            test("SELECT * FROM foo", '*', 7);
+            test("SELECT /* comment here with ** */ * FROM foo", '*', 34);
+            test("SELECT /* 'comment'' \"here\" with ** \"\" */ * FROM foo", '*', 42);
+
+            test("SELECT \"COLUMN\" FROM bar WHERE this = that", 'O', 18);
+            test("SELECT \"COLUMN\", 'VOLUME' FROM bar WHERE this = that", 'O', 28);
+            test("SELECT \"CO\"\"LU\"\"MN\", 'VOL''UM''E' FROM bar WHERE this = that", 'O', 36);
+        }
+
+        private void test(String sql, char c, int expectedIndex)
+        {
+            SQLFragment frag = new SQLFragment(sql);
+            assertEquals("Bad index returned attempting to find " + c + " in " + frag.getRawSQL(), expectedIndex, new SqlScanner(frag).find(c));
+        }
     }
 }

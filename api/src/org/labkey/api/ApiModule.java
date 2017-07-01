@@ -17,6 +17,7 @@ package org.labkey.api;
 
 import com.google.common.collect.ImmutableSet;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.SqlScanner;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
@@ -53,7 +54,8 @@ public class ApiModule extends CodeOnlyModule
     {
         return ImmutableSet.of(
             Constants.TestCase.class,
-            DataIteratorUtil.TestCase.class
+            DataIteratorUtil.TestCase.class,
+            SqlScanner.TestCase.class
         );
     }
 }
