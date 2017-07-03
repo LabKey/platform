@@ -139,6 +139,12 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     }
 
     @Override
+    public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException
+    {
+        renderGridCellContents(ctx, out);
+    }
+
+    @Override
     public Object getDisplayValue(RenderContext ctx)
     {
         return getDisplayValues(ctx).stream().map(o -> o == null ? " " : o.toString()).collect(Collectors.joining(", "));
