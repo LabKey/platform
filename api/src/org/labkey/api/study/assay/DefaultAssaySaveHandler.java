@@ -26,8 +26,11 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
+import org.labkey.api.data.MvUtil;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
@@ -43,6 +46,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.query.ValidationException;
@@ -58,6 +62,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -380,7 +385,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             outputData.put(handleData(context, dataObject), dataObject.optString(ExperimentJSONConverter.ROLE, ExpDataRunInput.DEFAULT_ROLE));
         }
 
-        List<Map<String, Object>> dataRows = dataArray.toMapList();
+        List<Map<String, Object>> dataRows = convertRunData(dataArray, run.getContainer(), protocol);
         ExpData newData = DefaultAssayRunCreator.generateResultData(context.getUser(), run.getContainer(), getProvider(), dataRows, (Map)outputData);
 
         Map<ExpMaterial, String> outputMaterial = new HashMap<>();
@@ -416,6 +421,35 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
 
             saveExperimentRun(uploadContext, batch, run);
         }
+    }
+
+    /**
+     * Handle any mv indicator columns plus any additional conversion on the results domain data before run creation.
+     */
+    private List<Map<String, Object>> convertRunData(JSONArray dataArray, Container container, ExpProtocol protocol)
+    {
+        Domain domain = _provider.getResultsDomain(protocol);
+        Map<String, DomainProperty> propertyMap = domain.getProperties().stream()
+                .collect(Collectors.toMap(DomainProperty::getName, e -> e));
+
+        List<Map<String, Object>> dataRows = dataArray.toMapList();
+        for (Map<String, Object> row : dataRows)
+        {
+            for (Map.Entry<String, Object> entry : row.entrySet())
+            {
+                DomainProperty prop = propertyMap.get(entry.getKey());
+                if (prop != null && prop.isMvEnabled())
+                {
+                    String mvIndicatorName = entry.getKey() + MvColumn.MV_INDICATOR_SUFFIX;
+                    if (row.containsKey(mvIndicatorName))
+                    {
+                        MvFieldWrapper mvFieldWrapper = new MvFieldWrapper(MvUtil.getMvIndicators(container), entry.getValue(), String.valueOf(row.get(mvIndicatorName)));
+                        row.put(entry.getKey(), mvFieldWrapper);
+                    }
+                }
+            }
+        }
+        return dataRows;
     }
 
     @Nullable
