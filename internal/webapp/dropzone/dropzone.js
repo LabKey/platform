@@ -1310,7 +1310,8 @@
       headers = {
         "Accept": "application/json",
         "Cache-Control": "no-cache",
-        "X-Requested-With": "XMLHttpRequest"
+        "X-Requested-With": "XMLHttpRequest",
+         "X-LABKEY-CSRF": LABKEY.CSRF
       };
       if (this.options.headers) {
         extend(headers, this.options.headers);
