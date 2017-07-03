@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CrosstabTableInfo;
@@ -57,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 
 abstract public class UserSchema extends AbstractSchema implements MemTrackable
@@ -215,7 +217,15 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         if (table != null)
         {
             if (includeExtraMetadata)
+            {
                 table.overlayMetadata(name, this, errors);
+
+                // make sure to filter out columns that may be hidden by the extra metadata
+                table.setDefaultVisibleColumns(table.getDefaultVisibleColumns().stream().filter(fieldKey -> {
+                    ColumnInfo column = table.getColumn(fieldKey);
+                    return (null == column) || !table.getColumn(fieldKey).isHidden();
+                }).collect(Collectors.toList()));
+            }
             afterConstruct(table);
             // should just be !forWrite, but exp schema is still a problem
             if (useCache)
