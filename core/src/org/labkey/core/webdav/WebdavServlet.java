@@ -27,6 +27,7 @@ import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
@@ -84,8 +85,9 @@ public class WebdavServlet extends HttpServlet
             String m = request.getHeader("Method");
             if (m == null)
                 m = helper.getParameter("method");
-            if (null != m)
+            if (!StringUtils.isEmpty(m) && !StringUtils.equals(method,m))
             {
+                // POST can map to mutating methods, but GET can not
                 m = m.toUpperCase();
                 if ("POST".equals(method) || "PROPFIND".equals(m) || "OPTIONS".equals(m) || "JSON".equals(m) || "LASTERROR".equals(m) || "ZIP".equals(m) || "GET".equals(m) || "MD5SUM".equals(m))
                     method = m;
@@ -95,6 +97,11 @@ public class WebdavServlet extends HttpServlet
                     return;
                 }
             }
+        }
+
+        if ("POST".equals(request.getMethod()) || "POST".equals(method))
+        {
+            CSRFUtil.validate(request, response);
         }
 
         if ("GET".equals(method) && "/".equals(fullPath) && AppProps.getInstance().getSiteWelcomePageUrlString() != null)
@@ -135,7 +142,7 @@ public class WebdavServlet extends HttpServlet
         dav.setUrlResourcePath(fullPath);
         int stackSize = HttpView.getStackSize();
         // Only track non-GET requests
-        try (RequestInfo t = "get".equalsIgnoreCase(method) ? null : MemTracker.get().startProfiler(request, method.toUpperCase() + " " + fullPath))
+        try (RequestInfo t = "GET".equalsIgnoreCase(method) ? null : MemTracker.get().startProfiler(request, method.toUpperCase() + " " + fullPath))
         {
             HttpView.initForRequest(context, request, response);
             dav.handleRequest(request, response);
