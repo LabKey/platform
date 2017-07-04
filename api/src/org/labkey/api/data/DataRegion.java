@@ -2449,6 +2449,9 @@ public class DataRegion extends AbstractDataRegion
 
         if (!_groupTables.isEmpty())
         {
+            if (newUI)
+                out.write("<table class=\"labkey-group-tables\">");
+
             for (GroupTable groupTable : _groupTables)
             {
                 List<DisplayColumnGroup> groups = groupTable.getGroups();
@@ -2477,17 +2480,20 @@ public class DataRegion extends AbstractDataRegion
                     }
                     for (String heading : groupHeadings)
                     {
-                        out.write("<td valign=\"bottom\" class=\"labkey-form-label\">");
+                        if (newUI)
+                            out.write("<td nowrap><label class=\"col-sm-3 col-lg-2 control-label\">");
+                        else
+                            out.write("<td valign=\"bottom\" class=\"labkey-form-label\">");
                         out.write(PageFlowUtil.filter(heading));
+                        if (newUI)
+                            out.write("</label>");
                         out.write("</td>");
                     }
                 }
                 else
                 {
                     for (DisplayColumnGroup group : groups)
-                    {
-                        group.getColumns().get(0).renderDetailsCaptionCell(ctx, out);
-                    }
+                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().get(0));
                     out.write("</tr>\n<tr>");
                     if (hasCopyable)
                     {
@@ -2518,7 +2524,7 @@ public class DataRegion extends AbstractDataRegion
                         if (!newUI)
                             renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
                         out.write("<tr>");
-                        group.getColumns().get(0).renderDetailsCaptionCell(ctx, out);
+                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().get(0));
                         if (group.isCopyable() && hasCopyable)
                         {
                             group.writeSameCheckboxCell(ctx, out);
@@ -2531,7 +2537,7 @@ public class DataRegion extends AbstractDataRegion
                         {
                             if (!shouldRender(col, ctx))
                                 continue;
-                            col.renderInputCell(ctx, out, 1);
+                            writeColRenderInputCell(ctx, out, col, 1);
                         }
                         out.write("\t</tr>");
                     }
@@ -2551,15 +2557,22 @@ public class DataRegion extends AbstractDataRegion
                         if (rowClass != null)
                             out.write(" class=\"" + rowClass + "\"");
                         out.write(">");
-                        out.write("<td class=\"labkey-form-label\" nowrap>");
+
+                        if (newUI)
+                            out.write("<td nowrap><label class=\"col-sm-3 col-lg-2 control-label\">");
+                        else
+                            out.write("<td class=\"labkey-form-label\" nowrap>");
                         out.write(PageFlowUtil.filter(groupHeadings.get(i)));
+                        if (newUI)
+                            out.write("</label>");
                         out.write("</td>");
+
                         for (DisplayColumnGroup group : groups)
                         {
                             DisplayColumn col = group.getColumns().get(i);
                             if (!shouldRender(col, ctx))
                                 continue;
-                            col.renderInputCell(ctx, out, 1);
+                            writeColRenderInputCell(ctx, out, col, 1);
                         }
                         out.write("\t</tr>");
                     }
@@ -2567,11 +2580,12 @@ public class DataRegion extends AbstractDataRegion
 
                 out.write("<script type=\"text/javascript\">");
                 for (DisplayColumnGroup group : groups)
-                {
                     group.writeCopyableJavaScript(ctx, out);
-                }
                 out.write("</script>");
             }
+
+            if (newUI)
+                out.write("</table>");
         }
 
         out.write("<tr><td colspan=\"" + (span + 1) + "\" align=\"left\">");
@@ -2628,18 +2642,54 @@ public class DataRegion extends AbstractDataRegion
         renderFormEnd(ctx, out);
     }
 
-
-    private void writeSameHeader(RenderContext ctx, Writer out, List<DisplayColumnGroup> groups)
-            throws IOException
+    private void writeColRenderDetailsCaptionCell(RenderContext ctx, Writer out, DisplayColumn col) throws IOException
     {
-        out.write("<td class=\"labkey-form-label\">");
+        if (PageFlowUtil.useExperimentalCoreUI())
+        {
+            out.write("<td nowrap>");
+            col.renderDetailsCaptionCell(ctx, out);
+            out.write("</td>");
+        }
+        else
+        {
+            col.renderDetailsCaptionCell(ctx, out);
+        }
+    }
+
+    private void writeColRenderInputCell(RenderContext ctx, Writer out, DisplayColumn col, int span) throws IOException
+    {
+        if (PageFlowUtil.useExperimentalCoreUI())
+        {
+            out.write("<td class=\"labkey-input-cell\">");
+            col.renderInputCell(ctx, out, span);
+            out.write("</td>");
+        }
+        else
+        {
+            col.renderInputCell(ctx, out, span);
+        }
+    }
+
+    private void writeSameHeader(RenderContext ctx, Writer out, List<DisplayColumnGroup> groups) throws IOException
+    {
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+
+        if (newUI)
+            out.write("<td nowrap><label class=\"col-sm-3 col-lg-2 control-label\">");
+        else
+            out.write("<td class=\"labkey-form-label\">");
+
         out.write("<input type=\"checkbox\" name=\"~~SELECTALL~~\" onchange=\"");
         for (DisplayColumnGroup group : groups)
         {
             group.writeCopyableOnChangeHandler(ctx, out);
         }
         out.write("\" />");
-        out.write("Same" + PageFlowUtil.helpPopup("Same", "If selected, all entries on this row will have the same value") + "</td>");
+        out.write("Same" + PageFlowUtil.helpPopup("Same", "If selected, all entries on this row will have the same value"));
+
+        if (newUI)
+            out.write("</label>");
+        out.write("</td>");
     }
 
     protected boolean shouldRender(DisplayColumn renderer, RenderContext ctx)

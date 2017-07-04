@@ -43,15 +43,11 @@ public class AssayDataCollectorDisplayColumn extends SimpleDisplayColumn
         _col.setInputType("file");
     }
 
-    public void renderDetailsCaptionCell(RenderContext ctx, Writer out) throws IOException
+    @Override
+    public void renderTitle(RenderContext ctx, Writer out) throws IOException
     {
-        if (null == _caption)
-            return;
-
-        out.write("<td class='labkey-form-label'>");
-        renderTitle(ctx, out);
+        super.renderTitle(ctx, out);
         out.write(" *");
-        out.write("</td>");
     }
 
     public boolean isEditable()
