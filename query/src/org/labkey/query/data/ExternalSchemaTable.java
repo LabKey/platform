@@ -33,6 +33,7 @@ import org.labkey.query.ExternalSchema;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -57,7 +58,7 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable<ExternalSc
         {
             //create list to avoid NPE if an error occurs
             Collection<QueryException> errors = new ArrayList<>();
-            loadFromXML(getUserSchema(), _metadata, errors);
+            loadFromXML(getUserSchema(), Collections.singleton(_metadata), errors);
         }
         catch (IllegalArgumentException e)
         {

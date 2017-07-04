@@ -631,7 +631,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     protected void applyQueryMetadata(UserSchema schema, List<QueryException> errors, TableType xmlTable, Map<String, NamedFiltersType> namedFilters, AbstractTableInfo ret)
     {
-        ret.loadFromXML(schema, xmlTable, errors);
+        ret.loadFromXML(schema, Collections.singleton(xmlTable), errors);
     }
 
     public String getMetadataXml()

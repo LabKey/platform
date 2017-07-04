@@ -279,7 +279,7 @@ public class LinkedSchema extends ExternalSchema
         linkedTableInfo.init();
 
         // Apply metadata. Filters have already been applied
-        linkedTableInfo.loadFromXML(this, metaData, errors);
+        linkedTableInfo.loadFromXML(this, Collections.singleton(metaData), errors);
 
         return linkedTableInfo;
     }
