@@ -862,14 +862,20 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         checkLocked();
 
         if (xmlTables != null)
+        {
             for (TableType xmlTable : xmlTables)
                 loadFromXML(schema, xmlTable, errors);
+
+            // make sure to filter out columns that may be hidden by the extra metadata
+            setDefaultVisibleColumns(getDefaultVisibleColumns().stream().filter(fieldKey -> {
+                ColumnInfo column = getColumn(fieldKey);
+                return (null == column) || !getColumn(fieldKey).isHidden();
+            }).collect(Collectors.toList()));
+        }
     }
 
-    public void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, Collection<QueryException> errors)
+    private void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, Collection<QueryException> errors)
     {
-        checkLocked();
-
         loadAllButCustomizerFromXML(schema, xmlTable, errors);
 
         // This needs to happen AFTER all of the other XML-based config has been applied, so it should always
