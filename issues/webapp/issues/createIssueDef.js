@@ -17,7 +17,7 @@ IssueDefUtil = new function() {
                 var name = input.value;
                 if (name) {
 
-                    Ext4.Ajax.request({
+                    LABKEY.Ajax.request({
                         url: LABKEY.ActionURL.buildURL("issues", "validateIssueDefName.api"),
                         scope: this,
                         jsonData: {
@@ -37,7 +37,7 @@ IssueDefUtil = new function() {
                                 }
                                 else {
                                     var errorHTML = jsonResp.message;
-                                    Ext4.Msg.alert('Error', errorHTML);
+                                    LABKEY.Utils.alert('Error', errorHTML);
                                 }
 
                             }
@@ -46,14 +46,14 @@ IssueDefUtil = new function() {
                             var jsonResp = LABKEY.Utils.decode(response.responseText);
                             if (jsonResp && jsonResp.errors) {
                                 var errorHTML = jsonResp.errors[0].message;
-                                Ext4.Msg.alert('Error', errorHTML);
+                                LABKEY.Utils.alert('Error', errorHTML);
                             }
                         }
                     });
                 }
             }
             else {
-                Ext4.Msg.alert('Error', "No IssueList Kind found. You may need to enable the Issues module.");
+                LABKEY.Utils.alert('Error', "No IssueList Kind found. You may need to enable the Issues module.");
             }
         }
     };

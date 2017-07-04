@@ -216,7 +216,7 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsPanel', {
             params[queryConfig.dataRegionName + '.viewName'] = queryConfig.viewName;
 
         if (queryConfig.containerFilter)
-            params.containerFilter = queryConfig.containerFilter;
+            params[queryConfig.dataRegionName + '.containerFilterName'] = queryConfig.containerFilter;
 
         if (LABKEY.ActionURL.getParameter(queryConfig.dataRegionName + '.ignoreFilter'))
             params[queryConfig.dataRegionName + '.ignoreFilter'] = true;

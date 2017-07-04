@@ -57,10 +57,9 @@ public class InsertIssueDefAction extends UserSchemaAction
             public LinkedHashSet<ClientDependency> getClientDependencies()
             {
                 LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-
+                resources.add(ClientDependency.fromPath("Ext4"));
                 resources.add(ClientDependency.fromPath("issues/createIssueDef.js"));
                 resources.addAll(super.getClientDependencies());
-
                 return resources;
             }
         };
@@ -79,8 +78,6 @@ public class InsertIssueDefAction extends UserSchemaAction
 
         bb.add(btnSubmit);
         bb.add(btnCancel);
-
-        view.getClientDependencies().add(ClientDependency.fromPath("issues/createRelated.js"));
         view.getDataRegion().setButtonBar(bb);
 
         return view;
