@@ -282,3 +282,14 @@ td.labkey-blank-cell, th.labkey-blank-cell {
     }
   }
 }
+
+.labkey-group-tables {
+  .control-label {
+    word-break: normal;
+  }
+
+  .labkey-input-cell > div {
+    width: 100%;
+    padding: 2px;
+  }
+}
