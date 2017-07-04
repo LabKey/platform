@@ -2574,7 +2574,7 @@ if (!LABKEY.DataRegions) {
         });
 
         LABKEY.Query.saveQueryViews({
-            containerPath: this.containerFilter,
+            containerPath: this.containerPath,
             schemaName: this.schemaName,
             queryName: this.queryName,
             views: [viewConfig],
