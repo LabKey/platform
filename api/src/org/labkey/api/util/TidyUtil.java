@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.w3c.dom.CharacterData;
@@ -43,6 +44,7 @@ public class TidyUtil
 {
     private static final Pattern scriptPattern = Pattern.compile("(<script.*?>)(.*?)(</script>)", Pattern.CASE_INSENSITIVE| Pattern.DOTALL);
 
+    @Nullable
     public static Document convertHtmlToDocument(final String html, final boolean asXML, final Collection<String> errors)
     {
         Tidy tidy = configureHtmlTidy(asXML);
@@ -119,6 +121,7 @@ public class TidyUtil
         return out.getBuffer().toString();
     }
 
+    @Nullable
     private static Document tidyParseDOM(final Tidy tidy, final String content, final Collection<String> errors)
     {
         // TIDY does not properly parse the contents of script tags!
@@ -149,7 +152,15 @@ public class TidyUtil
         if (strippedString.isEmpty())
             return null;
 
-        Document doc = tidy.parseDOM(new ByteArrayInputStream(strippedString.getBytes(StringUtilsLabKey.DEFAULT_CHARSET)), null);
+        Document doc = null;
+        try
+        {
+            doc = tidy.parseDOM(new ByteArrayInputStream(strippedString.getBytes(StringUtilsLabKey.DEFAULT_CHARSET)), null);
+        }
+        catch (NullPointerException e)
+        {
+            errors.add("Tidy failed to parse html. Check that all html tags are valid and not malformed.");
+        }
 
         // fix up scripts
         if (null != doc && null != doc.getDocumentElement())

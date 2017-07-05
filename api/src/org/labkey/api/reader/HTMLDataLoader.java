@@ -152,7 +152,7 @@ public class HTMLDataLoader extends DataLoader
     {
         List<String> errors = new LinkedList<>();
         Document doc = TidyUtil.convertHtmlToDocument(_html, true, errors);
-        if (errors.size() > 0)
+        if (errors.size() > 0 || doc == null)
             return null;
 
         Element table = findTable(doc);
@@ -162,7 +162,7 @@ public class HTMLDataLoader extends DataLoader
         return parseTable(table, limit);
     }
 
-    protected static Element findTable(Document doc)
+    protected static Element findTable(@NotNull Document doc)
     {
         Element html = doc.getDocumentElement();
         if (html == null || !"html".equalsIgnoreCase(html.getTagName()))
