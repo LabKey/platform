@@ -52,17 +52,13 @@ public class MarkdownServiceImpl implements MarkdownService
 
         // Better yet, avoid js injection by using the invokeMethod syntax that takes a java String as a param
         Invocable invocable = (Invocable) engine;
-        Object testResult = null;
         try
         {
-            testResult = invocable.invokeMethod(mdCompiled, "render", mdText);
+            return invocable.invokeMethod(mdCompiled, "render", mdText).toString();
         }
         catch (NoSuchMethodException | ScriptException e)
         {
             throw new IllegalStateException("Java script engine not able to invoke markdownit method to translate markdown to html.");
         }
-
-        String testString = testResult.toString();
-        return testString;
     }
 }
