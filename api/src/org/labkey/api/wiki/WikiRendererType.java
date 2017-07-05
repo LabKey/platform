@@ -59,6 +59,16 @@ public enum WikiRendererType
         {
             public String getFileExtension() {return ".txt"; }
             public String getDisplayName() {return "Plain Text";}
+        },
+    MARKDOWN
+        {
+            public String getDisplayName() {return "Markdown";}
+            public String getFileExtension() {return ".md";}
+
+            @Override
+            public HttpView getSyntaxHelpView(){
+                return new JspView("/org/labkey/wiki/view/wikiMarkdownHelp.jsp");
+            }
         };
 
     public abstract String getDisplayName();
