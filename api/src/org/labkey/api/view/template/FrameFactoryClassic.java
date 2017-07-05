@@ -369,15 +369,18 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
                     containerPathString = PageFlowUtil.qh(webPart.getPermissionContainer().getPath());
 
                 // Wrapped in immediately invoke function expression because of Issue 16953
-                NavTree permissionsNav = new NavTree("Permissions",
-                        "javascript:LABKEY.Portal._showPermissions(" +
-                                config._webpart.getRowId() + "," +
-                                permissionString + "," +
-                                containerPathString + ");"
-                );
+                if (PageFlowUtil.isPageAdminMode(getContext()))
+                {
+                    NavTree permissionsNav = new NavTree("Permissions",
+                            "javascript:LABKEY.Portal._showPermissions(" +
+                                    config._webpart.getRowId() + "," +
+                                    permissionString + "," +
+                                    containerPathString + ");"
+                    );
 
-                permissionsNav.setId("permissions_" + webPart.getRowId());
-                nMenu.addChild(permissionsNav);
+                    permissionsNav.setId("permissions_" + webPart.getRowId());
+                    nMenu.addChild(permissionsNav);
+                }
             }
 
             if (config._location != null && config._location.equals(WebPartFactory.LOCATION_RIGHT))

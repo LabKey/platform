@@ -15,6 +15,7 @@
  */
 package org.labkey.api.jsp.taglib;
 
+import org.labkey.api.util.element.DisplayField;
 import org.labkey.api.util.element.Input;
 import org.labkey.api.util.element.TextArea;
 
@@ -126,6 +127,8 @@ public class InputTag extends SimpleTagBase
 
         if ("textarea".equalsIgnoreCase(type))
             input = new TextArea.TextAreaBuilder();
+        else if ("displayfield".equalsIgnoreCase(type))
+            input = new DisplayField.DisplayFieldBuilder();
         else
             input = new Input.InputBuilder().type(type);
 

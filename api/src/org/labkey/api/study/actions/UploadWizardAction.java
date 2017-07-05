@@ -370,6 +370,12 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
         InsertView insertView = createBatchInsertView(runForm, errorReshow, errors);
         insertView.getDataRegion().setFormActionUrl(new ActionURL(UploadWizardAction.class, getContainer()));
+        insertView.setTitle("Batch Properties");
+        insertView.setTitlePopupHelp("Batch Properties", "A batch is a set of assay runs, which are usually "
+                + "imported at the same time. The batch may have a set of properties, configured by an administrator. "
+                + "The values of the properties are the same for all runs within the batch, and are set at import time.");
+        // Needed for thaw list participant visit resolvers
+        insertView.addClientDependency(ClientDependency.fromPath("sqv"));
 
         ButtonBar bbar = new ButtonBar();
         bbar.setStyle(ButtonBar.Style.separateButtons);
@@ -377,18 +383,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         addResetButton(runForm, insertView, bbar);
         ActionURL returnURL = runForm.getReturnActionURL();
         addCancelButton(bbar, returnURL);
-
         insertView.getDataRegion().setButtonBar(bbar, DataRegion.MODE_INSERT);
 
-        insertView.setTitle("Batch Properties");
-        insertView.setTitlePopupHelp("Batch Properties", "A batch is a set of assay runs, which are usually imported at the same time. The batch may have a set of properties, configured by an administrator. The values of the properties are the same for all runs within the batch, and are set at import time.");
+        JspView<AssayRunUploadForm> assayPropsView = new JspView<>("/org/labkey/study/assay/view/newUploadAssayProperties.jsp", runForm);
+        assayPropsView.setTitle("Assay Properties");
 
         _stepDescription = "Batch Properties";
 
-        JspView<AssayRunUploadForm> headerView = new JspView<AssayRunUploadForm>("/org/labkey/study/assay/view/newUploadSet.jsp", runForm);
-        // Needed for thaw list participant visit resolvers
-        headerView.addClientDependency(ClientDependency.fromPath("sqv"));
-        return new VBox(headerView, insertView);
+        return new VBox(assayPropsView, insertView);
     }
 
     /**
@@ -492,10 +494,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             newRunForm.clearUploadedData();
         }
 
-        //Put messages on top of page instead of in insert widget
-        if (null != errors)
-            newRunForm.setErrors(errors);
-        InsertView insertView = createRunInsertView(newRunForm, errorReshow, null);
+        InsertView insertView = createRunInsertView(newRunForm, errorReshow, errors);
 
         addHiddenBatchProperties(newRunForm, insertView);
 
@@ -532,12 +531,34 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         insertView.getDataRegion().setButtonBar(bbar, DataRegion.MODE_INSERT);
         insertView.setTitle("Run Properties");
-        insertView.setTitlePopupHelp("Run Properties", "Each run within an assay may have a set of properties, configured by an administrator. The values are set at import time.");
+        insertView.setTitlePopupHelp("Run Properties", "Each run within an assay may have a set of "
+                + "properties, configured by an administrator. The values are set at import time.");
 
         _stepDescription = "Run Properties and Data File";
 
-        JspView<AssayRunUploadForm> headerView = new JspView<AssayRunUploadForm>("/org/labkey/api/study/actions/newRunProperties.jsp", newRunForm);
-        return new VBox(headerView, insertView);
+        VBox vbox = new VBox();
+
+        JspView<AssayRunUploadForm> warningsView = new JspView<>("/org/labkey/api/study/actions/newUploadWarnings.jsp", newRunForm);
+        if (newRunForm.getTransformResult().getWarnings() != null)
+            warningsView.setTitle("Transform Warnings");
+        vbox.addView(warningsView);
+
+        JspView<AssayRunUploadForm> assayPropsView = new JspView<>("/org/labkey/study/assay/view/newUploadAssayProperties.jsp", newRunForm);
+        assayPropsView.setTitle("Assay Properties");
+        vbox.addView(assayPropsView);
+
+        if (!newRunForm.getBatchProperties().isEmpty())
+        {
+            JspView<AssayRunUploadForm> batchPropsView = new JspView<>("/org/labkey/study/assay/view/newUploadBatchProperties.jsp", newRunForm);
+            batchPropsView.setTitle("Batch Properties");
+            vbox.addView(batchPropsView);
+        }
+
+        if (newRunForm.isSuccessfulUploadComplete())
+            vbox.addView(new HtmlView("<p class=\"labkey-header-large\">Upload successful.  Upload another run below, or click Cancel to view previously uploaded runs.</p>"));
+
+        vbox.addView(insertView);
+        return vbox;
     }
 
     /** Check the assay configuration to determine if we should prompt the user to upload or otherwise specify a data file */

@@ -17,7 +17,7 @@ Ext4.define('LABKEY.Portal.WebPartPermissionsPanel', {
                 width: 500,
                 layout: 'fit',
                 closeAction: 'destroy',
-                title: 'Permissions'
+                title: 'WebPart Permissions'
             });
             this.callParent([config]);
         },
@@ -44,8 +44,8 @@ Ext4.define('LABKEY.Portal.WebPartPermissionsPanel', {
 
         getPanel: function(){
             var divContainer = Ext4.create('Ext.container.Container', {
-                html: "<div>This WebPart can be shown or hidden based on the user's permission</div>",
-                margin: '0 0 15 0'
+                html: "<div>This WebPart can be shown or hidden based on the user's permission.</div>",
+                margin: '0 0 5px 0'
             });
 
             this.permissionCombo = Ext4.create('Ext.form.field.ComboBox', {
