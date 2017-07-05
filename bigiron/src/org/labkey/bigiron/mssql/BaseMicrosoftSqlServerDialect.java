@@ -366,12 +366,13 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             outputSql.append(" INTO @TableVar");
         }
 
+        SqlScanner scanner = new SqlScanner(sql);
         int start;
         int end;
 
         if (type == ReselectType.INSERT)
         {
-            start = new SqlScanner(sql).find(')');
+            start = scanner.indexOf(')');
 
             if (-1 == start)
                 throw new IllegalStateException("Unable to insert OUTPUT clause");
@@ -386,7 +387,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         }
         else
         {
-            end = sql.indexOf("WHERE");
+            end = scanner.indexOf("WHERE");
 
             if (-1 == end)
                 throw new IllegalStateException("Unable to insert OUTPUT clause");
@@ -2188,7 +2189,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     public Collection<String> getScriptWarnings(String name, String sql)
     {
         // At the moment, we're only checking for stored procedure definitions that aren't followed immediately by a GO
-        // statement or end of the script. These will cause major problem if they are missed during script consolidation.
+        // statement or end of the script. These will cause major problems if they are missed during script consolidation.
 
         // Dumb little parser that, within stored procedure definitions, matches up each BEGIN with COMMIT/END.
         String[] tokens = sql.replace(";", "").split("\\s+|,");
