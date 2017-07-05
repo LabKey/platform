@@ -85,6 +85,16 @@ public class HtmlRenderer implements WikiRenderer
         cds.addAll(formattedHtml.getClientDependencies());
 
         Document doc = TidyUtil.convertHtmlToDocument("<html><body>" + StringUtils.trimToEmpty(formattedHtml.getHtml()) + "</body></html>", false, errors);
+        if (!errors.isEmpty() || doc == null)
+        {
+            StringBuilder innerHtml = new StringBuilder("<div class=\"labkey-error\"><b>An exception occurred while generating the HTML.  Please correct this content.</b></div><br>The error message was: ");
+            if (!errors.isEmpty())
+            {
+                for (String error : errors)
+                    innerHtml.append(PageFlowUtil.filter(error)).append("<hr>");
+            }
+            return new FormattedHtml(innerHtml.toString(), false, cds);
+        }
 
         // process A and IMG
         NodeList nl = doc.getElementsByTagName("a");
