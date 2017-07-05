@@ -2132,7 +2132,8 @@ study/src/org/labkey/study/assay/view/chooseAssayType.jsp -text
 study/src/org/labkey/study/assay/view/dataUpload.jsp -text
 study/src/org/labkey/study/assay/view/moduleAssayListView.jsp -text
 study/src/org/labkey/study/assay/view/moduleAssayUpload.jsp -text
-study/src/org/labkey/study/assay/view/newUploadSet.jsp -text
+study/src/org/labkey/study/assay/view/newUploadAssayProperties.jsp -text
+study/src/org/labkey/study/assay/view/newUploadBatchProperties.jsp -text
 study/src/org/labkey/study/assay/view/publishChooseStudy.jsp -text
 study/src/org/labkey/study/assay/view/resultDetails.jsp -text
 study/src/org/labkey/study/assay/view/runDetails.jsp -text

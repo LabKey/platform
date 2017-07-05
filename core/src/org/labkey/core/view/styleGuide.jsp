@@ -177,6 +177,7 @@
         <h2>Horizontal form</h2>
         <div class="lk-sg-example">
             <labkey:form action="some-action" layout="horizontal">
+                <labkey:input type="displayfield" label="Display Field" value="Value to display as text"/>
                 <labkey:input name="name" label="Standard Input" placeholder="Placeholder Text" id="exampleInputName1"/>
                 <labkey:input name="avatar" label="Avatar" type="file" id="avatar1" contextContent="It's best to use an image smaller than 400x400 pixels"/>
                 <labkey:input name="sometext" label="Text Area" type="textarea" id="area1" placeholder="My words can be on many lines"/>

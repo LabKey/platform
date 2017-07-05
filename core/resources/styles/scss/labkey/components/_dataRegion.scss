@@ -293,3 +293,7 @@ td.labkey-blank-cell, th.labkey-blank-cell {
     padding: 2px;
   }
 }
+
+.form-control-static {
+  min-height: 0;
+}

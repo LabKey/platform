@@ -56,11 +56,13 @@
                     for (NavTree p : projects.getChildren())
                     {
                         String projectTitle = p.getText();
-                        if (projectTitle.length() > 36) {
-                            projectTitle = projectTitle.substring(0, 31) + "...";
+                        if (projectTitle.length() > 28) {
+                            projectTitle = projectTitle.substring(0, 28) + "...";
                         }
                 %>
-                    <li data-submenu-id="<%=h(projectTitle.toLowerCase())%>"><a data-field="<%=h(p.getText())%>" title="<%=h(projectTitle)%>" href="<%=h(p.getHref())%>"><%=h(projectTitle)%></a></li>
+                    <li data-submenu-id="<%=h(projectTitle.toLowerCase())%>">
+                        <a data-field="<%=h(p.getText())%>" title="<%=h(p.getText())%>" href="<%=h(p.getHref())%>"><%=h(projectTitle)%></a>
+                    </li>
                 <%
                     }
                 %>
