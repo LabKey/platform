@@ -336,6 +336,10 @@
 
     SubMenu.prototype.viewportAlign = function() {
         var menu =  $(this).children('ul.dropdown-menu');
+        if (menu.length == 0) {
+            return;
+        }
+        
         var offset = menu.offset();
         var win = $(window);
 

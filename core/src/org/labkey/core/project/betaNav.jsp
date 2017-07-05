@@ -56,12 +56,13 @@
                     for (NavTree p : projects.getChildren())
                     {
                         String projectTitle = p.getText();
-                        if (projectTitle.length() > 28) {
-                            projectTitle = projectTitle.substring(0, 28) + "...";
+                        String projectDisplay = projectTitle;
+                        if (projectDisplay.length() > 28) {
+                            projectDisplay = projectDisplay.substring(0, 28) + "...";
                         }
                 %>
                     <li data-submenu-id="<%=h(projectTitle.toLowerCase())%>">
-                        <a data-field="<%=h(p.getText())%>" title="<%=h(p.getText())%>" href="<%=h(p.getHref())%>"><%=h(projectTitle)%></a>
+                        <a data-field="<%=h(projectTitle)%>" title="<%=h(projectTitle)%>" href="<%=h(p.getHref())%>"><%=h(projectDisplay)%></a>
                     </li>
                 <%
                     }
@@ -196,6 +197,7 @@
 
             <% if (getContainer().getProject() != null && !getContainer().isRoot()) { %>
                 var l = projectList.find('li[data-submenu-id="<%=h(getContainer().getProject().getName().toLowerCase())%>"]');
+                console.log(l);
                 if (l.length) {
                     l.trigger('mouseenter');
 
