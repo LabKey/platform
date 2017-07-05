@@ -105,7 +105,8 @@ public class SqlScriptExecutor
 
     private Collection<Block> getBlocks()
     {
-        StringBuilder stripped = stripComments(_sql);
+        // Strip all comments from the script -- PostgreSQL JDBC driver goes berserk if it sees ; or ? inside a comment
+        StringBuilder stripped = new SqlScanner(_sql).stripComments();
 
         Collection<String> sqlBlocks;
 
@@ -142,53 +143,6 @@ public class SqlScriptExecutor
         }
 
         return blocks;
-    }
-
-    // Strip all comments from the script -- PostgreSQL JDBC driver goes berserk if it sees ; or ? inside a comment
-    private StringBuilder stripComments(String sql)
-    {
-        StringBuilder sb = new StringBuilder(sql.length());
-        int j = 0;
-
-        while (j < sql.length())
-        {
-            char c = sql.charAt(j);
-            String twoChars = null;
-            int end = j + 1;
-
-            if (j < (sql.length() - 1))
-                twoChars = sql.substring(j, j + 2);
-
-            if ('\'' == c)
-            {
-                end = sql.indexOf('\'', j + 1) + 1;
-
-                if (0 == end)
-                    _log.error("No quote termination char");
-                else
-                    sb.append(sql.substring(j, end));
-            }
-            else if ("/*".equals(twoChars))
-            {
-                end = sql.indexOf("*/", j + 2) + 2;  // Skip comment completely
-
-                if (1 == end)
-                    _log.error("No comment termination char");
-            }
-            else if ("--".equals(twoChars))
-            {
-                end = sql.indexOf("\n", j + 2);  // Skip comment but leave the cr
-
-                if (0 == end)
-                    end = sql.length();
-            }
-            else
-                sb.append(c);
-
-            j = end;
-        }
-
-        return sb;
     }
 
     public class Block

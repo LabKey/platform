@@ -859,7 +859,16 @@ public abstract class SqlDialect
         String lowerNoWhiteSpace = lower.replaceAll("\\s", "");
 
         if (lowerNoWhiteSpace.contains("primarykey,"))
-            errors.add("Do not designate PRIMARY KEY on the column definition line; this creates a PK with an arbitrary name, making it more difficult to change later.  Instead, create the PK as a named constraint (e.g., PK_MyTable).");
+            errors.add("Do not designate PRIMARY KEY on the column definition line; this creates a PK with an arbitrary name, making it more difficult to change later. Instead, create the PK as a named constraint (e.g., PK_MyTable).");
+
+        try
+        {
+            new SqlScanner(sql).stripComments();
+        }
+        catch (Exception e)
+        {
+            errors.add(e.getMessage());
+        }
 
         checkSqlScript(lower, lowerNoWhiteSpace, errors);
 
