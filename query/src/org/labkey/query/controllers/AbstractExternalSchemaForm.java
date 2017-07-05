@@ -15,6 +15,7 @@
  */
 package org.labkey.query.controllers;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.action.SpringActionController;
@@ -44,51 +45,58 @@ public abstract class AbstractExternalSchemaForm<T extends AbstractExternalSchem
     public void validate(Errors errors)
     {
         AbstractExternalSchemaDef bean = getBean();
-        if (null != IdentifierString.validateIdentifierString(bean.getUserSchemaName()))
-            errors.reject(SpringActionController.ERROR_MSG, "Schema name should only contain alphanumeric characters and underscores");
 
-        if (bean.getUserSchemaName().length() > 50)
-            errors.reject(SpringActionController.ERROR_MSG, "Schema name must not be longer than 50 characters");
-
-        if (bean.getSchemaTemplate() == null)
+        if (StringUtils.isBlank(bean.getUserSchemaName()))
         {
-            if (bean.getSourceSchemaName() == null)
-                errors.reject(SpringActionController.ERROR_MSG, "Source schema name is required");
-
-            if (bean.getTables() == null)
-                errors.reject(SpringActionController.ERROR_MSG, "Schema tables is required");
-
-            String metaData = bean.getMetaData();
-            if (null != metaData)
-            {
-                try
-                {
-                    XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
-                    TablesDocument doc = TablesDocument.Factory.parse(metaData, options);
-                    XmlBeansUtil.validateXmlDocument(doc);
-                }
-                catch (XmlException e)
-                {
-                    errors.reject("metaData", e.getMessage());    // TODO: Place error message above meta data box
-                }
-                catch (XmlValidationException e)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, e.getDetails());
-                }
-            }
+            errors.reject(SpringActionController.ERROR_MSG, "Must provide a userSchemaName parameter");
         }
         else
         {
-            Container templateContainer = getContainer();
-            String dataSource = bean.getDataSource();
-            if (dataSource != null)
-                templateContainer = ContainerManager.getForId(dataSource);
+            if (null != IdentifierString.validateIdentifierString(bean.getUserSchemaName()))
+                errors.reject(SpringActionController.ERROR_MSG, "Schema name should only contain alphanumeric characters and underscores");
 
-            TemplateSchemaType template = bean.lookupTemplate(templateContainer);
-            if (template == null)
-                errors.reject(SpringActionController.ERROR_MSG, "Template '" + bean.getSchemaTemplate() + "' not found in container");
+            if (bean.getUserSchemaName().length() > 50)
+                errors.reject(SpringActionController.ERROR_MSG, "Schema name must not be longer than 50 characters");
 
-            // We allow overriding the template sourceSchemaName, tables, and metaData.
+            if (bean.getSchemaTemplate() == null)
+            {
+                if (bean.getSourceSchemaName() == null)
+                    errors.reject(SpringActionController.ERROR_MSG, "Source schema name is required");
+
+                if (bean.getTables() == null)
+                    errors.reject(SpringActionController.ERROR_MSG, "Schema tables is required");
+
+                String metaData = bean.getMetaData();
+                if (null != metaData)
+                {
+                    try
+                    {
+                        XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
+                        TablesDocument doc = TablesDocument.Factory.parse(metaData, options);
+                        XmlBeansUtil.validateXmlDocument(doc);
+                    }
+                    catch (XmlException e)
+                    {
+                        errors.reject("metaData", e.getMessage());    // TODO: Place error message above meta data box
+                    }
+                    catch (XmlValidationException e)
+                    {
+                        errors.reject(SpringActionController.ERROR_MSG, e.getDetails());
+                    }
+                }
+            }
+            else
+            {
+                Container templateContainer = getContainer();
+                String dataSource = bean.getDataSource();
+                if (dataSource != null)
+                    templateContainer = ContainerManager.getForId(dataSource);
+
+                TemplateSchemaType template = bean.lookupTemplate(templateContainer);
+                if (template == null)
+                    errors.reject(SpringActionController.ERROR_MSG, "Template '" + bean.getSchemaTemplate() + "' not found in container");
+
+                // We allow overriding the template sourceSchemaName, tables, and metaData.
 //            if (bean.getSourceSchemaName() != null)
 //                errors.reject(SpringActionController.ERROR_MSG, "Source schema name not allowed when using schema template");
 //
@@ -97,6 +105,7 @@ public abstract class AbstractExternalSchemaForm<T extends AbstractExternalSchem
 //
 //            if (bean.getMetaData() != null)
 //                errors.reject(SpringActionController.ERROR_MSG, "Metadata not allowed when using a schema template");
+            }
         }
     }
 }
