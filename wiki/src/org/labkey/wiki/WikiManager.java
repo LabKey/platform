@@ -71,6 +71,7 @@ import org.labkey.wiki.model.WikiVersion;
 import org.labkey.wiki.model.WikiVersionsGrid;
 import org.labkey.wiki.model.WikiView;
 import org.labkey.wiki.renderer.HtmlRenderer;
+import org.labkey.wiki.renderer.MarkdownRenderer;
 import org.labkey.wiki.renderer.PlainTextRenderer;
 import org.labkey.wiki.renderer.RadeoxRenderer;
 import org.radeox.macro.MacroRepository;
@@ -915,6 +916,9 @@ public class WikiManager implements WikiService
                 break;
             case TEXT_WITH_LINKS:
                 renderer = new PlainTextRenderer();
+                break;
+            case MARKDOWN:
+                renderer = new MarkdownRenderer(hrefPrefix, attachPrefix, nameTitleMap, attachments);
                 break;
             default:
                 renderer = new RadeoxRenderer(null, attachPrefix, null, attachments);

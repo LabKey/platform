@@ -23,6 +23,8 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.markdown.MarkdownService;
+import org.labkey.wiki.renderer.MarkdownServiceImpl;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
@@ -84,6 +86,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         ServiceRegistry.get().registerService(WikiService.class, WikiManager.get());
 
+        ServiceRegistry.get().registerService(MarkdownService.class, new MarkdownServiceImpl());
     }
 
     @NotNull

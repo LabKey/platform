@@ -18,7 +18,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <table>
     <tr>
-        <td colspan=2><b>Formatting Guide</b> (<a href="https://markdown-it.github.io/" target="_blank">more help</a>)</td>
+        <td colspan=2><b>Markdown Formatting Guide</b> (<a href="https://markdown-it.github.io/" target="_blank">more help</a>)</td>
     </tr>
     <tr>
         <td>Headers</td>

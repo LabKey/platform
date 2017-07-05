@@ -42,6 +42,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.exceptions.OptimisticConflictException;
+import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
@@ -60,6 +61,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerTreeSelected;
@@ -2597,7 +2599,7 @@ public class WikiController extends SpringActionController
             String newBody = form.getBody();
             Container container = getContainer();
 
-            //currently, we can only transform from wiki to HTML
+            //transform from wiki to HTML
             if (StringUtils.equals(WikiRendererType.RADEOX.name(),form.getFromFormat())
                     && StringUtils.equals(WikiRendererType.HTML.name(),form.getToFormat()))
             {
@@ -2610,6 +2612,23 @@ public class WikiController extends SpringActionController
 
                 wikiver.setRendererType(form.getFromFormat());
                 newBody = wikiver.getHtmlForConvert(getContainer(), wiki);
+            }
+
+            //transform from markdown to html
+            if (StringUtils.equals(WikiRendererType.MARKDOWN.name(),form.getFromFormat())
+                    && StringUtils.equals(WikiRendererType.HTML.name(),form.getToFormat()))
+            {
+                Wiki wiki = new Wiki(container, "_transform_temp");
+                WikiVersion wikiver = new WikiVersion("_transform_temp");
+                wikiver.setCacheContent(false);
+
+                if (null != form.getBody())
+                    wikiver.setBody(form.getBody());
+
+                wikiver.setRendererType(form.getFromFormat());
+
+                MarkdownService markdownService = ServiceRegistry.get().getService(MarkdownService.class);
+                newBody = markdownService.mdToHtml(form.getBody());
             }
 
             response.put("toFormat", form.getToFormat());

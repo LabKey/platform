@@ -3485,6 +3485,8 @@ wiki/radeox/src/simplelog.properties -text
 wiki/radeox/src/test/radeox/test/groovy/AllGroovyTests.java -text
 wiki/radeox/src/test/radeox/test/groovy/RadeoxTemplateEngineTest.java -text
 wiki/resources/credits/jars.txt -text
+wiki/resources/scripts/markdown-it.js -text
+wiki/resources/scripts/markdown-it.min.js -text
 wiki/resources/web/_images/page.png -text
 wiki/resources/web/wiki/internal/Wiki.js -text
 wiki/resources/web/wiki/internal/wikiEdit.js -text
@@ -3522,6 +3524,8 @@ wiki/src/org/labkey/wiki/query/PathDisplayColumn.java -text
 wiki/src/org/labkey/wiki/query/WikiSchema.java -text
 wiki/src/org/labkey/wiki/renderer/ClientDependencySubstitutionHandler.java -text
 wiki/src/org/labkey/wiki/renderer/HtmlRenderer.java -text
+wiki/src/org/labkey/wiki/renderer/MarkdownRenderer.java -text
+wiki/src/org/labkey/wiki/renderer/MarkdownServiceImpl.java -text
 wiki/src/org/labkey/wiki/renderer/PlainTextRenderer.java -text
 wiki/src/org/labkey/wiki/renderer/WebPartSubstitutionHandler.java -text
 wiki/src/org/labkey/wiki/sharedWiki.txt -text

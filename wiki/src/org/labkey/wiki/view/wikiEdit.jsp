@@ -285,7 +285,7 @@
             <div id="wiki-help-MARKDOWN-source" style="display:none">
                 <table>
                     <tr>
-                        <td colspan=2><b>Formatting Guide</b> (<a href="https://markdown-it.github.io/">More Help</a>)</td>
+                        <td colspan=2><b>Markdown Formatting Guide</b> (<a href="https://markdown-it.github.io/">More Help</a>)</td>
                     </tr>
                     <tr>
                         <td>Headers</td>
