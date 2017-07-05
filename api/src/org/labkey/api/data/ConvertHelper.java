@@ -43,8 +43,8 @@ import org.apache.commons.beanutils.converters.SqlTimestampConverter;
 import org.apache.commons.beanutils.converters.StringConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
 import org.json.JSONObject;
+import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.FieldKey;
@@ -79,17 +79,16 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 
 public class ConvertHelper implements PropertyEditorRegistrar
 {
-    private static final Logger _log = Logger.getLogger(ConvertHelper.class);
-    private static ConvertHelper _myInstance = new ConvertHelper();
+    private static final ConvertHelper _myInstance = new ConvertHelper();
 
     // just a list of converters we know about
-    HashSet<Class> _converters = new HashSet<>();
+    private final Set<Class> _converters = new ConcurrentHashSet<>();
 
 
     public static PropertyEditorRegistrar getPropertyEditorRegistrar()
@@ -390,7 +389,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
             {
                 c = ContainerManager.getForPath(str);
             }
-            else if (str.startsWith(Container.class.getName() + "@") && str.indexOf(" ") != -1)
+            else if (str.startsWith(Container.class.getName() + "@") && str.contains(" "))
             {
                 // Sometimes we get called with a Container.toString() value since the Apache conversion code
                 // doesn't appear to handle a no-op conversion on Containers - it calls toString() to force us to convert
@@ -426,10 +425,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
     public static class SQLByteArrayConverter implements Converter
     {
-        // used for "getClass" comparison
-        static final private byte[] _byteArray = new byte[0];
-
-        final Converter _converter;
+        private final Converter _converter;
 
         public SQLByteArrayConverter(Converter converter)
         {
@@ -443,7 +439,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
         public Object convert(Class clazz, Object o)
         {
-            if (clazz != _byteArray.getClass())
+            if (clazz != byte[].class)
                 return _converter.convert(clazz, o);
             if (!(o instanceof Blob))
                 return _converter.convert(clazz, o);
