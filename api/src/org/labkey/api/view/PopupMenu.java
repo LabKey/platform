@@ -176,7 +176,7 @@ public class PopupMenu extends DisplayElement
         {
             assert !requiresSelection : "Only button-style popups can require selection.";
             out.append(PageFlowUtil.generateDropDownTextLink(_navTree.getText(), "javascript:void(0)",
-                    onClickScript, _buttonStyle == ButtonStyle.BOLDTEXT, _offset, _navTree.getId()));
+                    onClickScript, _buttonStyle == ButtonStyle.BOLDTEXT, _offset, _navTree.getId(), attributes));
         }
         else if (_buttonStyle == ButtonStyle.IMAGE)
         {
@@ -184,13 +184,13 @@ public class PopupMenu extends DisplayElement
             if (_navTree.getImageCls() != null && _navTree.getImageCls().length() > 0)
             {
                 out.append(PageFlowUtil.generateDropDownFontIconImage(_navTree.getText(), "javascript:void(0)",
-                        onClickScript, _navTree.getImageCls(), _imageId));
+                        onClickScript, _navTree.getImageCls(), _imageId, attributes));
             }
             else
             {
                 assert _navTree.getImageSrc() != null && _navTree.getImageSrc().length() > 0 : "Must provide an image source or image cls for image based popups.";
                 out.append(PageFlowUtil.generateDropDownImage(_navTree.getText(), "javascript:void(0)",
-                        onClickScript, _navTree.getImageSrc(), _imageId, _navTree.getImageHeight(), _navTree.getImageWidth()));
+                        onClickScript, _navTree.getImageSrc(), _imageId, _navTree.getImageHeight(), _navTree.getImageWidth(), attributes));
             }
         }
 

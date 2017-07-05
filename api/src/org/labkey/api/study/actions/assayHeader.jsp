@@ -16,8 +16,21 @@
  */
 %>
 <%@ page import="org.labkey.api.study.actions.AssayHeaderView" %>
-<%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.PopupMenuView" %>
+<%@ page import="org.labkey.api.view.PopupMenu" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("Ext4");
+    }
+%>
 <%
     JspView<AssayHeaderView> me = (JspView<AssayHeaderView>) HttpView.currentView();
     AssayHeaderView bean = me.getModelBean();

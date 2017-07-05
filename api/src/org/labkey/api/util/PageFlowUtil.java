@@ -1318,27 +1318,36 @@ public class PageFlowUtil
     }
 
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
-    public static String generateDropDownTextLink(String text, String href, String onClick, boolean bold, String offset, String id)
+    public static String generateDropDownTextLink(String text, String href, String onClick, boolean bold, String offset,
+                                                  String id, Map<String, String> properties)
     {
-        return "<a class=\"labkey-menu-text-link\" style=\"" + (bold ? "font-weight: bold;" : "") + "\" href=\"" + filter(href) + "\"" +
+        String additions = getAttributes(properties);
+
+        return "<a class=\"labkey-menu-text-link\" style=\"" + (bold ? "font-weight: bold;" : "") + "\" href=\"" + filter(href) + "\" " + additions +
                 " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
                 (id == null ? "" : " id=\"" + filter(id) + "PopupLink\"") + "><span" +
                 (id == null ? "" : " id=\"" + filter(id) + "PopupText\"") + ">" + filter(text) + "</span>&nbsp;<span class=\"fa fa-caret-down\" style=\"position:relative;color:lightgray\"></span></a>";
     }
 
     /* Renders image and a drop down wrapped in an unstyled link */
-    public static String generateDropDownImage(String text, String href, String onClick, String imageSrc, String imageId, Integer imageHeight, Integer imageWidth)
+    public static String generateDropDownImage(String text, String href, String onClick, String imageSrc, String imageId,
+                                               Integer imageHeight, Integer imageWidth, Map<String, String> properties)
     {
-        return "<a href=\"" + filter(href) +"\"" +
+        String additions = getAttributes(properties);
+
+        return "<a href=\"" + filter(href) +"\" " + additions +
             " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
             "><img id=\"" + imageId + "\" title=\"" + filter(text) + "\" src=\"" + imageSrc + "\" " +
             (imageHeight == null ? "" : " height=\"" + imageHeight + "\"") + (imageWidth == null ? "" : " width=\"" + imageWidth + "\"") + "/></a>";
     }
 
     /* Renders image using font icon and a drop down wrapped in an unstyled link */
-    public static String generateDropDownFontIconImage(String text, String href, String onClick, String imageCls, String imageId)
+    public static String generateDropDownFontIconImage(String text, String href, String onClick, String imageCls,
+                                                       String imageId, Map<String, String> properties)
     {
-        return "<a href=\"" + filter(href) +"\"" +
+        String additions = getAttributes(properties);
+
+        return "<a href=\"" + filter(href) +"\" " + additions +
                 " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
                 "><span id=\"" + imageId + "\" title=\"" + filter(text) + "\" class=\"" + imageCls + "\"></span></a>";
     }
