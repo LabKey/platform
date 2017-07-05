@@ -10,7 +10,6 @@ public interface MarkdownService
     /**
      * @param mdText
      * @return the html string that will render the content described by the markdown text of the input string
-     * @throws Exception
      */
     String mdToHtml(String mdText);
 }
