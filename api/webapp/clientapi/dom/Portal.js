@@ -119,9 +119,14 @@
                 }
                 else if (action == REMOVE_ACTION)
                 {
-                    var breakEl   = targetTable.previousElementSibling;
-                    var breakNode = targetTable.previousSibling;
-                    targetTable.parentNode.removeChild(breakEl || breakNode); // TODO: Does not properly remove in IE7
+                    if (!LABKEY.experimental.useExperimentalCoreUI)
+                    {
+                        // These fixed Issue: 11833.
+                        // They remove the <br> elements between each webpart. These are not present in new UI.
+                        var breakEl   = targetTable.previousElementSibling;
+                        var breakNode = targetTable.previousSibling;
+                        targetTable.parentNode.removeChild(breakEl || breakNode); // TODO: Does not properly remove in IE7
+                    }
                     targetTable.parentNode.removeChild(targetTable);
                 }
             }
