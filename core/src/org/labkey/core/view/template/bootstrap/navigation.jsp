@@ -173,33 +173,36 @@
         <div class="lk-nav-tabs-ct">
             <ul class="nav lk-nav-tabs hidden-sm hidden-xs pull-right <%=h(isPageAdminMode ? "lk-nav-tabs-admin" : "")%>">
                 <%
-                    for (NavTree tab : tabs)
+                    if (tabs.size() > 1)
                     {
-                        boolean show = isPageAdminMode || !tab.isDisabled();
-
-                        if (show && null != tab.getText() && tab.getText().length() > 0)
+                        for (NavTree tab : tabs)
                         {
+                            boolean show = isPageAdminMode || !tab.isDisabled();
+
+                            if (show && null != tab.getText() && tab.getText().length() > 0)
+                            {
                 %>
                 <li role="presentation" class="<%= text(tab.isSelected() ? "active" : "") %>">
                     <a href="<%=h(tab.getHref())%>" id="<%=h(tab.getText()).replace(" ", "")%>Tab">
                         <% if (tab.isDisabled()) { %><i class="fa fa-eye-slash"></i><% } %>
                         <%=h(tab.getText())%>
-                <%
+                        <%
                             if (isPageAdminMode && tab.getChildren().length == 1)
                             {
-                %>
-                    <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
-                        <i class="fa fa-caret-down"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-right">
-                        <% PopupMenuView.renderTree(tab.getChildren()[0], out); %>
-                    </ul>
-                <%
+                        %>
+                        <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-right">
+                            <% PopupMenuView.renderTree(tab.getChildren()[0], out); %>
+                        </ul>
+                        <%
                             }
-                %>
+                        %>
                     </a>
                 </li>
                 <%
+                            }
                         }
                     }
 
@@ -218,50 +221,47 @@
             <ul class="nav lk-nav-tabs hidden-md hidden-lg pull-right">
                 <%
                     // Generate selected tab
-                    for (NavTree tab : tabs)
+                    if (tabs.size() > 1)
                     {
-                        if (null != tab.getText() && tab.getText().length() > 0)
+                        for (NavTree tab : tabs)
                         {
-                            if (tab.isSelected())
+                            if (null != tab.getText() && tab.getText().length() > 0)
                             {
+                                if (tab.isSelected())
+                                {
                 %>
                 <li role="presentation" class="dropdown active">
                     <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
                         <%=h(tab.getText())%>&nbsp;
-                        <% if (tabs.size() > 1) { %>
-                        <i class="fa fa-chevron-down" style="font-size: 12px;"></i>
-                        <% } %>
+                        <span class="fa fa-chevron-down" style="font-size: 12px;"></span>
                     </a>
-                <%
+                    <%
+                                }
                             }
                         }
-                    }
-
-                    if (tabs.size() > 1)
-                    {
-                %>
+                    %>
                     <ul class="dropdown-menu dropdown-menu-right">
-                <%
-                        // Generate all other tabs
-                        for (NavTree tab : tabs)
-                        {
-                            boolean show = isPageAdminMode || !tab.isDisabled();
-
-                            if (show && null != tab.getText() && tab.getText().length() > 0 && !tab.isSelected())
+                        <%
+                            // Generate all other tabs
+                            for (NavTree tab : tabs)
                             {
-                %>
+                                boolean show = isPageAdminMode || !tab.isDisabled();
+
+                                if (show && null != tab.getText() && tab.getText().length() > 0 && !tab.isSelected())
+                                {
+                        %>
                         <li>
                             <a href="<%=h(tab.getHref())%>"><%=h(tab.getText())%></a>
                         </li>
-                <%
+                        <%
+                                }
                             }
-                        }
-                %>
+                        %>
                     </ul>
+                </li>
                 <%
                     }
                 %>
-                </li>
             </ul>
         </div>
     </div>
