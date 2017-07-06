@@ -47,6 +47,9 @@ public class MarkdownServiceImpl implements MarkdownService
 
         // Better yet, avoid js injection by using the invokeMethod syntax that takes a java String as a param
         Invocable invocable = (Invocable) engine;
+        // markdownit wont accept null as input param
+        if (null == mdText)
+            mdText = "";
         Object html = invocable.invokeMethod(mdCompiled, "render", mdText);
         if (null == html)
             return null;
