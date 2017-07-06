@@ -32,6 +32,7 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.view.PopupMenuView" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.module.FolderType" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -206,7 +207,7 @@
                         }
                     }
 
-                    if (isPageAdminMode)
+                    if (isPageAdminMode && c.getFolderType() != FolderType.NONE)
                     {
                 %>
                 <li role="presentation">
