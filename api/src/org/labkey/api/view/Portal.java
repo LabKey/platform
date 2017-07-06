@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.CompareType;
@@ -855,8 +856,9 @@ public class Portal
     {
         public String pageId;
         public String location;
-        public Map<String, String> webPartNames;
-        public Map<String, String> rightWebPartNames;
+        public boolean rightEmpty; // used by new ui
+        public Map<String, String> webPartNames; // used by old ui
+        public Map<String, String> rightWebPartNames; // used by old ui
     }
 
     private static void addCustomizeDropdowns(Container c, HttpView template, String id, Collection<String> occupiedLocations)
@@ -869,34 +871,118 @@ public class Portal
         }
 
         boolean rightEmpty = !occupiedLocations.contains(WebPartFactory.LOCATION_RIGHT);
-        AddWebParts bodyAddPart = null;
-        Map<String, String> rightParts = null;
-        
-        for (String regionName : regionNames)
+        if (PageFlowUtil.useExperimentalCoreUI())
         {
-            Map<String, String> partsToAdd = Portal.getPartsToAdd(c, regionName);
-
-            if (WebPartFactory.LOCATION_RIGHT.equals(regionName) && rightEmpty)
-                rightParts = partsToAdd;
-            else
+            for (String regionName : regionNames)
             {
                 //TODO: Make addPartView a real class & move to ProjectController
                 AddWebParts addPart = new AddWebParts();
                 addPart.pageId = id;
                 addPart.location = regionName;
-                addPart.webPartNames = partsToAdd;
+                addPart.rightEmpty = rightEmpty;
                 WebPartView addPartView = new JspView<>("/org/labkey/api/view/addWebPart.jsp", addPart);
                 addPartView.setFrame(WebPartView.FrameType.NONE);
-
-                // save these off in case we have to re-shuffle due to an empty right region:
-                if (HttpView.BODY.equals(regionName))
-                    bodyAddPart = addPart;
 
                 addViewToRegion(template, regionName, addPartView);
             }
         }
-        if (rightEmpty && bodyAddPart != null && rightParts != null)
-            bodyAddPart.rightWebPartNames = rightParts;
+        else
+        {
+            AddWebParts bodyAddPart = null;
+            Map<String, String> rightParts = null;
+
+            for (String regionName : regionNames)
+            {
+                Map<String, String> partsToAdd = Portal.getPartsToAdd(c, regionName);
+
+                if (WebPartFactory.LOCATION_RIGHT.equals(regionName) && rightEmpty)
+                    rightParts = partsToAdd;
+                else
+                {
+                    //TODO: Make addPartView a real class & move to ProjectController
+                    AddWebParts addPart = new AddWebParts();
+                    addPart.pageId = id;
+                    addPart.location = regionName;
+                    addPart.webPartNames = partsToAdd;
+                    WebPartView addPartView = new JspView<>("/org/labkey/api/view/addWebPart.jsp", addPart);
+                    addPartView.setFrame(WebPartView.FrameType.NONE);
+
+                    // save these off in case we have to re-shuffle due to an empty right region:
+                    if (HttpView.BODY.equals(regionName))
+                        bodyAddPart = addPart;
+
+                    addViewToRegion(template, regionName, addPartView);
+                }
+            }
+            if (rightEmpty && bodyAddPart != null && rightParts != null)
+                bodyAddPart.rightWebPartNames = rightParts;
+        }
+
+    }
+
+    public static String addWebPartWidgets(AddWebParts bean, ViewContext viewContext)
+    {
+        if (WebPartFactory.LOCATION_MENUBAR.equals(bean.location))
+        {
+            return addWebPartWidget(bean, viewContext, "", "pull-left").toString();
+        }
+        else if (WebPartFactory.LOCATION_BODY.equals(bean.location))
+        {
+            if (bean.rightEmpty)
+            {
+                StringBuilder leftWidget = addWebPartWidget(bean, viewContext, "", "pull-left");
+                AddWebParts newBean = new AddWebParts();
+                newBean.pageId = bean.pageId;
+                newBean.location = WebPartFactory.LOCATION_RIGHT;
+                newBean.rightEmpty = true;
+                StringBuilder rightWidget = addWebPartWidget(newBean, viewContext, "", "pull-right");
+                return leftWidget.append(rightWidget).toString();
+            }
+
+            return addWebPartWidget(bean, viewContext, "visible-md-inline visible-lg-inline", "pull-left").toString();
+        }
+        else if (WebPartFactory.LOCATION_RIGHT.equals(bean.location) && !bean.rightEmpty)
+        {
+            AddWebParts newBean = new AddWebParts();
+            newBean.pageId = bean.pageId;
+            newBean.location = WebPartFactory.LOCATION_BODY;
+            newBean.rightEmpty = false;
+            StringBuilder leftBottomWidget = addWebPartWidget(newBean, viewContext, "visible-xs-inline visible-sm-inline", "pull-left");
+            StringBuilder rightBottomWidget = addWebPartWidget(bean, viewContext, "visible-xs-inline visible-sm-inline", "pull-right");
+            StringBuilder rightMainWidget = addWebPartWidget(bean, viewContext, "visible-md-inline visible-lg-inline", "pull-left");
+
+            return leftBottomWidget.append(rightBottomWidget).append(rightMainWidget).toString();
+        }
+        else
+        {
+            // incorrect usage
+            return "";
+        }
+    }
+
+    private static StringBuilder addWebPartWidget(AddWebParts bean, ViewContext viewContext, String visibilityClass, String pullClass)
+    {
+        Container c = viewContext.getContainer();
+        ActionURL currentURL = viewContext.getActionURL();
+        StringBuilder sb = new StringBuilder();
+        sb.append("<div>\n");
+        sb.append("<form class=\"form-inline ").append(pullClass).append(" ").append(visibilityClass).append("\" action=\"").append(PageFlowUtil.urlProvider(ProjectUrls.class).getAddWebPartURL(c)).append("\">\n");
+        sb.append("<input type=\"hidden\" name=\"pageId\" value=\"").append(bean.pageId).append("\"/>\n");
+        sb.append("<input type=\"hidden\" name=\"location\" value=\"").append(bean.location).append("\"/>\n");
+        sb.append(ReturnUrlForm.generateHiddenFormField(currentURL)).append("\n");
+        sb.append("<div class=\"input-group\">\n");
+        sb.append("<select name=\"name\" class=\"form-control\">\n");
+        sb.append("<option value=\"\">&lt;Select Web Part&gt;</option>\n");
+        for (Map.Entry<String, String> entry : Portal.getPartsToAdd(c, bean.location).entrySet())
+        {
+            sb.append("<option value=\"").append(entry.getKey()).append("\">").append(entry.getValue()).append("</option>\n");
+        }
+        sb.append("</select>\n");
+        sb.append("<span class=\"input-group-btn\">\n");
+        sb.append(PageFlowUtil.button("Add").submit(true)).append("\n");
+        sb.append("</span>\n</div>\n</form>\n</div>\n");
+
+        return sb;
     }
 
     private static void addViewToRegion(HttpView template, String regionName, HttpView view)
