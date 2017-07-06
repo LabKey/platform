@@ -22,6 +22,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.BootstrapTemplate" %>
+<%@ page import="org.labkey.api.view.Portal" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Nullable
@@ -50,7 +51,9 @@
     HttpView me = HttpView.currentView();
     PageConfig pageConfig = (PageConfig) me.getModelBean();
 
-    boolean showRight = me.getView(WebPartFactory.LOCATION_RIGHT) instanceof HttpView && ((HttpView) me.getView(WebPartFactory.LOCATION_RIGHT)).isVisible();
+    boolean showRight = Portal.getPartsByLocation(Portal.getParts(getContainer())).keySet().contains(WebPartFactory.LOCATION_RIGHT)
+            && me.getView(WebPartFactory.LOCATION_RIGHT) instanceof HttpView
+            && ((HttpView) me.getView(WebPartFactory.LOCATION_RIGHT)).isVisible();
 %>
 <div class="container lk-body-ct">
     <%= text(BootstrapTemplate.renderSiteMessages(pageConfig)) %>
