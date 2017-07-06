@@ -19,30 +19,25 @@ public class MarkdownServiceImpl implements MarkdownService
     ScriptEngine engine;
     Object mdCompiled;
 
-    public MarkdownServiceImpl()
+    public MarkdownServiceImpl() throws Exception
     {
         LabKeyScriptEngineManager engineManager = new LabKeyScriptEngineManager();
         engine = engineManager.getEngineByName("nashorn");
-        try
+
+        Module module = ModuleLoader.getInstance().getModule("Wiki");
+        Path path = Path.parse("scripts/").append("markdown-it.js");
+        Resource r = module.getModuleResource(path);
+        if (r != null && r.isFile() && r.exists())
         {
-            Module module = ModuleLoader.getInstance().getModule("Wiki");
-            Path path = Path.parse("scripts/").append("markdown-it.js");
-            Resource r = module.getModuleResource(path);
-            if (r != null && r.isFile() && r.exists())
-            {
-                engine.eval(new InputStreamReader(new BufferedInputStream(r.getInputStream(), 1024 * 20), StringUtilsLabKey.DEFAULT_CHARSET));
-                engine.eval("var md = new markdownit()");
-                mdCompiled = engine.eval("md");
-            }
+            engine.eval(new InputStreamReader(new BufferedInputStream(r.getInputStream(), 1024 * 20), StringUtilsLabKey.DEFAULT_CHARSET));
+            engine.eval("var md = new markdownit()");
+            mdCompiled = engine.eval("md");
         }
 
-        catch (Exception e)
-        {
-            // todo: unable to create the nashorn engine probably should log that cause the md2htm isnt going to work if its not there
-        }
     }
 
-    public String mdToHtml(String mdText)
+    @Override
+    public String toHtml(String mdText) throws NoSuchMethodException, ScriptException
     {
         // make sure that the source text has the carriage returns escaped and the whole thing encoded
         // otherwise it wont parse right as a js string if it hits a cr or a quote.
@@ -52,13 +47,9 @@ public class MarkdownServiceImpl implements MarkdownService
 
         // Better yet, avoid js injection by using the invokeMethod syntax that takes a java String as a param
         Invocable invocable = (Invocable) engine;
-        try
-        {
-            return invocable.invokeMethod(mdCompiled, "render", mdText).toString();
-        }
-        catch (NoSuchMethodException | ScriptException e)
-        {
-            throw new IllegalStateException("Java script engine not able to invoke markdownit method to translate markdown to html.");
-        }
+        Object html = invocable.invokeMethod(mdCompiled, "render", mdText);
+        if (null == html)
+            return null;
+        return html.toString();
     }
 }

@@ -84,6 +84,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.script.RhinoService;
+import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.Priority;
@@ -964,6 +965,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ModuleStaticResolverImpl.TestCase.class,
                 StorageProvisioner.TestCase.class,
                 RhinoService.TestCase.class,
+                MarkdownService.TestCase.class,
                 DbScope.TransactionTestCase.class,
                 SimpleTranslator.TranslateTestCase.class,
                 ResultSetDataIterator.TestCase.class,

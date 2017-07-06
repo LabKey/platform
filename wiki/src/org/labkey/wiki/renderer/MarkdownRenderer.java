@@ -22,6 +22,7 @@ import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.wiki.FormattedHtml;
 
+import javax.script.ScriptException;
 import java.util.*;
 
 public class MarkdownRenderer extends HtmlRenderer
@@ -32,12 +33,32 @@ public class MarkdownRenderer extends HtmlRenderer
         super(hrefPrefix, attachPrefix, nameTitleMap, attachments);
     }
 
+    @Override
     public FormattedHtml format(String text)
     {
         // translate the markdown to html and reuse the html renderer
         MarkdownService markdownService = ServiceRegistry.get().getService(MarkdownService.class);
-        text = markdownService.mdToHtml(text);
-        return super.format(text);
+        if (null != markdownService)
+        {
+            try
+            {
+                return super.format(markdownService.toHtml(text));
+            }
+            catch( NoSuchMethodException | ScriptException e)
+            {
+                // if the translation from markdown to html doesnt work then show an error message in the view of the html
+                StringBuilder errorMsg = new StringBuilder("<div class=\"labkey-error\"><b>An exception occurred while converting markdown to HTML</b></div><br>The error message was: ");
+                errorMsg.append(e.getMessage());
+                return super.format(errorMsg.toString());
+            }
+        }
+        else
+        {
+            // if no markdownService available then show an error message in the view of the html
+            String errorMsg = "<div class=\"labkey-error\"><b>No markdown service was available to convert the markdown to HTML</b></div><br>";
+            return super.format(errorMsg);
+        }
+
     }
 
 }

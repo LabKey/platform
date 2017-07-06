@@ -86,7 +86,15 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         ServiceRegistry.get().registerService(WikiService.class, WikiManager.get());
 
-        ServiceRegistry.get().registerService(MarkdownService.class, new MarkdownServiceImpl());
+        try
+        {
+            ServiceRegistry.get().registerService(MarkdownService.class, new MarkdownServiceImpl());
+        }
+        catch (Exception e)
+        {
+            _log.error(e);
+        }
+
     }
 
     @NotNull
