@@ -1712,12 +1712,21 @@ div span.labkey-main-menu-icon {
 .labkey-portal-container
 {
   border-top: $lk-container-border-top;
+
+  .labkey-portal-container {
+    border-top: none;
+  }
 }
 
 .labkey-anchor-disabled
 {
   color: $lk-text-color !important;
   cursor: default;
+}
+
+.panel-portal .panel-portal .labkey-anchor-disabled
+{
+  color: $panel-bg !important;
 }
 
 @import "components/header";
