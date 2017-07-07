@@ -32,15 +32,15 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
 
     initComponent : function() {
 
-        // Load aggregates from the customView.aggregates Array.
+        // Load aggregates from the customView.analyticsProviders Array.
         // We use the columnStore to track aggregates since aggregates and columns are 1-to-1 at this time.
         // By adding the aggregate to the columnStore the columnsList can render it.
-        if (!Ext4.isEmpty(this.customView.aggregates)) {
+        if (!Ext4.isEmpty(this.customView.analyticsProviders)) {
 
             var columnStore = this.getColumnStore();
-            for (var i = 0; i < this.customView.aggregates.length; i++) {
-                var agg = this.customView.aggregates[i];
-                if (!agg.fieldKey && !agg.type) {
+            for (var i = 0; i < this.customView.analyticsProviders.length; i++) {
+                var agg = this.customView.analyticsProviders[i];
+                if (!agg.fieldKey || !agg.isSummaryStatistic) {
                     continue;
                 }
                 var columnRecord = columnStore.getById(agg.fieldKey);
@@ -83,7 +83,6 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                 cls: 'labkey-customview-list',
                 flex: 1,
                 store: this.getColumnStore(),
-                emptyText: 'No fields selected',
                 deferEmptyText: false,
                 multiSelect: false,
                 height: 250,
@@ -91,12 +90,15 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                 overItemCls: 'x4-view-over',
                 itemSelector: '.labkey-customview-item',
                 tpl: new Ext4.XTemplate(
+                    '<tpl if="length == 0">',
+                    '  <div class="labkey-customview-empty">No fields selected.</div>',
+                    '</tpl>',
                     '<tpl for=".">',
                     '<table width="100%" cellspacing="0" cellpadding="0" class="labkey-customview-item labkey-customview-columns-item" fieldKey="{fieldKey:htmlEncode}">',
                     '  <tr>',
                     '    <td class="labkey-grab"></td>',
                     '    <td><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
-                    '    <td valign="top"><div class="item-aggregate">{[this.getAggegateCaption(values)]}</div></td>',
+                    '    <td valign="top"><div class="item-aggregate">{[this.getAggregateCaption(values)]}</div></td>',
 
                     /* Clicking this will fire the onToolGear() function */
                     '    <td width="15px" valign="top"><div class="labkey-tool-gear fa fa-cog" title="Edit title"></div></td>',
@@ -126,21 +128,21 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                             return Ext4.htmlEncode(values.name) + " <span class='labkey-error'>(not found)</span>";
                         },
 
-                        getAggegateCaption : function(values) {
+                        getAggregateCaption : function(values) {
                             var fieldKey = values.fieldKey,
                                 labels = [],
                                 caption = '';
 
                             me.getAggregateStore().each(function(rec) {
                                 if (rec.get('fieldKey') === fieldKey) {
-                                    labels.push(rec.get('type'));
+                                    labels.push(LABKEY.analyticProviders[rec.get('name')] || rec.get('name'));
                                 }
                             });
 
                             labels = Ext4.Array.unique(labels);
 
                             if (labels.length) {
-                                caption = Ext4.htmlEncode(labels.join(','));
+                                caption = Ext4.htmlEncode(labels.join(', '));
                             }
 
                             return caption;
@@ -166,9 +168,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
         if (!Ext4.ModelManager.isRegistered(MODEL_CLASS)) {
             Ext4.define(MODEL_CLASS, {
                 extend: 'Ext.data.Model',
-                fields: [{name: 'fieldKey'}, {name: 'type'}, {name: 'label'} ],
+                fields: [{name: 'fieldKey'}, {name: 'name'}],
                 idProperty: {name: 'id', convert: function(v, rec){
-                    return rec.get('fieldKey').toUpperCase();
+                    return rec.get('fieldKey').toUpperCase() + rec.get('name');
                 }}
             });
         }
@@ -271,24 +273,5 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
             // XXX: check each fieldKey is selected only once
         }
         return true;
-    },
-
-    save : function(edited, urlParameters) {
-        this.callParent([edited, urlParameters]);
-
-        // move the aggregates out of the 'columns' list and into a separate 'aggregates' list
-        edited.aggregates = [];
-        this.getAggregateStore().each(function(rec) {
-            edited.aggregates.push({
-                fieldKey: rec.get('fieldKey'),
-                type: rec.get('type'),
-                label: rec.get('label')
-            });
-        }, this);
-
-        for (var i = 0; i < edited.columns.length; i++) {
-            delete edited.columns[i].aggregate;
-        }
     }
-
 });

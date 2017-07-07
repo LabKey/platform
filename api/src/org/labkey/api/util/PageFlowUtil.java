@@ -63,6 +63,8 @@ import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
+import org.labkey.api.stats.AnalyticsProvider;
+import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
@@ -2190,6 +2192,15 @@ public class PageFlowUtil
         }
 
         json.put("defaultHeaders", defaultHeaders);
+
+        AnalyticsProviderRegistry analyticsProviderRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
+        if (analyticsProviderRegistry != null)
+        {
+            Map<String, String> analyticProviders = new HashMap<>();
+            for (AnalyticsProvider provider : analyticsProviderRegistry.getAllAnalyticsProviders())
+                analyticProviders.put(provider.getName(), provider.getLabel());
+            json.put("analyticProviders", analyticProviders);
+        }
 
         // Include a few server-generated GUIDs/UUIDs
         json.put("uuids", Arrays.asList(GUID.makeGUID(), GUID.makeGUID(), GUID.makeGUID()));

@@ -1901,11 +1901,8 @@ if (!LABKEY.DataRegions) {
                         return;
                     }
 
-                    var minWidth = Math.max(700, Math.min(1000, _getHeaderSelector(this).width())); // >= 700 && <= 1000
-
                     this.customizeView = Ext4.create('LABKEY.internal.ViewDesigner.Designer', {
                         renderTo: Ext4.getBody().createChild({tag: 'div', customizeView: true, style: {display: 'none'}}),
-                        width: minWidth,
                         activeTab: activeTab,
                         dataRegion: this,
                         containerPath : this.containerPath,

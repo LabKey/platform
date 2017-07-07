@@ -155,19 +155,24 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
     hasField : Ext4.emptyFn,
     
     getBaseItems : function() {
+        var items = [];
+        if (Ext4.isString(this.baseTitle)) {
+            items.push(this.getTitlePanel());
+        }
+        if (Ext4.isString(this.baseTitleDescription)) {
+            items.push(this.getTitleDescriptionPanel());
+        }
+        items.push(this.getList());
+
         return [{
             xtype: 'panel',
             border: false,
             cls: 'labkey-customview-panel',
-            minWidth: 220,
             layout: {
                 type: 'vbox',
                 align: 'stretch'
             },
-            items: [
-                this.getPanelTitle(),
-                this.getList()
-            ],
+            items: items,
             dockedItems: this.getSubDockedItems()
         }];
     },
@@ -176,15 +181,26 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
         return undefined;
     },
 
-    getPanelTitle : function() {
-        if (!this.panelTitle) {
-            this.panelTitle = Ext4.create('Ext.Component', {
+    getTitlePanel : function() {
+        if (!this.titlePanel) {
+            this.titlePanel = Ext4.create('Ext.Component', {
                 cls: 'labkey-customview-title',
                 html: Ext4.String.htmlEncode(this.baseTitle)
             });
         }
 
-        return this.panelTitle;
+        return this.titlePanel;
+    },
+
+    getTitleDescriptionPanel : function() {
+        if (!this.titleDescriptionPanel) {
+            this.titleDescriptionPanel = Ext4.create('Ext.Component', {
+                cls: 'labkey-customview-description',
+                html: Ext4.String.htmlEncode(this.baseTitleDescription)
+            });
+        }
+
+        return this.titleDescriptionPanel;
     },
 
     /** Get the listview for the tab. */

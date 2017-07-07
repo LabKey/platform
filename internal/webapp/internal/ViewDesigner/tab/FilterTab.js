@@ -25,8 +25,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
     extend: 'LABKEY.internal.ViewDesigner.tab.BaseTab',
 
     cls: 'test-filter-tab',
-
     baseTitle: 'Selected Filters',
+    baseTitleDescription: 'Filters will be applied in the order set below.',
 
     initComponent : function() {
         
@@ -303,7 +303,6 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
                 cls: 'labkey-customview-list',
                 flex: 1,
                 store: this.getFilterStore(),
-                emptyText: 'No filters added',
                 deferEmptyText: false,
                 multiSelect: true,
                 height: this.hideContainerFilterToolbar ? 250 : 220,
@@ -311,6 +310,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
                 overItemCls: 'x4-view-over',
                 itemSelector: '.labkey-customview-item',
                 tpl: new Ext4.XTemplate(
+                    '<tpl if="length == 0">',
+                    '  <div class="labkey-customview-empty">No filters added.</div>',
+                    '</tpl>',
                     '<tpl for=".">',
                     '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-filter-item" fieldKey="{fieldKey:htmlEncode}">',
                     '  <tr>',

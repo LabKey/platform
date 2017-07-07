@@ -447,6 +447,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
     initComponent : function() {
 
         this.items = [
+            this.getCustomViewClose(),
             this.getTabsDataView(true),
             this.getTabsMainPanel()
         ];
@@ -633,8 +634,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                         cls: 'labkey-customview-panel',
                         flex: 1,
                         border: false,
-                        split: true,
-                        minWidth: 220,
+                        margin: LABKEY.experimental.useExperimentalCoreUI ? '0 5px 0 0' : 0,
                         items: [
                             {
                                 xtype: 'box',
@@ -645,6 +645,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                         ]
                     },
                     this.getInnerTabPanel(this.activeTab),
+                    this.getTopMessagePanel(),
                     this.getBottomToolbarPanel()
                 ]
             })
@@ -720,6 +721,21 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         }
 
         return this.tabsDataViewStore;
+    },
+
+    getCustomViewClose : function() {
+        if (!this.customViewClose) {
+            this.customViewClose = Ext4.create('Ext.Component', {
+                region: 'north',
+                html: '<i class="fa fa-times fa-lg labkey-customview-close"></i>'
+            });
+
+            this.customViewClose.on('render', function(cmp) {
+                this.attachClickHandler(cmp, 'labkey-customview-close', function() { this.close();});
+            }, this);
+        }
+
+        return this.customViewClose;
     },
 
     getTabsDataView : function(create) {
@@ -800,29 +816,28 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 layout: 'fit',
                 border: false,
                 items: [{
-                    xtype: 'box',
-                    height: 20,
-                    hidden: true,
-                    // would like to use 'labkey-status-info' class instead of inline style, but it centers and stuff
-                    cls: 'labkey-customview-message'
-                },{
-                    // this is needed because when the message box below is hidden, we need something in the panel
-                    xtype: 'box',
-                    height: 0
-                }],
-                buttonAlign: 'left',
-                dockedItems: [{
                     xtype: 'toolbar',
                     dock: 'bottom',
                     ui: 'footer',
                     cls: 'labkey-customview-button-footer',
                     items: this.getFooterItems()
                 }]
-
             });
         }
 
         return this.bottomToolbarPanel;
+    },
+
+    getTopMessagePanel : function() {
+        if (!this.topMessagePanel) {
+            this.topMessagePanel = Ext4.create('Ext.panel.Panel', {
+                region: 'north',
+                border: false,
+                items: []
+            });
+        }
+
+        return this.topMessagePanel;
     },
 
     onRender : function(ct, position) {
@@ -831,7 +846,6 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         if (!this.canEdit())
         {
             var msg = "This grid view is not editable, but you may save a new grid view with a different name.";
-            // XXX: show this.editableErrors in a '?' help tooltip
             this.showMessage(msg);
         }
         else if (this.customView.session) {
@@ -902,34 +916,32 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         return this.fieldMetaStore;
     },
 
-    getMessageBox : function() {
-        var messageContainer = this.getBottomToolbarPanel().down('box');
-        if (messageContainer) {
-            return messageContainer;
-        }
-    },
-
     showMessage : function(msg) {
-        // XXX: support multiple messages
-        var m = this.getMessageBox();
-        if (m && m.getEl()) {
-            m.update("<span class='labkey-tool labkey-tool-close' style='float:right;vertical-align:top;'></span><span>"
-                + Ext4.htmlEncode(msg) + "</span>");
-            m.show();
-            m.getEl().slideIn();
-            m.getEl().on('click', function() { this.hideMessage(); }, this, {single: true});
-        }
-        else {
-            this.on('afterrender', function() { this.showMessage(msg); }, this, {single: true});
+        var msgId = Ext4.id();
+
+        var msgBox = this.getTopMessagePanel().add({
+            xtype: 'box',
+            id: msgId,
+            cls: 'labkey-customview-message alert-warning',
+            html: '<span class="fa fa-times labkey-tool-close" title="Close message"></span>'
+                + '<div>' + Ext4.htmlEncode(msg) + '</div>'
+        });
+
+        msgBox.on('render', function(cmp) {
+            this.attachClickHandler(cmp, 'labkey-tool-close', function() { this.hideMessage(msgId);});
+        }, this);
+    },
+
+    attachClickHandler : function(cmp, subElCls, handler) {
+        var subEl = Ext4.dom.Query.selectNode('.' + subElCls, cmp.getEl().dom);
+        if (subEl) {
+            Ext4.get(subEl).on('click', handler, this);
         }
     },
 
-    hideMessage : function() {
-        var m = this.getMessageBox();
-        if (m) {
-            m.update('');
-            m.hide();
-        }
+    hideMessage : function(msgId) {
+        var msgBox = this.getTopMessagePanel().down('#' + msgId);
+        this.getTopMessagePanel().remove(msgBox);
     },
 
     getDesignerTabs : function() {

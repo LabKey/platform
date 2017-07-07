@@ -28,4 +28,5 @@ public interface AnalyticsProviderRegistry
     ColumnAnalyticsProvider getColumnAnalyticsProvider(@NotNull String name);
     Collection<ColumnAnalyticsProvider> getColumnAnalyticsProviders(@Nullable ColumnInfo columnInfo, boolean sort);
     Collection<QueryAnalyticsProvider> getQueryAnalyticsProviders(@Nullable QuerySettings settings);
+    Collection<AnalyticsProvider> getAllAnalyticsProviders();
 }

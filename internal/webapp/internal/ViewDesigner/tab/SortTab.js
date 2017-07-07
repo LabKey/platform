@@ -26,8 +26,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.SortTab', {
     extend: 'LABKEY.internal.ViewDesigner.tab.BaseTab',
 
     cls: 'test-sort-tab',
-    
     baseTitle: 'Selected Sorts',
+    baseTitleDescription: 'Sorts will be applied in the order set below.',
     
     getSortStore : function() {
         if (!this.sortStore) {
@@ -71,7 +71,6 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.SortTab', {
                 cls: 'labkey-customview-list',
                 flex: 1,
                 store: this.getSortStore(),
-                emptyText: 'No sorts added',
                 deferEmptyText: false,
                 multiSelect: true,
                 height: 250,
@@ -79,6 +78,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.SortTab', {
                 overItemCls: 'x4-view-over',
                 itemSelector: '.labkey-customview-item',
                 tpl: new Ext4.XTemplate(
+                    '<tpl if="length == 0">',
+                    '  <div class="labkey-customview-empty">No sorts added.</div>',
+                    '</tpl>',
                     '<tpl for=".">',
                     '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-sort-item" fieldKey="{fieldKey:htmlEncode}">',
                     '  <tr>',
