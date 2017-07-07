@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -86,6 +87,9 @@
 <div id="headerDiv">
     <labkey:form id="headerSearchForm" action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" method="GET" style="margin:0;">
         <div id="hdr-search" class="lk-input">
+            <% if (AppProps.getInstance().isDevMode() && getUser() != null && getUser().isInSiteAdminGroup()) { %>
+                <a href="#" onclick="LABKEY.Utils.toggleUI();">See the new look!</a>
+            <% } %>
             <span class="fa fa-search lk-fa-search-icon"></span>
             <input placeholder="<%=h("Search " + laf.getShortName())%>" id="search-input" type="text" name="q" class="hdr-search-input" value="">
             <input type="submit" tabindex="-1" style="position: absolute; left: -9999px; width: 1px; height: 1px;"/>
