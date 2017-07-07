@@ -1302,7 +1302,7 @@ public class QueryServiceImpl implements QueryService
 
         for (FieldKey field : fields)
         {
-            if (!ret.containsKey(field))
+            if (null != field && !ret.containsKey(field))
             {
                 ColumnInfo column = getColumn(manager, table, columnMap, field);
                 if (column != null)
