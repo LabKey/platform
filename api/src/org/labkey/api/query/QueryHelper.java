@@ -28,8 +28,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
 import java.net.URISyntaxException;
-import java.sql.SQLException;
-import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -193,7 +192,7 @@ public class QueryHelper
         }
 
         map = qs.getColumns(ti, fieldKeys);
-        Collection<ColumnInfo> cols = map.values();
+        Set<ColumnInfo> cols = new HashSet<>(map.values());     // Use Set to remove dups causes by aliases
 
         //add filter.  view filter + extra filters are merged
         if(filter == null)
