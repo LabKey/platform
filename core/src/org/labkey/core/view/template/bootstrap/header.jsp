@@ -32,6 +32,7 @@
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.admin.CoreUrls" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -141,9 +142,18 @@
             </li>
 <% } %>
 
+<% if (AppProps.getInstance().isDevMode() && isRealUser && user.isInSiteAdminGroup())
+{ %>
+            <li data-tt="tooltip" data-placement="bottom" title="Revert back to the legacy look and feel.">
+                <a href="#" onclick="LABKEY.Utils.toggleUI();">
+                    <i class="fa fa-history"></i>
+                </a>
+            </li>
+<% } %>
+
 <% if (isRealUser)
 { %>
-            <li data-tt="tooltip" data-placement="bottom" title="Give your thoughts on our new look">
+            <li data-tt="tooltip" data-placement="bottom" title="Give your thoughts on our new look.">
                 <a href="<%=h(urlProvider(CoreUrls.class).getFeedbackURL())%>" target="_blank">
                     <span class="hidden-sm hidden-md hidden-lg">
                         <i class="fa fa-comments"></i>
