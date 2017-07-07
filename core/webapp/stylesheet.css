@@ -1374,6 +1374,14 @@ img.labkey-grid-filter-icon
     border-bottom: solid 1px #cccccc;
 }
 
+.labkey-customview-description {
+    padding: 5px 9px;
+}
+
+.labkey-customview-panel {
+    border: solid 1px lightgray;
+}
+
 .labkey-customview-filter-item .item-caption,
 .labkey-customview-sort-item .item-caption {
     font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
@@ -1488,6 +1496,31 @@ img.labkey-grid-filter-icon
 .labkey-customview-message {
     background-color: #FFDF8C;
     padding: 2px !important;
+}
+.labkey-customview-message {
+    padding: 2px 8px;
+    border-radius: 5px;
+    border: solid 1px #faebcc;
+}
+.labkey-customview-message span.labkey-tool-close {
+    float: right;
+    padding-top: 2px;
+    opacity: 0.1;
+}
+.labkey-customview-message span.labkey-tool-close:hover {
+    opacity: 1;
+}
+
+.labkey-customview-close {
+    z-index: 99999;
+    cursor: pointer;
+    opacity: 0.1;
+    position: absolute;
+    right: 5px;
+    top: 0;
+}
+.labkey-customview-close:hover {
+    opacity: 1;
 }
 
 .labkey-customview-save .x4-form-item-label,

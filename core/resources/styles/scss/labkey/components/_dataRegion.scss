@@ -94,7 +94,7 @@
   }
 
   tr.lk-row-over > td {
-    background-color: #e2e2e2;
+    background-color: $lk-grid-row-color-hover;
   }
 
   .lk-dr-action-icon {
@@ -182,6 +182,10 @@
 
 .lk-region-drawer-container {
   position: relative;
+}
+
+.lk-region-drawer .tab-content > .tab-pane {
+  padding: 5px;
 }
 
 .labkey-data-region-header-container {

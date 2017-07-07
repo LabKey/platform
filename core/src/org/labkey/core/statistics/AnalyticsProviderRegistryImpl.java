@@ -96,4 +96,10 @@ public class AnalyticsProviderRegistryImpl implements AnalyticsProviderRegistry
 
         return providers;
     }
+
+    @Override
+    public Collection<AnalyticsProvider> getAllAnalyticsProviders()
+    {
+        return Collections.unmodifiableCollection(REGISTERED_PROVIDERS);
+    }
 }
