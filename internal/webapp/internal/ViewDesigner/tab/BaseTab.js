@@ -157,27 +157,34 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
     getBaseItems : function() {
         return [{
             xtype: 'panel',
-            cls: 'themed-panel2',
-            title: this.baseTitle,
             border: false,
-            style: {'border-left-width': '1px'},
+            cls: 'labkey-customview-panel',
+            minWidth: 220,
             layout: {
                 type: 'vbox',
                 align: 'stretch'
             },
-            tools: [{
-                handler: function() {
-                    this.designer.close();
-                },
-                scope: this
-            }],
-            items: [this.getList()],
+            items: [
+                this.getPanelTitle(),
+                this.getList()
+            ],
             dockedItems: this.getSubDockedItems()
         }];
     },
     
     getSubDockedItems : function() {
         return undefined;
+    },
+
+    getPanelTitle : function() {
+        if (!this.panelTitle) {
+            this.panelTitle = Ext4.create('Ext.Component', {
+                cls: 'labkey-customview-title',
+                html: Ext4.String.htmlEncode(this.baseTitle)
+            });
+        }
+
+        return this.panelTitle;
     },
 
     /** Get the listview for the tab. */

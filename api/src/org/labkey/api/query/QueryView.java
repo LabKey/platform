@@ -1166,6 +1166,7 @@ public class QueryView extends WebPartView<Object>
     {
         PanelButton exportButton = new PanelButton("Export", getDataRegionName(), 132);
         exportButton.setIconCls("download");
+        exportButton.setTabAlignTop(true);
         ActionURL exportRowsXlsURL = urlFor(QueryAction.exportRowsExcel);
         ActionURL exportRowsXlsxURL = urlFor(QueryAction.exportRowsXLSX);
 
@@ -1348,12 +1349,13 @@ public class QueryView extends WebPartView<Object>
 
             if (!getQueryDef().isTemporary())
             {
+                button.addSeparator();
+                addGridViews(button, target, current);
+                button.addSeparator();
                 addManageViewItems(button, PageFlowUtil.map(
                         "schemaName", getSchema().getSchemaName(),
                         "queryName", getSettings().getQueryName()));
                 addFilterItems(button);
-                button.addSeparator();
-                addGridViews(button, target, current);
             }
         }
         else
@@ -1362,7 +1364,6 @@ public class QueryView extends WebPartView<Object>
             if (!getQueryDef().isTemporary())
             {
                 addGridViews(button, target, current);
-
                 button.addSeparator();
             }
 
@@ -1595,7 +1596,6 @@ public class QueryView extends WebPartView<Object>
         }
         if (t instanceof ContainerFilterable && t.supportsContainerFilter() && !getAllowableContainerFilterTypes().isEmpty())
         {
-            button.addSeparator();
             NavTree containerFilterItem = new NavTree("Folder Filter");
             containerFilterItem.setId(getBaseMenuId() + ":GridViews:Folder Filter");
             button.addMenuItem(containerFilterItem);
@@ -1724,8 +1724,9 @@ public class QueryView extends WebPartView<Object>
                     iconUrl = new URLHelper(view.isShared() ? "/reports/grid.gif" : "/reports/icon_private_view.png");
                 iconUrl.setContextPath(AppProps.getInstance().getParsedContextPath());
                 item.setImageSrc(iconUrl);
-                if (view.isShared())
-                    item.setImageCls("fa fa-table");
+
+                if (null != view.getCustomIconCls())
+                    item.setImageCls(view.getCustomIconCls());
             }
             catch (URISyntaxException e)
             {
@@ -1883,8 +1884,8 @@ public class QueryView extends WebPartView<Object>
 
             NavTree customizeView = new NavTree("Customize Grid");
             customizeView.setId(getBaseMenuId() + ":GridViews:Customize Grid");
-            customizeView.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "]" +
-                    ".toggleShowCustomizeView();");
+            customizeView.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "]" + ".toggleShowCustomizeView();");
+            customizeView.setImageCls("fa fa-pencil");
             button.addMenuItem(customizeView);
         }
 
@@ -1907,6 +1908,7 @@ public class QueryView extends WebPartView<Object>
 
         NavTree item = button.addMenuItem("Manage Views", url);
         item.setId(getBaseMenuId() + ":GridViews:Manage Views");
+        item.setImageCls("fa fa-cog");
     }
 
     public String getDataRegionName()

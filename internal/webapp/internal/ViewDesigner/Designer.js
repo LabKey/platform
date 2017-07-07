@@ -7,18 +7,11 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
     extend: 'Ext.panel.Panel',
 
-    cls: 'customize-grid-panel',
-
+    cls: 'labkey-customize-grid-panel',
     layout: 'border',
-
     height: 310,
-
-    tabWidth: 80,
-
     activeTab: 0,
-
     border: false,
-
     bodyStyle: 'background-color: transparent;',
 
     statics: {
@@ -581,13 +574,14 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 autoScroll: true,
                 border: false,
                 cls: 'labkey-fieldmeta-tree',
+                height: LABKEY.experimental.useExperimentalCoreUI ? 200 : 190,
                 rootVisible: false,
                 store: treeStore,
                 dockedItems: [{
                     xtype: 'toolbar',
                     dock: 'bottom',
-                    ui: 'footer',
-                    cls: 'labkey-customview-treepanel-footer',
+                    height: 34,
+                    style: 'padding-right: 5px;',
                     items: ['->',{
                         xtype: 'checkbox',
                         boxLabel: 'Show Hidden Fields',
@@ -630,22 +624,25 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         if (!this.tabsMainPanel) {
             this.tabsMainPanel = Ext4.create('Ext.panel.Panel', {
                 region: 'center',
-                cls: 'labkey-customview-centerpanel',
                 layout: 'border',
                 border: false,
                 items: [
                     {
                         xtype: 'panel',
                         region: 'west',
-                        cls: 'themed-panel2',
-                        title: 'Available Fields',
+                        cls: 'labkey-customview-panel',
                         flex: 1,
                         border: false,
                         split: true,
                         minWidth: 220,
-                        maxWidth: 700,
-                        layout: 'fit',
-                        items: [this.fieldsTree]
+                        items: [
+                            {
+                                xtype: 'box',
+                                cls: 'labkey-customview-title',
+                                html: 'Available Fields'
+                            },
+                            this.fieldsTree
+                        ]
                     },
                     this.getInnerTabPanel(this.activeTab),
                     this.getBottomToolbarPanel()
@@ -728,29 +725,22 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
     getTabsDataView : function(create) {
         if (!this.tabsDataView && create) {
             this.tabsDataView = Ext4.create('Ext.view.View', {
-                region: 'west',
-                cls: 'labkey-customview-westpanel',
-                width: this.tabWidth,
+                region: 'north',
+                padding: '0 0 5px 0',
                 store: this.getTabsStore(),
                 tpl: new Ext4.XTemplate(
-                    '<ul><tpl for=".">',
-                    '<li class="labkey-customview-tab {active:this.getAdditionalCls}">{text}</li>',
-                    '<div class="tab-joint" style="{[this.getTabJointDisplay(values)]}"></div>',
-                    '</tpl></ul>',
+                    '<ul class="nav nav-tabs">',
+                    '<tpl for=".">',
+                        '<li role="presentation" class="labkey-customview-tab {active:this.getAdditionalCls}"><a>{text}</a></li>',
+                    '</tpl>',
+                    '</ul>',
                     {
                         getAdditionalCls : function(active) {
-                            return active ? "labkey-customview-activetab" : "";
-                        },
-                        getTabJointDisplay : function(values) {
-                            var style = "top: " + (values.index * 25 + 14) + "px;";
-                            if (!values.active) {
-                                style += " display: none;";
-                            }
-                            return style;
+                            return active ? "active" : "";
                         }
                     }
                 ),
-                itemSelector: 'li.labkey-customview-tab',
+                itemSelector: 'li',
                 listeners: {
                     scope: this,
                     itemclick: this.onTabsItemClick
@@ -917,7 +907,6 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         if (messageContainer) {
             return messageContainer;
         }
-        // return undefined;
     },
 
     showMessage : function(msg) {

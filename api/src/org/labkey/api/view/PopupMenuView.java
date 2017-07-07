@@ -130,11 +130,22 @@ public class PopupMenuView extends HttpView<PopupMenu>
 
     protected static void renderLink(NavTree item, String cls, Writer out) throws IOException
     {
+        // if the item is "selected" and doesn't have have an image cls to use, provide our default
+        String itemImageCls = item.getImageCls();
+        if (item.isSelected() && null == itemImageCls)
+            itemImageCls = "fa fa-check-square-o";
+
+        String styleStr = "";
+        if (null != itemImageCls)
+            styleStr += "padding-left: 0;";
+        if (item.isStrong())
+            styleStr += "font-weight: bold;";
+        if (item.isEmphasis())
+            styleStr += "font-style: italic;";
+
         out.write("<a");
         if (null != cls)
             out.write(" class=\"" + cls + "\"");
-        if (null != item.getImageCls())
-            out.write(" style=\"padding-left: 0;\"");
         if (null != item.getScript())
             out.write(" onclick=\"" + PageFlowUtil.filter(item.getScript()) +"\" ");
         if (null != item.getHref())
@@ -144,9 +155,10 @@ public class PopupMenuView extends HttpView<PopupMenu>
         if (null != item.getDescription())
             out.write(" title=\"" + PageFlowUtil.filter(item.getDescription()) + "\"");
         out.write(" tabindex=\"0\"");
+        out.write(" style=\"" + styleStr + "\"");
         out.write(">");
-        if (null != item.getImageCls())
-            out.write("<i class=\"" + item.getImageCls() + "\"></i>");
+        if (null != itemImageCls)
+            out.write("<i class=\"" + itemImageCls + "\"></i>");
         out.write(PageFlowUtil.filter(item.getText()));
         out.write("</a>");
     }

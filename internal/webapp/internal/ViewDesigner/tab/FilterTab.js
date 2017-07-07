@@ -44,12 +44,12 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
             items: [{
                 xtype: 'label',
                 text: 'Folder Filter:',
-                style: 'font-size: 11px; padding-left: 5px;'
+                style: 'font-weight: normal; padding-left: 5px;'
             },' ', {
                 // HACK: Need to wrap the combo in an panel so the combo doesn't overlap items after it.
                 xtype: 'panel',
                 width: 200,
-                plain: true,
+                // plain: true,
                 border: false,
                 layout: 'fit',
                 items: [this.getContainerFilterCombo()]

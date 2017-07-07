@@ -38,6 +38,8 @@ public class PanelButton extends ActionButton
     private static final int MIN_HEIGHT = VERTICAL_TAB_HEIGHT * 4;
 
     private int _height;
+    private boolean _justified;
+    private boolean _tabAlignTop;
     private Map<String, HttpView> _subpanels = new LinkedHashMap<>();
     private final String _dataRegionName;
 
@@ -80,10 +82,11 @@ public class PanelButton extends ActionButton
                 .toString();
 
         out.write(btn);
-        out.write("<div id=\"" + panelId + "\" name=\"" + getCaption() + "-panel\" class=\"tabbable tabs-left\" style=\"display: none;\">");
+        out.write("<div id=\"" + panelId + "\" name=\"" + getCaption() + "-panel\" "
+                + "class=\"tabbable" + (!_tabAlignTop ? " tabs-left" : "") + "\" style=\"display: none;\">");
 
         // render tabs
-        out.write("<ul class=\"nav nav-tabs\">");
+        out.write("<ul class=\"nav nav-tabs" + (_justified ? " nav-justified" : "") + "\">");
         for (Map.Entry<String, HttpView> entry : _subpanels.entrySet())
         {
             String entryId = PageFlowUtil.filter(id + entry.getKey());
@@ -99,7 +102,9 @@ public class PanelButton extends ActionButton
         for (Map.Entry<String, HttpView> entry : _subpanels.entrySet())
         {
             String entryId = PageFlowUtil.filter(id + entry.getKey());
-            out.write("<div id=\"" + entryId + "\" class=\"tab-pane" + (active ? " active" : "") + "\">");
+            out.write("<div id=\"" + entryId + "\" class=\"tab-pane"
+                    + (!_tabAlignTop ? " tab-pane-bordered" : "")
+                    + (active ? " active" : "") + "\">");
             active = false;
             try
             {
@@ -129,5 +134,15 @@ public class PanelButton extends ActionButton
     public boolean hasSubPanels()
     {
         return !_subpanels.isEmpty();
+    }
+
+    public void setJustified(boolean justified)
+    {
+        _justified = justified;
+    }
+
+    public void setTabAlignTop(boolean tabAlignTop)
+    {
+        _tabAlignTop = tabAlignTop;
     }
 }
