@@ -1368,6 +1368,12 @@ img.labkey-grid-filter-icon
     list-style: none;
 }
 
+.labkey-customview-title {
+    padding: 5px 9px;
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
+    border-bottom: solid 1px #cccccc;
+}
+
 .labkey-customview-filter-item .item-caption,
 .labkey-customview-sort-item .item-caption {
     font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
@@ -1469,10 +1475,6 @@ img.labkey-grid-filter-icon
 
 .labkey-customview-tab {
     cursor: pointer;
-    font-size: 11px;
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
-    padding: 6px  !important;
-    color: #555555;
 }
 
 .labkey-customview-activetab {
@@ -3879,10 +3881,13 @@ a div.x4-menu-item-icon.fa-users
 
 .labkey-ribbon .tab-content > .tab-pane {
     background-color: #fff;
+    display: none;
+}
+
+.labkey-ribbon .tab-content > .tab-pane-bordered {
     border-top: 1px solid #ddd;
     border-right: 1px solid #ddd;
     border-bottom: 1px solid #ddd;
-    display: none;
 }
 
 .labkey-ribbon .tab-content > .active {

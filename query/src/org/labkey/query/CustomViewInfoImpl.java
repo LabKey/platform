@@ -243,7 +243,8 @@ public class CustomViewInfoImpl implements CustomViewInfo
 
     public String getCustomIconCls()
     {
-        return "fa fa-table";  // don't bother to use isShared(), we don't change the font icon for private views because stacking icons looks bad in fonts
+        // ideally we would use fa-lock stacked on top of fa-table, but stacking icons looks bad in fonts
+        return isShared() ? "fa fa-table" : "fa fa-lock fa-lg";
     }
 
     public boolean hasFilterOrSort()

@@ -89,7 +89,7 @@
 
   tr.lk-row-hl, tr.lk-row-hl.lk-row-over {
     & > td {
-      background-color: #ffc;
+      background-color: $lk-grid-row-select-color;
     }
   }
 

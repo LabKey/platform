@@ -157,9 +157,8 @@ public class ReportQueryViewFactory
         {
             NavTree customizeView = new NavTree("Customize Grid");
             customizeView.setId(getBaseMenuId() + ":GridViews:Customize Grid");
-            customizeView.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "]" +
-                    ".toggleShowCustomizeView();");
-
+            customizeView.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "]" + ".toggleShowCustomizeView();");
+            customizeView.setImageCls("fa fa-pencil");
             button.addMenuItem(customizeView);
         }
 

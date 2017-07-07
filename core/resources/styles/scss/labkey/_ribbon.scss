@@ -126,10 +126,14 @@
 
 .labkey-ribbon .tab-content > .tab-pane {
   background-color: #fff;
+  padding: 5px;
+  display: none;
+}
+
+.labkey-ribbon .tab-content > .tab-pane-bordered {
   border-top: 1px solid #ddd;
   border-right: 1px solid #ddd;
   border-bottom: 1px solid #ddd;
-  display: none;
 }
 
 .labkey-ribbon .tab-content > .active {

@@ -1,11 +1,21 @@
-.labkey-customview-westpanel ul {
-  padding: 0;
-  list-style: none;
+
+.labkey-customview-title {
+  padding: 5px 9px;
+  font-weight: bold;
+  border-bottom: solid 1px $lk-grid-border-color;
+}
+
+.labkey-customview-panel {
+  border: solid 1px $lk-grid-border-color;
+}
+
+.labkey-customview-panel.x4-panel-default {
+  border-color: $lk-grid-border-color;
 }
 
 .labkey-customview-filter-item .item-caption,
 .labkey-customview-sort-item .item-caption {
-  font-family: $font-family-sans-serif-bold;
+  font-weight: bold;
 }
 
 .labkey-customview-item {
@@ -15,9 +25,9 @@
 
 .labkey-customview-item.x-view-selected,
 .labkey-customview-item.x4-item-selected {
-  background: #eeeeee;
-  border-top: 1px solid #89A1B4;
-  border-bottom: 1px solid #89A1B4;
+  background: $lk-grid-row-select-color;
+  border-top: 1px solid $lk-grid-row-select-color;
+  border-bottom: 1px solid $lk-grid-row-select-color;
 }
 
 .labkey-customview-item.x-view-over,
@@ -152,11 +162,6 @@
 
 .labkey-customview-tab {
   cursor: pointer;
-  font-size: 11px;
-  font-family: $font-family-sans-serif-bold;
-  padding: 6px  !important;
-  outline: none;
-  color: #555555;
 }
 
 .labkey-customview-activetab {
@@ -181,24 +186,14 @@
   border-top: solid #CCCCCC 1px !important;
 }
 
-.labkey-customview-westpanel .tab-joint {
-  position: absolute;
-  top: 1px;
-  left: 78px;
-  width: 3px;
-  height: 25px;
-  background: #FFFFFF;
-  z-index: 8999;
-}
-
-.labkey-customview-centerpanel {
-  border: solid #CCCCCC 1px;
-}
-
 .labkey-fieldmeta-tree .x4-grid-body {
   border-top-width: 0;
 }
 
 .labkey-customview-list {
   cursor: pointer;
+}
+
+.labkey-customize-grid-panel .x4-splitter {
+  background-color: $white;
 }
