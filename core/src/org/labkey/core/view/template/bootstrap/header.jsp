@@ -15,24 +15,27 @@
  * limitations under the License.
  */
 --%>
+<%@ page import="org.labkey.api.admin.CoreUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.search.SearchUrls" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.settings.HeaderProperties" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.PopupAdminView" %>
 <%@ page import="org.labkey.api.view.PopupMenuView" %>
 <%@ page import="org.labkey.api.view.PopupUserView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.core.view.template.bootstrap.BootstrapHeader" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
-<%@ page import="org.labkey.api.admin.CoreUrls" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.BootstrapHeader" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.BootstrapTemplate" %>
+<%@ page import="org.labkey.api.view.HtmlView" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -52,6 +55,7 @@
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     boolean showSearch = hasUrlProvider(SearchUrls.class);
 
+    HtmlView headerHtml = BootstrapTemplate.getHomeTemplateResource(new HeaderProperties());
     String siteShortName = (laf.getShortName() != null && laf.getShortName().length() > 0) ? laf.getShortName() : null;
 %>
 <div class="labkey-page-header">
@@ -60,20 +64,30 @@
             <a class="brand-logo" href="<%=h(laf.getLogoHref())%>">
                 <img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>" height="30">
             </a>
-            <% if (siteShortName != null) {
-                String displayedShortName = "LabKey Server".equals(siteShortName) ? "" : siteShortName;
+            <%-- _header.html overrides the server short name--%>
+            <%  if (headerHtml == null) {
+                    if (siteShortName != null) {
+                        String displayedShortName = "LabKey Server".equals(siteShortName) ? "" : siteShortName;
             %>
-            <h4 class="brand-link"><a href="<%=h(laf.getLogoHref())%>"><%=h(displayedShortName)%></a></h4>
-            <% } %>
+                        <h4 class="brand-link"><a href="<%=h(laf.getLogoHref())%>"><%=h(displayedShortName)%></a></h4>
+            <%      }
+                } %>
         </div>
         <div class="hidden-sm hidden-md hidden-lg navbar-header">
             <a class="brand-logo-mobile" href="<%=h(laf.getLogoHref())%>">
                 <img src="<%=h(TemplateResourceHandler.LOGO_MOBILE.getURL(c))%>" alt="<%=h(laf.getShortName())%>" height="30">
             </a>
-            <% if (siteShortName != null) { %>
-            <h4 class="brand-link"><a href="<%=h(laf.getLogoHref())%>"><%=h(siteShortName)%></a></h4>
-            <% } %>
+            <% if (headerHtml == null) {
+                    if (siteShortName != null) { %>
+                        <h4 class="brand-link"><a href="<%=h(laf.getLogoHref())%>"><%=h(siteShortName)%></a></h4>
+            <%      }
+                } %>
         </div>
+        <%--if a _header.html file is defined put it into dom without html encoding. It will need to define divs
+        with appropriate bootstrap classes--%>
+        <% if (headerHtml != null) {%>
+            <%=text(headerHtml.getHtml())%>
+        <%}%>
         <ul class="navbar-nav-lk">
 <% if (showSearch) { %>
             <li class="navbar-search hidden-xs">
