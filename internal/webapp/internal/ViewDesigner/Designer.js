@@ -125,11 +125,15 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                         msgTarget: "side",
                         allowBlank: false,
                         emptyText: "Name is required",
-                        maxLength: 50,
                         width: 280,
                         autoCreate: {tag: 'input', type: 'text', size: '50'},
                         validator: function(value) {
-                            if (LABKEY.internal.ViewDesigner.Designer.RESERVED_VIEW_NAMES.indexOf(value.trim()) > -1) {
+                            var trimmedValue = value.trim();
+                            if (trimmedValue.length == 0)
+                                return "Blank grid view name is not allowed";
+                            else if (trimmedValue.length > 50)
+                                return "The grid view name must be less than 50 characters long";
+                            else if (LABKEY.internal.ViewDesigner.Designer.RESERVED_VIEW_NAMES.indexOf(trimmedValue) > -1) {
                                 return "The grid view name '" + value + "' is not allowed";
                             }
                             return true;
@@ -201,7 +205,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                         var nameField = win.down('#nameFieldContainer').items.get(1);
                         if (!nameField.isValid())
                         {
-                            Ext4.Msg.alert("Invalid grid view name", "The grid view name must be less than 50 characters long and not 'default'.");
+                            Ext4.Msg.alert("Invalid grid view name", nameField.getErrors());
                             return;
                         }
                         if (!canEdit && viewName == nameField.getValue())
