@@ -55,6 +55,7 @@ import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.iterator.MarkableIterator;
+import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
@@ -84,7 +85,6 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.script.RhinoService;
-import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.Priority;
@@ -92,13 +92,10 @@ import org.labkey.api.security.AuthenticationProviderConfigAuditTypeProvider;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
-import org.labkey.api.security.InvalidGroupMembershipException;
-import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
@@ -112,10 +109,8 @@ import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.FolderSettingsCache;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
@@ -220,12 +215,10 @@ import org.labkey.core.webdav.DavController;
 import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookQueryView;
 import org.labkey.core.workbook.WorkbookSearchView;
-import org.labkey.security.xml.GroupEnumType;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
-import javax.mail.MessagingException;
 import javax.servlet.ServletContext;
 import java.io.File;
 import java.io.IOException;
@@ -373,7 +366,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
 
         AdminConsole.addExperimentalFeatureFlag(PageFlowUtil.EXPERIMENTAL_MIGRATE_CORE_UI, "Core UI Migration",
-                "Use the templates and styling being built during the core UI migration. This may require an independent build first.", false);
+                "Use the templates and styling being built during the core UI migration.", false);
         AdminConsole.addExperimentalFeatureFlag(MenuBarView.EXPERIMENTAL_NAV, "Combined Navigation Drop-down",
                 "This feature will combine the Navigation of Projects and Folders into one drop-down.", false);
         AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
