@@ -1460,12 +1460,13 @@ public class SecurityManager implements ConfigProperty.ConfigPropertyInitializer
             return ProjectAndSiteGroupsCache.getSiteGroups();
     }
 
-
+    @Nullable
     public static Group getGroup(int groupId)
     {
         return GroupCache.get(groupId);
     }
 
+    @Nullable
     public static UserPrincipal getPrincipal(int id)
     {
         UserPrincipal principal = UserManager.getUser(id);
@@ -1473,6 +1474,7 @@ public class SecurityManager implements ConfigProperty.ConfigPropertyInitializer
     }
 
     /** This will preferentially return project users/groups.  If no principal is found at the project level and includeSiteGroups=true, it will check site groups */
+    @Nullable
     public static UserPrincipal getPrincipal(String name, Container container, boolean includeSiteGroups)
     {
         UserPrincipal up = getPrincipal(name, container);

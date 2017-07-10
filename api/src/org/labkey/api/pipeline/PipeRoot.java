@@ -100,6 +100,6 @@ public interface PipeRoot extends SecurableResource
 
     void configureForm(SetupForm form);
 
-    /** @return true if this root is based on the site leve root */
+    /** @return true if this root is based on the site level root */
     boolean isDefault();
 }
