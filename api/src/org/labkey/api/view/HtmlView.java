@@ -60,6 +60,11 @@ public class HtmlView extends WebPartView
         _html = html;
     }
 
+    public String getHtml()
+    {
+        return _html;
+    }
+
     public void setPrintfParameters(Object... params)
     {
         _printfParams = params;

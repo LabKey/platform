@@ -25,7 +25,9 @@ import org.labkey.api.module.MultiPortalFolderType;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.FooterProperties;
+import org.labkey.api.settings.TemplateProperties;
 import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -92,7 +94,7 @@ public class HomeTemplate extends PrintTemplate
         setView("navigation", getNavigationView(context, page));
 
         setView("appbar", getAppBarView(context, page));
-        setView("footer", getFooterView());
+        setView("footer", getHomeTemplateResource(new FooterProperties()));
     }
 
     protected void setUserMetaTag(ViewContext context, PageConfig page)
@@ -161,27 +163,27 @@ public class HomeTemplate extends PrintTemplate
         return new TemplateHeaderView(upgradeMessage, moduleFailures, page);
     }
 
-    protected HttpView getFooterView()
+    public static HtmlView getHomeTemplateResource(TemplateProperties prop)
     {
-        WebPartView view = null;
-        if (FooterProperties.isShowFooter())
+        HtmlView view = null;
+        if (prop.isDisplay())
         {
             Module coreModule = ModuleLoader.getInstance().getCoreModule();
             List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
-            if (null != ModuleLoader.getInstance().getModule(FooterProperties.getFooterModule()))
+            if (null != ModuleLoader.getInstance().getModule(prop.getModule()))
             {
-                modules.add(ModuleLoader.getInstance().getModule(FooterProperties.getFooterModule()));
+                modules.add(ModuleLoader.getInstance().getModule(prop.getModule()));
             }
             ListIterator<Module> i = modules.listIterator(modules.size());
             while (i.hasPrevious())
             {
-                view = ModuleHtmlView.get(i.previous(), "_footer");
+                view = ModuleHtmlView.get(i.previous(), prop.getFileName());
                 if (null != view)
                     break;
             }
             if (null == view)
             {
-                view = ModuleHtmlView.get(coreModule, "_footer");
+                view = ModuleHtmlView.get(coreModule, prop.getFileName());
             }
             if (null != view)
             {

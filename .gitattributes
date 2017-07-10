@@ -1283,11 +1283,13 @@ api/src/org/labkey/api/settings/DateParsingMode.java -text
 api/src/org/labkey/api/settings/ExperimentalFeatureService.java -text
 api/src/org/labkey/api/settings/FolderSettingsCache.java -text
 api/src/org/labkey/api/settings/FooterProperties.java -text
+api/src/org/labkey/api/settings/HeaderProperties.java -text
 api/src/org/labkey/api/settings/LookAndFeelFolderProperties.java -text
 api/src/org/labkey/api/settings/LookAndFeelProperties.java -text
 api/src/org/labkey/api/settings/PreferenceService.java -text
 api/src/org/labkey/api/settings/ResourceURL.java -text
 api/src/org/labkey/api/settings/Setting.java -text
+api/src/org/labkey/api/settings/TemplateProperties.java -text
 api/src/org/labkey/api/settings/TemplateResourceHandler.java -text
 api/src/org/labkey/api/settings/WriteableAppProps.java -text
 api/src/org/labkey/api/settings/WriteableFolderLookAndFeelProperties.java -text

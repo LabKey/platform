@@ -17,17 +17,20 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.search.SearchUrls" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.settings.HeaderProperties" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HtmlView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page import="org.labkey.api.view.menu.HeaderMenu" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.view.template.HomeTemplate" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -44,6 +47,7 @@
     Container c = getContainer();
     ActionURL currentURL = getActionURL();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
+    HtmlView headerHtml = HomeTemplate.getHomeTemplateResource(new HeaderProperties());
 
     boolean hasWarnings = bean.pageConfig.getWarningMessages().size() > 0;
     boolean homeOrNoneTemplate = bean.pageConfig.getTemplate() == PageConfig.Template.Home || bean.pageConfig.getTemplate() == PageConfig.Template.None;
@@ -112,7 +116,7 @@
       </td>
       <td class="labkey-main-title-area">
           <span>
-              <a class="labkey-main-title" href="<%=h(laf.getLogoHref())%>"><%=h(laf.getShortName())%></a>
+              <a class="labkey-main-title" href="<%=h(laf.getLogoHref())%>"><%=(headerHtml == null ? h(laf.getShortName()) : headerHtml.getHtml())%></a>
           </span>
       </td>
 
