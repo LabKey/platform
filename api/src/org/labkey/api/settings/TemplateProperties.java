@@ -17,13 +17,13 @@ public interface TemplateProperties
 
     default boolean isDisplay()
     {
-        String showFooter = "TRUE"; // default is to show the footer
+        String isDisplay = "TRUE"; // default is to display property
         Map<String, String> map = PropertyManager.getProperties(getDisplayConfigs());
         if (!map.isEmpty())
         {
-            showFooter = map.get(getDisplayPropertyName());
+            isDisplay = map.get(getDisplayPropertyName());
         }
-        return BooleanUtils.toBoolean(showFooter);
+        return BooleanUtils.toBoolean(isDisplay);
     }
 
     default void setDisplay(boolean isDisplay)
