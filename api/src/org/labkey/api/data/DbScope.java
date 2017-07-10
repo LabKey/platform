@@ -1653,6 +1653,7 @@ public class DbScope
         {
             _preCommitTasks.clear();
             _postCommitTasks.clear();
+            _postRollbackTasks.clear();
             closeCaches();
         }
 
@@ -1681,12 +1682,13 @@ public class DbScope
                     // Don't pop until locks are empty, because other closes have yet to occur
                     // and we want to use _abort to ensure no one tries to commit this transaction
                     popCurrentTransaction();
-                }
 
-                if (_aborted)
-                {
-                    // Run this now that we've been disassociated with a potentially trashed connection
-                    CommitTaskOption.POSTROLLBACK.run(this);
+                    if (_aborted)
+                    {
+                        // Run this now that we've been disassociated with a potentially trashed connection
+                        CommitTaskOption.POSTROLLBACK.run(this);
+                        clearCommitTasks();
+                    }
                 }
             }
             else
