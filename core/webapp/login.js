@@ -118,7 +118,7 @@
                 url: LABKEY.ActionURL.buildURL('login', 'getLoginMechanismsApi.api', this.containerPath),
                 method: 'POST',
                 params: {
-                    returnUrl: returnURL == null ? null : encodeURIComponent(returnURL),
+                    returnUrl: returnURL,
                     urlHash: document.getElementById('urlhash'),
                     'X-LABKEY-CSRF': document.getElementById('X-LABKEY-CSRF')
                 },

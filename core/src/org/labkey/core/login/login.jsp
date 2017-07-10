@@ -90,7 +90,7 @@
         <% } %>
         <input type="hidden" id="urlhash" name="urlhash">
     </form>
-    <% String otherLoginMechanisms = AuthenticationManager.getLoginPageLogoHtml(bean.form.getReturnActionURL());
+    <% String otherLoginMechanisms = AuthenticationManager.getLoginPageLogoHtml(bean.form.getReturnURLHelper());
     if(StringUtils.isNotEmpty(otherLoginMechanisms))
     {
     %>

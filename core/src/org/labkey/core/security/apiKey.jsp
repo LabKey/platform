@@ -52,7 +52,7 @@
     {
         %><%=ex.getMessage()%><%
     }
-    String id = SessionApiKeyManager.get().createKey(getViewContext().getRequest(), getUser());
+    String id = SessionApiKeyManager.get().createKey(request, session);
 %>
 <%= AppProps.getInstance().getBaseServerUrl() %>
 This API key can be used to authorize client code accessing LabKey Server using one of the <%=helpLink("viewApis", "LabKey Client APIs")%>. Using an API key avoids

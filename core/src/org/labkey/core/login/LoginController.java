@@ -301,7 +301,7 @@ public class LoginController extends SpringActionController
                 if (!returnURL.isReadOnly())
                     returnURL.setFragment(null);
                 url.addReturnURL(returnURL);
-                if (null != fragment)
+                if (!StringUtils.isBlank(fragment))
                     url.replaceParameter("urlhash", "#" + fragment);
             }
             return url;
@@ -1105,7 +1105,7 @@ public class LoginController extends SpringActionController
         public Object execute(LoginForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            ActionURL returnURL = form.getReturnActionURL();
+            URLHelper returnURL = form.getReturnURLHelper();
             if (null != returnURL && null != form.getUrlhash())
             {
                 returnURL.setFragment(form.getUrlhash().replace("#", ""));
