@@ -23,9 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.stats.AnalyticsProviderRegistry;
-import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
@@ -43,9 +40,10 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.stats.AnalyticsProviderRegistry;
+import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.CSRFUtil;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.Formats;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
@@ -2821,46 +2819,12 @@ public class DataRegion extends AbstractDataRegion
         }
     }
 
-    // This is the chance for one-time DisplayColumn setup that requires the current context. At the moment, all
-    // we do is override the date & number formats to reflect the folder defaults. TODO: A more general approach would be
-    // to push this into DisplayColumn itself, e.g., prepare(Container c).
+    // This is the chance for one-time DisplayColumn setup that requires the current context.
     public void prepareDisplayColumns(Container c)
     {
-        final String defaultDate = DateUtil.getDateFormatString(c);
-        final String defaultDateTime = DateUtil.getDateTimeFormatString(c);
-        final String defaultNumber = Formats.getNumberFormatString(c);
-        final String defaultTime = DateUtil.getTimeFormatString(c);
-
         for (DisplayColumn dc : getDisplayColumns())
         {
-            String formatString = dc.getFormatString();
-            ColumnInfo col = dc.getColumnInfo();
-
-            if (null == col)
-                continue;
-
-            if (col.isDateTimeType())
-            {
-                if (null == formatString)
-                {
-                    // No display format on this column, so apply the appropriate default display format based on underlying type
-                    dc.setFormatString(col.getJdbcType() == JdbcType.DATE ? defaultDate : defaultDateTime);
-                }
-                else
-                {
-                    // Replace special named formats with the current default display format strings in this folder
-                    if (DEFAULTDATETIME.equalsIgnoreCase(formatString))
-                        dc.setFormatString(defaultDateTime);
-                    else if (DEFAULTDATE.equalsIgnoreCase(formatString))
-                        dc.setFormatString(defaultDate);
-                    else if (DEFAULTTIME.equalsIgnoreCase(formatString))
-                        dc.setFormatString(defaultTime);
-                }
-            }
-            else if (null == formatString && col.isNumericType())
-            {
-                dc.setFormatString(defaultNumber);
-            }
+            dc.prepare(c);
         }
     }
 

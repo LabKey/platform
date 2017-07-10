@@ -22,14 +22,16 @@ import org.apache.commons.lang3.time.FastDateFormat;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
-import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.element.Input;
+import org.labkey.api.stats.ColumnAnalyticsProvider;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.Formats;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.util.element.Input;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;
@@ -1258,6 +1260,42 @@ public abstract class DisplayColumn extends RenderColumn
         else if (!_displayClass.contains(className))
         {
             _displayClass = _displayClass + " " + className;
+        }
+    }
+
+    /**
+     * This is the chance for one-time DisplayColumn setup that requires the current context. At the moment, all
+     * we do is override the date & number formats to reflect the folder defaults.
+     */
+    public void prepare(Container c)
+    {
+        String formatString = getFormatString();
+        ColumnInfo col = getColumnInfo();
+
+        if (col != null)
+        {
+            if (col.isDateTimeType())
+            {
+                if (null == formatString)
+                {
+                    // No display format on this column, so apply the appropriate default display format based on underlying type
+                    setFormatString(col.getJdbcType() == JdbcType.DATE ? DateUtil.getDateFormatString(c) : DateUtil.getDateTimeFormatString(c));
+                }
+                else
+                {
+                    // Replace special named formats with the current default display format strings in this folder
+                    if (DataRegion.DEFAULTDATETIME.equalsIgnoreCase(formatString))
+                        setFormatString(DateUtil.getDateTimeFormatString(c));
+                    else if (DataRegion.DEFAULTDATE.equalsIgnoreCase(formatString))
+                        setFormatString(DateUtil.getDateFormatString(c));
+                    else if (DataRegion.DEFAULTTIME.equalsIgnoreCase(formatString))
+                        setFormatString(DateUtil.getTimeFormatString(c));
+                }
+            }
+            else if (null == formatString && col.isNumericType())
+            {
+                setFormatString(Formats.getNumberFormatString(c));
+            }
         }
     }
 }

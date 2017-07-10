@@ -162,13 +162,13 @@ public class ReportingWriter
                 props.put("importAliases", new ArrayList<>(cinfo.getImportAliasSet()));
             }
 
-            if (cinfo.getTsvFormatString() != null)
+            if (dc.getTsvFormatString() != null)
             {
-                props.put("tsvFormat", cinfo.getTsvFormatString());
+                props.put("tsvFormat", dc.getTsvFormatString());
             }
-            if (cinfo.getFormat() != null)
+            if (dc.getFormatString() != null)
             {
-                String format = cinfo.getFormat();
+                String format = dc.getFormatString();
                 props.put("format", format);
                 if (includeDomainFormat)
                     props.put("formatString", format);
@@ -189,9 +189,9 @@ public class ReportingWriter
                 if (null != extFormat)
                     props.put("extFormat", extFormat);
             }
-            if (cinfo.getExcelFormatString() != null)
+            if (dc.getExcelFormatString() != null)
             {
-                props.put("excelFormat", cinfo.getExcelFormatString());
+                props.put("excelFormat", dc.getExcelFormatString());
             }
 
             String inputType = cinfo.getInputType();
