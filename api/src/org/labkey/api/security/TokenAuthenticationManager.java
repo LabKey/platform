@@ -18,8 +18,6 @@ package org.labkey.api.security;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.servlet.http.HttpSession;
-
 /**
  * Created by adam on 4/3/2016.
  */
@@ -37,25 +35,21 @@ public class TokenAuthenticationManager extends SessionKeyManager<User>
     }
 
     @Override
-    @NotNull String getSessionAttributeName()
+    @NotNull
+    protected String getSessionAttributeName()
     {
         return "token";
     }
 
     @Override
-    @Nullable String getKeyPrefix()
+    @Nullable
+    protected String getKeyPrefix()
     {
         return null;
     }
 
     @Override
-    User createContext(HttpSession session, User user)
-    {
-        return user;
-    }
-
-    @Override
-    User validateContext(User user, String key)
+    protected User validateContext(User user, String key)
     {
         return user;
     }

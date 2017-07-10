@@ -33,24 +33,23 @@ import java.util.concurrent.ConcurrentHashMap;
  * User: adam
  * Date: Aug 23, 2007
  */
-abstract class SessionKeyManager<T>
+public abstract class SessionKeyManager<T>
 {
     private final Map<String, T> KEY_MAP = new ConcurrentHashMap<>();
     private final Object SESSION_LOCK = new Object();
 
-    abstract @NotNull String getSessionAttributeName();
-    abstract @Nullable String getKeyPrefix();
-    abstract T createContext(HttpSession session, User user);
-    abstract T validateContext(T context, String key);
+    protected abstract @NotNull String getSessionAttributeName();
+    protected abstract @Nullable String getKeyPrefix();
+    protected abstract T validateContext(T context, String key);
 
-    // Generate a random key, associate it with subclass-provided context, and track the key in session to support
-    // invalidation. All keys expire at the same time the LabKey session expires (explicit logout or session timeout).
-    public String createKey(HttpServletRequest request, User user)
+    // Generate a random key, associate it with the provided context, and track the key in session to support invalidation.
+    // All keys expire at the same time the LabKey session expires (explicit logout or session timeout).
+    public String createKey(HttpServletRequest request, T context)
     {
         String prefix = getKeyPrefix();
-        String apiKey = (null != prefix ? prefix + "|" : "") + GUID.makeHash();
+        String key = (null != prefix ? prefix : "") + GUID.makeHash();
         HttpSession session = request.getSession(true);
-        KEY_MAP.put(apiKey, createContext(session, user));
+        KEY_MAP.put(key, context);
 
         synchronized (SESSION_LOCK)
         {
@@ -63,10 +62,10 @@ abstract class SessionKeyManager<T>
                 session.setAttribute(getSessionAttributeName(), holder);
             }
 
-            holder.addKey(apiKey);
+            holder.addKey(key);
         }
 
-        return apiKey;
+        return key;
     }
 
     public @Nullable T getContext(String key)

@@ -39,25 +39,21 @@ public class SessionApiKeyManager extends SessionKeyManager<HttpSession>
     }
 
     @Override
-    @NotNull String getSessionAttributeName()
+    @NotNull
+    protected String getSessionAttributeName()
     {
         return "apikeys";
     }
 
     @Override
-    @Nullable String getKeyPrefix()
+    @Nullable
+    protected String getKeyPrefix()
     {
-        return "session";
+        return "session|";
     }
 
     @Override
-    HttpSession createContext(HttpSession session, User user)
-    {
-        return session;
-    }
-
-    @Override
-    HttpSession validateContext(HttpSession session, String apiKey)
+    protected HttpSession validateContext(HttpSession session, String apiKey)
     {
         return isKeyInSession(session, apiKey) ? session : null;
     }

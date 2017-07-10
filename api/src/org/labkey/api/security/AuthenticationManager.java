@@ -167,13 +167,13 @@ public class AuthenticationManager
         addConfigurationAuditEvent(user, key, value ? "enabled" : "disabled");
     }
 
-    public static @Nullable String getHeaderLogoHtml(ActionURL currentURL)
+    public static @Nullable String getHeaderLogoHtml(URLHelper currentURL)
     {
         return getAuthLogoHtml(currentURL, HEADER_LOGO_PREFIX);
     }
 
 
-    public static @Nullable String getLoginPageLogoHtml(ActionURL currentURL)
+    public static @Nullable String getLoginPageLogoHtml(URLHelper currentURL)
     {
         return getAuthLogoHtml(currentURL, LOGIN_PAGE_LOGO_PREFIX);
     }
@@ -197,7 +197,7 @@ public class AuthenticationManager
         return !AuthenticationProviderCache.getActiveProviders(SSOAuthenticationProvider.class).isEmpty();
     }
 
-    private static @Nullable String getAuthLogoHtml(ActionURL currentURL, String prefix)
+    private static @Nullable String getAuthLogoHtml(URLHelper currentURL, String prefix)
     {
         Collection<SSOAuthenticationProvider> ssoProviders = AuthenticationProviderCache.getActiveProviders(SSOAuthenticationProvider.class);
 
@@ -1267,7 +1267,7 @@ public class AuthenticationManager
             _providerName = provider.getName(); // Just for convenience
         }
 
-        private @NotNull String getLink(ActionURL returnURL, String prefix)
+        private @NotNull String getLink(URLHelper returnURL, String prefix)
         {
             String img = getImg(prefix);
 
