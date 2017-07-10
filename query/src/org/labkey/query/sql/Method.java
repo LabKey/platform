@@ -47,8 +47,10 @@ import org.labkey.query.sql.antlr.SqlBaseLexer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.text.DecimalFormat;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 public abstract class Method
@@ -1283,7 +1285,7 @@ public abstract class Method
     }
 
 
-    static CaseInsensitiveHashMap<Method> postgresMethods = new CaseInsensitiveHashMap<>();
+    final static Map<String, Method> postgresMethods = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
     static
     {
         postgresMethods.put("ascii",new PassthroughMethod("ascii",JdbcType.INTEGER,1,1));
@@ -1322,7 +1324,7 @@ public abstract class Method
         postgresMethods.put("to_number",new PassthroughMethod("to_number",JdbcType.DECIMAL,2,2));
     }
 
-    static CaseInsensitiveHashMap<Method> mssqlMethods = new CaseInsensitiveHashMap<>();
+    final static Map<String, Method> mssqlMethods = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
     static
     {
         mssqlMethods.put("ascii",new PassthroughMethod("ascii",JdbcType.INTEGER,1,1));
@@ -1345,35 +1347,35 @@ public abstract class Method
         mssqlMethods.put("stuff",new PassthroughMethod("stuff",JdbcType.VARCHAR,4,4));
     }
 
-    static CaseInsensitiveHashMap<Method> oracleMethods = new CaseInsensitiveHashMap<>();
+    final static Map<String, Method> oracleMethods = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
     static
     {
 /*  Standard Oracle Functions
     See: http://download.oracle.com/docs/cd/E11882_01/server.112/e17118/functions002.htm#CJAIBHGG*/
 
-    // Numeric Functions - Haven't put advanced mathematical functions in. Can add in later if the demand is there.
+        // Numeric Functions - Haven't put advanced mathematical functions in. Can add in later if the demand is there.
 
-    oracleMethods.put("to_number", new PassthroughMethod("to_number", JdbcType.DECIMAL, 1,3));
+        oracleMethods.put("to_number", new PassthroughMethod("to_number", JdbcType.DECIMAL, 1,3));
 
-    // Character Functions returning Character Values
+        // Character Functions returning Character Values
 
-    oracleMethods.put("to_char", new PassthroughMethod("to_char", JdbcType.VARCHAR, 1,3));
-    oracleMethods.put("substr", new PassthroughMethod("substr", JdbcType.VARCHAR, 2,3));
-    oracleMethods.put("trim", new PassthroughMethod("trim", JdbcType.VARCHAR, 1,1));
-    oracleMethods.put("instr", new PassthroughMethod("instr", JdbcType.VARCHAR, 2,4));
-    oracleMethods.put("replace", new PassthroughMethod("replace", JdbcType.VARCHAR, 2,3));
-    oracleMethods.put("translate", new PassthroughMethod("translate", JdbcType.VARCHAR, 3,3));
-    oracleMethods.put("rpad", new PassthroughMethod("rpad", JdbcType.VARCHAR, 2,3));
-    oracleMethods.put("lpad", new PassthroughMethod("lpad", JdbcType.VARCHAR, 2,3));
-    oracleMethods.put("ascii", new PassthroughMethod("ascii", JdbcType.INTEGER, 1,1));
-    oracleMethods.put("initcap", new PassthroughMethod("initcap", JdbcType.VARCHAR, 1,1));
-    oracleMethods.put("chr", new PassthroughMethod("chr", JdbcType.VARCHAR, 1,1));
-    oracleMethods.put("regexp_like", new PassthroughMethod("regexp_like", JdbcType.VARCHAR, 2,2));
+        oracleMethods.put("to_char", new PassthroughMethod("to_char", JdbcType.VARCHAR, 1,3));
+        oracleMethods.put("substr", new PassthroughMethod("substr", JdbcType.VARCHAR, 2,3));
+        oracleMethods.put("trim", new PassthroughMethod("trim", JdbcType.VARCHAR, 1,1));
+        oracleMethods.put("instr", new PassthroughMethod("instr", JdbcType.VARCHAR, 2,4));
+        oracleMethods.put("replace", new PassthroughMethod("replace", JdbcType.VARCHAR, 2,3));
+        oracleMethods.put("translate", new PassthroughMethod("translate", JdbcType.VARCHAR, 3,3));
+        oracleMethods.put("rpad", new PassthroughMethod("rpad", JdbcType.VARCHAR, 2,3));
+        oracleMethods.put("lpad", new PassthroughMethod("lpad", JdbcType.VARCHAR, 2,3));
+        oracleMethods.put("ascii", new PassthroughMethod("ascii", JdbcType.INTEGER, 1,1));
+        oracleMethods.put("initcap", new PassthroughMethod("initcap", JdbcType.VARCHAR, 1,1));
+        oracleMethods.put("chr", new PassthroughMethod("chr", JdbcType.VARCHAR, 1,1));
+        oracleMethods.put("regexp_like", new PassthroughMethod("regexp_like", JdbcType.VARCHAR, 2,2));
 
-        // Date Functions
+            // Date Functions
 
-    oracleMethods.put("to_date", new PassthroughMethod("to_date", JdbcType.DATE, 1,3));
-    oracleMethods.put("sysdate", new PassthroughMethod("sysdate", JdbcType.DATE, 0,0));
+        oracleMethods.put("to_date", new PassthroughMethod("to_date", JdbcType.DATE, 1,3));
+        oracleMethods.put("sysdate", new PassthroughMethod("sysdate", JdbcType.DATE, 0,0));
     }
 
 }
