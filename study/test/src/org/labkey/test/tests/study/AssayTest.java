@@ -891,12 +891,10 @@ public class AssayTest extends AbstractAssayTest
 
         assertTextPresent(TEST_RUN1, TEST_RUN2);
 
-        log("Setting the customized view to include subfolders");
+        log("Save the customized view to include subfolders");
         assayRuns = DataRegionTable.findDataRegionWithinWebpart(this, TEST_ASSAY + " Runs");
         CustomizeView customizeViewsHelper = assayRuns.getCustomizeView();
         customizeViewsHelper.openCustomizeViewPanel();
-
-        customizeViewsHelper.clipFolderFilter();
         customizeViewsHelper.saveCustomView("");
 
         assertTextPresent(TEST_RUN1, TEST_RUN2);

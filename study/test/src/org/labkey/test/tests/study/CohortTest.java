@@ -479,19 +479,16 @@ public class CohortTest extends BaseWebDriverTest
 
         setCohortFilter("Negative", AdvancedCohortType.CURRENT); // 4 rows
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.clipFilter(AdvancedCohortType.CURRENT.fieldKey());
         _customizeViewsHelper.saveCustomView("CurrentNegative", true);
 
         DataRegionTable.findDataRegion(this).clickHeaderMenu("Grid Views", "default");
         setCohortFilter("Negative", AdvancedCohortType.INITIAL); // 16 rows
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.clipFilter(AdvancedCohortType.INITIAL.fieldKey());
         _customizeViewsHelper.saveCustomView("InitialPositive", true);
 
         DataRegionTable.findDataRegion(this).clickHeaderMenu("Grid Views", "default");
         setCohortFilter("Positive", AdvancedCohortType.DATA_COLLECTION); // 6 rows
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.clipFilter(AdvancedCohortType.DATA_COLLECTION.fieldKey());
         _customizeViewsHelper.saveCustomView("DataCollectionPositive", true);
 
 
