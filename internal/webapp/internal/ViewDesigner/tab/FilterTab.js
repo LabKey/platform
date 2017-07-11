@@ -39,52 +39,27 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
         return [{
             xtype: 'toolbar',
             dock: 'bottom',
-            hidden: this.hideContainerFilterToolbar,
             height: 30,
-            items: [{
-                xtype: 'label',
-                text: 'Folder Filter:',
-                style: 'font-weight: normal; padding-left: 5px;'
-            },' ', {
-                // HACK: Need to wrap the combo in an panel so the combo doesn't overlap items after it.
-                xtype: 'panel',
-                width: 200,
-                // plain: true,
-                border: false,
-                layout: 'fit',
-                items: [this.getContainerFilterCombo()]
-            },'->', this.getContainerFilterClip()]
+            style: 'padding-left: 5px;',
+            hidden: this.hideContainerFilterToolbar,
+            items: [this.getContainerFilterCombo()]
         }];
-    },
-
-    getContainerFilterClip : function() {
-        if (!this.cfClip) {
-            this.cfClip = Ext4.create('LABKEY.internal.ViewDesigner.button.PaperclipButton', {
-                pressed: !this.designer.userContainerFilter,
-                tooltipType: 'title',
-                disabled: !this.customView.containerFilter,
-                itemType: 'container filter'
-            });
-        }
-
-        return this.cfClip;
     },
 
     getContainerFilterCombo : function() {
         if (!this.cfCombo) {
             this.cfCombo = Ext4.create('Ext.form.field.ComboBox', {
                 cls: 'labkey-folder-filter-combo',
+                fieldLabel: 'Folder Filter',
+                labelWidth: 65,
+                width: 250,
                 value: this.customView.containerFilter,
                 store: [[null, 'Default']].concat(this.designer.allowableContainerFilters),
                 mode: 'local',
                 triggerAction: 'all',
                 allowBlank: true,
                 editable: false,
-                emptyText: 'Default',
-                listeners: {
-                    change: this.onFolderFilterChange,
-                    scope: this
-                }
+                emptyText: 'Default'
             });
         }
 
@@ -146,22 +121,13 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
         return this.filterStore;
     },
 
-    onFolderFilterChange : function(combo, newValue) {
-        if (newValue) {
-            this.getContainerFilterClip().enable();
-        }
-        else {
-            this.getContainerFilterClip().disable();
-        }
-    },
-
     onListBeforeClick : function(list, record, item, index, e, eOpts) {
         if (this.callParent([list, record, item, index, e, eOpts]) === false) {
             return false;
         }
 
         var target = Ext4.fly(e.getTarget());
-        if (target.is("a.labkey-text-link[add='true']")) {
+        if (target.is(".labkey-tool-add")) {
             this.addClause(index);
         }
     },
@@ -316,28 +282,20 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
                     '<tpl for=".">',
                     '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-filter-item" fieldKey="{fieldKey:htmlEncode}">',
                     '  <tr>',
-                    '    <td rowspan="{[values.items.length+2]}" class="labkey-grab" width="8px">&nbsp;</td>',
-                    '    <td colspan="3"><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
+                    '    <td rowspan="{[values.items.length+1]}" class="labkey-grab" width="8px">&nbsp;</td>',
+                    '    <td colspan="2"><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
                     '  </tr>',
                     '  <tpl for="items">',
                     '  <tr clauseIndex="{[xindex-1]}">',
                     '    <td>',
                     '      <div class="item-op"></div>',
                     '      <div class="item-value"></div>',
+                    //     NOTE: The click event for the (+) is handled in onListBeforeClick.
+                    '      <i class="fa fa-plus-circle labkey-tool-add" title="Add filter clause"></i>',
                     '    </td>',
-                    '    <td width="21px" valign="top"><div class="item-paperclip"></div></td>',
-                    '    <td width="15px" valign="top"><div class="labkey-tool-close fa fa-times" title="Remove filter clause"></div></td>',
-                    '    <td width="5px"><span>&nbsp;</span></td>',/* Spacer on the end to prevent tools from appearing under scrollbar */
+                    '    <td valign="top"><div class="labkey-tool-close fa fa-times" title="Remove filter clause"></div></td>',
                     '  </tr>',
                     '  </tpl>',
-                    '  <tr>',
-                    '    <td colspan="3">',
-                    '      <span style="padding-left:3px;">',
-                    // NOTE: The click event for the 'Add' text link is handled in onListBeforeClick.
-                    LABKEY.Utils.textLink({text: "Add", onClick: "return false;", add: true}),
-                    '      </span>',
-                    '    </td>',
-                    '  </tr>',
                     '</table>',
                     '</tpl>',
                     {
@@ -387,12 +345,6 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
                     fieldMetaStore: this.fieldMetaStore,
                     selectOnFocus: true,
                     emptyText: 'Enter filter value'
-                },{
-                    xtype: 'paperclip-button',
-                    renderTarget: 'div.item-paperclip',
-                    indexedProperty: true,
-                    tooltipType: 'title',
-                    itemType: 'filter'
                 }]
             });
         }
@@ -497,27 +449,16 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
                     o.value = value;
                 }
 
-                if (items[j].urlParameter) {
-                    urlData.push(o);
-                }
-                else {
-                    saveData.push(o);
-                }
+                saveData.push(o);
             }
         }, this);
 
         var containerFilter = this.getContainerFilterCombo().getValue();
         if (containerFilter) {
-            if (this.getContainerFilterClip().pressed) {
-                edited.containerFilter = containerFilter;
-            }
-            else {
-                urlParameters.containerFilter = containerFilter;
-            }
+            edited.containerFilter = containerFilter;
         }
 
         var root = this.getFilterStore().getProxy().getReader().root;
-
         edited[root] = saveData;
         urlParameters[root] = urlData;
     }

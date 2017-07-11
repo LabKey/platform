@@ -587,8 +587,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                     xtype: 'toolbar',
                     dock: 'bottom',
                     height: 34,
-                    style: 'padding-right: 5px;',
-                    items: ['->',{
+                    style: 'padding-left: 5px;',
+                    items: [{
                         xtype: 'checkbox',
                         boxLabel: 'Show Hidden Fields',
                         checked: this.showHiddenFields,

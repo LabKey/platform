@@ -85,13 +85,11 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.SortTab', {
                     '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-sort-item" fieldKey="{fieldKey:htmlEncode}">',
                     '  <tr>',
                     '    <td rowspan="2" class="labkey-grab"></td>',
-                    '    <td colspan="3"><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
+                    '    <td colspan="2"><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
                     '  </tr>',
                     '  <tr>',
                     '    <td><div class="item-dir"></div></td>',
-                    '    <td width="21px" valign="top"><div class="item-paperclip"></div></td>',
                     '    <td width="15px" valign="top"><span class="labkey-tool-close fa fa-times" title="Remove sort"></span></td>',
-                    '    <td width="5px"><span>&nbsp;</span></td>',/* Spacer on the end to prevent tools from appearing under scrollbar */
                     '  </tr>',
                     '</table>',
                     '</tpl>',
@@ -129,12 +127,6 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.SortTab', {
                     forceSelection: true,
                     allowBlank: false,
                     editable: false
-                },{
-                    xtype: 'paperclip-button',
-                    renderTarget: 'div.item-paperclip',
-                    applyValue: 'urlParameter',
-                    tooltipType: 'title',
-                    itemType: 'sort'
                 }]
             });
         }
