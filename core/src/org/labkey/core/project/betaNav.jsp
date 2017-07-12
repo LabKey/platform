@@ -197,7 +197,6 @@
 
             <% if (getContainer().getProject() != null && !getContainer().isRoot()) { %>
                 var l = projectList.find('li[data-submenu-id="<%=h(getContainer().getProject().getName().toLowerCase())%>"]');
-                console.log(l);
                 if (l.length) {
                     l.trigger('mouseenter');
 

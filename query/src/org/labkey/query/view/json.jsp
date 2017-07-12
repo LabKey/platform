@@ -155,7 +155,7 @@
         var h = Ext4.util.Format.htmlEncode;
         el = Ext4.get(el||'cellset');
         var html = [];
-        html.push('<table class="labkey-data-region labkey-show-borders"><tr>');
+        html.push('<table class="labkey-data-region-legacy labkey-show-borders"><tr>');
         if (cs.axes.length>1)
                 html.push('<td>&nbsp;</td>');
 

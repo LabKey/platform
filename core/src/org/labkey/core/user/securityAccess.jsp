@@ -77,7 +77,7 @@
     However, if this account were re-enabled, it would have the following permissions.</div>
 <% } %>
 
-<table id=<%=q(accessRegion.getDomId())%> lk-region-name=<%=q(accessRegion.getName())%> class="labkey-data-region labkey-show-borders">
+<table id=<%=q(accessRegion.getDomId())%> lk-region-name=<%=q(accessRegion.getName())%> class="labkey-data-region-legacy labkey-show-borders">
     <colgroup><col><col><col></colgroup>
     <tr id="dataregion_column_header_row_access">
         <th>&nbsp;</th>

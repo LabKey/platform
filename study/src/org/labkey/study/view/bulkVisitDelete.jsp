@@ -79,7 +79,7 @@
 </p>
 <labkey:errors/>
 <labkey:form action="<%=h(buildURL(StudyController.BulkDeleteVisitsAction.class))%>" name="bulkDeleteVisits" method="POST">
-<table class="labkey-data-region labkey-show-borders">
+<table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
         <td class="labkey-column-header"><input type="checkbox" onchange="toggleAllRows(this);"></td>
         <td class="labkey-column-header">Label</td>

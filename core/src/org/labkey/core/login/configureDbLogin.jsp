@@ -34,12 +34,16 @@
 <table>
     <tr>
         <td class="labkey-form-label">Password Strength</td>
-        <td><table class="labkey-data-region labkey-show-borders"><%
+        <td><table class="labkey-data-region-legacy labkey-show-borders"><%
             for (PasswordRule rule : PasswordRule.values())
             { %>
             <tr valign="center">
-                <td><input type="radio" name="strength" value="<%=h(rule.name())%>"<%=checked(rule.equals(bean.currentRule))%>><b><%=h(rule.name())%></b></td>
-                <td><%=text(rule.getFullRuleHTML())%></td>
+                <td style="padding: 5px;">
+                    <input type="radio" name="strength" value="<%=h(rule.name())%>"<%=checked(rule.equals(bean.currentRule))%>><b><%=h(rule.name())%></b>
+                </td>
+                <td style="padding: 5px;">
+                    <%=text(rule.getFullRuleHTML())%>
+                </td>
             </tr>
                 <%
             }

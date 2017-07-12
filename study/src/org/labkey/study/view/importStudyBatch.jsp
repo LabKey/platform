@@ -38,7 +38,7 @@
 %>
 The dataset definition file <b><%= h(reader.getDefinitionFileName()) %></b> refers to the following dataset files:<br><br>
 
-<table class="labkey-data-region labkey-show-borders">
+<table class="labkey-data-region-legacy labkey-show-borders">
     <tr><th>#</th><th align="left">Dataset Name</th><th align=left>File</th><th align=left>Action</th></tr><%
 int row = 0;
 for (DatasetImportRunnable runnable : runnables)

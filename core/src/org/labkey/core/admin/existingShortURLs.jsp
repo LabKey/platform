@@ -35,7 +35,7 @@
     AdminController.ShortURLForm bean = (AdminController.ShortURLForm) HttpView.currentModel();
 %>
 
-<table class="labkey-data-region labkey-show-borders">
+<table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
         <td class="labkey-column-header">Short URL</td>
         <td class="labkey-column-header">Test Link</td>
@@ -43,7 +43,7 @@
         <td class="labkey-column-header">Target URL</td>
         <td class="labkey-column-header"></td>
     </tr>
-    <% if (bean.getSavedShortURLs().isEmpty()) { %><tr><td colspan="3">No short URLs have been configured.</td></tr> <% } %>
+    <% if (bean.getSavedShortURLs().isEmpty()) { %><tr><td colspan="5">No short URLs have been configured.</td></tr> <% } %>
     <% int index = 0;
         for (ShortURLRecord shortURLRecord : bean.getSavedShortURLs()) {
             index++; %>

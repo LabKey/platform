@@ -118,7 +118,7 @@
 <%WebPartView.startTitleFrame(out, "Timepoints", null, "900", null);%>
 <p>NOTE: If you edit the day range of timepoints, use <%= textLink("Recompute Timepoints", UpdateParticipantVisitsAction.class)%> to
 assign dataset data to the correct timepoints.</p>
-<table class="labkey-data-region labkey-show-borders">
+<table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
         <td class="labkey-column-header">&nbsp;</td>
         <td class="labkey-column-header">Label</td>

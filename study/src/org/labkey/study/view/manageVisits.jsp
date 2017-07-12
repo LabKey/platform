@@ -83,7 +83,7 @@
     {
 %>
 <p>
-<table id="visits" class="labkey-data-region labkey-show-borders">
+<table id="visits" class="labkey-data-region-legacy labkey-show-borders">
     <tr>
         <td class="labkey-column-header">&nbsp;</td>
         <td class="labkey-column-header">Label</td>

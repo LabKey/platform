@@ -420,7 +420,7 @@ function onTruncateAndReset(el, id)
 --%>
 
 <div class="labkey-data-region-wrap">
-<table class="labkey-data-region labkey-show-borders etl-table">
+<table class="labkey-data-region-legacy labkey-show-borders etl-table">
     <tr class="etl-table-header" align="center">
         <td class="labkey-column-header">Name</td>
         <td class="labkey-column-header">Source Module</td>

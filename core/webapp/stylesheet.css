@@ -1001,7 +1001,8 @@ table.labkey-admin-console
 
 /* There are some odd styles that are used so that the data
 regions look the same in IE, Safari, and Firefox */
-table.labkey-data-region {
+table.labkey-data-region,
+table.labkey-data-region-legacy {
     background-color: #FFFFFF;
     *border-collapse: collapse;
     border-spacing: 0;
@@ -1044,15 +1045,16 @@ table.labkey-show-surrounding-border
     border: 1px solid #DDDDDD;
 }
 
-.labkey-data-region th,
-.labkey-data-region .labkey-column-header
+.labkey-data-region th, .labkey-data-region .labkey-column-header,
+.labkey-data-region-legacy th, .labkey-data-region-legacy .labkey-column-header
 {
     border-bottom: solid 1px #AAAAAA;
     vertical-align: top;
 }
 
 .labkey-row TD, .labkey-alternate-row TD,
-.labkey-data-region TH, .labkey-data-region .labkey-column-header
+.labkey-data-region TH, .labkey-data-region .labkey-column-header,
+.labkey-data-region-legacy TH, .labkey-data-region-legacy .labkey-column-header
 {
     padding: 1px 4px;
 }

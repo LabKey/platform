@@ -83,7 +83,7 @@
     </tr>
     <tr>
         <td class="labkey-wp-body">
-            <table class="labkey-data-region labkey-show-borders">
+            <table class="labkey-data-region-legacy labkey-show-borders">
                 <tr>
                     <th>Pool Name</th>
                     <th>Init</th>
@@ -92,10 +92,11 @@
                     <th>Max</th>
                 </tr>
             <%
+                int counter = 1;
                 for (Pair<String, AdminController.MemoryUsageSummary> property : bean.memoryUsages)
                 {
             %>
-                <tr class="labkey-row">
+                <tr class="<%=getShadeRowClass(counter % 2 == 1)%>">
                     <td><%= h(property.getKey()) %></td>
                     <td align="right"><%= h(property.getValue() == null ? "" : property.getValue().getInit()) %></td>
                     <td align="right"><%= h(property.getValue() == null ? "" : property.getValue().getUsed()) %></td>
@@ -103,20 +104,27 @@
                     <td align="right"><%= h(property.getValue() == null ? "" : property.getValue().getMax()) %></td>
                 </tr>
             <%
+                    counter++;
                 }
             %>
             </table>
             <p/>
-            <table name="systemProperties">
+            <table name="systemProperties" class="labkey-data-region-legacy labkey-show-borders">
+                <tr>
+                    <th>System Property Name</th>
+                    <th>System Property Value</th>
+                </tr>
             <%
+                counter = 1;
                 for (Pair<String, Object> property : bean.systemProperties)
                 {
             %>
-                <tr>
-                    <td class="labkey-form-label"><%= h(property.getKey()) %></td>
+                <tr class="<%=getShadeRowClass(counter % 2 == 1)%>">
+                    <td><%= h(property.getKey()) %></td>
                     <td><%= h(property.getValue().toString()) %></td>
                 </tr>
             <%
+                    counter++;
                 }
             %>
             </table>
@@ -134,7 +142,7 @@
     </tr>
     <tr>
         <td class="labkey-wp-body">
-            <table class="labkey-data-region labkey-show-borders" name="leaks" id="leaks">
+            <table class="labkey-data-region-legacy labkey-show-borders" name="leaks" id="leaks">
                 <tr>
                     <th>&nbsp;</th>
                     <th align="left">Object Class</th>
@@ -144,7 +152,7 @@
                 </tr>
             <%
                     long currentMillis = System.currentTimeMillis();
-                    int counter = 1;
+                    counter = 1;
                     for (MemTracker.HeldReference reference : bean.references)
                     {
                         String htmlStack = reference.getHtmlStack();

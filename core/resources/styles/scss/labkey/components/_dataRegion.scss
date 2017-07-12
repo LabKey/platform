@@ -301,3 +301,28 @@ td.labkey-blank-cell, th.labkey-blank-cell {
 .form-control-static {
   min-height: 0;
 }
+
+/* This is for HTML tables that previously used the labkey-data-region cls for styling */
+.labkey-data-region-legacy {
+  background-color: #FFFFFF;
+
+  &.labkey-show-borders {
+    border: 1px solid #DDDDDD;
+  }
+
+  &.labkey-show-borders td, &.labkey-show-borders th {
+    border-top: 0;
+    border-left: 0;
+    border-right: solid 1px #DDDDDD;
+    border-bottom: solid 1px #DDDDDD;
+  }
+
+  th, .labkey-column-header, .labkey-row td, .labkey-alternate-row td {
+    padding: 1px 4px;
+  }
+
+  th, .labkey-column-header {
+    border-bottom: solid 1px #AAAAAA !important;
+    vertical-align: top;
+  }
+}

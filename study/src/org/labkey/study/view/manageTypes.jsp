@@ -136,7 +136,7 @@
 
 <% WebPartView.startTitleFrame(out, "Datasets", null, null, "datasets"); %>
 <br/>
-<table id="dataregion_datasets" class="labkey-data-region labkey-show-borders">
+<table id="dataregion_datasets" class="labkey-data-region-legacy labkey-show-borders">
     <tr>
         <td class="labkey-column-header">ID</td>
         <td class="labkey-column-header">Name</td>

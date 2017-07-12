@@ -35,7 +35,7 @@
 </div>
 <br/>
 <labkey:form method="post">
-    <table class="labkey-data-region labkey-show-borders">
+    <table class="labkey-data-region-legacy labkey-show-borders">
         <tr>
             <td class="labkey-column-header">Enabled</td>
             <td class="labkey-column-header">Name</td>

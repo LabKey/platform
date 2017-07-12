@@ -145,7 +145,7 @@ else
         out.write("<input type=\"hidden\" name=\"redirect\" value=\"" + h(redir) + "\">");
 
     int row = 0;
-    %><br/><table class="labkey-data-region labkey-show-borders" id="datasetSecurityFormTable"><colgroup>
+    %><br/><table class="labkey-data-region-legacy labkey-show-borders" id="datasetSecurityFormTable"><colgroup>
     <%
     for (int i = 0; i < restrictedGroups.size() + 1; i++)
     {

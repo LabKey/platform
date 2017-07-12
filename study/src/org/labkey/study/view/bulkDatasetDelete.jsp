@@ -34,7 +34,7 @@
 
 <p>Please select the datasets you want to delete:</p>
 <labkey:form action="<%=h(buildURL(DatasetController.BulkDatasetDeleteAction.class))%>" name="bulkDatasetDelete" method="POST">
-<table class="labkey-data-region labkey-show-borders">
+<table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
         <td class="labkey-column-header"><input type="checkbox" onchange="toggleAllRows(this);"></td>
         <td class="labkey-column-header">ID</td>

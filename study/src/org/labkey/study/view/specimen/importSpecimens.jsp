@@ -43,7 +43,7 @@
             List<SpecimenArchive.EntryDescription> entries = archive.getEntryDescriptions(getContainer());
 %>
     Specimen archive <b><%= h(archiveName) %></b> contains the following files:<br><br>
-    <table class="labkey-data-region labkey-show-borders">
+    <table class="labkey-data-region-legacy labkey-show-borders">
         <tr><th>File</th><th>Size</th><th>Modified</th></tr>
         <%
             int row = 0;

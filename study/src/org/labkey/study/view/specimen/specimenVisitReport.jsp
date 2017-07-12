@@ -65,7 +65,7 @@ The request has produced no records.
         int colCount = visits.size() + report.getLabelDepth();
 %>
 <div id="<%=tableContainerId%>" style="overflow-x:auto; min-width: 740px">
-<table class="labkey-data-region labkey-show-borders"><colgroup>
+<table class="labkey-data-region-legacy labkey-show-borders"><colgroup>
     <%
     for (int i = 0; i < colCount; i++)
     {
