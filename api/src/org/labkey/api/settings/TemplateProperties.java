@@ -14,10 +14,11 @@ public interface TemplateProperties
     String getDisplayPropertyName();
     String getModulePropertyName();
     String getFileName();
+    String getShowByDefault();
 
     default boolean isDisplay()
     {
-        String isDisplay = "TRUE"; // default is to display property
+        String isDisplay = getShowByDefault();
         Map<String, String> map = PropertyManager.getProperties(getDisplayConfigs());
         if (!map.isEmpty())
         {

@@ -29,4 +29,6 @@ public class HeaderProperties implements TemplateProperties
     {
         return FILE_NAME;
     }
+
+    public String getShowByDefault() { return "FALSE";}
 }

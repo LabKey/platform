@@ -43,4 +43,6 @@ public class FooterProperties implements TemplateProperties
     {
         return FILE_NAME;
     }
+
+    public String getShowByDefault() { return "TRUE";}
 }
