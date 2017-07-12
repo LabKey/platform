@@ -16,11 +16,12 @@ import java.io.InputStreamReader;
 
 public class MarkdownServiceImpl implements MarkdownService
 {
-    ScriptEngine engine;
-    Object mdCompiled;
+    private Object mdCompiled;
+    private Invocable invocable;
 
     public MarkdownServiceImpl() throws Exception
     {
+        ScriptEngine engine;
         LabKeyScriptEngineManager engineManager = new LabKeyScriptEngineManager();
         engine = engineManager.getEngineByName("nashorn");
 
@@ -32,6 +33,8 @@ public class MarkdownServiceImpl implements MarkdownService
             engine.eval(new InputStreamReader(new BufferedInputStream(r.getInputStream(), 1024 * 20), StringUtilsLabKey.DEFAULT_CHARSET));
             engine.eval("var md = new markdownit()");
             mdCompiled = engine.eval("md");
+            invocable = (Invocable) engine;
+            invocable.invokeMethod(mdCompiled, "render", "# call render method here to ensure that nashorn compiles this method before use by app");
         }
 
     }
@@ -46,7 +49,7 @@ public class MarkdownServiceImpl implements MarkdownService
         //        Object testResult = engine.eval("md.render('" + mdText + "')");
 
         // Better yet, avoid js injection by using the invokeMethod syntax that takes a java String as a param
-        Invocable invocable = (Invocable) engine;
+
         // markdownit wont accept null as input param
         if (null == mdText)
             mdText = "";
