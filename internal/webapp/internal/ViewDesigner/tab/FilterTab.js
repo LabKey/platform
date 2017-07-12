@@ -449,6 +449,10 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
                     o.value = value;
                 }
 
+                if (items[j].urlParameter) {
+                    urlData.push(o);
+                }
+                
                 saveData.push(o);
             }
         }, this);
