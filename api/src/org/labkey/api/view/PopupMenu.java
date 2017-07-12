@@ -213,9 +213,12 @@ public class PopupMenu extends DisplayElement
 
     public void renderMenuScript(Writer out) throws IOException
     {
-        out.append("<script type=\"text/javascript\">\n");
-        renderExtMenu(out);
-        out.append("\n</script>");
+        if (!PageFlowUtil.useExperimentalCoreUI())
+        {
+            out.append("<script type=\"text/javascript\">\n");
+            renderExtMenu(out);
+            out.append("\n</script>");
+        }
     }
 
     private void renderExtMenu(Writer out) throws IOException
