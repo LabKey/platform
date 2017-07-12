@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
@@ -27,4 +28,5 @@
 Are you sure you want to delete this page?
 <p/>
 <b>name: <%=h(wiki.getName())%></b><br/>
-<b>title: <%=h(wiki.getLatestVersion().getTitle())%></b>
+<b>title: <%=h(wiki.getLatestVersion().getTitle())%></b><br/>
+<br/><labkey:checkbox id="isDeletingSubtree" name="isDeletingSubtree" value="true" checked="false"/> Delete Entire Wiki Subtree

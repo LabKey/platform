@@ -405,7 +405,7 @@ public class WikiController extends SpringActionController
             try
             {
                 //delete page and all versions
-                getWikiManager().deleteWiki(getUser(), c, _wiki);
+                getWikiManager().deleteWiki(getUser(), c, _wiki, form.getIsDeletingSubtree());
             }
             catch (OptimisticConflictException e)
             {
@@ -1818,6 +1818,7 @@ public class WikiController extends SpringActionController
          private String _redirect;
          private int _parent;
          private int _version;
+         private boolean _isDeletingSubtree;
 
          public int getVersion()
          {
@@ -1859,6 +1860,16 @@ public class WikiController extends SpringActionController
          public void setRedirect(String redirect)
          {
              _redirect = redirect;
+         }
+
+         public boolean getIsDeletingSubtree()
+     {
+         return _isDeletingSubtree;
+     }
+
+         public void setIsDeletingSubtree(boolean isDeletingSubtree)
+         {
+             _isDeletingSubtree = isDeletingSubtree;
          }
      }
 

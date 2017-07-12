@@ -267,10 +267,10 @@ public class WikiManager implements WikiService
 
 
 
-    public void deleteWiki(User user, Container c, Wiki wiki) throws SQLException
+    public void deleteWiki(User user, Container c, Wiki wiki, boolean isDeletingSubtree) throws SQLException
     {
-        //shift children to new parent
-        reparent(user, wiki);
+        //shift children to new parent, or delete recursively if deleting the whole subtree
+        handleChildren(user, c, wiki, isDeletingSubtree);
 
         DbScope scope = comm.getSchema().getScope();
 
@@ -302,7 +302,7 @@ public class WikiManager implements WikiService
     }
 
 
-    private void reparent(User user, Wiki wiki) throws SQLException
+    private void handleChildren(User user, Container c, Wiki wiki, boolean isDeletingSubtree) throws SQLException
     {
         //shift any children upward so they are not orphaned
 
@@ -311,55 +311,63 @@ public class WikiManager implements WikiService
 
         if (children.size() > 0)
         {
-            Wiki parent = wiki.getParentWiki();
-            int parentId = -1;
-            float wikiDisplay = wiki.getDisplayOrder();
-            Wiki nextWiki = null;
-
-            //if page being deleted is not at root, get id and display order of its parent
-            if (null != parent)
-                parentId = parent.getRowId();
-
-            //get page's siblings (children of its parent)
-            List<Wiki> siblings = WikiSelectManager.getChildWikis(wiki.lookupContainer(), parentId);
-
-            //find parent wiki page in sibling list, and determine its position (based on display order)
-            int wikiPosition = 0;
-
-            for (Wiki w : siblings)
+            if(isDeletingSubtree)
             {
-                //hack: make sure we are working with the right kind of wiki object for comparison
-                if (w.getEntityId().equals(wiki.getEntityId()))
+                for(Wiki childWiki : children)
+                    deleteWiki(user, c, childWiki, true);
+            }
+            else
+            {
+                Wiki parent = wiki.getParentWiki();
+                int parentId = -1;
+                float wikiDisplay = wiki.getDisplayOrder();
+                Wiki nextWiki = null;
+
+                //if page being deleted is not at root, get id and display order of its parent
+                if (null != parent)
+                    parentId = parent.getRowId();
+
+                //get page's siblings (children of its parent)
+                List<Wiki> siblings = WikiSelectManager.getChildWikis(wiki.lookupContainer(), parentId);
+
+                //find parent wiki page in sibling list, and determine its position (based on display order)
+                int wikiPosition = 0;
+
+                for (Wiki w : siblings)
                 {
-                    wikiPosition = siblings.indexOf(w);
-                    break;
+                    //hack: make sure we are working with the right kind of wiki object for comparison
+                    if (w.getEntityId().equals(wiki.getEntityId()))
+                    {
+                        wikiPosition = siblings.indexOf(w);
+                        break;
+                    }
                 }
-            }
 
-            //get next sibling to parent
-            if (wikiPosition < siblings.size() - 1)
-                nextWiki = siblings.get(wikiPosition + 1);
+                //get next sibling to parent
+                if (wikiPosition < siblings.size() - 1)
+                    nextWiki = siblings.get(wikiPosition + 1);
 
-            //children need to fit between parent wiki and next wiki
-            //increment child's order, starting with deleted page's order
-            float reorder = wikiDisplay;
+                //children need to fit between parent wiki and next wiki
+                //increment child's order, starting with deleted page's order
+                float reorder = wikiDisplay;
 
-            for (Wiki child : children)
-            {
-                child.setParent(parentId);
-                child.setDisplayOrder(reorder++);
-                updateWiki(user, child, null);
-            }
-
-            //if there are subsequent siblings, reorder them as well.
-            if (null != nextWiki)
-            {
-                //walk through siblings starting with page following parent
-                for (int i = wikiPosition + 1; i < siblings.size(); i++)
+                for (Wiki child : children)
                 {
-                    Wiki lowerSib = siblings.get(i);
-                    lowerSib.setDisplayOrder(reorder++);
-                    updateWiki(user, lowerSib, null);
+                    child.setParent(parentId);
+                    child.setDisplayOrder(reorder++);
+                    updateWiki(user, child, null);
+                }
+
+                //if there are subsequent siblings, reorder them as well.
+                if (null != nextWiki)
+                {
+                    //walk through siblings starting with page following parent
+                    for (int i = wikiPosition + 1; i < siblings.size(); i++)
+                    {
+                        Wiki lowerSib = siblings.get(i);
+                        lowerSib.setDisplayOrder(reorder++);
+                        updateWiki(user, lowerSib, null);
+                    }
                 }
             }
         }
@@ -1051,7 +1059,7 @@ public class WikiManager implements WikiService
             //
             // DELETE
             //
-            _m.deleteWiki(user, c, wikiA);
+            _m.deleteWiki(user, c, wikiA, false);
 
             // verify
             assertNull(WikiSelectManager.getWikiFromDatabase(c, "pageA"));
