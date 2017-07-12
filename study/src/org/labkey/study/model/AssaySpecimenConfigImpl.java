@@ -39,6 +39,7 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
 {
     private int _rowId;
     private String _assayName;
+    private Integer _dataset;
     private String _description;
     private String _source;
     private Integer _locationId;
@@ -90,6 +91,16 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
     public void setAssayName(String assayName)
     {
         _assayName = assayName;
+    }
+
+    public Integer getDataset()
+    {
+        return _dataset;
+    }
+
+    public void setDataset(Integer dataset)
+    {
+        _dataset = dataset;
     }
 
     public String getDescription()
@@ -207,6 +218,7 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
         Map<String, Object> props = new HashMap<>();
         props.put("RowId", getRowId());
         props.put("AssayName", getAssayName());
+        props.put("DataSet", getDataset());
         props.put("Description", getDescription());
         props.put("LocationId", getLocationId());
         props.put("Source", getSource());
@@ -228,6 +240,8 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
         if (o.containsKey("RowId"))
             assay.setRowId(o.getInt("RowId"));
 
+        if (o.containsKey("DataSet") && o.get("DataSet") instanceof Integer && o.getInt("DataSet") > 0)
+            assay.setDataset(o.getInt("DataSet"));
         if (o.containsKey("Source") && !StringUtils.isEmpty(o.getString("Source")))
             assay.setSource(o.getString("Source"));
         if (o.containsKey("LocationId") && o.get("LocationId") instanceof Integer && o.getInt("LocationId") > 0)

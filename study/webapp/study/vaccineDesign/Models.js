@@ -48,6 +48,7 @@ Ext4.define('LABKEY.VaccineDesign.Assay', {
     fields : [
         {name : 'RowId', defaultValue: undefined},
         {name : 'AssayName', type : 'string'},
+        {name : 'DataSet', type : 'int'},
         {name : 'Description', type : 'string'},
         {name : 'Lab', type : 'string'},
         {name : 'LocationId', type : 'int'},

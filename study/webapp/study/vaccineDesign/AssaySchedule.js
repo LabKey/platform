@@ -418,6 +418,12 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
                 editorType: 'LABKEY.ext4.ComboBox',
                 editorConfig: assayNameEditorConfig
             },{
+                label: 'Dataset',
+                width: 200,
+                dataIndex: 'DataSet',
+                editorType: 'LABKEY.ext4.ComboBox',
+                editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('DataSet', 185, 'DataSets', undefined, 'Label', 'DataSetId')
+            },{
                 label: 'Description',
                 width: 200,
                 hidden: this.disableEdit && !this.columnHasData('Description'),
@@ -554,7 +560,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
             var matchingIndex = LABKEY.VaccineDesign.Utils.getMatchingRowIndexFromArray(value, column.dataIndexArrFilterProp, column.dataIndexArrFilterValue);
             return matchingIndex > -1;
         }
-        else if ((dataIndex == 'SampleQuantity' || dataIndex == 'LocationId') && value == 0)
+        else if ((dataIndex == 'SampleQuantity' || dataIndex == 'LocationId') || dataIndex == 'DataSet' && value == 0)
         {
             return null;
         }

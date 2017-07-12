@@ -56,6 +56,16 @@ public class AssaySpecimenTable extends BaseStudyTable
 
         addWrapColumn(_rootTable.getColumn("Description"));
         addWrapLocationColumn("LocationId", "LocationId");
+        ColumnInfo dataSetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("DataSet"));
+        dataSetColumn.setFk(new LookupForeignKey("DataSetId")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable("DataSets");
+            }
+        });
+        addColumn(dataSetColumn);
+
         addWrapColumn(_rootTable.getColumn("Source"));
         //addWrapTypeColumn("PrimaryTypeId", "PrimaryTypeId");
         //addWrapTypeColumn("DerivativeTypeId", "DerivativeTypeId");
