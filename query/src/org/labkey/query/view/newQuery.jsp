@@ -32,9 +32,34 @@
         namesAndLabels = form.getSchema().getTableAndQueryNamesAndLabels(false, false);
 %>
 <labkey:errors />
-
 <% if (namesAndLabels.size() == 0) { %>
     Cannot create a new query: no tables/queries exist in the current schema to base the new query on.
+<% } else { %>
+<% if (PageFlowUtil.useExperimentalCoreUI()) { %>
+<labkey:form id="createQueryForm" className="col-md-6 col-lg-5" action="<%=urlFor(QueryController.NewQueryAction.class)%>" method="POST">
+    <labkey:input type="hidden" name="<%=h(QueryParam.schemaName.toString())%>" value="<%=h(form.getSchemaName())%>"/>
+    <labkey:input type="hidden" name="ff_redirect" id="ff_redirect" value="sourceQuery" />
+    <labkey:input label="What do you want to call the new query?"
+                  type="text"
+                  id="ff_newQueryName"
+                  name="ff_newQueryName"
+                  value="<%=h(form.ff_newQueryName)%>" />
+    <labkey:select label="Which query/table do you want this new query to be based on?"
+                   name="ff_baseTableName">
+        <% for (Map.Entry<String, String> entry : namesAndLabels.entrySet())
+        {
+            String queryLabel = entry.getValue();
+            String queryName = entry.getKey();
+            String displayText = queryName;
+            if (!queryName.equalsIgnoreCase(queryLabel))
+                displayText += " (" + queryLabel + ")";
+        %>
+        <option value="<%=h(queryName)%>" <%=selected(queryName.equals(form.ff_baseTableName))%>><%=h(displayText)%></option>
+        <% } %>
+    </labkey:select>
+    <%= button("Create and Edit Source").disableOnClick(true).submit(true) %>
+    <%= button("Cancel").href(PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), form.getSchemaName())) %>
+</labkey:form>
 <% } else { %>
     <labkey:form id="createQueryForm" action="<%=urlFor(QueryController.NewQueryAction.class)%>" method="POST">
         <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=h(form.getSchemaName())%>" />
@@ -59,19 +84,10 @@
                 <% } %>
             </select>
         </p>
-        <labkey:button text="Create and Edit Source" id="submit-form-btn" onclick="disableCreateButton();" />
-        <labkey:button text="Cancel" href="<%= h(PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), form.getSchemaName()))%>" />
+        <%= button("Create and Edit Source").disableOnClick(true).submit(true) %>
+        <%= button("Cancel").href(PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), form.getSchemaName())) %>
     </labkey:form>
 <% } %>
-
-<script type="text/javascript">
-    var disableCreateButton = function ()
-    {
-        var submitButton = document.getElementById("submit-form-btn");
-        LABKEY.Utils.replaceClass(submitButton, 'labkey-button', 'labkey-disabled-button');
-
-        return true;
-    }
-</script>
+<% } %>
 
 
