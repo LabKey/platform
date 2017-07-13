@@ -335,6 +335,17 @@ public class Portal
             this.permissionContainer = permissionContainer;
         }
 
+        public void hasFrame(boolean hasFrame)
+        {
+            this.propertyMap.put("framed", Boolean.toString(hasFrame));
+        }
+
+        public boolean hasFrame()
+        {
+            return !this.propertyMap.containsKey("framed") ||
+                    Boolean.parseBoolean(this.propertyMap.get("framed"));
+        }
+
         @Override
         public boolean equals(Object o)
         {
@@ -1067,6 +1078,14 @@ public class Portal
 
                         if (!part.isPermanent())
                             navTree.addChild("Remove From Page", getDeleteURL(context, part), null, "fa fa-times");
+
+                        if (PageFlowUtil.useExperimentalCoreUI())
+                        {
+                            if (part.hasFrame())
+                                navTree.addChild("Hide Webpart Frame", getToggleFrameURL(context, part), null, "fa fa-eye-slash");
+                            else
+                                navTree.addChild("Show Webpart Frame", getToggleFrameURL(context, part), null, "fa fa-eye");
+                        }
                     }
                 }
 
@@ -1142,6 +1161,14 @@ public class Portal
         }
         else
             return PageFlowUtil.urlProvider(ProjectUrls.class).getDeleteWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
+    }
+
+    public static String getToggleFrameURL(ViewContext context, Portal.WebPart webPart)
+    {
+        return "javascript:LABKEY.Portal.toggleWebPartFrame({" +
+                "webPartId:" + webPart.getRowId() + "," +
+                "updateDOM:true" +
+                "})";
     }
 
 

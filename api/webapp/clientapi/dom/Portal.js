@@ -34,6 +34,7 @@
         // private methods:
         var MOVE_ACTION = 'move';
         var REMOVE_ACTION = 'remove';
+        var TOGGLE_FRAME_ACTION = 'toggle_frame';
         var MOVE_UP = 0;
         var MOVE_DOWN = 1;
         var MOVE_LEFT = 0;
@@ -43,12 +44,42 @@
         {
             return function(webparts, responseObj, options)
             {
-                updateDOM(webparts, action, webPartId, direction);
+                if (action == TOGGLE_FRAME_ACTION)
+                {
+                    toggleFrame(webPartId);
+                }
+                else
+                {
+                    updateDOM(webparts, action, webPartId, direction);
+                }
                 // after update, call the user's success function:
                 if (userSuccessCallback)
                     userSuccessCallback(webparts, responseObj, options);
             }
         }
+
+        function toggleFrame(webPartId)
+        {
+            var webpartToToggleFrame = $("#webpart_" + webPartId);
+            webpartToToggleFrame.toggleClass("labkey-portal-container");
+            webpartToToggleFrame.find(">:first-child")
+                    .toggleClass("panel")
+                    .toggleClass("panel-portal")
+                    .toggleClass("panel-frameless");
+            var dropdownToToggle = webpartToToggleFrame.find("i.fa.fa-eye-slash, i.fa.fa-eye");
+            dropdownToToggle.toggleClass("fa-eye-slash")
+                    .toggleClass("fa-eye");
+            dropdownToToggle.parent().html(function (idx, html) {
+               if (html.indexOf("Hide") !== -1)
+               {
+                   return html.replace("Hide", "Show");
+               }
+               else
+               {
+                   return html.replace("Show", "Hide");
+               }
+            });
+         }
 
         function updateDOM(webparts, action, webPartId, direction)
         {
@@ -503,6 +534,18 @@
                 var callConfig = mapIndexConfigParameters(config, REMOVE_ACTION, undefined);
                 LABKEY.Ajax.request({
                     url: LABKEY.ActionURL.buildURL('project', 'deleteWebPartAsync', config.containerPath),
+                    method : 'GET',
+                    success: LABKEY.Utils.getOnSuccess(callConfig),
+                    failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(callConfig), callConfig.scope, true),
+                    params: callConfig.params
+                });
+            },
+
+            toggleWebPartFrame : function(config)
+            {
+                var callConfig = mapIndexConfigParameters(config, TOGGLE_FRAME_ACTION, undefined);
+                LABKEY.Ajax.request({
+                    url: LABKEY.ActionURL.buildURL('project', 'toggleWebPartFrameAsync', config.containerPath),
                     method : 'GET',
                     success: LABKEY.Utils.getOnSuccess(callConfig),
                     failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(callConfig), callConfig.scope, true),
