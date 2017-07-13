@@ -21,7 +21,6 @@ import gwt.client.org.labkey.study.chart.client.StudyChartService;
 import gwt.client.org.labkey.study.chart.client.model.GWTPair;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.gwt.client.model.GWTChart;
 import org.labkey.api.gwt.client.model.GWTChartColumn;
@@ -135,7 +134,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         }
 
         final String key = getReportKey(report.getDescriptor());
-        if (!reportNameExists(_context, chart.getReportName(), key))
+        if (!ReportService.get().reportNameExists(_context, chart.getReportName(), key))
         {
             if (!chart.isShared())
                 report.getDescriptor().setOwner(_context.getUser().getUserId());
@@ -168,7 +167,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         }
         report.getDescriptor().setProperty("filterParam", "participantId");
         String key = report.getDescriptor().getProperty("datasetId");
-        if (!reportNameExists(_context, chart.getReportName(), key))
+        if (!ReportService.get().reportNameExists(_context, chart.getReportName(), key))
         {
             ReportService.get().saveReport(_context, key, report);
 
@@ -201,22 +200,6 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         return ReportUtil.getReportQueryKey(descriptor);
     }
 
-    private boolean reportNameExists(ViewContext context, String reportName, String key)
-    {
-        try
-        {
-            for (Report report : ReportService.get().getReports(context.getUser(), context.getContainer(), key))
-            {
-                if (StringUtils.equals(reportName, report.getDescriptor().getReportName()))
-                    return true;
-            }
-            return false;
-        }
-        catch (Exception e)
-        {
-            return false;
-        }
-    }
 
     public List<GWTChartRenderer> getChartRenderers(GWTChart chart)
     {

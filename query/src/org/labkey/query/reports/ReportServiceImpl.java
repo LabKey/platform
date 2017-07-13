@@ -75,6 +75,7 @@ import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.VirtualFile;
@@ -862,6 +863,24 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             }
         }
         return report;
+    }
+
+    @Override
+    public boolean reportNameExists(ViewContext context, String reportName, String key)
+    {
+        try
+        {
+            for (Report report : getReports(context.getUser(), context.getContainer(), key))
+            {
+                if (StringUtils.equals(reportName, report.getDescriptor().getReportName()))
+                    return true;
+            }
+            return false;
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
     }
 
     @Override

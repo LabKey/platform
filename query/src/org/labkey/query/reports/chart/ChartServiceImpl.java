@@ -18,7 +18,6 @@ package org.labkey.query.reports.chart;
 
 import com.google.gwt.user.client.rpc.SerializableException;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.gwt.client.model.GWTChart;
 import org.labkey.api.gwt.client.model.GWTChartRenderer;
 import org.labkey.api.gwt.client.model.GWTChartColumn;
@@ -76,7 +75,7 @@ public class ChartServiceImpl extends BaseRemoteService implements ChartService
             if (report != null)
             {
                 final String key = ReportUtil.getReportQueryKey(report.getDescriptor());
-                if (!reportNameExists(_context, chart.getReportName(), key))
+                if (!ReportService.get().reportNameExists(_context, chart.getReportName(), key))
                 {
                     ReportService.get().saveReport(_context, key, report);
                 }
@@ -95,23 +94,6 @@ public class ChartServiceImpl extends BaseRemoteService implements ChartService
         catch (Exception e)
         {
             throw UnexpectedException.wrap(e);
-        }
-    }
-
-    private boolean reportNameExists(ViewContext context, String reportName, String key)
-    {
-        try
-        {
-            for (Report report : ReportService.get().getReports(context.getUser(), context.getContainer(), key))
-            {
-                if (StringUtils.equals(reportName, report.getDescriptor().getReportName()))
-                    return true;
-            }
-            return false;
-        }
-        catch (Exception e)
-        {
-            return false;
         }
     }
 

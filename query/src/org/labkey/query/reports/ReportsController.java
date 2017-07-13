@@ -65,8 +65,6 @@ import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QueryForm;
-import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SimpleValidationError;
@@ -1167,11 +1165,6 @@ public class ReportsController extends SpringActionController
                 return new ApiSimpleResponse(resultProperties);
             }
 
-/*
-            if (null != resultsView)
-                resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
-*/
-
             return null;
         }
 
@@ -1442,7 +1435,7 @@ public class ReportsController extends SpringActionController
                 // on new reports, check for duplicates
                 else if (null == report.getDescriptor().getReportId())
                 {
-                    if (reportNameExists(report.getDescriptor().getReportName(), ReportUtil.getReportQueryKey(report.getDescriptor())))
+                    if (ReportService.get().reportNameExists(getViewContext(), report.getDescriptor().getReportName(), ReportUtil.getReportQueryKey(report.getDescriptor())))
                     {
                         errors.reject("saveScriptReport", "There is already a report with the name of: '" + report.getDescriptor().getReportName() +
                                 "'. Please specify a different name.");
@@ -1481,27 +1474,6 @@ public class ReportsController extends SpringActionController
             response.put("redirect", form.getRedirectUrl());
 
             return response;
-        }
-
-        // TODO: Use shared method instead?
-        private boolean reportNameExists(String reportName, String key)
-        {
-            try
-            {
-                ViewContext context = getViewContext();
-
-                for (Report report : ReportService.get().getReports(context.getUser(), context.getContainer(), key))
-                {
-                    if (StringUtils.equals(reportName, report.getDescriptor().getReportName()))
-                        return true;
-                }
-
-                return false;
-            }
-            catch (Exception e)
-            {
-                return false;
-            }
         }
     }
 
@@ -1750,19 +1722,6 @@ public class ReportsController extends SpringActionController
             form.setRefreshDate(report.getDescriptor().getRefreshDate());
 
             ReportService.get().validateReportPermissions(getViewContext(), report);
-
-            //
-            // see if this user can make a public report private
-            // if not, then don't enable the sharing checkbox
-            //
-//            if (null == report.getDescriptor().getOwner())
-//            {
-//                List<ValidationError> errors = new ArrayList<>();
-//                report.getDescriptor().setOwner(getUser().getUserId());
-//                form.setCanChangeSharing(ReportService.get().tryValidateReportPermissions(getViewContext(), report, errors));
-//                report.getDescriptor().setOwner(null);
-//            }
-
             form.setCanChangeSharing(report.canShare(getUser(), getContainer()));
         }
 
@@ -1771,22 +1730,6 @@ public class ReportsController extends SpringActionController
         {
             if (null == StringUtils.trimToNull(form.getViewName()))
                 errors.reject("viewName", "You must enter a report name.");
-
-/*
-            String dateStr = form.getReportDateString();
-            if (dateStr != null && dateStr.length() > 0)
-            {
-                try
-                {
-                    Long l = DateUtil.parseDateTime(dateStr);
-                    Date reportDate = new Date(l);
-                }
-                catch (ConversionException x)
-                {
-                    errors.reject("uploadForm", "You must enter a legal report date");
-                }
-            }
-*/
         }
 
         protected String getReportKey(R report, F form)
@@ -1956,7 +1899,6 @@ public class ReportsController extends SpringActionController
             else
             {
                 errors.reject(ERROR_MSG, "Unknown attachment report type");
-                return;
             }
         }
 
@@ -2411,19 +2353,6 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    private static QueryForm getQueryForm(ViewContext context, String viewId)
-    {
-        Map<String, String> map = PageFlowUtil.mapFromQueryString(viewId);
-        QueryForm form = new QueryForm();
-
-        form.setSchemaName(map.get(QueryParam.schemaName.name()));
-        form.setQueryName(map.get(QueryParam.queryName.name()));
-        form.setViewName(map.get(QueryParam.viewName.name()));
-        form.setViewContext(context);
-
-        return form;
-    }
-
     @RequiresPermission(ReadPermission.class)
     public class RenameReportAction extends FormViewAction<ReportDesignBean>
     {
@@ -2450,7 +2379,7 @@ public class ReportsController extends SpringActionController
                             return;
                         }
 
-                        if (reportNameExists(getViewContext(), _newReportName, _report.getDescriptor().getReportKey()))
+                        if (ReportService.get().reportNameExists(getViewContext(), _newReportName, _report.getDescriptor().getReportKey()))
                             errors.reject("renameReportAction", "There is already a view with the name of: " + _newReportName +
                                     ". Please specify a different name.");
                     }
@@ -2490,23 +2419,6 @@ public class ReportsController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-    private boolean reportNameExists(ViewContext context, String reportName, String key)
-    {
-        try
-        {
-            for (Report report : ReportService.get().getReports(context.getUser(), context.getContainer(), key))
-            {
-                if (StringUtils.equals(reportName, report.getDescriptor().getReportName()))
-                    return true;
-            }
-            return false;
-        }
-        catch (Exception e)
-        {
-            return false;
         }
     }
 

@@ -466,7 +466,7 @@ public class ReportsController extends BaseStudyController
 
         public void validateCommand(SaveReportViewForm form, Errors errors)
         {
-            if (reportNameExists(getViewContext(), form.getLabel(), ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName())))
+            if (ReportService.get().reportNameExists(getViewContext(), form.getLabel(), ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName())))
                 errors.reject("saveReportView", "There is already a report with the name of: '" + form.getLabel() +
                         "'. Please specify a different name.");
         }
@@ -493,29 +493,11 @@ public class ReportsController extends BaseStudyController
                 return r.getRunReportURL(getViewContext());
             else
                 return getViewContext().cloneActionURL().deleteParameters().setAction(BeginAction.class);
-
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-    private boolean reportNameExists(ViewContext context, String reportName, String key)
-    {
-        try
-        {
-            for (Report report : ReportService.get().getReports(context.getUser(), context.getContainer(), key))
-            {
-                if (StringUtils.equals(reportName, report.getDescriptor().getReportName()))
-                    return true;
-            }
-            return false;
-        }
-        catch (Exception e)
-        {
-            return false;
         }
     }
 
