@@ -51,7 +51,7 @@
     <%= PageFlowUtil.getStandardIncludes(getViewContext(), model.getClientDependencies()) %>
     <% } %>
 </head>
-<body onload="<%=h(onLoad)%>">
+<body onload="<%=h(onLoad)%>" class="<%=h(BootstrapTemplate.getTemplatePrefix(model) + "-template-body")%>">
 <%
     if (me.includeGWT()) {
 %>

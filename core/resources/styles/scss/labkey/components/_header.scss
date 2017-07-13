@@ -208,10 +208,6 @@
   background-color: $lk-page-header-notification-bg-color;
 }
 
-.lk-body-ct {
-  padding: 20px 0 0 0;
-}
-
 .lk-body-title {
   margin-bottom: 20px;
 
@@ -230,7 +226,17 @@
   margin: 0 15px 15px;
 }
 
-.dialog-template-alert,
-.wizard-template-alert {
-  margin-top: 20px;
+/* Default pages show the header & navigation */
+.default-template-body {
+  .labkey-page-nav {
+    margin-bottom: 20px;
+  }
+}
+
+/* Dialog/Wizard pages show just the header */
+.dialog-template-body,
+.wizard-template-body {
+  .labkey-page-header {
+    margin-bottom: 20px;
+  }
 }

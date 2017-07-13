@@ -25,7 +25,7 @@
     JspView<PageConfig> me = (JspView<PageConfig>) HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();
 %>
-<div class="container">
+<div class="container lk-body-ct">
     <%= text(BootstrapTemplate.renderSiteMessages(pageConfig)) %>
     <div class="well">
         <% me.include(me.getBody(), out); %>

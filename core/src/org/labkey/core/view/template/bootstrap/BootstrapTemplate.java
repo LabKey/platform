@@ -20,8 +20,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -69,10 +71,6 @@ public class BootstrapTemplate extends HomeTemplate
 
     private void buildWarnings(ViewContext context, PageConfig page)
     {
-        page.addWarningMessage("<strong>Under construction!</strong> This layout is under development. " +
-                "<a href=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getExperimentalFeaturesURL() + "\" class=\"alert-link\">Turn it off here</a> " +
-                "by disabling the \"Core UI Migration\" feature.");
-
         User user = getViewContext().getUser();
         Container container = getViewContext().getContainer();
 
@@ -122,6 +120,25 @@ public class BootstrapTemplate extends HomeTemplate
             DbScope.getLabKeyScope().getSqlDialect().addAdminWarningMessages(sqlWarnings);
             if (sqlWarnings.size() > 0)
                 page.addWarningMessages(sqlWarnings);
+        }
+
+        if (AppProps.getInstance().isDevMode())
+        {
+            int leakCount = ConnectionWrapper.getProbableLeakCount();
+            if (leakCount > 0)
+            {
+                int count = ConnectionWrapper.getActiveConnectionCount();
+                String connectionsInUse = "<a href=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getMemTrackerURL() + "\">" + count + " DB connection" + (count == 1 ? "" : "s") + " in use.";
+                connectionsInUse += " " + leakCount + " probable leak" + (leakCount == 1 ? "" : "s") + ".</a>";
+                page.addWarningMessage(connectionsInUse);
+            }
+        }
+
+        if (AppProps.getInstance().isShowRibbonMessage() && !StringUtils.isEmpty(AppProps.getInstance().getRibbonMessageHtml()))
+        {
+            String message = AppProps.getInstance().getRibbonMessageHtml();
+            message = ModuleHtmlView.replaceTokens(message, getViewContext());
+            page.addWarningMessage(message);
         }
     }
 
@@ -292,6 +309,26 @@ public class BootstrapTemplate extends HomeTemplate
         isAppTemplate = appTemplate;
     }
 
+    public static String getTemplatePrefix(PageConfig page)
+    {
+        PageConfig.Template t = page.getTemplate();
+        final String templateCls;
+
+        switch (t)
+        {
+            case Wizard:
+                templateCls = "wizard";
+                break;
+            case Dialog:
+                templateCls = "dialog";
+                break;
+            default:
+                templateCls = "default";
+        }
+
+        return templateCls;
+    }
+
     // For now, gives a central place to render messaging
     public static String renderSiteMessages(PageConfig page)
     {
@@ -299,22 +336,7 @@ public class BootstrapTemplate extends HomeTemplate
         int size = page.getWarningMessages().size();
         if (size > 0)
         {
-            PageConfig.Template t = page.getTemplate();
-            final String templateCls;
-
-            switch (t)
-            {
-                case Wizard:
-                    templateCls = "wizard";
-                    break;
-                case Dialog:
-                    templateCls = "dialog";
-                    break;
-                default:
-                    templateCls = "default";
-            }
-
-            messages += "<div class=\"alert alert-warning " + templateCls + "-template-alert\" role=\"alert\">";
+            messages += "<div class=\"alert alert-warning " + getTemplatePrefix(page) + "-template-alert\" role=\"alert\">";
 
             if (size == 1)
                 messages += page.getWarningMessages().get(0) + "</div>";

@@ -26,12 +26,11 @@
     JspView<PageConfig> me = (JspView<PageConfig>) HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();
 %>
-<div class="container">
+<div class="container lk-body-ct">
     <%= text(BootstrapTemplate.renderSiteMessages(pageConfig)) %>
     <div class="labkey-wizard-container">
         <div class="well">
             <span class="labkey-nav-page-header"><%= h(pageConfig.getTitle()) %></span>
-
             <div class="row labkey-wizard-row hidden-md hidden-lg">
                 <div class="col-xs-12">
                     <ul class="nav nav-pills list-inline">
@@ -47,7 +46,6 @@
                     </ul>
                 </div>
             </div>
-
             <div class="row labkey-wizard-row">
                 <div class="col-md-3 hidden-xs hidden-sm">
                     <ul class="nav nav-stacked labkey-wizard-pills">
@@ -59,7 +57,6 @@
                         <% } %>
                     </ul>
                 </div>
-
                 <div class="col-md-9 labkey-wizard-content">
                     <table class="tab-content">
                         <tr>
@@ -68,9 +65,7 @@
                         </tr>
                     </table>
                 </div>
-
             </div>
         </div>
     </div>
-
 </div>

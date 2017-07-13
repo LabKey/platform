@@ -64,7 +64,5 @@ public class BootstrapBodyTemplate extends BootstrapTemplate
     @Override
     public void prepareWebPart(PageConfig page)
     {
-
     }
-
 }
