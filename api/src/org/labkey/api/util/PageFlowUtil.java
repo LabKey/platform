@@ -1682,9 +1682,12 @@ public class PageFlowUtil
             resources.add(ClientDependency.fromPath("clientapi"));
 
             if (PageFlowUtil.useExperimentalCoreUI())
-                resources.add(ClientDependency.fromPath("util.js"));
-            else
                 resources.add(ClientDependency.fromPath("internal"));
+            else
+            {
+                resources.add(ClientDependency.fromPath("Ext4"));
+                resources.add(ClientDependency.fromPath("util.js"));
+            }
         }
 
         if (extraResources != null)
