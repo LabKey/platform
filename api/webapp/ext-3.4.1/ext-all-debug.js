@@ -5526,9 +5526,7 @@ Ext.onReady = Ext.EventManager.onDocumentReady;
         return true;
     };
 
-    if (!initExtCss()) {
-        Ext.onReady(initExtCss);
-    }
+    Ext.onReady(initExtCss);
 })();
 
 
