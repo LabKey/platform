@@ -11,6 +11,9 @@
         <tag-class>org.labkey.api.jsp.taglib.ButtonTag</tag-class>
         <body-content>empty</body-content>
         <attribute>
+            <name>disableOnClick</name>
+        </attribute>
+        <attribute>
             <name>text</name>
             <required>true</required>
             <rtexprvalue>true</rtexprvalue>
