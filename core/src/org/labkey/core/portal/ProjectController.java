@@ -727,6 +727,22 @@ public class ProjectController extends SpringActionController
 
     @RequiresPermission(AdminPermission.class)
     @ApiVersion(10.2)
+    public class ToggleWebPartFrameAsyncAction extends ApiAction<CustomizePortletApiForm>
+    {
+        @Override
+        public ApiResponse execute(CustomizePortletApiForm customizePortletForm, BindException errors) throws Exception
+        {
+            Portal.WebPart webPart = Portal.getPart(getContainer(), customizePortletForm.getWebPartId());
+            if (webPart != null && handleToggleWebPartFrame(getContainer(), webPart.getPageId(), webPart.getIndex()))
+                return getWebPartLayoutApiResponse(customizePortletForm.getPageId());
+            else
+                throw new NotFoundException("Web part not found.  Please refresh the page and try again.");
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    @ApiVersion(10.2)
     public class MoveWebPartAsyncAction extends ApiAction<CustomizePortletApiForm>
     {
         @Override
@@ -795,6 +811,28 @@ public class ProjectController extends SpringActionController
         for (Portal.WebPart part : parts)
             if (part.getIndex() != index)
                 newParts.add(part);
+
+        Portal.saveParts(c, pageId, newParts);
+        return true;
+    }
+
+    private boolean handleToggleWebPartFrame(Container c, String pageId, int index)
+    {
+        List<Portal.WebPart> parts = Portal.getParts(c, pageId);
+        //Changed on us..
+        if (null == parts || parts.isEmpty())
+            return true;
+
+        ArrayList<Portal.WebPart> newParts = new ArrayList<>();
+        for (Portal.WebPart part : parts)
+        {
+            Portal.WebPart newPart = new Portal.WebPart(part);
+            if (part.getIndex() == index)
+            {
+                newPart.hasFrame(!newPart.hasFrame());
+            }
+            newParts.add(newPart);
+        }
 
         Portal.saveParts(c, pageId, newParts);
         return true;

@@ -6,3 +6,7 @@
     @include panel-variant($panel-default-border, $panel-bg, $lk-secondary-brand-color, $panel-default-border);
   }
 }
+
+.panel-frameless {
+  margin-bottom: 20px;
+}

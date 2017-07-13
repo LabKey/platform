@@ -51,7 +51,10 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
             case TITLE:
                 return new FrameTitleBootstrap(context, config);
             case PORTAL:
-                return new FramePortalBootstrap(context, config);
+                if (config._webpart == null || config._webpart.hasFrame())
+                    return new FramePortalBootstrap(context, config);
+                else
+                    return new FramePortalFramelessBootstrap(context, config);
             case DIALOG:
                 return new FrameDialogBootstrap(context, config);
         }
@@ -257,6 +260,50 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
         }
 
 
+    }
+
+    public class FramePortalFramelessBootstrap extends FramePortalBootstrap
+    {
+        public FramePortalFramelessBootstrap(ViewContext context, FrameConfig config)
+        {
+            super(context, config);
+        }
+
+        @Override
+        public void renderWebpartStart(PrintWriter out)
+        {
+            out.print("<!--FrameType.PORTAL_FRAMELESS-->");
+            out.println("<div name=\"webpart\"");
+            if (null != getConfig()._webpart)
+                out.println(" id=\"webpart_" + getConfig()._webpart.getRowId() + "\"");
+            out.write(">");
+            out.println("<div class=\"panel-frameless\">");
+        }
+
+        @Override
+        public void renderWebpartHeaderStart(PrintWriter out, String title)
+        {
+            out.println("<div class=\"panel-heading clearfix\">");
+
+            out.print("<h3 class=\"panel-title pull-left\" title=\"");
+            if (getConfig()._showTitle)
+            {
+                out.print(PageFlowUtil.filter(title));
+            }
+            out.print("\">");
+            out.print("<a name=\"" + PageFlowUtil.filter(title) + "\" class=\"labkey-anchor-disabled\">");
+            if (getConfig()._isCollapsible)
+            {
+                renderCollapsiblePortalTitle(out);
+            }
+            else
+            {
+                renderNonCollapsiblePortalTitle(out);
+            }
+
+            out.print("</a>");
+            out.print("</h3>");
+        }
     }
 
     @Override
