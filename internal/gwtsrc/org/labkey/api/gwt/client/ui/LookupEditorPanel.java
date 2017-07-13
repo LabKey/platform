@@ -375,7 +375,6 @@ public class LookupEditorPanel extends LayoutContainer
             super();
             setWidth(250);
             sinkEvents(Event.ONCHANGE);
-//            setForceSelection(true);
             setTriggerAction(TriggerAction.ALL);
             setStore(new ComboStore());
             addListener(Events.Change,new Listener<FieldEvent>(){
@@ -415,7 +414,6 @@ public class LookupEditorPanel extends LayoutContainer
                     _listExpand();
                 }
             });
-//            setTemplate("<tpl for=\".\"><div class=\"x-combo-list-item\" title=\"{" + getDisplayField() + "}\">{" + getDisplayField() + "}</div></tpl>");
             setTemplate(XTemplate.create("<tpl for=\".\"><div class=\"x-combo-list-item\" title=\"{[fm.htmlEncode(values." + getDisplayField() + ")]}\">{[fm.htmlEncode(values." + getDisplayField() + ")]}</div></tpl>"));
             updateTestMarker();
         }
@@ -506,10 +504,6 @@ public class LookupEditorPanel extends LayoutContainer
         }
     }
 
-
-//    GWTPropertyDescriptor initialValue;
-//    GWTPropertyDescriptor value;
-
     public void setValue(GWTPropertyDescriptor pd)
     {
         if (null==pd)
@@ -537,27 +531,6 @@ public class LookupEditorPanel extends LayoutContainer
         return (null != lookupSchemaName ? lookupSchemaName : "lists");
     }
 
-//    public GWTPropertyDescriptor getValue()
-//    {
-//        // selenium onChange events are not firing
-//        _comboContainer.onChange();
-//        _comboSchema.onChange();
-//        _comboTableName.onChange();
-//
-//        if (null == value)
-//            return null;
-//        return copy(value);
-//    }
-
-
-//    public boolean isDirty()
-//    {
-//        GWTPropertyDescriptor init = null==initialValue ? new GWTPropertyDescriptor() : initialValue;
-//        return !_eq(initialValue.getLookupContainer(), value.getLookupContainer()) ||
-//               !_eq(initialValue.getLookupSchema(), value.getLookupSchema()) ||
-//               !_eq(initialValue.getLookupQuery(), value.getLookupQuery());
-//    }
-
 
     // is this a valid folder/schema/table/range combination
     public boolean isValid()
@@ -579,17 +552,6 @@ public class LookupEditorPanel extends LayoutContainer
     {
         changes.fireEvent(new ChangeEvent(){});
     }
-
-
-//    static GWTPropertyDescriptor copy(GWTPropertyDescriptor src)
-//    {
-//        GWTPropertyDescriptor ret = new GWTPropertyDescriptor();
-//        ret.setRangeURI(src.getRangeURI());
-//        ret.setLookupContainer(src.getLookupContainer());
-//        ret.setLookupSchema(src.getLookupSchema());
-//        ret.setLookupQuery(src.getLookupQuery());
-//        return ret;
-//    }
 
     boolean _empty(String a) { return null == a || "".equals(a); }
     boolean _eq(String a, String b) { return _empty(a)?_empty(b):a.equals(b); }

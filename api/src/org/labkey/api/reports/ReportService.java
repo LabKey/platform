@@ -160,6 +160,8 @@ public interface ReportService
      */
     void maintenance(Logger log);
 
+    boolean reportNameExists(ViewContext context, String reportName, String key);
+
     /**
      * Validates whether a user has the appropriate permissions to save the report with the changed
      * settings. Use tryValidateReportPermissions if you don't want to throw a runtime exception
