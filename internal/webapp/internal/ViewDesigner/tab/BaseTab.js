@@ -130,7 +130,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
 
     validate : Ext4.emptyFn,
 
-    save : function(edited, urlParameters) {
+    save : function(edited, urlParameters, properties) {
         var store = this.getList().getStore();
 
         var writer = Ext4.create('Ext.data.writer.Json', {
@@ -138,15 +138,20 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
             writeAllFields: true
         });
 
-        var root = store.getProxy().getReader().root;
+        var root = store.getProxy().getReader().root,
+            isSessionView = Ext4.isObject(properties) ? properties.session : false;
+
         edited[root] = [];
         urlParameters[root] = [];
 
         store.each(function(r) {
+            // keep the records added via the url, regardless of session view or saved view
             if (r.get('urlParameter')) {
                 urlParameters[root].push(writer.getRecordData(r, {action: 'create'}));
             }
-            else {
+
+            // only convert url records to the save object if this is not a session based view save
+            if (!isSessionView || !r.get('urlParameter')) {
                 edited[root].push(writer.getRecordData(r, {action: 'create'}));
             }
         });

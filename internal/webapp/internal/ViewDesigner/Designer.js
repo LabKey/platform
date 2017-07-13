@@ -1228,7 +1228,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             for (i = 0; i < tabs.length; i++) {
                 tab = tabs[i];
                 if (tab instanceof LABKEY.internal.ViewDesigner.tab.BaseTab) {
-                    tab.save(edited, urlParameters);
+                    tab.save(edited, urlParameters, properties);
                 }
             }
 

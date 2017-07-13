@@ -409,11 +409,12 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
         return true;
     },
 
-    save : function(edited, urlParameters) {
+    save : function(edited, urlParameters, properties) {
 
         // flatten the filters
         var saveData = [],
-            urlData = [];
+            urlData = [],
+            isSessionView = Ext4.isObject(properties) ? properties.session : false;
 
         this.getFilterStore().each(function(filterRecord) {
             var fieldKey = filterRecord.get('fieldKey');
@@ -449,11 +450,15 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
                     o.value = value;
                 }
 
+                // keep the filters added via the url, regardless of session view or saved view
                 if (items[j].urlParameter) {
                     urlData.push(o);
                 }
-                
-                saveData.push(o);
+
+                // only convert url filters to the save object if this is not a session based view save
+                if (!isSessionView || !items[j].urlParameter) {
+                    saveData.push(o);
+                }
             }
         }, this);
 

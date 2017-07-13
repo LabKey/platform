@@ -136,11 +136,10 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.SortTab', {
 
     hasField : function(fieldKey) {
         // Find fieldKey using case-insensitive comparison
-        return this.sortStore.find("fieldKey", fieldKey, 0, false, false) != -1;
+        return this.getSortStore().find("fieldKey", fieldKey, 0, false, false) != -1;
     },
 
     validate : function() {
         return true;
     }
-
 });
