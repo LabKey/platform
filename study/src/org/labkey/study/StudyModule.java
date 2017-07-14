@@ -136,6 +136,7 @@ import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
 import org.labkey.study.query.studydesign.StudyProductDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
+import org.labkey.study.reports.AssayProgressReport;
 import org.labkey.study.reports.ChartReportView;
 import org.labkey.study.reports.EnrollmentReport;
 import org.labkey.study.reports.ExportExcelReport;
@@ -393,6 +394,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ReportService.get().registerReport(new StudyCrosstabReport());
         ReportService.get().registerReport(new StudyRReport());
         ReportService.get().registerReport(new ParticipantReport());
+        ReportService.get().registerReport(new AssayProgressReport());
 
         ReportService.get().registerDescriptor(new ChartReportView.ChartReportViewDescriptor());
         ReportService.get().registerDescriptor(new CrosstabReportDescriptor());

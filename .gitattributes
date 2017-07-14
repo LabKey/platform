@@ -2471,6 +2471,7 @@ study/src/org/labkey/study/query/studydesign/StudyTreatmentProductTable.java -te
 study/src/org/labkey/study/query/studydesign/StudyTreatmentTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyTreatmentVisitMapTable.java -text
 study/src/org/labkey/study/reports/AbstractReportView.java -text
+study/src/org/labkey/study/reports/AssayProgressReport.java -text
 study/src/org/labkey/study/reports/BaseStudyView.java -text
 study/src/org/labkey/study/reports/ChartReportView.java -text
 study/src/org/labkey/study/reports/EnrollmentReport.java -text
@@ -2576,6 +2577,7 @@ study/src/org/labkey/study/view/SubjectDetailsWebPartFactory.java -text
 study/src/org/labkey/study/view/SubjectsWebPart.java -text
 study/src/org/labkey/study/view/VaccineStudyWebPart.java -text
 study/src/org/labkey/study/view/assayList2.jsp -text
+study/src/org/labkey/study/view/assayProgressReport.jsp -text
 study/src/org/labkey/study/view/bulkDatasetDelete.jsp -text
 study/src/org/labkey/study/view/bulkImportDataTypes.jsp -text
 study/src/org/labkey/study/view/bulkVisitDelete.jsp -text

@@ -135,6 +135,12 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                         _getIconPath(ParticipantReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(ParticipantReport.TYPE));
                 prInfo.setId("create_participantReport");
                 designers.add(prInfo);
+
+                DesignerInfoImpl progressReportInfo = new DesignerInfoImpl(AssayProgressReport.TYPE, "Assay Progress Report", null,
+                        new ActionURL(ReportsController.AssayProgressReportAction.class, context.getContainer()),
+                        _getIconPath(AssayProgressReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(AssayProgressReport.TYPE));
+                prInfo.setId("create_assayProgressReport");
+                designers.add(progressReportInfo);
             }
             catch (Exception e)
             {

@@ -111,6 +111,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1892,5 +1893,29 @@ public class ReportsController extends BaseStudyController
                 _groups = groups.toString();
             }
         }
+    }
+
+    public static class ProgressReportForm extends ReportUtil.JsonReportForm
+    {
+    }
+
+    @RequiresLogin
+    @RequiresPermission(ReadPermission.class)
+    public class AssayProgressReportAction extends SimpleViewAction<ProgressReportForm>
+    {
+        @Override
+        public ModelAndView getView(ProgressReportForm form, BindException errors) throws Exception
+        {
+            JspView<ProgressReportForm> view = new JspView<>("/org/labkey/study/view/assayProgressReport.jsp", form, errors);
+
+            return view;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Assay Progress Report");
+        }
+
     }
 }
