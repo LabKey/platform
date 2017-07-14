@@ -571,7 +571,7 @@ public class LoginController extends SpringActionController
         {
             // This old login POST handler should no longer be used since it's been replaced by LoginApiAction. Leave the
             // code in place for now (17.2) in case we find a client who really needs it.
-            if (1 == 0)
+            if (1 == 1)
                 throw new DeprecatedActionException(LoginAction.class);
 
             HttpServletRequest request = getViewContext().getRequest();

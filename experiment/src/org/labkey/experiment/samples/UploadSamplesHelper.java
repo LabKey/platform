@@ -478,8 +478,9 @@ public class UploadSamplesHelper
 
     public static boolean isInputOutputHeader(String name)
     {
-        return name.startsWith(DATA_INPUT_PARENT) || name.startsWith(MATERIAL_INPUT_PARENT) ||
-                name.startsWith(DATA_OUTPUT_CHILD) || name.startsWith(MATERIAL_OUTPUT_CHILD);
+        String[] parts = name.split("\\.|/");
+        return parts[0].equalsIgnoreCase(DATA_INPUT_PARENT) || parts[0].equalsIgnoreCase(MATERIAL_INPUT_PARENT) ||
+                parts[0].equalsIgnoreCase(DATA_OUTPUT_CHILD) || parts[0].equalsIgnoreCase(MATERIAL_OUTPUT_CHILD);
     }
 
     private boolean isReservedHeader(String name)

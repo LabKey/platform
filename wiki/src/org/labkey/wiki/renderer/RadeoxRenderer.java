@@ -137,7 +137,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         }
     }
 
-    private static class newTabLinkMacro extends LinkMacro
+    private static class NewTabLinkMacro extends LinkMacro
     {
         @Override
         public String getDescription()
@@ -166,19 +166,22 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             String text = params.get("text", 0);
             String url = params.get("url", 1);
 
-            if(params.getLength() == 1) {
+            if (params.getLength() == 1)
                 url = text;
-                text = Encoder.toEntity(text.charAt(0)) + Encoder.escape(text.substring(1));
-            }
 
-            if(url != null && text != null) {
+            text = Encoder.toEntity(text.charAt(0)) + Encoder.escape(text.substring(1));
+
+            if (url != null)
+            {
                 writer.write("<span class=\"nobr\">");
                 writer.write("<a target=\"_blank\" href=\"");
                 writer.write(url);
                 writer.write("\">");
                 writer.write(text);
                 writer.write("</a></span>");
-            } else {
+            }
+            else
+            {
                 throw new IllegalArgumentException("link needs display text and a url as argument");
             }
         }
@@ -457,7 +460,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     static
     {
         MacroRepository repository = MacroRepository.getInstance();
-        repository.put("new-tab-link", new newTabLinkMacro());
+        repository.put("new-tab-link", new NewTabLinkMacro());
         repository.put("image", new ImageMacro());
         repository.put("div", new StylableMacro("div"));
         repository.put("span", new StylableMacro("span"));

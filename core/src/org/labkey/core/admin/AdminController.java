@@ -2423,7 +2423,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @AdminConsoleAction(AdminOperationsPermission.class)
+    @AdminConsoleAction
     public class CachesAction extends SimpleViewAction<MemForm>
     {
         public ModelAndView getView(MemForm form, BindException errors) throws Exception
@@ -2450,12 +2450,9 @@ public class AdminController extends SpringActionController
 
             StringBuilder html = new StringBuilder();
 
-            if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
-            {
-                html.append(PageFlowUtil.textLink("Clear Caches and Refresh", AdminController.getCachesURL(true, false)));
-                html.append(PageFlowUtil.textLink("Refresh", AdminController.getCachesURL(false, false)));
-                html.append("<hr size=1>\n");
-            }
+            html.append(PageFlowUtil.textLink("Clear Caches and Refresh", AdminController.getCachesURL(true, false)));
+            html.append(PageFlowUtil.textLink("Refresh", AdminController.getCachesURL(false, false)));
+            html.append("<hr size=1>\n");
 
             appendStats(html, "Caches", cacheStats);
             appendStats(html, "Transaction Caches", transactionStats);
