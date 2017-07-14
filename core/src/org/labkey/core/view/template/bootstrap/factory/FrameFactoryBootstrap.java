@@ -54,7 +54,7 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
                 if (config._webpart == null || config._webpart.hasFrame())
                     return new FramePortalBootstrap(context, config);
                 else
-                    return new FramePortalFramelessBootstrap(context, config);
+                    return new FramelessPortalBootstrap(context, config);
             case DIALOG:
                 return new FrameDialogBootstrap(context, config);
         }
@@ -262,9 +262,9 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
 
     }
 
-    public class FramePortalFramelessBootstrap extends FramePortalBootstrap
+    public class FramelessPortalBootstrap extends FramePortalBootstrap
     {
-        public FramePortalFramelessBootstrap(ViewContext context, FrameConfig config)
+        public FramelessPortalBootstrap(ViewContext context, FrameConfig config)
         {
             super(context, config);
         }
@@ -283,26 +283,38 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
         @Override
         public void renderWebpartHeaderStart(PrintWriter out, String title)
         {
-            out.println("<div class=\"panel-heading clearfix\">");
+            if (PageFlowUtil.isPageAdminMode(getContext()))
+            {
+                super.renderWebpartHeaderStart(out, title);
+            }
+        }
 
-            out.print("<h3 class=\"panel-title pull-left\" title=\"");
-            if (getConfig()._showTitle)
+        @Override
+        public void renderWebpartHeaderEnd(PrintWriter out)
+        {
+            if (PageFlowUtil.isPageAdminMode(getContext()))
             {
-                out.print(PageFlowUtil.filter(title));
+                super.renderWebpartHeaderEnd(out);
             }
-            out.print("\">");
-            out.print("<a name=\"" + PageFlowUtil.filter(title) + "\" class=\"labkey-anchor-disabled\">");
-            if (getConfig()._isCollapsible)
-            {
-                renderCollapsiblePortalTitle(out);
-            }
-            else
-            {
-                renderNonCollapsiblePortalTitle(out);
-            }
+        }
 
-            out.print("</a>");
-            out.print("</h3>");
+        @Override
+        public void renderPortalBody(PrintWriter out)
+        {
+            out.print("<div id=\"WebPartView" + System.identityHashCode(this) + "\"");
+            if (getConfig()._collapsed && getConfig()._isCollapsible)
+                out.print(" style=\"display: none\"");
+            if (null != getConfig()._className)
+                out.print(" class=\"" + getConfig()._className + "\">");
+        }
+
+        @Override
+        public void renderPortalMenu(PrintWriter out, String title)
+        {
+            if (PageFlowUtil.isPageAdminMode(getContext()))
+            {
+                super.renderPortalMenu(out, title);
+            }
         }
     }
 
