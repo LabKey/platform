@@ -394,7 +394,7 @@
             getWebParts : function(config)
             {
                 LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('project', 'getWebParts', config.containerPath),
+                    url: LABKEY.ActionURL.buildURL('project', 'getWebParts.api', config.containerPath),
                     method : 'GET',
                     success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
                     failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
@@ -440,7 +440,7 @@
             {
                 var callConfig = mapIndexConfigParameters(config, MOVE_ACTION, MOVE_UP);
                 LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('project', 'moveWebPartAsync', config.containerPath),
+                    url: LABKEY.ActionURL.buildURL('project', 'moveWebPartAsync.api', config.containerPath),
                     method : 'GET',
                     success: LABKEY.Utils.getOnSuccess(callConfig),
                     failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(callConfig), callConfig.scope, true),
@@ -488,7 +488,7 @@
             {
                 var callConfig = mapIndexConfigParameters(config, MOVE_ACTION, MOVE_DOWN);
                 LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('project', 'moveWebPartAsync', config.containerPath),
+                    url: LABKEY.ActionURL.buildURL('project', 'moveWebPartAsync.api', config.containerPath),
                     method : 'GET',
                     success: LABKEY.Utils.getOnSuccess(callConfig),
                     failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(callConfig), callConfig.scope, true),
@@ -533,7 +533,7 @@
             {
                 var callConfig = mapIndexConfigParameters(config, REMOVE_ACTION, undefined);
                 LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('project', 'deleteWebPartAsync', config.containerPath),
+                    url: LABKEY.ActionURL.buildURL('project', 'deleteWebPartAsync.api', config.containerPath),
                     method : 'GET',
                     success: LABKEY.Utils.getOnSuccess(callConfig),
                     failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(callConfig), callConfig.scope, true),
@@ -545,7 +545,7 @@
             {
                 var callConfig = mapIndexConfigParameters(config, TOGGLE_FRAME_ACTION, undefined);
                 LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('project', 'toggleWebPartFrameAsync', config.containerPath),
+                    url: LABKEY.ActionURL.buildURL('project', 'toggleWebPartFrameAsync.api', config.containerPath),
                     method : 'GET',
                     success: LABKEY.Utils.getOnSuccess(callConfig),
                     failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(callConfig), callConfig.scope, true),
@@ -561,7 +561,7 @@
             moveTabLeft : function(pageId, domId)
             {
                 LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('admin', 'moveTab', LABKEY.container.path),
+                    url: LABKEY.ActionURL.buildURL('admin', 'moveTab.api', LABKEY.container.path),
                     method: 'GET',
                     params: {
                         pageId: pageId,
@@ -589,7 +589,7 @@
             moveTabRight : function(pageId, domId)
             {
                 LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('admin', 'moveTab', LABKEY.container.path),
+                    url: LABKEY.ActionURL.buildURL('admin', 'moveTab.api', LABKEY.container.path),
                     method: 'GET',
                     params: {
                         pageId: pageId,
@@ -617,7 +617,7 @@
             toggleTabEditMode : function()
             {
                 LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('admin', 'toggleTabEditMode', LABKEY.container.path),
+                    url: LABKEY.ActionURL.buildURL('admin', 'toggleTabEditMode.api', LABKEY.container.path),
                     method: 'GET',
                     success: LABKEY.Utils.getCallbackWrapper(function(response, options){
                         var classToSearchFor = response.tabEditMode ? 'tab-edit-mode-disabled' : 'tab-edit-mode-enabled';
@@ -643,7 +643,7 @@
                 var addTabHandler = function(name, editWindow)
                 {
                     LABKEY.Ajax.request({
-                        url: LABKEY.ActionURL.buildURL('admin', 'addTab'),
+                        url: LABKEY.ActionURL.buildURL('admin', 'addTab.api'),
                         method: 'POST',
                         jsonData: {tabName: name},
                         success: function(response)
@@ -680,7 +680,7 @@
             showTab : function(pageId)
             {
                 LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('admin', 'showTab'),
+                    url: LABKEY.ActionURL.buildURL('admin', 'showTab.api'),
                     method: 'POST',
                     jsonData: {tabPageId: pageId},
                     success: function(response)
@@ -718,7 +718,7 @@
                     var renameHandler = function(name, editWindow)
                     {
                         LABKEY.Ajax.request({
-                            url: LABKEY.ActionURL.buildURL('admin', 'renameTab'),
+                            url: LABKEY.ActionURL.buildURL('admin', 'renameTab.api'),
                             method: 'POST',
                             jsonData: {
                                 tabPageId: pageId,

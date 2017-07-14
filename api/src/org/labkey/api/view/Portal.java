@@ -1167,7 +1167,8 @@ public class Portal
     {
         return "javascript:LABKEY.Portal.toggleWebPartFrame({" +
                 "webPartId:" + webPart.getRowId() + "," +
-                "updateDOM:true" +
+                "updateDOM:false," +
+                "success:function(){window.location.reload();}" +
                 "})";
     }
 
