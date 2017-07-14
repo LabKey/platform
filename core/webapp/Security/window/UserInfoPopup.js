@@ -59,9 +59,11 @@ Ext4.define('Security.window.UserInfoPopup', {
 
             if (this.canEdit)
             {
+                var userContainer = this.user.Container == this.cache.projectId ? container : this.user.Container;
+
                 hdrHtml += LABKEY.Utils.textLink({
                     text : 'manage group',
-                    href : LABKEY.ActionURL.buildURL('security', 'group', this.user.Container || '/', {id: this.user.UserId}),
+                    href : LABKEY.ActionURL.buildURL('security', 'group', userContainer || '/', {id: this.user.UserId}),
                     style: 'float: right'
                 });
             }
