@@ -15,7 +15,6 @@
  */
 package org.labkey.api.util;
 
-import org.apache.commons.collections4.IteratorUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.LockManager;
@@ -24,6 +23,8 @@ import org.labkey.api.security.AuthenticatedRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -121,18 +122,25 @@ public class SessionHelper
         }
         else
         {
-            HttpSession s = request.getSession(false);
+            HttpSession oldSession = request.getSession(false);
 
-            if (null != s)
+            if (null != oldSession)
             {
-                synchronized (getSessionLock(s))
+                if (attributesToPreserve.isEmpty())
                 {
-                    // Clear all the attributes instead of using s.invalidate(). This is an attempt to fix #22245, which I
-                    // suspect is caused by race conditions. It also allows us to preserve certain attributes.
-                    IteratorUtils.asIterator(s.getAttributeNames()).forEachRemaining(name -> {
-                        if (!attributesToPreserve.contains(name))
-                            s.removeAttribute(name);
+                    oldSession.invalidate();
+                }
+                else
+                {
+                    Map<String, Object> map = new HashMap<>();
+                    attributesToPreserve.forEach(name -> {
+                        Object value = oldSession.getAttribute(name);
+                        if (null != value)
+                            map.put(name, value);
                     });
+                    oldSession.invalidate();
+                    HttpSession newSession = request.getSession(true);
+                    map.forEach(newSession::setAttribute);
                 }
             }
         }

@@ -306,7 +306,7 @@ public class ViewServlet extends HttpServlet
             }
         }
         timer.stop();
-        _log.warn(timer.toString());
+        _log.debug(timer.toString());
     }
 
 
