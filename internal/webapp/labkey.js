@@ -29,7 +29,6 @@ if (typeof LABKEY == "undefined")
             hash: 0,
             imagePath: "",
             requestedCssFiles: {},
-            requestedScriptFiles: [],
             submit: false,
             unloadMessage: "You will lose any changes made to this page.",
             verbose: false,
@@ -596,7 +595,7 @@ if (typeof LABKEY == "undefined")
                     var chain = function()
                     {
                         loaded++;
-                        if (loaded == requestedLength)
+                        if (loaded === requestedLength)
                         {
                             handle(callback, scope);
                         }
@@ -617,7 +616,7 @@ if (typeof LABKEY == "undefined")
                     var allDone = function()
                     {
                         loaded++;
-                        if (loaded == requestedLength)
+                        if (loaded === requestedLength)
                         {
                             handle(callback, scope);
                         }
@@ -653,7 +652,7 @@ if (typeof LABKEY == "undefined")
                 return;
             }
 
-            if (file.indexOf('/') == 0)
+            if (file.indexOf('/') === 0)
             {
                 file = file.substring(1);
             }
