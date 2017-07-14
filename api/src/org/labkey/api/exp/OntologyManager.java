@@ -1218,8 +1218,11 @@ public class OntologyManager
                 }
             }
 
-            sql = "UPDATE " + getTinfoDomainDescriptor() + " SET Project = ? WHERE Container = ?";
-            new SqlExecutor(getExpSchema()).execute(sql, newProject, c);
+            TableInfo ddTable = getTinfoDomainDescriptor();
+            sql = "UPDATE " + ddTable + " SET Project = ? WHERE Container = ? AND DomainUri NOT IN ";
+            // Issue 30477: exclude project level domain descriptors (such as Study) that already exist
+            sql += "(SELECT DomainUri FROM " + ddTable + " WHERE Project = ? AND DomainUri IN (SELECT DomainUri FROM " + ddTable + " WHERE Container = ?))";
+            new SqlExecutor(getExpSchema()).execute(sql, newProject, c, newProject, c);
 
             if (null == oldProject) // if container was a project & demoted I'm done
             {
