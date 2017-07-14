@@ -69,11 +69,10 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.SortTab', {
 
             this.listItem = Ext4.create('Ext.ux.ComponentDataView', {
                 cls: 'labkey-customview-list',
-                flex: 1,
                 store: this.getSortStore(),
                 deferEmptyText: false,
                 multiSelect: true,
-                height: 250,
+                height: 166,
                 autoScroll: true,
                 overItemCls: 'x4-view-over',
                 itemSelector: '.labkey-customview-item',

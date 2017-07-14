@@ -267,11 +267,10 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
 
             this.listItem = Ext4.create('Ext.ux.ComponentDataView', {
                 cls: 'labkey-customview-list',
-                flex: 1,
                 store: this.getFilterStore(),
                 deferEmptyText: false,
                 multiSelect: true,
-                height: this.hideContainerFilterToolbar ? 250 : 220,
+                height: this.hideContainerFilterToolbar ? 166 : 136,
                 autoScroll: true,
                 overItemCls: 'x4-view-over',
                 itemSelector: '.labkey-customview-item',

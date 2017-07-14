@@ -322,10 +322,49 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
     },
 
     addDataViewDragDrop : function(view, groupName) {
-        new Ext4.view.DragZone({
-            view: view,
+        var viewTop, viewBottom;
+
+        new Ext4.dd.DragZone(view.getEl(), {
             ddGroup: groupName,
-            dragText: 'Reorder selected'
+            repairHighlightColor: 'ffffff',
+
+            getDragData: function(e) {
+                var sourceEl = e.getTarget(view.itemSelector);
+                if (sourceEl) {
+                    var d = Ext4.get(sourceEl).select('.item-caption').elements[0].cloneNode(true);
+                    d.id = Ext4.id();
+                    d.style = 'font-weight: bold; width: 300px;';
+                    return {
+                        view: view,
+                        ddel: d,
+                        sourceEl: sourceEl,
+                        repairXY: Ext4.fly(sourceEl).getXY(),
+                        records: [view.getRecord(sourceEl)]
+                    }
+                }
+            },
+
+            getRepairXY: function() {
+                return this.dragData.repairXY;
+            },
+
+            /* Handle scroll on drag above or below */
+            beforeDragOut: function(target, e, id) {
+                if (!viewTop) {
+                    viewTop = view.getEl().getY();
+                }
+                if (!viewBottom) {
+                    viewBottom = viewTop + view.getEl().getHeight();
+                }
+
+                var y = e.getY();
+                if (y <= viewTop) {
+                    view.getEl().scrollBy(0, -50, true);
+                }
+                else if (y >= viewBottom) {
+                    view.getEl().scrollBy(0, 50, true);
+                }
+            }
         });
 
         new Ext4.view.DropZone({

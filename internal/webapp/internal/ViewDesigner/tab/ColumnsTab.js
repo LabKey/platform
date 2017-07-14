@@ -81,11 +81,10 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
 
             this.listItem = Ext4.create('Ext.view.View', {
                 cls: 'labkey-customview-list',
-                flex: 1,
                 store: this.getColumnStore(),
                 deferEmptyText: false,
                 multiSelect: false,
-                height: 250,
+                height: 196,
                 autoScroll: true,
                 overItemCls: 'x4-view-over',
                 itemSelector: '.labkey-customview-item',

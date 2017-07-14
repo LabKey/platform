@@ -442,11 +442,6 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         this.callParent([config]);
 
         this.addEvents('beforesaveview', 'viewsave', 'beforedeleteview', 'deleteview');
-
-        // Show 'does not exist' message only for non-default views.
-        if (this.customView.doesNotExist && this.viewName) {
-            this.showMessage("Custom Grid View '" + this.viewName + "' not found.");
-        }
     },
 
     initComponent : function() {
@@ -454,7 +449,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         this.items = [
             this.getCustomViewClose(),
             this.getTabsDataView(true),
-            this.getTabsMainPanel()
+            this.getTopMessagePanel(),
+            this.getTabsMainPanel(),
+            this.getBottomToolbarPanel()
         ];
 
         this.callParent();
@@ -649,9 +646,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                             this.fieldsTree
                         ]
                     },
-                    this.getInnerTabPanel(this.activeTab),
-                    this.getTopMessagePanel(),
-                    this.getBottomToolbarPanel()
+                    this.getInnerTabPanel(this.activeTab)
                 ]
             })
         }
@@ -835,27 +830,52 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
     getTopMessagePanel : function() {
         if (!this.topMessagePanel) {
+            var items = [];
+            if (this.customView.doesNotExist && this.viewName) {
+                items.push(this.getMessageCmp("Custom Grid View '" + this.viewName + "' not found.", false));
+            }
+            if (!this.canEdit()) {
+                items.push(this.getMessageCmp("This grid view is not editable, but you may save a new grid view with a different name.", false));
+            }
+            if (this.customView.session) {
+                items.push(this.getMessageCmp("Editing an unsaved grid view.", false));
+            }
+
             this.topMessagePanel = Ext4.create('Ext.panel.Panel', {
                 region: 'north',
                 border: false,
-                items: []
+                items: items
             });
+
+            // update the main panel height to account for the messages
+            this.height = this.height + (items.length * 25);
         }
 
         return this.topMessagePanel;
     },
 
-    onRender : function(ct, position) {
-        this.callParent([ct, position]);
+    getMessageCmp : function(msg, closable) {
+        var msgId = Ext4.id(),
+            msgBox = Ext4.create('Ext.Component', {
+                xtype: 'box',
+                id: msgId,
+                cls: 'labkey-customview-message alert-warning',
+                html: (closable ? '<span class="fa fa-times labkey-tool-close" title="Close message"></span>' : '')
+                        + '<div>' + Ext4.htmlEncode(msg) + '</div>'
+            });
 
-        if (!this.canEdit())
-        {
-            var msg = "This grid view is not editable, but you may save a new grid view with a different name.";
-            this.showMessage(msg);
+        if (closable) {
+            msgBox.on('render', function(cmp) {
+                this.attachClickHandler(cmp, 'labkey-tool-close', function() { this.hideMessage(msgId);});
+            }, this);
         }
-        else if (this.customView.session) {
-            this.showMessage("Editing an unsaved grid view.");
-        }
+
+        return msgBox;
+    },
+
+    hideMessage : function(msgId) {
+        var msgBox = this.getTopMessagePanel().down('#' + msgId);
+        this.getTopMessagePanel().remove(msgBox);
     },
 
     beforeDestroy : function() {
@@ -921,32 +941,11 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         return this.fieldMetaStore;
     },
 
-    showMessage : function(msg) {
-        var msgId = Ext4.id();
-
-        var msgBox = this.getTopMessagePanel().add({
-            xtype: 'box',
-            id: msgId,
-            cls: 'labkey-customview-message alert-warning',
-            html: '<span class="fa fa-times labkey-tool-close" title="Close message"></span>'
-                + '<div>' + Ext4.htmlEncode(msg) + '</div>'
-        });
-
-        msgBox.on('render', function(cmp) {
-            this.attachClickHandler(cmp, 'labkey-tool-close', function() { this.hideMessage(msgId);});
-        }, this);
-    },
-
     attachClickHandler : function(cmp, subElCls, handler) {
         var subEl = Ext4.dom.Query.selectNode('.' + subElCls, cmp.getEl().dom);
         if (subEl) {
             Ext4.get(subEl).on('click', handler, this);
         }
-    },
-
-    hideMessage : function(msgId) {
-        var msgBox = this.getTopMessagePanel().down('#' + msgId);
-        this.getTopMessagePanel().remove(msgBox);
     },
 
     getDesignerTabs : function() {
