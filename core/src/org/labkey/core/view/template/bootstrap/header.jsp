@@ -91,7 +91,7 @@
         <ul class="navbar-nav-lk">
 <% if (showSearch) { %>
             <li class="navbar-search hidden-xs">
-                <a href="#" class="fa fa-search" id="global-search-trigger"></a>
+                <a class="fa fa-search" id="global-search-trigger"></a>
                 <div id="global-search" class="global-search">
                     <labkey:form id="global-search-form" action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" method="GET">
                         <input type="text" class="search-box" name="q" placeholder="Search LabKey Server" value="">
@@ -159,7 +159,7 @@
 <% if (AppProps.getInstance().isDevMode() && isRealUser && user.isInSiteAdminGroup())
 { %>
             <li data-tt="tooltip" data-placement="bottom" title="Revert back to the legacy look and feel.">
-                <a href="#" onclick="LABKEY.Utils.toggleUI();">
+                <a onclick="LABKEY.Utils.toggleUI();">
                     <i class="fa fa-history"></i>
                 </a>
             </li>
