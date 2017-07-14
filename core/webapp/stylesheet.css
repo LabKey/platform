@@ -1501,7 +1501,6 @@ img.labkey-grid-filter-icon
 }
 .labkey-customview-message {
     padding: 2px 8px;
-    border-radius: 5px;
     border: solid 1px #faebcc;
 }
 .labkey-customview-message span.labkey-tool-close {
