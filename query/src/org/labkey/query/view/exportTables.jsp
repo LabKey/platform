@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="org.springframework.validation.Errors" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
-<%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -55,11 +54,10 @@
 <%
     }
 %>
-
-<div id='merge-tables-ui'></div>
+<div id="merge-tables-ui"></div>
 <script type="text/javascript">
-    Ext4.onReady(function(){
-        var exportPanel = Ext4.create('HIPC.tree.ExportTablePanel', {
+    Ext4.onReady(function() {
+        Ext4.create('LABKEY.query.ExportTablePanel', {
             renderTo: 'merge-tables-ui'
         });
     });

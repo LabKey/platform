@@ -785,7 +785,6 @@ public class QueryController extends SpringActionController
             target.ff_newQueryName = StringUtils.trimToNull(target.ff_newQueryName);
             if (null == target.ff_newQueryName)
                 errors.reject(ERROR_MSG, "QueryName is required");
-                //errors.rejectValue("ff_newQueryName", ERROR_REQUIRED);
         }
 
         public ModelAndView getView(NewQueryForm form, boolean reshow, BindException errors) throws Exception
@@ -3237,67 +3236,67 @@ public class QueryController extends SpringActionController
             return super.getDefaultImportView(form, errors);
         }
 
-    @Override
-    public NavTree appendNavTrail(NavTree root)
-    {
-        (new SchemaAction(_form)).appendNavTrail(root);
-        root.addChild(_form.getQueryName(), _form.urlFor(QueryAction.executeQuery));
-        root.addChild("Import Data");
-        return root;
-    }
-}
-
-
-public static class ExportSqlForm
-{
-    private String _sql;
-    private String _schemaName;
-    private String _containerFilter;
-    private String _format = "excel";
-
-    public String getSql()
-    {
-        return _sql;
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            (new SchemaAction(_form)).appendNavTrail(root);
+            root.addChild(_form.getQueryName(), _form.urlFor(QueryAction.executeQuery));
+            root.addChild("Import Data");
+            return root;
+        }
     }
 
-    public void setSql(String sql)
+
+    public static class ExportSqlForm
     {
-        _sql = sql;
+        private String _sql;
+        private String _schemaName;
+        private String _containerFilter;
+        private String _format = "excel";
+
+        public String getSql()
+        {
+            return _sql;
+        }
+
+        public void setSql(String sql)
+        {
+            _sql = sql;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(String containerFilter)
+        {
+            _containerFilter = containerFilter;
+        }
+
+        public String getFormat()
+        {
+            return _format;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setFormat(String format)
+        {
+            _format = format;
+        }
     }
 
-    public String getSchemaName()
-    {
-        return _schemaName;
-    }
-
-    public void setSchemaName(String schemaName)
-    {
-        _schemaName = schemaName;
-    }
-
-    public String getContainerFilter()
-    {
-        return _containerFilter;
-    }
-
-    public void setContainerFilter(String containerFilter)
-    {
-        _containerFilter = containerFilter;
-    }
-
-    public String getFormat()
-    {
-        return _format;
-    }
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void setFormat(String format)
-    {
-        _format = format;
-    }
-}
-
-@RequiresPermission(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.2)
     @Action(ActionType.Export.class)
     public class ExportSqlAction extends ExportAction<ExportSqlForm>
@@ -5153,7 +5152,6 @@ public static class ExportSqlForm
 
         public NavTree appendNavTrail(NavTree root)
         {
-            //new ManageViewsAction().appendNavTrail(root);
             root.addChild("Create New Grid View");
             return root;
         }

@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext4.define('HIPC.tree.ExportTablePanel', {
+Ext4.define('LABKEY.query.ExportTablePanel', {
     
     extend: 'Ext.tree.Panel',
 

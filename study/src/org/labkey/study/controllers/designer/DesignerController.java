@@ -59,6 +59,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.designer.JSONSerializer;
 import org.labkey.study.designer.MapArrayExcelWriter;
@@ -263,7 +264,7 @@ public class DesignerController extends SpringActionController
                             "Discussion of " + info.getLabel() + " revision " + revision,
                             true, false);
                     VBox vbox = new VBox();
-                    vbox.addView(new HtmlView("<script type='text/javascript'>LABKEY.requiresCss('study/StudyVaccineDesign.css');</script>"));
+                    vbox.addClientDependency(ClientDependency.fromPath("study/StudyVaccineDesign.css"));
                     if (null != HttpView.currentRequest().getParameter("discussion.start") || null != HttpView.currentRequest().getParameter("discussion.id"))
                         vbox.addView(new HtmlView("Study information is on this page below the discussion."));
                     vbox.addView(discussion);
@@ -285,9 +286,8 @@ public class DesignerController extends SpringActionController
                 model.setEditMode(form.isEdit());
                 model.setPanel(form.getPanel());
                 model.setFinishURL(form.getFinishURL());
-                VaccineStudyWebPart part = new VaccineStudyWebPart(model);
 
-                return part;
+                return new VaccineStudyWebPart(model);
             }
         }
     }
