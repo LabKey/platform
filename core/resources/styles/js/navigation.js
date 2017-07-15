@@ -166,7 +166,7 @@
     $(function() {
         var menus = window.__menus;
         if (!menus) {
-            return;
+            menus = {};
         }
         $('[data-webpart]').on('show.bs.dropdown show.bs.mobiledrop', function() {
             var partName = $(this).data('name');
