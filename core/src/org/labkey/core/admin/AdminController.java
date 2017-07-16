@@ -4322,7 +4322,7 @@ public class AdminController extends SpringActionController
             String folderName = StringUtils.trimToNull(form.getName());
             StringBuilder error = new StringBuilder();
 
-            if (Container.isLegalName(folderName, error))
+            if (Container.isLegalName(folderName, c.isProject(), error))
             {
                 // 19061: Unable to do case-only container rename
                 if (c.getParent().hasChild(folderName) && !c.equals(c.getParent().getChild(folderName)))
@@ -4333,7 +4333,7 @@ public class AdminController extends SpringActionController
                     }
                     else
                     {
-                        error.append("The " + (c.getParent().isProject() ? "project " : "folder ") + c.getParent().getPath() + " already has a folder with this name.");
+                        error.append("The ").append(c.getParent().isProject() ? "project " : "folder ").append(c.getParent().getPath()).append(" already has a folder with this name.");
                     }
                 }
                 else
@@ -4580,7 +4580,7 @@ public class AdminController extends SpringActionController
             String folderName = StringUtils.trimToNull(form.getName());
             StringBuilder error = new StringBuilder();
 
-            if (Container.isLegalName(folderName, error))
+            if (Container.isLegalName(folderName, parent.isRoot(), error))
             {
                 if (parent.hasChild(folderName))
                 {
@@ -4590,7 +4590,7 @@ public class AdminController extends SpringActionController
                     }
                     else
                     {
-                        error.append("The " + (parent.isProject() ? "project " : "folder ") + parent.getPath() + " already has a folder with this name.");
+                        error.append("The ").append(parent.isProject() ? "project " : "folder ").append(parent.getPath()).append(" already has a folder with this name.");
                     }
                 }
                 else

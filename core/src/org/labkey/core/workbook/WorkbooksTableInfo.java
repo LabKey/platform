@@ -428,35 +428,17 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
             }
 
             // output columns
-            addColumn(new ColumnInfo("RowId", JdbcType.INTEGER), new Callable<Integer>()
-            {
-                @Override
-                public Integer call() throws Exception
-                {
-                    return _currentContainer != null ? _currentContainer.getRowId() : null;
-                }
-            });
+            addColumn(new ColumnInfo("RowId", JdbcType.INTEGER), (Callable<Integer>) () -> _currentContainer != null ? _currentContainer.getRowId() : null);
 
-            int entityIdOutputCol = addColumn(new ColumnInfo("EntityId", JdbcType.VARCHAR), new Callable<String>()
-            {
-                @Override
-                public String call() throws Exception
-                {
-                    return _currentContainer != null ? _currentContainer.getEntityId().toString() : null;
-                }
-            });
+            int entityIdOutputCol = addColumn(new ColumnInfo("EntityId", JdbcType.VARCHAR), (Callable<String>) () -> _currentContainer != null ? _currentContainer.getEntityId().toString() : null);
 
             // Not sure if this is right, but return the newly inserted container as 'container' instead of the parent container.
             addAliasColumn("Container", entityIdOutputCol);
 
-            addColumn(new ColumnInfo("Parent", JdbcType.VARCHAR), new Callable<String>()
+            addColumn(new ColumnInfo("Parent", JdbcType.VARCHAR), (Callable<String>) () ->
             {
-                @Override
-                public String call() throws Exception
-                {
-                    Container parentContainer = _currentContainer != null ? _currentContainer.getParent() : null;
-                    return parentContainer != null ? parentContainer.getEntityId().toString() : null;
-                }
+                Container parentContainer = _currentContainer != null ? _currentContainer.getParent() : null;
+                return parentContainer != null ? parentContainer.getEntityId().toString() : null;
             });
 
             // UNDONE: add all other container/workbook columns
@@ -578,82 +560,66 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
                 throw new IllegalArgumentException("parent container required");
 
             // parent container
-            outputCols.put("parent", it.addColumn(new ColumnInfo("parent", JdbcType.VARCHAR), new Callable()
+            outputCols.put("parent", it.addColumn(new ColumnInfo("parent", JdbcType.VARCHAR), (Callable) () ->
             {
-                @Override
-                public Object call() throws Exception
-                {
-                    int parentInputCol = inputCols.get("container");
-                    Object parentContainerVal = it.getInputColumnValue(parentInputCol);
-                    Container parentContainer = ConvertHelper.convert(parentContainerVal, Container.class);
-                    // XXX: how do we signal field errors?
-                    if (parentContainer == null)
-                        throw new Exception("Container was missing or not found");
+                int parentInputCol = inputCols.get("container");
+                Object parentContainerVal = it.getInputColumnValue(parentInputCol);
+                Container parentContainer = ConvertHelper.convert(parentContainerVal, Container.class);
+                // XXX: how do we signal field errors?
+                if (parentContainer == null)
+                    throw new Exception("Container was missing or not found");
 
-                    // parent must be normal (not workbook or container tab)
-                    if (Container.TYPE.normal != parentContainer.getType())
-                        throw new Exception("Parent container must be a normal container!");
+                // parent must be normal (not workbook or container tab)
+                if (Container.TYPE.normal != parentContainer.getType())
+                    throw new Exception("Parent container must be a normal container!");
 
-                    return parentContainer.getEntityId();
-                }
+                return parentContainer.getEntityId();
             }));
 
             // sort order (depends on parent container column)
-            outputCols.put("sortOrder", it.addColumn(new ColumnInfo("sortOrder", JdbcType.INTEGER), new Callable()
+            outputCols.put("sortOrder", it.addColumn(new ColumnInfo("sortOrder", JdbcType.INTEGER), (Callable) () ->
             {
-                @Override
-                public Object call() throws Exception
-                {
-                    int parentOutputCol = outputCols.get("parent");
-                    String parentEntityId = it.get(parentOutputCol).toString();
-                    Container parentContainer = ContainerManager.getForId(parentEntityId);
-                    return DbSequenceManager.get(parentContainer, ContainerManager.WORKBOOK_DBSEQUENCE_NAME).next();
-                }
+                int parentOutputCol = outputCols.get("parent");
+                String parentEntityId = it.get(parentOutputCol).toString();
+                Container parentContainer = ContainerManager.getForId(parentEntityId);
+                return DbSequenceManager.get(parentContainer, ContainerManager.WORKBOOK_DBSEQUENCE_NAME).next();
             }));
 
             // name column
-            outputCols.put("name", it.addColumn(new ColumnInfo("name", JdbcType.VARCHAR), new Callable()
+            outputCols.put("name", it.addColumn(new ColumnInfo("name", JdbcType.VARCHAR), (Callable) () ->
             {
-                @Override
-                public Object call() throws Exception
+                int nameInputCol = inputCols.get("name");
+                Object nameVal = it.getInputColumnValue(nameInputCol);
+                String name;
+                if (nameVal != null)
                 {
-                    int nameInputCol = inputCols.get("name");
-                    Object nameVal = it.getInputColumnValue(nameInputCol);
-                    String name;
-                    if (nameVal != null)
-                    {
-                        name = ConvertHelper.convert(nameVal, String.class);
-                    }
-                    else
-                    {
-                        Object sortOrderOutputCol = outputCols.get("sortOrder");
-                        assert sortOrderOutputCol != null;
-                        name = String.valueOf(sortOrderOutputCol);
-                    }
-
-                    StringBuilder error = new StringBuilder();
-                    if (!Container.isLegalName(name, error))
-                        throw new Exception(error.toString());
-
-                    return name;
+                    name = ConvertHelper.convert(nameVal, String.class);
                 }
+                else
+                {
+                    Object sortOrderOutputCol = outputCols.get("sortOrder");
+                    assert sortOrderOutputCol != null;
+                    name = String.valueOf(sortOrderOutputCol);
+                }
+
+                StringBuilder error = new StringBuilder();
+                if (!Container.isLegalName(name, false, error))
+                    throw new Exception(error.toString());
+
+                return name;
             }));
 
             // title column
-            it.addColumn(new ColumnInfo("title", JdbcType.VARCHAR), new Callable()
+            it.addColumn(new ColumnInfo("title", JdbcType.VARCHAR), (Callable) () ->
             {
-                @Override
-                public Object call() throws Exception
-                {
-                    int titleInputCol = inputCols.get("title");
-                    Object titleVal = it.getInputColumnValue(titleInputCol);
-                    String title = ConvertHelper.convert(titleVal, String.class);
-                    StringBuilder error = new StringBuilder();
-                    if (!Container.isLegalName(title, error))
-                        throw new Exception(error.toString());
+                int titleInputCol = inputCols.get("title");
+                Object titleVal = it.getInputColumnValue(titleInputCol);
+                String title = ConvertHelper.convert(titleVal, String.class);
+                StringBuilder error = new StringBuilder();
+                if (!Container.isLegalName(title, false, error))
+                    throw new Exception(error.toString());
 
-                    return title;
-                }
+                return title;
             });
 
 
