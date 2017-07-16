@@ -239,7 +239,7 @@ public class ContainerManager
             throw new IllegalArgumentException("Parent of a container must not be a container tab or workbook!");
 
         StringBuilder error = new StringBuilder();
-        if (!Container.isLegalName(name, error))
+        if (!Container.isLegalName(name, parent.isRoot(), error))
             throw new IllegalArgumentException(error.toString());
 
         if (!Container.isLegalTitle(title, error))

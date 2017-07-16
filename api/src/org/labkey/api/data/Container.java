@@ -578,9 +578,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
 
-    public static boolean isLegalName(String name, StringBuilder error)
+    public static boolean isLegalName(String name, boolean isProject, StringBuilder error)
     {
-        if (null == name || 0 == name.trim().length())
+        if (StringUtils.isBlank(name))
         {
             error.append("Blank names are not allowed.");
             return false;
@@ -598,12 +598,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
             return false;
         }
 
-        if (-1 != name.indexOf(';'))
+        if (name.contains(";"))
         {
             error.append("Semicolons are not allowed in folder names.");
             return false;
         }
-        else if (name.startsWith("@"))
+
+        if (name.startsWith("@"))
         {
             error.append("Folder name may not begin with '@'.");
             return false;
@@ -625,12 +626,24 @@ public class Container implements Serializable, Comparable<Container>, Securable
             }
         }
 
+        if (isProject && !isLegalProjectName(name))
+        {
+            error.append("Project name can't be \"").append(name).append("\".");
+            return false;
+        }
+
         return true;
+    }
+
+    // Check for illegal project names
+    public static boolean isLegalProjectName(String name)
+    {
+        return (!name.equalsIgnoreCase("cas"));
     }
 
     public static boolean isLegalTitle(String name, StringBuilder error)
     {
-        if (null == name || 0 == name.trim().length())
+        if (StringUtils.isBlank(name))
         {
             return true;  //titles can be blank
         }
