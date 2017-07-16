@@ -128,6 +128,7 @@ public class ImportTypesHelper
             {
                 // Special case handling for GUID keys
                 pt = PropertyType.STRING;
+                columnXml.setScale(100);
             }
 
             if (pt == null)
