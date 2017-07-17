@@ -201,6 +201,7 @@ public abstract class AbstractDataRegion extends DisplayElement
         return null;
     }
 
+    // TODO: Remove after switch over to new UI -- replaced by DataRegion.prepareFilters
     protected String getFilterErrorMessage(RenderContext ctx) throws IOException
     {
         StringBuilder buf = new StringBuilder();

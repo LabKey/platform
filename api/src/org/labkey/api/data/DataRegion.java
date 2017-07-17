@@ -78,7 +78,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-// TODO: it seems to me that data region and its views (ParameterView) don't belong in this package (matt)
 
 public class DataRegion extends AbstractDataRegion
 {
@@ -1056,8 +1055,20 @@ public class DataRegion extends AbstractDataRegion
         {
             for (Message message : _messages)
             {
-                out.write("<div class=\"lk-region-bar\" data-msgpart=\"" + PageFlowUtil.filter(message.getArea()) + "\">");
+                boolean isError = MessageType.ERROR.equals(message.getType());
+                boolean isWarning = MessageType.WARNING.equals(message.getType());
+                boolean isThemed = isError || isWarning;
+
+                out.write("<div class=\"lk-region-bar" + (isThemed ? " lk-msg-bar" : "") + "\" data-msgpart=\"" + PageFlowUtil.filter(message.getArea()) + "\">");
+
+                if (isThemed)
+                    out.write("<div class=\"alert alert-" + (isError ? "danger" : "warning") + "\">");
+
                 out.write(message.getContent());
+
+                if (isThemed)
+                    out.write("</div>");
+
                 out.write("</div>");
             }
         }
@@ -2830,9 +2841,34 @@ public class DataRegion extends AbstractDataRegion
 
     private void prepareFilters(RenderContext ctx)
     {
-        // TODO: Render erroneous un-applied filters using getFilterErrorMessage for context
         if (isShowFilterDescription())
         {
+            Set<FieldKey> ignoredColumns = ctx.getIgnoredFilterColumns();
+            if (!ignoredColumns.isEmpty())
+            {
+                // TODO: It'd be better to have this be actionable by the user (e.g. show a filter context action
+                // with an exclamation point and option to remove or add a link to remove the offending parameter)
+                String msg;
+                if (ignoredColumns.size() == 1)
+                {
+                    msg = "Ignoring filter/sort on column '" + ignoredColumns.iterator().next().toDisplayString() + "' because it does not exist.";
+                }
+                else
+                {
+                    String sep = "";
+                    msg = "Ignoring filter/sort on columns ";
+                    for (FieldKey fieldKey : ignoredColumns)
+                    {
+                        msg += sep;
+                        sep = ", ";
+                        msg += "'" + fieldKey.toDisplayString() + "'";
+                    }
+                    msg += " because they do not exist.";
+                }
+
+                addMessage(new Message(msg, MessageType.WARNING, "filter"));
+            }
+
             SimpleFilter filter = getValidFilter(ctx);
 
             if (filter != null)
