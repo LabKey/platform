@@ -139,6 +139,14 @@
 <% if (me.getView("notifications") != null) { %>
     <% include(me.getView("notifications"), out); %>
 <% } %>
+
+<% if (AppProps.getInstance().isDevMode() && isRealUser && user.isInSiteAdminGroup())
+   { %>
+            <li data-tt="tooltip" data-placement="bottom" title="Revert back to the legacy look and feel.">
+                <a onclick="LABKEY.Utils.toggleUI();"><i class="fa fa-history"></i></a>
+            </li>
+<% } %>
+
 <% if (user != null && user.isImpersonated()) { %>
             <li>
                 <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()))%>" class="btn btn-primary">Stop impersonating</a>
@@ -155,16 +163,6 @@
                 <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign In</a>
             </li>
 <% } %>
-
-<% if (AppProps.getInstance().isDevMode() && isRealUser && user.isInSiteAdminGroup())
-{ %>
-            <li data-tt="tooltip" data-placement="bottom" title="Revert back to the legacy look and feel.">
-                <a onclick="LABKEY.Utils.toggleUI();">
-                    <i class="fa fa-history"></i>
-                </a>
-            </li>
-<% } %>
-
 <% if (isRealUser)
 { %>
             <li data-tt="tooltip" data-placement="bottom" title="Give your thoughts on our new look.">
