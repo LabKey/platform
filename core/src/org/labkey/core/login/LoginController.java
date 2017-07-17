@@ -22,14 +22,12 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.DeprecatedActionException;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.annotations.RefactorIn17_3;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -133,7 +131,6 @@ public class LoginController extends SpringActionController
 {
     private static final Logger _log = Logger.getLogger(LoginController.class);
     private static final ActionResolver _actionResolver = new DefaultActionResolver(LoginController.class);
-    private static final int secondsPerYear = 60 * 60 * 24 * 365;
 
     public LoginController()
     {
@@ -512,144 +509,42 @@ public class LoginController extends SpringActionController
     @ActionNames("login, showLogin")
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    @CSRF(CSRF.Method.NONE) // don't need CSRF for actions that require a password
-    public class LoginAction extends FormViewAction<LoginForm>
+    public class LoginAction extends SimpleViewAction<LoginForm>
     {
-        public void validateCommand(LoginForm form, Errors errors)
+        public ModelAndView getView(LoginForm form, BindException errors) throws Exception
         {
-        }
-
-        public ModelAndView getView(LoginForm form, boolean reshow, BindException errors) throws Exception
-        {
+            boolean isGuest = getUser().isGuest();
             HttpServletRequest request = getViewContext().getRequest();
 
-            // If we're reshowing, the user must have entered incorrect credentials.
-            // Set the response code accordingly
-            if (reshow)
+            if (isGuest)
             {
-                HttpServletResponse response = getViewContext().getResponse();
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                // Reset authentication state. If, for example, user hits back button in the midst of two-factor auth
+                // workflow then start over. Preserve login return properties, if they exist
+                SessionHelper.clearSession(request, PageFlowUtil.set(AuthenticationManager.getLoginReturnPropertiesSessionKey()));
             }
-            else
-            {
-                boolean isGuest = getUser().isGuest();
 
-                if (isGuest)
+            URLHelper returnURL = form.getReturnURLHelper();
+            LoginReturnProperties properties = null;
+
+            // Create LoginReturnProperties if we have a returnURL
+            if (null != returnURL)
+            {
+                properties = AuthenticationManager.getLoginReturnProperties(request);
+                // create or update only if more than 5 minutes since any previously stashed LoginReturnProperties for this session. Prevents bogus redirects as in issue: 23782
+                if (null == properties || properties.isExpired())
                 {
-                    // Reset authentication state. If, for example, user hits back button in the midst of two-factor auth
-                    // workflow then start over. Preserve login return properties, if they exist
-                    SessionHelper.clearSession(request, PageFlowUtil.set(AuthenticationManager.getLoginReturnPropertiesSessionKey()));
+                    properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
                 }
-
-                URLHelper returnURL = form.getReturnURLHelper();
-                LoginReturnProperties properties = null;
-
-                // Create LoginReturnProperties if we have a returnURL
-                if (null != returnURL)
-                {
-                    properties = AuthenticationManager.getLoginReturnProperties(request);
-                    // create or update only if more than 5 minutes since any previously stashed LoginReturnProperties for this session. Prevents bogus redirects as in issue: 23782
-                    if (null == properties || properties.isExpired())
-                    {
-                        properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
-                    }
-               }
-                // If user is already logged in, then redirect immediately. This handles users clicking on stale login links
-                // (e.g., multiple tab scenario) but is also necessary because of Excel's link behavior (see #9246).
-                if (!isGuest)
-                   return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()));
-
-                if (null != properties)
-                    AuthenticationManager.setLoginReturnProperties(request, properties);
             }
+            // If user is already logged in, then redirect immediately. This handles users clicking on stale login links
+            // (e.g., multiple tab scenario) but is also necessary because of Excel's link behavior (see #9246).
+            if (!isGuest)
+               return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()));
+
+            if (null != properties)
+                AuthenticationManager.setLoginReturnProperties(request, properties);
 
             return showLogin(form, errors, request, getPageConfig());
-        }
-
-        @RefactorIn17_3
-        public boolean handlePost(LoginForm form, BindException errors) throws Exception
-        {
-            // This old login POST handler should no longer be used since it's been replaced by LoginApiAction. Leave the
-            // code in place for now (17.2) in case we find a client who really needs it.
-            if (1 == 1)
-                throw new DeprecatedActionException(LoginAction.class);
-
-            HttpServletRequest request = getViewContext().getRequest();
-
-            // Handle a hash (#Example) on the originally requested URL. These aren't passed to the server on GET, so getView()
-            // never sees them. The standard login page uses JavaScript to post them as a hidden parameter. If we have one,
-            // update any previously stashed LoginReturnProperties.
-            if (null != form.getUrlhash())
-            {
-                LoginReturnProperties properties = AuthenticationManager.getLoginReturnProperties(request);
-
-                if (null != properties)
-                {
-                    AuthenticationManager.setLoginReturnProperties(request, new LoginReturnProperties(properties.getReturnUrl(), form.getUrlhash(), properties.isSkipProfile()));
-                }
-            }
-
-            Project termsProject = getTermsOfUseProject(form);
-
-            if (!isTermsOfUseApproved(form))
-            {
-                if (!form.isApprovedTermsOfUse())
-                {
-                    if (null != termsProject)
-                    {
-                        errors.reject(ERROR_MSG, "To use the " + termsProject.getName() + " project, you must check the box to approve the terms of use.");
-                    }
-                    else
-                    {
-                        errors.reject(ERROR_MSG, "To use this site, you must check the box to approve the terms of use.");
-                    }
-                    return false;
-                }
-            }
-
-            boolean success = authenticate(form, errors, request);
-
-            if (success)
-            {
-                // Terms of use are approved only if we've posted from the login page. In SSO case, we will attempt
-                // to access the page and will get a TermsOfUseException if terms of use approval is required.
-                if (form.getTermsOfUseType() == TermsOfUseType.PROJECT_LEVEL)
-                    WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), termsProject, true);
-                else if (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE)
-                    WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), null, true);
-
-                // Login page is container qualified, but we need to store the cookie at /labkey/login/ or /cpas/login/ or /login/
-                String path = StringUtils.defaultIfEmpty(getViewContext().getContextPath(), "/");
-
-                HttpServletResponse response = getViewContext().getResponse();
-
-                if (form.isRemember())
-                {
-                    // Write cookies to save email.
-                    // Starting in LabKey 9.1, the cookie value is URL encoded to allow for special characters like @.  See #6736.
-                    String unencodedValue = form.getEmail();
-                    String encodedValue = PageFlowUtil.encode(unencodedValue);
-                    Cookie emailCookie = new Cookie("email", encodedValue);
-                    emailCookie.setMaxAge(secondsPerYear);
-                    emailCookie.setPath(path);
-                    response.addCookie(emailCookie);
-                }
-                else
-                {
-                    // Clear the cookie
-                    Cookie emailCookie = new Cookie("email", "");
-                    emailCookie.setMaxAge(0);
-                    emailCookie.setPath(path);
-                    response.addCookie(emailCookie);
-                }
-            }
-
-            return success;
-        }
-
-        public URLHelper getSuccessURL(LoginForm form)
-        {
-            return AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer()).getRedirectURL();
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -918,7 +813,6 @@ public class LoginController extends SpringActionController
                 errors.reject("password", "Resetting verification failed.  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
             }
         }
-
     }
 
     @RequiresNoPermission
@@ -931,9 +825,6 @@ public class LoginController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            ValidEmail _email = null;
-            User _user = null;
-
             final String rawEmail = form.getEmail();
 
             if (null == rawEmail)
@@ -943,6 +834,9 @@ public class LoginController extends SpringActionController
                 response.put("message", errors.getMessage());
                 return response;
             }
+
+            ValidEmail _email;
+            User _user;
 
             try
             {
@@ -1046,10 +940,10 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public class AcceptTermsOfUseApiAction extends MutatingApiAction<LoginForm>
+    public class AcceptTermsOfUseApiAction extends MutatingApiAction<AgreeToTermsForm>
     {
         @Override
-        public Object execute(LoginForm form, BindException errors) throws Exception
+        public Object execute(AgreeToTermsForm form, BindException errors) throws Exception
         {
             Project project = getTermsOfUseProject(form);
             if (!form.isApprovedTermsOfUse())
@@ -1082,13 +976,12 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public class GetTermsOfUseApiAction extends MutatingApiAction<LoginForm>
+    public class GetTermsOfUseApiAction extends MutatingApiAction<AgreeToTermsForm>
     {
         @Override
-        public Object execute(LoginForm form, BindException errors) throws Exception
+        public Object execute(AgreeToTermsForm form, BindException errors) throws Exception
         {
-            ApiSimpleResponse response = null;
-            response = new ApiSimpleResponse();
+            ApiSimpleResponse response = new ApiSimpleResponse();
             WikiTermsOfUseProvider.TermsOfUse tou = WikiTermsOfUseProvider.getTermsOfUse(getTermsOfUseProject(form));
             response.put("termsOfUseContent", tou.getHtml());
             response.put("termsOfUseType", tou.getType());
@@ -1136,13 +1029,12 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     // @AllowedDuringUpgrade
-    public class IsAgreeOnlyApiAction extends MutatingApiAction<LoginForm>
+    public class IsAgreeOnlyApiAction extends MutatingApiAction<AgreeToTermsForm>
     {
         @Override
-        public Object execute(LoginForm form, BindException errors) throws Exception
+        public Object execute(AgreeToTermsForm form, BindException errors) throws Exception
         {
-            ApiSimpleResponse response = null;
-            response = new ApiSimpleResponse();
+            ApiSimpleResponse response = new ApiSimpleResponse();
             boolean isGuest = getUser().isGuest();
             if (!isGuest) {
                 response.put("isAgreeOnly", true);
@@ -1202,15 +1094,16 @@ public class LoginController extends SpringActionController
 
         // default login using JSP from LoginView can be removed after the new login.html ajax version is working
         // LoginView view = new LoginView(form, errors, remember, form.isApprovedTermsOfUse());
-        WebPartView view = getCustomLoginViewIfAvailable(errors, form, remember);
+        WebPartView view = getLoginView(errors);
 
         vBox.addView(view);
 
         return vBox;
     }
 
-    private WebPartView getCustomLoginViewIfAvailable(BindException errors, LoginForm form, boolean remember) throws Exception {
-        // replace normal jsp login page with the page specified by controller-action in the Look and Feel Settings
+    private WebPartView getLoginView(BindException errors) throws Exception
+    {
+        // Get the login page specified by controller-action in the Look and Feel Settings
         // This is placed in showLogin() instead of the getLoginURL() to ensure that the logic above
         // regarding 'server upgrade' and 'server startup' is executed regardless of the custom login action the user specified.
         String loginController = "login";
@@ -1286,13 +1179,15 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @CSRF
-    public class AgreeToTermsAction extends FormViewAction<LoginForm>
+    public class AgreeToTermsAction extends FormViewAction<AgreeToTermsForm>
     {
-        public void validateCommand(LoginForm target, Errors errors)
+        @Override
+        public void validateCommand(AgreeToTermsForm form, Errors errors)
         {
         }
 
-        public ModelAndView getView(LoginForm form, boolean reshow, BindException errors) throws Exception
+        @Override
+        public ModelAndView getView(AgreeToTermsForm form, boolean reshow, BindException errors) throws Exception
         {
             // default login using JSP from AgreeToTermsView can be removed after the new login.html ajax version is working
             AgreeToTermsView view = new AgreeToTermsView(form, errors);
@@ -1308,7 +1203,8 @@ public class LoginController extends SpringActionController
             return view;
         }
 
-        public boolean handlePost(LoginForm form, BindException errors) throws Exception
+        @Override
+        public boolean handlePost(AgreeToTermsForm form, BindException errors) throws Exception
         {
             Project project = getTermsOfUseProject(form);
 
@@ -1333,11 +1229,13 @@ public class LoginController extends SpringActionController
             return true;
         }
 
-        public URLHelper getSuccessURL(LoginForm form)
+        @Override
+        public URLHelper getSuccessURL(AgreeToTermsForm form)
         {
             return form.getReturnURLHelper();
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -1345,48 +1243,35 @@ public class LoginController extends SpringActionController
     }
 
 
-    private abstract class BaseLoginView extends JspView<LoginBean>
+    private class AgreeToTermsView extends JspView<AgreeToTermsBean>
     {
-        private BaseLoginView(LoginForm form, BindException errors, boolean agreeOnly, boolean remember, boolean termsOfUseChecked)
+        private AgreeToTermsView(AgreeToTermsForm form, BindException errors)
         {
-            super("/org/labkey/core/login/login.jsp", new LoginBean(form, agreeOnly, remember, termsOfUseChecked), errors);
-
-            // default login using JSP can be removed after the new html ajax version is working
-            // todo: loading login.html in this manner from the /src dir doesnt cause login.view.xml js includes to be respoected and it needs to be.
-            // super("/org/labkey/core/login/login.html", new LoginBean(form, agreeOnly, remember, termsOfUseChecked), errors);
+            super("/org/labkey/core/login/termsOfUse.jsp", new AgreeToTermsBean(form), errors);
             setFrame(FrameType.NONE);
         }
     }
 
 
-    public class LoginBean
+    public class AgreeToTermsBean
     {
-        public LoginForm form;
-        public boolean agreeOnly;
-        public boolean remember;
+        public final AgreeToTermsForm form;
         public String termsOfUseHTML = null;
-        public boolean termsOfUseChecked;
 
-        private LoginBean(LoginForm form, boolean agreeOnly, boolean remember, boolean termsOfUseChecked)
+        private AgreeToTermsBean(AgreeToTermsForm form)
         {
             this.form = form;
-            this.agreeOnly = agreeOnly;
-            this.remember = remember;
-            this.termsOfUseChecked = termsOfUseChecked;
 
             try
             {
                 Project project = getTermsOfUseProject(form);
 
                 // Display the terms of use if this is the terms-of-use page or user hasn't already approved them. #4684
-                if (agreeOnly || !WikiTermsOfUseProvider.isTermsOfUseApproved(getViewContext(), project))
+                WikiTermsOfUseProvider.TermsOfUse terms = WikiTermsOfUseProvider.getTermsOfUse(project);
+                if (terms.getType() != TermsOfUseType.NONE)
                 {
-                    WikiTermsOfUseProvider.TermsOfUse terms = WikiTermsOfUseProvider.getTermsOfUse(project);
-                    if (terms.getType() != TermsOfUseType.NONE)
-                    {
-                        this.form.setTermsOfUseType(terms.getType());
-                        termsOfUseHTML = terms.getHtml();
-                    }
+                    this.form.setTermsOfUseType(terms.getType());
+                    termsOfUseHTML = terms.getHtml();
                 }
             }
             catch (Exception e)
@@ -1397,26 +1282,8 @@ public class LoginController extends SpringActionController
     }
 
 
-    private class LoginView extends BaseLoginView
-    {
-        private LoginView(LoginForm form, BindException errors, boolean remember, boolean termsOfUseChecked)
-        {
-            super(form, errors, false, remember, termsOfUseChecked);
-        }
-    }
-
-
-    private class AgreeToTermsView extends BaseLoginView
-    {
-        private AgreeToTermsView(LoginForm form, BindException errors)
-        {
-            super(form, errors, true, false, false);
-        }
-    }
-
-
     @Nullable
-    private Project getTermsOfUseProject(LoginForm form) throws ServletException
+    private Project getTermsOfUseProject(AgreeToTermsForm form) throws ServletException
     {
         if (null != form.getTermsOfUseType() && (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE))
             return null;
@@ -1425,7 +1292,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    private boolean isTermsOfUseApproved(LoginForm form) throws ServletException, URISyntaxException
+    private boolean isTermsOfUseApproved(AgreeToTermsForm form) throws ServletException, URISyntaxException
     {
         Project termsProject = getTermsOfUseProject(form);
         return form.isApprovedTermsOfUse() || !WikiTermsOfUseProvider.isTermsOfUseRequired(termsProject) || WikiTermsOfUseProvider.isTermsOfUseApproved(getViewContext(), termsProject);
@@ -1449,14 +1316,34 @@ public class LoginController extends SpringActionController
     }
 
 
-    public static class LoginForm extends AbstractLoginForm
+    public static class AgreeToTermsForm extends AbstractLoginForm
+    {
+        private boolean approvedTermsOfUse;
+        private TermsOfUseType termsOfUseType;
+
+        public void setTermsOfUseType(TermsOfUseType type) { this.termsOfUseType = type; }
+
+        public TermsOfUseType getTermsOfUseType() { return this.termsOfUseType; }
+
+        public boolean isApprovedTermsOfUse()
+        {
+            return approvedTermsOfUse;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setApprovedTermsOfUse(boolean approvedTermsOfUse)
+        {
+            this.approvedTermsOfUse = approvedTermsOfUse;
+        }
+    }
+
+
+    public static class LoginForm extends AgreeToTermsForm
     {
         private boolean remember;
         private String email;
         private String password;
         private String provider;
-        private boolean approvedTermsOfUse;
-        private TermsOfUseType termsOfUseType;
 
         public void setProvider(String provider)
         {
@@ -1466,10 +1353,6 @@ public class LoginController extends SpringActionController
         {
             this.email = email;
         }
-
-        public void setTermsOfUseType(TermsOfUseType type) { this.termsOfUseType = type; }
-
-        public TermsOfUseType getTermsOfUseType() { return this.termsOfUseType; }
 
         public String getProvider()
         {
@@ -1501,17 +1384,6 @@ public class LoginController extends SpringActionController
         public void setRemember(boolean remember)
         {
             this.remember = remember;
-        }
-
-        public boolean isApprovedTermsOfUse()
-        {
-            return approvedTermsOfUse;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setApprovedTermsOfUse(boolean approvedTermsOfUse)
-        {
-            this.approvedTermsOfUse = approvedTermsOfUse;
         }
     }
 

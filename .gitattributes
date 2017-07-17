@@ -489,11 +489,11 @@ core/src/org/labkey/core/login/PasswordRule.java -text
 core/src/org/labkey/core/login/configuration.jsp -text
 core/src/org/labkey/core/login/configureDbLogin.jsp -text
 core/src/org/labkey/core/login/finishResetPassword.jsp -text
-core/src/org/labkey/core/login/login.jsp -text
 core/src/org/labkey/core/login/pickAuthLogo.jsp -text
 core/src/org/labkey/core/login/register.jsp -text
 core/src/org/labkey/core/login/resetPassword.jsp -text
 core/src/org/labkey/core/login/setPassword.jsp -text
+core/src/org/labkey/core/login/termsOfUse.jsp -text
 core/src/org/labkey/core/notification/NotificationController.java -text
 core/src/org/labkey/core/notification/NotificationEndpoint.java -text
 core/src/org/labkey/core/notification/NotificationServiceImpl.java -text
