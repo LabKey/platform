@@ -44,92 +44,26 @@
         {
             return function(webparts, responseObj, options)
             {
-                if (action == TOGGLE_FRAME_ACTION)
-                {
-                    toggleFrame(webPartId);
-                }
-                else
-                {
-                    updateDOM(webparts, action, webPartId, direction);
-                }
+                updateDOM(webparts, action, webPartId, direction);
                 // after update, call the user's success function:
                 if (userSuccessCallback)
                     userSuccessCallback(webparts, responseObj, options);
             }
         }
 
-        function toggleFrame(webPartId)
-        {
-            var webpartToToggleFrame = $("#webpart_" + webPartId);
-            webpartToToggleFrame.toggleClass("labkey-portal-container");
-            webpartToToggleFrame.find(">:first-child")
-                    .toggleClass("panel")
-                    .toggleClass("panel-portal")
-                    .toggleClass("panel-frameless");
-            var dropdownToToggle = webpartToToggleFrame.find("i.fa.fa-eye-slash, i.fa.fa-eye");
-            dropdownToToggle.toggleClass("fa-eye-slash")
-                    .toggleClass("fa-eye");
-            dropdownToToggle.parent().html(function (idx, html) {
-               if (html.indexOf("Hide") !== -1)
-               {
-                   return html.replace("Hide", "Show");
-               }
-               else
-               {
-                   return html.replace("Show", "Hide");
-               }
-            });
-         }
-
         function updateDOM(webparts, action, webPartId, direction)
         {
-            // First build up a list of valid webpart table DOM IDs.  This allows us to skip webpart tables that are embedded
-            // within others (as in the case of using the APIs to asynchronously render nested webparts).  This ensures that
-            // we only rearrange top-level webparts.
-            var validWebpartTableIds = {}, regionParts, i;
-            for (var region in webparts)
-            {
-                if (webparts.hasOwnProperty(region))
-                {
-                    regionParts = webparts[region];
-                    for (i = 0; i < regionParts.length; i++)
-                    {
-                        validWebpartTableIds['webpart_' + regionParts[i].webPartId] = true;
-                    }
-                }
-            }
-
-            // would be nice to use getElementsByName('webpart') here, but this isn't supported in IE.
-            var tables;
-            if (LABKEY.experimental.useExperimentalCoreUI)
-                tables = document.getElementsByClassName('labkey-portal-container');
-            else
-                tables = document.getElementsByTagName('table');
-            var webpartTables = [];
-            var targetTable;
-            var targetTableIndex;
-            for (var tableIndex = 0; tableIndex < tables.length; tableIndex++)
-            {
-                var table = tables[tableIndex];
-                // a table is possibly affected by a delete action if it's of type 'webpart' (whether it's in the current set
-                // of active webparts or not). It's possibly affected by a move action only if it's in the active set of webparts.
-                var possiblyAffected = ((action == REMOVE_ACTION && table.getAttribute('name') == 'webpart') || validWebpartTableIds[table.id]);
-                if (possiblyAffected)
-                {
-                    webpartTables[webpartTables.length] = table;
-                    if (table.id == 'webpart_' + webPartId)
-                    {
-                        targetTableIndex = webpartTables.length - 1;
-                        targetTable = table;
-                    }
-                }
-            }
+            var targetTable = document.getElementById('webpart_' + webPartId);
 
             if (targetTable)
             {
-                if (action == MOVE_ACTION)
+                if (action === MOVE_ACTION)
                 {
-                    var swapTable = webpartTables[direction == MOVE_UP ? targetTableIndex - 1 : targetTableIndex + 1];
+                    var swapTable;
+                    swapTable = direction === MOVE_UP ?
+                            getAdjacentWebparts(targetTable).above :
+                            getAdjacentWebparts(targetTable).below;
+
                     if (swapTable)
                     {
                         var parentEl = targetTable.parentNode;
@@ -146,10 +80,18 @@
                                 break;
                             }
                         }
+                        if (LABKEY.experimental.useExperimentalCoreUI)
+                        {
+                            var targetUpButtonClass = getUpDownButtons(targetTable).upButton.className;
+                            var targetDownButtonClass= getUpDownButtons(targetTable).downButton.className;
+                            updateUpDownButtons(targetTable, getUpDownButtons(swapTable).upButton.className, getUpDownButtons(swapTable).downButton.className);
+                            updateUpDownButtons(swapTable, targetUpButtonClass, targetDownButtonClass);
+                        }
                     }
                 }
-                else if (action == REMOVE_ACTION)
+                else if (action === REMOVE_ACTION)
                 {
+                    var adjacentWebparts = getAdjacentWebparts(targetTable);
                     if (!LABKEY.experimental.useExperimentalCoreUI)
                     {
                         // These fixed Issue: 11833.
@@ -158,64 +100,76 @@
                         var breakNode = targetTable.previousSibling;
                         targetTable.parentNode.removeChild(breakEl || breakNode); // TODO: Does not properly remove in IE7
                     }
+                    if (LABKEY.experimental.useExperimentalCoreUI)
+                    {
+                        if (adjacentWebparts.below)
+                        {
+                            updateUpDownButtons(adjacentWebparts.below, getUpDownButtons(targetTable).upButton.className, undefined);
+                        }
+                        if (adjacentWebparts.above)
+                        {
+                            updateUpDownButtons(adjacentWebparts.above, undefined, getUpDownButtons(targetTable).downButton.className);
+                        }
+                    }
                     targetTable.parentNode.removeChild(targetTable);
                 }
             }
-            updateButtons(webparts);
         }
 
-        function updateButtons(webparts)
+        function getAdjacentWebparts(webpart)
+        {
+            var above;
+            var below;
+            if (LABKEY.experimental.useExperimentalCoreUI)
+            {
+                above = webpart.previousElementSibling;
+                below = webpart.nextElementSibling;
+            }
+            else
+            {
+                above = webpart.previousElementSibling.previousElementSibling;
+                below = webpart.nextElementSibling.nextElementSibling;
+            }
+            return {
+                above: above && above.getAttribute("name") === "webpart" ? above : undefined,
+                below: below && below.getAttribute("name") === "webpart" ? below : undefined
+            }
+        }
+
+        function getUpDownButtons(webpart)
         {
             var moveUpImage = 'fa fa-caret-square-o-up labkey-fa-portal-nav';
             var moveUpDisabledImage = 'fa fa-caret-square-o-up x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav';
             var moveDownImage = 'fa fa-caret-square-o-down labkey-fa-portal-nav';
             var moveDownDisabledImage = 'fa fa-caret-square-o-down x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav';
-            for (var region in webparts)
+
+            var getImageEl = function(webpart, imgClass)
             {
-                if (!webparts.hasOwnProperty(region))
-                    continue;
-
-                var regionParts = webparts[region];
-
-                // get the webpart table elements from the DOM here; it's possible that some configured webparts may
-                // not actually be in the document (if the webpartfactory returns null for security reasons, for example.)
-                var confirmedWebparts = [];
-                var confirmedWebpartTables = [];
-                var index;
-                for (index = 0; index < regionParts.length; index++)
-                {
-                    var testWebpart = regionParts[index];
-                    var testTable = document.getElementById('webpart_' + testWebpart.webPartId);
-                    if (testTable)
-                    {
-                        confirmedWebparts[confirmedWebparts.length] = testWebpart;
-                        confirmedWebpartTables[confirmedWebpartTables.length] = testTable;
-                    }
-                }
-
-                for (index = 0; index < confirmedWebpartTables.length; index++)
-                {
-                    var webpartTable = confirmedWebpartTables[index];
-                    var disableUp = index == 0;
-                    var disableDown = index == confirmedWebparts.length - 1;
-                    var imgChildren = webpartTable.getElementsByClassName('labkey-fa-portal-nav');
-
+                if (webpart){
+                    var imgChildren = webpart.getElementsByClassName('labkey-fa-portal-nav');
                     for (var imageIndex = 0; imageIndex < imgChildren.length; imageIndex++)
                     {
-                        var imageEl = imgChildren[imageIndex];
-
-                        if (imageEl.className.indexOf(moveUpImage) >= 0 && disableUp)
-                            imageEl.className = moveUpDisabledImage;
-                        else if (imageEl.className.indexOf(moveUpDisabledImage) >= 0 && !disableUp)
-                            imageEl.className = moveUpImage;
-
-                        if (imageEl.className.indexOf(moveDownImage) >= 0 && disableDown)
-                            imageEl.className = moveDownDisabledImage;
-                        else if (imageEl.className.indexOf(moveDownDisabledImage) >= 0 && !disableDown)
-                            imageEl.className = moveDownImage;
+                        if (imgChildren[imageIndex].className.indexOf(imgClass) >= 0)
+                        {
+                            return imgChildren[imageIndex];
+                        }
                     }
                 }
+            };
+
+            return {
+                upButton: getImageEl(webpart, moveUpImage) || getImageEl(webpart, moveUpDisabledImage),
+                downButton: getImageEl(webpart, moveDownImage) || getImageEl(webpart, moveDownDisabledImage)
             }
+        }
+
+
+        function updateUpDownButtons(webpart, upButtonClass, downButtonClass)
+        {
+            if (upButtonClass)
+                getUpDownButtons(webpart).upButton.className = upButtonClass;
+            if (downButtonClass)
+                getUpDownButtons(webpart).downButton.className = downButtonClass;
         }
 
         function wrapErrorCallback(userErrorCallback)
