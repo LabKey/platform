@@ -652,21 +652,21 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager implements Co
         //
 
         Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION);
-        Map<String, Map <String, String>> enginePropertyMap = new HashMap<>();
+        Map<String, Map<String, String>> enginePropertyMap = new HashMap<>();
 
         for (ConfigProperty prop: startupProps)
         {
             if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
             {
                 String[] scriptEngineNameAndParamSplit = prop.getName().split("\\.");
-                if (null != scriptEngineNameAndParamSplit && scriptEngineNameAndParamSplit.length == 2)
+                if (scriptEngineNameAndParamSplit.length == 2)
                 {
                     String engineName = scriptEngineNameAndParamSplit[0];
                     String engineParam = scriptEngineNameAndParamSplit[1];
                     String paramValue = prop.getValue();
                     if (enginePropertyMap.containsKey(engineName))
                     {
-                        Map propertyMap = enginePropertyMap.get(engineName);
+                        Map<String, String> propertyMap = enginePropertyMap.get(engineName);
                         propertyMap.put(engineParam, paramValue);
                         enginePropertyMap.put(engineName, propertyMap);
                     }
@@ -688,8 +688,7 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager implements Co
         for (Map.Entry<String, Map <String, String>> entry : enginePropertyMap.entrySet())
         {
             // Set a default value for external to true since script engines defined in startup props will likely be external
-            if (null == entry.getValue().get("external"))
-                entry.getValue().put("external", "True");
+            entry.getValue().putIfAbsent("external", "True");
             ExternalScriptEngineDefinition def = createDefinition(entry.getValue(), true);
             String key = makeKey(def.isRemote(), def.getExtensions());
             // Only attempt to create the script engine if no script engine with this key has been created before.
@@ -721,7 +720,7 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager implements Co
             // call the method that makes use of the test startup properties to add a new Script Engine Definition to the server
             populateScriptEngineDefinitionsWithStartupProps(true);
 
-            // now check that the expected changes occured to the Scripting Engine Definitions on the server
+            // now check that the expected changes occurred to the Scripting Engine Definitions on the server
             defList = getEngineDefinitions();
             assertTrue("The script engine defined in the startup properties was not setup: " + SCRIPT_ENGINE_NAME, defList.stream().anyMatch((ExternalScriptEngineDefinition def) -> def.getName().equals(SCRIPT_ENGINE_NAME))) ;
 
@@ -750,5 +749,4 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager implements Co
             ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
         }
     }
-
 }

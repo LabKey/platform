@@ -36,6 +36,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Project;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.DisableLoginProvider;
 import org.labkey.api.security.AuthenticationProvider.ExpireAccountProvider;
@@ -68,6 +69,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -80,6 +82,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
@@ -115,6 +118,28 @@ public class AuthenticationManager
         }
 
         return null;
+    }
+
+    // Called unconditionally on every server startup. At some point, might want to make this bootstrap only.
+    public static void populateSettingsWithStartupProps()
+    {
+        // TODO: iterate all providers and save startup properties for each, if found
+
+        // Attempt to enable the providers listed in startup properties
+        ModuleLoader.getInstance().getConfigProperties(AUTHENTICATION_CATEGORY).stream()
+            .filter(p -> p.getName().equals(PROVIDERS_KEY))
+            .flatMap(p -> Arrays.stream(p.getValue().split(":")))
+            .forEach(name ->
+            {
+                try
+                {
+                    enableProvider(name, null);
+                }
+                catch (NotFoundException e)
+                {
+                    _log.warn("Authentication startup properties specified an authentication provider (\"" + name + "\") that is not present on this server");
+                }
+            });
     }
 
     public enum Priority { High, Low }
@@ -291,6 +316,8 @@ public class AuthenticationManager
             _allProviders.add(0, authProvider);
         else
             _allProviders.add(authProvider);
+
+        AuthenticationProviderCache.clear();
     }
 
 
@@ -309,7 +336,9 @@ public class AuthenticationManager
     public static void enableProvider(String name, User user)
     {
         AuthenticationProvider provider = getProvider(name);
-        Set<String> activeNames = getActiveProviderNames();
+        Set<String> activeNames = getActiveProviders().stream()
+            .map(AuthenticationProvider::getName)
+            .collect(Collectors.toSet());
 
         if (!activeNames.contains(name))
         {
@@ -330,7 +359,9 @@ public class AuthenticationManager
     public static void disableProvider(String name, User user)
     {
         AuthenticationProvider provider = getProvider(name);
-        Set<String> activeNames = getActiveProviderNames();
+        Set<String> activeNames = getActiveProviders().stream()
+            .map(AuthenticationProvider::getName)
+            .collect(Collectors.toSet());
 
         if (activeNames.contains(name))
         {
@@ -448,7 +479,8 @@ public class AuthenticationManager
         AuthenticationProviderCache.clear();
     }
 
-    static Set<String> getActiveProviderNames()
+    // Provider names stored in properties; they're not necessarily all valid providers
+    static Set<String> getActiveProviderNamesFromProperties()
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
         String activeProviderProp = props.get(PROVIDERS_KEY);
