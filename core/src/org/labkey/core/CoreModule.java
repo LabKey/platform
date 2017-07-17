@@ -868,6 +868,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         SecurityManager.addTermsOfUseProvider(new WikiTermsOfUseProvider());
 
         PropertyService.get().registerDomainKind(new TestDomainKind());
+
+        AuthenticationManager.populateSettingsWithStartupProps();
     }
 
     @Override
