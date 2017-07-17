@@ -2287,13 +2287,9 @@ public class PageFlowUtil
                 if (null != redirectContainer)
                     termsContainer = redirectContainer.getProject();
             }
-            catch (IllegalArgumentException iae)
+            catch (IllegalArgumentException | URISyntaxException iae)
             {
-                // the redirect URL isn't an action url, so we can't get the container. Ignore.
-            }
-            catch (URISyntaxException e)
-            {
-                // the redirect URL isn't well formed, so we can't get the container. Ignore.
+                // the redirect URL isn't an action url or isn't well formed, so we can't get the container. Ignore.
             }
         }
 
