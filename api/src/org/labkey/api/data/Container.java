@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.module.FolderType;
@@ -635,10 +636,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return true;
     }
 
+    // Any names that we register as special servlets won't work as project names
+    private static final Set<String> ILLEGAL_PROJECT_NAMES = Sets.newCaseInsensitiveHashSet("cas", "_rstudio", "_webdav", "filecontent");
+
     // Check for illegal project names
     public static boolean isLegalProjectName(String name)
     {
-        return (!name.equalsIgnoreCase("cas"));
+        return !ILLEGAL_PROJECT_NAMES.contains(name);
     }
 
     public static boolean isLegalTitle(String name, StringBuilder error)
