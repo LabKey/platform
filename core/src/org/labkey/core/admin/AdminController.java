@@ -4352,7 +4352,7 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            errors.reject(ERROR_MSG, "Error: " + error + "  Please enter a different folder name.");
+            errors.reject(ERROR_MSG, "Error: " + error + " Please enter a different name.");
             return false;
         }
 
@@ -4373,7 +4373,7 @@ public class AdminController extends SpringActionController
                     error.append(e.getMessage());
                 }
             }
-            errors.reject(ERROR_MSG, "Error: " + error + "  Please enter a different folder name.");
+            errors.reject(ERROR_MSG, "Error: " + error + " Please enter a different name.");
             return false;
         }
 
@@ -4692,7 +4692,7 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            errors.reject(ERROR_MSG, "Error: " + error + "  Please enter a different folder name.");
+            errors.reject(ERROR_MSG, "Error: " + error + " Please enter a different name.");
             return false;
         }
 
