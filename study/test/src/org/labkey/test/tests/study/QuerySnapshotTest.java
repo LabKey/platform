@@ -20,7 +20,10 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.BVT;
+import org.labkey.test.components.html.BootstrapMenu;
+import org.labkey.test.components.html.ProjectMenu;
 import org.labkey.test.tests.StudyBaseTest;
+import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
@@ -30,6 +33,7 @@ import static org.junit.Assert.assertTrue;
 @Category({BVT.class})
 public class QuerySnapshotTest extends StudyBaseTest
 {
+    private final boolean IS_BOOTSTRAP_LAYOUT_WHITELISTED = setIsBootstrapWhitelisted(true); // whitelist me before constructor time
     private final String DEMOGRAPHICS_SNAPSHOT = "Demographics Snapshot";
     private final String APX_SNAPSHOT = "APX Joined Snapshot";
     private final String CROSS_STUDY_SNAPSHOT = "Cross study query snapshot";
@@ -135,10 +139,18 @@ public class QuerySnapshotTest extends StudyBaseTest
         assertTextPresent("Dataset: " + DEMOGRAPHICS_SNAPSHOT);
 
         // test automatic updates by altering the source dataset
+        DataRegionTable table = new DataRegionTable("Dataset", getDriver());
         log("test automatic updates by altering the source dataset");
         clickFolder(getStudyLabel());
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
-        _extHelper.clickInsertNewRow();
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            table.clickInsertNewRowButton();
+        }
+        else
+        {
+            _extHelper.clickInsertNewRow();
+        }
         setFormElement(Locator.name("quf_MouseId"), "999121212");
         setFormElement(Locator.name("quf_DEMraco"), "Armenian");
 
@@ -146,17 +158,38 @@ public class QuerySnapshotTest extends StudyBaseTest
 
         clickFolder(getStudyLabel());
         clickAndWait(Locator.linkWithText(DEMOGRAPHICS_SNAPSHOT));
-        _extHelper.clickMenuButton("QC State", "All data");
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            table.clickHeaderMenu("QC State", "All data");
+        }
+        else
+        {
+            _extHelper.clickMenuButton("QC State", "All data");
+        }
         waitForSnapshotUpdate("Armenian");
 
         log("delete the snapshot");
-        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            table.clickHeaderMenu("Grid views", "Edit Snapshot");
+        }
+        else
+        {
+            _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        }
         deleteSnapshot();
 
         // snapshot over a custom view
         // test automatic updates by altering the source dataset
         log("create a snapshot over a custom view");
-        clickFolder(getStudyLabel());
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            new ProjectMenu(getDriver()).navigateToSubFolder(getProjectName(), getStudyLabel());
+        }
+        else
+        {
+            clickFolder(getStudyLabel());
+        }
         clickAndWait(Locator.linkWithText("APX-1: Abbreviated Physical Exam"));
         _customizeViewsHelper.openCustomizeViewPanel();
 
@@ -167,27 +200,68 @@ public class QuerySnapshotTest extends StudyBaseTest
         assertTextNotPresent("Slovakian");
 
         log("test automatic updates for a joined snapshot view");
-        clickFolder(getStudyLabel());
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            new ProjectMenu(getDriver()).navigateToSubFolder(getProjectName(), getStudyLabel());
+        }
+        else
+        {
+            clickFolder(getStudyLabel());
+        }
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
-        clickAndWait(Locator.xpath("//a[.='999320016']/../..//td/a[.='edit']"));
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            table.updateLink(table.getRowIndex("Mouse Id", "999320016")).click();
+        }
+        else
+        {
+            clickAndWait(Locator.xpath("//a[.='999320016']/../..//td/a[.='edit']"));
+        }
         setFormElement(Locator.name("quf_DEMraco"), "Slovakian");
         clickButton("Submit");
 
-        clickFolder(getStudyLabel());
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            new ProjectMenu(getDriver()).navigateToSubFolder(getProjectName(), getStudyLabel());
+        }
+        else
+        {
+            clickFolder(getStudyLabel());
+        }
         clickAndWait(Locator.linkWithText(APX_SNAPSHOT));
-        _extHelper.clickMenuButton("QC State", "All data");
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            table.clickHeaderMenu("QC State", "All data");
+        }else
+        {
+            _extHelper.clickMenuButton("QC State", "All data");
+        }
 
         waitForSnapshotUpdate("Slovakian");
 
         log("delete the snapshot");
-        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            table.clickHeaderMenu("Grid views", "Edit Snapshot");
+        }else
+        {
+            _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        }
         deleteSnapshot();
 
         // snapshot over a custom query
         log("create a snapshot over a custom query");
         clickFolder(getStudyLabel());
         goToManageViews();
-        _extHelper.clickExtMenuButton(true, Locator.linkContainingText("Add Report"), "Grid View");
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            new BootstrapMenu(getDriver(),
+                    Locator.tagWithClassContaining("span", "lk-menu-drop")
+                            .waitForElement(getDriver(), WAIT_FOR_JAVASCRIPT)).clickMenuButton(true, false, "Grid View");
+        }else
+        {
+            _extHelper.clickExtMenuButton(true, Locator.linkContainingText("Add Report"), "Grid View");
+        }
 
         clickAndWait(Locator.linkWithText("Modify Dataset List (Advanced)"));
         createNewQuery("study");
@@ -204,7 +278,13 @@ public class QuerySnapshotTest extends StudyBaseTest
 
         // edit snapshot then delete
         log("edit the snapshot");
-        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            table.clickHeaderMenu("Grid views", "Edit Snapshot");
+        }else
+        {
+            _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        }
         checkCheckbox(Locator.xpath("//input[@type='radio' and @name='updateType' and not (@id)]"));
         clickButton("Save");
         assertTrue(isChecked(Locator.xpath("//input[@type='radio' and @name='updateType' and not (@id)]")));
@@ -216,7 +296,13 @@ public class QuerySnapshotTest extends StudyBaseTest
         waitForText(10000, "Dataset: Custom Query Snapshot");
 
         log("delete the snapshot");
-        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            table.clickHeaderMenu("Grid views", "Edit Snapshot");
+        }else
+        {
+            _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        }
         deleteSnapshot();
 
         clickTab("Manage");
@@ -237,7 +323,13 @@ public class QuerySnapshotTest extends StudyBaseTest
         // verify refresh from both datasets
         clickFolder(FOLDER_1);
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
-        _extHelper.clickInsertNewRow();
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            table.clickInsertNewRowButton();
+        }else
+        {
+            _extHelper.clickInsertNewRow();
+        }
         setFormElement(Locator.name("quf_MouseId"), "999121212");
         setFormElement(Locator.name("quf_DEMsex"), "Unknown");
 
@@ -249,7 +341,13 @@ public class QuerySnapshotTest extends StudyBaseTest
         
         clickFolder(FOLDER_2);
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
-        _extHelper.clickInsertNewRow();
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            table.clickInsertNewRowButton();
+        }else
+        {
+            _extHelper.clickInsertNewRow();
+        }
         setFormElement(Locator.name("quf_MouseId"), "999151515");
         setFormElement(Locator.name("quf_DEMsexor"), "Undecided");
 
@@ -259,7 +357,13 @@ public class QuerySnapshotTest extends StudyBaseTest
         clickAndWait(Locator.linkWithText(CROSS_STUDY_SNAPSHOT));
         waitForSnapshotUpdate("Undecided");
 
-        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            table.clickHeaderMenu("Grid views", "Edit Snapshot");
+        }else
+        {
+            _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        }
         deleteSnapshot();
 
         clickFolder(getStudyLabel());
@@ -268,11 +372,23 @@ public class QuerySnapshotTest extends StudyBaseTest
         changeDatasetLabel(DEMOGRAPHICS_SNAPSHOT, "New Demographics");
         clickFolder(getStudyLabel());
         clickAndWait(Locator.linkWithText("New Demographics"));
-        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            table.clickHeaderMenu("Grid views", "Edit Snapshot");
+        }else
+        {
+            _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        }
         changeDatasetName(DEMOGRAPHICS_SNAPSHOT, "New Dem");
         clickFolder(getStudyLabel());
         clickAndWait(Locator.linkWithText("New Demographics"));
-        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            table.clickHeaderMenu("Grid views", "Edit Snapshot");
+        }else
+        {
+            _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        }
         deleteSnapshot();
     }
 
@@ -283,7 +399,15 @@ public class QuerySnapshotTest extends StudyBaseTest
 
     private void createQuerySnapshot(String snapshotName, boolean autoUpdate, boolean isDemographic, String keyField, int index)
     {
-        _extHelper.clickMenuButton("Reports", "Create Query Snapshot");
+        if (IS_BOOTSTRAP_LAYOUT)
+        {
+            DataRegionTable table = DataRegionTable.findDataRegion(this);
+            table.clickHeaderMenu("Charts / Reports", true, "Create Query Snapshot");
+        }
+        else
+        {
+            _extHelper.clickMenuButton("Reports", "Create Query Snapshot");
+        }
 
         setFormElement(Locator.name("snapshotName"), snapshotName);
         if (autoUpdate)
