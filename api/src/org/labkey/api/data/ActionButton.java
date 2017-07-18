@@ -135,6 +135,7 @@ public class ActionButton extends DisplayElement implements Cloneable
     private @Nullable String _pluralConfirmText;
     private String _encodedSubmitForm;
     private boolean _noFollow = false;
+    private boolean _enabled = true;
 
     private String _id;
 
@@ -221,6 +222,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         _pluralConfirmText = ab._pluralConfirmText;
         _singularConfirmText = ab._singularConfirmText;
         _noFollow = ab._noFollow;
+        _enabled = ab._enabled;
     }
 
     public String getActionType()
@@ -347,6 +349,11 @@ public class ActionButton extends DisplayElement implements Cloneable
         _noFollow = noFollow;
     }
 
+    public void setEnabled(boolean enabled)
+    {
+        _enabled = enabled;
+    }
+    
     public void setRequiresSelection(boolean requiresSelection)
     {
         setRequiresSelection(requiresSelection, null, (Integer)null);
@@ -437,6 +444,7 @@ public class ActionButton extends DisplayElement implements Cloneable
                 .disableOnClick(_disableOnClick)
                 .iconCls(getIconCls())
                 .tooltip(getTooltip())
+                .enabled(_enabled)
                 .id(_id);
 
         Map<String, String> attributes = new HashMap<>();
