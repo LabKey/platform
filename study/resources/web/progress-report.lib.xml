@@ -1,0 +1,9 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="progress-report/config.js"/>
+        <script path="progress-report/config.css"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext4" />
+    </dependencies>
+</libraries>

@@ -27,7 +27,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("Ext4");
+        dependencies.add("progress-report");
     }
 %>
 
@@ -44,5 +44,8 @@
 <script type="text/javascript">
     Ext4.onReady(function(){
 
+        new LABKEY.ext4.ProgressReportConfig({
+            renderTo    : <%=q(renderId)%>
+        });
     });
 </script>
