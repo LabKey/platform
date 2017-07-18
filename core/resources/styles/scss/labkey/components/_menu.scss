@@ -36,3 +36,11 @@
     }
   }
 }
+
+.dropdown-menu .menu-filter-input {
+  padding: $lk-dropdown-link-padding;
+
+  input {
+    padding: 2px 3px;
+  }
+}

@@ -431,3 +431,65 @@
             .on('show.bs.dropdown', '.lk-region-ct', attachMenu)
             .on('hide.bs.dropdown', '.lk-region-ct', detachMenu);
 }(jQuery);
+
+// Menu filtering inputs
++function($) {
+    'use strict';
+
+    var menuFilterInputs;
+    function attachMenuFiltering(e) {
+        menuFilterInputs = [];
+
+        // if the input has the data-filter-item attr then attach the keyup listner
+        var menuFilterInputEls = $(e.target).find('input.dropdown-menu-filter');
+        if (menuFilterInputEls.length) {
+            menuFilterInputEls.each(function(index, filterInputEl) {
+                var filterInput = $(filterInputEl);
+                if (filterInput.attr('data-filter-item')) {
+                    menuFilterInputs.push(filterInput);
+                    filterInput.on('keyup', attachMenuFilterKeyup);
+                    // TODO need to clear the filterInput when it is hidden via submenu click
+                }
+            });
+        }
+    }
+
+    function attachMenuFilterKeyup(e) {
+        getMatchingMenuFilterItems(this).each(function(index, filterItemEl) {
+            var filterItem = $(filterItemEl),
+                filterItemTxt = filterItem.text().toLowerCase(),
+                filterTxt = e.target.value.toLowerCase(),
+                display = 'list-item';
+
+            // hide the list-item if it does not contain the filter text
+            if (filterTxt.length > 0 && filterItemTxt.indexOf(filterTxt) == -1) {
+                display = 'none';
+            }
+
+            filterItem.css('display', display);
+        });
+    }
+
+    function getMatchingMenuFilterItems(filterInputEl) {
+        var itemStr = $(filterInputEl).attr('data-filter-item');
+        return $('li.' + itemStr);
+    }
+
+    function resetMenuFiltering(e) {
+        if (menuFilterInputs.length > 0) {
+            for (var i = 0; i < menuFilterInputs.length; i++) {
+                // reshow any hidden menu filter items
+                getMatchingMenuFilterItems(menuFilterInputs[i]).each(function(index, filterItemEl) {
+                    $(filterItemEl).css('display', 'list-item');
+                });
+
+                // reset the filter input value and remove the keyup listener
+                menuFilterInputs[i].val(null);
+                menuFilterInputs[i].off('keyup', attachMenuFilterKeyup);
+            }
+        }
+    }
+
+    $(document).on('show.bs.dropdown', attachMenuFiltering);
+    $(document).on('hide.bs.dropdown', resetMenuFiltering);
+}(jQuery);
