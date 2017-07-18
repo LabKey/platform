@@ -2304,8 +2304,16 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
             }
 
             // Only parse the 'extFormatFn' if ExtJS is present
-            if (field.extFormatFn && window && (window.Ext !== undefined || window.Ext4 !== undefined)) {
-                field.extFormatFn = eval(field.extFormatFn);
+            // checking to see if the fn ExtJS version and the window ExtJS version match
+            if (field.extFormatFn) {
+                var ext4Index = field.extFormatFn.indexOf('Ext4.'),
+                    isExt4Fn = ext4Index == 0 || ext4Index == 1,
+                    canEvalExt3 = !isExt4Fn && window && window.Ext !== undefined,
+                    canEvalExt4 = isExt4Fn && window && window.Ext4 !== undefined;
+
+                if (canEvalExt3 || canEvalExt4) {
+                    field.extFormatFn = eval(field.extFormatFn);
+                }
             }
         }
 
