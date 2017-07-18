@@ -886,15 +886,18 @@ public class Portal
         {
             for (String regionName : regionNames)
             {
-                //TODO: Make addPartView a real class & move to ProjectController
-                AddWebParts addPart = new AddWebParts();
-                addPart.pageId = id;
-                addPart.location = regionName;
-                addPart.rightEmpty = rightEmpty;
-                WebPartView addPartView = new JspView<>("/org/labkey/api/view/addWebPart.jsp", addPart);
-                addPartView.setFrame(WebPartView.FrameType.NONE);
+                if (!regionName.equals(WebPartFactory.LOCATION_RIGHT) || !rightEmpty)
+                {
+                    //TODO: Make addPartView a real class & move to ProjectController
+                    AddWebParts addPart = new AddWebParts();
+                    addPart.pageId = id;
+                    addPart.location = regionName;
+                    addPart.rightEmpty = rightEmpty;
 
-                addViewToRegion(template, regionName, addPartView);
+                    WebPartView addPartView = new JspView<>("/org/labkey/api/view/addWebPart.jsp", addPart);
+                    addPartView.setFrame(WebPartView.FrameType.NONE);
+                    addViewToRegion(template, regionName, addPartView);
+                }
             }
         }
         else
