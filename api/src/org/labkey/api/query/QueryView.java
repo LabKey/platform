@@ -63,7 +63,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTrailConfig;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.PopupAdminView;
 import org.labkey.api.view.PopupMenuView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
