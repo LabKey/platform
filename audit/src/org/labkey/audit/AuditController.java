@@ -15,18 +15,21 @@
  */
 package org.labkey.audit;
 
+import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.RequiresPermission;
@@ -60,8 +63,26 @@ public class AuditController extends SpringActionController
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "audit log", new ActionURL(ShowAuditLogAction.class, ContainerManager.getRoot()), AdminPermission.class);
     }
 
+    @RequiresPermission(AdminPermission.class)
+    public class BeginAction extends RedirectAction
+    {
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            if (getContainer() != null && getContainer().isRoot())
+                return new ActionURL(ShowAuditLogAction.class, getContainer());
+            else
+                return PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), "auditLog");
+        }
 
-    @ActionNames("begin, showAuditLog")
+        @Override
+        public boolean doAction(Object o, BindException errors) throws Exception
+        {
+            return true;
+        }
+    }
+
+    @ActionNames("showAuditLog")
     @AdminConsoleAction
     @RequiresPermission(AdminPermission.class)
     public class ShowAuditLogAction extends QueryViewAction<ShowAuditLogForm, QueryView>

@@ -62,7 +62,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
     },
 
     isDirty : function() {
-        return this.dirty || (this.codeMirror && this.codeMirror.getValue() != this.reportConfig.script);
+        return this.dirty || (this.codeMirror && this.codeMirror.getValue().replace(/\s/g, '') != this.reportConfig.script.replace(/\s/g, ''));
     },
 
     beforeUnload : function() {

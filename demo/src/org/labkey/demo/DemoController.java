@@ -157,8 +157,7 @@ public class DemoController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            (new BeginAction()).appendNavTrail(root).addChild("Insert Person", getURL());
-            return root;
+            return root.addChild("Demo", new ActionURL(BeginAction.class, getContainer())).addChild("Insert Person");
         }
 
         public ActionURL getURL()
@@ -223,8 +222,7 @@ public class DemoController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return (new BeginAction()).appendNavTrail(root)
-                    .addChild(getPageTitle(), getURL(_person));
+            return root.addChild("Demo", new ActionURL(BeginAction.class, getContainer())).addChild(getPageTitle());
         }
 
         public String getPageTitle()
@@ -305,7 +303,7 @@ public class DemoController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return (new BeginAction()).appendNavTrail(root).addChild("Bulk Update", getURL());
+            return root.addChild("Demo", new ActionURL(BeginAction.class, getContainer())).addChild("Bulk Update");
         }
 
         public ActionURL getURL()
