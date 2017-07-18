@@ -89,8 +89,26 @@ public class PopupMenuView extends HttpView<PopupMenu>
         if (tree == null || !PageFlowUtil.useExperimentalCoreUI())
             return;
 
+        String treeItemCls = null;
+
         for (NavTree child : tree.getChildren())
         {
+            // check if this is the first child with the menu filter cls, if so add the filter input item
+            if (child.getMenuFilterItemCls() != null)
+            {
+                if (treeItemCls == null || !treeItemCls.equals(child.getMenuFilterItemCls()))
+                {
+                    treeItemCls = child.getMenuFilterItemCls();
+                    renderMenuFilterInput(treeItemCls, out);
+                }
+            }
+            else
+            {
+                // clear the cls to stop the menu filter section, note that this means that menu filter items
+                // must be consecutively placed in the menu in order to work with the filter input
+                treeItemCls = null;
+            }
+
             if (child.hasChildren())
             {
                 String text = PageFlowUtil.filter(child.getText());
@@ -107,7 +125,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
             else if ("-".equals(child.getText()))
                 renderTreeDivider(out);
             else
-                renderTreeItem(child, null, out);
+                renderTreeItem(child, treeItemCls, out);
         }
     }
 
@@ -161,5 +179,17 @@ public class PopupMenuView extends HttpView<PopupMenu>
             out.write("<i class=\"" + itemImageCls + "\"></i>");
         out.write(PageFlowUtil.filter(item.getText()));
         out.write("</a>");
+    }
+
+    public static String getMenuFilterItemCls(NavTree tree)
+    {
+        return PageFlowUtil.filter(tree.getText()).replaceAll("\\s", "-").toLowerCase() + "-item";
+    }
+
+    private static void renderMenuFilterInput(String menuFilterItemCls, Writer out) throws IOException
+    {
+        out.write("<li class=\"menu-filter-input\">");
+        out.write("<input type=\"text\" placeholder=\"Filter\" class=\"dropdown-menu-filter\" data-filter-item=\"" + menuFilterItemCls + "\"/>");
+        out.write("</li>");
     }
 }

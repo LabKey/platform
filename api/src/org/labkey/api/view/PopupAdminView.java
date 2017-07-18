@@ -31,7 +31,9 @@ import org.labkey.api.view.menu.ProjectAdminMenu;
 import org.labkey.api.view.menu.SiteAdminMenu;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -77,15 +79,28 @@ public class PopupAdminView extends PopupMenuView
 
     private static void addModulesToMenu(ViewContext context, SortedSet<Module> modules, Module defaultModule, NavTree menu)
     {
+        List<NavTree> moduleItems = new ArrayList<>();
+
         for (Module module : modules)
         {
             if (null == module || module.equals(defaultModule))
                 continue;
 
             ActionURL tabUrl = module.getTabURL(context.getContainer(), context.getUser());
-
             if (null != tabUrl)
-                menu.addChild(module.getTabName(context), tabUrl);
+            {
+                NavTree item = new NavTree(module.getTabName(context), tabUrl);
+                moduleItems.add(item);
+                menu.addChild(item);
+            }
+        }
+
+        // enable menu filtering for the module list if > 10 items
+        if (moduleItems.size() > 10)
+        {
+            String menuFilterItemCls = PopupMenuView.getMenuFilterItemCls(menu);
+            for (NavTree item : moduleItems)
+                item.setMenuFilterItemCls(menuFilterItemCls);
         }
     }
 
@@ -174,6 +189,7 @@ public class PopupAdminView extends PopupMenuView
             {
                 defaultModule = c.getFolderType().getDefaultModule();
                 goToModuleMenu.addChild(c.getName() + " Start Page", c.getFolderType().getStartURL(c, user));
+                goToModuleMenu.addSeparator();
             }
 
             addModulesToMenu(context, activeModules, defaultModule, goToModuleMenu);

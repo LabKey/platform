@@ -63,6 +63,8 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTrailConfig;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.PopupAdminView;
+import org.labkey.api.view.PopupMenuView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
@@ -1637,6 +1639,7 @@ public class QueryView extends WebPartView<Object>
     protected void addGridViews(MenuButton menu, URLHelper target, String currentView)
     {
         List<CustomView> views = new ArrayList<>(getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest(), false, false).values());
+        List<NavTree> viewItems = new ArrayList<>();
 
         // default grid view stays at the top level. The default will have a getName == null
         boolean hasDefault = false;
@@ -1733,8 +1736,18 @@ public class QueryView extends WebPartView<Object>
                 _log.error("Invalid custom view icon url", e);
             }
 
+            viewItems.add(item);
             menu.addMenuItem(item);
         }
+
+        // enable menu filtering for the module list if > 10 items
+        if (viewItems.size() > 10)
+        {
+            String menuFilterItemCls = PopupMenuView.getMenuFilterItemCls(menu.getNavTree());
+            for (NavTree item : viewItems)
+                item.setMenuFilterItemCls(menuFilterItemCls);
+        }
+
     }
 
     protected void addReportViews(MenuButton menu)

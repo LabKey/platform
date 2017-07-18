@@ -63,6 +63,7 @@ public class NavTree implements Collapsible
     private String _target = null;
     private String _tip;
     private URLHelper _imageURL;
+    private String _menuFilterItemCls = null;
 
     private final @NotNull List<NavTree> _children = new LinkedList<>();
 
@@ -140,6 +141,7 @@ public class NavTree implements Collapsible
         _target = source._target;
         _tip = source._tip;
         _imageCls = source._imageCls;
+        _menuFilterItemCls = source._menuFilterItemCls;
 
         _children.addAll(source._children.stream().map(NavTree::new).collect(Collectors.toList()));
     }
@@ -312,7 +314,6 @@ public class NavTree implements Collapsible
         return _children.size();
     }
 
-
     public void setImage(String src, int width, int height)
     {
         _imageSrc = src;
@@ -481,6 +482,16 @@ public class NavTree implements Collapsible
     public void setTip(String tip)
     {
         _tip = tip;
+    }
+
+    public void setMenuFilterItemCls(String menuFilterItemCls)
+    {
+        _menuFilterItemCls = menuFilterItemCls;
+    }
+
+    public String getMenuFilterItemCls()
+    {
+        return _menuFilterItemCls;
     }
 
     public String childrenToJS()
