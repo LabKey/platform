@@ -283,6 +283,7 @@ public class AuthenticationManager
             }
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            getPageConfig().setIncludeLoginLink(false);
 
             return new SimpleErrorView(errors, false);
         }
