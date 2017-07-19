@@ -27,19 +27,107 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
     initComponent: function ()
     {
         this.items = [];
-        this.items.push(this.getConfigPanel());
+        this.items.push(this.getReportPanel());
+        this.items.push(this.getAssayPanel());
+
+        this.buttons = [{
+                xtype   : 'button',
+                text    : 'Save',
+                scope   : this,
+                handler : this.saveReport
+            },{
+                xtype   : 'button',
+                text    : 'Cancel'
+        }];
 
         this.callParent(arguments);
     },
 
-    getConfigPanel : function(){
+    getReportPanel : function(){
+
+        if (!this.reportPanel){
+
+            var properties = [{
+                xtype      : 'textfield',
+                allowBlank : false,
+                name       : 'viewName',
+                labelWidth : 120,
+                width      : 400,
+                fieldLabel : 'Name',
+//                value      : this.data.name
+                listeners: {
+                    scope : this,
+                    change: function(cmp, newVal){
+                        this.name = newVal;
+                    }
+                }
+            },{
+                xtype      : 'textarea',
+                fieldLabel : 'Description',
+                name       : 'description',
+//                value      : this.data.description,
+                labelWidth : 120,
+                width      : 400,
+                listeners: {
+                    scope  : this,
+                    change : function(cmp, newVal){
+                        this.description = newVal;
+                    }
+                }
+            }];
+
+            var sharedName = "shared";
+            if (this.disableShared) {
+                // be sure to roundtrip the original shared value
+                // since we are disabling the checkbox
+                properties.push({
+                    xtype : 'hidden',
+                    name  : "shared",
+//                    value : this.data.shared,
+                    labelWidth : 120,
+                    width      : 400
+                });
+
+                // rename the disabled checkbox
+                sharedName = "hiddenShared";
+            }
+
+            properties.push({
+                xtype   : 'checkbox',
+//                inputValue  : this.data.shared,
+//                checked     : this.data.shared,
+                boxLabel    : 'Share this report with all users?',
+                name        : sharedName,
+                fieldLabel  : "Shared",
+                disabled    : this.disableShared,
+                uncheckedValue : false,
+                labelWidth : 120,
+                width      : 400,
+                listeners: {
+                    change: function(cmp, newVal, oldVal){
+                        cmp.inputValue = newVal;
+                    }
+                }
+            });
+
+            this.reportPanel = Ext4.create('Ext.form.Panel', {
+                border  : false,
+                frame   : false,
+                flex    : 1.2,
+                items   : properties
+            });
+        }
+        return this.reportPanel;
+    },
+
+    getAssayPanel : function(){
 
         if (!this.configPanel){
             this.configPanel = Ext4.create('Ext.panel.Panel', {
                 itemId : 'configpanel',
                 items : [{
                     xtype : 'panel',
-                    height : 700
+                    height : 200
                 }],
                 listeners : {
                     scope   : this,
@@ -61,9 +149,9 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
             scope: this,
             success: function(result)
             {
-                this.getConfigPanel().getEl().unmask();
-                this.getConfigPanel().removeAll();
-                this.getConfigPanel().add({
+                this.getAssayPanel().getEl().unmask();
+                this.getAssayPanel().removeAll();
+                this.getAssayPanel().add({
                     xtype : 'panel',
                     border: false,
                     tpl   : this.getConfigTpl(),
@@ -102,5 +190,37 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
             buttons: Ext4.Msg.OK,
             icon: Ext4.Msg.ERROR
         });
+    },
+
+    saveReport : function(){
+        console.log('save report');
+
+        var form = this.reportPanel.getForm();
+        if (form.isValid()){
+
+            Ext4.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('study-reports', 'saveAssayProgressReport.api'),
+                method: 'POST',
+                jsonData: {
+                    name    : this.name,
+                    description : this.description,
+                    public  : this.public
+                },
+                success: function (response) {
+                    if (this.returnUrl)
+                        window.location = this.returnUrl;
+                },
+                failure: this.failureHandler,
+                scope: this
+            });
+        }
+        else {
+            Ext4.Msg.show({
+                title   :'Error',
+                msg     : 'Please fill out all required fields.',
+                buttons : Ext4.Msg.OK,
+                icon    : Ext4.Msg.ERROR
+            });
+        }
     }
 });

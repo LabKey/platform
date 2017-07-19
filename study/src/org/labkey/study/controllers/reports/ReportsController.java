@@ -29,6 +29,7 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BeanViewForm;
@@ -95,6 +96,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.reports.AssayProgressReport;
 import org.labkey.study.reports.EnrollmentReport;
 import org.labkey.study.reports.ExportExcelReport;
 import org.labkey.study.reports.ExternalReport;
@@ -1918,4 +1920,58 @@ public class ReportsController extends BaseStudyController
         }
 
     }
+
+    @RequiresLogin
+    @RequiresPermission(ReadPermission.class)
+    public class SaveAssayProgressReportAction extends MutatingApiAction<ReportUtil.JsonReportForm>
+    {
+        @Override
+        public void validateForm(ReportUtil.JsonReportForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public ApiResponse execute(ReportUtil.JsonReportForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            String key = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), null);
+            Report report = getReport(form);
+
+            int rowId = ReportService.get().saveReport(getViewContext(), key, report);
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId));
+
+            response.put("success", true);
+            response.put("reportId", reportId);
+
+            return response;
+        }
+
+        private Report getReport(ReportUtil.JsonReportForm form) throws Exception
+        {
+            Report report;
+
+            if (form.getReportId() != null)
+                report = form.getReportId().getReport(getViewContext());
+            else
+                report = ReportService.get().createReportInstance(AssayProgressReport.TYPE);
+
+            if (report != null)
+            {
+                report = report.clone();
+                ReportDescriptor descriptor = report.getDescriptor();
+
+                if (form.getName() != null)
+                    descriptor.setReportName(form.getName());
+                if (form.getDescription() != null)
+                    descriptor.setReportDescription(form.getDescription());
+                if (!form.isPublic())
+                    descriptor.setOwner(getUser().getUserId());
+                else
+                    descriptor.setOwner(null);
+            }
+            return report;
+        }
+
+    }
+
 }
