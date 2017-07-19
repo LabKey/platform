@@ -294,7 +294,7 @@ public class Input extends DisplayElement
             sb.append("\"");
         }
 
-        sb.append(" name=\"").append(getName()).append("\"");
+        sb.append(" name=\"").append(PageFlowUtil.filter(getName())).append("\"");
 
         if (StringUtils.isNotEmpty(getId()))
             sb.append(" id=\"").append(getId()).append("\"");
