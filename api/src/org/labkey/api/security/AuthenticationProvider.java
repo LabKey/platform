@@ -27,6 +27,8 @@ import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -70,6 +72,26 @@ public interface AuthenticationProvider
     default boolean isFicamApproved()
     {
         return false;
+    }
+
+    /**
+     * Override this to advertise the normal PropertyManager categories that this provider uses. This is used to
+     * read and populate provider configurations via bootstrap/startup properties.
+     * @return A collection of property categories used by this provider
+     */
+    default @NotNull Collection<String> getPropertyCategories()
+    {
+        return Collections.emptyList();
+    }
+
+    /**
+     * Override this to advertise the encrypted PropertyManager categories that this provider uses. This is used to
+     * read and populate provider configurations via bootstrap/startup properties.
+     * @return A collection of property categories used by this provider
+     */
+    default @NotNull Collection<String> getEncryptedPropertyCategories()
+    {
+        return Collections.emptyList();
     }
 
     interface PrimaryAuthenticationProvider extends AuthenticationProvider

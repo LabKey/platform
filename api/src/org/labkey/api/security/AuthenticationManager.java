@@ -35,6 +35,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Project;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.data.PropertyStore;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
@@ -49,6 +51,7 @@ import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationPro
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HeartBeat;
@@ -81,6 +84,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -121,11 +125,14 @@ public class AuthenticationManager
     }
 
     // Called unconditionally on every server startup. At some point, might want to make this bootstrap only.
+    // TODO: SSO logos. Auditing of configuration property changes. Other general "Authentication" properties (auto-create, self-registration, self-service email changes).
     public static void populateSettingsWithStartupProps()
     {
-        // TODO: iterate all providers and save startup properties for each, if found
+        // Populate the startup properties to configure each authentication provider
+        populateProviderProperties(PropertyManager.getNormalStore(), AuthenticationProvider::getPropertyCategories);
+        populateProviderProperties(PropertyManager.getEncryptedStore(), AuthenticationProvider::getEncryptedPropertyCategories);
 
-        // Attempt to enable the providers listed in startup properties
+        // Attempt to enable the providers listed in the general authentication startup properties
         ModuleLoader.getInstance().getConfigProperties(AUTHENTICATION_CATEGORY).stream()
             .filter(p -> p.getName().equals(PROVIDERS_KEY))
             .flatMap(p -> Arrays.stream(p.getValue().split(":")))
@@ -137,9 +144,30 @@ public class AuthenticationManager
                 }
                 catch (NotFoundException e)
                 {
-                    _log.warn("Authentication startup properties specified an authentication provider (\"" + name + "\") that is not present on this server");
+                    _log.warn("Authentication startup properties attempted to enable an authentication provider (\"" + name + "\") that is not present on this server");
                 }
             });
+    }
+
+    private static void populateProviderProperties(PropertyStore store, Function<AuthenticationProvider, Collection<String>> function)
+    {
+        // For each provider, use function to collect the desired property categories
+        List<String> categories = getAllProviders().stream()
+            .map(function)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
+
+        // For each category that matches a ConfigProperty scope, write all the properties to the provided PropertyStore
+        categories.forEach(category -> {
+            Collection<ConfigProperty> configProperties = ModuleLoader.getInstance().getConfigProperties(category);
+
+            if (!configProperties.isEmpty())
+            {
+                PropertyMap map = store.getWritableProperties(category, true);
+                configProperties.forEach(cp -> map.put(cp.getName(), cp.getValue()));
+                map.save();
+            }
+        });
     }
 
     public enum Priority { High, Low }
@@ -185,7 +213,7 @@ public class AuthenticationManager
 
     public static void setAuthConfigProperty(User user, String key, boolean value)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
+        PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
         props.put(key, Boolean.toString(value));
         props.save();
 
@@ -474,7 +502,7 @@ public class AuthenticationManager
             sep = PROP_SEPARATOR;
         }
 
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
+        PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
         props.put(PROVIDERS_KEY, sb.toString());
         props.save();
         AuthenticationProviderCache.clear();

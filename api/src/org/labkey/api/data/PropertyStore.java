@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.security.User;
 
 /**
@@ -26,18 +27,18 @@ import org.labkey.api.security.User;
 public interface PropertyStore
 {
     /** @return a read-only copy of the properties */
-    @NotNull PropertyManager.PropertyMap getProperties(User user, Container container, String category);
+    @NotNull PropertyMap getProperties(User user, Container container, String category);
     /** @return a read-only copy of the properties */
-    @NotNull PropertyManager.PropertyMap getProperties(Container container, String category);
+    @NotNull PropertyMap getProperties(Container container, String category);
     /** @return a read-only copy of the properties */
-    @NotNull PropertyManager.PropertyMap getProperties(String category);
+    @NotNull PropertyMap getProperties(String category);
 
     // If create == true, then never returns null. If create == false, will return null if property set doesn't exist.
-    public PropertyManager.PropertyMap getWritableProperties(User user, Container container, String category, boolean create);
-    public PropertyManager.PropertyMap getWritableProperties(Container container, String category, boolean create);
-    public PropertyManager.PropertyMap getWritableProperties(String category, boolean create);
+    PropertyMap getWritableProperties(User user, Container container, String category, boolean create);
+    PropertyMap getWritableProperties(Container container, String category, boolean create);
+    PropertyMap getWritableProperties(String category, boolean create);
 
-    public void deletePropertySet(User user, Container container, String category);
-    public void deletePropertySet(Container container, String category);
-    public void deletePropertySet(String category);
+    void deletePropertySet(User user, Container container, String category);
+    void deletePropertySet(Container container, String category);
+    void deletePropertySet(String category);
 }
