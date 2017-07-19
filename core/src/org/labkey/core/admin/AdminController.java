@@ -763,7 +763,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresNoPermission
     @AllowedDuringUpgrade
     @AllowedBeforeInitialUserIsSet
     public class HealthCheckAction extends ApiAction
@@ -773,19 +773,31 @@ public class AdminController extends SpringActionController
         {
             Map<String, Object> healthValues = new HashMap<>();
             //Hold overall status
-            Map<String, Object> overallStatus = new HashMap<>();
+            Map<String, Boolean> overallStatus = new HashMap<>();
 
             healthValues.put("Overall", overallStatus);
             healthValues.put("DbConnectionStatus", dbConnectionHealth(overallStatus));
             healthValues.put("Users", userHealth(overallStatus));
 
-            //TODO: Removing for initial health check, may want to add it back later.
-//            healthValues.put("MemoryStatus", memoryHealth(overallStatus));
+            Boolean healthy = true;
+            for (Boolean healthStat : overallStatus.values())
+            {
+                healthy = healthy && healthStat;
+            }
 
-            return new ApiSimpleResponse(healthValues);
+            if (getUser().hasRootAdminPermission())
+            {
+                healthValues.put("healthy", healthy);
+                return new ApiSimpleResponse(healthValues);
+            }
+            else
+            {
+                return new ApiSimpleResponse("healthy", healthy);
+            }
+
         }
 
-        private Map<String, Object> userHealth(Map<String, Object> overallStatus)
+        private Map<String, Object> userHealth(Map<String, Boolean> overallStatus)
         {
             Map<String, Object> userHealth = new HashMap<>();
             ZonedDateTime now = ZonedDateTime.now();
@@ -805,7 +817,7 @@ public class AdminController extends SpringActionController
             return userHealth;
         }
 
-        private Map<String, Boolean> dbConnectionHealth(Map<String, Object> overallStatus) throws Exception
+        private Map<String, Boolean> dbConnectionHealth(Map<String, Boolean> overallStatus) throws Exception
         {
             Map<String, Boolean> healthValues = new HashMap<>();
             Boolean allConnected = true;
@@ -827,32 +839,6 @@ public class AdminController extends SpringActionController
 
             overallStatus.put("AllDBsConnected", allConnected);
             return healthValues;
-        }
-
-        private Map<String, Object> memoryHealth(Map<String, Object> overallStatus)
-        {
-            Map<String, Object> memoryReports = new HashMap<>();
-
-            //Record the property table
-            MemBean mem = new MemBean(getViewContext().getRequest(), MemTracker.getInstance().beforeReport());
-            mem.systemProperties.forEach( property -> memoryReports.put(property.getKey(), property.getValue()));
-
-            //Record the usage stats for each memory (sub)type
-            Map<String, Object> memUsage = new HashMap<>();
-            mem.memoryUsages.forEach( usage -> {
-                Map<String, Object> usageMap = new HashMap<>();
-                MemoryUsageSummary summary = usage.getValue();
-                usageMap.put("Init", summary.getInit());
-                usageMap.put("Used", summary.getUsed());
-                usageMap.put("Committed", summary.getCommitted());
-                usageMap.put("Max", summary.getMax());
-
-                memUsage.put(usage.getKey(), usageMap);
-            });
-            memoryReports.put("Usage", memUsage);
-            overallStatus.put(HEAP_MEMORY_KEY, memUsage.get(HEAP_MEMORY_KEY));
-
-            return memoryReports;
         }
     }
 
