@@ -1207,8 +1207,11 @@ public class OntologyManager
             }
 
             // update project of any descriptors in folder just moved
-            String sql = "UPDATE " + getTinfoPropertyDescriptor() + " SET Project = ? WHERE Container = ?";
-            new SqlExecutor(getExpSchema()).execute(sql, newProject, c);
+            TableInfo pdTable = getTinfoPropertyDescriptor();
+            String sql = "UPDATE " + pdTable + " SET Project = ? WHERE Container = ? AND PropertyUri NOT IN";
+            // Issue 30477: exclude project level properties descriptors (such as Study) that already exist
+            sql += "(SELECT PropertyUri FROM " + pdTable + " WHERE Project = ? AND PropertyUri IN (SELECT PropertyUri FROM " + pdTable + " WHERE Container = ?))";
+            new SqlExecutor(getExpSchema()).execute(sql, newProject, c, newProject, c);
 
             if (_log.isDebugEnabled())
             {
