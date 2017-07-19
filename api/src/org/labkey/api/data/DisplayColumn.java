@@ -1008,6 +1008,19 @@ public abstract class DisplayColumn extends RenderColumn
         return writer.toString();
     }
 
+    public void renderDetailsCaptionCell(RenderContext ctx, Writer out, boolean strictGrid) throws IOException
+    {
+        if (null == _caption)
+            return;
+        if (!strictGrid)
+            renderDetailsCaptionCell(ctx, out);
+        else if (PageFlowUtil.useExperimentalCoreUI())
+        {
+            out.write("<label class=\"col-3\">");
+            renderTitle(ctx, out);
+            out.write("</label>");
+        }
+    }
 
     public void renderDetailsCaptionCell(RenderContext ctx, Writer out) throws IOException
     {

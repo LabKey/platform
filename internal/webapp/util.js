@@ -155,7 +155,7 @@ function addFilePicker(tblId, linkId)
     var filePickerId = "formFile" + twoDigit(filePickerIndex);
     filePickerCell.innerHTML = '<input type="file" id="' + filePickerId + '" name="formFiles[' + twoDigit(filePickerIndex) + ']" size="45" onChange="showPathname(this, \'filename' + twoDigit(filePickerIndex) + '\')">';
     var removePathnameCell = newRow.insertCell(1);
-    removePathnameCell.innerHTML = '<table><tr><td><a href="javascript:removeFilePicker(\'' + tblId + '\', \'' + linkId + '\', \'' + newRow.id + '\')">remove</a></td>' +
+    removePathnameCell.innerHTML = '<table><tr><td><a href="javascript:removeFilePicker(\'' + tblId + '\', \'' + linkId + '\', \'' + newRow.id + '\')">&nbsp;remove</a></td>' +
         '<td><label id="filename' + twoDigit(filePickerIndex) + '"></label></td></tr></table>';
     updateInstructions(document.getElementById(linkId), table.rows.length);
 }

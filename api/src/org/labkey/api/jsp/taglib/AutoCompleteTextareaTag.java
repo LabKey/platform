@@ -84,5 +84,7 @@ public class AutoCompleteTextareaTag extends AutoCompleteTag
 
         if (getValue() != null)
             sb.append("                html : ").append(PageFlowUtil.jsString(getValue())).append(",\n");
+        if (PageFlowUtil.useExperimentalCoreUI())
+            sb.append("                class: \"form-control\", \n");
     }
 }
