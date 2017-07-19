@@ -139,9 +139,9 @@
         function getUpDownButtons(webpart)
         {
             var moveUpImage = 'fa fa-caret-square-o-up labkey-fa-portal-nav';
-            var moveUpDisabledImage = 'fa fa-caret-square-o-up x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav';
+            var moveUpDisabledImage = 'fa fa-caret-square-o-up labkey-btn-default-toolbar-small-disabled labkey-fa-portal-nav';
             var moveDownImage = 'fa fa-caret-square-o-down labkey-fa-portal-nav';
-            var moveDownDisabledImage = 'fa fa-caret-square-o-down x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav';
+            var moveDownDisabledImage = 'fa fa-caret-square-o-down labkey-btn-default-toolbar-small-disabled labkey-fa-portal-nav';
 
             var getImageEl = function(webpart, imgClass)
             {
