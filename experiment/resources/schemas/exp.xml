@@ -419,6 +419,7 @@
       <column columnName="DefaultScale"/>
       <column columnName="FacetingBehaviorType"/>
       <column columnName="Protected"/>
+      <column columnName="Phi"/>
       <column columnName="ExcludeFromShifting"/>
       <column columnName="Created"/>
       <column columnName="CreatedBy"/>

@@ -42,6 +42,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.gwt.client.PhiType;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
@@ -181,6 +182,11 @@ public class DomainPropertyImpl implements DomainProperty
     public boolean isProtected()
     {
         return _pd.isProtected();
+    }
+
+    public PhiType getPhi()
+    {
+        return _pd.getPhi();
     }
 
     @Override
@@ -348,6 +354,14 @@ public class DomainPropertyImpl implements DomainProperty
         if (!isEdited() && isProtected == isProtected())
             return;
         edit().setProtected(isProtected);
+    }
+
+    @Override
+    public void setPhi(PhiType phi)
+    {
+        if (!isEdited() && getPhi() == phi)
+            return;
+        edit().setPhi(phi);
     }
 
     @Override
@@ -701,6 +715,7 @@ public class DomainPropertyImpl implements DomainProperty
         setFacetingBehavior(propSrc.getFacetingBehavior());
         setImportAliasSet(propSrc.getImportAliasSet());
         setProtected(propSrc.isProtected());
+        setPhi(propSrc.getPhi());
         setURL(propSrc.getURL());
         setHidden(propSrc.isHidden());
         setShownInDetailsView(propSrc.isShownInDetailsView());
@@ -979,6 +994,7 @@ public class DomainPropertyImpl implements DomainProperty
             pd.setLookupQuery("lkQuery");
             pd.setFacetingBehaviorType(FacetingBehaviorType.AUTOMATIC);
             pd.setProtected(false);
+            pd.setPhi(PhiType.NotPHI);
             pd.setExcludeFromShifting(false);
             return pd;
         }

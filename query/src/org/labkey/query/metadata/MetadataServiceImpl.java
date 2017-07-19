@@ -243,6 +243,10 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                         {
                             gwtColumnInfo.setProtected(column.getProtected());
                         }
+                        if (column.isSetPhi())
+                        {
+                            gwtColumnInfo.setPhi(column.getPhi().toString());
+                        }
                         if (column.isSetExcludeFromShifting())
                         {
                             gwtColumnInfo.setExcludeFromShifting(column.getExcludeFromShifting());
