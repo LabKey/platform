@@ -51,8 +51,7 @@
     HttpView me = HttpView.currentView();
     PageConfig pageConfig = (PageConfig) me.getModelBean();
 
-    boolean showRight = Portal.getPartsByLocation(Portal.getParts(getContainer())).keySet().contains(WebPartFactory.LOCATION_RIGHT)
-            && me.getView(WebPartFactory.LOCATION_RIGHT) instanceof HttpView
+    boolean showRight = me.getView(WebPartFactory.LOCATION_RIGHT) instanceof HttpView
             && ((HttpView) me.getView(WebPartFactory.LOCATION_RIGHT)).isVisible();
 %>
 <div class="container lk-body-ct">
