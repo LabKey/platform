@@ -380,7 +380,6 @@ public class LoginController extends SpringActionController
     @CSRF
     public class RegisterAction extends SimpleViewAction<RegisterForm>
     {
-
         public ModelAndView getView(RegisterForm form, BindException errors) throws Exception
         {
             if (!AuthenticationManager.isRegistrationEnabled())
@@ -1046,7 +1045,6 @@ public class LoginController extends SpringActionController
     private HttpView showLogin(LoginForm form, BindException errors, HttpServletRequest request, PageConfig page) throws Exception
     {
         String email = form.getEmail();
-        boolean remember = false;
 
         // If email is null, check to see if email is saved in cookie
         // If email is already filled in (e.g., from setPassword), use it instead of the cookie
@@ -1056,9 +1054,6 @@ public class LoginController extends SpringActionController
             email = getEmailFromCookie(request);
             form.setEmail(email);
         }
-
-        if (null != email)
-            remember = true;
 
         VBox vBox = new VBox();
 
@@ -1092,8 +1087,6 @@ public class LoginController extends SpringActionController
         page.setIncludeLoginLink(false);
         page.setTitle("Sign In");
 
-        // default login using JSP from LoginView can be removed after the new login.html ajax version is working
-        // LoginView view = new LoginView(form, errors, remember, form.isApprovedTermsOfUse());
         WebPartView view = getLoginView(errors);
 
         vBox.addView(view);
@@ -1145,7 +1138,7 @@ public class LoginController extends SpringActionController
         }
         else
         {
-            // Neither the default login page at core/resources/views/login.html or the custom login described in admin console  were found
+            // Neither the default login page at core/resources/views/login.html or the custom login described in admin console were found
             throw new NotFoundException("Neither the custom login page specified via Look and Feel Settings as: " + customLogin + " or the default login page were found.");
         }
         return view;
@@ -1189,10 +1182,8 @@ public class LoginController extends SpringActionController
         @Override
         public ModelAndView getView(AgreeToTermsForm form, boolean reshow, BindException errors) throws Exception
         {
-            // default login using JSP from AgreeToTermsView can be removed after the new login.html ajax version is working
+            // Consider: replace with a getCustomAgreeToTermsView() that reads a custom agreeToTerms.html file
             AgreeToTermsView view = new AgreeToTermsView(form, errors);
-            // replace the getCustomLoginViewIfAvailable() with a getCustomAgreeToTermsViewIfAvailable() method that reads a custom agreeToTerms.html file
-            // WebPartView view = getCustomLoginViewIfAvailable(errors, form, false);
 
             PageConfig page = getPageConfig();
 
@@ -2322,7 +2313,6 @@ public class LoginController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class SetAuthenticationParameterAction extends RedirectAction<AuthParameterForm>
     {
-
         @Override
         public URLHelper getSuccessURL(AuthParameterForm form)
         {
