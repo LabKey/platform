@@ -403,7 +403,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                             writer.append("<div class=\"form-group\">");
 
                         //gross, but necessary to override builder CSS
-                        if (prop.getPropertyDescriptor().getName().equalsIgnoreCase("AssignedTo"))
+                        if (newUI && prop.getPropertyDescriptor().getName().equalsIgnoreCase("AssignedTo"))
                             writer.append(renderLargeLabel(prop, context, readOnly));
                         else
                             writer.append(renderLabel(prop, context, readOnly, false));
