@@ -1733,6 +1733,12 @@ div span.labkey-main-menu-icon {
   color: $panel-bg !important;
 }
 
+// formerly : .x4-btn-default-toolbar-small-disabled
+.labkey-btn-default-toolbar-small-disabled {
+  filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
+  opacity: 0.5;
+}
+
 @import "components/header";
 @import "components/navigation";
 @import "components/menu";
