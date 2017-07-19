@@ -654,7 +654,7 @@ public class DataColumn extends DisplayColumn
                         .rows(_inputRows)
                         .name(getInputPrefix() + formFieldName)
                         .disabled(disabledInput)
-                        .value(strVal);
+                        .value(PageFlowUtil.filter(strVal));
 
                 out.write(input.build().toString());
             }
@@ -773,7 +773,7 @@ public class DataColumn extends DisplayColumn
                     Input.InputBuilder input = new Input.InputBuilder()
                             .name(getInputPrefix() + formFieldName)
                             .disabled(disabledInput)
-                            .value(strVal);
+                            .value(PageFlowUtil.filter(strVal));
 
                     out.write(input.build().toString());
                 }
