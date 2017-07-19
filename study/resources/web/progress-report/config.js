@@ -203,8 +203,7 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
                 method: 'POST',
                 jsonData: {
                     name    : this.name,
-                    description : this.description,
-                    public  : this.public
+                    description : this.description
                 },
                 success: function (response) {
                     if (this.returnUrl)
