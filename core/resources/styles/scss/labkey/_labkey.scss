@@ -428,20 +428,20 @@ regions on mouseover */
 }
 
 /* Used for text fields with auto completion */
-.labkey-completion {
+div.labkey-completion {
   display:none;
   border: 1px solid #AAAAAA;
   padding: 2px 2em 2px 2px;
-  position:absolute;
+  position:fixed;
   background-color:#FFFFFF;
   z-index:100;
   overflow-y: auto;
   overflow-x: hidden;
   max-height: 200px;
+}
 
-  table {
-    border-spacing: 0;
-  }
+table.labkey-completion {
+  border-spacing: 0;
 
   td {
     padding: 0;

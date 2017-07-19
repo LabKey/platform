@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.issue.model.IssueManager.EntryTypeNames" %>
 <%@ page import="org.labkey.issue.view.IssuesListView" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     IssuesController.SummaryBean bean = ((JspView<IssuesController.SummaryBean>) HttpView.currentView()).getModelBean();
@@ -33,8 +34,17 @@
 
     if (bean.hasPermission)
     {
+        if (bean.bugs.isEmpty())
+        {%>
+            <div style="margin-bottom: 8px"> There are no issues in this list.</div>
+            <a class="btn btn-default" href="<%=bean.insertURL%>">
+                <%="new " + names.singularName.toLowerCase()%>
+            </a>
+        <%}
+        else
+        {
 %>
-<table class="labkey-data-region">
+<table class="table-condensed table-striped table-bordered">
     <tr><td>User</td><td>Open</td><td>Resolved</td>
 <%
         for (Map<String, Object> bug : bean.bugs)
@@ -55,12 +65,28 @@
     </tr>
 <% } %>
 </table>
+<% if (PageFlowUtil.useExperimentalCoreUI())
+{%>
+
+<div class="btn-group" role="group" style="margin-top: 8px">
+    <a class="btn btn-default" href="<%=getBaseListURL(bean.issueDefName).addParameter("issues-" + bean.issueDefName + ".Status~eq", "open")%>">
+        <%="view open " + names.pluralName.toLowerCase()%>
+    </a>
+    <a class="btn btn-default" href="<%=bean.insertURL%>">
+        <%="new " + names.singularName.toLowerCase()%>
+    </a>
+</div>
+
+<%} else {%>
+
 <%=textLink("view open " + names.pluralName, getBaseListURL(bean.issueDefName).addParameter("issues-" + bean.issueDefName + ".Status~eq", "open"))%>
 <%=textLink("submit new " + names.singularName, bean.insertURL)%>
 <%
+        }
     }
-    else
-    {
+}
+else
+{
 %>
 <span>
   <% if (user.isGuest()) { %>

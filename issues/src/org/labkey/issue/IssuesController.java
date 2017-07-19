@@ -1878,10 +1878,13 @@ public class IssuesController extends SpringActionController
                 {
                     // fall through
                 }
+
+                //Search for the query term instead
+                return HttpView.redirect(PageFlowUtil.urlProvider(SearchUrls.class).getSearchURL(getContainer(), issueId, IssueSearchResultTemplate.NAME));
             }
             ActionURL url = getViewContext().cloneActionURL();
             url.deleteParameters();
-            url.addParameter("error", "Invalid issue id '" + issueId + "'");
+            url.addParameter("error", "Invalid issue ID or search term.");
             url.setAction(ListAction.class);
             url.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
             return HttpView.redirect(url);

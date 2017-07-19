@@ -56,7 +56,8 @@ public class RelatedIssuesView extends VBox
     public RelatedIssuesView(@NotNull ViewContext context, @NotNull Set<Integer> relatedIssues)
     {
         setFrame(FrameType.DIV);
-        setBodyClass("labkey-indented");
+        if (!PageFlowUtil.useExperimentalCoreUI())
+            setBodyClass("labkey-indented");
         setIncludeBreak(false);
 
         TableInfo issues = IssuesSchema.getInstance().getTableInfoIssues();

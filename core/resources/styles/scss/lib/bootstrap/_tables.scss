@@ -15,7 +15,7 @@ th {
 
 // Baseline styles
 
-.table {
+.table{
   background-color: $table-bg;
   width: 100%;
   max-width: 100%;
@@ -64,7 +64,7 @@ th {
 
 // Condensed table w/ half padding
 
-.table-condensed {
+.table-condensed, .issues-Changes {
   > thead,
   > tbody,
   > tfoot {
@@ -75,6 +75,12 @@ th {
       }
     }
   }
+}
+
+.issues-Changes {
+  margin-bottom: 4px;
+  margin-left: 8px;
+  color: $gray-dark;
 }
 
 

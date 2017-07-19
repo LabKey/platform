@@ -632,3 +632,24 @@ input[type="checkbox"] {
     }
   }
 }
+
+
+//Form Row
+//
+//Removes L/R padding of form labels so fitting many of them in grid layout looks better
+.form-row {
+  label {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  //full-width form-group direct children shouldn't have negative margins
+  > .form-group {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  &.col-sm-12 {
+    padding-left: 0;
+  }
+}

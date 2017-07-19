@@ -384,6 +384,8 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String renderColumn(DomainProperty prop, ViewContext context, boolean visible, boolean readOnly) throws IOException
     {
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+
         if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()))
         {
             final StringBuilder sb = new StringBuilder();
@@ -395,11 +397,25 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                 {
                     try (Writer writer = new StringWriter())
                     {
-                        writer.append("<tr>");
-                        writer.append(renderLabel(prop, context));
+                        if (!newUI)
+                            writer.append("<tr>");
+                        else
+                            writer.append("<div class=\"form-group\">");
+
+                        //gross, but necessary to override builder CSS
+                        if (prop.getPropertyDescriptor().getName().equalsIgnoreCase("AssignedTo"))
+                            writer.append(renderLargeLabel(prop, context, readOnly));
+                        else
+                            writer.append(renderLabel(prop, context, readOnly, false));
+
                         if (visible)
                             writer.append(renderInput(prop, context, readOnly));
-                        writer.append("</tr>");
+
+                        if (!newUI)
+                            writer.append("</tr>");
+                        else
+                            writer.append("</div>");
+
                         sb.append(writer);
                     }
                     return sb.toString();
@@ -409,7 +425,16 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return "";
     }
 
-    public String renderLabel(DomainProperty prop, ViewContext context) throws IOException
+    public String renderLargeLabel(DomainProperty prop, ViewContext context, boolean readOnly) throws IOException {
+        return renderLabel(prop, context, readOnly, true);
+    }
+
+    public String renderLabel(DomainProperty prop, ViewContext context)  throws IOException
+    {
+        return renderLabel(prop, context, false, false);
+    }
+
+    public String renderLabel(DomainProperty prop, ViewContext context, boolean strictGrid, boolean isLarge) throws IOException
     {
         if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()))
         {
@@ -425,8 +450,16 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
                     try (Writer writer = new StringWriter())
                     {
-                        dc.renderDetailsCaptionCell(renderContext, writer);
+                        if (isLarge)
+                        {
+                            sb.append("<label class=\"col-md-4 col-lg-5 control-label\">");
+                            dc.renderTitle(renderContext, writer);
+                        }
+                        else
+                            dc.renderDetailsCaptionCell(renderContext, writer, strictGrid);
                         sb.append(writer);
+                        if (isLarge)
+                            sb.append("</label>");
                     }
                     return sb.toString();
                 }
@@ -437,6 +470,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String renderInput(DomainProperty prop, ViewContext context, boolean readOnly) throws IOException
     {
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()))
         {
             final StringBuilder sb = new StringBuilder();
@@ -459,9 +493,17 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
                     try (Writer writer = new StringWriter())
                     {
-                        writer.append("<td>");
+                        if (!newUI)
+                            writer.append("<td>");
+                        else if (prop.getPropertyDescriptor().getName().equalsIgnoreCase("AssignedTo"))
+                            writer.append("<div class=\"col-md-8 col-lg-9\" >");
+                        else
+                            writer.append(readOnly ? "<div class=\"col-9\">" : "<div class=\"col-sm-9 col-lg-10\">");
                         dc.render(renderContext, writer);
-                        writer.append("</td>");
+                        if (!newUI)
+                            writer.append("</td>");
+                        else
+                            writer.append("</div>");
                         sb.append(writer);
                     }
                     return sb.toString();
@@ -490,6 +532,8 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         sb.append("\" value=\"");
         sb.append(filter(value));
         sb.append("\" onchange=\"LABKEY.setDirty(true);return true;");
+        if (PageFlowUtil.useExperimentalCoreUI())
+            sb.append("\" class=\"form-control\" ");
         if (null == extra)
             sb.append("\">");
         else
@@ -548,8 +592,10 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     public String getNotifyList()
     {
         if (!isVisible("notifyList"))
-        {
-            return filter(getNotifyListString(false));
+        {   if (PageFlowUtil.useExperimentalCoreUI())
+                return getNotifyListString(false).replace("\n", "<br>");
+            else
+                return filter(getNotifyListString(false));
         }
         return "";
     }

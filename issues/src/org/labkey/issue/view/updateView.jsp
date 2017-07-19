@@ -61,6 +61,12 @@
     final User user = getUser();
     final String focusId = bean.isInsert() ? "title" : "comment";
     final int emailPrefs = IssueManager.getUserEmailPreferences(c, user.getUserId());
+    final boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+    IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issue.getIssueDefName());
+    if (issueListDef == null)
+        issueListDef = IssueManager.getIssueListDef(issue);
+    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c, issueListDef.getName());
+
 
     BindException errors = bean.getErrors();
     String completionUrl = urlProvider(SecurityUrls.class).getCompleteUserReadURLPrefix(c);
@@ -85,9 +91,9 @@
     List<DomainProperty> column2Props = new ArrayList<>();
     List<DomainProperty> extraColumns = new ArrayList<>();
 
-    IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issue.getIssueDefName());
-    if (issueListDef == null)
-        issueListDef = IssueManager.getIssueListDef(issue);
+    //IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issue.getIssueDefName());
+//    if (issueListDef == null)
+//        issueListDef = IssueManager.getIssueListDef(issue);
     final String popup = getNotifyHelpPopup(emailPrefs, issue.getIssueId(), IssueManager.getEntryTypeNames(c, issueListDef.getName()));
 
     // todo: don't include if the lookup is empty (was previously IssuePage.hasKeywords)
@@ -110,6 +116,8 @@
 %>
 
 <script type="text/javascript">
+    var showLess = false;
+
     function filterRe(e, input, re)
     {
         if (e.isSpecialKey())
@@ -140,6 +148,21 @@
     function filterCommaSepNumber(e, input)
     {
         return filterRe(e, input, /^[\d,\s]+$/);
+    }
+
+    function showMoreTimestamps() {
+        var allStampsDiv = document.getElementById("allTimeStamps");
+        var stampExpandIcon = document.getElementById("stampExpandIcon");
+
+        if (!showLess) {
+            stampExpandIcon.className = 'fa fa-caret-up';
+            allStampsDiv.style.display = "block";
+        } else {
+            stampExpandIcon.className = 'fa fa-caret-down';
+            allStampsDiv.style.display = "none";
+        }
+
+        showLess = !showLess;
     }
 
     (function($){
@@ -182,8 +205,9 @@
         });
     })(jQuery);
 </script>
+<labkey:form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data" layout="horizontal">
+    <% if (!newUI) {%>
 
-<labkey:form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data">
 
     <table><%
         if (null != errors && 0 != errors.getErrorCount())
@@ -341,6 +365,213 @@
         <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a></td></tr>
     </table>
 
+<%}
+else
+{%>
+    <table><%
+        if (null != errors && 0 != errors.getErrorCount())
+        {
+            for (ObjectError e : errors.getAllErrors())
+            {%>
+        <tr><td colspan=3><span class="labkey-error"><%=h(context.getMessage(e))%></span></td></tr><%
+                }
+            }
+            if (!bean.getRequiredFields().isEmpty())
+            {%>
+        <tr><td class="help-block">Fields marked with an asterisk * are required.</td></tr><%
+            }
+        %>
+    </table>
+    <br>
+    <% String placeHolderString = bean.getIssue().getIssueId() == 0 ? "Name this " + names.singularName: " "; %>
+
+    <div class="row">
+        <div class="col-sm-8">
+            <div class="form-group">
+                <label for="title" class="control-label col-md-1" style="padding-right: 5px;">Title</label>
+                <div class="col-md-11">
+                    <input type="text" class="form-control" name="title" id="title" value="<%=text(issue.getTitle() == null ? "" : issue.getTitle())%>" placeholder="<%=text(placeHolderString)%>" tabindex="1">
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <strong>Status:</strong>
+            <span><%=text(issue.getStatus())%></span>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-5">
+            <%=text(bean.renderColumn(propertyMap.get("assignedTo"), getViewContext(), bean.isVisible("assignedTo"), bean.isReadOnly("assignedTo")))%>
+            <%--<div class="form-group">--%>
+                <%--<label class="col-md-5 col-lg-4 control-label">--%>
+                    <%--Assigned To--%>
+                <%--</label>--%>
+                <%--<div class="col-md-7 col-lg-8">--%>
+                    <%--<% String extra = "id=\"related\"";--%>
+                    <%--if (bean.isVisible("assignedTo"))--%>
+                        <%--extra += " style=\"display: hidden;\"";--%>
+                    <%--if (bean.isReadOnly("assignedTo"))--%>
+                        <%--extra += " disabled";--%>
+                    <%--%>--%>
+                    <%--<%=text(bean.writeInput("assignedTo", issue.getRelated(), extra))%>--%>
+                <%--</div>--%>
+            <%--</div>--%>
+            <%
+
+            %>
+
+
+            <%if (bean.isVisible("resolution"))
+            {%>
+                <%=text(bean.renderColumn(propertyMap.get("resolution"), getViewContext(), true, bean.isReadOnly("resolution")))%>
+            <%}
+                Map<String, String> m = issue.getRecentTimestampMap(user);
+                String lastUpdatedStr = "";
+                if (null != m)
+                {
+                    lastUpdatedStr = m.get("event") + ": " + m.get("date") + " by " + m.get("user");
+                }
+            %>
+            <div style="margin: 10px 0;">
+                <div id="recentTimeStamp"><div><strong>Recent Activity</strong></div><%=lastUpdatedStr%>
+                    <a id="timestampsToggle" onclick="showMoreTimestamps()">
+                        <i id="stampExpandIcon" title="See all" class="fa fa-caret-down" style="cursor: pointer;"></i>
+                    </a>
+                </div>
+
+                <div id="allTimeStamps" style="display: none;">
+                    <%
+                        List<Map<String, String>> mapList = issue.getOrderedTimestampMapArray(user);
+
+                        for (int j = 1; j < mapList.size(); j++)
+                        {
+                            Map<String, String> s = mapList.get(j);
+                            String stampString = s.get("event") + ": " + s.get("date") + " by " + s.get("user");
+                    %>
+                    <div><%=stampString%></div>
+                    <%
+                        }
+                    %>
+                </div>
+            </div>
+
+        </div>
+        <div class="col-sm-3">
+            <div class="form-group">
+                <label class="col-md-5 col-lg-4 control-label">
+                    Related
+                </label>
+                <div class="col-md-7 col-lg-8">
+                    <%=text(bean.writeInput("related", issue.getRelated(), "id=\"related\" placeholder=\"ID #\""))%>
+                </div>
+            </div>
+
+            <%if (bean.isVisible("duplicate"))
+            {%>
+            <div class="form-group">
+                <label class="col-md-5 col-lg-4 control-label">
+                    Duplicate ID
+                </label>
+                <div class="col-md-7 col-lg-8">
+                <%if("Duplicate".equals(issue.getResolution()))
+                {
+                    //Enabled duplicate field.%>
+                    <%=text(bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "type=\"number\" min=\"1\" placeholder=\"ID #\""))%>
+                <%}
+                else
+                {
+                    //Disabled duplicate field.%>
+                    <%=text(bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "disabled"))%>
+            <%}%>
+                </div>
+            </div>
+            <script type="text/javascript">
+                var duplicateInput = document.getElementsByName('duplicate')[0];
+                var duplicateOrig = duplicateInput.value;
+                var resolutionSelect = document.getElementsByName('resolution')[0];
+                function updateDuplicateInput()
+                {
+                    // The options don't have an explicit value set, so look for the display text instead of
+                    // the value
+                    if (resolutionSelect.selectedIndex >= 0 &&
+                            resolutionSelect.options[resolutionSelect.selectedIndex].value === 'Duplicate')
+                    {
+                        duplicateInput.disabled = false;
+                    }
+                    else
+                    {
+                        duplicateInput.disabled = true;
+                        duplicateInput.value = duplicateOrig;
+                    }
+                }
+                if (window.addEventListener)
+                    resolutionSelect.addEventListener('change', updateDuplicateInput, false);
+                else if (window.attachEvent)
+                    resolutionSelect.attachEvent('onchange', updateDuplicateInput);
+            </script><%
+            }
+            else
+            {
+            if(issue.getDuplicate() != null)
+            {%>
+            <a href="<%=IssuesController.getDetailsURL(c, issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a><%
+            }
+            }%>
+        </div>
+        <div class="col-md-1">
+                <label for="notifyListArea">Notify List</label>
+        </div>
+        <div class="col-sm-3">
+            <labkey:autoCompleteTextArea name="notifyListArea" id="notifyListArea" url="<%=h(completionUrl)%>" rows="4" tabindex="20" cols="40" value="<%=h(bean.getNotifyListString(false))%>"/>
+        </div>
+    </div>
+    <hr>
+    <%
+        ArrayList<DomainProperty> propertyArr = new ArrayList<>(extraColumns);
+        propertyArr.addAll(bean.getCustomColumnConfiguration().getCustomProperties());
+        for (int j = 0; j < propertyArr.size(); j++)
+        {
+            DomainProperty prop = propertyArr.get(j);
+            if (j % 3 == 0)
+            { //begin row div
+    %>
+            <div class="form-row">
+    <%       }%>
+
+    <div class="col-sm-4">
+        <%=text(bean.renderColumn(prop, getViewContext()))%>
+    </div>
+
+    <%
+            if (j % 3 == 2)
+            { //end row div
+    %>
+            </div>
+    <%
+            }
+    }
+    %>
+    <br>
+    <div class="form-row">
+        <div class="form-group">
+            <label class="control-label">
+                Comment
+            </label>
+            <div class="col-sm-12">
+                <textarea id="commentArea" class="form-control" name="comment" cols="150" rows="8" onchange="LABKEY.setDirty(true);return true;"><%=h(bean.getBody())%></textarea>
+            </div>
+        </div>
+    </div>
+
+    <table style="display: inline-table">
+        <tr><td><table id="filePickerTableHead"></table></td></tr>
+        <tr><td><a href="javascript:addFilePicker('filePickerTableHead','filePickerLinked')" id="filePickerLinked"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a></td></tr>
+    </table>
+    <div style="float: right; padding-right: 15px; padding-top: 10px; display: inline-table;">
+        <%= button("Cancel").href(cancelURL) %>
+        <%= button("Save").submit(true).attributes("name=\"" + bean.getAction() + "\"").disableOnClick(true) %>
+    </div>
+    <hr>
     <%
         if (bean.getCallbackURL() != null)
         {
@@ -354,10 +585,42 @@
     %>
     <input type="hidden" name="returnUrl" value="<%=h(bean.getReturnURL())%>"/>
     <%
-        }
+        }%>
+    <div>
+        <%
+            for (Issue.Comment comment : issue.getComments())
+            {
+                String styleStr = !issue.getComments().contains(comment) ? "display: none" : "display: inline";
+                String classStr = !issue.getComments().contains(comment) ? "relatedIssue" : "currentIssue";
+        %>
+        <div class="<%=classStr%>" style="<%=styleStr%>">
+            <strong>
+                <%=h(comment.getCreatedByName(user))%>
+            </strong>
+            <br>
+            <strong>
+                <%=h(bean.writeDate(comment.getCreated()))%>
+            </strong>
+            <%
+                if (!issue.getComments().contains(comment))
+                {%>
+            <div style="color:blue;font-weight:bold;">Related # <%=comment.getIssue().getIssueId()%> </div><%
+            }%>
+            <%=comment.getComment()%>
+            <%=bean.renderAttachments(context, comment)%>
+        </div>
+        <hr><%
+        }%>
+    </div>
 
-    for (Issue.Comment comment : issue.getComments())
-    {%>
+
+<%}%>
+
+<%
+    if (!newUI)
+    {
+        for (Issue.Comment comment : issue.getComments())
+        {%>
     <hr>
     <table width="100%"><tr><td align="left"><b>
         <%=h(bean.writeDate(comment.getCreated()))%>
@@ -367,7 +630,9 @@
     </table>
     <%=text(comment.getComment())%>
     <%=text(bean.renderAttachments(context, comment))%><%
+    }
     }%>
+
     <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(bean.getPrevIssue())%>">
     <input type="hidden" name="action" value="<%=h(bean.getAction().getName())%>">
     <input type="hidden" name="issueId" value="<%=issue.getIssueId()%>">
@@ -376,7 +641,9 @@
 <script type="text/javascript" for="window" event="onload">try {document.getElementById(<%=q(focusId)%>).focus();} catch (x) {}</script>
 <script type="text/javascript">
 
-    var origComment = document.getElementById("comment").value;
+    var origComment = document.getElementById("comment") === null ?
+            document.getElementById("commentArea").value :
+            document.getElementById("comment").value;
     var origNotify = <%=q(bean.getNotifyListString(false).toString())%>;
 
     function isDirty()

@@ -27,18 +27,24 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.MemTracker;
+import org.labkey.remoteapi.query.DateParser;
 
 import java.io.Serializable;
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 
 public class Issue extends Entity implements Serializable, Cloneable
@@ -556,6 +562,69 @@ public class Issue extends Entity implements Serializable, Cloneable
     public void setProperty(String name, Object value)
     {
         _properties.put(name, value);
+    }
+
+    public Map<String, String> getRecentTimestampMap(User user)
+    {
+        List<Map<String, String>> arr = getOrderedTimestampMapArray(user);
+        return arr.size() > 0 ? arr.get(0) : null;
+    }
+
+    public List<Map<String, String>> getOrderedTimestampMapArray(User user)
+    {
+
+        Comparator<Map<String, String>> mapComparator = (m1, m2) -> {
+                try
+                {
+                    Date d1 = new DateParser().parse(m1.get("date"));
+                    Date d2 = new DateParser().parse(m2.get("date"));
+                    return d1.compareTo(d2);
+                }
+                catch (ParseException e)
+                {
+                    throw new RuntimeException(e.getMessage());
+                }
+        };
+
+        List<Map<String, String>> pairList = new LinkedList<>();
+
+        if (getCreated() != null)
+        {
+            Map<String, String> createdMap = new HashMap<>();
+            createdMap.put("date", getCreated().toString());
+            createdMap.put("event", "Created");
+            createdMap.put("user", getCreatedByName(user));
+            pairList.add(createdMap);
+        }
+
+        if (getModified() != null)
+        {
+            Map<String, String> modifiedMap = new HashMap<>();
+            modifiedMap.put("date", getModified().toString());
+            modifiedMap.put("event", "Modified");
+            modifiedMap.put("user", getModifiedByName(user));
+            pairList.add(modifiedMap);
+        }
+
+        if (getResolved() != null)
+        {
+            Map<String, String> resolvedMap = new HashMap<>();
+            resolvedMap.put("date", getResolved().toString());
+            resolvedMap.put("event", "Resolved");
+            resolvedMap.put("user", getResolvedByName(user));
+            pairList.add(resolvedMap);
+        }
+
+        if (getClosed() != null)
+        {
+            Map<String, String> closedMap = new HashMap<>();
+            closedMap.put("date", getClosed().toString());
+            closedMap.put("event", "Closed");
+            closedMap.put("user", getClosedByName(user));
+            pairList.add(closedMap);
+        }
+
+        return pairList.stream().sorted(mapComparator.reversed()).collect(Collectors.toList());
     }
 
     @Override

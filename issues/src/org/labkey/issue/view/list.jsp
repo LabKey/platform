@@ -38,30 +38,23 @@
 <%--<% if (false) { %>--%>
 <% if (PageFlowUtil.useExperimentalCoreUI()) { %>
 <div class="row" style="margin-bottom: 15px;">
-    <div class="col-xs-7">
-        <labkey:form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" layout="inline">
-            <% if (c.hasPermission(getUser(), InsertPermission.class)) { %>
-            <%= button("New " + names.singularName)
-                    .href(new ActionURL(IssuesController.InsertAction.class, c)
-                    .addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueListDef))
-                    .addClass("btn btn-success")
-            %>
-            <% } %>
-            <labkey:input name="issueId"/>
-            <%= button("Jump to " + names.singularName).submit(true) %>
-        </labkey:form>
+    <div class="col-sm-7">
+        <% if (c.hasPermission(getUser(), InsertPermission.class)) { %>
+        <a class="btn btn-primary" href="<%=new ActionURL(IssuesController.InsertAction.class, c).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueListDef).toString()%>">
+            <%="New " + names.singularName%>
+        </a>
+        <% } %>
     </div>
-    <div class="col-xs-5">
-        <div class="pull-right">
-            <labkey:form action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" layout="inline">
-                <labkey:input name="q"/>
-                <labkey:input type="hidden" name="template" value="<%=h(IssuesController.IssueSearchResultTemplate.NAME)%>"/>
-                <%= button("Search").iconCls("search").submit(true) %>
-            </labkey:form>
-        </div>
+    <div class="col-sm-5">
+        <labkey:form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" layout="inline">
+            <labkey:input name="issueId" placeholder="ID # or Search Term"/>
+            <%= button("Search").iconCls("search").submit(true) %>
+        </labkey:form>
     </div>
 </div>
 <% } else { %>
+<%--OLD UI--%>
+
 <table>
     <tr>
     <td nowrap><labkey:form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" layout="horizontal">
