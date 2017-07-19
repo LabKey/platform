@@ -42,6 +42,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.gwt.client.PhiType;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -247,6 +248,7 @@ public class DomainUtil
         gwtProp.setMvEnabled(prop.isMvEnabled());
         gwtProp.setFacetingBehaviorType(prop.getFacetingBehavior().name());
         gwtProp.setProtected(prop.isProtected());
+        gwtProp.setPhi(prop.getPhi().name());
         gwtProp.setExcludeFromShifting(prop.isExcludeFromShifting());
         gwtProp.setDefaultValueType(prop.getDefaultValueTypeEnum());
         gwtProp.setImportAliases(prop.getPropertyDescriptor().getImportAliases());
@@ -749,6 +751,12 @@ public class DomainUtil
 
         if (from.isProtected())
             to.setProtected(from.isProtected());
+
+        if (from.getPhi() != null)
+        {
+            PhiType type = PhiType.valueOf(from.getPhi());
+            to.setPhi(type);
+        }
 
         if (from.isExcludeFromShifting())
             to.setExcludeFromShifting(from.isExcludeFromShifting());

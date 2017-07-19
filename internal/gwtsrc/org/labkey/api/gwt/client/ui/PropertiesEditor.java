@@ -77,6 +77,7 @@ import org.labkey.api.gwt.client.ui.property.ImportAliasesItem;
 import org.labkey.api.gwt.client.ui.property.MaxLengthItem;
 import org.labkey.api.gwt.client.ui.property.MeasureItem;
 import org.labkey.api.gwt.client.ui.property.MvEnabledItem;
+import org.labkey.api.gwt.client.ui.property.PhiItem;
 import org.labkey.api.gwt.client.ui.property.ProtectedItem;
 import org.labkey.api.gwt.client.ui.property.RecommendedVariableItem;
 import org.labkey.api.gwt.client.ui.property.RequiredItem;
@@ -167,6 +168,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     private ImageButton _inferSchemaButton;
     private ImageButton _compareTemplateButton;
     private DefaultValueItem<DomainType, FieldType> _defaultValueSelector;
+    private PhiItem<DomainType, FieldType> _phiSelector;
 
     protected DomainType _domain;
     ArrayList<Row> _rows;
@@ -442,6 +444,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         advancedPane.addItem(_defaultValueSelector);
         advancedPane.addItem(new ImportAliasesItem<DomainType, FieldType>(advancedPane));
         advancedPane.addItem(new ProtectedItem<DomainType, FieldType>(advancedPane));
+        _phiSelector = new PhiItem<DomainType, FieldType>(advancedPane);
+        advancedPane.addItem(_phiSelector);
         advancedPane.addItem(new ExcludeFromShiftingItem<DomainType, FieldType>(advancedPane));
         advancedPane.addItem(new FacetingBehaviorItem<DomainType, FieldType>(advancedPane));
         advancedPane.addItem(new MaxLengthItem<DomainType, FieldType>(advancedPane));
@@ -678,6 +682,10 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             if (_defaultValueSelector != null)
             {
                 _defaultValueSelector.setEnabled(!readOnly && _domain.getDefaultValueOptions().length > 0);
+            }
+            if (_phiSelector != null)
+            {
+                _phiSelector.setEnabled(!readOnly);
             }
 
             Element e = _table.getRowFormatter().getElement(tableRow);

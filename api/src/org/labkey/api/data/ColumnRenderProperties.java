@@ -21,6 +21,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.gwt.client.PhiType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 
@@ -79,6 +80,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     protected DefaultValueType _defaultValueType = null;
     protected FacetingBehaviorType facetingBehaviorType = FacetingBehaviorType.AUTOMATIC;
     protected Boolean isProtected = false;
+    protected PhiType phi = PhiType.NotPHI;
     protected Boolean isExcludeFromShifting = false;
 
     protected FieldKey crosstabColumnDimension;
@@ -112,6 +114,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.facetingBehaviorType = facetingBehaviorType;
         to.crosstabColumnMember = crosstabColumnMember;
         to.isProtected = isProtected;
+        to.phi = phi;
         to.isExcludeFromShifting = isExcludeFromShifting;
         to.scale = scale;
         to.propertyURI = propertyURI;
@@ -686,6 +689,16 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public void setProtected(boolean isProtected)
     {
         this.isProtected = isProtected;
+    }
+
+    public void setPhi(PhiType type)
+    {
+        phi = type;
+    }
+
+    public PhiType getPhi()
+    {
+        return phi;
     }
 
     public boolean isExcludeFromShifting()

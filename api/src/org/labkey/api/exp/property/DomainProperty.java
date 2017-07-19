@@ -25,6 +25,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.gwt.client.PhiType;
 
 import java.util.List;
 import java.util.Set;
@@ -51,6 +52,7 @@ public interface DomainProperty extends ImportAliasable
     boolean isRecommendedVariable();
     DefaultScaleType getDefaultScale();
     boolean isProtected();
+    PhiType getPhi();
     boolean isExcludeFromShifting();
     boolean isMvEnabledForDrop();
 
@@ -77,6 +79,7 @@ public interface DomainProperty extends ImportAliasable
     void setRecommendedVariable(boolean isRecommendedVariable);
     void setDefaultScale(DefaultScaleType defaultScale);
     void setProtected(boolean isProtected);
+    void setPhi(PhiType phi);
     void setExcludeFromShifting(boolean isExcludeFromShifting);
     void setScale(int scale);
 
