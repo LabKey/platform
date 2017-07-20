@@ -25,6 +25,8 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import javax.naming.NamingException;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * User: adam
@@ -98,5 +100,11 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
         }
 
         return AuthenticationResponse.createFailureResponse(this, FailureReason.configurationError);
+    }
+
+    @Override
+    public @NotNull Collection<String> getPropertyCategories()
+    {
+        return Collections.singleton(LdapAuthenticationManager.LDAP_AUTHENTICATION_CATEGORY_KEY);
     }
 }

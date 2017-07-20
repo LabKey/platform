@@ -35,6 +35,7 @@ import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EmptyStackException;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -159,5 +160,11 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     public ActionURL getConfigurationLink()
     {
         return PageFlowUtil.urlProvider(LoginUrls.class).getConfigureDbLoginURL();
+    }
+
+    @Override
+    public @NotNull Collection<String> getPropertyCategories()
+    {
+        return Collections.singleton(DbLoginManager.DATABASE_AUTHENTICATION_CATEGORY_KEY);
     }
 }

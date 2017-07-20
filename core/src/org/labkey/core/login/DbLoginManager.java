@@ -56,7 +56,8 @@ public class DbLoginManager
     }
 
 
-    private static final String DATABASE_AUTHENTICATION_CATEGORY_KEY = "DatabaseAuthentication";
+    static final String DATABASE_AUTHENTICATION_CATEGORY_KEY = "DatabaseAuthentication";
+
     private enum Key { Strength, Expiration }
 
     public static void saveProperties(LoginController.Config config)

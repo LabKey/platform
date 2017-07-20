@@ -121,7 +121,7 @@ public class LdapAuthenticationManager
         return new InitialDirContext(env);
     }
 
-    private static final String LDAP_AUTHENTICATION_CATEGORY_KEY = "LDAPAuthentication";
+    static final String LDAP_AUTHENTICATION_CATEGORY_KEY = "LDAPAuthentication";
 
     public static void activate()
     {
