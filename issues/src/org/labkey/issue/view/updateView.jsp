@@ -408,13 +408,15 @@ else
             <%}
                 Map<String, String> m = issue.getRecentTimestampMap(user);
                 String lastUpdatedStr = "";
+                String lastUpdatedTitleStr = "";
                 if (null != m)
                 {
                     lastUpdatedStr = m.get("event") + ": " + m.get("date") + " by " + m.get("user");
+                    lastUpdatedTitleStr = m.get("fullDateTime");
                 }
             %>
             <div style="margin: 10px 0;">
-                <div id="recentTimeStamp"><div><strong>Recent Activity</strong></div><%=h(lastUpdatedStr)%>
+                <div id="recentTimeStamp" title="<%=h(lastUpdatedTitleStr)%>"><div><strong>Recent Activity</strong></div><%=h(lastUpdatedStr)%>
                     <a id="timestampsToggle" onclick="showMoreTimestamps()">
                         <i id="stampExpandIcon" title="See all" class="fa fa-caret-down" style="cursor: pointer;"></i>
                     </a>
@@ -429,7 +431,7 @@ else
                             Map<String, String> s = mapList.get(j);
                             String stampString = s.get("event") + ": " + s.get("date") + " by " + s.get("user");
                     %>
-                    <div><%=h(stampString)%></div>
+                    <div title="<%=h(s.get("fullDateTime"))%>"><%=h(stampString)%></div>
                     <%
                         }
                     %>
@@ -579,7 +581,7 @@ else
                 <%=h(comment.getCreatedByName(user))%>
             </strong>
             <br>
-            <strong>
+            <strong title="<%=h(comment.getCreatedFullString())%>">
                 <%=h(bean.writeDate(comment.getCreated()))%>
             </strong>
             <%
