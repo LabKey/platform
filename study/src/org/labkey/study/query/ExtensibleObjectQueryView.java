@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.PanelButton;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
@@ -23,6 +24,8 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.model.ExtensibleStudyEntity;
 import org.labkey.study.model.StudyImpl;
+
+import java.util.List;
 
 /**
  * Query view for objects with extended properties using Ontology manager
@@ -64,7 +67,11 @@ public class ExtensibleObjectQueryView extends QueryView
 
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
-        bar.add(createExportButton(view.getDataRegion().getRecordSelectorValueColumns()));
+        List<String> recordSelectorColumns = view.getDataRegion().getRecordSelectorValueColumns();
+        bar.add(createExportButton(recordSelectorColumns));
+        PanelButton signButton = createSignButton(recordSelectorColumns);
+        if (null != signButton)
+            bar.add(signButton);
     }
 
     public boolean allowEditing()

@@ -32,6 +32,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
@@ -370,8 +371,12 @@ public class DatasetQueryView extends StudyQueryView
         if (StudyManager.getInstance().showQCStates(getContainer()))
             bar.add(createQCStateButton(_qcStateSet));
 
+        List<String> recordSelectorColumns = view.getDataRegion().getRecordSelectorValueColumns();
+        bar.add(createExportButton(recordSelectorColumns));
+        PanelButton signButton = createSignButton(recordSelectorColumns);
+        if (null != signButton)
+            bar.add(signButton);
 
-        bar.add(createExportButton(view.getDataRegion().getRecordSelectorValueColumns()));
         if (!PageFlowUtil.useExperimentalCoreUI())
         {
             bar.add(createPrintButton());

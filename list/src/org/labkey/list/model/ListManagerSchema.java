@@ -23,6 +23,7 @@ import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
@@ -135,7 +136,11 @@ public class ListManagerSchema extends UserSchema
                     bar.add(createReportButton());
                     bar.add(createCreateNewListButton());
                     bar.add(createDeleteButton());
-                    bar.add(super.createExportButton(view.getDataRegion().getRecordSelectorValueColumns()));
+                    List<String> recordSelectorColumns = view.getDataRegion().getRecordSelectorValueColumns();
+                    bar.add(super.createExportButton(recordSelectorColumns));
+                    PanelButton signButton = createSignButton(recordSelectorColumns);
+                    if (null != signButton)
+                        bar.add(signButton);
                     bar.add(createImportListArchiveButton());
                     bar.add(createExportArchiveButton());
                 }

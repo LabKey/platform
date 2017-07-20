@@ -24,6 +24,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateColumn;
@@ -80,10 +81,13 @@ public class LocationQueryView extends QueryView
             bar.add(deleteAllUnused);
         }
 
-        ActionButton b = createExportButton(view.getDataRegion().getRecordSelectorValueColumns());
-        if (null != b)
-            bar.add(b);
-        b = createPrintButton();
+        List<String> recordSelectorColumns = view.getDataRegion().getRecordSelectorValueColumns();
+        bar.add(createExportButton(recordSelectorColumns));
+
+        PanelButton signButton = createSignButton(recordSelectorColumns);
+        if (null != signButton)
+            bar.add(signButton);
+        ActionButton b = createPrintButton();
         if (null != b)
             bar.add(createPrintButton());
         bar.add(createPageSizeMenuButton());

@@ -21,6 +21,9 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
+import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.model.SpecimenRequest;
@@ -87,9 +90,9 @@ public class DefaultRequestNotification
                 SpecimenQueryView view = SpecimenQueryView.createView(context, vials, SpecimenQueryView.ViewType.VIALS_EMAIL);
                 view.setDisableLowVialIndicators(true);
                 if (RequestNotificationSettings.SpecimensAttachmentEnum.ExcelAttachment == settings.getSpecimensAttachmentEnum())
-                    specimenListFile = view.exportToExcelFile();
+                    specimenListFile = view.exportToExcelFile(ExcelWriter.ExcelDocumentType.xls, null);
                 else
-                    specimenListFile = view.exportToTsvFile();
+                    specimenListFile = view.exportToTsvFile(TSVWriter.DELIM.TAB, TSVWriter.QUOTE.DOUBLE, ColumnHeaderType.Caption, null);
                 if (null != specimenListFile)
                 {
                     List<AttachmentFile> attachments = new ArrayList<>();
