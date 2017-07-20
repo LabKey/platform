@@ -40,8 +40,8 @@
 <div class="row" style="margin-bottom: 15px;">
     <div class="col-sm-7">
         <% if (c.hasPermission(getUser(), InsertPermission.class)) { %>
-        <a class="btn btn-primary" href="<%=new ActionURL(IssuesController.InsertAction.class, c).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueListDef).toString()%>">
-            <%="New " + names.singularName%>
+        <a class="btn btn-primary" href="<%=h(new ActionURL(IssuesController.InsertAction.class, c).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueListDef).toString())%>">
+            <%=h("New " + names.singularName)%>
         </a>
         <% } %>
     </div>

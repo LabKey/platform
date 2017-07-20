@@ -439,7 +439,7 @@ else
                         for (NavTree headerLink : additionalHeaderLinks)
                         {
                             String isDisabled = headerLink.isDisabled() ? "disabled" : ""; %>
-                        <li class="<%=text(isDisabled)%>"><a href="<%=headerLink.getHref()%>"></a></li>
+                        <li class="<%=text(isDisabled)%>"><a href="<%=h(headerLink.getHref())%>"></a></li>
                     <%}%>
                 </ul>
             </span>
@@ -455,14 +455,14 @@ else
             {%>
             <div class="btn-group" role="group" aria-label="Create New Issue group" style="display: block;">
                 <a class="btn btn-primary" style="margin-bottom: 8px;" href="<%=PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName()))%>">
-                    <%="new " + names.singularName.toLowerCase()%>
+                    <%=h("new " + names.singularName.toLowerCase())%>
                 </a>
                 <span class="lk-menu-drop dropdown">
                     <a class="btn btn-primary" data-toggle="dropdown">
                         <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-right">
-                        <li><a onclick="<%=relatedIssues.toString()%>">Create Related Issue</a></li>
+                        <li><a onclick="<%=h(relatedIssues.toString())%>">Create Related Issue</a></li>
                     </ul>
                 </span>
             </div>
@@ -491,7 +491,7 @@ else
     </div>
     <div class="col-sm-2">
         <label>Assigned To</label>
-        <div class="form-group"><%=issue.getAssignedToName(user)%></div>
+        <div class="form-group"><%=h(issue.getAssignedToName(user))%></div>
     </div>
     <div class="col-sm-4">
         <label>Recent Activity</label>
@@ -504,7 +504,7 @@ else
             }
         %>
         <div class="form-group">
-            <div id="recentTimeStamp"><%=lastUpdatedStr%>
+            <div id="recentTimeStamp"><%=h(lastUpdatedStr)%>
                 <a id="timestampsToggle" onclick="showMoreTimestamps()">
                     <i id="stampExpandIcon" title="See all" class="fa fa-caret-down" style="cursor: pointer;"></i>
                 </a>
@@ -519,18 +519,21 @@ else
                         Map<String, String> s = mapList.get(j);
                         String stampString = s.get("event") + ": " + s.get("date") + " by " + s.get("user");
                 %>
-                <div><%=stampString%></div>
+                <div><%=h(stampString)%></div>
                 <%
                     }
                 %>
             </div>
         </div>
     </div>
-    <% if (!bean.getNotifyList().trim().equals(""))
+    <% if (!bean.getNotifyListCollection(false).isEmpty())
     {%>
     <div class="col-sm-4">
         <label>Notify List</label>
-        <div><%=bean.getNotifyList()%></div>
+        <%for (String name : bean.getNotifyListCollection(false))
+        {%>
+            <div><%=h(name)%></div>
+        <%}%>
     </div>
     <%}%>
 </div>
@@ -555,7 +558,7 @@ else
             propertyArr.addAll(bean.getCustomColumnConfiguration().getCustomProperties());
             for(DomainProperty prop : propertyArr)
             { %>
-        <%=bean.renderColumn(prop, getViewContext(), true, true)%>
+        <%=text(bean.renderColumn(prop, getViewContext(), true, true))%>
         <%}%>
     </div>
     <div class="col-sm-9 col-sm-pull-3">
@@ -565,7 +568,7 @@ else
             String styleStr = !issue.getComments().contains(comment) ? "display: none" : "display: inline";
             String classStr = !issue.getComments().contains(comment) ? "relatedIssue" : "currentIssue";
             %>
-        <div class="<%=classStr%>" style="<%=styleStr%>">
+        <div class="<%=text(classStr)%>" style="<%=text(styleStr)%>">
             <hr>
                 <strong>
                     <%=h(comment.getCreatedByName(user))%>

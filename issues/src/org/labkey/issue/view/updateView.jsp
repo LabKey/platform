@@ -390,7 +390,7 @@ else
             <div class="form-group">
                 <label for="title" class="control-label col-md-1" style="padding-right: 5px;">Title</label>
                 <div class="col-md-11">
-                    <input type="text" class="form-control" name="title" id="title" value="<%=text(issue.getTitle() == null ? "" : issue.getTitle())%>" placeholder="<%=text(placeHolderString)%>" tabindex="1">
+                    <input class="form-control" name="title" id="title" value="<%=h(issue.getTitle() == null ? "" : issue.getTitle())%>" placeholder="<%=h(placeHolderString)%>" tabindex="1">
                 </div>
             </div>
         </div>
@@ -433,7 +433,7 @@ else
                 }
             %>
             <div style="margin: 10px 0;">
-                <div id="recentTimeStamp"><div><strong>Recent Activity</strong></div><%=lastUpdatedStr%>
+                <div id="recentTimeStamp"><div><strong>Recent Activity</strong></div><%=h(lastUpdatedStr)%>
                     <a id="timestampsToggle" onclick="showMoreTimestamps()">
                         <i id="stampExpandIcon" title="See all" class="fa fa-caret-down" style="cursor: pointer;"></i>
                     </a>
@@ -448,7 +448,7 @@ else
                             Map<String, String> s = mapList.get(j);
                             String stampString = s.get("event") + ": " + s.get("date") + " by " + s.get("user");
                     %>
-                    <div><%=stampString%></div>
+                    <div><%=h(stampString)%></div>
                     <%
                         }
                     %>
@@ -593,7 +593,7 @@ else
                 String styleStr = !issue.getComments().contains(comment) ? "display: none" : "display: inline";
                 String classStr = !issue.getComments().contains(comment) ? "relatedIssue" : "currentIssue";
         %>
-        <div class="<%=classStr%>" style="<%=styleStr%>">
+        <div class="<%=text(classStr)%>" style="<%=text(styleStr)%>">
             <strong>
                 <%=h(comment.getCreatedByName(user))%>
             </strong>

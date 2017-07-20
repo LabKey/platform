@@ -72,6 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.stream.Collectors.toList;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 
@@ -592,14 +593,25 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     public String getNotifyList()
     {
         if (!isVisible("notifyList"))
-        {   if (PageFlowUtil.useExperimentalCoreUI())
-                return getNotifyListString(false).replace("\n", "<br>");
-            else
-                return filter(getNotifyListString(false));
+        {
+            return filter(getNotifyListString(false));
         }
         return "";
     }
 
+    public List<String> getNotifyListCollection(boolean asEmail)
+    {
+        if (asEmail)
+        {
+            return _issue.getNotifyListEmail().stream()
+                    .map(ValidEmail::toString)
+                    .collect(toList());
+        }
+        else
+        {
+            return _issue.getNotifyListDisplayNames(_user);
+        }
+    }
 
     public String getLabel(ColumnType type, boolean markIfRequired)
     {

@@ -38,7 +38,7 @@
         {%>
             <div style="margin-bottom: 8px"> There are no issues in this list.</div>
             <a class="btn btn-default" href="<%=bean.insertURL%>">
-                <%="new " + names.singularName.toLowerCase()%>
+                <%=h("new " + names.singularName.toLowerCase())%>
             </a>
         <%}
         else
@@ -69,11 +69,11 @@
 {%>
 
 <div class="btn-group" role="group" style="margin-top: 8px">
-    <a class="btn btn-default" href="<%=getBaseListURL(bean.issueDefName).addParameter("issues-" + bean.issueDefName + ".Status~eq", "open")%>">
-        <%="view open " + names.pluralName.toLowerCase()%>
+    <a class="btn btn-default" href="<%=h(getBaseListURL(bean.issueDefName).addParameter("issues-" + bean.issueDefName + ".Status~eq", "open"))%>">
+        <%=h("view open " + names.pluralName.toLowerCase())%>
     </a>
     <a class="btn btn-default" href="<%=bean.insertURL%>">
-        <%="new " + names.singularName.toLowerCase()%>
+        <%=h("new " + names.singularName.toLowerCase())%>
     </a>
 </div>
 
