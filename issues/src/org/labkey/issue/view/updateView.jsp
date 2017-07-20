@@ -402,25 +402,6 @@ else
     <div class="row">
         <div class="col-sm-5">
             <%=text(bean.renderColumn(propertyMap.get("assignedTo"), getViewContext(), bean.isVisible("assignedTo"), bean.isReadOnly("assignedTo")))%>
-            <%--<div class="form-group">--%>
-                <%--<label class="col-md-5 col-lg-4 control-label">--%>
-                    <%--Assigned To--%>
-                <%--</label>--%>
-                <%--<div class="col-md-7 col-lg-8">--%>
-                    <%--<% String extra = "id=\"related\"";--%>
-                    <%--if (bean.isVisible("assignedTo"))--%>
-                        <%--extra += " style=\"display: hidden;\"";--%>
-                    <%--if (bean.isReadOnly("assignedTo"))--%>
-                        <%--extra += " disabled";--%>
-                    <%--%>--%>
-                    <%--<%=text(bean.writeInput("assignedTo", issue.getRelated(), extra))%>--%>
-                <%--</div>--%>
-            <%--</div>--%>
-            <%
-
-            %>
-
-
             <%if (bean.isVisible("resolution"))
             {%>
                 <%=text(bean.renderColumn(propertyMap.get("resolution"), getViewContext(), true, bean.isReadOnly("resolution")))%>

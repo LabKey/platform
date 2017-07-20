@@ -453,14 +453,18 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                     {
                         if (isLarge)
                         {
-                            sb.append("<label class=\"col-md-4 col-lg-5 control-label\">");
+                            sb.append("<label class=\"col-md-4 col-lg-3 control-label\">");
                             dc.renderTitle(renderContext, writer);
                         }
                         else
                             dc.renderDetailsCaptionCell(renderContext, writer, strictGrid);
                         sb.append(writer);
                         if (isLarge)
+                        {
+                            if (getRequiredFields().contains("assignedto"))
+                                sb.append(" *");
                             sb.append("</label>");
+                        }
                     }
                     return sb.toString();
                 }

@@ -346,6 +346,9 @@ if (!issue.getComments().contains(comment))
 else
     {
 %>
+        <% if (!bean.isPrint())
+{
+%>
 <script type="text/javascript">
     var hidden = true;
     var showLess = true;
@@ -483,7 +486,12 @@ else
             </labkey:form>
         </div>
     </div>
-    <%} %>
+    <%}%>
+<%}
+else
+{ %>
+    <div class="labkey-nav-page-header-container"><span class="labkey-nav-page-header"><%=h(names.singularName + " " + issue.getIssueId() + ": " +issue.getTitle())%></span><p></div>
+<% } %>
 <div class="row">
     <div class="col-sm-1">
         <label><%=text(bean.getLabel("Status", true))%></label>
