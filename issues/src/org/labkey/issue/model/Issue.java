@@ -26,12 +26,11 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
-import org.labkey.remoteapi.query.DateParser;
 
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -574,57 +573,54 @@ public class Issue extends Entity implements Serializable, Cloneable
     {
 
         Comparator<Map<String, String>> mapComparator = (m1, m2) -> {
-                try
-                {
-                    Date d1 = new DateParser().parse(m1.get("date"));
-                    Date d2 = new DateParser().parse(m2.get("date"));
-                    return d1.compareTo(d2);
-                }
-                catch (ParseException e)
-                {
-                    throw new RuntimeException(e.getMessage());
-                }
+            Date d1 = new Date(DateUtil.parseDate(getContainerFromId(), m1.get("date")));
+            Date d2 = new Date(DateUtil.parseDate(getContainerFromId(), m2.get("date")));
+            return d1.compareTo(d2);
         };
 
-        List<Map<String, String>> pairList = new LinkedList<>();
+        List<Map<String, String>> activityList = new LinkedList<>();
 
         if (getCreated() != null)
         {
             Map<String, String> createdMap = new HashMap<>();
-            createdMap.put("date", getCreated().toString());
+            createdMap.put("date", DateUtil.formatDateTime(getContainerFromId(), getCreated()));
+            createdMap.put("fullDateTime", DateUtil.formatDateTime(getCreated(), "EEE, d MMM yyyy HH:mm:ss"));
             createdMap.put("event", "Created");
             createdMap.put("user", getCreatedByName(user));
-            pairList.add(createdMap);
+            activityList.add(createdMap);
         }
 
         if (getModified() != null)
         {
             Map<String, String> modifiedMap = new HashMap<>();
-            modifiedMap.put("date", getModified().toString());
+            modifiedMap.put("date", DateUtil.formatDateTime(getContainerFromId(), getModified()));
+            modifiedMap.put("fullDateTime", DateUtil.formatDateTime(getModified(), "EEE, d MMM yyyy HH:mm:ss"));
             modifiedMap.put("event", "Modified");
             modifiedMap.put("user", getModifiedByName(user));
-            pairList.add(modifiedMap);
+            activityList.add(modifiedMap);
         }
 
         if (getResolved() != null)
         {
             Map<String, String> resolvedMap = new HashMap<>();
-            resolvedMap.put("date", getResolved().toString());
+            resolvedMap.put("date", DateUtil.formatDateTime(getContainerFromId(), getResolved()));
+            resolvedMap.put("fullDateTime", DateUtil.formatDateTime(getResolved(), "EEE, d MMM yyyy HH:mm:ss"));
             resolvedMap.put("event", "Resolved");
             resolvedMap.put("user", getResolvedByName(user));
-            pairList.add(resolvedMap);
+            activityList.add(resolvedMap);
         }
 
         if (getClosed() != null)
         {
             Map<String, String> closedMap = new HashMap<>();
-            closedMap.put("date", getClosed().toString());
+            closedMap.put("date", DateUtil.formatDateTime(getContainerFromId(), getClosed()));
+            closedMap.put("fullDateTime", DateUtil.formatDateTime(getClosed(), "EEE, d MMM yyyy HH:mm:ss"));
             closedMap.put("event", "Closed");
             closedMap.put("user", getClosedByName(user));
-            pairList.add(closedMap);
+            activityList.add(closedMap);
         }
 
-        return pairList.stream().sorted(mapComparator.reversed()).collect(Collectors.toList());
+        return activityList.stream().sorted(mapComparator.reversed()).collect(Collectors.toList());
     }
 
     @Override
@@ -675,6 +671,11 @@ public class Issue extends Entity implements Serializable, Cloneable
 
         public Comment()
         {
+        }
+
+        public String getCreatedFullString()
+        {
+            return DateUtil.formatDateTime(getCreated(),"EEE, d MMM yyyy HH:mm:ss");
         }
 
         public Comment(String comment)
